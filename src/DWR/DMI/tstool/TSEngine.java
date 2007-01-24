@@ -875,7 +875,7 @@ private Vector	_fill_pattern_ts = new Vector (20,10);
 						// Vector of StringMonthTS
 						// fill patterns used with
 						// fillPattern().
-private TSTool_JFrame __gui = null;		// Need this to control cursor
+private TSCommandProcessorUI __gui = null;		// Need this to control cursor
 						// on reports (wait, not wait)
 						// SAMX - set cursor in GUI
 						// before calling TSEngine?
@@ -1003,7 +1003,7 @@ public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 			DIADvisorDMI DIADvisor_archive_dmi,
 			NWSRFS_DMI nwsrfs_dmi,
 			SatMonSysDMI smsdmi,
-			Vector commands, TSTool_JFrame gui )
+			Vector commands, TSCommandProcessorUI gui )
 {	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
 			nwsrfs_dmi, smsdmi, commands );
 	__gui = gui;
@@ -1021,7 +1021,7 @@ public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 			DIADvisorDMI DIADvisor_archive_dmi,
 			NWSRFS_DMI nwsrfs_dmi,
 			SatMonSysDMI smsdmi,
-			Vector commands, TSTool_JFrame gui,
+			Vector commands, TSCommandProcessorUI gui,
 			boolean create_output )
 {	_create_output = create_output;
 	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
@@ -1054,7 +1054,7 @@ public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 			DIADvisorDMI DIADvisor_dmi,
 			DIADvisorDMI DIADvisor_archive_dmi,
 			NWSRFS_DMI nwsrfs_dmi,
-			SatMonSysDMI smsdmi, TSTool_JFrame gui )
+			SatMonSysDMI smsdmi, TSCommandProcessorUI gui )
 {	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
 			nwsrfs_dmi, smsdmi, null );
 	__gui = gui;
@@ -7588,7 +7588,7 @@ throws IOException
 			// file...
 			Vector report = createDataCoverageReport (
 				__tslist_output );
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor( false );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -7615,7 +7615,7 @@ throws IOException
 		try {	// For now, put the code in here at the bottom of this
 			// file...
 			Vector report = createDataLimitsReport(__tslist_output);
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -7673,18 +7673,20 @@ throws IOException
 			//DateValueTS.writeTimeSeries ( __tslist_output,
 			//	_output_file,
 			//	date1, date2, units, true );
-			JGUIUtil.setWaitCursor ( __gui, true );
+			
+			__gui.setWaitCursor( true );
+			
 			DateValueTS.writeTimeSeriesList ( __tslist_output,
 				_output_file, __OutputStart_DateTime,
 				__OutputEnd_DateTime,
 				units, true );
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 		}
 		else {	Message.printWarning ( 1, routine, "Unable to write " +
 			"DateValue time series of different intervals." );
 		}
 		} catch ( Exception e ) {
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			message = "Error writing DateValue file \"" +
 			_output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -7698,15 +7700,15 @@ throws IOException
 		}
 	}
 	else if ( output_format == OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE ) {
-		try {	JGUIUtil.setWaitCursor ( __gui, true );
+		try {	__gui.setWaitCursor ( true );
 			PropList esp_props = new PropList ( "esp" );
 			NWSRFS_ESPTraceEnsemble esp =
 				new NWSRFS_ESPTraceEnsemble (
 				__tslist_output, esp_props );
 			esp.writeESPTraceEnsembleFile ( _output_file );
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 		} catch ( Exception e ) {
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			message =
 			"Error writing NWSRFS ESP Trace Ensemble file \"" +
 			_output_file + "\"";
@@ -7752,7 +7754,7 @@ throws IOException
 			// file...
 			Vector report = createMonthSummaryReport (
 				__tslist_output, sumprops );
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -7820,12 +7822,12 @@ throws IOException
 			date2.addDay ( 1 );
 			date2.setHour ( 0 );
 		}
-		JGUIUtil.setWaitCursor ( __gui, true );
+		__gui.setWaitCursor ( true );
 		NWSCardTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
 			_output_file, date1, date2, units, true );
-		JGUIUtil.setWaitCursor ( __gui, false );
+		__gui.setWaitCursor ( false );
 		} catch ( Exception e ) {
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			message = "Error writing NWS Card file \"" +
 			_output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -7879,14 +7881,14 @@ throws IOException
 			interval_mult = ((TS)
 			__tslist_output.elementAt(0)).getDataIntervalMult();
 		}
-		JGUIUtil.setWaitCursor ( __gui, true );
+		__gui.setWaitCursor ( true );
 		RiverWareTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
 			_output_file, __OutputStart_DateTime,
 			__OutputEnd_DateTime, units,
 			1.0, null, -1.0, true );
-		JGUIUtil.setWaitCursor ( __gui, false );
+		__gui.setWaitCursor ( false );
 		} catch ( Exception e ) {
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			message = "Error writing RiverWare file \"" +
 			_output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -7900,7 +7902,7 @@ throws IOException
 		}
 	}
 	else if ( output_format == OUTPUT_SHEFA_FILE ) {
-		try {	JGUIUtil.setWaitCursor ( __gui, true );
+		try {	__gui.setWaitCursor ( true );
 			Vector units_Vector = null;
 			Vector PE_Vector = ShefATS.getPEForTimeSeries (
 					__tslist_output );
@@ -7913,9 +7915,9 @@ throws IOException
 				__OutputEnd_DateTime,
 				units_Vector, PE_Vector,
 				Duration_Vector, AltID_Vector, shef_props );
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 		} catch ( Exception e ) {
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			message = "Error writing SHEF A file \"" +
 			_output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -8031,7 +8033,7 @@ throws IOException
 					TSAnalyst.getDataCoverageReport() );
 				}
 */
-				JGUIUtil.setWaitCursor ( __gui, false );
+				__gui.setWaitCursor ( false );
 				new ReportJFrame ( summary, reportProps );
 			}
 			catch ( Exception e ) {
@@ -8148,7 +8150,7 @@ throws IOException
 
 		try {	Vector report = createYearToDateReport (__tslist_output,
 				_reference_date, null );
-			JGUIUtil.setWaitCursor ( __gui, false );
+			__gui.setWaitCursor ( false );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -10677,7 +10679,7 @@ throws Exception
 			Message.printWarning ( 1, routine,
 			"There were warnings processing commands.  " +
 			"The output may be incomplete." );
-			tstool.quitProgram ( 1 );
+			__gui.quitProgram ( 1 );
 		}
 		else {	Message.printWarning ( 1, routine,
 			"There were warnings processing commands.  " +

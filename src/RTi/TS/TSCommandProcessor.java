@@ -21,7 +21,6 @@ package RTi.TS;
 
 import java.util.Vector;
 
-import DWR.DMI.tstool.TSEngine;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;

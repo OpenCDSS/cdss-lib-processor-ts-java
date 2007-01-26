@@ -72,6 +72,7 @@ import RTi.Util.String.StringUtil;
 
 // REVISIT SAM 2005-06-08 Need to evaluate where command classes should live to
 // avoid mixing with lower-level code.
+import DWR.DMI.HydroBaseDMI.fillUsingDiversionComments_Command;
 import DWR.DMI.HydroBaseDMI.openHydroBase_Command;
 import DWR.DMI.HydroBaseDMI.readHydroBase_Command;
 
@@ -153,7 +154,11 @@ throws UnknownCommandException
 		command_string,"fillRegression") ) {
 		return new fillRegression_Command ();
 	}
-
+	else if ( StringUtil.startsWithIgnoreCase(
+			command_string,"fillUsingDiversionComments") ) {
+			return new fillUsingDiversionComments_Command ();
+	}
+	
 	// "l" commands...
 
 	else if ( StringUtil.getToken(command_string,"( =",

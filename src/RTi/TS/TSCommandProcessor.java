@@ -14,6 +14,12 @@
 //					commands.
 // 2006-05-02	SAM, RTi		Add processCommands() to allow a
 //					call from the runCommands() command.
+// 2007-01-26	Kurt Tometich, RTi	Moved this class to new product
+//							TSCommandProcessor.  Added several methods that
+//							call or mimic TSEngine methods to allow generic
+//							command implementations to be able to call TSEngine
+//							without directly depending or being a member of that
+//							class.
 //------------------------------------------------------------------------------
 // EndHeader
 
@@ -22,11 +28,13 @@ package RTi.TS;
 import java.util.Vector;
 
 
+import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 import RTi.Util.Message.startLog_Command;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
@@ -51,6 +59,41 @@ public TSCommandProcessor ()
 public TSCommandProcessor ( TSEngine tsengine )
 {	__tsengine = tsengine;
 }
+
+/**
+Calls the TSEngine method with the same name to do the work.
+Calculate the average data limits for a time series using the averaging period
+if specified (otherwise use the available period).
+@param ts ts Monthly time series to process.
+Currently only limits for monthly time series are supported.
+@return the average data for a time series.
+If a monthly time series, a MonthTSLimits will be returned.
+@throws Exception Exception if there is an error getting the limits.
+ */
+public TSLimits calculateTSAverageLimits ( TS ts )
+throws Exception
+{
+	return __tsengine.calculateTSAverageLimits(ts);
+}
+
+/**
+Calls the TSEngine method with the same name to do the work.
+Calculate the average data limits for a time series using the averaging period
+if specified (otherwise use the available period).
+@param i Counter for time series being processed (starting at zero), used to
+control printing of messages.
+@param ts ts Monthly time series to process.
+Currently only limits for monthly time series are supported.
+@return the average data for a time series.
+If a monthly time series, a MonthTSLimits will be returned.
+@throws Exception Exception if there is an error getting the limits.
+ */
+public TSLimits calculateTSAverageLimits ( int i, TS ts )
+throws Exception
+{
+	return __tsengine.calculateTSAverageLimits(i, ts);
+}
+
 
 /**
 Return data for a named property, required by the CommandProcessor
@@ -126,6 +169,26 @@ throws Exception
 }
 
 /**
+Return the default HydroBaseDMI that is being used (InputName = "").
+@return the HydroBaseDMI that is being used (may return null).
+*/
+public HydroBaseDMI getHydroBaseDMI ()
+{	
+	return getHydroBaseDMI ( "" );
+}
+
+/**
+Return the HydroBaseDMI that is being used.
+@param input_name Input name for the DMI, can be blank.
+@return the HydroBaseDMI that is being used (may return null).
+*/
+public HydroBaseDMI getHydroBaseDMI ( String input_name )
+{	
+	return __tsengine.getHydroBaseDMI( input_name );
+}
+
+
+/**
 Return a time series from either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is returned, it is a new instance from the file
 and should be set to null when done.
@@ -155,6 +218,17 @@ and should be set to null when done.
 public TS getTimeSeries ( int position )
 throws Exception
 {	return __tsengine.getTimeSeries ( position );
+}
+
+/**
+Return number of time series that have been processed and are available for
+output.  The size is determined from the in-memory time series list or the
+BinaryTS, as appropriate.
+@return number of time series available for output.
+*/
+public int getTimeSeriesSize ()
+{	
+	return __tsengine.getTimeSeriesSize();
 }
 
 /**
@@ -190,6 +264,24 @@ public String getTSSupplierName()
 }
 
 /**
+Get the UPDATE TS value from TSEngine
+@return int UPDATE TS value
+ */
+public int getUpdateTS()
+{
+	return __tsengine.UPDATE_TS;
+}
+
+/**
+Calls TSEngine to check for output period 
+@return boolean haveOutputPeriod
+ */
+public boolean haveOutputPeriod()
+{
+	return __tsengine.haveOutputPeriod();
+}
+
+/**
 Return the position of a time series from either the __tslist vector or the
 BinaryTS file, as appropriate.  See the overloaded method for full
 documentation.  This version assumes that no sequence number is used.
@@ -214,6 +306,21 @@ public void processCommands ( Vector commands, PropList props )
 throws Exception
 {	__tsengine.processCommands ( commands, props );
 }
+
+/**
+Process a time series action, meaning insert or update in the list.
+@param ts_action INSERT_TS to insert at the position, UPDATE_TS to update at
+the position, NONE to do to nothing.
+@param ts Time series to act on.
+@param ts_pos Position in the time series list to perform action.
+@exception Exception if an error occurs.
+*/
+public void processTimeSeriesAction ( int ts_action, TS ts, int ts_pos )
+throws Exception
+{
+	__tsengine.processTimeSeriesAction( ts_action, ts, ts_pos );
+}
+
 
 /**
 Method for TSSupplier interface.
@@ -393,5 +500,6 @@ public void setTimeSeries ( TS ts, int position )
 throws Exception
 {	__tsengine.setTimeSeries ( ts, position );
 }
+
 
 }

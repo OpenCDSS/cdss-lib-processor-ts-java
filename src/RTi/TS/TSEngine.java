@@ -600,7 +600,7 @@
 //					  __OutputEnd_DateTime to be more
 //					  consistent with other code.
 // 2006-07-13	SAM, RTi		* Manage NDFD Adapters.
-// 2006-10-30   KAT, RTi        * Commented out variables and packages
+// 2006-10-30   Kurt Tometich, RTi  * Commented out variables and packages
 //                    pertaining to the legacy dataServices code
 // 2006-11-02   KAT, RTi        * Fixed the newDayTSFromMonthAndDayTS
 //                    to multiply the monthly volume by (1 / 1.9835).
@@ -617,11 +617,20 @@
 // 2007-01-16   KAT, RTi    * Fixed a bug in do_writeStateCU() where the
 //                    file from the command was not taking into account
 //                    the current working directory like all other commands.
+// 2007-01-25 	KAT, RTi	Deleted several import statements that were not
+//							needed.
+// 2007-01-26	KAT, RTi	Moved the do_fillUsingDiversionComments() method
+//							to the HydroBase package.  Also deleted the old way
+//							of handling this command in processCommands() by
+//							allowing it to hit the generic code at the end and 
+//							call the TSCommandFactory.  The command was copied
+//							to HydroBase similar to the openHydroBase() command.
+//
+//
 // EndHeader
 
 package RTi.TS;
 
-import java.awt.Component;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.String;
@@ -635,28 +644,13 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import javax.swing.JFrame;
-
 import rti.domain.timeseries.TimeSeries;
 import rti.domain.timeseries.TimeSeriesFabricator;
 import rti.transfer.TimeSeriesIdBean;
 import rti.type.TimeSeriesInputType;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-import DWR.DMI.HydroBaseDMI.HydroBase_AgriculturalCASSCropStats;
-import DWR.DMI.HydroBaseDMI.HydroBase_AgriculturalNASSCropStats;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel;
-import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
-import DWR.DMI.HydroBaseDMI.HydroBase_StationGeolocMeasType;
-import DWR.DMI.HydroBaseDMI.HydroBase_StructureGeolocStructMeasType;
-import DWR.DMI.HydroBaseDMI.HydroBase_StructureIrrigSummaryTS;
 import DWR.DMI.HydroBaseDMI.HydroBase_Util;
-import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
@@ -675,8 +669,6 @@ import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
 
-import RTi.GRTS.GRTS_Util;
-import RTi.GRTS.TSProcessor;
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
@@ -684,7 +676,6 @@ import RTi.GRTS.TSViewJFrame;
 import RTi.TS.BinaryTS;
 import RTi.TS.DateValueTS;
 import RTi.TS.DayTS;
-import RTi.TS.IrregularTS;
 import RTi.TS.MexicoCsmnTS;
 import RTi.TS.ModsimTS;
 import RTi.TS.MonthTS;
@@ -694,18 +685,14 @@ import RTi.TS.ShefATS;
 import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSAnalyst;
-import RTi.TS.TSData;
 import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
-import RTi.TS.TSRegression;
 import RTi.TS.TSSupplier;
 import RTi.TS.TSUtil;
 import RTi.TS.UsgsNwisTS;
 import RTi.TS.YearTS;
 
-import RTi.Util.GUI.InputFilter;
-import RTi.Util.GUI.InputFilter_JPanel;
-import RTi.Util.GUI.JGUIUtil;
+
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -717,7 +704,6 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ProcessManager;
-import RTi.Util.IO.ProcessManagerJDialog;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.UnknownCommandException;
@@ -737,7 +723,7 @@ import RTi.Util.Time.TimeUtil;
 public class TSEngine implements CommandProcessor, MessageJDialogListener,
 TSSupplier, WindowListener
 {
-private final int	INSERT_TS = 1,	// "ts_action" values
+public final int	INSERT_TS = 1,	// "ts_action" values
 			UPDATE_TS = 2,
 			EXIT = 3,
 			NONE = 4;
@@ -1122,7 +1108,7 @@ value of getTimeSeriesSize().
 @param ts Monthly time series to process.
 @exception Exception if there is an error getting the limits.
 */
-private TSLimits calculateTSAverageLimits ( TS ts )
+public TSLimits calculateTSAverageLimits ( TS ts )
 throws Exception
 {	return calculateTSAverageLimits ( getTimeSeriesSize(), ts );
 }
@@ -1138,7 +1124,7 @@ control printing of messages.
 Currently only limits for monthly time series are supported.
 @exception Exception if there is an error getting the limits.
 */
-private TSLimits calculateTSAverageLimits ( int i, TS ts )
+public TSLimits calculateTSAverageLimits ( int i, TS ts )
 throws Exception
 {	String message, routine = "TSEngine.calculateTSAverageLimits";
 	TSLimits average_limits = null;
@@ -3275,139 +3261,6 @@ throws Exception
 		}
 		else {	message = "Unable to find time series \"" +
 				TSID + "\" for fillRepeat() command.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-	}
-	tokens = null;
-}
-
-/**
-Helper method to execute the fillUsingDiversionComments() command.
-@param command Command to process.
-@exception Exception if there is an error processing the command.
-*/
-private void do_fillUsingDiversionComments ( String command )
-throws Exception
-{	String message, routine = "TSEngine.do_fillUsingDiversionComments";
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || tokens.size() < 2 ) {
-		// Must have at least the command name and a TSID...
-		message = "Bad command \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine, "," );
-	String TSID = props.getValue ( "TSID" );
-	String FillStart = props.getValue ( "FillStart" );
-	String FillEnd = props.getValue ( "FillEnd" );
-	String FillFlag = props.getValue ( "FillFlag" );
-	String RecalcLimits = props.getValue ( "RecalcLimits" );
-	DateTime start = null;
-	DateTime end = null;
-	try {	if ( FillStart != null ) {
-			start = DateTime.parse(FillStart);
-		}
-	}
-	catch ( Exception e ) {
-		message = "Fill start is not a valid date.  Ignoring date.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	try {	if ( FillEnd != null ) {
-			end = DateTime.parse(FillEnd);
-		}
-	}
-	catch ( Exception e ) {
-		message = "Fill end is not a valid date.  Ignoring date.";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	TS ts = null;			// Time series instance to update
-	HydroBaseDMI hbdmi = null;	// HydroBaseDMI to use
-	if ( TSID.equals("*") ) {
-		// Fill everything in memory...
-		int nts = getTimeSeriesSize();
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);
-			hbdmi = getHydroBaseDMI (
-				ts.getIdentifier().getInputName() );
-			// If the output period has been specified, then the
-			// time series is already the proper length and should
-			// NOT be extended.  If the output period was NOT
-			// specified, automatically extend the period.
-			// REVISIT SAM 2006-05-19
-			// Evaluate whether the query period should be
-			// considered when reading the diversion comments used
-			// in filling.
-			if ( haveOutputPeriod() ) {
-				// No need to extend the period...
-				HydroBase_Util.fillTSUsingDiversionComments (
-				hbdmi, ts, start, end, FillFlag, false );
-			}
-			else {	// Extend the period if data are available...
-				HydroBase_Util.fillTSUsingDiversionComments (
-				hbdmi, ts, start, end, FillFlag, true );
-			}
-			if ( RecalcLimits.equalsIgnoreCase("True") ) {
-				try {	ts.setDataLimitsOriginal (
-					calculateTSAverageLimits(ts));
-				}
-				catch ( Exception e ) {
-					Message.printWarning ( 2, routine,
-					"Error recalculating original data " +
-					"limits for \"" +
-					ts.getIdentifierString() + "\""  );
-					Message.printWarning ( 2, routine, e );
-				}
-			}
-			// Update...
-			processTimeSeriesAction ( UPDATE_TS, ts, its );
-		}
-	}
-	else {	// Fill one time series...
-		int ts_pos = indexOf ( TSID );
-		if ( ts_pos >= 0 ) {
-			ts = getTimeSeries ( ts_pos );
-			hbdmi = getHydroBaseDMI (
-				ts.getIdentifier().getInputName() );
-			// If the output period has been specified, then the
-			// time series is already the proper length and should
-			// NOT be extended.  If the output period was NOT
-			// specified, automatically extend the period.
-			// REVISIT SAM 2006-05-19
-			// Evaluate whether the query period should be
-			// considered when reading the diversion comments used
-			// in filling.
-			if ( haveOutputPeriod() ) {
-				// No need to extend the period...
-				HydroBase_Util.fillTSUsingDiversionComments (
-				hbdmi, ts, start, end, FillFlag, false );
-			}
-			else {	// Extend the period...
-				HydroBase_Util.fillTSUsingDiversionComments (
-				hbdmi, ts, start, end, FillFlag, true );
-			}
-			if ( RecalcLimits.equalsIgnoreCase("True") ) {
-				try {	ts.setDataLimitsOriginal (
-					calculateTSAverageLimits(ts));
-				}
-				catch ( Exception e ) {
-					Message.printWarning ( 2, routine,
-					"Error recalculating original data " +
-					"limits for \"" +
-					ts.getIdentifierString() + "\""  );
-					Message.printWarning ( 2, routine, e );
-				}
-			}
-			processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-		}
-		else {	message = "Unable to find time series \"" +
-				TSID + "\" for fillUsingDiversionComments() " +
-				"command.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -6679,7 +6532,7 @@ Indicate whether the output period has been specified.
 @return true if the output period has been specified (and we can use its
 dates without fear of nulls or zero years).
 */
-private boolean haveOutputPeriod ()
+public boolean haveOutputPeriod ()
 {	if ((__OutputStart_DateTime == null) || (__OutputEnd_DateTime == null)){
 		return false;
 	}
@@ -8382,7 +8235,7 @@ the position, NONE to do to nothing.
 @param ts_pos Position in the time series list to perform action.
 @exception Exception if an error occurs.
 */
-private void processTimeSeriesAction ( int ts_action, TS ts, int ts_pos )
+public void processTimeSeriesAction ( int ts_action, TS ts, int ts_pos )
 throws Exception
 {	if ( ts_action == INSERT_TS ) {
 		// Add new time series to the list...
@@ -9178,13 +9031,6 @@ throws Exception
 			"Use fillUsingDiversionComments().");
 			++update_count;
 			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(
-			true,0,"fillUsingDiversionComments",0,26) ) {
-			// Fill missing data in the time series with diversion
-			// comments...
-			do_fillUsingDiversionComments ( expression );
 			continue;
 		}
 		else if ( expression.regionMatches( true,0,"free",0,4) ) {
@@ -10507,6 +10353,7 @@ throws Exception
 					Message.printDebug ( 1, routine,
 					"Running command through new code..." );
 				}
+				
 				c.runCommand ( command_tag, 2 );
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,

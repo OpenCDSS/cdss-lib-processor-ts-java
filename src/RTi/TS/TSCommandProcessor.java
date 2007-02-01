@@ -51,6 +51,10 @@ private TSEngine __tsengine = null;	// Map back to existing code until able
 					// to transition into a true
 					// TSCommandProcessor class, at which
 					// time TSEngine will go away.
+public final int	INSERT_TS = 1,	// "ts_action" values
+					UPDATE_TS = 2,
+					EXIT = 3,
+					NONE = 4;
 
 public TSCommandProcessor ()
 {	super();
@@ -261,15 +265,6 @@ Return the TSSupplier name.
 */
 public String getTSSupplierName()
 {	return __tsengine.getTSSupplierName();
-}
-
-/**
-Get the UPDATE TS value from TSEngine
-@return int UPDATE TS value
- */
-public int getUpdateTS()
-{
-	return __tsengine.UPDATE_TS;
 }
 
 /**

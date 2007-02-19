@@ -45,21 +45,12 @@
 //------------------------------------------------------------------------------
 // EndHeader
 
-package RTi.TS;
-
-import RTi.DataTest.newDataTest_Command;
-import RTi.DataTest.runDataTest_Command;
-
-import RTi.DMI.NWSRFS_DMI.readNwsCard_Command;
+package RTi.TSCommandProcessor;
 
 // REVISIT SAM 2005-07-10 Need to evaluate where command classes should live to
 // avoid mixing with lower-level code.
 //import RTi.DataServices.Adapter.NDFD.openNDFD_Command;
 //import RTi.DataServices.Adapter.NDFD.readNDFD_Command;
-
-// REVISIT SAM 2005-10-18 Need to evaluate where command classes should live to
-// avoid mixing with lower-level code.
-import RTi.GRTS.processTSProduct_Command;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
@@ -70,19 +61,53 @@ import RTi.Util.Message.startLog_Command;
 
 import RTi.Util.String.StringUtil;
 
-// REVISIT SAM 2005-06-08 Need to evaluate where command classes should live to
-// avoid mixing with lower-level code.
+// DataTest commands
+
+import RTi.DataTest.newDataTest_Command;
+import RTi.DataTest.runDataTest_Command;
+
+// GRTS commands (time series products).
+
+import RTi.GRTS.processTSProduct_Command;
+
+// HydroBase commands.
+
 import DWR.DMI.HydroBaseDMI.fillUsingDiversionComments_Command;
 import DWR.DMI.HydroBaseDMI.openHydroBase_Command;
 import DWR.DMI.HydroBaseDMI.readHydroBase_Command;
 
-// REVISIT SAM 2005-08-30 Need to evaluate where command classes should live to
-// avoid mixing with lower-level code.
+//NWSRFS commands.
+
+import RTi.DMI.NWSRFS_DMI.readNwsCard_Command;
+import RTi.DMI.NWSRFS_DMI.writeNWSRFSESPTraceEnsemble_Command;
+
+// StateMod commands.
+
 import DWR.StateMod.writeStateMod_Command;
 import DWR.StateMod.readStateMod_Command;
 import DWR.StateMod.readStateModB_Command;
 
-import RTi.DMI.NWSRFS_DMI.writeNWSRFSESPTraceEnsemble_Command;
+// TS commands (basic functionality).
+
+import RTi.TS.analyzePattern_Command;
+import RTi.TS.changeInterval_Command;
+import RTi.TS.compareTimeSeries_Command;
+import RTi.TS.copy_Command;
+import RTi.TS.cumulate_Command;
+import RTi.TS.fillConstant_Command;
+import RTi.TS.fillHistMonthAverage_Command;
+import RTi.TS.fillHistYearAverage_Command;
+import RTi.TS.fillMixedStation_Command;
+import RTi.TS.fillMOVE2_Command;
+import RTi.TS.fillRegression_Command;
+import RTi.TS.lagK_Command;
+import RTi.TS.newStatisticYearTS_Command;
+import RTi.TS.newTimeSeries_Command;
+import RTi.TS.runCommands_Command;
+import RTi.TS.scale_Command;
+import RTi.TS.setInputPeriod_Command;
+import RTi.TS.sortTimeSeries_Command;
+import RTi.TS.writeRiverWare_Command;
 
 /**
 This class instantiates Commands for time series processing.

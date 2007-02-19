@@ -625,11 +625,21 @@
 //							allowing it to hit the generic code at the end and 
 //							call the TSCommandFactory.  The command was copied
 //							to HydroBase similar to the openHydroBase() command.
-//
+// 2007-02-08	SAM, RTi	Rename to TSCommandProcessor package.
+//					Clean up code based on Eclipse feedback.
+//					Change so TSEngine does not implement CommandProcessor -
+//					force all interaction to go through the TSCommandProcessor,
+//					which has an instance of TSEngine.
+//					Change getPropContents() to protected since only
+//					TSCommandProcessor should call.
+//					Internally change QueryStart/End to InputStart/End -
+//					need to transition code at command level as edits occur.
+//					Remove setProp() and setPropContents() since these are
+//					now handled by the TSCommandProcessor.
 //
 // EndHeader
 
-package RTi.TS;
+package RTi.TSCommandProcessor;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -650,7 +660,6 @@ import rti.transfer.TimeSeriesIdBean;
 import rti.type.TimeSeriesInputType;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-import DWR.DMI.HydroBaseDMI.HydroBase_Util;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
@@ -692,11 +701,9 @@ import RTi.TS.TSUtil;
 import RTi.TS.UsgsNwisTS;
 import RTi.TS.YearTS;
 
-
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.DataFormat;
 import RTi.Util.IO.DataUnits;
@@ -704,7 +711,6 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ProcessManager;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Math.MathUtil;
@@ -720,10 +726,11 @@ import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
-public class TSEngine implements CommandProcessor, MessageJDialogListener,
+public class TSEngine implements MessageJDialogListener,
 TSSupplier, WindowListener
 {
-public final int	INSERT_TS = 1,	// "ts_action" values
+public final static int
+			INSERT_TS = 1,	// "ts_action" values for processTimeSeriesAction
 			UPDATE_TS = 2,
 			EXIT = 3,
 			NONE = 4;
@@ -837,11 +844,11 @@ private int	__calendar_type = CALENDAR_YEAR;// Calendar type is the default.
 private boolean __cancel_processing = true;	// Indicates whether time series
 						// command processing should be
 						// cancelled
-private Vector	_commands = null;		// Original commands as Vector
+//private Vector	_commands = null;		// Original commands as Vector
 						// (used when running in batch
 						// mode).
 private String [] _commands_array = null;	// Commands as array.
-private boolean	_create_output = true;		// Indicates whether full output
+private boolean	__create_output = true;		// Indicates whether full output
 						// should be created.  False
 						// means that time series are
 						// processed but output
@@ -881,14 +888,13 @@ private double	_missing_range[] = null;	// Range for missing data.
 private Vector	_missing_ts = new Vector();	// Vector to save list of time
 						// series identifiers that are
 						// not found.
-private Vector __NDFDAdapter_Vector = new Vector();
+// TODO SAM 2007-02-18 need to reenable NDFD
+//private Vector __NDFDAdapter_Vector = new Vector();
 						// NDFD Adapter instance
 						// Vector, to allow more than
 						// one database instance to
 						// be open at a time, only
 						// used with openNDFD().
-private String _nl = System.getProperty ( "line.separator" );
-						// displayed, etc.
 private int __num_prepended_commands = 0;	// The number of commands that
 						// are at the beginning of the
 						// __commands, which have been
@@ -909,7 +915,6 @@ private int	_output_format = OUTPUT_NONE;	// Output format.  This used to
 						// to OUTPUT_NONE to allow a
 						// check for a legacy setting
 						// from the -o options.
-private int _output_filter = OUTPUT_FILTER_DATA;// Output filter.
 private String	_output_file = "tstool.out";	// Default output file name.
 private DateTime __OutputStart_DateTime = null;	// Global start date/time for
 						// output.
@@ -918,8 +923,8 @@ private DateTime __OutputEnd_DateTime = null;	// Global end date/time for
 private	boolean	_preview_output = false;	// Indicates whether exported
 						// data should be previewed.
 						// The default is false.
-private DateTime __query_date1 = null;		// Start date for query.
-private DateTime __query_date2 = null;		// End date for query.
+private DateTime __InputStart_DateTime = null;		// Start date for read.
+private DateTime __InputEnd_DateTime = null;		// End date for read.
 private DIADvisorDMI __DIADvisor_dmi = null;	// DMI for DIADvisor operational
 						// database.
 private DIADvisorDMI __DIADvisor_archive_dmi = null;
@@ -930,8 +935,6 @@ private RiversideDB_DMI __rdmi = null;		// DMI for RiversideDB.
 private DateTime _reference_date = null;	// Reference date for year to
 						// date report (only use month
 						// and day).
-private int	_reference_year = 2000;		// Reference year for annual
-						// traces.
 private	Vector	_tsexpression_list = null;	// List of time series
 						// expressions to process.
 private	Vector	_tsexpression_list2 = null;	// List of time series
@@ -1007,7 +1010,7 @@ public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 			SatMonSysDMI smsdmi,
 			Vector commands, TSCommandProcessorUI gui,
 			boolean create_output )
-{	_create_output = create_output;
+{	__create_output = create_output;
 	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
 			nwsrfs_dmi, smsdmi, commands );
 	__gui = gui;
@@ -1410,7 +1413,6 @@ public Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 			ts = TSUtil.changeInterval ( ts, TimeInterval.DAY, 1 );
 		}
 
-		boolean first = true;	// First year total...
 		int interval_base = ts.getDataIntervalBase();
 		int interval_mult = ts.getDataIntervalMult();
 		start = new DateTime (ts.getDate1());	// Overall start
@@ -1587,7 +1589,7 @@ throws Exception
 		ntslist = orig_tslist.size();
 	}
 	for ( int i = 0; i < ntslist; i++ ) {
-		try {	newts = analyst.createStatisticMonthTS(
+		try {	newts = TSAnalyst.createStatisticMonthTS(
 				(TS)orig_tslist.elementAt(i), null );
 			analyst.appendToDataCoverageSummaryReport ( newts );
 			// Don't actually need the time series...
@@ -2630,9 +2632,6 @@ private void do_fillPattern ( String command )
 throws Exception
 {	String routine = "TSEngine.do_fillPattern", message;
 	TS ts;			// Time series to fill
-	String fill_pattern;	// Pattern ID to use.
-	int i;			// Counter for time series.
-	int size;		// Number of time series to process.
 	String TSList = __AllMatchingTSID;	// Defaults..
 	String TSID = "*";
 	String PatternID = null;
@@ -2754,12 +2753,12 @@ throws Exception
 	String IndependentTSID = props.getValue ( "IndependentTSID" );
 	String FillStart = props.getValue ( "FillStart" );
 	String FillEnd = props.getValue ( "FillEnd" );
-	String CalculateFactorHow = props.getValue ( "CalculateFactorHow" );
+	//String CalculateFactorHow = props.getValue ( "CalculateFactorHow" );
 	String AnalysisStart = props.getValue ( "AnalysisStart" );
 	String AnalysisEnd = props.getValue ( "AnalysisEnd" );
 	String InitialValue = props.getValue ( "InitialValue" );
 	String FillDirection = props.getValue ( "FillDirection" );
-	String FillFlag = props.getValue ( "FillFlag" );
+	//String FillFlag = props.getValue ( "FillFlag" );
 
 	// The props are passed on to some methods...
 
@@ -2785,8 +2784,8 @@ throws Exception
 			throw new Exception ( message );
 		}
 	}
-	DateTime AnalysisStart_DateTime = null;
-	DateTime AnalysisEnd_DateTime = null;
+	//DateTime AnalysisStart_DateTime = null;
+	//DateTime AnalysisEnd_DateTime = null;
 	if ( AnalysisStart != null ) {
 		try {	start = DateTime.parse(AnalysisStart);
 		}
@@ -2827,10 +2826,6 @@ throws Exception
 		message = "FillDirection \"" + FillDirection +
 			"\" is not an Forward or Backward.";
 		Message.printWarning ( 2, routine, message );
-	}
-	int idir = 1;	// Forward
-	if ( FillDirection.equalsIgnoreCase("Backward") ) {
-		idir = -1;
 	}
 	// Get the independent time series...
 	int ts_pos = indexOf ( IndependentTSID );
@@ -3445,7 +3440,7 @@ throws Exception
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	String tsid = ((String)tokens.elementAt(3)).trim();
-	String units = ((String)tokens.elementAt(4)).trim();
+	//String units = ((String)tokens.elementAt(4)).trim();
 	String date1_string = ((String)tokens.elementAt(5)).trim();
 	String date2_string = ((String)tokens.elementAt(6)).trim();
 	DateTime query_date1 = getDateTime ( date1_string );
@@ -3539,7 +3534,7 @@ readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
 */
 private void do_readNWSRFSFS5Files ( String command )
 throws Exception
-{	String routine = "TSEngine.do_readNWSRFSFS5Files", message;
+{	//String routine = "TSEngine.do_readNWSRFSFS5Files";
 	Vector tokens = StringUtil.breakStringList ( command,
 			"()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 2) ) {
@@ -3548,12 +3543,12 @@ throws Exception
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
 	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine, "," );
-	String TSID = props.getValue ( "TSList" );
-	String QueryStart = props.getValue ( "QueryStart" );
-	String QueryEnd = props.getValue ( "QueryEnd" );
-	String Units = props.getValue ( "Units" );
+	//PropList props = PropList.parse (
+	//	(String)tokens.elementAt(1), routine, "," );
+	//String TSID = props.getValue ( "TSList" );
+	//String QueryStart = props.getValue ( "QueryStart" );
+	//String QueryEnd = props.getValue ( "QueryEnd" );
+	//String Units = props.getValue ( "Units" );
 
 	/* REVISIT SAM 2004-09-11 need to enable
 	DateTime QueryStart_DateTime = getDateTime ( QueryStart );
@@ -3595,16 +3590,16 @@ throws Exception
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	//String tsid = ((String)tokens.elementAt(3)).trim();
-	String units = ((String)tokens.elementAt(3)).trim();
+	//String units = ((String)tokens.elementAt(3)).trim();
 	String date1_string = ((String)tokens.elementAt(4)).trim();
 	String date2_string = ((String)tokens.elementAt(5)).trim();
 	DateTime query_date1 = getDateTime ( date1_string );
 	if ( query_date1 == null ) {
-		query_date1 = __query_date1;
+		query_date1 = __InputStart_DateTime;
 	}
 	DateTime query_date2 = getDateTime ( date2_string );
 	if ( query_date2 == null ) {
-		query_date2 = __query_date2;
+		query_date2 = __InputEnd_DateTime;
 	}
 	Message.printStatus ( 1, routine,
 	"Reading RiverWare file \"" + infile + "\"" );
@@ -3649,7 +3644,6 @@ throws Exception
 	PropList props = PropList.parse (
 		(String)tokens.elementAt(1), routine,"," );
 	String InputFile = props.getValue ( "InputFile" );
-	String IncludeTotal = props.getValue ( "IncludeTotal" );
 	String TSID = props.getValue ( "TSID" );
 
 	// REVISIT need to check prop
@@ -3672,7 +3666,7 @@ throws Exception
 	try {	if ( StateCU_CropPatternTS.isCropPatternTSFile ( InputFile ) ) {
 			tslist = StateCU_CropPatternTS.toTSVector(
 				StateCU_CropPatternTS.readStateCUFile (
-				InputFile, __query_date1, __query_date2,
+				InputFile, __InputStart_DateTime, __InputEnd_DateTime,
 				null ),
 				IncludeLocationTotal_boolean,
 				IncludeDataSetTotal_boolean,
@@ -3683,12 +3677,12 @@ throws Exception
 				InputFile ) ) {
 			tslist = StateCU_IrrigationPracticeTS.toTSVector(
 				StateCU_IrrigationPracticeTS.readStateCUFile (
-				InputFile, __query_date1, __query_date2 ),
+				InputFile, __InputStart_DateTime, __InputEnd_DateTime ),
 				IncludeDataSetTotal_boolean, null, null );
 		}
 		else if ( StateCU_TS.isReportFile ( InputFile ) ) {
 			tslist = StateCU_TS.readTimeSeriesList (
-				TSID, InputFile, __query_date1, __query_date2,
+				TSID, InputFile, __InputStart_DateTime, __InputEnd_DateTime,
 				(String)null, true );
 		}
 		else {	// Not a recognized StateCU file type...
@@ -3733,16 +3727,16 @@ throws Exception
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	String tsid = ((String)tokens.elementAt(3)).trim();
-	String units = ((String)tokens.elementAt(4)).trim();
+	//String units = ((String)tokens.elementAt(4)).trim();
 	String date1_string = ((String)tokens.elementAt(5)).trim();
 	String date2_string = ((String)tokens.elementAt(6)).trim();
 	DateTime query_date1 = getDateTime ( date1_string );
 	if ( query_date1 == null ) {
-		query_date1 = __query_date1;
+		query_date1 = __InputStart_DateTime;
 	}
 	DateTime query_date2 = getDateTime ( date2_string );
 	if ( query_date2 == null ) {
-		query_date2 = __query_date2;
+		query_date2 = __InputEnd_DateTime;
 	}
 	Message.printStatus ( 1, routine,
 	"Reading DateValue file \"" + infile + "\"" );
@@ -3804,12 +3798,12 @@ throws Exception
 	if ( QueryStart != null ) {
 		query_date1 = DateTime.parse ( QueryStart );
 	}
-	else {	query_date1 = __query_date1;
+	else {	query_date1 = __InputStart_DateTime;
 	}
 	if ( QueryEnd != null ) {
 		query_date2 = DateTime.parse ( QueryEnd );
 	}
-	else {	query_date2 = __query_date2;
+	else {	query_date2 = __InputEnd_DateTime;
 	}
 	Message.printStatus ( 2, routine,
 	"Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
@@ -5133,7 +5127,7 @@ throws Exception
 	Message.printStatus ( 1, routine,
 	"Reading StateMod file \"" + infile1 + "\"" );
 	try {	tslist1 = StateMod_TS.readTimeSeriesList ( infile1,
-			__query_date1, __query_date2, null, true );
+			__InputStart_DateTime, __InputEnd_DateTime, null, true );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 1, routine,
@@ -5142,7 +5136,7 @@ throws Exception
 	Message.printStatus ( 1, routine,
 	"Reading StateMod file \"" + infile2 + "\"" );
 	try {	tslist2 = StateMod_TS.readTimeSeriesList ( infile2,
-			__query_date1, __query_date2, null, true );
+			__InputStart_DateTime, __InputEnd_DateTime, null, true );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 1, routine,
@@ -5485,13 +5479,12 @@ throws Throwable
 			_binary_ts = null;
 		}
 	}
-	_commands = null;
 	_commands_array = null;
 	_datetime_Hashtable = null;
 	__OutputStart_DateTime = null;
 	__OutputEnd_DateTime = null;
-	__query_date1 = null;
-	__query_date2 = null;
+	__InputStart_DateTime = null;
+	__InputEnd_DateTime = null;
 	_binaryts_date1 = null;
 	_binaryts_date2 = null;
 	_fill_pattern_ts = null;
@@ -5499,8 +5492,8 @@ throws Throwable
 	__hbdmi_Vector = null;
 	_missing_range = null;
 	_missing_ts = null;
-	__NDFDAdapter_Vector = null;
-	_nl = null;
+	// TODO SAM 2007-02-18 Need to enable NDFD
+	//__NDFDAdapter_Vector = null;
 	_output_commands = null;
 	_output_file = null;
 	_reference_date = null;
@@ -5517,6 +5510,22 @@ get*() methods.
 */
 public BinaryTS getBinaryTS ()
 {	return _binary_ts;
+}
+
+/**
+Indicate whether output files should be created.
+@return True if output files should be created, false if not.
+*/
+public boolean getCreateOutput()
+{	return __create_output;
+}
+
+/**
+Return the list of DataTest.
+@return Vector of DataTest that can be used for data test commands.
+*/
+public Vector getDataTestList ()
+{	return __datatestlist;
 }
 
 /**
@@ -5561,12 +5570,12 @@ throws Exception
 	else if(date_string.equalsIgnoreCase("InputEnd") ||
 		date_string.equalsIgnoreCase("QueryEnd") ||
 		date_string.equalsIgnoreCase("QueryPeriodEnd") ) {
-		return __query_date2;
+		return __InputEnd_DateTime;
 	}
 	else if(date_string.equalsIgnoreCase("InputStart") ||
 		date_string.equalsIgnoreCase("QueryStart") ||
 		date_string.equalsIgnoreCase("QueryPeriodStart") ) {
-		return __query_date1;
+		return __InputStart_DateTime;
 	}
 
 	// Else did not find a date time so try parse the string...
@@ -5684,6 +5693,30 @@ public HydroBaseDMI getHydroBaseDMI ( String input_name )
 	return null;
 }
 
+/**
+Return the list of HydroBaseDMI.
+@return Vector of open HydroBaseDMI.
+*/
+public Vector getHydroBaseDMIList ()
+{	return __hbdmi_Vector;
+}
+
+/**
+Return the input period end, or null if all available data are to be queried.
+@return the input period end, or null if all available data are to be queried.
+*/
+public DateTime getInputEnd()
+{	return __InputEnd_DateTime;
+}
+
+/**
+Return the input start, or null if all available data are to be read at input.
+@return the input period start, or null if all available data are to be read.
+*/
+public DateTime getInputStart()
+{	return __InputStart_DateTime;
+}
+
 // REVISIT SAM 2006-07-13
 // May need to fully qualify Adapter but for now there is no conflict with
 // other packages.
@@ -5724,6 +5757,47 @@ public Adapter getNDFDAdapter (String input_name )
 }
 */
 
+/**
+Return comments to add to the top of output files.  This includes HydroBase and
+other database connection information that may have been used by commands.
+@return A Vector of String, suitable to add to output files.
+*/
+protected Vector getOutputComments ()
+{	// Format the comments to add to the top of output files.
+	// If available, use the HydroBase comments.  The commands file
+	// will typically automatically be added by
+	// IOUtil.printCreatorHeader() when called by write methods.
+	// TODO SAM 2005-09-01
+	// Evaluate whether printCreatorHeader should automatically
+	// include the commands or whether this should be an option.
+	// It seems to work reasonbly well now.
+
+	Vector comments = new Vector();	// All comments to return.
+	HydroBaseDMI hbdmi = null;
+	String db_comments[] = null;	// Comments for one connection
+	int hbsize = 0;
+	if ( __hbdmi_Vector != null ) {
+		hbsize = __hbdmi_Vector.size();
+	}
+	for ( int ih = 0; ih < hbsize; ih++ ) {
+		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
+		if ( hbdmi == null ) {
+			continue;
+		}
+		try {	db_comments = hbdmi.getVersionComments ();
+		}
+		catch ( Exception e ) {
+			db_comments = null;
+		}
+		if ( db_comments != null ) {
+			for ( int i = 0; i < db_comments.length; i++ ) {
+				comments.addElement( db_comments[i] );
+			}
+		}
+	}
+	db_comments = null;
+	return comments;
+}
 
 /**
 Return the output period start, or null if all data are to be output.
@@ -5760,242 +5834,38 @@ public DateTime getOutputStart()
 }
 
 /**
-Return data for a named property, required by the CommandProcessor
-interface.  See the overloaded version for a list of properties that are
-handled.
-@param prop Property to set.
-@return the named property, or null if a value is not found.
+Return the output year type, to be used for commands that create output.
+@return the output year type, as "Calendar" or "Water".
 */
-public Prop getProp ( String prop )
-{	Object o = getPropContents ( prop );
-	if ( o == null ) {
-		return null;
+protected String getOutputYearType()
+{	
+	if ( __calendar_type == CALENDAR_YEAR ) {
+		return "Calendar";
 	}
-	else {	// Contents will be a Vector, etc., so convert to a full
-		// property.
-		// REVISIT SAM 2005-05-13 This will work seamlessly for strings
-		// but may have a side-effects (conversions) for non-strings...
-		Prop p = new Prop ( prop, o, o.toString() );
-		return p;
+	else if ( __calendar_type == WATER_YEAR ) {
+		return "Water";
 	}
-}
-
-/**
-Return the contents for a named property, required by the CommandProcessor
-interface. Currently the following properties are handled:
-<table width=100% cellpadding=10 cellspacing=0 border=2>
-<tr>
-<td><b>Property</b></td>	<td><b>Description</b></td>
-</tr>
-
-<tr>
-<td><b>CreateOutput</b></td>
-<td>Indicate if output should be created.  If True, commands that create output
-should do so.  If False, the commands should be skipped.  This is used to
-speed performance during initial testing.
-</td>
-</tr>
-
-<tr>
-<td><b>HydroBaseDMIList</b></td>
-<td>A Vector of open HydroBaseDMI, available for reading.
-</td>
-</tr>
-
-<tr>
-<td><b>InputEnd</b></td>
-<td>The input end from the setInputPeriod() command, as a DateTime object.
-</td>
-</tr>
-
-<tr>
-<td><b>InputStart</b></td>
-<td>The input start from the setInputPeriod() command, as a DateTime object.
-</td>
-</tr>
-
-<tr>
-<td><b>OutputComments</b></td>
-<td>A Vector of String with comments suitable for output.  The comments
-DO NOT contain the leading comment character (specific code that writes the
-output should add the comment characters).  Currently the comments contain
-open HydroBase connection information, if available.
-</td>
-</tr>
-
-<tr>
-<td><b>OutputEnd</b></td>
-<td>The output end from the setOutputPeriod() command, as a DateTime object.
-</td>
-</tr>
-
-<tr>
-<td><b>OutputStart</b></td>
-<td>The output start from the setOutputPeriod() command, as a DateTime object.
-</td>
-</tr>
-
-<tr>
-<td><b>OutputYearType</b></td>
-<td>The output year type.
-</td>
-</tr>
-
-<tr>
-<td><b>TSIDListNoInput</b></td>
-<td>The Vector of time series identifiers that are available, without the
-input type and name.  The time series identifiers from commands above the
-selected command are returned.  This property will normally only be used with
-command editor dialogs.</td>
-</tr>
-
-<tr>
-<td><b>TSProductAnnotationProviderList</b></td>
-<td>A Vector of TSProductAnnotationProvider (for example, this is requested
-by the processTSProduct() command).
-</td>
-</tr>
-
-<tr>
-<td><b>TSResultsList</b></td>
-<td>The Vector of time series results.</td>
-</tr>
-
-<tr>
-<td><b>TSViewWindowListener</b></td>
-<td>The WindowListener that is interested in listing to TSView window events.
-This is used when processing a TSProduct in batch mode so that the main
-application can close when the TSView window is closed.</td>
-</tr>
-
-<tr>
-<td><b>WorkingDir</b></td>
-<td>The working directory for the processor (initially the same as the
-application but may be changed by commands during execution).</td>
-</tr>
-
-</table>
-@return the contents for a named property, or null if a value is not found.
-*/
-public Object getPropContents ( String prop )
-{	String routine = "TSEngine.getPropContents";
-	if ( prop.equalsIgnoreCase("CreateOutput") ) {
-		if ( _create_output ) {
-			return "True";
-		}
-		else {	return "False";
-		}
+	else {
+		return "";
 	}
-	else if ( prop.equalsIgnoreCase("DataTestList")) {
-		return __datatestlist;
-	}
-	else if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
-		return __hbdmi_Vector;
-	}
-	else if ( prop.equalsIgnoreCase("NDFDAdapterList") ) {
-		return __NDFDAdapter_Vector;
-	}
-	else if ( prop.equalsIgnoreCase("QueryEnd") ) {
-		return __query_date2;
-	}
-	else if ( prop.equalsIgnoreCase("QueryStart") ) {
-		return __query_date1;
-	}
-	else if ( prop.equalsIgnoreCase("OutputComments") ) {
-		// Format the comments to add to the top of output files.
-		// If available, use the HydroBase comments.  The commands file
-		// will typically automatically be added by
-		// IOUtil.printCreatorHeader() when called by write methods.
-		// REVISIT SAM 2005-09-01
-		// Evaluate whether printCreatorHeader should automatically
-		// include the commands or whether this should be an option.
-		// It seems to work reasonbly well now.
-
-		Vector comments = new Vector();	// All comments to return.
-		HydroBaseDMI hbdmi = null;
-		String db_comments[] = null;	// Comments for one connection
-		int hbsize = 0;
-		if ( __hbdmi_Vector != null ) {
-			hbsize = __hbdmi_Vector.size();
-		}
-		for ( int ih = 0; ih < hbsize; ih++ ) {
-			hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
-			if ( hbdmi == null ) {
-				continue;
-			}
-			try {	db_comments = hbdmi.getVersionComments ();
-			}
-			catch ( Exception e ) {
-				db_comments = null;
-			}
-			if ( db_comments != null ) {
-				for ( int i = 0; i < db_comments.length; i++ ) {
-					comments.addElement( db_comments[i] );
-				}
-			}
-		}
-		db_comments = null;
-		return comments;
-	}
-	else if ( prop.equalsIgnoreCase("OutputEnd") ) {
-		return __OutputEnd_DateTime;
-	}
-	else if ( prop.equalsIgnoreCase("OutputStart") ) {
-		return __OutputStart_DateTime;
-	}
-	else if ( prop.equalsIgnoreCase("OutputYearType") ) {
-		if ( __calendar_type == CALENDAR_YEAR ) {
-			return "Calendar";
-		}
-		else if ( __calendar_type == WATER_YEAR ) {
-			return "Water";
-		}
-	}
-	else if ( prop.equalsIgnoreCase("TSIDListNoInput") ) {
-		// Note the dependence on the GUI, even depending on what is
-		// selected in the commands list.
-		// REVISIT SAM 2005-05-05 need to make the link more abstract.
-		if ( __gui == null ) {
-			Message.printWarning ( 3, routine,
-			"GUI is null.  Can't get TSIDListNoInput" );
-			return new Vector ();
-		}
-		else {	return getTSIdentifiersFromCommands(
-			__gui.getCommandsAboveSelected() );
-		}
-	}
-	else if ( prop.equalsIgnoreCase("TSProductAnnotationProviderList") ) {
-		return getTSProductAnnotationProviders();
-	}
-	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
-		return getTimeSeriesList(null);
-	}
-	else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
-		return _tsview_window_listener;
-	}
-	else if ( prop.equalsIgnoreCase("WorkingDir") ) {
-		// REVISIT SAM 2005-05-11 The working directory needs to be
-		// maintained separately from the processor and the
-		// application...
-		return IOUtil.getProgramWorkingDir();
-	}
-	return null;
-}
-
-/**
-Return the query period start, or null if all data are to be queried.
-@return the query period start, or null if all data are to be queried.
-*/
-public DateTime getQueryDate1()
-{	return __query_date1;
 }
 
 /**
 Return the query period end, or null if all data are to be queried.
+@deprecated Use getInputEnd.
 @return the query period end, or null if all data are to be queried.
 */
 public DateTime getQueryDate2()
-{	return __query_date2;
+{	return getInputEnd();
+}
+
+/**
+Return the query period start, or null if all data are to be queried.
+@deprecated Use getInputStart.
+@return the query period start, or null if all data are to be queried.
+*/
+public DateTime getQueryDate1()
+{	return getInputStart();
 }
 
 /**
@@ -6052,6 +5922,8 @@ is guaranteed to be non-null but may be empty.
 @param routine The routine that is calling this helper method (for messaging).
 @param command Command that is being processed (for messaging).
 */
+/* REVISIT SAM 2007-02-08
+Is this needed?
 private Vector getSpecifiedTimeSeries ( String command_tag, Vector tsids,
 					String routine, String command )
 throws Exception
@@ -6087,7 +5959,9 @@ throws Exception
 			command + "\"" );
 	}
 	return v;
-} 
+}
+*/
+
 /**
 Return a time series from either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is returned, it is a new instance from the file
@@ -6234,12 +6108,12 @@ to be used to update the time series.  Use the size of the Vector (in the first
 element) to determine the number of time series to process.  The order of the
 time series will be from first to last.
 */
-public Vector getTimeSeriesToProcess ( String TSList, String TSID )
+protected Vector getTimeSeriesToProcess ( String TSList, String TSID )
 {	Vector tslist = new Vector();	// List of time series to process
 	int nts = getTimeSeriesSize();
 	int [] tspos = new int[nts];	// Positions of time series to process.
 					// Size to match the full list but may
-					// not be filled.
+					// not be filled initially - trim before returning.
 	// Setup the return data...
 	Vector v = new Vector ( 2 );
 	v.addElement ( tslist );
@@ -6247,6 +6121,7 @@ public Vector getTimeSeriesToProcess ( String TSList, String TSID )
 	// Loop through the time series in memory...
 	int count = 0;
 	TS ts = null;
+	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID + "\"");
 	if ( TSList.equalsIgnoreCase("LastMatchingTSID") ) {
 		// Search backwards for the last single matching time series...
 		for ( int its = (nts - 1); its >= 0; its-- ) {
@@ -6261,6 +6136,10 @@ public Vector getTimeSeriesToProcess ( String TSList, String TSID )
 				if (ts.getIdentifier().matches(TSID,true,true)){
 					tslist.addElement ( ts );
 					tspos[count++] = its;
+					// Only return the single index...
+					int [] tspos2 = new int[1];
+					tspos2[0] = tspos[0];
+					v.setElementAt(tspos2,1);
 					// Only want one match...
 					return v;
 				}
@@ -6269,6 +6148,10 @@ public Vector getTimeSeriesToProcess ( String TSList, String TSID )
 				if(ts.getIdentifier().matches(TSID,true,false)){
 					tslist.addElement ( ts );
 					tspos[count++] = its;
+					// Only return the single index...
+					int [] tspos2 = new int[1];
+					tspos2[0] = tspos[0];
+					v.setElementAt(tspos2,1);
 					// Only want one match...
 					return v;
 				}
@@ -6312,6 +6195,19 @@ public Vector getTimeSeriesToProcess ( String TSList, String TSID )
 			tspos[count++] = its;
 		}
 	}
+	// Trim down the "tspos" array to only include matches so that other
+	// code does not mistakenly iterate through a longer array...
+	if ( count == 0 ) {
+		v.setElementAt ( new int[0], 1 );
+	}
+	else {
+		int [] tspos2 = new int[count];
+		for ( int i = 0; i < count; i++ ) {
+			tspos2[i] = tspos[i];
+		}
+		v.setElementAt ( tspos2, 1 );
+	}
+	Message.printStatus( 2, "", tslist.toString() );
 	return v;
 }
 
@@ -6472,11 +6368,34 @@ public static Vector getTSIdentifiersFromCommands (	Vector commands,
 }
 
 /**
+@return the Vector of time series identifiers that are available, with the
+input type information.
+@return The Vector of time series identifiers that are available, without the
+input type and name.  The time series identifiers from commands above the
+selected command are returned.  This property will normally only be used with
+command editor dialogs.
+*/
+protected Vector getTSIDListNoInput ()
+{	// Note the dependence on the GUI, even depending on what is
+	// selected in the commands list.
+	// TODO SAM 2005-05-05 Remove dependence on GUI.
+	if ( __gui == null ) {
+		String routine = "TSEngine.getTSIDListNoInput";
+		Message.printWarning ( 3, routine,
+		"GUI is null.  Can't get list of available time series identifiers." );
+		return new Vector ();
+	}
+	else {	return getTSIdentifiersFromCommands(
+		__gui.getCommandsAboveSelected() );
+	}
+}
+
+/**
 Return a Vector of objects (currently open DMI instances) that implement
 TSProductAnnotationProvider. This is a helper method for other methods.
 @return a non-null Vector of TSProductAnnotationProviders.
 */
-private Vector getTSProductAnnotationProviders ()
+protected Vector getTSProductAnnotationProviders ()
 {	Vector ap_Vector = new Vector();
 	// Check the HydroBase instances...
 	int hsize = __hbdmi_Vector.size();
@@ -6510,6 +6429,16 @@ public String getTSSupplierName()
 }
 
 /**
+Return the WindowListener that wants to track TSView windows.
+This is used when the TSCommandProcessor is run as a supporting
+tool (e.g., in TSTool with no main GUI).
+@return the WindowListener for TSView windows.
+*/
+public WindowListener getTSViewWindowListener ()
+{	return _tsview_window_listener;
+}
+
+/**
 Determine whether the averaging period is set (start and end dates need to be
 non-null and years not equal to zero).
 @return true if the averaging period has been specified (and we can use its
@@ -6522,6 +6451,23 @@ private boolean haveAveragingPeriod ()
 	}
 	if (	(_averaging_date1.getYear() == 0) ||
 		(_averaging_date2.getYear() == 0) ) {
+		return false;
+	}
+	return true;
+}
+
+/**
+Indicate whether the input period has been specified.
+@return true if the input period has been specified (and we can use its
+dates without fear of nulls or zero years).
+*/
+private boolean haveInputPeriod ()
+{	if ( (__InputStart_DateTime == null) ||
+		(__InputEnd_DateTime == null) ) {
+		return false;
+	}
+	if ( (__InputStart_DateTime.getYear() == 0) ||
+			(__InputEnd_DateTime.getYear() == 0) ){
 		return false;
 	}
 	return true;
@@ -6545,17 +6491,12 @@ public boolean haveOutputPeriod ()
 
 /**
 Indicate whether the query period has been specified.
+@deprecated Use haveInputPeriod
 @return true if the query period has been specified (and we can use its
 dates without fear of nulls or zero years).
 */
 private boolean haveQueryPeriod ()
-{	if ( (__query_date1 == null) || (__query_date2 == null) ) {
-		return false;
-	}
-	if ( (__query_date1.getYear() == 0) || (__query_date2.getYear() == 0) ){
-		return false;
-	}
-	return true;
+{	return haveInputPeriod();
 }
 
 /**
@@ -6688,9 +6629,7 @@ private void initialize (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 				NWSRFS_DMI nwsrfs_dmi,
 				SatMonSysDMI smsdmi,
 				Vector commands )
-{	_commands = commands;
-	_output_filter = OUTPUT_FILTER_DATA;
-	// Add to the Vector.  Do not close the old connection because it may
+{	// Add to the Vector.  Do not close the old connection because it may
 	// be used in the application.
 	setHydroBaseDMI ( hbdmi, false );
 	__rdmi = rdmi;
@@ -6890,62 +6829,6 @@ throws Exception
 	//	ts.setIdentifier ( tsident_string );
 	//}
 	return ts;
-}
-
-/**
-Parse an expression - return the expression as an array of TS.  The
-first element, which is the function, will NOT be returned.  This will return
-a period that matches that requested by the user.
-@param expression Time series expression to parse.
-*/
-private Vector parseExpression ( String command_tag, String expression )
-{	return parseExpression ( command_tag, expression, false );
-}
-
-/**
-Parse an expression - return the expression as an array of TS.  The
-first element, which is the function, will NOT be returned.
-@param expression Time series expression.
-@param full_period True if the full period for the time series should be
-returned.
-*/
-private Vector parseExpression ( String command_tag, String expression,
-			boolean full_period )
-{	String routine = "TSEngine.parseExpression";
-	StringTokenizer st = new StringTokenizer ( expression, "(,)" );
-	Vector tsvec = new Vector ( st.countTokens(), 1 );
-	TS ts = null;
-	int num_retrieved=0;
-	String	tsident_string = null;
-
-	if ( Message.isDebugOn ) {
-		Message.printDebug ( 10, routine,
-		"Parsing expression \"" + expression + "\"" );
-	}
-
-	st.nextToken();  // function
-	while ( st.hasMoreTokens()) {
-		tsident_string=st.nextToken();
-		try {	ts = readTimeSeries ( command_tag, tsident_string,
-				full_period );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine,
-			"Error reading time series \"" + tsident_string + "\"");
-			Message.printWarning ( 2, routine, e );
-			ts = null;
-		}
-		if ( ts == null ) {
-			Message.printWarning ( 1, routine,
-			"No time series available for \"" + tsident_string +
-			"\"" );
-		}
-		else {	tsvec.addElement ( ts );
-			num_retrieved++;
-		}
-	}
-
-	return tsvec;
 }
 
 /**
@@ -7227,7 +7110,6 @@ public void processTimeSeries ( int ts_indices[], PropList proplist )
 throws IOException
 {	String	message = null,	// Message string
 		routine = "TSEngine.processTimeSeries";
-	TS	ts = null;	// Single time series to process.
 
 	// Define a local proplist to better deal with null...
 	PropList props = proplist;
@@ -7484,10 +7366,8 @@ throws IOException
 		}
 		try {
 		TS	tspt = null;
-		int	list_size = 0;
 		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
 			tspt = (TS)__tslist_output.elementAt(0);
-			list_size = __tslist_output.size();
 		}
 		String units = null;
 		if ( tspt != null ) {
@@ -7498,13 +7378,6 @@ throws IOException
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
 		if ( TSUtil.intervalsMatch ( __tslist_output )) {
-			int interval = 0;
-			if ( _binary_ts_used ) {
-				interval = _binary_ts.getDataIntervalBase();
-			}
-			else {	interval = ((TS)__tslist_output.elementAt(0)
-					).getDataIntervalBase();
-			}
 			// Need date precision to be day...
 			//DateTime date1 = _date1;
 			// Why was this set here????
@@ -7644,14 +7517,11 @@ throws IOException
 
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
-		int interval_base = 0;
 		int interval_mult = 1;
 		if ( _binary_ts_used ) {
-			interval_base = _binary_ts.getDataIntervalBase();
 			interval_mult = _binary_ts.getDataIntervalMult();
 		}
-		else {	interval_base = ((TS)
-			__tslist_output.elementAt(0)).getDataIntervalBase();
+		else {
 			interval_mult = ((TS)
 			__tslist_output.elementAt(0)).getDataIntervalMult();
 		}
@@ -7721,17 +7591,6 @@ throws IOException
 
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
-		int interval_base = 0;
-		int interval_mult = 1;
-		if ( _binary_ts_used ) {
-			interval_base = _binary_ts.getDataIntervalBase();
-			interval_mult = _binary_ts.getDataIntervalMult();
-		}
-		else {	interval_base = ((TS)
-			__tslist_output.elementAt(0)).getDataIntervalBase();
-			interval_mult = ((TS)
-			__tslist_output.elementAt(0)).getDataIntervalMult();
-		}
 		__gui.setWaitCursor ( true );
 		RiverWareTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
 			_output_file, __OutputStart_DateTime,
@@ -8427,13 +8286,11 @@ throws Exception
 				// __num_prepended_commands - the user will
 				// see command numbers in messages like (12),
 				// indicating the twelfth command.
-	int i_for_notify;	// Zero index position for commands, adjusted
-				// for __num_prepended_commands
 
 	String command_tag = null;	// String used in messages to allow
 					// link back to the application
 					// commands, for use with each command.
-	String message_tag = "ProcessCommands";
+	//String message_tag = "ProcessCommands";
 					// Tag used with messages generated in
 					// this method.
 
@@ -8443,8 +8300,6 @@ throws Exception
 		// the first user-defined command will have:
 		// i_for_message = 1 - 1 + 1 = 1
 		i_for_message = i - __num_prepended_commands + 1;
-		i_for_notify = i_for_message - 1;// Expected to be
-						// zero-referenced
 		command_tag = ""+i_for_message;	// Command number as integer 1+,
 						// for message/log handler.
 		try {	// Catch errors in all the expressions.
@@ -9195,7 +9050,7 @@ throws Exception
 			Message.printStatus ( 1, routine,
 			"Reading DateValue file \"" + infile + "\"" );
 			try {	tslist = DateValueTS.readTimeSeriesList (
-					infile, __query_date1, __query_date2,
+					infile, __InputStart_DateTime, __InputEnd_DateTime,
 					null, true );
 			}
 			catch ( Exception e ) {
@@ -9244,7 +9099,7 @@ throws Exception
 			Message.printStatus ( 1, routine,
 			"Reading MODSIM file \"" + infile + "\"" );
 			try {	tslist = ModsimTS.readTimeSeriesList (
-					infile, __query_date1, __query_date2,
+					infile, __InputStart_DateTime, __InputEnd_DateTime,
 					null, true );
 			}
 			catch ( Exception e ) {
@@ -9918,13 +9773,6 @@ throws Exception
 				alias = ((String)tokens.elementAt(3)).trim();
 				int pos = indexOf ( alias );
 				if ( pos >= 0 ) {
-					String minval_type =
-						(String)tokens.elementAt(4);
-					boolean minfromdata = true;
-					if ( !minval_type.equalsIgnoreCase(
-						"MinFromTS") ) {
-						minfromdata = false;
-					}
 					String minval =
 						(String)tokens.elementAt(5);
 					String maxval =
@@ -10003,11 +9851,6 @@ throws Exception
 				// Read the time series...
 				ts = readTimeSeries( command_tag,
 					((String)tokens.elementAt(2)).trim());
-				if ( ts.getDataIntervalBase() !=
-					TimeInterval.IRREGULAR ) {
-					DateTime d1=new DateTime(ts.getDate1());
-					DateTime d2=new DateTime(ts.getDate2());
-				}
 			}
 			else if ( method.equalsIgnoreCase("readUsgsNwis") ) {
 				// TS Alias = readUsgsNwis(file,start,end)
@@ -10185,7 +10028,7 @@ throws Exception
 		else if(expression.regionMatches(true,0,"writeDateValue",0,14)){
 			// Write the time series in memory to a DateValue
 			// time series file...
-			if ( !_create_output ) {
+			if ( !__create_output ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10197,7 +10040,7 @@ throws Exception
 		else if ( expression.regionMatches(true,0,"writeNwsCard",0,12)){
 			// Write the time series in memory to an NWS Card
 			// time series file...
-			if ( !_create_output ) {
+			if ( !__create_output ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10210,7 +10053,7 @@ throws Exception
 		else if(expression.regionMatches(true,0,"writeStateCU",0,12) ){
 			// Write the time series in memory to a StateCU time
 			// series file...
-			if ( !_create_output ) {
+			if ( !__create_output ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10223,7 +10066,7 @@ throws Exception
 		else if ( expression.regionMatches(true,0,"writeSummary",0,12)){
 			// Write the time series in memory to a summary
 			// format...
-			if ( !_create_output ) {
+			if ( !__create_output ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10607,8 +10450,8 @@ throws Exception
 	DateTime query_date2 = null;
 	if ( haveQueryPeriod() ) {
 		// Use the query period...
-		query_date1 = __query_date1;
-		query_date2 = __query_date2;
+		query_date1 = __InputStart_DateTime;
+		query_date2 = __InputEnd_DateTime;
 	}
 
 	// Specify units if given and not the default (otherwise pass in as
@@ -10649,8 +10492,6 @@ throws Exception
 					tsident_string, "~", 0 );
 				// Version without the input...
 				String tsident_string2;
-				String input_type = null;
-				String input_name = null;
 				tsident_string2 = (String)v.elementAt(0);
 				ts.setIdentifier ( tsident_string2 );
 				Message.printStatus ( 1, routine,
@@ -11332,11 +11173,7 @@ throws Exception
 	if ( ts == null ) {
 		return;
 	}
-	// If the identifer string is null, get from the time series...
-	String tsident_string2 = tsident_string;
-	if ( tsident_string == null ) {
-		tsident_string2 = ts.getIdentifierString();
-	}
+
 	// Do not want to use the abbreviated legend that was required
 	// with the old graph package...
 
@@ -11366,7 +11203,6 @@ throws Exception
 	// needHistoricalAverages() always returns true...
 
 	if ( needHistoricalAverages(ts) ) {
-		double old_missing_range[] = null;
 		try {	ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
 		}
 		catch ( Exception e ) {
@@ -11466,6 +11302,8 @@ more flexibility but is currently somewhat specific.  Phase in all the old
 functionality as time allows.
 THIS CODE IS NOT CURRENTLY FUNCTIONAL.
 */
+/* REVISIT SAM 2007-02-08
+Need to decide whether this should be supported.
 private void runInterpreter ( Vector commands )
 {	if ( commands == null ) {
 		return;
@@ -11488,6 +11326,7 @@ private void runInterpreter ( Vector commands )
 		}
 	}
 }
+*/
 
 /**
 Search for a fill pattern TS.
@@ -11517,6 +11356,15 @@ public StringMonthTS searchForFillPatternTS ( String fill_pattern )
 	}
 	fill_pattern_ts_i = null;
 	return null;
+}
+
+/**
+Set the list of DataTest, for example, when set with TSCommandsProcessor.
+@param DataTest_Vector List of data test definitions, as Vector of DataTest.
+*/
+public void setDataTestList ( Vector DataTest_Vector )
+{	
+	__datatestlist = (Vector)DataTest_Vector;
 }
 
 /**
@@ -11556,6 +11404,30 @@ private void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 	}
 	// Add a new instance to the Vector...
 	__hbdmi_Vector.addElement ( hbdmi );
+}
+
+/**
+Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() command.
+@param dmilist Vector of HydroBaseDMI.
+*/
+public void setHydroBaseDMIList ( Vector dmilist )
+{	__hbdmi_Vector = dmilist;
+}
+
+/**
+Set the input period end.
+@param end Input period end.
+*/
+public void setInputEnd ( DateTime end )
+{	__InputEnd_DateTime = end;
+}
+
+/**
+Set the input period start.
+@param start Input period start.
+*/
+public void setInputStart ( DateTime start )
+{	__InputStart_DateTime = start;
 }
 
 /**
@@ -11618,52 +11490,22 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 */
 
 /**
-Set the data for a named property, required by the CommandProcessor
-interface.  See the getPropContents method for a list of properties that are
-handled.
-@param prop Property to set.
-@return the named property, or null if a value is not found.
-*/
-public void setProp ( Prop prop )
-{	String key = prop.getKey();
-	if ( key.equalsIgnoreCase("TSResultsList") ) {
-		__tslist = (Vector)prop.getContents();
-		// REVISIT SAM 2005-05-05 Does anything need to be revisited?
-	}	
-}
-
-/**
 Set the contents for a named property, required by the CommandProcessor
 interface.  See the getPropContents() method for a description of properties.
 The following properties can be set:
 <pre>
-HydroBaseDMIList
 NDFDAdapterList
-InputEnd
-InputStart
-TSResultsList
 </pre>
 */
+/* TODO SAM 2007-02-17 Need to reenable NDFD input type
 public void setPropContents ( String prop, Object contents )
-{	if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
-		__hbdmi_Vector = (Vector)contents;
-	}
-	else if ( prop.equalsIgnoreCase("InputEnd") ) {
-		__query_date2 = (DateTime)contents;
-	}
-	else if ( prop.equalsIgnoreCase("InputStart") ) {
-		__query_date1 = (DateTime)contents;
-	}
+{	
 	if ( prop.equalsIgnoreCase("NDFDAdapterList") ) {
 		__NDFDAdapter_Vector = (Vector)contents;
 	}
-	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
-		__tslist = (Vector)contents;
-	}
-	else if ( prop.equalsIgnoreCase("DataTestList") ) {
-		__datatestlist = (Vector)contents;
-	}
+
 }
+*/
 
 /*
 Set the time series in either the __tslist vector or the BinaryTS file,
@@ -11792,6 +11634,15 @@ throws Exception
 		__tslist.removeElementAt ( position );
 		__tslist.insertElementAt ( ts, position );
 	}
+}
+
+/**
+Set the time series list, for example, when being processed through
+TSCommandsProcessor.
+@param tslist List of time series results, as Vector of TS.
+*/
+public void setTimeSeriesList ( Vector tslist )
+{	__tslist = tslist;
 }
 
 /**
@@ -12157,7 +12008,7 @@ a BinaryTS has been created for daily data.
 */
 public void writeSummary ( Vector tslist, String output_file )
 throws IOException
-{	String message = null, routine = "TSEngine.writeSummary";
+{	String routine = "TSEngine.writeSummary";
 
 	// Write a summary using default properties, similar to the Save...
 	// Time Series As... menu in the GUI.

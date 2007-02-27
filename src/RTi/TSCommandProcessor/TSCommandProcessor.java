@@ -849,12 +849,12 @@ throws Exception
 					"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
+	String TSID = (String)o;
 	o = request_params.getContents ( "CommandTag" );
 	String CommandTag = "";
 	if ( o != null ) {
 		CommandTag = (String)o;
 	}
-	String TSID = (String)o;
 	TS ts = __tsengine.getTimeSeries ( CommandTag, TSID );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...

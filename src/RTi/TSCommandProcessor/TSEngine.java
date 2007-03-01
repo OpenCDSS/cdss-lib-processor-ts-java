@@ -8814,10 +8814,13 @@ throws Exception
 				"(,) ", StringUtil.DELIM_SKIP_BLANKS |
 				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 4 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				message = 
+				"Bad command \"" + expression + "\"";
+				Message.printWarning ( 1, routine, message );
+				++error_count;
 				continue;
 			}
+
 			// Parse the identifier...
 			alias = (String)tokens.elementAt(1);
 			int maxint = StringUtil.atoi(

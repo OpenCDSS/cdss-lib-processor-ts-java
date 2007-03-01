@@ -636,6 +636,7 @@
 //					need to transition code at command level as edits occur.
 //					Remove setProp() and setPropContents() since these are
 //					now handled by the TSCommandProcessor.
+// 2007-03-01	SAM, RTi	Fix fillInterpolate() to handle TSID with spaces.
 //
 // EndHeader
 
@@ -8810,7 +8811,8 @@ throws Exception
 			// Fill missing data in the time series using
 			// interpolation...
 			tokens = StringUtil.breakStringList ( expression,
-				"(,) ", StringUtil.DELIM_SKIP_BLANKS );
+				"(,) ", StringUtil.DELIM_SKIP_BLANKS |
+				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 4 ) {
 				Message.printStatus ( 1, routine,
 				"Bad command \"" + expression + "\"" );

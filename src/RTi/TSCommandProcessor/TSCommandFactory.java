@@ -76,10 +76,14 @@ import DWR.DMI.HydroBaseDMI.fillUsingDiversionComments_Command;
 import DWR.DMI.HydroBaseDMI.openHydroBase_Command;
 import DWR.DMI.HydroBaseDMI.readHydroBase_Command;
 
-//NWSRFS commands.
+// NWSRFS commands.
 
 import RTi.DMI.NWSRFS_DMI.readNwsCard_Command;
 import RTi.DMI.NWSRFS_DMI.writeNWSRFSESPTraceEnsemble_Command;
+
+// StateCU commands.
+
+import DWR.StateCU.readStateCU_Command;
 
 // StateMod commands.
 
@@ -250,6 +254,10 @@ throws UnknownCommandException
 		command_string,"readStateModB") ) {
 		return new readStateModB_Command ();
 	}
+	else if ( StringUtil.startsWithIgnoreCase(
+			command_string,"readStateCU") ) {
+			return new readStateCU_Command ();
+		}
 	else if ( StringUtil.startsWithIgnoreCase(
 		command_string,"readStateMod") ) {
 		return new readStateMod_Command ();

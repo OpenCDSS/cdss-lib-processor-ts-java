@@ -2025,6 +2025,7 @@ throws Exception
 	String InputType = null;
 	String InputName = null;
 	String HandleMissingTSHow = null;
+	String DefaultUnits = null;
 	if ( command.indexOf('=') < 0 ) {
 		// Old syntax...
 		Vector tokens = StringUtil.breakStringList ( command,
@@ -2064,6 +2065,7 @@ throws Exception
 		InputType = props.getValue ( "InputType" );
 		InputName = props.getValue ( "InputName" );
 		HandleMissingTSHow=props.getValue("HandleMissingTSHow");
+		DefaultUnits=props.getValue("DefaultUnits");
 	}
 
 	if ( ListFile == null ) {
@@ -2178,14 +2180,20 @@ throws Exception
 		// Now read the time series (the following will create
 		// an empty time series if requested).
 		// Temporarily reset the __include_missing_ts flag based
-		// on this command because the global flag is used in the read
-		// method.
+		// on this command because the global flag is used in the
+		// readTimeSeries method.
+		// TODO SAM 2007-03-12 Need to avoid global flag.
 		include_missing_ts_old = __include_missing_ts;
 		try {	__include_missing_ts = include_missing_ts;
 			ts = readTimeSeries ( command_tag,
 				tsident_string.toString() );
 			__include_missing_ts = include_missing_ts_old;
 			if ( ts != null ) {
+				if ( (DefaultUnits != null) &&
+						(ts.getDataUnits().length() == 0) ) {
+					// Time series has no units so assign default.
+					ts.setDataUnits ( DefaultUnits );
+				}
 				processTimeSeriesAction ( INSERT_TS, ts,
 							getTimeSeriesSize());
 			}
@@ -3620,96 +3628,6 @@ throws Exception
 		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
 	}
 	return ts;
-}
-
-/**
-Execute the readStateCU() command:
-<pre>
-readStateCU(InputFile="x",TSID="X")
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_readStateCU ( String command )
-throws Exception
-{	String routine = "TSEngine.do_readStateCU", message;
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || tokens.size() < 2 ) {
-		// Must have at least the command name and a TSID...
-		message = "Bad command \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine,"," );
-	String InputFile = props.getValue ( "InputFile" );
-	String TSID = props.getValue ( "TSID" );
-
-	// REVISIT need to check prop
-	boolean IncludeLocationTotal_boolean = true;
-	boolean IncludeDataSetTotal_boolean = true;
-
-    // get the path based on the current working directory
-    InputFile = IOUtil.getPathUsingWorkingDir( InputFile );
-    
-	if ( InputFile == null ) {
-		message = "Input file is null - must be specified.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-
-	Message.printStatus ( 1, routine, "Reading StateCU file \"" +
-		InputFile + "\"" );
-	TS ts = null;
-	Vector tslist = null;
-	try {	if ( StateCU_CropPatternTS.isCropPatternTSFile ( InputFile ) ) {
-			tslist = StateCU_CropPatternTS.toTSVector(
-				StateCU_CropPatternTS.readStateCUFile (
-				InputFile, __InputStart_DateTime, __InputEnd_DateTime,
-				null ),
-				IncludeLocationTotal_boolean,
-				IncludeDataSetTotal_boolean,
-				null,
-				null );
-		}
-		else if(StateCU_IrrigationPracticeTS.isIrrigationPracticeTSFile(
-				InputFile ) ) {
-			tslist = StateCU_IrrigationPracticeTS.toTSVector(
-				StateCU_IrrigationPracticeTS.readStateCUFile (
-				InputFile, __InputStart_DateTime, __InputEnd_DateTime ),
-				IncludeDataSetTotal_boolean, null, null );
-		}
-		else if ( StateCU_TS.isReportFile ( InputFile ) ) {
-			tslist = StateCU_TS.readTimeSeriesList (
-				TSID, InputFile, __InputStart_DateTime, __InputEnd_DateTime,
-				(String)null, true );
-		}
-		else {	// Not a recognized StateCU file type...
-			Message.printWarning ( 1, routine, "File \"" +
-			InputFile + "\" is not a recognized StateCU file type."+
-			"  Not reading." );
-		}
-		// Now post-process and insert into the time series
-		// list...
-		int size = 0;
-		if ( tslist != null ) {
-			size = tslist.size();
-		}
-		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)tslist.elementAt(i);
-			readTimeSeries2 ( ts, null, true );
-				processTimeSeriesAction ( INSERT_TS, ts,
-						getTimeSeriesSize());
-		}
-	}
-	catch ( Exception e ) {
-		message = "Error reading StateCU file \"" + InputFile + "\".";
-		Message.printWarning ( 1, routine, message );
-		Message.printWarning ( 3, routine, e );
-		throw new Exception ( message );
-	}
 }
 
 /**
@@ -9153,11 +9071,6 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
-		else if (expression.regionMatches(true,0,"readStateCU",0,11)){
-			// Read multiple time series from a StateCU file...
-			do_readStateCU ( expression );
-			continue;
-		}
 		else if ( expression.regionMatches(true,0,"regress",0,7) ) {
 			Message.printWarning ( 1, routine,
 			"regress() is obsolete.  Use fillRegression()." );
@@ -10943,12 +10856,25 @@ throws Exception
 	// "trick" is used to avoid requiring another argument to the TSSupplier
 	// interface, although an argument may be added at some point.
 
+	// FIXME SAM 2007-06-21 This is a problem because TSIDs allow sequence numbers
+	// for ensembles.
+	// TSIDs with sequence number have a [] at the end so do a
+	// fix - if 3 "." are before the [], the assume the [] is for
+	// ensembles.
 	boolean is_template = false;
 	int pos = tsident_string.indexOf("[");
+	int period_count = 0;
+	for ( int i = 0; i < pos; i++ ) {
+		if ( tsident_string.charAt(i) == '.' ) {
+			++period_count;
+		}
+	}
 	int array_index = -1;	// Indicates an array index of * (implement
 				// later).
-	if ( pos >= 0 ) {
+	if ( (pos >= 0) && (period_count <3) ) {
 		is_template = true;
+		Message.printStatus ( 2, routine, "Requested TSID \"" + tsident_string +
+				" is a template.");
 		// Figure out the array position...
 		String array_index_string = StringUtil.getToken (
 			tsident_string.substring(pos + 1), "]", 0, 0 );
@@ -10960,8 +10886,7 @@ throws Exception
 		}
 		else {	// Invalid...
 			Message.printWarning ( 2, routine,
-			"TSID \"" + tsident_string +
-			"\" array index is invalid" );
+			"TSID \"" + tsident_string + "\" array index is invalid" );
 			throw new Exception ( "TSID \"" + tsident_string +
 			"\" array index is invalid" );
 		}
@@ -10972,6 +10897,7 @@ throws Exception
 
 	if ( size != 0 ) {
 		TS ts = null;
+		TSIdent tsident = null;
 
 		//  First try the aliases (not supported for templates)...
 
@@ -10983,7 +10909,7 @@ throws Exception
 				}
 				if (	ts.getAlias().equalsIgnoreCase(
 					tsident_string) ) {
-					Message.printStatus ( 1, routine,
+					Message.printStatus ( 2, routine,
 					"Matched alias." );
 					return ts;
 				}
@@ -10998,13 +10924,15 @@ throws Exception
 			if ( ts == null ) {
 				continue;
 			}
-			Message.printStatus ( 1, routine, 
-			"Checking tsid \"" + ts.getIdentifier() + "\"" );
+			tsident = ts.getIdentifier();
+			if ( Message.isDebugOn ) {
+				Message.printDebug ( 2, routine, 
+						"Checking tsid \"" + tsident.toString(true) + "\"" );
+			}
 			if ( is_template ) {
-				if (	ts.getIdentifier().matches(
-					tsident_string, true, full_tsid_check)){
-					Message.printStatus ( 1, routine,
-					"Matched TSID." );
+				if ( tsident.matches(tsident_string, true, full_tsid_check)){
+					Message.printStatus ( 2, routine,
+					"Matched TSID for template." );
 					// See if this is the one we want -
 					// both are zero initial value...
 					if (	(array_index < 0) ||
@@ -11018,12 +10946,11 @@ throws Exception
 					++match_count;
 				}
 			}
-			else {	// Just do a "simple" comparison...
-				if (	ts.getIdentifier().equals(
-					tsident_string,
-					full_tsid_check) ) {
-					Message.printStatus ( 1, routine,
-					"Matched TSID." );
+			else {	// Check the identifier strings using full identifiers.
+				// The TSID being requested controls the level of comparison.
+				// If it has the input fields, then they will be checked.
+				if ( tsident.equals(tsident_string,full_tsid_check) ) {
+					Message.printStatus ( 1, routine,"Matched TSID using TSID with input fields." );
 					return ts;
 				}
 			}
@@ -11041,13 +10968,27 @@ throws Exception
 		throw new Exception ( "TSID \"" + tsident_string +
 			"\" could not be matched." );
 	}
+	else {	Message.printStatus ( 2, routine,
+			"TSID \"" + tsident_string + "\" could not be matched in memory." +
+					"  Trying to read using TSID." );
+	}
 
 	// If not found, try reading from a persistent source.  If called with
 	// an alias, this will fail.  If called with a TSID, this should
 	// succeed...
 
-	return readTimeSeries0 ( tsident_string, req_date1, req_date2,
+	TS ts = readTimeSeries0 ( tsident_string, req_date1, req_date2,
 				req_units, read_data );
+	if ( ts == null ) {
+		Message.printStatus ( 2, routine,
+				"TSID \"" + tsident_string +
+				"\" could not read using TSID.  Not able to provide." );
+	}
+	else {
+		Message.printStatus ( 2, routine,
+				"TSID \"" + tsident_string + "\" successfully read using TSID." );
+	}
+	return ts;
 }
 
 /**

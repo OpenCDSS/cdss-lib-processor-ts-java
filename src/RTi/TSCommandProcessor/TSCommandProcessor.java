@@ -715,12 +715,16 @@ throws Exception
 	else if ( request.equalsIgnoreCase("ReadTimeSeries2") ) {
 		return processRequest_ReadTimeSeries2 ( request, request_params );
 	}
+	else if ( request.equalsIgnoreCase("SetTimeSeries") ) {
+		return processRequest_SetTimeSeries ( request, request_params );
+	}
 	else {
 		TSCommandProcessorRequestResultsBean bean =
 			new TSCommandProcessorRequestResultsBean();
 		String warning = "Unknown TSCommandProcessor request \"" +
 		request + "\"";
 		bean.setWarningText( warning );
+		Message.printWarning(3, "TSCommandProcessor.processRequest", warning);
 		// TODO SAM 2007-02-07 Need to figure out a way to indicate
 		// an error and pass back useful information.
 		throw new UnrecognizedRequestException ( warning );
@@ -1019,7 +1023,7 @@ throws Exception
 }
 
 /**
-Process the IndexOf request.
+Process the ReadTimeSeries2 request.
 */
 private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries2 (
 		String request, PropList request_params )
@@ -1037,6 +1041,39 @@ throws Exception
 	}
 	Vector TSList = (Vector)o;
 	__tsengine.readTimeSeries2 ( TSList );
+	//PropList results = bean.getResultsPropList();
+	// No data are returned in the bean.
+	return bean;
+}
+
+/**
+Process the SetTimeSeries request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetTimeSeries (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "TS" );
+	if ( o == null ) {
+			String warning = "Request SetTimeSeries() does not provide a TS parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	TS ts = (TS)o;
+	Object o2 = request_params.getContents ( "Index" );
+	if ( o2 == null ) {
+			String warning = "Request SetTimeSeries() does not provide an Index parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	Integer Index = (Integer)o2;
+	__tsengine.setTimeSeries ( ts, Index.intValue() );
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
 	return bean;

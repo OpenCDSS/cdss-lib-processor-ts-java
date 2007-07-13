@@ -3726,22 +3726,43 @@ throws Exception
 	}
 	Message.printStatus ( 2, routine,
 	"Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
-	TS ts = null;
+	// Get the TSIdent for the TSID string.  The input name is checked to
+	// see if it is a directory.
+	// Default to the DMI instance from the calling code, which will
+	// be used if a path is not specified in the input name.  In this case,
+	// the user has possibly indicated that files should be found using the
+	// Apps Defaults.
+	NWSRFS_DMI nwsrfs_dmi = __nwsrfs_dmi;
+	boolean opened_new_dmi = false;
 	TSIdent tsident = new TSIdent ( TSID );
-	if (	!tsident.getInputName().equals("") &&
-		!tsident.getInputName().equalsIgnoreCase(
-		__nwsrfs_dmi.getFS5FilesLocation() ) ) {
-		message = "Currently opened DMI directory \"" +
-		__nwsrfs_dmi.getFS5FilesLocation() +
-		"\" does not match requested input name \"" +
-		tsident.getInputName() + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
+	String input_name = tsident.getInputName();
+	// Convert to a full path because this what will be stored in
+	// the __nwsrfs_dmi.
+	input_name = IOUtil.getPathUsingWorkingDir( input_name );
+	if ( (nwsrfs_dmi == null) || (!input_name.equals("") &&
+			!input_name.equalsIgnoreCase(
+					__nwsrfs_dmi.getFS5FilesLocation() ) )) {
+		// Need to open a new DMI because the one that is currently open
+		// does not match the requested path.
+		if ( nwsrfs_dmi == null ) {
+			Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
+					input_name + "\"" );
+		}
+		else {	Message.printStatus( 2, routine, "FS5Files location from GUI \"" +
+				__nwsrfs_dmi.getFS5FilesLocation() + "\" does not match request.  " +
+				"Opening new FS5Files from TSID:  \"" + input_name + "\"" );
+		}
+		nwsrfs_dmi = new NWSRFS_DMI( input_name );
+		opened_new_dmi = true;
 	}
-	try {	ts = __nwsrfs_dmi.readTimeSeries (
+	TS ts = null;
+	try {	ts = nwsrfs_dmi.readTimeSeries (
 			TSID, query_date1, query_date2, Units, true );
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
+		if ( opened_new_dmi ) {
+			nwsrfs_dmi.close();
+		}
 	}
 	catch ( Exception e ) {
 		message = "Error reading NWSRFS FS5Files time series \"" +
@@ -4895,6 +4916,78 @@ throws Exception
 	fill_pattern_ts = null;
 	tokens = null;
 	fillpatternfile = null;
+}
+
+/**
+Execute the setToMin() command.
+@param command_tag Command number used for messaging.
+@param command Command to parse.
+@exception Exception if there is an error.
+*/
+private void do_setToMin ( String command_tag, String command )
+throws Exception
+{	String routine = "TSEngine.do_setToMin", message;
+	int warning_level = 2;
+	int warning_count = 0;
+	Vector v = StringUtil.breakStringList ( command,
+		"(),\t", StringUtil.DELIM_SKIP_BLANKS |
+		StringUtil.DELIM_ALLOW_STRINGS ); 
+	if ( (v == null) || (v.size() < 3) ) {
+		throw new Exception ( "Bad command \"" + command + "\"" );
+	}
+	String alias = ((String)v.elementAt(1)).trim();
+	String independent = null;
+
+	// Make sure there are time series available to operate on...
+
+	int ts_pos = indexOf ( alias );
+	TS ts = getTimeSeries ( ts_pos );
+	if ( ts == null ) {
+		message = "Unable to find time series \""
+		+ alias + "\" for\n" + command + "\".";
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(command_tag,
+		++warning_count), routine, message );
+		throw new CommandException ( message );
+	}
+	// Now loop through the remaining time series and put into a Vector for
+	// processing...
+	int vsize = v.size();
+	Vector vTS = new Vector ( vsize - 1 );
+	TS independentTS = null;
+	for ( int its = 2; its < vsize; its++ ) {
+		independent = ((String)v.elementAt(its)).trim();
+		// The following may or may not have TEMPTS at the front but is
+		// handled transparently by getTimeSeries.
+		independentTS = getTimeSeries ( command_tag, independent );
+		if ( independentTS == null ) {
+			message = "Unable to find time series \"" + independent+
+			"\" for \"" + command + "\".";
+			Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(command_tag,
+			++warning_count), routine, message );
+			v = null;
+			vTS = null;
+			independentTS = null;
+			continue;
+		}
+		else {	vTS.addElement ( independentTS );
+		}
+	}
+	ts = TSUtil.min ( ts, vTS );
+	v = null;
+	vTS = null;
+	independentTS = null;
+	processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
+	if ( warning_count > 0 ) {
+		message = "There were " + warning_count +
+			" warnings processing the command.";
+		Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag, ++warning_count),
+			routine,message);
+		throw new CommandWarningException ( message );
+	}
 }
 
 /**
@@ -9436,6 +9529,11 @@ throws Exception
 		else if ( expression.regionMatches(
 			true,0,"setMissingDataValue",0,19) ) {
 			do_setMissingDataValue ( expression );
+			continue;
+		}
+		else if ( expression.regionMatches(true,0,"setToMin",0,8)) {
+			// Don't use space because TEMPTS will not parse right.
+			do_setToMin ( command_tag, expression );
 			continue;
 		}
 		else if ( expression.regionMatches(true,0,

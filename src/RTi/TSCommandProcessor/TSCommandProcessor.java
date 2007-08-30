@@ -36,9 +36,12 @@ import java.awt.event.WindowListener;	// To know when graph closes to close app
 
 // RTi utility code.
 
+import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandListListener;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorListener;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
-import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.GenericCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
@@ -66,21 +69,201 @@ This class processes time series commands and manages the relevant data.
 public class TSCommandProcessor implements CommandProcessor, TSSupplier
 {
 
-private TSEngine __tsengine = null;	// Map back to existing code until able
-					// to transition into a true
-					// TSCommandProcessor class, at which
-					// time TSEngine will go away.
-public final int	INSERT_TS = 1,	// "ts_action" values
+/**
+The legacy TSEngine class did all of the processing in TSTool.  It is now
+wrapped by this TSCommandProcessor class and code will continue to be moved
+to Command classes and this class.
+*/
+private TSEngine __tsengine = null;
+
+/**
+Actions that are used when processing time series, indicating
+whether new time series are created or existing ones modified.
+*/
+public final int	INSERT_TS = 1,
 					UPDATE_TS = 2,
 					EXIT = 3,
 					NONE = 4;
 
+/**
+The list of commands managed by this command processor,
+guaranteed to be non-null.
+*/
+private Vector __Command_Vector = new Vector();
+
+/**
+The name of the file to which the commands are saved, or null if not saved.
+Note that the in-memory commands should always be used for printing file headers.
+*/
+private String __commands_filename = null;
+
+/**
+The array of CommandListListeners to be called when the command list changes.
+*/
+private CommandListListener [] __CommandListListener_array = null;
+
+/**
+The array of CommandProcessorListeners to be called when the commands are
+running, to indicate progress.
+*/
+private CommandProcessorListener [] __CommandProcessorListener_array = null;
+
+/**
+Construct a command processor with no commands.
+*/
 public TSCommandProcessor ()
 {	super();
+
+	// Create a TSEngine that works parallel to this class.
+	__tsengine = new TSEngine ( this );
 }
 
-public TSCommandProcessor ( TSEngine tsengine )
-{	__tsengine = tsengine;
+/**
+Add a command at the end of the list.
+@param command Command to add.
+@param index Index (0+) at which to insert the command.
+*/
+public void addCommand ( Command command )
+{	String routine = "TSCommandProcessor.addCommand";
+	__Command_Vector.addElement( command );
+	notifyCommandListListenersOfAdd ( __Command_Vector.size() - 1,
+			__Command_Vector.size() - 1 );
+	Message.printStatus(2, routine, "Added command object \"" +
+			command + "\"." );
+}
+
+/**
+Add a command at the end of the list using the string text.  This should currently only be
+used for commands that do not have command classes, which perform
+additional validation on the commands.  A GenericCommand instance will
+be instantiated to maintain the string and allow command status to be
+set.
+@param command_string Command string for command.
+@param index Index (0+) at which to insert the command.
+*/
+public void addCommand ( String command_string )
+{	String routine = "TSCommandProcessor.addCommand";
+	Command command = new GenericCommand ();
+	command.setCommandString ( command_string );
+	addCommand ( command );
+	Message.printStatus(2, routine, "Creating generic command from string \"" +
+			command_string + "\"." );
+}
+
+/**
+Add a CommandListListener, to be notified when commands are added, removed,
+or change (are edited or execution status is updated).
+If the listener has already been added, the listener will remain in
+the list in the original order.
+*/
+public void addCommandListListener ( CommandListListener listener )
+{
+		// Use arrays to make a little simpler than Vectors to use later...
+		if ( listener == null ) {
+			return;
+		}
+		// See if the listener has already been added...
+		// Resize the listener array...
+		int size = 0;
+		if ( __CommandListListener_array != null ) {
+			size = __CommandListListener_array.length;
+		}
+		for ( int i = 0; i < size; i++ ) {
+			if ( __CommandListListener_array[i] == listener ) {
+				return;
+			}
+		}
+		if ( __CommandListListener_array == null ) {
+			__CommandListListener_array = new CommandListListener[1];
+			__CommandListListener_array[0] = listener;
+		}
+		else {	// Need to resize and transfer the list...
+			size = __CommandListListener_array.length;
+			CommandListListener [] newlisteners =
+				new CommandListListener[size + 1];
+			for ( int i = 0; i < size; i++ ) {
+					newlisteners[i] = __CommandListListener_array[i];
+			}
+			__CommandListListener_array = newlisteners;
+			__CommandListListener_array[size] = listener;
+			newlisteners = null;
+		}
+}
+
+/**
+Add a CommandProcessorListener, to be notified when commands are started,
+progress made, and completed.  This is useful to allow calling software to
+report progress.
+If the listener has already been added, the listener will remain in
+the list in the original order.
+*/
+public void addCommandProcessorListener ( CommandProcessorListener listener )
+{
+		// Use arrays to make a little simpler than Vectors to use later...
+		if ( listener == null ) {
+			return;
+		}
+		// See if the listener has already been added...
+		// Resize the listener array...
+		int size = 0;
+		if ( __CommandProcessorListener_array != null ) {
+			size = __CommandProcessorListener_array.length;
+		}
+		for ( int i = 0; i < size; i++ ) {
+			if ( __CommandProcessorListener_array[i] == listener ) {
+				return;
+			}
+		}
+		if ( __CommandProcessorListener_array == null ) {
+			__CommandProcessorListener_array = new CommandProcessorListener[1];
+			__CommandProcessorListener_array[0] = listener;
+		}
+		else {	// Need to resize and transfer the list...
+			size = __CommandProcessorListener_array.length;
+			CommandProcessorListener [] newlisteners =
+				new CommandProcessorListener[size + 1];
+			for ( int i = 0; i < size; i++ ) {
+					newlisteners[i] = __CommandProcessorListener_array[i];
+			}
+			__CommandProcessorListener_array = newlisteners;
+			__CommandProcessorListener_array[size] = listener;
+			newlisteners = null;
+		}
+}
+
+/**
+Clear the results of processing.  This resets the list of time series to
+empty.
+*/
+public void clearResults()
+{
+	__tsengine.clearResults();
+}
+
+/**
+Return the Command instance at the requested position.
+@return The number of commands being managed by the processor
+*/
+public Command get( int pos )
+{
+	return (Command)__Command_Vector.get(pos);
+}
+
+/**
+Return the list of commands.
+@return the list of commands.
+*/
+public Vector getCommands ()
+{
+	return __Command_Vector;
+}
+
+/**
+Get the name of the commands file associated with the processor.
+*/
+public String getCommandsFileName ()
+{
+	return __commands_filename;
 }
 
 /**
@@ -186,14 +369,6 @@ THIS HAS NOT BEEN IMPLEMENTED.
 </tr>
 
 <tr>
-<td><b>TSIDListNoInput</b></td>
-<td>The Vector of time series identifiers that are available, without the
-input type and name.  The time series identifiers from commands above the
-selected command are returned.  This property will normally only be used with
-command editor dialogs.</td>
-</tr>
-
-<tr>
 <td><b>TSProductAnnotationProviderList</b></td>
 <td>A Vector of TSProductAnnotationProvider (for example, this is requested
 by the processTSProduct() command).
@@ -228,15 +403,21 @@ application but may be changed by commands during execution), as a String.</td>
 @exception UnrecognizedRequestException if an unknown property is requested.
 */
 public Object getPropContents ( String prop ) throws Exception
-{	// TODO SAM 2007-02-11 Need to start folding TSEngine logic into this class.
-	if ( prop.equalsIgnoreCase("CreateOutput") ) {
-		return getPropContents_CreateOutput();
+{	String routine = "TSCommandProcessor.getPropContents";
+	if ( prop.equalsIgnoreCase("AutoExtendPeriod") ) {
+		return getPropContents_AutoExtendPeriod();
 	}
 	else if ( prop.equalsIgnoreCase("DataTestList") ) {
 		return getPropContents_DataTestList();
 	}
 	else if ( prop.equalsIgnoreCase("HaveOutputPeriod") ) {
 		return getPropContents_HaveOutputPeriod();
+	}
+	else if ( prop.equalsIgnoreCase("IncludeMissingTS") ) {
+		return getPropContents_IncludeMissingTS();
+	}
+	else if ( prop.equalsIgnoreCase("InitialWorkingDir") ) {
+		return getPropContents_InitialWorkingDir();
 	}
 	else if ( prop.equalsIgnoreCase("InputEnd") ) {
 		return getPropContents_InputEnd();
@@ -259,9 +440,6 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
 		return getPropContents_HydroBaseDMIList();
 	}
-	else if ( prop.equalsIgnoreCase("TSIDListNoInput") ) {
-		return getPropContents_TSIDListNoInput();
-	}
 	else if ( prop.equalsIgnoreCase("TSProductAnnotationProviderList") ) {
 		return getPropContents_TSProductAnnotationProviderList();
 	}
@@ -277,7 +455,7 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
 	}
-	else {	String warning = "Unknown TSGetContents request \"" + prop + "\"";
+	else {	String warning = "Unknown GetPropContents request \"" + prop + "\"";
 			// TODO SAM 2007-02-07 Need to figure out a way to indicate
 			// an error and pass back useful information.
 			throw new UnrecognizedRequestException ( warning );
@@ -285,11 +463,14 @@ public Object getPropContents ( String prop ) throws Exception
 }
 
 /**
-Handle the CreateOutput property request.
-@return Boolean getPropContents_CreateOutput ()
+Handle the AutoExtendPeriod property request.
+@return Boolean depending on whether time series periods should automatically
+be extended during reads.
 */
-private Boolean getPropContents_CreateOutput ()
-{	return new Boolean ( __tsengine.getCreateOutput() );
+private Boolean getPropContents_AutoExtendPeriod()
+{
+	boolean b = __tsengine.autoExtendPeriod();
+	return new Boolean ( b );
 }
 
 /**
@@ -321,6 +502,28 @@ private Vector getPropContents_HydroBaseDMIList()
 }
 
 /**
+Handle the IncludeMissingTS property request.
+@return Boolean indicating whether missing time series should be created when no data found.
+ */
+private Boolean getPropContents_IncludeMissingTS()
+{
+	boolean b = __tsengine.includeMissingTS();
+	return new Boolean ( b );
+}
+
+/**
+Handle the InitialWorkingDir property request.  The initial working directory is the home of the
+commands file if read/saved and should be passed by the calling code when
+running commands.
+Use getPropContents_WorkingDir to get the working directory after processing.
+@return The working directory, as a String.
+ */
+private String getPropContents_InitialWorkingDir()
+{
+	return __tsengine.getInitialWorkingDir();
+}
+
+/**
 Handle the InputEnd property request.
 @return DateTime for InputEnd, or null if not set.
  */
@@ -340,13 +543,21 @@ private DateTime getPropContents_InputStart()
 
 /**
 Handle the OutputComments property request.  This includes, for example,
-HydroBase version information that documents data available for a commands
+the commands that are active and HydroBase version information that documents
+data available for a commands.
 run.
 @return Vector of String containing comments for output.
  */
 private Vector getPropContents_OutputComments()
 {
-	return __tsengine.getOutputComments();
+	String [] array = __tsengine.formatOutputHeaderComments(getCommands());
+	Vector v = new Vector();
+	if ( array != null ) {
+		for ( int i = 0; i < array.length; i++ ) {
+			v.addElement( array[i]);
+		}
+	}
+	return v;
 }
 
 /**
@@ -374,15 +585,6 @@ Handle the OutputYearType property request.
 private String getPropContents_OutputYearType()
 {
 	return __tsengine.getOutputYearType();
-}
-
-/**
-Handle the TSIDListNoInput property request.
-@return The time series results list, as a Vector of TS.
- */
-private Vector getPropContents_TSIDListNoInput()
-{
-	return __tsengine.getTSIDListNoInput();
 }
 
 /**
@@ -423,15 +625,17 @@ private WindowListener getPropContents_TSViewWindowListener()
 }
 
 /**
-Handle the WorkingDir property request.
+Handle the WorkingDir property request.  The working directory is the home of the
+commands file if read/saved, or may be dynamically modified with the setWorkingDir()
+command - unclear if should be discouraged but in the legacy software.
+For this class, it will be the initial working directory if the processor has not been
+run, or the results of running the processor.
+Use getInitialWorkingDir to get the initial working directory.
 @return The working directory, as a String.
  */
 private String getPropContents_WorkingDir()
 {
-	//	 TODO SAM 2005-05-11 The working directory needs to be
-	//	 maintained separately from the processor and the
-	//	 application...
-	return IOUtil.getProgramWorkingDir();
+	return __tsengine.getWorkingDir();
 }
 
 /**
@@ -440,6 +644,122 @@ Return the TSSupplier name.
 */
 public String getTSSupplierName()
 {	return __tsengine.getTSSupplierName();
+}
+
+/**
+Determine the index of a command in the processor.  A reference comparison occurs.
+@param command A command to search for in the processor.
+@return the index (0+) of the matching command, or -1 if not found.
+*/
+public int indexOf ( Command command )
+{
+	int size = size();
+	Command c;
+	for ( int i = 0; i < size; i++ ) {
+		c = (Command)__Command_Vector.elementAt(i);
+		if ( c == command ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/**
+Add a command using the Command instance.
+@param command Command to insert.
+@param index Index (0+) at which to insert the command.
+*/
+public void insertCommandAt ( Command command, int index )
+{	String routine = "TSCommandProcessor.insertCommandAt";
+	__Command_Vector.insertElementAt( command, index);
+	notifyCommandListListenersOfAdd ( index, index );
+	Message.printStatus(2, routine, "Inserted command object \"" +
+			command + "\" at [" + index + "]" );
+}
+
+/**
+Add a command using the string text.  This should currently only be
+used for commands that do not have command classes, which perform
+additional validation on the commands.  A GenericCommand instance will
+be instantiated to maintain the string and allow command status to be
+set.
+@param command_string Command string for command.
+@param index Index (0+) at which to insert the command.
+*/
+public void insertCommandAt ( String command_string, int index )
+{	String routine = "TSCommandProcessor.insertCommandAt";
+	Command command = new GenericCommand ();
+	command.setCommandString ( command_string );
+	insertCommandAt ( command, index );
+	Message.printStatus(2, routine, "Creating generic command from string \"" +
+			command_string + "\"." );
+}
+
+/**
+Notify registered CommandListListeners about one or more commands being added.
+@param index0 The index (0+) of the first command that is added.
+@param index1 The index (0+) of the last command that is added.
+*/
+private void notifyCommandListListenersOfAdd ( int index0, int index1 )
+{	if ( __CommandListListener_array != null ) {
+		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
+			__CommandListListener_array[i].commandAdded(index0, index1);
+		}
+	}
+}
+
+/**
+Notify registered CommandListListeners about one or more commands being changed.
+@param index0 The index (0+) of the first command that is added.
+@param index1 The index (0+) of the last command that is added.
+*/
+private void notifyCommandListListenersOfChange ( int index0, int index1 )
+{	if ( __CommandListListener_array != null ) {
+		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
+			__CommandListListener_array[i].commandChanged(index0, index1);
+		}
+	}
+}
+
+/**
+Notify registered CommandListListeners about one or more commands being removed.
+@param index0 The index (0+) of the first command that is added.
+@param index1 The index (0+) of the last command that is added.
+*/
+private void notifyCommandListListenersOfRemove ( int index0, int index1 )
+{	if ( __CommandListListener_array != null ) {
+		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
+			__CommandListListener_array[i].commandRemoved(index0, index1);
+		}
+	}
+}
+
+/**
+Notify registered CommandProcessorListeners about a command completing.
+@param icommand The index (0+) of the command that is completing.
+@param command The instance of the command that is completing.
+*/
+protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand, Command command )
+{	// This method is protected to allow TSEngine to call
+	if ( __CommandProcessorListener_array != null ) {
+		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
+			__CommandProcessorListener_array[i].commandCompleted(icommand,size(),command,-1.0F,"Command completed.");
+		}
+	}
+}
+
+/**
+Notify registered CommandProcessorListeners about a command starting.
+@param icommand The index (0+) of the command that is starting.
+@param command The instance of the command that is starting.
+*/
+protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, Command command )
+{	// This method is protected to allow TSEngine to call
+	if ( __CommandProcessorListener_array != null ) {
+		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
+			__CommandProcessorListener_array[i].commandStarted(icommand,size(),command,-1.0F,"Command started.");
+		}
+	}
 }
 
 /**
@@ -607,7 +927,8 @@ runCommands() command.
 <ol>
 <li>	<b>Commands</b> A list of commands to run, as a Vector of String.</li>
 <li>	<b>Properties</b> Properties to control the commands, as a PropList - note
-		that all properties should be String, as per the TSEngine properties.</li>
+		that all properties should be String, as per the TSEngine properties.  Valid
+		properties are InitialWorkingDir=PathToWorkingDir, CreateOutput=True|False.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -631,6 +952,22 @@ Returned values from this request are:
 Returned values from this request are:
 <ol>
 <li>	None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
+<td><b>ProcessTimeSeriesResultsList</b></td>
+<td>Process the processor's time series results into a graph, file, etc.
+	Parameters to this request are:
+<ol>
+<li>	<b>Indices</b> Indices (0+) indicating the time series to process.</li>
+<li>	<b>Properties</b> Properties indicating the type of output.  These are
+		currently documented internally in TSEngine.
+		</ol>
+Returned values from this request are:
+<ol>
+<li>	None - results display or are created as files.</li>
 </ol>
 </td>
 </tr>
@@ -670,11 +1007,49 @@ Returned values from this request are:
 </tr>
 
 <tr>
-<td><b>TSIDListNoInput</b></td>
-<td>The Vector of time series identifiers that are available, without the
+<td><b>RunCommands</b></td>
+<td>Run commands to create the results:
+<ol>
+<li>	<b>CommandList</b> A Vector of Command instances to run.</li>
+<li>	<b>InitialWorkingDir</b> The initial working directory as a String, to initialize paths.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>	None - time series results will contain the results.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
+<td><b>SetHydroBaseDMI</b></td>
+<td>Set a HydroBaseDMI instance for use in database queries.
+	Parameters to this request are:
+<ol>
+<li>	<b>HydroBaseDMI</b> An open HydroBaseDMI instance, where the input name
+		can be used to uniquely identify the instance.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>	None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
+<td><b>TSIDListNoInputAboveCommand</b></td>
+<td>The Vector of time series identifiers that are available (as String), without the
 input type and name.  The time series identifiers from commands above the
 selected command are returned.  This property will normally only be used with
-command editor dialogs.</td>
+command editor dialogs.  Parameters for this request are:</td>
+<ol>
+<li>	<b>Command</b> A Command instance, typically being edited, above which time series
+identifiers are determined.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>	<b>TSIDList</b> The list of time series identifiers as a Vector of String.</li>
+</ol>
+</td>
 </tr>
 
 </table>
@@ -703,6 +1078,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("GetTimeSeriesToProcess") ) {
 		return processRequest_GetTimeSeriesToProcess ( request, request_params );
 	}
+	else if ( request.equalsIgnoreCase("GetTSIDListNoInputAboveCommand") ) {
+		return processRequest_GetTSIDListNoInputAboveCommand ( request, request_params );
+	}
 	else if ( request.equalsIgnoreCase("IndexOf") ) {
 		return processRequest_IndexOf ( request, request_params );
 	}
@@ -712,8 +1090,17 @@ throws Exception
 	else if ( request.equalsIgnoreCase("ProcessTimeSeriesAction") ) {
 		return processRequest_ProcessTimeSeriesAction ( request, request_params );
 	}
+	else if ( request.equalsIgnoreCase("ProcessTimeSeriesResultsList") ) {
+		return processRequest_ProcessTimeSeriesResultsList ( request, request_params );
+	}
 	else if ( request.equalsIgnoreCase("ReadTimeSeries2") ) {
 		return processRequest_ReadTimeSeries2 ( request, request_params );
+	}
+	else if ( request.equalsIgnoreCase("RunCommands") ) {
+		return processRequest_RunCommands ( request, request_params );
+	}
+	else if ( request.equalsIgnoreCase("SetHydroBaseDMI") ) {
+		return processRequest_SetHydroBaseDMI ( request, request_params );
 	}
 	else if ( request.equalsIgnoreCase("SetTimeSeries") ) {
 		return processRequest_SetTimeSeries ( request, request_params );
@@ -821,7 +1208,7 @@ throws Exception
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "Index" );
 	if ( o == null ) {
-			String warning = "Request IndexOf() does not provide an Index parameter.";
+			String warning = "Request GetTimeSeries() does not provide an Index parameter.";
 			bean.setWarningText ( warning );
 			bean.setWarningRecommendationText (
 					"This is likely a software code error.");
@@ -901,6 +1288,32 @@ throws Exception
 			((Vector)(tslist.elementAt(0))).toString() );
 	results.setUsingObject("TSToProcessList", (Vector)(tslist.elementAt(0)) );
 	results.setUsingObject("Indices", (int [])(tslist.elementAt(1)) );
+	return bean;
+}
+
+/**
+Process the GetTimeSeriesForTSID request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetTSIDListNoInputAboveCommand (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "Command" );
+	if ( o == null ) {
+			String warning =
+				"Request GetTSIDListNoInputAboveCommand() does not provide a TSID parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	Command command = (Command)o;
+	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand( this, command );
+	PropList results = bean.getResultsPropList();
+	// This will be set in the bean because the PropList is a reference...
+	results.setUsingObject("TSIDList", tsids );
 	return bean;
 }
 
@@ -1023,6 +1436,53 @@ throws Exception
 }
 
 /**
+Process the ProcessTimeSeriesResultsList request.
+This processes the time series into a product such as a graph or report.
+*/
+private CommandProcessorRequestResultsBean processRequest_ProcessTimeSeriesResultsList (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	// Indices for time series...
+	Object o_Indices = request_params.getContents ( "Indices" );
+	int [] Indices_array = null;
+	if ( o_Indices == null ) {
+		/* OK FOR NOW since null means process all
+			String warning =
+				"Request ProcessTimeSeriesResultsList() does not provide an Indices parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+			*/
+	}
+	else {
+		Indices_array = (int [])o_Indices;
+	}
+	// Properties for processing, as per legacy code...
+	Object o_Properties = request_params.getContents ( "Properties" );
+	PropList Properties = null;
+	if ( o_Properties == null ) {
+			/* OK for now - use defaults
+			String warning =
+				"Request ProcessTimeSeriesResultsList() does not provide a Properties parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+			*/
+	}
+	else {
+		Properties = (PropList)o_Properties;
+	}
+	__tsengine.processTimeSeries( Indices_array, Properties );
+	// No results need to be set in the bean.
+	return bean;
+}
+
+/**
 Process the ReadTimeSeries2 request.
 */
 private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries2 (
@@ -1043,6 +1503,86 @@ throws Exception
 	__tsengine.readTimeSeries2 ( TSList );
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
+	return bean;
+}
+
+/**
+Process the RunCommands request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RunCommands (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	// Command list.
+	Object o = request_params.getContents ( "CommandList" );
+	if ( o == null ) {
+			String warning =
+				"Request RunCommands() does not provide a CommandList parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	Vector commands = (Vector)o;
+	// Initial working directory for path adjustments...
+	Object o2 = request_params.getContents ( "InitialWorkingDir" );
+	if ( o2 == null ) {
+			String warning =
+				"Request RunCommands() does not provide an InitialWorkingDir parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	String InitialWorkingDir = (String)o2;
+	// Whether commands should create output...
+	Object o3 = request_params.getContents ( "CreateOutput" );
+	if ( o3 == null ) {
+			String warning =
+				"Request RunCommands() does not provide a CreateOutput parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	Boolean CreateOutput_Boolean = (Boolean)o3;
+	// Set properties as per the legacy application.
+	PropList props = new PropList ( "TSEngine");
+	props.set ( "InitialWorkingDir", InitialWorkingDir );
+	props.set ( "CreateOutput", "" + CreateOutput_Boolean );
+	// TODO SAM 2007-08-22 Need to evaluate recursion for complex workflow and testing
+	// Call the TSEngine method.
+	// TODO SAM 2007-08-22 Consider threading to improve perforamance and interaction
+	runCommands ( commands, props );
+	// No results need to be returned.
+	return bean;
+}
+
+/**
+Process the SetHydroBaseDMI request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetHydroBaseDMI (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "HydroBaseDMI" );
+	if ( o == null ) {
+			String warning =
+				"Request SetHydroBaseDMI() does not provide a HydroBaseDMI parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	HydroBaseDMI dmi = (HydroBaseDMI)o;
+	// Add an open HydroBaseDMI instance, closing a previous connection
+	// of the same name if it exists.
+	__tsengine.setHydroBaseDMI( dmi, true );
+	// No results need to be returned.
 	return bean;
 }
 
@@ -1196,6 +1736,84 @@ throws Exception {
 }
 
 /**
+Remove all commands.
+*/
+public void removeAllCommands ()
+{	int size = __Command_Vector.size();
+	if ( size > 0 ) {
+		__Command_Vector.removeAllElements ();
+		notifyCommandListListenersOfRemove ( 0, size - 1 );
+	}
+}
+
+/**
+Remove a command at a position.
+@param index Position (0+) at which to remove command.
+*/
+public void removeCommandAt ( int index )
+{	String routine = "TSCommandProcessor.removeCommandAt";
+	__Command_Vector.removeElementAt ( index );
+	notifyCommandListListenersOfRemove ( index, index );
+	Message.printStatus(2, routine, "Remove command object at [" + index + "]" );
+}
+
+/**
+Remove a CommandListListener.
+@param listener CommandListListener to remove.
+*/
+public void removeCommandListListener ( CommandListListener listener )
+{	if ( listener == null ) {
+		return;
+	}
+	if ( __CommandListListener_array != null ) {
+		// Loop through and set to null any listeners that match the
+		// requested listener...
+		int size = __CommandListListener_array.length;
+		int count = 0;
+		for ( int i = 0; i < size; i++ ) {
+			if (	(__CommandListListener_array[i] != null) &&
+				(__CommandListListener_array[i] == listener) ) {
+				__CommandListListener_array[i] = null;
+			}
+			else {	++count;
+			}
+		}
+		// Now resize the listener array...
+		CommandListListener [] newlisteners =
+			new CommandListListener[count];
+		count = 0;
+		for ( int i = 0; i < size; i++ ) {
+			if ( __CommandListListener_array[i] != null ) {
+				newlisteners[count++] = __CommandListListener_array[i];
+			}
+		}
+		__CommandListListener_array = newlisteners;
+		newlisteners = null;
+	}
+}
+
+/**
+Run the specified commands.  If no commands are specified, run all that are being managed.
+@param commands Vector of Command to process.
+@param props Properties to control run, including:  InitialWorkingDir=PathToWorkingDir, CreateOutput=True|False.
+*/
+public void runCommands ( Vector commands, PropList props )
+throws Exception
+{
+	__tsengine.processCommands(commands, props);
+}
+
+/**
+Set the name of the commands file where the commands are saved.
+@param filename Name of commands file (should be absolute since
+it will be used in output headers).
+*/
+public void setCommandsFileName ( String filename )
+{
+	__commands_filename = filename;
+}
+
+/**
 Set the data for a named property, required by the CommandProcessor
 interface.  See the getPropContents method for a list of properties that are
 handled.  This method simply calls setPropContents () using the information in
@@ -1270,6 +1888,16 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 		prop +	"\".";
 		throw new UnrecognizedRequestException ( message );
 	}
+}
+
+/**
+Return the number of commands being managed by this processor.  This
+matches the Collection interface, although that is not yet fully implemented.
+@return The number of commands being managed by the processor
+*/
+public int size()
+{
+	return __Command_Vector.size();
 }
 
 }

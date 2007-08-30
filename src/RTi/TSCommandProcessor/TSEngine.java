@@ -848,13 +848,8 @@ private boolean __cancel_processing = true;	// Indicates whether time series
 //private Vector	_commands = null;		// Original commands as Vector
 						// (used when running in batch
 						// mode).
-private String [] _commands_array = null;	// Commands as array.
-private boolean	__create_output = true;		// Indicates whether full output
-						// should be created.  False
-						// means that time series are
-						// processed but output
-						// commands (graph and file
-						// write commands) are skipped.
+//private String [] _commands_array = null;	// Commands as array.
+
 private boolean	_detailedheader = false;	// Indicates whether detailed
 						// header should be added to
 						// output.
@@ -867,10 +862,6 @@ private Vector	_fill_pattern_ts = new Vector (20,10);
 						// Vector of StringMonthTS
 						// fill patterns used with
 						// fillPattern().
-private TSCommandProcessorUI __gui = null;		// Need this to control cursor
-						// on reports (wait, not wait)
-						// SAMX - set cursor in GUI
-						// before calling TSEngine?
 private Vector __hbdmi_Vector = new Vector();	// HydroBase DMI instance
 						// Vector, to allow more than
 						// one database instance to
@@ -924,6 +915,15 @@ private DateTime __OutputEnd_DateTime = null;	// Global end date/time for
 private	boolean	_preview_output = false;	// Indicates whether exported
 						// data should be previewed.
 						// The default is false.
+/**
+Properties generated/maintained by the processor.  These are initialized when calling
+processCommands() and may be modified during command processing.  There are
+methods to return key values such as the end result WorkingDir.  This is available to
+allow the GUI to process setWorkingDir() commands prior to displaying a command editor,
+which requires the working directory at that point of the workflow.
+*/
+private PropList __processor_PropList = null;
+
 private DateTime __InputStart_DateTime = null;		// Start date for read.
 private DateTime __InputEnd_DateTime = null;		// End date for read.
 private DIADvisorDMI __DIADvisor_dmi = null;	// DMI for DIADvisor operational
@@ -936,116 +936,39 @@ private RiversideDB_DMI __rdmi = null;		// DMI for RiversideDB.
 private DateTime _reference_date = null;	// Reference date for year to
 						// date report (only use month
 						// and day).
-private	Vector	_tsexpression_list = null;	// List of time series
+/**
+The TSCommandProcessor instance that is managing this TSEngine instance.
+A valid instance should be passed during construction.
+*/
+private TSCommandProcessor __ts_processor = null;
+
+//private	Vector	_tsexpression_list = null;	// List of time series
 						// expressions to process.
 private	Vector	_tsexpression_list2 = null;	// List of time series
 						// expressions to process, when
 						// nested commands are used
 						// (e.g., with runCommands()).
-private Vector	__tslist = null;		// Time series vector that is
-						// the result of processing.
-						// This will always be non-null
-						// so check _binary_ts_used.
-						// See initialize().
+/**
+Vector of time series vector that is the result of processing.
+This will always be non-null so check _binary_ts_used.
+*/
+private Vector	__tslist = new Vector(50,50);		
 private Vector	__tslist_output = null;		// Time series vector that is
 						// actually output (limited by
 						// selections in the GUI).
 private WindowListener _tsview_window_listener = null;
 						// WindowListener for
 						// TSViewJFrame objects
-private String	_units = "";			// Units for processing.
 
 private Vector __datatestlist = null;
 
 /**
-This needed to support the RTi.TS.TSCommandProcessor.
-REVISIT SAM 2005-05-19 Remove when TSEngine is merged into TSCommandProcessor.
+Construct a TSEngine to work in parallel with a TSCommandProcessor.
+@param ts_processor TSCommandProcessor instance that is controlling processing.
 */
-public TSEngine ()
+protected TSEngine ( TSCommandProcessor ts_processor )
 {
-}
-
-/**
-Constructor.
-*/
-public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
-			DIADvisorDMI DIADvisor_dmi,
-			DIADvisorDMI DIADvisor_archive_dmi,
-			NWSRFS_DMI nwsrfs_dmi,
-			SatMonSysDMI smsdmi,
-			Vector commands )
-{	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
-			nwsrfs_dmi, smsdmi,
-			commands );
-	try {	processCommands ( hbdmi, commands );
-	}
-	catch ( Exception e ) {
-	}
-}
-
-/**
-Constructor.
-*/
-public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
-			DIADvisorDMI DIADvisor_dmi,
-			DIADvisorDMI DIADvisor_archive_dmi,
-			NWSRFS_DMI nwsrfs_dmi,
-			SatMonSysDMI smsdmi,
-			Vector commands, TSCommandProcessorUI gui )
-{	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
-			nwsrfs_dmi, smsdmi, commands );
-	__gui = gui;
-	try {	processCommands ( hbdmi, commands );
-	}
-	catch ( Exception e ) {
-	}
-}
-
-/**
-Constructor.
-*/
-public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
-			DIADvisorDMI DIADvisor_dmi,
-			DIADvisorDMI DIADvisor_archive_dmi,
-			NWSRFS_DMI nwsrfs_dmi,
-			SatMonSysDMI smsdmi,
-			Vector commands, TSCommandProcessorUI gui,
-			boolean create_output )
-{	__create_output = create_output;
-	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
-			nwsrfs_dmi, smsdmi, commands );
-	__gui = gui;
-	try {	processCommands ( hbdmi, commands );
-	}
-	catch ( Exception e ) {
-	}
-}
-
-/**
-Constructor.
-*/
-public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
-			DIADvisorDMI DIADvisor_dmi,
-			DIADvisorDMI DIADvisor_archive_dmi,
-			NWSRFS_DMI nwsrfs_dmi,
-			SatMonSysDMI smsdmi )
-{	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
-			nwsrfs_dmi, smsdmi, null );
-}
-
-/**
-Constructor.  This version is currently used with the new Command design,
-allowing the processor to reference information in the GUI.  At some point, a
-more abstract version of the GUI may be implemented.
-*/
-public TSEngine (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
-			DIADvisorDMI DIADvisor_dmi,
-			DIADvisorDMI DIADvisor_archive_dmi,
-			NWSRFS_DMI nwsrfs_dmi,
-			SatMonSysDMI smsdmi, TSCommandProcessorUI gui )
-{	initialize (	hbdmi, rdmi, DIADvisor_dmi, DIADvisor_archive_dmi,
-			nwsrfs_dmi, smsdmi, null );
-	__gui = gui;
+	__ts_processor = ts_processor;
 }
 
 /**
@@ -1086,10 +1009,11 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 
 /**
 Add a WindowListener for TSViewJFrame instances that are created.  Currently
-only one listener can be set.
+only one listener can be set.  This is needed to be able to close down the
+application when simple plot interfaces are displayed.
 @param listener WindowListener to listen to TSViewJFrame WindowEvents.
 */
-public void addTSViewWindowListener ( WindowListener listener )
+private void addTSViewWindowListener ( WindowListener listener )
 {	_tsview_window_listener = listener;
 }
 
@@ -1098,7 +1022,7 @@ Indicate whether a time series' data period should automatically be extended
 to the output period (to allow for filling).
 @return True if the period should be automatically extended.
 */
-public boolean autoExtendPeriod()
+protected boolean autoExtendPeriod()
 {	return __auto_extend_period;
 }
 
@@ -1112,7 +1036,7 @@ value of getTimeSeriesSize().
 @param ts Monthly time series to process.
 @exception Exception if there is an error getting the limits.
 */
-public TSLimits calculateTSAverageLimits ( TS ts )
+protected TSLimits calculateTSAverageLimits ( TS ts )
 throws Exception
 {	return calculateTSAverageLimits ( getTimeSeriesSize(), ts );
 }
@@ -1128,7 +1052,7 @@ control printing of messages.
 Currently only limits for monthly time series are supported.
 @exception Exception if there is an error getting the limits.
 */
-public TSLimits calculateTSAverageLimits ( int i, TS ts )
+private TSLimits calculateTSAverageLimits ( int i, TS ts )
 throws Exception
 {	String message, routine = "TSEngine.calculateTSAverageLimits";
 	TSLimits average_limits = null;
@@ -1234,11 +1158,22 @@ throws Exception
 }
 
 /**
+Clear the time series results.  The commands will need to be rerun to regenerate
+the results.
+*/
+protected void clearResults ( )
+{
+	if ( __tslist != null ) {
+		__tslist.removeAllElements();
+	}
+}
+
+/**
 Create data limits report.  Currently this creates a report for the available
 period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 */
-public Vector createDataLimitsReport ( Vector tslist )
+private Vector createDataLimitsReport ( Vector tslist )
 {	int size = tslist.size();
 	Vector report = new Vector ();
 
@@ -1290,7 +1225,7 @@ available period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 @param props Properties to control report (see TSUtil.createMonthSummary()).
 */
-public Vector createMonthSummaryReport ( Vector tslist, PropList props )
+private Vector createMonthSummaryReport ( Vector tslist, PropList props )
 {	int size = tslist.size();
 	Vector report = new Vector ();
 	String routine = "TSEngine.createMonthSummaryReport";
@@ -1362,7 +1297,7 @@ CFS units.
 @param props Properties to control output (currently the only property is
 SortTotals=true/false).
 */
-public Vector createYearToDateReport ( Vector tslist, DateTime end_date,
+private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 				PropList props )
 {	int size = tslist.size();
 	Vector report = new Vector ();
@@ -1522,7 +1457,7 @@ public Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 Delete the BinaryTS associated with the TSEngine, containing the results of
 time series expression processing.
 */
-public void deleteBinaryTS ()
+private void deleteBinaryTS ()
 {	try {	if ( _binary_ts != null ) {
 			_binary_ts.delete ();
 			_binary_ts = null;
@@ -1780,7 +1715,7 @@ throws Exception
 		}
 	}
 	else if ( TSList.equalsIgnoreCase("SelectedTS") ) {
-		vTS = getSelectedTimeSeries( false );
+		vTS = getSelectedTimeSeriesList ( false );
 	}
 	else if ( TSList.equalsIgnoreCase("SpecifiedTS") ) {
 		// Get the requested time series...
@@ -5006,7 +4941,7 @@ throws Exception
 	if ( tokens.size() < 2 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
-	// Parse the name and dates...
+	// Parse the directory and mode...
 	String dir = ((String)tokens.elementAt(1)).trim();
 	String type = "GUIAndBatch";
 	if ( tokens.size() == 3 ) {
@@ -5025,7 +4960,11 @@ throws Exception
 		(IOUtil.isBatch() && type.equalsIgnoreCase("BatchOnly")) ||
 		type.equalsIgnoreCase("GUIAndBatch") ) {
 		// Set the working directory...
+		// TODO SAM 2007-08-22 Currently does not allow adjustments to the
+		// path - only absolute resets.
 		if ( IOUtil.fileExists(dir) ) {
+			// TODO SAM 2007-08-22 Evaluate the ramifications of this
+			// being application-wide vs. just the processor instance.
 			IOUtil.setProgramWorkingDir(dir);
 			if ( app_PropList != null ) {
 				app_PropList.set ( "WorkingDir", dir );
@@ -5246,7 +5185,7 @@ throws Exception
 
 	Vector tslist = null;
 	if ( (TSList != null) && TSList.equalsIgnoreCase("SelectedTS") ) {
-		tslist = getSelectedTimeSeries( false );
+		tslist = getSelectedTimeSeriesList ( false );
 	}
 	else {	// Default is to output all time series...
 		tslist = __tslist;
@@ -5300,9 +5239,10 @@ throws Exception
 /**
 Execute the writeStateCU() command.
 @param command Command to parse.
+@param comments Comments for output header.
 @exception Exception if there is an error.
 */
-private void do_writeStateCU ( String command )
+private void do_writeStateCU ( String command, String[] comments )
 throws Exception
 {	String routine = "TSEngine.do_writeStateCU";
 	Vector tokens = StringUtil.breakStringList ( command,
@@ -5313,45 +5253,7 @@ throws Exception
 	}
 	String out = ((String)tokens.elementAt(1)).trim();
     String outfile = IOUtil.getPathUsingWorkingDir( out );
-      
-	// Format the comments to add to the top of the file.  In this
-	// case, add the commands used to generate the file and if available
-	// the hydrobase comments...
-	// REVISIT SAM 2005-04-12 Loop through the instances.
-    
-	String comments[] = _commands_array;	// default
-	int hsize = __hbdmi_Vector.size();
-	HydroBaseDMI hbdmi = null;
-	String db_comments[] = null;
-	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
-		if ( hbdmi != null ) {
-		try {	db_comments = hbdmi.getVersionComments ();
-		}
-		catch ( Exception e ) {
-			db_comments = null;
-		}
-		if ( db_comments != null ) {
-			int size = 0;
-			int csize = 0;
-			if ( _commands_array != null ) {
-				csize = _commands_array.length;
-			}
-			size = csize + db_comments.length;
-			comments = new String[size];
-			if ( _commands_array != null ) {
-				for (	int i = 0; i < csize; i++ ) {
-					comments[i] = _commands_array[i];
-				}
-			}
-			for ( int i = csize; i < size; i++ ) {
-				comments[i] = db_comments[i - csize];
-			}
-		}
-		}
-		db_comments = null;
-	}
-
+	
 	try {	StateCU_TS.writeFrostDatesFile ( __tslist, outfile,
 			comments, __OutputStart_DateTime, __OutputEnd_DateTime);
 	}
@@ -5491,7 +5393,6 @@ throws Throwable
 			_binary_ts = null;
 		}
 	}
-	_commands_array = null;
 	_datetime_Hashtable = null;
 	__OutputStart_DateTime = null;
 	__OutputEnd_DateTime = null;
@@ -5500,7 +5401,6 @@ throws Throwable
 	_binaryts_date1 = null;
 	_binaryts_date2 = null;
 	_fill_pattern_ts = null;
-	__gui = null;
 	__hbdmi_Vector = null;
 	_missing_range = null;
 	_missing_ts = null;
@@ -5509,10 +5409,63 @@ throws Throwable
 	_output_commands = null;
 	_output_file = null;
 	_reference_date = null;
-	_tsexpression_list = null;
 	__tslist = null;
 	__tslist_output = null;
 	super.finalize();
+}
+
+/**
+Format comments for the header of output files.  The comments
+include the commands file and database version information.
+@param commands The commands that are being processed.
+@param include_commands Indicate whether the commands should be included
+in the comments.  IOUtil.printCreatorHeader will automatically include the
+commands if a commands file has been set but is probably better to move
+to a case where the commands are passed to the write methods.
+*/
+protected String [] formatOutputHeaderComments ( Vector commands )
+{	Vector comments = new Vector();
+	// Commands.  Show the file name but all commands may be in memory.
+	comments.addElement (
+		"--------------------------------------------------" +
+			"---------------------" );
+	String commands_filename = __ts_processor.getCommandsFileName();
+	if ( commands_filename == null ) {
+		comments.addElement ( "Commands file name:  COMMANDS NOT SAVED TO FILE" );
+	}
+	else { comments.addElement ( "Commands file name: \"" + commands_filename + "\"" );
+	}
+	comments.addElement ( "Commands: " );
+	int size_commands = commands.size();
+	for ( int i = 0; i < size_commands; i++ ) {
+		comments.addElement ( ((Command)commands.elementAt(i)).toString() );
+	}
+	// Save information about data sources.
+	HydroBaseDMI hbdmi = null;
+	int hsize = __hbdmi_Vector.size();
+	String db_comments[] = null;
+	for ( int ih = 0; ih < hsize; ih++ ) {
+		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
+		if ( hbdmi != null ) {
+			try {	db_comments = hbdmi.getVersionComments ();
+			}
+			catch ( Exception e ) {
+				db_comments = null;
+			}
+		}
+		if ( db_comments != null ) {
+			for ( int i = 0; i < db_comments.length; i++ ) {
+				comments.addElement(db_comments[i]);
+			}
+		}
+	}
+	// Convert to an array...
+	int size = comments.size();
+	String [] comments_array = new String[size];
+	for ( int i = 0; i < size; i++ ) {
+		comments_array[i] = (String)comments.elementAt(i);
+	}
+	return comments_array;
 }
 
 /**
@@ -5520,23 +5473,15 @@ Get the BinaryTS reference.  This should be used only to call the BinaryTS
 get*() methods.
 @return the BinaryTS associated with the TSEngine, or null if not used.
 */
-public BinaryTS getBinaryTS ()
+private BinaryTS getBinaryTS ()
 {	return _binary_ts;
-}
-
-/**
-Indicate whether output files should be created.
-@return True if output files should be created, false if not.
-*/
-public boolean getCreateOutput()
-{	return __create_output;
 }
 
 /**
 Return the list of DataTest.
 @return Vector of DataTest that can be used for data test commands.
 */
-public Vector getDataTestList ()
+protected Vector getDataTestList ()
 {	return __datatestlist;
 }
 
@@ -5553,7 +5498,7 @@ Get a date/time from a string.  This is done using the following rules:
 @param date_string Date/time string to parse.
 @exception if the date cannot be determined using the defined procedure.
 */
-public DateTime getDateTime ( String date_string )
+protected DateTime getDateTime ( String date_string )
 throws Exception
 {	if (	(date_string == null) ||
 		date_string.equals("") || date_string.equals("*") ) {
@@ -5604,7 +5549,7 @@ may not be set correctly (units currently default to "ACFT" and the data type
 is taken from the current GUI choice).
 @exception Exception if the time series identifier is bad.
 */
-public MonthTS getEmptyTimeSeries ( String tsident_string )
+private MonthTS getEmptyTimeSeries ( String tsident_string )
 throws Exception
 {	MonthTS ts = new MonthTS ();
 	// Allocate the data space...  If the dates have been set, use them.
@@ -5628,7 +5573,7 @@ for fully loaded method.  The list is not sorted
 @param commands Time series commands to search.
 @return list of graph identifiers or an empty non-null Vector if nothing found.
 */
-public static Vector getGraphIdentifiersFromCommands ( Vector commands )
+private static Vector getGraphIdentifiersFromCommands ( Vector commands )
 {	return getGraphIdentifiersFromCommands ( commands, false );
 }
 
@@ -5640,7 +5585,7 @@ These strings are suitable for drop-down lists, etc.
 @param sort Should output be sorted by identifier.
 @return list of graph identifiers or an empty non-null Vector if nothing found.
 */
-public static Vector getGraphIdentifiersFromCommands ( Vector commands,
+private static Vector getGraphIdentifiersFromCommands ( Vector commands,
 						boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
@@ -5676,7 +5621,7 @@ public static Vector getGraphIdentifiersFromCommands ( Vector commands,
 Return the default HydroBaseDMI that is being used (InputName = "").
 @return the HydroBaseDMI that is being used (may return null).
 */
-public HydroBaseDMI getHydroBaseDMI ()
+private HydroBaseDMI getHydroBaseDMI ()
 {	return getHydroBaseDMI ( "" );
 }
 
@@ -5685,7 +5630,7 @@ Return the HydroBaseDMI that is being used.
 @param input_name Input name for the DMI, can be blank.
 @return the HydroBaseDMI that is being used (may return null).
 */
-public HydroBaseDMI getHydroBaseDMI ( String input_name )
+protected HydroBaseDMI getHydroBaseDMI ( String input_name )
 {	int size = __hbdmi_Vector.size();
 	if ( input_name == null ) {
 		input_name = "";
@@ -5709,15 +5654,29 @@ public HydroBaseDMI getHydroBaseDMI ( String input_name )
 Return the list of HydroBaseDMI.
 @return Vector of open HydroBaseDMI.
 */
-public Vector getHydroBaseDMIList ()
+protected Vector getHydroBaseDMIList ()
 {	return __hbdmi_Vector;
+}
+
+/**
+Return the value of the "InitialWorkingDir" processor property as a String, or null
+if not available.  This is the result of the processor taking an initial working
+directory and modifying it with setWorkingDir() commands.
+*/
+protected String getInitialWorkingDir()
+{
+	if ( __processor_PropList == null ){
+		return null;
+	}
+	else {	return __processor_PropList.getValue ( "InitialWorkingDir");
+	}
 }
 
 /**
 Return the input period end, or null if all available data are to be queried.
 @return the input period end, or null if all available data are to be queried.
 */
-public DateTime getInputEnd()
+protected DateTime getInputEnd()
 {	return __InputEnd_DateTime;
 }
 
@@ -5725,7 +5684,7 @@ public DateTime getInputEnd()
 Return the input start, or null if all available data are to be read at input.
 @return the input period start, or null if all available data are to be read.
 */
-public DateTime getInputStart()
+protected DateTime getInputStart()
 {	return __InputStart_DateTime;
 }
 
@@ -5770,70 +5729,10 @@ public Adapter getNDFDAdapter (String input_name )
 */
 
 /**
-Return comments to add to the top of output files.  This includes HydroBase and
-other database connection information that may have been used by commands.
-@return A Vector of String, suitable to add to output files.
-*/
-protected Vector getOutputComments ()
-{	// Format the comments to add to the top of output files.
-	// If available, use the HydroBase comments.  The commands file
-	// will typically automatically be added by
-	// IOUtil.printCreatorHeader() when called by write methods.
-	// TODO SAM 2005-09-01
-	// Evaluate whether printCreatorHeader should automatically
-	// include the commands or whether this should be an option.
-	// It seems to work reasonbly well now.
-
-	Vector comments = new Vector();	// All comments to return.
-	HydroBaseDMI hbdmi = null;
-	String db_comments[] = null;	// Comments for one connection
-	int hbsize = 0;
-	if ( __hbdmi_Vector != null ) {
-		hbsize = __hbdmi_Vector.size();
-	}
-	for ( int ih = 0; ih < hbsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
-		if ( hbdmi == null ) {
-			continue;
-		}
-		try {	db_comments = hbdmi.getVersionComments ();
-		}
-		catch ( Exception e ) {
-			db_comments = null;
-		}
-		if ( db_comments != null ) {
-			for ( int i = 0; i < db_comments.length; i++ ) {
-				comments.addElement( db_comments[i] );
-			}
-		}
-	}
-	db_comments = null;
-	return comments;
-}
-
-/**
-Return the output period start, or null if all data are to be output.
-@return the output period start, or null if all data are to be output.
-@deprecated Use getOutputStart
-*/
-public DateTime getOutputDate1()
-{	return __OutputStart_DateTime;
-}
-
-/**
-Return the output period end, or null if all data are to be output.
-@return the output period end, or null if all data are to be output.
-@deprecated Use getOutputEnd
-*/
-public DateTime getOutputDate2()
-{	return __OutputEnd_DateTime;
-}
-
-/**
 Return the output period end, or null if all data are to be output.
 @return the output period end, or null if all data are to be output.
 */
-public DateTime getOutputEnd()
+protected DateTime getOutputEnd()
 {	return __OutputEnd_DateTime;
 }
 
@@ -5841,7 +5740,7 @@ public DateTime getOutputEnd()
 Return the output period start, or null if all data are to be output.
 @return the output period start, or null if all data are to be output.
 */
-public DateTime getOutputStart()
+protected DateTime getOutputStart()
 {	return __OutputStart_DateTime;
 }
 
@@ -5860,37 +5759,6 @@ protected String getOutputYearType()
 	else {
 		return "";
 	}
-}
-
-/**
-Return the query period end, or null if all data are to be queried.
-@deprecated Use getInputEnd.
-@return the query period end, or null if all data are to be queried.
-*/
-public DateTime getQueryDate2()
-{	return getInputEnd();
-}
-
-/**
-Return the query period start, or null if all data are to be queried.
-@deprecated Use getInputStart.
-@return the query period start, or null if all data are to be queried.
-*/
-public DateTime getQueryDate1()
-{	return getInputStart();
-}
-
-/**
-Return a Vector of the selected time series, or all time series if none are
-specifically selected.
-@return the selected time series (those where ts.setSelected(true) has been
-called).
-@param return_all_if_none_selected If true return all if no time series happen
-to be selected.
-@deprecated Use getSelectedTimeSeriesList ( boolean ).
-*/
-private Vector getSelectedTimeSeries ( boolean return_all_if_none_selected )
-{	return getSelectedTimeSeriesList ( return_all_if_none_selected );
 }
 
 /**
@@ -5987,7 +5855,7 @@ number) is ignored.
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
 */
-public TS getTimeSeries ( String command_tag, String id )
+protected TS getTimeSeries ( String command_tag, String id )
 throws Exception
 {	return getTimeSeries ( command_tag, id, -1 );
 }
@@ -6007,7 +5875,7 @@ series and not BinaryTS.
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error getting the time series.
 */
-public TS getTimeSeries ( String command_tag, String id, int sequence_number )
+protected TS getTimeSeries ( String command_tag, String id, int sequence_number )
 throws Exception
 {	String tsident = id.trim();
 	if ( tsident.regionMatches(true,0,TEMPTS,0,6) ) {
@@ -6040,7 +5908,7 @@ and should be set to null when done.
 @return a time series from the requested position or null if none is available.
 @exception Exception if there is an error reading the time series.
 */
-public TS getTimeSeries ( int position )
+protected TS getTimeSeries ( int position )
 throws Exception
 {	if ( position < 0 ) {
 		return null;
@@ -6067,7 +5935,7 @@ Return the list of time series.  See also getSelectedTimeSeriesList().
 @param indices a list of indices to return or null to return all.  Only indices
 within the time series list size will be returned.
 */
-public Vector getTimeSeriesList ( int [] indices )
+protected Vector getTimeSeriesList ( int [] indices )
 {	if ( indices == null ){
 		return __tslist;
 	}
@@ -6092,7 +5960,7 @@ output.  The size is determined from the in-memory time series list or the
 BinaryTS, as appropriate.
 @return number of time series available for output.
 */
-public int getTimeSeriesSize ()
+protected int getTimeSeriesSize ()
 {	if ( _binary_ts_used ) {
 		return _binary_ts.size();
 	}
@@ -6230,7 +6098,7 @@ See documentation for fully loaded method.  The list is not sorted
 @return list of time series identifiers or an empty non-null Vector if nothing
 found.
 */
-public static Vector getTraceIdentifiersFromCommands ( Vector commands )
+protected static Vector getTraceIdentifiersFromCommands ( Vector commands )
 {	return getTraceIdentifiersFromCommands ( commands, false );
 }
 
@@ -6243,7 +6111,7 @@ These strings are suitable for drop-down lists, etc.
 @return list of time series identifiers or an empty non-null Vector if nothing
 found.
 */
-public static Vector getTraceIdentifiersFromCommands ( Vector commands,
+protected static Vector getTraceIdentifiersFromCommands ( Vector commands,
 						boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
@@ -6279,127 +6147,6 @@ public static Vector getTraceIdentifiersFromCommands ( Vector commands,
 	}
 	tokens = null;
 	return v;
-}
-
-/**
-Get a list of identifiers from a list of commands.  See documentation for
-fully loaded method.  The output list is not sorted and does NOT contain the
-input type or name.
-@param commands Time series commands to search.
-@return list of time series identifiers or an empty non-null Vector if nothing
-found.
-*/
-public static Vector getTSIdentifiersFromCommands ( Vector commands )
-{	// Default behavior...
-	return getTSIdentifiersFromCommands ( commands, false, false );
-}
-
-/**
-Get a list of identifiers from a list of commands.  See documentation for
-fully loaded method.  The output list does NOT contain the input type or name.
-@param commands Time series commands to search.
-@param sort Should output be sorted by identifier.
-@return list of time series identifiers or an empty non-null Vector if nothing
-found.
-*/
-public static Vector getTSIdentifiersFromCommands (	Vector commands,
-							boolean sort )
-{	// Return the identifiers without the input type and name.
-	return getTSIdentifiersFromCommands ( commands, false, sort );
-}
-
-/**
-Get a list of identifiers from a list of commands.  Commands that start
-with "TS ? = " or lines that are time series identifiers are returned.
-These strings are suitable for drop-down lists, etc.
-If a non-empty alias is available, it is used for the identifer.  Otherwise the
-full identifier is used.
-@param commands Time series commands to search.
-@param include_input If true, include the input type and name in the returned
-values.  If false, only include the 5-part information.
-@param sort Should output be sorted by identifier.
-@return list of time series identifiers or an empty non-null Vector if nothing
-found.
-*/
-public static Vector getTSIdentifiersFromCommands (	Vector commands,
-							boolean include_input,
-							boolean sort )
-{	if ( commands == null ) {
-		return new Vector();
-	}
-	Vector v = new Vector ( 10, 10 );
-	int size = commands.size();
-	String command = null;
-	Vector tokens = null;
-	boolean in_comment = false;
-	for ( int i = 0; i < size; i++ ) {
-		command = ((String)commands.elementAt(i)).trim();
-		if (	(command == null) ||
-			command.startsWith("#") ||
-			(command.length() == 0) ) {
-			// Make sure comments are ignored...
-			continue;
-		}
-		if ( command.startsWith("/*") ) {
-			in_comment = true;
-			continue;
-		}
-		else if ( command.startsWith("*/") ) {
-			in_comment = false;
-			continue;
-		}
-		if ( in_comment ) {
-			continue;
-		}
-		else if ( StringUtil.startsWithIgnoreCase(command,"TS ") ) {
-			// Use the alias...
-			tokens = StringUtil.breakStringList(
-				command.substring(3)," =",
-				StringUtil.DELIM_SKIP_BLANKS);
-			if ( (tokens != null) && (tokens.size() > 0) ) {
-				v.addElement ( (String)tokens.elementAt(0) );
-				//+ " (alias)" );
-			}
-			tokens = null;	// GC
-		}
-		else if ( isTSID(command) ) {
-			// Reasonably sure it is an identifier.  Only add the
-			// 5-part TSID and not the trailing input type and name.
-			int pos = command.indexOf("~");
-			if ( (pos < 0) || include_input ) {
-				// Add the whole thing...
-				v.addElement ( command );
-			}
-			else {	// Add the part before the input fields...
-				v.addElement ( command.substring(0,pos) );
-			}
-		}
-	}
-	tokens = null;
-	return v;
-}
-
-/**
-@return the Vector of time series identifiers that are available, with the
-input type information.
-@return The Vector of time series identifiers that are available, without the
-input type and name.  The time series identifiers from commands above the
-selected command are returned.  This property will normally only be used with
-command editor dialogs.
-*/
-protected Vector getTSIDListNoInput ()
-{	// Note the dependence on the GUI, even depending on what is
-	// selected in the commands list.
-	// TODO SAM 2005-05-05 Remove dependence on GUI.
-	if ( __gui == null ) {
-		String routine = "TSEngine.getTSIDListNoInput";
-		Message.printWarning ( 3, routine,
-		"GUI is null.  Can't get list of available time series identifiers." );
-		return new Vector ();
-	}
-	else {	return getTSIdentifiersFromCommands(
-		__gui.getCommandsAboveSelected() );
-	}
 }
 
 /**
@@ -6446,8 +6193,22 @@ This is used when the TSCommandProcessor is run as a supporting
 tool (e.g., in TSTool with no main GUI).
 @return the WindowListener for TSView windows.
 */
-public WindowListener getTSViewWindowListener ()
+protected WindowListener getTSViewWindowListener ()
 {	return _tsview_window_listener;
+}
+
+/**
+Return the value of the "WorkingDir" processor property as a String, or null
+if not available.  This is the result of the processor taking an initial working
+directory and modifying it with setWorkingDir() commands.
+*/
+protected String getWorkingDir()
+{
+	if ( __processor_PropList == null ){
+		return null;
+	}
+	else {	return __processor_PropList.getValue ( "WorkingDir");
+	}
 }
 
 /**
@@ -6490,7 +6251,7 @@ Indicate whether the output period has been specified.
 @return true if the output period has been specified (and we can use its
 dates without fear of nulls or zero years).
 */
-public boolean haveOutputPeriod ()
+protected boolean haveOutputPeriod ()
 {	if ((__OutputStart_DateTime == null) || (__OutputEnd_DateTime == null)){
 		return false;
 	}
@@ -6502,20 +6263,10 @@ public boolean haveOutputPeriod ()
 }
 
 /**
-Indicate whether the query period has been specified.
-@deprecated Use haveInputPeriod
-@return true if the query period has been specified (and we can use its
-dates without fear of nulls or zero years).
-*/
-private boolean haveQueryPeriod ()
-{	return haveInputPeriod();
-}
-
-/**
 Indicate whether missing time series are automatically included in output.
 @return true if missing time series are automatically included in output.
 */
-public boolean includeMissingTS()
+protected boolean includeMissingTS()
 {	return __include_missing_ts;
 }
 
@@ -6526,7 +6277,7 @@ documentation.  This version assumes that no sequence number is used.
 @param string the alias and/or time series identifier to look for.
 @return Position in time series list (0 index), or -1 if not in the list.
 */
-public int indexOf ( String string )
+protected int indexOf ( String string )
 {	return indexOf ( string, -1 );
 }
 
@@ -6552,7 +6303,7 @@ checked to find a match.  Currently this is only used for in-memory time series
 (not BinaryTS).
 @return Position in time series list (0 index), or -1 if not in the list.
 */
-public int indexOf ( String string, int sequence_number )
+private int indexOf ( String string, int sequence_number )
 {	// First search the aliases in the BinaryTS and in memory list...
 	int pos = -1;
 	if ( (string == null) || string.equals("") ) {
@@ -6635,6 +6386,7 @@ Initialize data for TSEngine.
 @param smsdmi SatMonSysDMI instance for ColoradoSMS input type.
 @param commands Vector of commands to process (e.g., from commands file).
 */
+/* FIXME SAM 2007-08-20 Remove if not used after rework
 private void initialize (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 				DIADvisorDMI DIADvisor_dmi,
 				DIADvisorDMI DIADvisor_archive_dmi,
@@ -6649,7 +6401,6 @@ private void initialize (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 	__DIADvisor_dmi = DIADvisor_dmi;
 	__DIADvisor_archive_dmi = DIADvisor_archive_dmi;
 	__nwsrfs_dmi = nwsrfs_dmi;
-	_tsexpression_list = new Vector ( 10, 10 );
 	__tslist = new Vector ( 50, 50 );// Always allocate something since
 					// we don't know how many time series
 					// will be processed
@@ -6659,41 +6410,14 @@ private void initialize (	HydroBaseDMI hbdmi, RiversideDB_DMI rdmi,
 	else {	_binary_ts_file = "C:\\temp\\tstool.bts";
 	}
 }
+*/
 
 /**
 Indicate whether a BinaryTS is used.
 @return true if a BinaryTS is used for time series, false if not.
 */
-public boolean isBinaryTSUsed ()
+protected boolean isBinaryTSUsed ()
 {	return _binary_ts_used;
-}
-
-/**
-Evaluate whether a command appears to be a pure time series identifier (not a
-command that uses a time series identifier).  The string is checked to see if
-it has three "." and that any parentheses are after the first ".".  If this
-method is called after checking for TS TSID = command() syntax, it should
-correctly evaluate the identifier.  Some of these checks are needed for TSIDs
-that have data types with () - this is the case with some input types (e.g.,
-HydroBase agricultural statistics that have "(Dry)".
-@param command Command to evaluate.
-@return true if the command appears to be a pure TSID, false if not.
-*/
-public static boolean isTSID ( String command )
-{	int left_paren_pos = command.indexOf('(');
-	int right_paren_pos = command.indexOf(')');
-	int period_pos = command.indexOf('.');
-
-	if ((StringUtil.patternCount(command,".") >= 3) &&
-			(((left_paren_pos < 0) &&	// Definitely not a
-			(right_paren_pos < 0)) ||	// command.
-			((left_paren_pos > 0) &&	// A TSID with ()
-			(period_pos > 0) &&
-			(left_paren_pos > period_pos))) ) {
-		return true;
-	}
-	else {	return false;
-	}
 }
 
 /**
@@ -6871,11 +6595,13 @@ processing.
 </tr>
 </table>
 */
+/* TODO SAM 2007-08-20 Evaluate how to integrate with new design.
 public void processCommands ( Vector commands, PropList app_PropList )
 throws Exception
 {	// Run in batch mode...
 	processCommands ( (HydroBaseDMI)null, commands, app_PropList );
 }
+*/
 
 /**
 Process a tstool commands file.  This routine parses the commands file
@@ -6885,12 +6611,15 @@ a commands file without reading into the GUI.
 @param hbdmi Database connection.
 @param filename File name containing tstool commands.
 */
-public void processCommands ( HydroBaseDMI hbdmi, String filename )
+/* FIXME SAM 2007-08-20 Evaluate how to integrate with new design.
+protected void processCommands ( HydroBaseDMI hbdmi, String filename )
 throws Exception
 {	// Run in batch mode...
 	processCommands ( hbdmi, filename, true );
 }
+*/
 
+// FIXME SAM 2007-08-20 Evaluate how to integrate with new design.
 /**
 Process a tstool commands file.  This routine parses the commands file
 and calls processCommands with the information found in that file.
@@ -6901,7 +6630,8 @@ a commands file without reading into the GUI.
 @param is_batch Indicates whether a batch mode is run.  True means no GUI.
 False means either a full (main GUI) or partial (plots only) GUI.
 */
-public void processCommands (	HydroBaseDMI hbdmi, String filename,
+/* FIXME SAM 2007-08-20 Need to enable in some form
+private void processCommands (	HydroBaseDMI hbdmi, String filename,
 				boolean is_batch )
 throws Exception
 {	String message, routine = "TSEngine.processCommands";
@@ -6951,7 +6681,7 @@ throws Exception
 		}
 	}
 
-	try {	processCommands ( hbdmi, cmdVec );
+	try {	processCommands ( cmdVec, null );
 	} catch ( Exception e ) {
 		message = "Error processing command strings.";
 		Message.printWarning ( 1, routine, message );
@@ -6961,22 +6691,8 @@ throws Exception
 }
 
 /**
-Process a set of TSTool commands, resulting in time series being set in memory.
-@param hbdmi Database connection.  This is not currently used and can be
-specified as null.  Initial database connections are set in the constructor.
-@param commands Commands to process (one operation per line).
-@exception java.lang.Exception If there is an error in the commands file.
-*/
-public void processCommands ( HydroBaseDMI hbdmi, Vector commands )
-throws Exception
-{	processCommands ( hbdmi, commands, null );
-}
-
-/**
 Process a set of TSTool commands.
-@param hbdmi Database connection.  This is not currently used and can be
-specified as null.  Initial database connections are set in the constructor.
-@param commands Commands to process (one operation per line).
+@param commands Vector of Command instances to process.
 @param app_PropList if not null, set properties as commands are processed:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
@@ -7002,7 +6718,8 @@ processing.
 </table>
 @exception java.lang.Exception If there is an error in the commands file.
 */
-public void processCommands (	HydroBaseDMI hbdmi, Vector commands,
+/* FIXME SAM Need to reenable in some form
+protected void processCommands ( Vector commands,
 				PropList app_PropList )
 throws Exception
 {	String	routine = "TSEngine.processCommands";
@@ -7023,6 +6740,10 @@ throws Exception
 		DateTime.DATE_CURRENT|DateTime.PRECISION_SECOND );
 	Message.printStatus ( 1, routine,
 		"Start processing commands at: " + now.toString() );
+	/ * TODO SAM 2007-08-09 This should be unneeded as the commands
+	 * are stored in the TSCommandProcessor list now and can be
+	 * regenerated with toString().
+	 * Remove when confirmed.
 	if ( !IOUtil.isBatch() ) {
 		// Running in the GUI and we need to put together a list of
 		// commands as an array that will get saved in file output...
@@ -7032,6 +6753,7 @@ throws Exception
 			_commands_array[i + 1] = (String)commands.elementAt(i);
 		}
 	}
+	* /
 
 	// As of TSTool 05.xx.xx+, the time series expression list contains all
 	// commands...
@@ -7042,6 +6764,7 @@ throws Exception
 			Recursive_boolean = true;
 		}
 	}
+	/ * FIXME SAM 2007-08-10 Need to reenable processing
 	if ( Recursive_boolean ) {
 		// A recursive call to the processing is occurring.  Save the
 		// commands to process in a second list so that it won't step
@@ -7050,1079 +6773,22 @@ throws Exception
 	}
 	else {	_tsexpression_list = commands;
 	}
+	* /
 
 	// Now process the time series expressions...
 
-	processTimeSeriesCommands ( app_PropList );
+	// FIXME SAM 2007-08-10 Need to enable in some form
+	// processTimeSeriesCommands ( app_PropList );
 
 	now = new DateTime ( DateTime.DATE_CURRENT|DateTime.PRECISION_SECOND );
 	Message.printStatus ( 1, routine,
 	"End processing commands at:   " + now.toString() );
 }
-
-/**
-Process a list of time series to produce an output product.
-This version is typically called only when running in batch mode because the
-legacy settings (like -ostatemod) have been set in a command file.  The
-overloaded version is called with the appropriate arguments.  Currently, only
--ostatemod, -osummary, -osummarynostats, and -o File are evaluated.
-@exception IOException if there is an error generating the results.
 */
-public void processTimeSeries ()
-throws IOException
-{	PropList proplist = new PropList ( "processTimeSeries" );
-	if ( _output_format == OUTPUT_STATEMOD ) {
-		proplist.set ( "OutputFormat=-ostatemod" );
-		proplist.set ( "OutputFile=" + _output_file );
-	}
-	else if ( _output_format == OUTPUT_SUMMARY ) {
-		proplist.set ( "OutputFormat=-osummary" );
-		proplist.set ( "OutputFile=" + _output_file );
-	}
-	else if ( _output_format == OUTPUT_SUMMARY_NO_STATS ) {
-		proplist.set ( "OutputFormat=-osummarynostats" );
-		proplist.set ( "OutputFile=" + _output_file );
-	}
-	processTimeSeries ( null, proplist );
-	proplist = null;
-}
 
-/**
-Process a list of time series to produce an output product.
-The time series are typically generated from a previous call to
-processCommands() or processTimeSeriesCommands().
-@param ts_indices List of time series indices to process from the internal
-time series list.  If null, all are processed.  The indices do not have to be
-in order.
-@param proplist List of properties to define the output:
-<table width=100% cellpadding=10 cellspacing=0 border=2>
-<tr>
-<td><b>Property</b></td>	<td><b>Description</b></td>	<td><b>Default</b></td>
-</tr>
-
-<tr>
-<td><b>OutputFormat</b></td>
-<td>
-<ul>
-<li>-ostatemod  Output StateMod file.</li>
-</ul>
-</td>
-<td>No default.</td>
-</tr>
-
-<tr>
-<td><b>OutputFile</b></td>
-<td>Output file.</td>
-<td>No default.</td>
-</tr>
-</table>
-@exception IOException if there is an error generating the results.
-*/
-public void processTimeSeries ( int ts_indices[], PropList proplist )
-throws IOException
-{	String	message = null,	// Message string
-		routine = "TSEngine.processTimeSeries";
-
-	// Define a local proplist to better deal with null...
-	PropList props = proplist;
-	if ( props == null ) {
-		props = new PropList ( "" );
-	}
-
-	if ( _binary_ts_used ) {
-		Message.printStatus ( 1, routine,
-		"Creating output from BinaryTS file..." );
-	}
-	else {	if ( (__tslist == null) || (__tslist.size()==0) ) {
-			message = "No time series to process.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		} 
-		Message.printStatus ( 1, routine,
-		"Creating output from previously queried time series..." );
-	}
-
-	// Put together the Vector to output, given the requested ts_indices.
-	// Need to do more work if BinaryTS, but hopefully if BinaryTS
-	// batch mode will be used?!  Use a member __tslist_output so we can
-	// manage memory and not leave used if an exception occurs (clean up
-	// the next time).
-
-	int nts = __tslist.size();
-	if ( ts_indices == null ) {
-		// Use the entire list...
-		__tslist_output = __tslist;
-	}
-	else {	int ts_indices_size = ts_indices.length;
-		if ( __tslist_output == null ) {
-			__tslist_output = new Vector ( ts_indices_size );
-		}
-		else {	// This does not work because if the Vector is passed
-			// to TSViewJFrame, etc., the Vector is reused but the
-			// contents will have changed.  Therefore, need to
-			// create a new Vector for each output product.  The
-			// time series themselves can be re-used.
-			//__tslist_output.removeAllElements();
-			__tslist_output = new Vector ( ts_indices_size );
-		}
-		for ( int i = 0; i < ts_indices_size; i++ ) {
-			if ( (ts_indices[i] >= 0) && (ts_indices[i] < nts) ) {
-				__tslist_output.addElement (
-				__tslist.elementAt(ts_indices[i]) );
-			}
-		}
-	}
-
-	// Figure out the output.  This method is going to be called with
-	// legacy -o options (batch mode) as well as new PropList syntax.  Make
-	// sure to support legacy first and then phase in new approach...
-
-	int output_format = OUTPUT_NONE;
-	String precision_string = "*";
-	_preview_output = false;
-
-	String prop_value = props.getValue ( "OutputFormat" );
-	Message.printStatus ( 1, routine,"Output format is \""+prop_value+"\"");
-	String parameters = props.getValue ( "Parameters" );
-	if ( prop_value != null ) {
-		// Reports...
-
-		if ( prop_value.equalsIgnoreCase("-odata_coverage_report") ) {
-			output_format = OUTPUT_DATA_COVERAGE_REPORT;
-		}
-		else if ( prop_value.equalsIgnoreCase("-odata_limits_report")) {
-			output_format = OUTPUT_DATA_LIMITS_REPORT;
-		}
-		else if ( prop_value.equalsIgnoreCase(
-			"-omonth_mean_summary_report")) {
-			output_format = OUTPUT_MONTH_MEAN_SUMMARY_REPORT;
-		}
-		else if ( prop_value.equalsIgnoreCase(
-			"-omonth_total_summary_report")) {
-			output_format = OUTPUT_MONTH_TOTAL_SUMMARY_REPORT;
-		}
-		else if ( prop_value.equalsIgnoreCase("-oyear_to_date_report")){
-			output_format = OUTPUT_YEAR_TO_DATE_REPORT;
-			try {	_reference_date = DateTime.parse(parameters);
-			}
-			catch ( Exception e ) {
-				_reference_date = null;
-			}
-		}
-
-		// Time series file output...
-
-		else if ( prop_value.equalsIgnoreCase("-odatevalue") ) {
-			output_format = OUTPUT_DATEVALUE;
-		}
-		else if ( prop_value.equalsIgnoreCase(
-			"-onwsrfsesptraceensemble") ) {
-			output_format = OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE;
-		}
-		else if ( prop_value.equalsIgnoreCase("-onwscard") ) {
-			output_format = OUTPUT_NWSCARD_FILE;
-		}
-		else if ( prop_value.equalsIgnoreCase("-oriverware") ) {
-			output_format = OUTPUT_RIVERWARE_FILE;
-		}
-		else if ( prop_value.equalsIgnoreCase("-oshefa") ) {
-			output_format = OUTPUT_SHEFA_FILE;
-		}
-		else if ( prop_value.equalsIgnoreCase("-ostatemod") ) {
-			output_format = OUTPUT_STATEMOD;
-		}
-		else if ( prop_value.equalsIgnoreCase("-osummary") ) {
-			output_format = OUTPUT_SUMMARY;
-		}
-		else if ( prop_value.equalsIgnoreCase("-otable") ) {
-			output_format = OUTPUT_TABLE;
-		}
-		else if ( prop_value.equalsIgnoreCase("-osummarynostats") ) {
-			output_format = OUTPUT_SUMMARY_NO_STATS;
-		}
-
-		// Graph output...
-
-		else if ( prop_value.equalsIgnoreCase("-oannual_traces_graph")){
-			output_format = OUTPUT_ANNUAL_TRACES_GRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-obar_graph")){
-			output_format = OUTPUT_BAR_GRAPH;
-			// Use parameters for the position of the bars.
-		}
-		else if ( prop_value.equalsIgnoreCase("-odoublemass_graph")){
-			output_format = OUTPUT_DOUBLE_MASS_GRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-oduration_graph")){
-			output_format = OUTPUT_DURATION_GRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-olinegraph")){
-			output_format = OUTPUT_LINEGRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-olinelogygraph")){
-			output_format = OUTPUT_LINELOGYGRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-opointgraph")){
-			output_format = OUTPUT_POINT_GRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-oporgraph")){
-			output_format = OUTPUT_PORGRAPH;
-		}
-		else if (prop_value.equalsIgnoreCase("-oPredictedValue_graph")){
-			output_format = OUTPUT_PredictedValue_GRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase(
-			"-oPredictedValueResidual_graph")){
-			output_format = OUTPUT_PredictedValueResidual_GRAPH;
-		}
-		else if ( prop_value.equalsIgnoreCase("-oxyscatter_graph")){
-			output_format = OUTPUT_XY_SCATTER_GRAPH;
-		}
-	}
-	prop_value = props.getValue ( "OutputFile" );
-	if ( prop_value != null ) {
-		if ( prop_value.equalsIgnoreCase("-preview") ) {
-			_preview_output = true;
-		}
-		else {	_output_file = prop_value;
-		}
-	}
-	prop_value = props.getValue ( "Precision" );
-	if ( prop_value != null ) {
-		if (	prop_value.equals("*") ||
-			StringUtil.isInteger(prop_value) ) {
-			precision_string = prop_value;
-		}
-		else {	_output_file = prop_value;
-		}
-	}
-
-	if ( output_format == OUTPUT_STATEMOD ) {
-		try {	writeStateModTS ( __tslist_output, _output_file,
-			precision_string );
-		} catch ( Exception e ) {
-			message = "Error writing StateMod file \"" +
-			_output_file + "\"";
-			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
-			// Why is this done - batch mode only???
-			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
-			}
-			throw new IOException ( message );
-		}
-	}
-	else if ( output_format == OUTPUT_DATA_COVERAGE_REPORT ) {
-		PropList reportProps = new PropList ("ReportJFrame.props");
-		reportProps.set ( "HelpKey", "TSTool" );
-		reportProps.set ( "TotalWidth", "750" );
-		reportProps.set ( "TotalHeight", "550" );
-		reportProps.set ( "Title", "Data Coverage Report" );
-		reportProps.set ( "DisplayFont", "Courier" );
-		reportProps.set ( "DisplaySize", "11" );
-		// reportProps.set ( "DisplayStyle", Font.PLAIN );
-		reportProps.set ( "PrintFont", "Courier" );
-		// reportProps.set ( "PrintFont", Font.PLAIN );
-		reportProps.set ( "PrintSize", "7" );
-		reportProps.set ( "PageLength", "5000" );
-		reportProps.set ( "Search", "true" );
-
-		try {	// For now, put the code in here at the bottom of this
-			// file...
-			Vector report = createDataCoverageReport (
-				__tslist_output );
-			__gui.setWaitCursor( false );
-			new ReportJFrame ( report, reportProps );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
-			Message.printWarning ( 2, routine, e );
-		}
-	}
-	else if ( output_format == OUTPUT_DATA_LIMITS_REPORT ) {
-		PropList reportProps = new PropList ("ReportJFrame.props");
-		reportProps.set ( "HelpKey", "TSTool" );
-		reportProps.set ( "TotalWidth", "750" );
-		reportProps.set ( "TotalHeight", "550" );
-		reportProps.set ( "Title", "Data Limits Report" );
-		reportProps.set ( "DisplayFont", "Courier" );
-		reportProps.set ( "DisplaySize", "11" );
-		// reportProps.set ( "DisplayStyle", Font.PLAIN );
-		reportProps.set ( "PrintFont", "Courier" );
-		// reportProps.set ( "PrintFont", Font.PLAIN );
-		reportProps.set ( "PrintSize", "7" );
-		reportProps.set ( "PageLength", "5000" );
-		reportProps.set ( "Search", "true" );
-
-		try {	// For now, put the code in here at the bottom of this
-			// file...
-			Vector report = createDataLimitsReport(__tslist_output);
-			__gui.setWaitCursor ( false );
-			new ReportJFrame ( report, reportProps );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
-			Message.printWarning ( 2, routine, e );
-		}
-	}
-	else if ( output_format == OUTPUT_DATEVALUE ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with year to date report.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		try {
-		TS	tspt = null;
-		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
-			tspt = (TS)__tslist_output.elementAt(0);
-		}
-		String units = null;
-		if ( tspt != null ) {
-			units = tspt.getDataUnits();
-			Message.printStatus ( 1, "", "Data units are " + units);
-		}
-
-		// Format the comments to add to the top of the file.  In this
-		// case, add the commands used to generate the file...
-		if ( TSUtil.intervalsMatch ( __tslist_output )) {
-			// Need date precision to be day...
-			//DateTime date1 = _date1;
-			// Why was this set here????
-			// SAM - 2001-08-27
-			//if ( _date1 != null ) {
-			//	date1 = new DateTime ( _date1 );
-			//	date1.setPrecision (DateTime.PRECISION_DAY);
-			//	date1.setDay ( 1 );
-			//}
-			//DateTime date2 = _date2;
-			//if ( _date2 != null ) {
-			//	date2 = new DateTime ( _date2 );
-			//	date2.setPrecision (DateTime.PRECISION_DAY);
-			//	date2.setDay ( TimeUtil.numDaysInMonth(
-			//		date2.getMonth(), date2.getYear() ));
-			//}
-			//DateValueTS.writeTimeSeries ( __tslist_output,
-			//	_output_file,
-			//	date1, date2, units, true );
-			
-			__gui.setWaitCursor( true );
-			
-			DateValueTS.writeTimeSeriesList ( __tslist_output,
-				_output_file, __OutputStart_DateTime,
-				__OutputEnd_DateTime,
-				units, true );
-			__gui.setWaitCursor ( false );
-		}
-		else {	Message.printWarning ( 1, routine, "Unable to write " +
-			"DateValue time series of different intervals." );
-		}
-		} catch ( Exception e ) {
-			__gui.setWaitCursor ( false );
-			message = "Error writing DateValue file \"" +
-			_output_file + "\"";
-			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
-			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
-			}
-			throw new IOException ( message );
-		}
-	}
-	else if ( output_format == OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE ) {
-		try {	__gui.setWaitCursor ( true );
-			PropList esp_props = new PropList ( "esp" );
-			NWSRFS_ESPTraceEnsemble esp =
-				new NWSRFS_ESPTraceEnsemble (
-				__tslist_output, esp_props );
-			esp.writeESPTraceEnsembleFile ( _output_file );
-			__gui.setWaitCursor ( false );
-		} catch ( Exception e ) {
-			__gui.setWaitCursor ( false );
-			message =
-			"Error writing NWSRFS ESP Trace Ensemble file \"" +
-			_output_file + "\"";
-			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
-			throw new IOException ( message );
-		}
-	}
-	else if ( (output_format == OUTPUT_MONTH_MEAN_SUMMARY_REPORT) ||
-		(output_format == OUTPUT_MONTH_TOTAL_SUMMARY_REPORT) ) {
-		String daytype = "Mean";
-		PropList reportProps = new PropList ("ReportJFrame.props");
-		reportProps.set ( "HelpKey", "TSTool" );
-		reportProps.set ( "TotalWidth", "750" );
-		reportProps.set ( "TotalHeight", "550" );
-		if ( output_format == OUTPUT_MONTH_MEAN_SUMMARY_REPORT ) {
-			reportProps.set ( "Title",
-			"Monthly Summary Report (Daily Means)" );
-			daytype = "Mean";
-		}
-		else {	reportProps.set ( "Title",
-			"Monthly Summary Report (Daily Totals)" );
-			daytype = "Total";
-		}
-		reportProps.set ( "DisplayFont", "Courier" );
-		reportProps.set ( "DisplaySize", "11" );
-		// reportProps.set ( "DisplayStyle", Font.PLAIN );
-		reportProps.set ( "PrintFont", "Courier" );
-		// reportProps.set ( "PrintFont", Font.PLAIN );
-		reportProps.set ( "PrintSize", "7" );
-		reportProps.set ( "PageLength", "5000" );
-		reportProps.set ( "Search", "true" );
-
-		PropList sumprops = new PropList ( "" );
-		sumprops.set ( "DayType", daytype );
-		if ( __calendar_type == WATER_YEAR ) {
-			sumprops.set ( "CalendarType", "WaterYear" );
-		}
-		else {	sumprops.set ( "CalendarType", "CalendarYear" );
-		}
-
-		try {	// For now, put the code in here at the bottom of this
-			// file...
-			Vector report = createMonthSummaryReport (
-				__tslist_output, sumprops );
-			__gui.setWaitCursor ( false );
-			new ReportJFrame ( report, reportProps );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
-			Message.printWarning ( 2, routine, e );
-		}
-	}
-	else if ( output_format == OUTPUT_NWSCARD_FILE ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with NWS Card output.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		// Write a NWS Card file containing a single time series.
-		try {
-		TS	tspt = null;
-		int	list_size = 0;
-		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
-			tspt = (TS)__tslist_output.elementAt(0);
-			list_size = __tslist_output.size();
-		}
-		// NWS Card files can only contain one time series...
-		if ( list_size != 1 ) {
-			message =
-			"Only 1 time series can be written to a NWS Card file";
-			Message.printWarning ( 1, routine, message );
-			throw new Exception ( message );
-		}
-		String units = null;
-		if ( tspt != null ) {
-			units = tspt.getDataUnits();
-			Message.printStatus ( 1, "", "Data units are " + units);
-		}
-
-		// Format the comments to add to the top of the file.  In this
-		// case, add the commands used to generate the file...
-		int interval_mult = 1;
-		if ( _binary_ts_used ) {
-			interval_mult = _binary_ts.getDataIntervalMult();
-		}
-		else {
-			interval_mult = ((TS)
-			__tslist_output.elementAt(0)).getDataIntervalMult();
-		}
-		// Need date precision to be hour and NWS uses hour 1 - 24 so
-		// adjust dates accordingly.
-		DateTime date1 = __OutputStart_DateTime;
-		if ( __OutputStart_DateTime != null ) {
-			date1 = new DateTime ( __OutputStart_DateTime );
-			date1.setPrecision (DateTime.PRECISION_HOUR);
-			date1.setDay ( 1 );
-			date1.setHour ( interval_mult );
-		}
-		DateTime date2 = __OutputEnd_DateTime;
-		if ( __OutputEnd_DateTime != null ) {
-			date2 = new DateTime ( __OutputEnd_DateTime );
-			date2.setPrecision (DateTime.PRECISION_HOUR);
-			date2.setDay ( TimeUtil.numDaysInMonth(
-				date2.getMonth(), date2.getYear() ));
-			date2.addDay ( 1 );
-			date2.setHour ( 0 );
-		}
-		__gui.setWaitCursor ( true );
-		NWSCardTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
-			_output_file, date1, date2, units, true );
-		__gui.setWaitCursor ( false );
-		} catch ( Exception e ) {
-			__gui.setWaitCursor ( false );
-			message = "Error writing NWS Card file \"" +
-			_output_file + "\"";
-			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
-			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
-			}
-			throw new IOException ( message );
-		}
-	}
-	else if ( output_format == OUTPUT_RIVERWARE_FILE ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with RiverWare file.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		// Write a RiverWare file containing a single time series.
-		try {
-		TS	tspt = null;
-		int	list_size = 0;
-		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
-			tspt = (TS)__tslist_output.elementAt(0);
-			list_size = __tslist_output.size();
-		}
-		// RiverWare files can only contain one time series...
-		if ( list_size != 1 ) {
-			message =
-			"Only 1 time series can be written to a RiverWare file";
-			Message.printWarning ( 1, routine, message );
-			throw new Exception ( message );
-		}
-		String units = null;
-		if ( tspt != null ) {
-			units = tspt.getDataUnits();
-			Message.printStatus ( 1, "", "Data units are " + units);
-		}
-
-		// Format the comments to add to the top of the file.  In this
-		// case, add the commands used to generate the file...
-		__gui.setWaitCursor ( true );
-		RiverWareTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
-			_output_file, __OutputStart_DateTime,
-			__OutputEnd_DateTime, units,
-			1.0, null, -1.0, true );
-		__gui.setWaitCursor ( false );
-		} catch ( Exception e ) {
-			__gui.setWaitCursor ( false );
-			message = "Error writing RiverWare file \"" +
-			_output_file + "\"";
-			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
-			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
-			}
-			throw new IOException ( message );
-		}
-	}
-	else if ( output_format == OUTPUT_SHEFA_FILE ) {
-		try {	__gui.setWaitCursor ( true );
-			Vector units_Vector = null;
-			Vector PE_Vector = ShefATS.getPEForTimeSeries (
-					__tslist_output );
-			Vector Duration_Vector = null;
-			Vector AltID_Vector = null;
-			PropList shef_props = new PropList ( "SHEF" );
-			shef_props.set ( "HourMax=24" );
-			ShefATS.writeTimeSeriesList ( __tslist_output,
-				_output_file, __OutputStart_DateTime,
-				__OutputEnd_DateTime,
-				units_Vector, PE_Vector,
-				Duration_Vector, AltID_Vector, shef_props );
-			__gui.setWaitCursor ( false );
-		} catch ( Exception e ) {
-			__gui.setWaitCursor ( false );
-			message = "Error writing SHEF A file \"" +
-			_output_file + "\"";
-			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
-			throw new IOException ( message );
-		}
-	}
-	else if ( (output_format == OUTPUT_SUMMARY) ||
-		(output_format == OUTPUT_SUMMARY_NO_STATS) ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with year to date report.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		try {
-		// First need to get the summary strings...
-		PropList sumprops = new PropList ( "Summary" );
-		sumprops.set ( "Format", "Summary" );
-		if ( __calendar_type == WATER_YEAR ) {
-			sumprops.set ( "CalendarType", "WaterYear" );
-		}
-		else {	sumprops.set ( "CalendarType", "CalendarYear" );
-		}
-		if ( _detailedheader ) {
-			sumprops.set("PrintGenesis","true");
-		}
-		else {	sumprops.set("PrintGenesis","false");
-		}
-		// Check the first time series.  If NWSCARD or DateValue, don't
-		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
-			transition to HydroBase comments being only additional
-			information
-		else {	// HydroBase, so use the comments for the header...
-			sumprops.set ( "UseCommentsForHeader", "true" );
-		}
-		if ( _non_co_detected ) {
-			// Data other that HydroBase, so format using standard
-			// headers...
-			sumprops.set ( "UseCommentsForHeader", "false" );
-		}
-		*/
-		sumprops.set ( "PrintHeader", "true" );
-		sumprops.set ( "PrintComments", "true" );
-		if ( output_format == OUTPUT_SUMMARY ) {
-			// Get the statistics...
-			sumprops.set ( "PrintMinStats", "true" );
-			sumprops.set ( "PrintMaxStats", "true" );
-			sumprops.set ( "PrintMeanStats", "true" );
-			sumprops.set ( "PrintNotes", "true" );
-		}
-		else if ( output_format == OUTPUT_SUMMARY_NO_STATS ) {
-			// Don't want the statistics or the notes but do want
-			// a line at the bottom (kludge for Ayres software)...
-			sumprops.set ( "PrintMinStats", "false" );
-			sumprops.set ( "PrintMaxStats", "false" );
-			sumprops.set ( "PrintMeanStats", "false" );
-			sumprops.set ( "PrintNotes", "false" );
-		}
-
-		if ( IOUtil.isBatch() || !_preview_output) {
-			try {	Vector summary = TSUtil.formatOutput (
-				_output_file,
-				__tslist_output, sumprops );	
-				// Just write the summary to the given file...
-/* REVISIT - SAM 2004-02-13 - why is this commented out if NOT frost dates?
-				if (	(_output_filter ==
-					OUTPUT_FILTER_DATA_COVERAGE)
-					&& !_frost_dates_detected ) {
-					// Add the summary to the results...
-					summary.addElement ( "" );
-					summary =
-					StringUtil.addListToStringList (
-					summary,
-					TSAnalyst.getDataCoverageReport() );
-				}
-*/
-				IOUtil.printStringList ( _output_file, summary);
-			} catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Unable to print summary to file \"" +
-				_output_file + "\"" );
-			}
-		}
-		else {	PropList reportProps=new PropList("ReportJFrame.props");
-			reportProps.set ( "HelpKey", "TSTool" );
-			reportProps.set ( "TotalWidth", "750" );
-			reportProps.set ( "TotalHeight", "550" );
-			reportProps.set ( "Title", "Summary" );
-			reportProps.set ( "DisplayFont", "Courier" );
-			reportProps.set ( "DisplaySize", "11" );
-			// reportProp.set ( "DisplayStyle", Font.PLAIN );
-			reportProps.set ( "PrintFont", "Courier" );
-			// reportProp.set ( "PrintFont", Font.PLAIN );
-			reportProps.set ( "PrintSize", "7" );
-			//reportProps.set ( "PageLength", "100" );
-			reportProps.set ( "PageLength", "100000" );
-
-			try {	Vector summary = TSUtil.formatOutput ( 
-				__tslist_output, sumprops );
-				// Now display (the user can save as a file,
-				// etc.).
-/*
-				if (	(_output_filter ==
-					OUTPUT_FILTER_DATA_COVERAGE)
-					&& !_frost_dates_detected ) {
-					// Add the summary to the results...
-					summary.addElement ( "" );
-					summary =
-					StringUtil.addListToStringList (
-					summary,
-					TSAnalyst.getDataCoverageReport() );
-				}
-*/
-				__gui.setWaitCursor ( false );
-				new ReportJFrame ( summary, reportProps );
-			}
-			catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Error printing summary." );
-				Message.printWarning ( 2, routine, e );
-			}
-		}
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
-			message = "Error creating summary";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-	}
-	else if ( output_format == OUTPUT_TABLE ) {
-		// A table output.  For now, this does not understand BinaryTS
-		// output.  Just copy the graph code and change for table.  AT
-		// some point, need to initialize all the view data at the
-		// same time in case the user changes views interactively after
-		// the initial view.
-		if ( _binary_ts_used ) {
-			message = "BinaryTS cannot be used with tables.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		// Temporary copy of data...
-		Vector tslist = __tslist_output;
-		try {
-		if ( IOUtil.isBatch() ) {
-			Message.printWarning ( 1, routine,
-			"Can only generate a table from GUI" );
-			return;
-		}
-
-		PropList graphprops = new PropList ( "Table" );
-		// Set graph properties for a simple graph...
-		graphprops.set ( "ExtendedLegend", "true" );
-		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
-		graphprops.set ( "DataUnits", 
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		graphprops.set ( "YAxisLabelString",
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		if ( __calendar_type == WATER_YEAR ) {
-			graphprops.set ( "CalendarType", "WaterYear" );
-		}
-		else {	graphprops.set ( "CalendarType", "CalendarYear" );
-		}
-		// Check the first time series.  If NWSCARD or DateValue, don't
-		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
-			transition to HydroBase comments being only additional
-			information
-		if ( _non_co_detected ) {
-			graphprops.set ( "UseCommentsForHeader", "false" );
-		}
-		else {	graphprops.set ( "UseCommentsForHeader", "true" );
-		}
-		*/
-		// Set the total size of the graph window...
-		graphprops.set ( "TotalWidth", "600" );
-		graphprops.set ( "TotalHeight", "400" );
-
-		// Default properties...
-		graphprops.set("GraphType=Line");
-
-		graphprops.set ( "InitialView", "Table" );
-		// Summary properties for secondary displays (copy
-		// from summary output)...
-		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
-		graphprops.set ( "TotalWidth", "600" );
-		graphprops.set ( "TotalHeight", "400" );
-		//graphprops.set ( "Title", "Summary" );
-		graphprops.set ( "DisplayFont", "Courier" );
-		graphprops.set ( "DisplaySize", "11" );
-		graphprops.set ( "PrintFont", "Courier" );
-		graphprops.set ( "PrintSize", "7" );
-		graphprops.set ( "PageLength", "100" );
-		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
-		addTSViewTSProductDMIs ( view );
-		addTSViewTSProductAnnotationProviders ( view );
-		// For garbage collection...
-		view = null;
-		tslist = null;
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
-			message = "Error creating table";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-	}
-	else if ( output_format == OUTPUT_YEAR_TO_DATE_REPORT ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with year to date report.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		PropList reportProps = new PropList ("ReportJFrame.props");
-		reportProps.set ( "HelpKey", "TSTool" );
-		reportProps.set ( "TotalWidth", "750" );
-		reportProps.set ( "TotalHeight", "550" );
-		reportProps.set ( "Title", "Year to Date Report" );
-		reportProps.set ( "DisplayFont", "Courier" );
-		reportProps.set ( "DisplaySize", "11" );
-		// reportProps.set ( "DisplayStyle", Font.PLAIN );
-		reportProps.set ( "PrintFont", "Courier" );
-		// reportProps.set ( "PrintFont", Font.PLAIN );
-		reportProps.set ( "PrintSize", "7" );
-		reportProps.set ( "PageLength", "5000" );
-		reportProps.set ( "Search", "true" );
-
-		try {	Vector report = createYearToDateReport (__tslist_output,
-				_reference_date, null );
-			__gui.setWaitCursor ( false );
-			new ReportJFrame ( report, reportProps );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
-			Message.printWarning ( 2, routine, e );
-		}
-	}
-	else if (	(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ||
-			(output_format == OUTPUT_BAR_GRAPH) ||
-			(output_format == OUTPUT_DOUBLE_MASS_GRAPH) ||
-			(output_format == OUTPUT_DURATION_GRAPH) ||
-			(output_format == OUTPUT_LINEGRAPH) ||
-			(output_format == OUTPUT_LINELOGYGRAPH) ||
-			(output_format == OUTPUT_PERCENT_EXCEED_GRAPH) ||
-			(output_format == OUTPUT_POINT_GRAPH) ||
-			(output_format == OUTPUT_PORGRAPH) ||
-			(output_format == OUTPUT_PredictedValue_GRAPH) ||
-			(output_format == OUTPUT_PredictedValueResidual_GRAPH)||
-			(output_format == OUTPUT_XY_SCATTER_GRAPH) ) {
-		// A graph type.  For now, this does not understand BinaryTS
-		// output...
-		if ( _binary_ts_used ) {
-			message = "BinaryTS cannot be used with graphs.";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-		// Temporary copy of data...
-		Vector tslist = __tslist_output;
-		try {
-		if ( IOUtil.isBatch() ) {
-			Message.printWarning ( 1, routine,
-			"Can only graph from GUI" );
-			return;
-		}
-
-		PropList graphprops = new PropList ( "Graph" );
-		graphprops.set ( "ExtendedLegend", "true" );
-		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
-		graphprops.set ( "DataUnits", 
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		graphprops.set ( "YAxisLabelString",
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		if ( __calendar_type == WATER_YEAR ) {
-			graphprops.set ( "CalendarType", "WaterYear" );
-		}
-		else {	graphprops.set ( "CalendarType", "CalendarYear" );
-		}
-		// Check the first time series.  If NWSCARD or DateValue, don't
-		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
-			transition to HydroBase comments being only additional
-			information
-		if ( _non_co_detected ) {
-			graphprops.set ( "UseCommentsForHeader", "false" );
-		}
-		else {	graphprops.set ( "UseCommentsForHeader", "true" );
-		}
-		*/
-		// Set the total size of the graph window...
-		graphprops.set ( "TotalWidth", "600" );
-		graphprops.set ( "TotalHeight", "400" );
-
-		if (	(tslist != null) &&
-			(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ) {
-/* Currently disabled...
-			// Go through each time series in the list and break
-			// into annual traces, and then plot those results...
-			Message.printStatus ( 1, routine,
-			"Splitting time series into traces..." );
-			int size = tslist.size();
-			Vector new_tslist = new Vector ( size );
-			Vector traces = null;
-			DateTime reference_date = new DateTime (
-				DateTime.PRECISION_DAY );
-			reference_date.setYear ( _reference_year );
-			reference_date.setMonth ( 1 );
-			reference_date.setDay ( 1 );
-			size = tslist.size();
-			for ( int i = 0; i < size; i++ ) {
-				ts = (TS)tslist.elementAt(i);
-				if ( ts == null ) {
-					continue;
-				}
-				// Get the trace time series, using Jan 1 of the
-				// reference year.
-				// This allows the raw data to temporally
-				// correct but is a pain to deal with in the
-				// plot code...
-				//traces = TSUtil.getTracesFromTS ( ts,
-				//		reference_date, null );
-				// Using this results in some funny labels but
-				// at least things plot...
-				traces = TSUtil.getTracesFromTS ( ts,
-						reference_date, reference_date);
-				if ( traces == null ) {
-					// If real-time data, add to the
-					// output...
-					if (	ts.getDataIntervalBase() ==
-						TimeInterval.IRREGULAR ) {
-						new_tslist.addElement ( ts );
-					}
-				}
-				else {	// Add the traces to the tslist.  Set
-					// the legend explicitly because the
-					// default is to print the period which
-					// is not useful...
-					int traces_size = traces.size();
-					Message.printStatus ( 1, routine,
-					"Split " + ts.getIdentifier() +
-					" into " + traces_size + " traces" );
-					TS ts2 = null;
-					for ( int j = 0; j < traces_size; j++ ){
-						ts2 = (TS)traces.elementAt(j);
-						ts2.setLegend ( "%D, %F" );
-						new_tslist.addElement ( ts2 );
-					}
-				}
-			}
-			// Now replace the original list with the new one...
-			tslist = new_tslist;
-			// The offset only affects the graph.  All other data
-			// are as if they were slices out of the original
-			// data...
-			//graphprops.set ("ReferenceDate",
-			//reference_date.toString());
-			graphprops.set ( "Title", "Annual Traces" );
-			graphprops.set ( "XAxis.Format", "MM-DD" );
-*/
-		}
-		else if ( output_format == OUTPUT_BAR_GRAPH ) {
-			graphprops.set("GraphType=Bar");
-			graphprops.set("BarPosition=" + parameters );
-		}
-		else if ( output_format == OUTPUT_DOUBLE_MASS_GRAPH ) {
-			graphprops.set("GraphType=Double-Mass");
-		}
-		else if ( output_format == OUTPUT_DURATION_GRAPH ) {
-			graphprops.set("GraphType=Duration");
-		}
-		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
-			graphprops.set("YAxisType=Log");
-			// Handle flags...
-			/* REVISIT SAM 2006-05-22
-			Can be very slow because blank labels are not ignored
-			in low-level code.
-			GRTS_Util.addDefaultPropertiesForDataFlags (
-				tslist, graphprops );
-			*/
-		}
-		else if ( output_format == OUTPUT_PERCENT_EXCEED_GRAPH ) {
-			graphprops.set("GraphType=PercentExceedance");
-			graphprops.set("Title=Period Exceedance Curve");
-			graphprops.set("XAxisLabelString=" +
-				"Percent of Time Exceeded");
-		}
-		else if ( output_format == OUTPUT_POINT_GRAPH ) {
-			graphprops.set("GraphType=Point");
-			// Handle flags...
-			/* REVISIT SAM 2006-05-22
-			Can be very slow because blank labels are not ignored
-			in low-level code.
-			GRTS_Util.addDefaultPropertiesForDataFlags (
-				tslist, graphprops );
-			*/
-		}
-		else if ( output_format == OUTPUT_PORGRAPH ) {
-			graphprops.set("GraphType=PeriodOfRecord");
-			graphprops.set("LineWidth=Thick");
-			graphprops.set("Title=Period of Record");
-			graphprops.set("YAxisLabelString=Legend Index");
-		}
-		else if ( output_format == OUTPUT_PredictedValue_GRAPH ) {
-			graphprops.set("GraphType=PredictedValue");
-		}
-		else if ( output_format == OUTPUT_PredictedValueResidual_GRAPH){
-			graphprops.set("GraphType=PredictedValueResidual");
-		}
-		else if ( output_format == OUTPUT_XY_SCATTER_GRAPH ) {
-			graphprops.set("GraphType=XY-Scatter");
-		}
-		else {	// Default properties...
-			graphprops.set("GraphType=Line");
-			// Handle flags...
-			/* REVISIT SAM 2006-05-22
-			Can be very slow because blank labels are not ignored
-			in low-level code.
-			GRTS_Util.addDefaultPropertiesForDataFlags (
-				tslist, graphprops );
-			*/
-		}
-
-		// For now always use new graph...
-		graphprops.set ( "InitialView", "Graph" );
-		// Summary properties for secondary displays (copy
-		// from summary output)...
-		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
-		graphprops.set ( "TotalWidth", "600" );
-		graphprops.set ( "TotalHeight", "400" );
-		//graphprops.set ( "Title", "Summary" );
-		graphprops.set ( "DisplayFont", "Courier" );
-		graphprops.set ( "DisplaySize", "11" );
-		graphprops.set ( "PrintFont", "Courier" );
-		graphprops.set ( "PrintSize", "7" );
-		graphprops.set ( "PageLength", "100" );
-		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
-		// Connect dynamic data objects...
-		addTSViewTSProductDMIs ( view );
-		addTSViewTSProductAnnotationProviders ( view );
-		// For garbage collection...
-		view = null;
-		tslist = null;
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
-			message = "Error creating graph";
-			Message.printWarning ( 1, routine, message );
-			throw new IOException ( message );
-		}
-	}
-
-	Message.printStatus ( 1, routine, "Ending time series output at:  " +
-	new DateTime(DateTime.DATE_CURRENT).toString() );
-}
-
-/**
-Process a time series action, meaning insert or update in the list.
-@param ts_action INSERT_TS to insert at the position, UPDATE_TS to update at
-the position, NONE to do to nothing.
-@param ts Time series to act on.
-@param ts_pos Position in the time series list to perform action.
-@exception Exception if an error occurs.
-*/
-public void processTimeSeriesAction ( int ts_action, TS ts, int ts_pos )
-throws Exception
-{	if ( ts_action == INSERT_TS ) {
-		// Add new time series to the list...
-		setTimeSeries ( ts, ts_pos );
-		updateComments ( ts );
-	}
-	else if ( ts_action == UPDATE_TS ) {
-		// Update in the time series list...
-		setTimeSeries ( ts, ts_pos );
-		updateComments ( ts );
-	}
-}
-
-// REVISIT SAM 2006-05-02
-// Need to phase out app_PropList or make the exchange of control information
-// more robust
+//REVISIT SAM 2006-05-02
+//Need to phase out app_PropList or make the exchange of control information
+//more robust
 /**
 Process a list of time series commands, resulting in a vector of time series
 (and/or setting data members and properties in memory).  The commands include
@@ -8130,6 +6796,8 @@ ALL commands.  The resulting time series are saved in memory (or a BinaryTS
 file) and can be output using the processTimeSeries() method).
 <b>Filling with historic averages is handled for monthly time series
 so that original data averages are used.</b>
+@param command_Vector The Vector of Command from the TSCommandProcessor,
+to be processed.
 @param app_PropList if not null, then properties are set as the commands are
 run.  This is typically used when running commands prior to using an edit
 dialog in the TSTool GUI, as follows:
@@ -8139,10 +6807,11 @@ dialog in the TSTool GUI, as follows:
 </tr>
 
 <tr>
-<td><b>WorkingDir</b></td>
-<td>Will be set if a setWorkingDir() command is encountered.
+<td><b>CreateOutput</b></td>
+<td>Indicate whether output files should be created.  False is faster but
+results in incomplete products.
 </td>
-<td>Working directory will not be set.</td>
+<td>True - create output files.</td>
 </tr>
 
 <tr>
@@ -8154,27 +6823,64 @@ processing.
 </td>
 <td>False</td>
 </tr>
+
+<tr>
+<td><b>WorkingDir</b></td>
+<td>Will be set if a setWorkingDir() command is encountered.
+</td>
+<td>Working directory will not be set.</td>
+</tr>
+
 </table>
 */
-public void processTimeSeriesCommands ( PropList app_PropList )
+protected void processCommands ( Vector command_Vector,
+		PropList app_PropList )
 throws Exception
 {	String	message, routine = "TSEngine.processTimeSeriesCommands";
 	String	tsident_string = null;
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
+	
+	// Save the passed in properties (formed in the TSCommandProcessor) request
+	// call, so that they can be retrieved with other requests.
+	
+	if ( app_PropList == null ) {
+		app_PropList = new PropList ( "TSEngine" );
+	}
+	__processor_PropList = app_PropList;
 
-	// Evaluate whether the processing is occurring in recursive fashion
-	// (e.g., because runCommands() is used).
-
-	boolean AppendResults_boolean = false;	// If true, do not clear the
-						// time series between recursive
-						// calls.
-	String Recursive = null;		// Indicate whether a recursive
-						// run of the processor is
-						// being made.
+	// Initialize the working directory to the initial directory that is
+	// passed in.  Do this because software may request the working directory that
+	// is the result of processing and the initial directory may never have
+	// been changed dynamically.
+	
+	String InitialWorkingDir = __processor_PropList.getValue ( "InitialWorkingDir" );
+	if ( InitialWorkingDir != null ) {
+		__processor_PropList.set ( "WorkingDir", InitialWorkingDir );
+	}
+	Message.printStatus(2, routine,"InitialWorkingDir=" + __processor_PropList.getValue("WorkingDir"));
+	
+	// Indicate whether output products/files should be created, or
+	// just time series (to allow interactive graphing).
+	boolean CreateOutput_boolean = true;
+	if ( __processor_PropList != null ) {
+		String CreateOutput = app_PropList.getValue ( "CreateOutput" );
+		if ( (CreateOutput != null) && CreateOutput.equalsIgnoreCase("False")){
+			CreateOutput_boolean = true;
+		}
+	}
+	Message.printStatus(2, routine,"CreateOutput=" + __processor_PropList.getValue("CreateOutput"));
+	
+	// Indicate whether time series should be cleared between runs.
+	// If true, do not clear the time series between recursive
+	// calls.  This is somewhat experimental to evaluate a master
+	// commands file that runs other commands files.
+	boolean AppendResults_boolean = false;
+	// Indicate whether a recursive run of the processor is
+	// being made (e.g., because runCommands() is used).
 	boolean Recursive_boolean = false;
-	if ( app_PropList != null ) {
-		Recursive = app_PropList.getValue ( "Recursive" );
+	if ( __processor_PropList != null ) {
+		String Recursive = app_PropList.getValue ( "Recursive" );
 		if ( (Recursive != null) && Recursive.equalsIgnoreCase("True")){
 			Recursive_boolean = true;
 			// Default for recursive runs is to NOT append
@@ -8182,6 +6888,8 @@ throws Exception
 			AppendResults_boolean = false;
 		}
 	}
+	Message.printStatus(2, routine,"Recursive=" + __processor_PropList.getValue("Recursive"));
+	/* FIXME SAM 2007-08-10 Need to enable recursion.
 	Vector tsexpression_list = null;	// Local copy of command strings
 						// to process.
 	if ( Recursive_boolean ) {
@@ -8189,25 +6897,16 @@ throws Exception
 	}
 	else {	tsexpression_list = _tsexpression_list;
 	}
+	*/
 
-	// REVISIT SAM 2006-05-02
-	// When will this get triggered?  It is not a very friendly message.
-	// Hopefully the application is catching this.
-	if ( tsexpression_list == null ) {
-		Message.printWarning ( 1, routine,
-		"Command list is empty (null)." );
-		return;
-	}
-	int size = tsexpression_list.size();
+	int size = __ts_processor.size();
 	Message.printStatus ( 1, routine, "Processing " + size+" commands..." );
 	StopWatch stopwatch = new StopWatch();
 	stopwatch.start();
 	String expression = null;
 	// Free all data from the previous run...
 	if ( !AppendResults_boolean ) {
-		if ( __tslist != null ) {
-			__tslist.removeAllElements();
-		}
+		clearResults ();
 	}
 	_binary_ts = null;
 	_binary_ts_used = false;
@@ -8217,8 +6916,8 @@ throws Exception
 	String method = null;	// Method to execute
 	String	alias = null,	// First (and often only) alias
 				// command(alias,...)
-		alias2 = null,	// Second time series alias (if needed)
-		tsalias = null;	// TS xxx = alias
+	alias2 = null,	// Second time series alias (if needed)
+	tsalias = null;	// TS xxx = alias
 				// Aliases for time series
 
 	// Go through the expressions up front one time and set some important
@@ -8226,11 +6925,13 @@ throws Exception
 
 	String first_token = null;
 	boolean in_comment = false;
+	Command command = null;	// The command to process
 	for ( int i = 0; i < size; i++ ) {
 		ts = null;	// Initialize each time to allow for checks
 				// below.
 		tokens = null;
-		expression = (String)tsexpression_list.elementAt(i);
+		command = __ts_processor.get(i);
+		expression = command.toString();
 		if ( expression == null ) {
 			continue;
 		}
@@ -8318,7 +7019,9 @@ throws Exception
 			// Do not indent the body inside the try!
 		ts = null;
 		ts_action = NONE;
-		expression = (String)tsexpression_list.elementAt(i);
+		//expression = (String)tsexpression_list.elementAt(i);
+		command = __ts_processor.get(i);
+		expression = command.toString();
 		if ( expression == null ) {
 			continue;
 		}
@@ -8327,6 +7030,8 @@ throws Exception
 			">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 		Message.printStatus ( 1, routine,
 			"Start processing command \"" + expression +"\"");
+		// Notify any listeners that the command is running...
+		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, command );
 
 		if ( expression.equals("") ) {
 			// Empty line...
@@ -10031,20 +8736,15 @@ throws Exception
 		else if ( expression.regionMatches(true,0,"-units",0,6) ) {
 			tokens =StringUtil.breakStringList(expression, "(,) ",
 				StringUtil.DELIM_SKIP_BLANKS );
-			if ( (tokens == null) || (tokens.size() != 2) ) {
-				Message.printWarning ( 1, routine, 
-				"Invalid -units command: \"" + expression +
-				"\"" );
-				continue;
-			}
-			setUnits ( (String)tokens.elementAt(1) );
-			Message.printStatus ( 1, routine,
-			"Output units will be \"" + _units + "\"" );
+			Message.printWarning ( 1, routine,
+					"-units is obsolete.\n" +
+					"Other commands now handle units." );
+					++update_count;
 		}
 		else if(expression.regionMatches(true,0,"writeDateValue",0,14)){
 			// Write the time series in memory to a DateValue
 			// time series file...
-			if ( !__create_output ) {
+			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10056,7 +8756,7 @@ throws Exception
 		else if ( expression.regionMatches(true,0,"writeNwsCard",0,12)){
 			// Write the time series in memory to an NWS Card
 			// time series file...
-			if ( !__create_output ) {
+			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10069,20 +8769,21 @@ throws Exception
 		else if(expression.regionMatches(true,0,"writeStateCU",0,12) ){
 			// Write the time series in memory to a StateCU time
 			// series file...
-			if ( !__create_output ) {
+			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
 				continue;
 			}
-			do_writeStateCU ( expression );
+			do_writeStateCU ( expression,
+					formatOutputHeaderComments(command_Vector) );
 			// No action needed at end...
 			continue;
 		}
 		else if ( expression.regionMatches(true,0,"writeSummary",0,12)){
 			// Write the time series in memory to a summary
 			// format...
-			if ( !__create_output ) {
+			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
 				"Skipping \"" + expression +
 				"\" because output is to be ignored." );
@@ -10124,7 +8825,7 @@ throws Exception
 
 		// Detect a time series identifier, which needs to be processed
 		// to read the time series...
-		else if ( isTSID(expression) ) {
+		else if ( TSCommandProcessorUtil.isTSID(expression) ) {
 			// Probably a raw time series identifier.
 			// Try to read it...
 			if ( Message.isDebugOn ) {
@@ -10193,7 +8894,7 @@ throws Exception
 					expression + "\"" );
 				}
 				c.initializeCommand ( expression,
-					new TSCommandProcessor(this),
+					__ts_processor,
 					command_tag, 2, true );
 				// REVISIT SAM 2005-05-11 Is this the best
 				// place for this or should it be in the
@@ -10329,6 +9030,8 @@ throws Exception
 			__cancel_processing = false;
 			break;
 		}
+		// Notify any listeners that the command is done running...
+		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, command );
 	}
 
 	// Change so from this point user always has to acknowledge the
@@ -10383,7 +9086,10 @@ throws Exception
 			Message.printWarning ( 1, routine,
 			"There were warnings processing commands.  " +
 			"The output may be incomplete." );
-			__gui.quitProgram ( 1 );
+			// FIXME SAM 2007-08-20 Need to figure out how to get the
+			// exit status out of the processor and allow calling
+			// code to exit.
+			//__gui.quitProgram ( 1 );
 		}
 		else {	Message.printWarning ( 1, routine,
 			"There were warnings processing commands.  " +
@@ -10406,12 +9112,1055 @@ throws Exception
 }
 
 /**
+Process a list of time series to produce an output product.
+This version is typically called only when running in batch mode because the
+legacy settings (like -ostatemod) have been set in a command file.  The
+overloaded version is called with the appropriate arguments.  Currently, only
+-ostatemod, -osummary, -osummarynostats, and -o File are evaluated.
+@exception IOException if there is an error generating the results.
+*/
+protected void processTimeSeries ()
+throws IOException
+{	PropList proplist = new PropList ( "processTimeSeries" );
+	if ( _output_format == OUTPUT_STATEMOD ) {
+		proplist.set ( "OutputFormat=-ostatemod" );
+		proplist.set ( "OutputFile=" + _output_file );
+	}
+	else if ( _output_format == OUTPUT_SUMMARY ) {
+		proplist.set ( "OutputFormat=-osummary" );
+		proplist.set ( "OutputFile=" + _output_file );
+	}
+	else if ( _output_format == OUTPUT_SUMMARY_NO_STATS ) {
+		proplist.set ( "OutputFormat=-osummarynostats" );
+		proplist.set ( "OutputFile=" + _output_file );
+	}
+	processTimeSeries ( null, proplist );
+	proplist = null;
+}
+
+/**
+Process a list of time series to produce an output product.
+The time series are typically generated from a previous call to
+processCommands() or processTimeSeriesCommands().
+@param ts_indices List of time series indices to process from the internal
+time series list.  If null, all are processed.  The indices do not have to be
+in order.
+@param proplist List of properties to define the output:
+<table width=100% cellpadding=10 cellspacing=0 border=2>
+<tr>
+<td><b>Property</b></td>	<td><b>Description</b></td>	<td><b>Default</b></td>
+</tr>
+
+<tr>
+<td><b>OutputFormat</b></td>
+<td>
+<ul>
+<li>-ostatemod  Output StateMod file.</li>
+</ul>
+</td>
+<td>No default.</td>
+</tr>
+
+<tr>
+<td><b>OutputFile</b></td>
+<td>Output file.</td>
+<td>No default.</td>
+</tr>
+</table>
+@param comments Comments to add to the to of output files.
+@exception IOException if there is an error generating the results.
+*/
+protected void processTimeSeries ( int ts_indices[], PropList proplist )
+throws IOException
+{	String	message = null,	// Message string
+		routine = "TSEngine.processTimeSeries";
+
+	// Define a local proplist to better deal with null...
+	PropList props = proplist;
+	if ( props == null ) {
+		props = new PropList ( "" );
+	}
+
+	if ( _binary_ts_used ) {
+		Message.printStatus ( 1, routine,
+		"Creating output from BinaryTS file..." );
+	}
+	else {	if ( (__tslist == null) || (__tslist.size()==0) ) {
+			message = "No time series to process.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		} 
+		Message.printStatus ( 1, routine,
+		"Creating output from previously queried time series..." );
+	}
+
+	// Put together the Vector to output, given the requested ts_indices.
+	// Need to do more work if BinaryTS, but hopefully if BinaryTS
+	// batch mode will be used?!  Use a member __tslist_output so we can
+	// manage memory and not leave used if an exception occurs (clean up
+	// the next time).
+
+	int nts = __tslist.size();
+	if ( ts_indices == null ) {
+		// Use the entire list...
+		__tslist_output = __tslist;
+	}
+	else {	int ts_indices_size = ts_indices.length;
+		if ( __tslist_output == null ) {
+			__tslist_output = new Vector ( ts_indices_size );
+		}
+		else {	// This does not work because if the Vector is passed
+			// to TSViewJFrame, etc., the Vector is reused but the
+			// contents will have changed.  Therefore, need to
+			// create a new Vector for each output product.  The
+			// time series themselves can be re-used.
+			//__tslist_output.removeAllElements();
+			__tslist_output = new Vector ( ts_indices_size );
+		}
+		for ( int i = 0; i < ts_indices_size; i++ ) {
+			if ( (ts_indices[i] >= 0) && (ts_indices[i] < nts) ) {
+				__tslist_output.addElement (
+				__tslist.elementAt(ts_indices[i]) );
+			}
+		}
+	}
+
+	// Figure out the output.  This method is going to be called with
+	// legacy -o options (batch mode) as well as new PropList syntax.  Make
+	// sure to support legacy first and then phase in new approach...
+
+	int output_format = OUTPUT_NONE;
+	String precision_string = "*";
+	_preview_output = false;
+
+	String prop_value = props.getValue ( "OutputFormat" );
+	Message.printStatus ( 1, routine,"Output format is \""+prop_value+"\"");
+	String parameters = props.getValue ( "Parameters" );
+	if ( prop_value != null ) {
+		// Reports...
+
+		if ( prop_value.equalsIgnoreCase("-odata_coverage_report") ) {
+			output_format = OUTPUT_DATA_COVERAGE_REPORT;
+		}
+		else if ( prop_value.equalsIgnoreCase("-odata_limits_report")) {
+			output_format = OUTPUT_DATA_LIMITS_REPORT;
+		}
+		else if ( prop_value.equalsIgnoreCase(
+			"-omonth_mean_summary_report")) {
+			output_format = OUTPUT_MONTH_MEAN_SUMMARY_REPORT;
+		}
+		else if ( prop_value.equalsIgnoreCase(
+			"-omonth_total_summary_report")) {
+			output_format = OUTPUT_MONTH_TOTAL_SUMMARY_REPORT;
+		}
+		else if ( prop_value.equalsIgnoreCase("-oyear_to_date_report")){
+			output_format = OUTPUT_YEAR_TO_DATE_REPORT;
+			try {	_reference_date = DateTime.parse(parameters);
+			}
+			catch ( Exception e ) {
+				_reference_date = null;
+			}
+		}
+
+		// Time series file output...
+
+		else if ( prop_value.equalsIgnoreCase("-odatevalue") ) {
+			output_format = OUTPUT_DATEVALUE;
+		}
+		else if ( prop_value.equalsIgnoreCase(
+			"-onwsrfsesptraceensemble") ) {
+			output_format = OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE;
+		}
+		else if ( prop_value.equalsIgnoreCase("-onwscard") ) {
+			output_format = OUTPUT_NWSCARD_FILE;
+		}
+		else if ( prop_value.equalsIgnoreCase("-oriverware") ) {
+			output_format = OUTPUT_RIVERWARE_FILE;
+		}
+		else if ( prop_value.equalsIgnoreCase("-oshefa") ) {
+			output_format = OUTPUT_SHEFA_FILE;
+		}
+		else if ( prop_value.equalsIgnoreCase("-ostatemod") ) {
+			output_format = OUTPUT_STATEMOD;
+		}
+		else if ( prop_value.equalsIgnoreCase("-osummary") ) {
+			output_format = OUTPUT_SUMMARY;
+		}
+		else if ( prop_value.equalsIgnoreCase("-otable") ) {
+			output_format = OUTPUT_TABLE;
+		}
+		else if ( prop_value.equalsIgnoreCase("-osummarynostats") ) {
+			output_format = OUTPUT_SUMMARY_NO_STATS;
+		}
+
+		// Graph output...
+
+		else if ( prop_value.equalsIgnoreCase("-oannual_traces_graph")){
+			output_format = OUTPUT_ANNUAL_TRACES_GRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-obar_graph")){
+			output_format = OUTPUT_BAR_GRAPH;
+			// Use parameters for the position of the bars.
+		}
+		else if ( prop_value.equalsIgnoreCase("-odoublemass_graph")){
+			output_format = OUTPUT_DOUBLE_MASS_GRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-oduration_graph")){
+			output_format = OUTPUT_DURATION_GRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-olinegraph")){
+			output_format = OUTPUT_LINEGRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-olinelogygraph")){
+			output_format = OUTPUT_LINELOGYGRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-opointgraph")){
+			output_format = OUTPUT_POINT_GRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-oporgraph")){
+			output_format = OUTPUT_PORGRAPH;
+		}
+		else if (prop_value.equalsIgnoreCase("-oPredictedValue_graph")){
+			output_format = OUTPUT_PredictedValue_GRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase(
+			"-oPredictedValueResidual_graph")){
+			output_format = OUTPUT_PredictedValueResidual_GRAPH;
+		}
+		else if ( prop_value.equalsIgnoreCase("-oxyscatter_graph")){
+			output_format = OUTPUT_XY_SCATTER_GRAPH;
+		}
+	}
+	prop_value = props.getValue ( "OutputFile" );
+	if ( prop_value != null ) {
+		if ( prop_value.equalsIgnoreCase("-preview") ) {
+			_preview_output = true;
+		}
+		else {	_output_file = prop_value;
+		}
+	}
+	prop_value = props.getValue ( "Precision" );
+	if ( prop_value != null ) {
+		if (	prop_value.equals("*") ||
+			StringUtil.isInteger(prop_value) ) {
+			precision_string = prop_value;
+		}
+		else {	_output_file = prop_value;
+		}
+	}
+
+	if ( output_format == OUTPUT_STATEMOD ) {
+		try {	writeStateModTS ( __tslist_output, _output_file,
+			precision_string, formatOutputHeaderComments(__ts_processor.getCommands()) );
+		} catch ( Exception e ) {
+			message = "Error writing StateMod file \"" +
+			_output_file + "\"";
+			Message.printWarning ( 1, routine, message );
+			Message.printWarning ( 2, routine, e );
+			// Why is this done - batch mode only???
+			// Free the binary file...
+			if ( _binary_ts != null ) {
+				_binary_ts.delete ();
+				_binary_ts = null;
+			}
+			throw new IOException ( message );
+		}
+	}
+	else if ( output_format == OUTPUT_DATA_COVERAGE_REPORT ) {
+		PropList reportProps = new PropList ("ReportJFrame.props");
+		reportProps.set ( "HelpKey", "TSTool" );
+		reportProps.set ( "TotalWidth", "750" );
+		reportProps.set ( "TotalHeight", "550" );
+		reportProps.set ( "Title", "Data Coverage Report" );
+		reportProps.set ( "DisplayFont", "Courier" );
+		reportProps.set ( "DisplaySize", "11" );
+		// reportProps.set ( "DisplayStyle", Font.PLAIN );
+		reportProps.set ( "PrintFont", "Courier" );
+		// reportProps.set ( "PrintFont", Font.PLAIN );
+		reportProps.set ( "PrintSize", "7" );
+		reportProps.set ( "PageLength", "5000" );
+		reportProps.set ( "Search", "true" );
+
+		try {	// For now, put the code in here at the bottom of this
+			// file...
+			Vector report = createDataCoverageReport (
+				__tslist_output );
+			new ReportJFrame ( report, reportProps );
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 1, routine,
+			"Error printing summary." );
+			Message.printWarning ( 2, routine, e );
+		}
+	}
+	else if ( output_format == OUTPUT_DATA_LIMITS_REPORT ) {
+		PropList reportProps = new PropList ("ReportJFrame.props");
+		reportProps.set ( "HelpKey", "TSTool" );
+		reportProps.set ( "TotalWidth", "750" );
+		reportProps.set ( "TotalHeight", "550" );
+		reportProps.set ( "Title", "Data Limits Report" );
+		reportProps.set ( "DisplayFont", "Courier" );
+		reportProps.set ( "DisplaySize", "11" );
+		// reportProps.set ( "DisplayStyle", Font.PLAIN );
+		reportProps.set ( "PrintFont", "Courier" );
+		// reportProps.set ( "PrintFont", Font.PLAIN );
+		reportProps.set ( "PrintSize", "7" );
+		reportProps.set ( "PageLength", "5000" );
+		reportProps.set ( "Search", "true" );
+
+		try {	// For now, put the code in here at the bottom of this
+			// file...
+			Vector report = createDataLimitsReport(__tslist_output);
+			new ReportJFrame ( report, reportProps );
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 1, routine,
+			"Error printing summary." );
+			Message.printWarning ( 2, routine, e );
+		}
+	}
+	else if ( output_format == OUTPUT_DATEVALUE ) {
+		if ( _binary_ts_used ) {
+			message =
+			"BinaryTS cannot be used with year to date report.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		try {
+		TS	tspt = null;
+		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
+			tspt = (TS)__tslist_output.elementAt(0);
+		}
+		String units = null;
+		if ( tspt != null ) {
+			units = tspt.getDataUnits();
+			Message.printStatus ( 1, "", "Data units are " + units);
+		}
+
+		// Format the comments to add to the top of the file.  In this
+		// case, add the commands used to generate the file...
+		if ( TSUtil.intervalsMatch ( __tslist_output )) {
+			// Need date precision to be day...
+			//DateTime date1 = _date1;
+			// Why was this set here????
+			// SAM - 2001-08-27
+			//if ( _date1 != null ) {
+			//	date1 = new DateTime ( _date1 );
+			//	date1.setPrecision (DateTime.PRECISION_DAY);
+			//	date1.setDay ( 1 );
+			//}
+			//DateTime date2 = _date2;
+			//if ( _date2 != null ) {
+			//	date2 = new DateTime ( _date2 );
+			//	date2.setPrecision (DateTime.PRECISION_DAY);
+			//	date2.setDay ( TimeUtil.numDaysInMonth(
+			//		date2.getMonth(), date2.getYear() ));
+			//}
+			//DateValueTS.writeTimeSeries ( __tslist_output,
+			//	_output_file,
+			//	date1, date2, units, true );
+			
+			DateValueTS.writeTimeSeriesList ( __tslist_output,
+				_output_file, __OutputStart_DateTime,
+				__OutputEnd_DateTime,
+				units, true );
+		}
+		else {	Message.printWarning ( 1, routine, "Unable to write " +
+			"DateValue time series of different intervals." );
+		}
+		} catch ( Exception e ) {
+			message = "Error writing DateValue file \"" +
+			_output_file + "\"";
+			Message.printWarning ( 1, routine, message );
+			Message.printWarning ( 2, routine, e );
+			// Free the binary file...
+			if ( _binary_ts != null ) {
+				_binary_ts.delete ();
+				_binary_ts = null;
+			}
+			throw new IOException ( message );
+		}
+	}
+	else if ( output_format == OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE ) {
+		try {	
+			PropList esp_props = new PropList ( "esp" );
+			NWSRFS_ESPTraceEnsemble esp =
+				new NWSRFS_ESPTraceEnsemble (
+				__tslist_output, esp_props );
+			esp.writeESPTraceEnsembleFile ( _output_file );
+		} catch ( Exception e ) {
+			message =
+			"Error writing NWSRFS ESP Trace Ensemble file \"" +
+			_output_file + "\"";
+			Message.printWarning ( 1, routine, message );
+			Message.printWarning ( 2, routine, e );
+			throw new IOException ( message );
+		}
+	}
+	else if ( (output_format == OUTPUT_MONTH_MEAN_SUMMARY_REPORT) ||
+		(output_format == OUTPUT_MONTH_TOTAL_SUMMARY_REPORT) ) {
+		String daytype = "Mean";
+		PropList reportProps = new PropList ("ReportJFrame.props");
+		reportProps.set ( "HelpKey", "TSTool" );
+		reportProps.set ( "TotalWidth", "750" );
+		reportProps.set ( "TotalHeight", "550" );
+		if ( output_format == OUTPUT_MONTH_MEAN_SUMMARY_REPORT ) {
+			reportProps.set ( "Title",
+			"Monthly Summary Report (Daily Means)" );
+			daytype = "Mean";
+		}
+		else {	reportProps.set ( "Title",
+			"Monthly Summary Report (Daily Totals)" );
+			daytype = "Total";
+		}
+		reportProps.set ( "DisplayFont", "Courier" );
+		reportProps.set ( "DisplaySize", "11" );
+		// reportProps.set ( "DisplayStyle", Font.PLAIN );
+		reportProps.set ( "PrintFont", "Courier" );
+		// reportProps.set ( "PrintFont", Font.PLAIN );
+		reportProps.set ( "PrintSize", "7" );
+		reportProps.set ( "PageLength", "5000" );
+		reportProps.set ( "Search", "true" );
+
+		PropList sumprops = new PropList ( "" );
+		sumprops.set ( "DayType", daytype );
+		if ( __calendar_type == WATER_YEAR ) {
+			sumprops.set ( "CalendarType", "WaterYear" );
+		}
+		else {	sumprops.set ( "CalendarType", "CalendarYear" );
+		}
+
+		try {	// For now, put the code in here at the bottom of this
+			// file...
+			Vector report = createMonthSummaryReport (
+				__tslist_output, sumprops );
+			new ReportJFrame ( report, reportProps );
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 1, routine,
+			"Error printing summary." );
+			Message.printWarning ( 2, routine, e );
+		}
+	}
+	else if ( output_format == OUTPUT_NWSCARD_FILE ) {
+		if ( _binary_ts_used ) {
+			message =
+			"BinaryTS cannot be used with NWS Card output.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		// Write a NWS Card file containing a single time series.
+		try {
+		TS	tspt = null;
+		int	list_size = 0;
+		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
+			tspt = (TS)__tslist_output.elementAt(0);
+			list_size = __tslist_output.size();
+		}
+		// NWS Card files can only contain one time series...
+		if ( list_size != 1 ) {
+			message =
+			"Only 1 time series can be written to a NWS Card file";
+			Message.printWarning ( 1, routine, message );
+			throw new Exception ( message );
+		}
+		String units = null;
+		if ( tspt != null ) {
+			units = tspt.getDataUnits();
+			Message.printStatus ( 1, "", "Data units are " + units);
+		}
+
+		// Format the comments to add to the top of the file.  In this
+		// case, add the commands used to generate the file...
+		int interval_mult = 1;
+		if ( _binary_ts_used ) {
+			interval_mult = _binary_ts.getDataIntervalMult();
+		}
+		else {
+			interval_mult = ((TS)
+			__tslist_output.elementAt(0)).getDataIntervalMult();
+		}
+		// Need date precision to be hour and NWS uses hour 1 - 24 so
+		// adjust dates accordingly.
+		DateTime date1 = __OutputStart_DateTime;
+		if ( __OutputStart_DateTime != null ) {
+			date1 = new DateTime ( __OutputStart_DateTime );
+			date1.setPrecision (DateTime.PRECISION_HOUR);
+			date1.setDay ( 1 );
+			date1.setHour ( interval_mult );
+		}
+		DateTime date2 = __OutputEnd_DateTime;
+		if ( __OutputEnd_DateTime != null ) {
+			date2 = new DateTime ( __OutputEnd_DateTime );
+			date2.setPrecision (DateTime.PRECISION_HOUR);
+			date2.setDay ( TimeUtil.numDaysInMonth(
+				date2.getMonth(), date2.getYear() ));
+			date2.addDay ( 1 );
+			date2.setHour ( 0 );
+		}
+		NWSCardTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
+			_output_file, date1, date2, units, true );
+		} catch ( Exception e ) {
+			message = "Error writing NWS Card file \"" +
+			_output_file + "\"";
+			Message.printWarning ( 1, routine, message );
+			Message.printWarning ( 2, routine, e );
+			// Free the binary file...
+			if ( _binary_ts != null ) {
+				_binary_ts.delete ();
+				_binary_ts = null;
+			}
+			throw new IOException ( message );
+		}
+	}
+	else if ( output_format == OUTPUT_RIVERWARE_FILE ) {
+		if ( _binary_ts_used ) {
+			message =
+			"BinaryTS cannot be used with RiverWare file.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		// Write a RiverWare file containing a single time series.
+		try {
+		TS	tspt = null;
+		int	list_size = 0;
+		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
+			tspt = (TS)__tslist_output.elementAt(0);
+			list_size = __tslist_output.size();
+		}
+		// RiverWare files can only contain one time series...
+		if ( list_size != 1 ) {
+			message =
+			"Only 1 time series can be written to a RiverWare file";
+			Message.printWarning ( 1, routine, message );
+			throw new Exception ( message );
+		}
+		String units = null;
+		if ( tspt != null ) {
+			units = tspt.getDataUnits();
+			Message.printStatus ( 1, "", "Data units are " + units);
+		}
+
+		// Format the comments to add to the top of the file.  In this
+		// case, add the commands used to generate the file...
+		RiverWareTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
+			_output_file, __OutputStart_DateTime,
+			__OutputEnd_DateTime, units,
+			1.0, null, -1.0, true );
+		} catch ( Exception e ) {
+			message = "Error writing RiverWare file \"" +
+			_output_file + "\"";
+			Message.printWarning ( 1, routine, message );
+			Message.printWarning ( 2, routine, e );
+			// Free the binary file...
+			if ( _binary_ts != null ) {
+				_binary_ts.delete ();
+				_binary_ts = null;
+			}
+			throw new IOException ( message );
+		}
+	}
+	else if ( output_format == OUTPUT_SHEFA_FILE ) {
+		try {
+			Vector units_Vector = null;
+			Vector PE_Vector = ShefATS.getPEForTimeSeries (
+					__tslist_output );
+			Vector Duration_Vector = null;
+			Vector AltID_Vector = null;
+			PropList shef_props = new PropList ( "SHEF" );
+			shef_props.set ( "HourMax=24" );
+			ShefATS.writeTimeSeriesList ( __tslist_output,
+				_output_file, __OutputStart_DateTime,
+				__OutputEnd_DateTime,
+				units_Vector, PE_Vector,
+				Duration_Vector, AltID_Vector, shef_props );
+		} catch ( Exception e ) {
+			message = "Error writing SHEF A file \"" +
+			_output_file + "\"";
+			Message.printWarning ( 1, routine, message );
+			Message.printWarning ( 2, routine, e );
+			throw new IOException ( message );
+		}
+	}
+	else if ( (output_format == OUTPUT_SUMMARY) ||
+		(output_format == OUTPUT_SUMMARY_NO_STATS) ) {
+		if ( _binary_ts_used ) {
+			message =
+			"BinaryTS cannot be used with year to date report.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		try {
+		// First need to get the summary strings...
+		PropList sumprops = new PropList ( "Summary" );
+		sumprops.set ( "Format", "Summary" );
+		if ( __calendar_type == WATER_YEAR ) {
+			sumprops.set ( "CalendarType", "WaterYear" );
+		}
+		else {	sumprops.set ( "CalendarType", "CalendarYear" );
+		}
+		if ( _detailedheader ) {
+			sumprops.set("PrintGenesis","true");
+		}
+		else {	sumprops.set("PrintGenesis","false");
+		}
+		// Check the first time series.  If NWSCARD or DateValue, don't
+		// use comments for header...
+		/* REVISIT SAM 2004-07-20 - try default header always -
+			transition to HydroBase comments being only additional
+			information
+		else {	// HydroBase, so use the comments for the header...
+			sumprops.set ( "UseCommentsForHeader", "true" );
+		}
+		if ( _non_co_detected ) {
+			// Data other that HydroBase, so format using standard
+			// headers...
+			sumprops.set ( "UseCommentsForHeader", "false" );
+		}
+		*/
+		sumprops.set ( "PrintHeader", "true" );
+		sumprops.set ( "PrintComments", "true" );
+		if ( output_format == OUTPUT_SUMMARY ) {
+			// Get the statistics...
+			sumprops.set ( "PrintMinStats", "true" );
+			sumprops.set ( "PrintMaxStats", "true" );
+			sumprops.set ( "PrintMeanStats", "true" );
+			sumprops.set ( "PrintNotes", "true" );
+		}
+		else if ( output_format == OUTPUT_SUMMARY_NO_STATS ) {
+			// Don't want the statistics or the notes but do want
+			// a line at the bottom (kludge for Ayres software)...
+			sumprops.set ( "PrintMinStats", "false" );
+			sumprops.set ( "PrintMaxStats", "false" );
+			sumprops.set ( "PrintMeanStats", "false" );
+			sumprops.set ( "PrintNotes", "false" );
+		}
+
+		if ( IOUtil.isBatch() || !_preview_output) {
+			try {	Vector summary = TSUtil.formatOutput (
+				_output_file,
+				__tslist_output, sumprops );	
+				// Just write the summary to the given file...
+/* REVISIT - SAM 2004-02-13 - why is this commented out if NOT frost dates?
+				if (	(_output_filter ==
+					OUTPUT_FILTER_DATA_COVERAGE)
+					&& !_frost_dates_detected ) {
+					// Add the summary to the results...
+					summary.addElement ( "" );
+					summary =
+					StringUtil.addListToStringList (
+					summary,
+					TSAnalyst.getDataCoverageReport() );
+				}
+*/
+				IOUtil.printStringList ( _output_file, summary);
+			} catch ( Exception e ) {
+				Message.printWarning ( 1, routine,
+				"Unable to print summary to file \"" +
+				_output_file + "\"" );
+			}
+		}
+		else {	PropList reportProps=new PropList("ReportJFrame.props");
+			reportProps.set ( "HelpKey", "TSTool" );
+			reportProps.set ( "TotalWidth", "750" );
+			reportProps.set ( "TotalHeight", "550" );
+			reportProps.set ( "Title", "Summary" );
+			reportProps.set ( "DisplayFont", "Courier" );
+			reportProps.set ( "DisplaySize", "11" );
+			// reportProp.set ( "DisplayStyle", Font.PLAIN );
+			reportProps.set ( "PrintFont", "Courier" );
+			// reportProp.set ( "PrintFont", Font.PLAIN );
+			reportProps.set ( "PrintSize", "7" );
+			//reportProps.set ( "PageLength", "100" );
+			reportProps.set ( "PageLength", "100000" );
+
+			try {
+				Vector summary = TSUtil.formatOutput ( 
+				__tslist_output, sumprops );
+				// Now display (the user can save as a file,
+				// etc.).
+/*
+				if (	(_output_filter ==
+					OUTPUT_FILTER_DATA_COVERAGE)
+					&& !_frost_dates_detected ) {
+					// Add the summary to the results...
+					summary.addElement ( "" );
+					summary =
+					StringUtil.addListToStringList (
+					summary,
+					TSAnalyst.getDataCoverageReport() );
+				}
+*/
+				new ReportJFrame ( summary, reportProps );
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1, routine,
+				"Error printing summary." );
+				Message.printWarning ( 2, routine, e );
+			}
+		}
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 2, routine, e );
+			message = "Error creating summary";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+	}
+	else if ( output_format == OUTPUT_TABLE ) {
+		// A table output.  For now, this does not understand BinaryTS
+		// output.  Just copy the graph code and change for table.  AT
+		// some point, need to initialize all the view data at the
+		// same time in case the user changes views interactively after
+		// the initial view.
+		if ( _binary_ts_used ) {
+			message = "BinaryTS cannot be used with tables.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		// Temporary copy of data...
+		Vector tslist = __tslist_output;
+		try {
+		if ( IOUtil.isBatch() ) {
+			Message.printWarning ( 1, routine,
+			"Can only generate a table from GUI" );
+			return;
+		}
+
+		PropList graphprops = new PropList ( "Table" );
+		// Set graph properties for a simple graph...
+		graphprops.set ( "ExtendedLegend", "true" );
+		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
+		graphprops.set ( "DataUnits", 
+			((TS)tslist.elementAt(0)).getDataUnits() );
+		graphprops.set ( "YAxisLabelString",
+			((TS)tslist.elementAt(0)).getDataUnits() );
+		if ( __calendar_type == WATER_YEAR ) {
+			graphprops.set ( "CalendarType", "WaterYear" );
+		}
+		else {	graphprops.set ( "CalendarType", "CalendarYear" );
+		}
+		// Check the first time series.  If NWSCARD or DateValue, don't
+		// use comments for header...
+		/* REVISIT SAM 2004-07-20 - try default header always -
+			transition to HydroBase comments being only additional
+			information
+		if ( _non_co_detected ) {
+			graphprops.set ( "UseCommentsForHeader", "false" );
+		}
+		else {	graphprops.set ( "UseCommentsForHeader", "true" );
+		}
+		*/
+		// Set the total size of the graph window...
+		graphprops.set ( "TotalWidth", "600" );
+		graphprops.set ( "TotalHeight", "400" );
+
+		// Default properties...
+		graphprops.set("GraphType=Line");
+
+		graphprops.set ( "InitialView", "Table" );
+		// Summary properties for secondary displays (copy
+		// from summary output)...
+		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
+		graphprops.set ( "TotalWidth", "600" );
+		graphprops.set ( "TotalHeight", "400" );
+		//graphprops.set ( "Title", "Summary" );
+		graphprops.set ( "DisplayFont", "Courier" );
+		graphprops.set ( "DisplaySize", "11" );
+		graphprops.set ( "PrintFont", "Courier" );
+		graphprops.set ( "PrintSize", "7" );
+		graphprops.set ( "PageLength", "100" );
+		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
+		addTSViewTSProductDMIs ( view );
+		addTSViewTSProductAnnotationProviders ( view );
+		// For garbage collection...
+		view = null;
+		tslist = null;
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 2, routine, e );
+			message = "Error creating table";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+	}
+	else if ( output_format == OUTPUT_YEAR_TO_DATE_REPORT ) {
+		if ( _binary_ts_used ) {
+			message =
+			"BinaryTS cannot be used with year to date report.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		PropList reportProps = new PropList ("ReportJFrame.props");
+		reportProps.set ( "HelpKey", "TSTool" );
+		reportProps.set ( "TotalWidth", "750" );
+		reportProps.set ( "TotalHeight", "550" );
+		reportProps.set ( "Title", "Year to Date Report" );
+		reportProps.set ( "DisplayFont", "Courier" );
+		reportProps.set ( "DisplaySize", "11" );
+		// reportProps.set ( "DisplayStyle", Font.PLAIN );
+		reportProps.set ( "PrintFont", "Courier" );
+		// reportProps.set ( "PrintFont", Font.PLAIN );
+		reportProps.set ( "PrintSize", "7" );
+		reportProps.set ( "PageLength", "5000" );
+		reportProps.set ( "Search", "true" );
+
+		try {	Vector report = createYearToDateReport (__tslist_output,
+				_reference_date, null );
+			new ReportJFrame ( report, reportProps );
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 1, routine,
+			"Error printing summary." );
+			Message.printWarning ( 2, routine, e );
+		}
+	}
+	else if (	(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ||
+			(output_format == OUTPUT_BAR_GRAPH) ||
+			(output_format == OUTPUT_DOUBLE_MASS_GRAPH) ||
+			(output_format == OUTPUT_DURATION_GRAPH) ||
+			(output_format == OUTPUT_LINEGRAPH) ||
+			(output_format == OUTPUT_LINELOGYGRAPH) ||
+			(output_format == OUTPUT_PERCENT_EXCEED_GRAPH) ||
+			(output_format == OUTPUT_POINT_GRAPH) ||
+			(output_format == OUTPUT_PORGRAPH) ||
+			(output_format == OUTPUT_PredictedValue_GRAPH) ||
+			(output_format == OUTPUT_PredictedValueResidual_GRAPH)||
+			(output_format == OUTPUT_XY_SCATTER_GRAPH) ) {
+		// A graph type.  For now, this does not understand BinaryTS
+		// output...
+		if ( _binary_ts_used ) {
+			message = "BinaryTS cannot be used with graphs.";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+		// Temporary copy of data...
+		Vector tslist = __tslist_output;
+		try {
+		if ( IOUtil.isBatch() ) {
+			Message.printWarning ( 1, routine,
+			"Can only graph from GUI" );
+			return;
+		}
+
+		PropList graphprops = new PropList ( "Graph" );
+		graphprops.set ( "ExtendedLegend", "true" );
+		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
+		graphprops.set ( "DataUnits", 
+			((TS)tslist.elementAt(0)).getDataUnits() );
+		graphprops.set ( "YAxisLabelString",
+			((TS)tslist.elementAt(0)).getDataUnits() );
+		if ( __calendar_type == WATER_YEAR ) {
+			graphprops.set ( "CalendarType", "WaterYear" );
+		}
+		else {	graphprops.set ( "CalendarType", "CalendarYear" );
+		}
+		// Check the first time series.  If NWSCARD or DateValue, don't
+		// use comments for header...
+		/* REVISIT SAM 2004-07-20 - try default header always -
+			transition to HydroBase comments being only additional
+			information
+		if ( _non_co_detected ) {
+			graphprops.set ( "UseCommentsForHeader", "false" );
+		}
+		else {	graphprops.set ( "UseCommentsForHeader", "true" );
+		}
+		*/
+		// Set the total size of the graph window...
+		graphprops.set ( "TotalWidth", "600" );
+		graphprops.set ( "TotalHeight", "400" );
+
+		if (	(tslist != null) &&
+			(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ) {
+/* Currently disabled...
+			// Go through each time series in the list and break
+			// into annual traces, and then plot those results...
+			Message.printStatus ( 1, routine,
+			"Splitting time series into traces..." );
+			int size = tslist.size();
+			Vector new_tslist = new Vector ( size );
+			Vector traces = null;
+			DateTime reference_date = new DateTime (
+				DateTime.PRECISION_DAY );
+			reference_date.setYear ( _reference_year );
+			reference_date.setMonth ( 1 );
+			reference_date.setDay ( 1 );
+			size = tslist.size();
+			for ( int i = 0; i < size; i++ ) {
+				ts = (TS)tslist.elementAt(i);
+				if ( ts == null ) {
+					continue;
+				}
+				// Get the trace time series, using Jan 1 of the
+				// reference year.
+				// This allows the raw data to temporally
+				// correct but is a pain to deal with in the
+				// plot code...
+				//traces = TSUtil.getTracesFromTS ( ts,
+				//		reference_date, null );
+				// Using this results in some funny labels but
+				// at least things plot...
+				traces = TSUtil.getTracesFromTS ( ts,
+						reference_date, reference_date);
+				if ( traces == null ) {
+					// If real-time data, add to the
+					// output...
+					if (	ts.getDataIntervalBase() ==
+						TimeInterval.IRREGULAR ) {
+						new_tslist.addElement ( ts );
+					}
+				}
+				else {	// Add the traces to the tslist.  Set
+					// the legend explicitly because the
+					// default is to print the period which
+					// is not useful...
+					int traces_size = traces.size();
+					Message.printStatus ( 1, routine,
+					"Split " + ts.getIdentifier() +
+					" into " + traces_size + " traces" );
+					TS ts2 = null;
+					for ( int j = 0; j < traces_size; j++ ){
+						ts2 = (TS)traces.elementAt(j);
+						ts2.setLegend ( "%D, %F" );
+						new_tslist.addElement ( ts2 );
+					}
+				}
+			}
+			// Now replace the original list with the new one...
+			tslist = new_tslist;
+			// The offset only affects the graph.  All other data
+			// are as if they were slices out of the original
+			// data...
+			//graphprops.set ("ReferenceDate",
+			//reference_date.toString());
+			graphprops.set ( "Title", "Annual Traces" );
+			graphprops.set ( "XAxis.Format", "MM-DD" );
+*/
+		}
+		else if ( output_format == OUTPUT_BAR_GRAPH ) {
+			graphprops.set("GraphType=Bar");
+			graphprops.set("BarPosition=" + parameters );
+		}
+		else if ( output_format == OUTPUT_DOUBLE_MASS_GRAPH ) {
+			graphprops.set("GraphType=Double-Mass");
+		}
+		else if ( output_format == OUTPUT_DURATION_GRAPH ) {
+			graphprops.set("GraphType=Duration");
+		}
+		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
+			graphprops.set("YAxisType=Log");
+			// Handle flags...
+			/* REVISIT SAM 2006-05-22
+			Can be very slow because blank labels are not ignored
+			in low-level code.
+			GRTS_Util.addDefaultPropertiesForDataFlags (
+				tslist, graphprops );
+			*/
+		}
+		else if ( output_format == OUTPUT_PERCENT_EXCEED_GRAPH ) {
+			graphprops.set("GraphType=PercentExceedance");
+			graphprops.set("Title=Period Exceedance Curve");
+			graphprops.set("XAxisLabelString=" +
+				"Percent of Time Exceeded");
+		}
+		else if ( output_format == OUTPUT_POINT_GRAPH ) {
+			graphprops.set("GraphType=Point");
+			// Handle flags...
+			/* REVISIT SAM 2006-05-22
+			Can be very slow because blank labels are not ignored
+			in low-level code.
+			GRTS_Util.addDefaultPropertiesForDataFlags (
+				tslist, graphprops );
+			*/
+		}
+		else if ( output_format == OUTPUT_PORGRAPH ) {
+			graphprops.set("GraphType=PeriodOfRecord");
+			graphprops.set("LineWidth=Thick");
+			graphprops.set("Title=Period of Record");
+			graphprops.set("YAxisLabelString=Legend Index");
+		}
+		else if ( output_format == OUTPUT_PredictedValue_GRAPH ) {
+			graphprops.set("GraphType=PredictedValue");
+		}
+		else if ( output_format == OUTPUT_PredictedValueResidual_GRAPH){
+			graphprops.set("GraphType=PredictedValueResidual");
+		}
+		else if ( output_format == OUTPUT_XY_SCATTER_GRAPH ) {
+			graphprops.set("GraphType=XY-Scatter");
+		}
+		else {	// Default properties...
+			graphprops.set("GraphType=Line");
+			// Handle flags...
+			/* REVISIT SAM 2006-05-22
+			Can be very slow because blank labels are not ignored
+			in low-level code.
+			GRTS_Util.addDefaultPropertiesForDataFlags (
+				tslist, graphprops );
+			*/
+		}
+
+		// For now always use new graph...
+		graphprops.set ( "InitialView", "Graph" );
+		// Summary properties for secondary displays (copy
+		// from summary output)...
+		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
+		graphprops.set ( "TotalWidth", "600" );
+		graphprops.set ( "TotalHeight", "400" );
+		//graphprops.set ( "Title", "Summary" );
+		graphprops.set ( "DisplayFont", "Courier" );
+		graphprops.set ( "DisplaySize", "11" );
+		graphprops.set ( "PrintFont", "Courier" );
+		graphprops.set ( "PrintSize", "7" );
+		graphprops.set ( "PageLength", "100" );
+		TSViewJFrame view = new TSViewJFrame ( tslist, graphprops );
+		// Connect dynamic data objects...
+		addTSViewTSProductDMIs ( view );
+		addTSViewTSProductAnnotationProviders ( view );
+		// For garbage collection...
+		view = null;
+		tslist = null;
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 2, routine, e );
+			message = "Error creating graph";
+			Message.printWarning ( 1, routine, message );
+			throw new IOException ( message );
+		}
+	}
+
+	Message.printStatus ( 1, routine, "Ending time series output at:  " +
+	new DateTime(DateTime.DATE_CURRENT).toString() );
+}
+
+/**
+Process a time series action, meaning insert or update in the list.
+@param ts_action INSERT_TS to insert at the position, UPDATE_TS to update at
+the position, NONE to do to nothing.
+@param ts Time series to act on.
+@param ts_pos Position in the time series list to perform action.
+@exception Exception if an error occurs.
+*/
+protected void processTimeSeriesAction ( int ts_action, TS ts, int ts_pos )
+throws Exception
+{	if ( ts_action == INSERT_TS ) {
+		// Add new time series to the list...
+		setTimeSeries ( ts, ts_pos );
+		updateComments ( ts );
+	}
+	else if ( ts_action == UPDATE_TS ) {
+		// Update in the time series list...
+		setTimeSeries ( ts, ts_pos );
+		updateComments ( ts );
+	}
+}
+
+/**
 Get a time series from the database/file using current date and units settings.
 @param tsident_string Time series identifier.
 @return the time series.
 @exception Exception if there is an error reading the time series.
 */
-private TS readTimeSeries ( String command_tag, String tsident_string )
+protected TS readTimeSeries ( String command_tag, String tsident_string )
 throws Exception
 {	return readTimeSeries ( command_tag, tsident_string, false );
 }
@@ -10423,7 +10172,7 @@ Get a time series from the database/file using current date and units settings.
 @return the time series.
 @exception Exception if there is an error reading the time series.
 */
-private TS readTimeSeries ( String command_tag, String tsident_string,
+protected TS readTimeSeries ( String command_tag, String tsident_string,
 				boolean full_period )
 throws Exception
 {	return readTimeSeries (command_tag, tsident_string, full_period, false);
@@ -10464,18 +10213,10 @@ throws Exception
 
 	DateTime query_date1 = null;	// Default is to query all data
 	DateTime query_date2 = null;
-	if ( haveQueryPeriod() ) {
+	if ( haveInputPeriod() ) {
 		// Use the query period...
 		query_date1 = __InputStart_DateTime;
 		query_date2 = __InputEnd_DateTime;
-	}
-
-	// Specify units if given and not the default (otherwise pass in as
-	// null)...
-
-	String units = null;
-	if ( (_units.length() != 0) && !_units.equalsIgnoreCase("DFLT") ) {
-		units = _units;
 	}
 
 	// Read the time series using the generic code...
@@ -10483,7 +10224,7 @@ throws Exception
 	ts = readTimeSeries0 (	tsident_string,
 				query_date1,
 				query_date2,
-				units,		// units
+				null,		// units
 				true );		// read data
 
 	if ( ts == null ) {
@@ -11311,7 +11052,7 @@ read commands.
 @param tslist Vector of TS to process.
 @exception Exception if there is an error processing the time series.
 */
-public void readTimeSeries2 ( Vector tslist )
+protected void readTimeSeries2 ( Vector tslist )
 throws Exception
 {	readTimeSeries2 ( tslist, true );
 }
@@ -11377,7 +11118,7 @@ Search for a fill pattern TS.
 @return reference to found StringMonthTS instance.
 @param fill_pattern Fill pattern identifier to search for.
 */
-public StringMonthTS searchForFillPatternTS ( String fill_pattern )
+private StringMonthTS searchForFillPatternTS ( String fill_pattern )
 {	if ( fill_pattern == null ) {
 		return null;
 	}
@@ -11406,7 +11147,7 @@ public StringMonthTS searchForFillPatternTS ( String fill_pattern )
 Set the list of DataTest, for example, when set with TSCommandsProcessor.
 @param DataTest_Vector List of data test definitions, as Vector of DataTest.
 */
-public void setDataTestList ( Vector DataTest_Vector )
+protected void setDataTestList ( Vector DataTest_Vector )
 {	
 	__datatestlist = (Vector)DataTest_Vector;
 }
@@ -11421,7 +11162,7 @@ location.  If a match is not found, the new instance is added at the end.
 true.  The main issue is that if something else is using the DMI instance (e.g.,
 the TSTool GUI) it may be necessary to leave the old instance open.
 */
-private void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
+protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 {	if ( hbdmi == null ) {
 		return;
 	}
@@ -11454,7 +11195,7 @@ private void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() command.
 @param dmilist Vector of HydroBaseDMI.
 */
-public void setHydroBaseDMIList ( Vector dmilist )
+protected void setHydroBaseDMIList ( Vector dmilist )
 {	__hbdmi_Vector = dmilist;
 }
 
@@ -11462,7 +11203,7 @@ public void setHydroBaseDMIList ( Vector dmilist )
 Set the input period end.
 @param end Input period end.
 */
-public void setInputEnd ( DateTime end )
+protected void setInputEnd ( DateTime end )
 {	__InputEnd_DateTime = end;
 }
 
@@ -11470,7 +11211,7 @@ public void setInputEnd ( DateTime end )
 Set the input period start.
 @param start Input period start.
 */
-public void setInputStart ( DateTime start )
+protected void setInputStart ( DateTime start )
 {	__InputStart_DateTime = start;
 }
 
@@ -11533,24 +11274,6 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 
 */
 
-/**
-Set the contents for a named property, required by the CommandProcessor
-interface.  See the getPropContents() method for a description of properties.
-The following properties can be set:
-<pre>
-NDFDAdapterList
-</pre>
-*/
-/* TODO SAM 2007-02-17 Need to reenable NDFD input type
-public void setPropContents ( String prop, Object contents )
-{	
-	if ( prop.equalsIgnoreCase("NDFDAdapterList") ) {
-		__NDFDAdapter_Vector = (Vector)contents;
-	}
-
-}
-*/
-
 /*
 Set the time series in either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is set, it updates the time series that is in
@@ -11561,7 +11284,7 @@ in-memory limits.
 @param id Identifier for time series (alias or TSIdent string).
 @exception Exception if there is an error saving the time series.
 */
-public void setTimeSeries ( String id, TS ts )
+protected void setTimeSeries ( String id, TS ts )
 throws Exception
 {	int position = indexOf ( id );
 	setTimeSeries ( ts, position );
@@ -11578,7 +11301,7 @@ in-memory limits.
 @param position Position in time series list (0 index).
 @exception Exception if there is an error saving the time series.
 */
-public void setTimeSeries ( TS ts, int position )
+protected void setTimeSeries ( TS ts, int position )
 throws Exception
 {	String routine = "TSEngine.setTimeSeries";
 
@@ -11685,25 +11408,15 @@ Set the time series list, for example, when being processed through
 TSCommandsProcessor.
 @param tslist List of time series results, as Vector of TS.
 */
-public void setTimeSeriesList ( Vector tslist )
+protected void setTimeSeriesList ( Vector tslist )
 {	__tslist = tslist;
-}
-
-/**
-Set the units for output.
-@param units Units for output.
-*/
-public void setUnits ( String units )
-{	if ( units != null ) {
-		_units = units;
-	}
 }
 
 /**
 Set the contents of a daily time series using a monthly time series for the
 total and a daily time series for the pattern.
 */
-public void setUsingMonthAndDay ( DayTS ts, MonthTS monthts, DayTS dayts )
+protected void setUsingMonthAndDay ( DayTS ts, MonthTS monthts, DayTS dayts )
 {	if ( (ts == null) || (monthts == null) || (dayts == null) ) {
 		return;
 	}
@@ -11849,9 +11562,11 @@ a BinaryTS has been created for daily data.
 @param precision_string If "*", then use the default rules that have been in
 place for some time.  If an integer, use as the precision parameter for
 StateMod.writePersistent().
+@param comments Comments to include at the top of the StateMod file, consisting
+of the commands as text and database version information.
 */
-public void writeStateModTS (	Vector tslist, String output_file,
-				String precision_string )
+private void writeStateModTS (	Vector tslist, String output_file,
+				String precision_string, String[] comments )
 {	String routine = "TSEngine.writeStateModTS";
 	// Type of calendar for output...
 	String calendar = "";
@@ -11937,43 +11652,6 @@ public void writeStateModTS (	Vector tslist, String output_file,
 		}
 	}
 
-	// Format the comments to add to the top of the file.  In this
-	// case, add the commands used to generate the file and if available
-	// the hydrobase comments...
-
-	String comments[] = _commands_array;	// default
-	HydroBaseDMI hbdmi = null;
-	int hsize = __hbdmi_Vector.size();
-	String db_comments[] = null;
-	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
-		if ( hbdmi != null ) {
-		try {	db_comments = hbdmi.getVersionComments ();
-		}
-		catch ( Exception e ) {
-			db_comments = null;
-		}
-		if ( db_comments != null ) {
-			int size = 0;
-			int csize = 0;
-			if ( _commands_array != null ) {
-				csize = _commands_array.length;
-			}
-			size = csize + db_comments.length;
-			comments = new String[size];
-			if ( _commands_array != null ) {
-				for (	int i = 0; i < csize; i++ ) {
-					comments[i] = _commands_array[i];
-				}
-			}
-			for ( int i = csize; i < size; i++ ) {
-				comments[i] = db_comments[i - csize];
-			}
-		}
-		}
-		db_comments = null;
-	}
-
 	if ( _binary_ts_used || TSUtil.intervalsMatch ( tslist )) {
 		// The time series to write have the same interval so write
 		// using the first interval....
@@ -12050,7 +11728,7 @@ a BinaryTS has been created for daily data.
 @param output_file Name of file to write.
 @exception IOException if there is an error writing the file.
 */
-public void writeSummary ( Vector tslist, String output_file )
+private void writeSummary ( Vector tslist, String output_file )
 throws IOException
 {	String routine = "TSEngine.writeSummary";
 

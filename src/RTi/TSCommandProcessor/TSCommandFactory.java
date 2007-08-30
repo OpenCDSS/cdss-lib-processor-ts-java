@@ -55,6 +55,7 @@ package RTi.TSCommandProcessor;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
 import RTi.Util.IO.compareFiles_Command;
+import RTi.Util.IO.GenericCommand;
 import RTi.Util.IO.UnknownCommandException;
 
 import RTi.Util.Message.startLog_Command;
@@ -118,7 +119,7 @@ This class instantiates Commands for time series processing.
 */
 public class TSCommandFactory implements CommandFactory
 {
-
+	
 /**
 Return a new time series command, based on the command name.
 @return a new time series command, based on the command name.
@@ -126,6 +127,22 @@ Return a new time series command, based on the command name.
 @throws UnknownCommandException if the command name is not recognized.
 */
 public Command newCommand ( String command_string )
+throws UnknownCommandException
+{
+	return newCommand ( command_string, false );
+}
+
+/**
+Return a new time series command, based on the command name.
+@return a new time series command, based on the command name.
+@param command_string The command string to process.
+@param create_generic_command_if_not_recognized If true and the command is
+not recognized, create a GenericCommand instance that holds the command string.
+This is useful for code that is being migrated to the full command class design.
+@throws UnknownCommandException if the command name is not recognized.
+*/
+public Command newCommand ( String command_string,
+		boolean create_generic_command_if_not_recognized )
 throws UnknownCommandException
 {	command_string = command_string.trim();
 
@@ -349,8 +366,17 @@ throws UnknownCommandException
 
 	// Did not match a command...
 
-	throw new UnknownCommandException ( "Unknown command \"" +
+	if ( create_generic_command_if_not_recognized ) {
+		// Create a generic command...
+		Command c = new GenericCommand ();
+		c.setCommandString( command_string );
+		return c;
+	}
+	else {
+		// Throw an exception if the command is not recognized.
+		throw new UnknownCommandException ( "Unknown command \"" +
 			command_string + "\"" );
+	}
 }
 
 }

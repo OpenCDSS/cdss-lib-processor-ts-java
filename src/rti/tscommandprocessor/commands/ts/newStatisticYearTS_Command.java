@@ -25,15 +25,17 @@ import RTi.TS.TSAnalyst;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -44,7 +46,7 @@ This class initializes, checks, and runs the newStatisticYearTS() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class newStatisticYearTS_Command extends SkeletonCommand
+public class newStatisticYearTS_Command extends AbstractCommand
 implements Command
 {
 
@@ -242,11 +244,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the file...
-	try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
+	try {	 PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
 			(String)tokens.elementAt(1), routine, "," );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		_parameters.set ( "Alias", Alias );
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		parameters.set ( "Alias", Alias );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
@@ -283,16 +286,19 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Non-user warning level
 
 	// Make sure there are time series available to operate on...
+	
+	PropList parameters = getCommandParameters ();
+	CommandProcessor processor = getCommandProcessor();
 
-	String Alias = _parameters.getValue ( "Alias" );
-	String TSID = _parameters.getValue ( "TSID" );
-	String NewTSID = _parameters.getValue ( "NewTSID" );
-	String Statistic = _parameters.getValue ( "Statistic" );
-	String TestValue = _parameters.getValue ( "TestValue" );
-	String AllowMissingCount = _parameters.getValue ( "AllowMissingCount" );
-	String AnalysisStart = _parameters.getValue ( "AnalysisStart" );
-	String AnalysisEnd = _parameters.getValue ( "AnalysisEnd" );
-	String SearchStart = _parameters.getValue ( "SearchStart" );
+	String Alias = parameters.getValue ( "Alias" );
+	String TSID = parameters.getValue ( "TSID" );
+	String NewTSID = parameters.getValue ( "NewTSID" );
+	String Statistic = parameters.getValue ( "Statistic" );
+	String TestValue = parameters.getValue ( "TestValue" );
+	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String SearchStart = parameters.getValue ( "SearchStart" );
 
 	// Figure out the dates to use for the analysis...
 
@@ -304,7 +310,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", AnalysisStart );
 			CommandProcessorRequestResultsBean bean = null;
 			try { bean =
-				_processor.processRequest( "DateTime", request_params);
+				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting AnalysisStart DateTime(DateTime=" +
@@ -343,7 +349,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", AnalysisEnd );
 			CommandProcessorRequestResultsBean bean = null;
 			try { bean =
-				_processor.processRequest( "DateTime", request_params);
+				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting AnalysisEnd DateTime(DateTime=" +
@@ -402,7 +408,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesForTSID", request_params);
+		processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
@@ -475,7 +481,7 @@ CommandWarningException, CommandException
 	// taken...
 
 	Vector TSResultsList_Vector = null;
-	try { Object o = _processor.getPropContents( "TSResultsList" );
+	try { Object o = processor.getPropContents( "TSResultsList" );
 			TSResultsList_Vector = (Vector)o;
 	}
 	catch ( Exception e ){
@@ -487,7 +493,7 @@ CommandWarningException, CommandException
 	}
 	if ( TSResultsList_Vector != null ) {
 		TSResultsList_Vector.addElement ( stats_ts );
-		try {	_processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 		}
 		catch ( Exception e ){
 			message = "Cannot set updated time series list.  Skipping.";

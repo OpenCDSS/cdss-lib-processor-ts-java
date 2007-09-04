@@ -23,15 +23,16 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 
 /**
@@ -41,7 +42,7 @@ This class initializes, checks, and runs the cumulate() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class cumulate_Command extends SkeletonCommand
+public class cumulate_Command extends AbstractCommand
 implements Command
 {
 
@@ -146,15 +147,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Set parameters and new defaults...
 
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
-			_parameters.set ( "TSID", TSID );
+			parameters.set ( "TSID", TSID );
 		}
 		if ( HandleMissingHow.length() > 0 ) {
-			_parameters.set ( "HandleMissingHow", HandleMissingHow);
+			parameters.set ( "HandleMissingHow", HandleMissingHow);
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 
 	else {	// Current syntax...
@@ -171,8 +173,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
+		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine, "," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -209,10 +211,13 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning level for non-user messages.
 
 	// Make sure there are time series available to operate on...
+	
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = "AllMatchingTSID";
-	String TSID = _parameters.getValue ( "TSID" );
-	String HandleMissingHow = _parameters.getValue ( "HandleMissingHow" );
+	String TSID = parameters.getValue ( "TSID" );
+	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
 
 	// Get the time series to process.  Allow TSID to be a pattern or
 	// specific time series...
@@ -222,7 +227,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -294,7 +299,7 @@ CommandWarningException, CommandException
 		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
 		bean = null;
 		try { bean =
-			_processor.processRequest( "GetTimeSeries", request_params);
+			processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(log_level,

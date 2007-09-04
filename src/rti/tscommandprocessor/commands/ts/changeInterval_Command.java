@@ -35,8 +35,10 @@ import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -44,12 +46,11 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.MeasTimeScale;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 
-public class changeInterval_Command extends SkeletonCommand
+public class changeInterval_Command extends AbstractCommand
 	implements Command
 {
 
@@ -330,12 +331,12 @@ throws 	InvalidCommandSyntaxException,
 		// Parse the parameters (second token in the tokens vector)
 		// needed to process the command.
 		try {
-			_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String) tokens.elementAt(1), mthd, "," );
+			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String) tokens.elementAt(1), mthd, "," ) );
 			// If the Alias was found in the command added it to the
 			// parameters propList.	
 			if ( Alias != null && Alias.length() > 0 ) {
-				_parameters.set( "Alias", Alias );
+				setCommandParameter( "Alias", Alias );
 				
 				if ( Message.isDebugOn ) {
 					mssg = "Alias is: " + Alias;
@@ -390,20 +391,21 @@ throws InvalidCommandParameterException,
 	int warning_count = 0;
 	int log_level = 3;	// Warning message level for non-user messages
 	
-	String	Alias        = _parameters.getValue( "Alias" );
-	String	TSID         = _parameters.getValue( "TSID"  );
-	String	NewInterval  = _parameters.getValue( "NewInterval"  );
-	String	OldTimeScale = _parameters.getValue( "OldTimeScale" );
-	String	NewTimeScale = _parameters.getValue( "NewTimeScale" );
-	String	NewDataType  = _parameters.getValue( "NewDataType"  );
-	String	AllowMissingCount  = _parameters.getValue("AllowMissingCount"  );
+	PropList parameters = getCommandParameters();
+	String	Alias        = parameters.getValue( "Alias" );
+	String	TSID         = parameters.getValue( "TSID"  );
+	String	NewInterval  = parameters.getValue( "NewInterval"  );
+	String	OldTimeScale = parameters.getValue( "OldTimeScale" );
+	String	NewTimeScale = parameters.getValue( "NewTimeScale" );
+	String	NewDataType  = parameters.getValue( "NewDataType"  );
+	String	AllowMissingCount = parameters.getValue("AllowMissingCount"  );
 	/* REVISIT SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
 	*/
 	String	OutputFillMethod  =
-		_parameters.getValue( "OutputFillMethod"      );
+		parameters.getValue( "OutputFillMethod"      );
 	String	HandleMissingInputHow =
-		_parameters.getValue( "HandleMissingInputHow" );
+		parameters.getValue( "HandleMissingInputHow" );
 	
 	// Set the properties for the method TSUtil.changeInterval()!
 	PropList props = new PropList ( "TSUtil.changeInterval" );
@@ -430,12 +432,14 @@ throws InvalidCommandParameterException,
 	// Get the reference (original_ts) to the time series to change interval
 	// from.  Currently just one can be processed.
 	
+	CommandProcessor processor = getCommandProcessor();
+	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "CommandTag", command_tag );
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesForTSID", request_params);
+		processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
@@ -481,7 +485,7 @@ throws InvalidCommandParameterException,
 		// Add the newly created time series to the software memory.
 		
 		Vector TSResultsList_Vector = null;
-		try { Object o = _processor.getPropContents( "TSResultsList" );
+		try { Object o = processor.getPropContents( "TSResultsList" );
 				TSResultsList_Vector = (Vector)o;
 		}
 		catch ( Exception e ){
@@ -493,7 +497,7 @@ throws InvalidCommandParameterException,
 		}
 		if ( TSResultsList_Vector != null ) {
 			TSResultsList_Vector.addElement ( result_ts );
-			try {	_processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+			try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 			}
 			catch ( Exception e ){
 				message = "Cannot set updated time series list.  Skipping.";

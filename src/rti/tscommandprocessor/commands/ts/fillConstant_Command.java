@@ -24,14 +24,15 @@ import RTi.TS.TSUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -42,7 +43,7 @@ This class initializes, checks, and runs the fillConstant() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class fillConstant_Command extends SkeletonCommand
+public class fillConstant_Command extends AbstractCommand
 implements Command
 {
 
@@ -196,15 +197,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Set parameters and new defaults...
 
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
-			_parameters.set ( "TSID", TSID );
-			_parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			_parameters.set ( "TSList", _AllMatchingTSID );
+			parameters.set ( "TSID", TSID );
+			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
+			parameters.set ( "TSList", _AllMatchingTSID );
 		}
-		_parameters.set ( "ConstantValue", ConstantValue );
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.set ( "ConstantValue", ConstantValue );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 
 	else {	// Current syntax...
@@ -221,8 +223,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
+		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine, "," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -260,9 +262,12 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning message level for non-user messgaes
 
 	// Make sure there are time series available to operate on...
+	
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
 
-	String TSList = _parameters.getValue ( "TSList" );
-	String TSID = _parameters.getValue ( "TSID" );
+	String TSList = parameters.getValue ( "TSList" );
+	String TSID = parameters.getValue ( "TSID" );
 
 	// Get the time series to process...
 	
@@ -271,7 +276,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -332,14 +337,14 @@ CommandWarningException, CommandException
 
 	// Constant value...
 
-	String ConstantValue = _parameters.getValue("ConstantValue");
+	String ConstantValue = parameters.getValue("ConstantValue");
 	double ConstantValue_double = StringUtil.atod ( ConstantValue );
 
 	// Fill period...
 
-	String FillStart = _parameters.getValue("FillStart");
-	String FillEnd = _parameters.getValue("FillEnd");
-	String FillFlag = _parameters.getValue("FillFlag");
+	String FillStart = parameters.getValue("FillStart");
+	String FillEnd = parameters.getValue("FillEnd");
+	String FillFlag = parameters.getValue("FillFlag");
 
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
@@ -351,7 +356,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", FillStart );
 		bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting FillStart DateTime(DateTime=" +
@@ -390,7 +395,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", FillEnd );
 		bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting FillEnd DateTime(DateTime=" +
@@ -445,7 +450,7 @@ CommandWarningException, CommandException
 		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
 		bean = null;
 		try { bean =
-			_processor.processRequest( "GetTimeSeries", request_params);
+			processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(log_level,

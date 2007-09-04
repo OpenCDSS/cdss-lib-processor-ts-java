@@ -31,16 +31,17 @@ import DWR.StateMod.StateMod_TS;
 
 import RTi.TS.TSLimits;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
-import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.Math.MathUtil;
@@ -52,7 +53,7 @@ import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
-public class analyzePattern_Command extends SkeletonCommand
+public class analyzePattern_Command extends AbstractCommand
 	implements Command
 {
 
@@ -100,7 +101,9 @@ throws InvalidCommandParameterException
 	// Get the working_dir from the command processor
 	String working_dir = null;
 	
-	try { Object o = _processor.getPropContents ( "WorkingDir" );
+	CommandProcessor processor = getCommandProcessor();
+	
+	try { Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
 			working_dir = (String)o;
@@ -325,8 +328,8 @@ throws 	InvalidCommandSyntaxException,
 
 	// Get the input needed to process the file...
 	try {
-		_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," );
+		setCommandParameters( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
@@ -369,10 +372,13 @@ throws InvalidCommandParameterException,
 
 	// Line separator.
 	String __nl = System.getProperty ("line.separator");
+	
+	CommandProcessor processor = getCommandProcessor();
+	PropList parameters = getCommandParameters();
 
 	// Make sure there are time series available to operate on...
-	String TSList = _parameters.getValue ( "TSList" );
-	String TSID   = _parameters.getValue ( "TSID"   );
+	String TSList = parameters.getValue ( "TSList" );
+	String TSID   = parameters.getValue ( "TSID"   );
 
 	// Get the time series to process...
 	
@@ -381,7 +387,7 @@ throws InvalidCommandParameterException,
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -438,7 +444,7 @@ throws InvalidCommandParameterException,
 	}
 	
 	// Get the method. Currently only Percentile method is supported.
-	String Method = _parameters.getValue ( "Method" );
+	String Method = parameters.getValue ( "Method" );
 	if ( Method == null || Method.equals("") ) {
 		Method = "Percentile";
 	}
@@ -452,7 +458,7 @@ throws InvalidCommandParameterException,
 	// Parameters (checkCommandParameters() method)
 	
 	// OutputFile
-	String OutputFile = _parameters.getValue ("OutputFile");
+	String OutputFile = parameters.getValue ("OutputFile");
 	if ( OutputFile == null || OutputFile.equals("") ) {
 		message = "\nThe OutputFile parameter must be specified. ";
 		Message.printWarning ( warning_level,
@@ -498,7 +504,7 @@ throws InvalidCommandParameterException,
 			request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
 			bean = null;
 			try { bean =
-				_processor.processRequest( "GetTimeSeries", request_params);
+				processor.processRequest( "GetTimeSeries", request_params);
 			}
 			catch ( Exception e ) {
 				Message.printWarning(log_level,
@@ -687,7 +693,7 @@ throws InvalidCommandParameterException,
 		// Saving results in the output file.
 		PropList props = new PropList ( "AnalyzePattern" );
 		String CalendarType = "CalendarYear";
-	   	try { Object o = _processor.getPropContents ( "OutputYearType" );
+	   	try { Object o = processor.getPropContents ( "OutputYearType" );
 	   		if ( o != null ) {
 	   			CalendarType = (String)o;
 	   			// Convert to the format used by code below...
@@ -712,7 +718,7 @@ throws InvalidCommandParameterException,
         DateTime OutputStart_DateTime = startDate;
         DateTime OutputEnd_DateTime = endDate;
         
-    	try { Object o = _processor.getPropContents ( "OutputStart" );
+    	try { Object o = processor.getPropContents ( "OutputStart" );
 			if ( o != null ) {
 				OutputStart_DateTime = (DateTime)o;
 			}
@@ -722,7 +728,7 @@ throws InvalidCommandParameterException,
     		message = "Error requesting OutputStart from processor - not using.";
     		Message.printDebug(10, routine, message );
     	}
-    	try { Object o = _processor.getPropContents ( "OutputEnd" );
+    	try { Object o = processor.getPropContents ( "OutputEnd" );
 			if ( o != null ) {
 				OutputEnd_DateTime = (DateTime)o;
 			}

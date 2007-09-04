@@ -21,8 +21,10 @@ import javax.swing.JFrame;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -30,7 +32,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
@@ -50,7 +51,7 @@ This class initializes, checks, and runs the readStateMod() command.
 TSResultsList, WorkingDir.
 </p>
 */
-public class readStateMod_Command extends SkeletonCommand implements Command
+public class readStateMod_Command extends AbstractCommand implements Command
 {
 // Flags used when setting the interval
 protected String _Day = "Day";
@@ -97,10 +98,11 @@ throws InvalidCommandParameterException
 	String ParcelYear = parameters.getValue ( "ParcelYear" );
 	String warning = "";
 
+	CommandProcessor processor = getCommandProcessor();
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
 		warning += "\nThe input file must be specified.";
 	}
-	else {	try { Object o = _processor.getPropContents ( "WorkingDir" );
+	else {	try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
 				if ( o != null ) {
 					__working_dir = (String)o;
@@ -245,12 +247,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 					message );
 			}
 			String InputFile = ((String)tokens.elementAt(1)).trim();
-			_parameters = new PropList ( getCommandName() );
-			_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+			PropList parameters = new PropList ( getCommandName() );
+			parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 			if ( InputFile.length() > 0 ) {
-				_parameters.set ( "InputFile", InputFile );
+				parameters.set ( "InputFile", InputFile );
 			}
-			_parameters.setHowSet ( Prop.SET_UNKNOWN );
+			parameters.setHowSet ( Prop.SET_UNKNOWN );
+			setCommandParameters ( parameters );
 		}
 	}
 }
@@ -278,15 +281,17 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int log_level = 3;	// Log level for non-user warnings
 
-	String InputFile = _parameters.getValue ( "InputFile" );
-
-	String InputStart = _parameters.getValue ( "InputStart" );
+	PropList parameters = getCommandParameters();
+	String InputFile = parameters.getValue ( "InputFile" );
+	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
-	String InputEnd = _parameters.getValue ( "InputEnd" );
-	String Interval = _parameters.getValue ( "Interval" );
-	String SpatialAggregation = _parameters.getValue ( "SpatialAggregation" );
-	String ParcelYear = _parameters.getValue ( "ParcelYear" );
+	String InputEnd = parameters.getValue ( "InputEnd" );
+	String Interval = parameters.getValue ( "Interval" );
+	String SpatialAggregation = parameters.getValue ( "SpatialAggregation" );
+	String ParcelYear = parameters.getValue ( "ParcelYear" );
 	DateTime InputEnd_DateTime = null;
+	
+	CommandProcessor processor = getCommandProcessor();
 	
 	if ( InputStart != null ) {
 		try {
@@ -294,7 +299,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", InputStart );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting InputStart DateTime(DateTime=" +
@@ -327,7 +332,7 @@ CommandWarningException, CommandException
 	}
 	}
 	else {	// Get from the processor...
-		try {	Object o = _processor.getPropContents ( "InputStart" );
+		try {	Object o = processor.getPropContents ( "InputStart" );
 				if ( o != null ) {
 					InputStart_DateTime = (DateTime)o;
 				}
@@ -345,7 +350,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", InputEnd );
 			CommandProcessorRequestResultsBean bean = null;
 			try { bean =
-				_processor.processRequest( "DateTime", request_params);
+				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting InputEnd DateTime(DateTime=" +
@@ -378,7 +383,7 @@ CommandWarningException, CommandException
 		}
 		}
 		else {	// Get from the processor...
-			try {	Object o = _processor.getPropContents ( "InputEnd" );
+			try {	Object o = processor.getPropContents ( "InputEnd" );
 					if ( o != null ) {
 						InputEnd_DateTime = (DateTime)o;
 					}
@@ -534,7 +539,7 @@ CommandWarningException, CommandException
 
 		if ( tslist != null ) {
 			Vector TSResultsList_Vector = null;
-			try { Object o = _processor.getPropContents( "TSResultsList" );
+			try { Object o = processor.getPropContents( "TSResultsList" );
 					TSResultsList_Vector = (Vector)o;
 			}
 			catch ( Exception e ){
@@ -555,7 +560,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.setUsingObject ( "TSList", tslist );
 			try {
-				_processor.processRequest( "ReadTimeSeries2", request_params);
+				processor.processRequest( "ReadTimeSeries2", request_params);
 			}
 			catch ( Exception e ) {
 				message =
@@ -573,7 +578,7 @@ CommandWarningException, CommandException
 			
 			// Now reset the list in the processor...
 			if ( TSResultsList_Vector != null ) {
-				try {	_processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+				try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 				}
 				catch ( Exception e ){
 					message = "Cannot set updated time series list.  Results may not be visible.";

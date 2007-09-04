@@ -40,13 +40,14 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
@@ -76,7 +77,7 @@ This class initializes, checks, and runs the readHydroBase() command.
 TSResultsList.
 </p>
 */
-public class readHydroBase_Command extends SkeletonCommand implements Command
+public class readHydroBase_Command extends AbstractCommand implements Command
 {
 
 // Data used here and in the dialog.
@@ -312,8 +313,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	// Parse everything after the (, which should be command parameters...
 	
-	try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," );
+	try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command_string +
@@ -324,6 +325,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
+	PropList parameters = getCommandParameters();
 
 	// Evaluate whether the command is a TS Alias version...
 
@@ -354,25 +356,25 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 
 	if ( Alias != null ) {
-		_parameters.set ( "Alias", Alias.trim() );
+		parameters.set ( "Alias", Alias.trim() );
 		_use_alias = true;
 	}
 
 	// Convert QueryStart and QueryEnd to new syntax InputStart and
 	// InputEnd...
-	String QueryStart = _parameters.getValue ( "QueryStart" );
+	String QueryStart = parameters.getValue ( "QueryStart" );
 	if ( (QueryStart != null) && (QueryStart.length() > 0) ) {
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		_parameters.set ( "InputStart", QueryStart );
-		_parameters.unSet ( QueryStart );
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		parameters.set ( "InputStart", QueryStart );
+		parameters.unSet ( QueryStart );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
 	}
-	String QueryEnd = _parameters.getValue ( "QueryEnd" );
+	String QueryEnd = parameters.getValue ( "QueryEnd" );
 	if ( (QueryEnd != null) && (QueryEnd.length() > 0) ) {
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		_parameters.set ( "InputEnd", QueryEnd );
-		_parameters.unSet ( QueryStart );
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		parameters.set ( "InputEnd", QueryEnd );
+		parameters.unSet ( QueryStart );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
 	}
 }
 	
@@ -400,14 +402,16 @@ CommandWarningException, CommandException
 {	String routine = "readHydroBase_Command.runCommand", message;
 	int warning_count = 0;
 
-	String InputStart = _parameters.getValue ( "InputStart" );
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
+	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	if ( InputStart != null ) {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputStart );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warning_level,
@@ -427,7 +431,7 @@ CommandWarningException, CommandException
 		}
 	}
 	else {	// Get from the processor...
-		try { Object o = _processor.getPropContents ( "InputStart" );
+		try { Object o = processor.getPropContents ( "InputStart" );
 			if ( o != null ) {
 				InputStart_DateTime = (DateTime)o;
 			}
@@ -438,14 +442,14 @@ CommandWarningException, CommandException
 			Message.printDebug(10, routine, message );
 		}
 	}
-	String InputEnd = _parameters.getValue ( "InputEnd" );
+	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputEnd_DateTime = null;
 	if ( InputEnd != null ) {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputEnd );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warning_level,
@@ -465,7 +469,7 @@ CommandWarningException, CommandException
 		}
 	}
 	else {	// Get from the processor...
-		try { Object o = _processor.getPropContents ( "InputEnd" );
+		try { Object o = processor.getPropContents ( "InputEnd" );
 			if ( o != null ) {
 				InputEnd_DateTime = (DateTime)o;
 			}
@@ -486,14 +490,14 @@ CommandWarningException, CommandException
 	String FillDailyDivFlag =
 		_parameters.getValue ( "FillDailyDivFlag" );
 	*/
-	String FillUsingDivComments = _parameters.getValue (
+	String FillUsingDivComments = parameters.getValue (
 		"FillUsingDivComments" );
 	if (	(FillUsingDivComments == null) ||
 		FillUsingDivComments.equals("") ) {
 		FillUsingDivComments = _False;	// Default is NOT to fill
 	}
 	String FillUsingDivCommentsFlag =
-		_parameters.getValue ( "FillUsingDivCommentsFlag" );
+		parameters.getValue ( "FillUsingDivCommentsFlag" );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count +
@@ -528,15 +532,15 @@ CommandWarningException, CommandException
 					// read or replaced if a list is read.
 	try {	if ( _use_alias ) {
 			// TS Alias = version....
-			String Alias = _parameters.getValue ( "Alias" );
-			String TSID = _parameters.getValue ( "TSID" );
+			String Alias = parameters.getValue ( "Alias" );
+			String TSID = parameters.getValue ( "TSID" );
 
 			Message.printStatus ( 2, routine,
 			"Reading HydroBase time series \"" + TSID + "\"" );
 			TS ts = null;
 			TSIdent tsident = new TSIdent ( TSID );
 			// Find the HydroBaseDMI to use...
-			Object o = _processor.getPropContents (
+			Object o = processor.getPropContents (
 				"HydroBaseDMIList" );
 			if ( o == null ) {
 				message = "Could not get list of HydroBase " +
@@ -575,9 +579,9 @@ CommandWarningException, CommandException
 		}
 		else {	// Read 1+ time series...
 			// Get the input needed to process the file...
-			String DataType = _parameters.getValue ( "DataType" );
-			String Interval = _parameters.getValue ( "Interval" );
-			String InputName = _parameters.getValue ( "InputName" );
+			String DataType = parameters.getValue ( "DataType" );
+			String Interval = parameters.getValue ( "Interval" );
+			String InputName = parameters.getValue ( "InputName" );
 			if ( InputName == null ) {
 				InputName = "";
 			}
@@ -585,7 +589,7 @@ CommandWarningException, CommandException
 			String WhereN;
 			int nfg = 0;	// Used below.
 			for ( nfg = 0; nfg < 1000; nfg++ ) {
-				WhereN = _parameters.getValue (
+				WhereN = parameters.getValue (
 					"Where" + (nfg + 1) );
 				if ( WhereN == null ) {
 					break;	// No more where clauses
@@ -594,7 +598,7 @@ CommandWarningException, CommandException
 			}
 		
 			// Find the HydroBaseDMI to use...
-			Object o = _processor.getPropContents (
+			Object o = processor.getPropContents (
 				"HydroBaseDMIList" );
 			if ( o == null ) {
 				message = "Could not get list of HydroBase " +
@@ -893,7 +897,7 @@ CommandWarningException, CommandException
 		// list being managed in the command processor...
 
 		Object o = null;
-		o = _processor.getPropContents ( "TSResultsList");
+		o = processor.getPropContents ( "TSResultsList");
 		if ( o == null ) {
 			message = "Unable to get list of time series.  Can't add to list.";
 			Message.printWarning(warning_level,
@@ -919,7 +923,7 @@ CommandWarningException, CommandException
 		try {	
 			PropList request_params = new PropList ( "" );
 			request_params.setUsingObject ( "TSList", tslist );
-			_processor.processRequest( "ReadTimeSeries2", request_params);
+			processor.processRequest( "ReadTimeSeries2", request_params);
 		}
 		catch ( Exception e ) {
 			message =
@@ -935,7 +939,7 @@ CommandWarningException, CommandException
 			// Index is zero based...
 			request_params.setUsingObject ( "Index", new Integer(vsize + i) );
 			try {
-				_processor.processRequest( "SetTimeSeries", request_params);
+				processor.processRequest( "SetTimeSeries", request_params);
 			}
 			catch ( Exception e ) {
 				Message.printWarning(warning_level,

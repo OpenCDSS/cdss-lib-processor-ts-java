@@ -26,15 +26,16 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -45,7 +46,7 @@ This class initializes, checks, and runs the scale() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class scale_Command extends SkeletonCommand
+public class scale_Command extends AbstractCommand
 implements Command
 {
 
@@ -199,21 +200,22 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Set parameters and new defaults...
 
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
-			_parameters.set ( "TSID", TSID );
+			parameters.set ( "TSID", TSID );
 		}
 		if ( ScaleValue.length() > 0 ) {
-			_parameters.set ( "ScaleValue", ScaleValue );
+			parameters.set ( "ScaleValue", ScaleValue );
 		}
 		if ( AnalysisStart.length() > 0 ) {
-			_parameters.set ( "AnalysisStart", AnalysisStart );
+			parameters.set ( "AnalysisStart", AnalysisStart );
 		}
 		if ( AnalysisEnd.length() > 0 ) {
-			_parameters.set ( "AnalysisEnd", AnalysisEnd );
+			parameters.set ( "AnalysisEnd", AnalysisEnd );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 
 	else {	// Current syntax...
@@ -230,8 +232,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
+		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine, "," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -269,13 +271,16 @@ CommandWarningException, CommandException
 	int log_level = 3;  // Level for non-use messages for log file.
 
 	// Make sure there are time series available to operate on...
+	
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = "AllMatchingTSID";
-	String TSID = _parameters.getValue ( "TSID" );
-	String ScaleValue = _parameters.getValue ( "ScaleValue" );
-	String AnalysisStart = _parameters.getValue ( "AnalysisStart" );
-	String AnalysisEnd = _parameters.getValue ( "AnalysisEnd" );
-	String NewUnits = _parameters.getValue ( "NewUnits" );
+	String TSID = parameters.getValue ( "TSID" );
+	String ScaleValue = parameters.getValue ( "ScaleValue" );
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String NewUnits = parameters.getValue ( "NewUnits" );
 
 	// Figure out the dates to use for the analysis.
 	// Default of null means to analyze the full period.
@@ -288,7 +293,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", AnalysisStart );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisStart DateTime(DateTime=" +
@@ -327,7 +332,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", AnalysisEnd );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisEnd DateTime(DateTime=" +
@@ -368,7 +373,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +

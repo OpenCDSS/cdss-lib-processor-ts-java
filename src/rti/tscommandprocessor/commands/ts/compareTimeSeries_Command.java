@@ -71,15 +71,16 @@ import RTi.TS.TSData;
 import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -92,7 +93,7 @@ This class initializes, checks, and runs the compareTimeSeries() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class compareTimeSeries_Command extends SkeletonCommand
+public class compareTimeSeries_Command extends AbstractCommand
 implements Command
 {
 
@@ -301,8 +302,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," );
+		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -340,8 +341,11 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Level for non-user messages
 	int size = 0;
 	
+	CommandProcessor processor = getCommandProcessor();
+	PropList parameters = getCommandParameters();
+	
 	Vector tslist = null;
-	try { Object o = _processor.getPropContents( "TSResultsList" );
+	try { Object o = processor.getPropContents( "TSResultsList" );
 			tslist = (Vector)o;
 	}
 	catch ( Exception e ){
@@ -367,22 +371,22 @@ CommandWarningException, CommandException
 		routine, message );
 		throw new CommandException ( message );
 	}
-	String MatchLocation = _parameters.getValue ( "MatchLocation" );
-	String MatchDataType = _parameters.getValue ( "MatchDataType" );
-	String Precision = _parameters.getValue ( "Precision" );
+	String MatchLocation = parameters.getValue ( "MatchLocation" );
+	String MatchDataType = parameters.getValue ( "MatchDataType" );
+	String Precision = parameters.getValue ( "Precision" );
 						// What to round data to before
 						// comparing.
-	String Tolerance = _parameters.getValue ( "Tolerance" );
-	String AnalysisStart = _parameters.getValue ( "AnalysisStart" );
-	String AnalysisEnd = _parameters.getValue ( "AnalysisEnd" );
-	String DiffFlag = _parameters.getValue ( "DiffFlag" );
+	String Tolerance = parameters.getValue ( "Tolerance" );
+	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
+	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String DiffFlag = parameters.getValue ( "DiffFlag" );
 	if ( (DiffFlag != null) && (DiffFlag.length() == 0) ) {
 		// Set to null to indicate no flag in checks below...
 		DiffFlag = null;
 	}
-	String CreateDiffTS = _parameters.getValue ( "CreateDiffTS" );
-	String WarnIfDifferent = _parameters.getValue ( "WarnIfDifferent" );
-	String WarnIfSame = _parameters.getValue ( "WarnIfSame" );
+	String CreateDiffTS = parameters.getValue ( "CreateDiffTS" );
+	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
+	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
 	int Precision_int = 0;			// The number of digits after
 						// the decimal to use for
 						// comparisons.  If Precision is
@@ -452,7 +456,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", AnalysisStart );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisStart DateTime(DateTime=" +
@@ -491,7 +495,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", AnalysisEnd );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisEnd DateTime(DateTime=" +
@@ -1175,7 +1179,7 @@ CommandWarningException, CommandException
 			b.toString() );
 
 		if ( CreateDiffTS_boolean ) {
-			try { Object o = _processor.getPropContents ( "TSResultsList" );
+			try { Object o = processor.getPropContents ( "TSResultsList" );
 				tslist = (Vector)o;
 			}
 			catch ( Exception e ) {
@@ -1188,7 +1192,7 @@ CommandWarningException, CommandException
 			for ( int i = 0; i < diffsize; i++ ) {
 				tslist.addElement ( (TS)diffts_Vector.elementAt(i) );
 			}
-			try {	_processor.setPropContents ( "TSResultsList", tslist );
+			try {	processor.setPropContents ( "TSResultsList", tslist );
 			}
 			catch ( Exception e ) {
 				message = "Error setting time series list appended with difference time series.";

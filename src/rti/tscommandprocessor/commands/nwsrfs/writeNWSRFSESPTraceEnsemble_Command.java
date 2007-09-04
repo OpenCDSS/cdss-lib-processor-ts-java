@@ -18,8 +18,10 @@ import javax.swing.JFrame;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -27,7 +29,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 
 import RTi.Util.String.StringUtil;
 
@@ -43,7 +44,7 @@ TSResultsList and WorkingDir.
 </p>
 */
 public class writeNWSRFSESPTraceEnsemble_Command 
-extends SkeletonCommand
+extends AbstractCommand
 implements Command {
 
 protected static final String
@@ -164,8 +165,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 
 	// Get the input needed to process the file...
 	try {
-		_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," );
+		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
@@ -209,15 +210,16 @@ throws InvalidCommandParameterException,
 	int log_level = 3;	// Log message level for non-user warnings
 
 	// Get the command properties not already stored as members.
-	String OutputFile = _parameters.getValue ( "OutputFile" );
-	String CarryoverGroup = _parameters.getValue ( "CarryoverGroup" );
-	String ForecastGroup = _parameters.getValue ( "ForecastGroup" );
-	String Segment = _parameters.getValue ( "Segment" );
-	String SegmentDescription = _parameters.getValue("SegmentDescription");
-	String Latitude = _parameters.getValue ( "Latitude" );
-	String Longitude = _parameters.getValue ( "Longitude" );
-	String RFC = _parameters.getValue ( "RFC" );
-	String TSList = _parameters.getValue ( "TSList" );
+	PropList parameters = getCommandParameters ();
+	String OutputFile = parameters.getValue ( "OutputFile" );
+	String CarryoverGroup = parameters.getValue ( "CarryoverGroup" );
+	String ForecastGroup = parameters.getValue ( "ForecastGroup" );
+	String Segment = parameters.getValue ( "Segment" );
+	String SegmentDescription = parameters.getValue("SegmentDescription");
+	String Latitude = parameters.getValue ( "Latitude" );
+	String Longitude = parameters.getValue ( "Longitude" );
+	String RFC = parameters.getValue ( "RFC" );
+	String TSList = parameters.getValue ( "TSList" );
 	
 	if ( (TSList == null) || (TSList.length() == 0) ) {
 		// Default...
@@ -228,9 +230,10 @@ throws InvalidCommandParameterException,
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	//request_params.set ( "TSID", TSID );
+	CommandProcessor processor = getCommandProcessor();
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +

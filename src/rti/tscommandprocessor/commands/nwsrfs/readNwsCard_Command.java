@@ -27,15 +27,16 @@ import java.io.File;
 import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -51,7 +52,7 @@ TSResultsList and WorkingDir.
 </p>
 */
 public class readNwsCard_Command 
-extends SkeletonCommand
+extends AbstractCommand
 implements Command {
 
 protected static final String
@@ -346,21 +347,22 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		String NewUnits = ((String)tokens.elementAt(3)).trim();
 		String InputStart = ((String)tokens.elementAt(4)).trim();
 		String InputEnd = ((String)tokens.elementAt(5)).trim();
-		_parameters = new PropList("Command Parameters");
-		_parameters.set("InputFile", InputFile);
+		PropList parameters = new PropList("Command Parameters");
+		parameters.set("InputFile", InputFile);
 		if (!NewUnits.equals("*")) {
-			_parameters.set("NewUnits", NewUnits);
+			parameters.set("NewUnits", NewUnits);
 		}
 		if (!InputStart.equals("*")) {
-			_parameters.set("InputStart", InputStart);
+			parameters.set("InputStart", InputStart);
 		}
 		if (!InputEnd.equals("*")) {
-			_parameters.set("InputEnd", InputEnd);
+			parameters.set("InputEnd", InputEnd);
 		}
 		if (!__Alias.trim().equals("")) {
-			_parameters.set("Alias", __Alias.trim());
+			parameters.set("Alias", __Alias.trim());
 		}
-		_parameters.set("Read24HourAsDay", "false");
+		parameters.set("Read24HourAsDay", "false");
+		setCommandParameters ( parameters );
 	}
 	else {
 		// This is the new format of parsing, where parameters are
@@ -384,8 +386,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	
 		// Get the input needed to process the file...
 		try {
-			_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
+			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine, "," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -396,15 +398,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 				routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
+		PropList parameters = getCommandParameters ();
 
 		// The following is for backwards compatability with old 
 		// commands files.
-		if (_parameters.getValue("InputStart") == null) {
-			_parameters.set("InputStart", _parameters.getValue(
+		if (parameters.getValue("InputStart") == null) {
+			parameters.set("InputStart", parameters.getValue(
 				"ReadStart"));
 		}
-		if (_parameters.getValue("InputEnd") == null) {
-			_parameters.set("InputEnd", _parameters.getValue(
+		if ( parameters.getValue("InputEnd") == null) {
+			parameters.set("InputEnd", parameters.getValue(
 				"ReadEnd"));
 		}
 
@@ -434,7 +437,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		}
 
 		if (__Alias != null) {
-			_parameters.set("Alias", __Alias.trim());
+			parameters.set("Alias", __Alias.trim());
 		}
 	}
 }
@@ -468,13 +471,14 @@ throws InvalidCommandParameterException,
 	Vector TSList     = null;	// Keep the list of time series	
 
 	// Get the command properties not already stored as members.
-	String InputFile = _parameters.getValue("InputFile");
-	String NewUnits = _parameters.getValue("NewUnits");
+	PropList parameters = getCommandParameters();
+	String InputFile = parameters.getValue("InputFile");
+	String NewUnits = parameters.getValue("NewUnits");
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
 	//String InputStart = _parameters.getValue("InputStart");
 	//String InputEnd = _parameters.getValue("InputEnd");
-	String Read24HourAsDay = _parameters.getValue("Read24HourAsDay");
-	String Alias = _parameters.getValue("Alias");
+	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+	String Alias = parameters.getValue("Alias");
 
 	// Set the properties for NWSCardTS.readTimeSeries().
 	PropList props = new PropList("NWSCardTS.readTimeSeries");
@@ -525,12 +529,13 @@ throws InvalidCommandParameterException,
 		throw new CommandException ( message );
 	}
 
+	CommandProcessor processor = getCommandProcessor();
 	// Add the new time series to the TSResultsList.
 	if ( TSList != null && TSCount > 0 ) {
 		// Get the list of time series currently in the command
 		// processor.
 		Vector TSResultsList_Vector = null;
-		try { Object o = _processor.getPropContents( "TSResultsList" );
+		try { Object o = processor.getPropContents( "TSResultsList" );
 				TSResultsList_Vector = (Vector)o;
 		}
 		catch ( Exception e ){
@@ -546,7 +551,7 @@ throws InvalidCommandParameterException,
 			TSResultsList_Vector.addElement ( TSList.elementAt(i) );
 		}
 		// Now set back in the processor...
-		try {	_processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 		}
 		catch ( Exception e ){
 			message = "Cannot set updated time series list.  Skipping.";

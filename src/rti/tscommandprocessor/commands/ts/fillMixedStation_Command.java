@@ -23,10 +23,11 @@ import java.io.File;
 import javax.swing.JFrame;
 import java.util.Vector;
 
-import RTi.TS.MixedStationAnalysis;
+//import RTi.TS.MixedStationAnalysis;
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
@@ -37,7 +38,7 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -47,7 +48,7 @@ import RTi.Util.Time.DateTime;
 /**
 This class can run in command "batch" mode or in tool menu.
 */
-public class fillMixedStation_Command extends SkeletonCommand
+public class fillMixedStation_Command extends AbstractCommand
 	implements Command
 {
 
@@ -138,10 +139,12 @@ throws InvalidCommandParameterException
 	String FillEnd 		= parameters.getValue ( "FillEnd"          );
 	String Intercept	= parameters.getValue ( "Intercept"        );
 	String OutputFile	= parameters.getValue ( "OutputFile"       );
+	
+	CommandProcessor processor = getCommandProcessor();
 	                            
 	// Get the working_dir from the command processor
 	String working_dir = null;
-	try { Object o = _processor.getPropContents ( "WorkingDir" );
+	try { Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
 			working_dir = (String)o;
@@ -526,8 +529,8 @@ throws 	InvalidCommandSyntaxException,
 
 	// Get the input needed to process the file...
 	try {
-		_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), mthd, "," );
+		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), mthd, "," ) );
 	}
 	catch ( Exception e ) {
 		mssg = "Syntax error in \"" + command +
@@ -582,29 +585,32 @@ throws InvalidCommandParameterException,
             	
 	int warning_count = 0;
 	
+	PropList parameters = getCommandParameters();
+	
 	// Get the properties from the propList parameters.
-        String DependentTSList  = _parameters.getValue ( "DependentTSList"  );
-	String DependentTSID    = _parameters.getValue ( "DependentTSID"    );
-	String IndependentTSList= _parameters.getValue ( "IndependentTSList");
-	String IndependentTSID  = _parameters.getValue ( "IndependentTSID"  );
-	String AnalysisMethod	= _parameters.getValue ( "AnalysisMethod"   );
-	String NumberOfEquations= _parameters.getValue ( "NumberOfEquations");
-	String Transformation	= _parameters.getValue ( "Transformation"   );
-	String AnalysisStart	= _parameters.getValue ( "AnalysisStart"    );
-	String AnalysisEnd	= _parameters.getValue ( "AnalysisEnd"      );
-	String MinimumDataCount	= _parameters.getValue ( "MinimumDataCount" );
-	String MinimumR		= _parameters.getValue ( "MinimumR"         );
-	String BestFitIndicator = _parameters.getValue ( "BestFitIndicator" );
-	String FillStart 	= _parameters.getValue ( "FillStart"        );
-	String FillEnd 		= _parameters.getValue ( "FillEnd"          );
-	String Intercept	= _parameters.getValue ( "Intercept"        );
-	String OutputFile	= _parameters.getValue ( "OutputFile"       );
+    String DependentTSList  = parameters.getValue ( "DependentTSList"  );
+	String DependentTSID    = parameters.getValue ( "DependentTSID"    );
+	String IndependentTSList= parameters.getValue ( "IndependentTSList");
+	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
+	String AnalysisMethod	= parameters.getValue ( "AnalysisMethod"   );
+	String NumberOfEquations= parameters.getValue ( "NumberOfEquations");
+	String Transformation	= parameters.getValue ( "Transformation"   );
+	String AnalysisStart	= parameters.getValue ( "AnalysisStart"    );
+	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
+	String MinimumDataCount	= parameters.getValue ( "MinimumDataCount" );
+	String MinimumR		= parameters.getValue ( "MinimumR"         );
+	String BestFitIndicator = parameters.getValue ( "BestFitIndicator" );
+	String FillStart 	= parameters.getValue ( "FillStart"        );
+	String FillEnd 		= parameters.getValue ( "FillEnd"          );
+	String Intercept	= parameters.getValue ( "Intercept"        );
+	String OutputFile	= parameters.getValue ( "OutputFile"       );
 	
 	Vector v;
 	int [] tspos;
 	int tsCount;
 	
-	CommandProcessor tsCP = _processor;
+	CommandProcessor tsCP = getCommandProcessor();
+	CommandProcessor processor = tsCP;
 	
 	// Get the list of dependent time series to process...
 	Vector dependentTSList = null; 
@@ -614,7 +620,7 @@ throws InvalidCommandParameterException,
 		// Get the time series from the command list.
 		// The getTimeSeriesToProcess method will properly return the
 		// time series according to the settings of DependentTSList.
-		v = getTimeSeriesToProcess( _processor,
+		v = getTimeSeriesToProcess( processor,
 			DependentTSList, DependentTSID );
 		Vector tslist = (Vector)v.elementAt(0);
 		tspos = (int [])v.elementAt(1);
@@ -672,7 +678,7 @@ throws InvalidCommandParameterException,
 		// get the list os selected time series objects.
 
 		Vector tsObjects = null;
-		try { Object o = _processor.getPropContents( "TSResultsList" );
+		try { Object o = processor.getPropContents( "TSResultsList" );
 				tsObjects = (Vector)o;
 		}
 		catch ( Exception e ){
@@ -697,7 +703,7 @@ throws InvalidCommandParameterException,
 		// Get the time series from the command list.
 		// The getTimeSeriesToProcess method will properly return the
 		// time series according to the settings of IndependentTSList.
-		v = getTimeSeriesToProcess( _processor, IndependentTSList, IndependentTSID);
+		v = getTimeSeriesToProcess( processor, IndependentTSList, IndependentTSID);
 				
 		Vector tslist = (Vector)v.elementAt(0);
 		tspos = (int [])v.elementAt(1);
@@ -754,7 +760,7 @@ throws InvalidCommandParameterException,
 		// get the list of selected time series objects.
 		
 		Vector tsObjects = null;
-		try { Object o = _processor.getPropContents( "TSResultsList" );
+		try { Object o = processor.getPropContents( "TSResultsList" );
 				tsObjects = (Vector)o;
 		}
 		catch ( Exception e ){

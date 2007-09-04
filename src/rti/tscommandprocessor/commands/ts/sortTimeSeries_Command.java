@@ -25,13 +25,15 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+
 
 /**
 <p>
@@ -40,7 +42,7 @@ This class initializes, checks, and runs the sortTimeSeries() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class sortTimeSeries_Command extends SkeletonCommand implements Command
+public class sortTimeSeries_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -113,7 +115,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// REVISIT SAM 2005-05-03 Probably need to add a parameter to sort
 	// by location, name, etc.
 	// Currently no parameters are needed.
-	_parameters = new PropList ( getCommandName() );
+	setCommandParameters ( new PropList ( getCommandName() ) );
 }
 
 /**
@@ -136,7 +138,10 @@ public void runCommand ( String command_tag, int warning_level )
 throws CommandWarningException, CommandException
 {	String routine = "sortTimeSeries_Command.runCommand", message;
 	Vector tslist = null;
-	try { Object o = _processor.getPropContents ( "TSResultsList" );
+	
+	CommandProcessor processor = getCommandProcessor();
+	
+	try { Object o = processor.getPropContents ( "TSResultsList" );
 			tslist = (Vector)o;
 	}
 	catch ( Exception e ) {
@@ -152,7 +157,7 @@ throws CommandWarningException, CommandException
 		return;
 	}
 	try {	Vector tslist_sorted = TSUtil.sort ( tslist );
-		_processor.setPropContents ( "TSResultsList", tslist_sorted );
+		processor.setPropContents ( "TSResultsList", tslist_sorted );
 	}
 	catch ( Exception e ) {
 		message = "Error sorting time series.";

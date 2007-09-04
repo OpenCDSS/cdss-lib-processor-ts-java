@@ -47,8 +47,10 @@ import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.GenericCommand_JDialog;
@@ -56,7 +58,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -64,7 +66,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
-public class lagK_Command extends SkeletonCommand implements Command
+public class lagK_Command extends AbstractCommand implements Command
 {
 	
 private boolean  __param_FillNearest = false;	// Flag indicating that missing
@@ -303,12 +305,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Parse the parameters (second token in the tokens vector)
 	// needed to process the command.
 	try {
-		_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String) tokens.elementAt(1), routine, "," );
+		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String) tokens.elementAt(1), routine, "," ) );
 		// If the Alias was found in the command added it to the
 		// parameters propList.	
 		if ( (Alias != null) && (Alias.length() > 0) ) {
-			_parameters.set( "Alias", Alias );
+			setCommandParameter( "Alias", Alias );
 			
 			if ( Message.isDebugOn ) {
 				message = "Alias is: " + Alias;
@@ -351,9 +353,12 @@ throws InvalidCommandParameterException, CommandWarningException,
 	int log_level = 3;
 	int warning_count = 0;
 	
-	String Alias = _parameters.getValue( "Alias" );
-	String TSID = _parameters.getValue( "TSID"  );
-	String ObsTSID = _parameters.getValue( "ObsTSID"  );
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
+	
+	String Alias = parameters.getValue( "Alias" );
+	String TSID = parameters.getValue( "TSID"  );
+	String ObsTSID = parameters.getValue( "ObsTSID"  );
 	
 	TS original_ts = null;		// Original time series
 	TS result_ts = null;		// Result time series
@@ -366,7 +371,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 	CommandProcessorRequestResultsBean bean = null;
 	int ts_pos = -1;	// No time series found
 	try { bean =
-		_processor.processRequest( "IndexOf", request_params);
+		processor.processRequest( "IndexOf", request_params);
 		PropList bean_PropList = bean.getResultsPropList();
 		Object o_Index = bean_PropList.getContents ( "Index" );
 		if ( o_Index == null ) {
@@ -398,7 +403,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 			request_params.setUsingObject ( "Index", new Integer(ts_pos) );
 			bean = null;
 			try { bean =
-				_processor.processRequest( "GetTimeSeries", request_params);
+				processor.processRequest( "GetTimeSeries", request_params);
 			}
 			catch ( Exception e ) {
 				Message.printWarning(log_level,
@@ -434,7 +439,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 			bean = null;
 			ts_pos = -1;	// No time series found
 			try { bean =
-				_processor.processRequest( "IndexOf", request_params);
+				processor.processRequest( "IndexOf", request_params);
 				PropList bean_PropList = bean.getResultsPropList();
 				Object o_Index = bean_PropList.getContents ( "Index" );
 				if ( o_Index == null ) {
@@ -465,7 +470,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 				request_params.setUsingObject ( "Index", new Integer(ts_pos) );
 				bean = null;
 				try { bean =
-					_processor.processRequest( "GetTimeSeries", request_params);
+					processor.processRequest( "GetTimeSeries", request_params);
 				}
 				catch ( Exception e ) {
 					Message.printWarning(log_level,
@@ -793,9 +798,9 @@ throws InvalidCommandParameterException, CommandWarningException,
 
 		// Add the newly created time series to the software memory.
 		Vector TSResultsList = 
-			(Vector) _processor.getPropContents ( "TSResultsList" );
+			(Vector) processor.getPropContents ( "TSResultsList" );
 		TSResultsList.addElement( result_ts );
-		_processor.setPropContents ( "TSResultsList", TSResultsList );
+		processor.setPropContents ( "TSResultsList", TSResultsList );
 		TSResultsList = null;
 		
 		I1_date       = null;
@@ -1119,8 +1124,9 @@ throws CommandWarningException
 
 	// If specified, the States data must be an array 
 	// of (Lag/TSID-Multiplier) + 1  = __param_numStates double values
-	String InflowStates = _parameters.getValue( "InflowStates"  );
-	String OutflowStates = _parameters.getValue( "OutflowStates"  );
+	PropList parameters = getCommandParameters ();
+	String InflowStates = parameters.getValue( "InflowStates"  );
+	String OutflowStates = parameters.getValue( "OutflowStates"  );
 		
 	if ( __param_numStates < 0 ) {
 		// Must have had some warnings in previous could and will have

@@ -43,7 +43,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -59,7 +59,7 @@ This class initializes, checks, and runs the fillUsingDiversionComments() comman
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class fillUsingDiversionComments_Command extends SkeletonCommand
+public class fillUsingDiversionComments_Command extends AbstractCommand
 implements Command
 {
 
@@ -192,8 +192,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the file...
-	try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," );
+	try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
@@ -259,13 +259,14 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int log_level = 3;
 	String message, routine = "fillUsingDiversionComments_Command.runCommand";
-	String TSID = _parameters.getValue ( "TSID" );
-	String FillStart = _parameters.getValue ( "FillStart" );
-	String FillEnd = _parameters.getValue ( "FillEnd" );
-	String FillFlag = _parameters.getValue ( "FillFlag" );
-	String FillUsingCIU = _parameters.getValue ( "FillUsingCIU" );
-	String FillUsingCIUFlag = _parameters.getValue ( "FillUsingCIUFlag" );
-	String RecalcLimits = _parameters.getValue ( "RecalcLimits" );
+	PropList parameters = getCommandParameters();
+	String TSID = parameters.getValue ( "TSID" );
+	String FillStart = parameters.getValue ( "FillStart" );
+	String FillEnd = parameters.getValue ( "FillEnd" );
+	String FillFlag = parameters.getValue ( "FillFlag" );
+	String FillUsingCIU = parameters.getValue ( "FillUsingCIU" );
+	String FillUsingCIUFlag = parameters.getValue ( "FillUsingCIUFlag" );
+	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 	
 	DateTime start = null;
 	DateTime end = null;
@@ -301,7 +302,8 @@ CommandWarningException, CommandException
 	// specified as input.
 	int nts = 0;
 	Object o = null;
-	try { o = _processor.getPropContents ( "TSResultsListSize");
+	CommandProcessor processor = getCommandProcessor();
+	try { o = processor.getPropContents ( "TSResultsListSize");
 		if ( o == null ) {
 			Message.printWarning(log_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -324,7 +326,7 @@ CommandWarningException, CommandException
 		request_params.set ( "TSID", TSID );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "IndexOf", request_params);
+			processor.processRequest( "IndexOf", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(log_level,
@@ -367,7 +369,7 @@ CommandWarningException, CommandException
 	}
 	
 	boolean HaveOutputPeriod_boolean = false;
-	try { o = _processor.getPropContents ( "HaveOutputPeriod");
+	try { o = processor.getPropContents ( "HaveOutputPeriod");
 		if ( o == null ) {
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -390,7 +392,7 @@ CommandWarningException, CommandException
 		request_params.setUsingObject ( "Index", new Integer(its) );
 		CommandProcessorRequestResultsBean bean = null;
 		try { bean =
-			_processor.processRequest( "GetTimeSeries", request_params);
+			processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warningLevel,
@@ -416,7 +418,7 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.set ( "InputName", "" + ts.getIdentifier().getInputName() );
 		try { bean =
-			_processor.processRequest( "GetHydroBaseDMI", request_params);
+			processor.processRequest( "GetHydroBaseDMI", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warningLevel,
@@ -521,7 +523,7 @@ CommandWarningException, CommandException
 					ciu.equalsIgnoreCase( "I" )) {
 				// Recalculate TS Limits
 				warning_count = 
-					recalculateLimits( ts, _processor, warningLevel, 
+					recalculateLimits( ts, processor, warningLevel, 
 					warning_count, command_tag );
 				// Fill missing data values at end of period with zeros
 				try {
@@ -555,7 +557,7 @@ CommandWarningException, CommandException
 			else if( ciu.equalsIgnoreCase( "N" )) {
 				// Recalculate TS Limits
 				warning_count = 
-					recalculateLimits( ts, _processor, warningLevel, 
+					recalculateLimits( ts, processor, warningLevel, 
 					warning_count, command_tag );
 				try {
 					TSData tmpTSData = 
@@ -585,7 +587,7 @@ CommandWarningException, CommandException
 			}	
 		}
 		else if ( RecalcLimits.equalsIgnoreCase( "True" ) ) {
-				recalculateLimits( ts, _processor, warningLevel,
+				recalculateLimits( ts, processor, warningLevel,
 					warning_count, command_tag );
 		}
 		// Update the time series in the processor...
@@ -596,7 +598,7 @@ CommandWarningException, CommandException
 		request_params.setUsingObject ( "TS", ts );
 		request_params.setUsingObject ( "Index", new Integer(its) );
 		try { bean =
-			_processor.processRequest( "ProcessTimeSeriesAction", request_params);
+			processor.processRequest( "ProcessTimeSeriesAction", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warningLevel,

@@ -54,19 +54,16 @@ package rti.tscommandprocessor.core;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
-import RTi.Util.IO.compareFiles_Command;
 import RTi.Util.IO.GenericCommand;
 import RTi.Util.IO.UnknownCommandException;
-
-import RTi.Util.Message.startLog_Command;
 
 import RTi.Util.String.StringUtil;
 
 // DataTest commands
 // FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
 
-import RTi.DataTest.newDataTest_Command;
-import RTi.DataTest.runDataTest_Command;
+import rti.tscommandprocessor.commands.datatest.newDataTest_Command;
+import rti.tscommandprocessor.commands.datatest.runDataTest_Command;
 
 // GRTS commands (time series products).
 
@@ -77,6 +74,10 @@ import rti.tscommandprocessor.commands.products.processTSProduct_Command;
 import rti.tscommandprocessor.commands.hydrobase.fillUsingDiversionComments_Command;
 import rti.tscommandprocessor.commands.hydrobase.openHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.readHydroBase_Command;
+
+// Logging commands.
+
+import rti.tscommandprocessor.commands.logging.startLog_Command;
 
 // NWSRFS commands.
 
@@ -117,6 +118,11 @@ import rti.tscommandprocessor.commands.ts.runCommands_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.setInputPeriod_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
+
+// Utility commands.
+
+import rti.tscommandprocessor.commands.util.compareFiles_Command;
+import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 
 /**
 This class instantiates Commands for time series processing.
@@ -216,6 +222,13 @@ throws UnknownCommandException
 		StringUtil.getToken(command_string,"( =",
 		StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "lagK") ) {
 		return new lagK_Command ();
+	}
+	
+	// "m" commands...
+	
+	else if ( StringUtil.startsWithIgnoreCase(
+			command_string,"mergeListFileColumns") ) {
+			return new mergeListFileColumns_Command ();
 	}
 
 	// "n" commands...

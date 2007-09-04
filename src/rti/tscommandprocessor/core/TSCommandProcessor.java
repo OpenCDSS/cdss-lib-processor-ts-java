@@ -59,6 +59,10 @@ import RTi.TS.TSSupplier;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
+// NWSRFS_DMI commands.
+
+import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
+
 // TS general commands.
 
 // REVISIT SAM 2005-05-19 When TSEngine is sufficiently clean, merge its code
@@ -652,15 +656,19 @@ Determine the index of a command in the processor.  A reference comparison occur
 @return the index (0+) of the matching command, or -1 if not found.
 */
 public int indexOf ( Command command )
-{
+{	String routine = getClass().getName() + ".indexOf";
 	int size = size();
 	Command c;
+	Message.printStatus ( 2, routine, "Checking " + size + " commands for command " + command );
 	for ( int i = 0; i < size; i++ ) {
 		c = (Command)__Command_Vector.elementAt(i);
+		Message.printStatus ( 2, routine, "Comparing to command " + c );
 		if ( c == command ) {
+			Message.printStatus ( 2, routine, "Found command." );
 			return i;
 		}
 	}
+	Message.printStatus ( 2, routine, "Did not find command." );
 	return -1;
 }
 
@@ -1582,6 +1590,32 @@ throws Exception
 	// Add an open HydroBaseDMI instance, closing a previous connection
 	// of the same name if it exists.
 	__tsengine.setHydroBaseDMI( dmi, true );
+	// No results need to be returned.
+	return bean;
+}
+
+/**
+Process the SetNWSRFSFS5FilesDMI request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetNWSRFSFS5FilesDMI (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "NWSRFSFS5FilesDMI" );
+	if ( o == null ) {
+			String warning =
+				"Request SetNWSRFSFS5FilesDMI() does not provide a NWSRFSFS5FilesDMI parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	NWSRFS_DMI dmi = (NWSRFS_DMI)o;
+	// Add an open HydroBaseDMI instance, closing a previous connection
+	// of the same name if it exists.
+	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
 }

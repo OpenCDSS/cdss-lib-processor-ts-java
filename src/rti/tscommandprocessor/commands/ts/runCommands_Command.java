@@ -21,13 +21,14 @@ import javax.swing.JFrame;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 
 /**
 <p>
@@ -37,7 +38,7 @@ This class initializes, checks, and runs the runCommands() command.
 WorkingDir.
 </p>
 */
-public class runCommands_Command extends SkeletonCommand implements Command
+public class runCommands_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -63,12 +64,14 @@ throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
 	String warning = "";
 	
+	CommandProcessor processor = getCommandProcessor();
+	
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
 		warning += "\nThe input file must be specified.";
 	}
 	else {	String working_dir = null;
 	
-			try { Object o = _processor.getPropContents ( "WorkingDir" );
+			try { Object o = processor.getPropContents ( "WorkingDir" );
 					// Working directory is available so use it...
 					if ( o != null ) {
 						working_dir = (String)o;
@@ -160,9 +163,12 @@ throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "runCommands_Command.runCommand", message;
 	int warning_count = 0;
+	
+	CommandProcessor processor = getCommandProcessor();
+	PropList parameters = getCommandParameters();
 
-	String InputFile = _parameters.getValue ( "InputFile" );
-
+	String InputFile = parameters.getValue ( "InputFile" );
+	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count +
 			" warnings about command parameters.";
@@ -199,7 +205,7 @@ CommandWarningException, CommandException
 		PropList request_params = new PropList ( "" );
 		request_params.setUsingObject ( "Commands", commands );
 		request_params.setUsingObject ( "Properties", props2 );
-		try { _processor.processRequest( "ProcessCommands", request_params);
+		try { processor.processRequest( "ProcessCommands", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting ProcessCommands() from processor.";

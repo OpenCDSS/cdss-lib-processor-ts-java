@@ -27,15 +27,16 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
@@ -47,7 +48,7 @@ This class initializes, checks, and runs the newTimeSeries() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class newTimeSeries_Command extends SkeletonCommand
+public class newTimeSeries_Command extends AbstractCommand
 implements Command
 {
 
@@ -257,30 +258,31 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Set parameters and new defaults...
 
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( Alias.length() > 0 ) {
-			_parameters.set ( "Alias", Alias );
+			parameters.set ( "Alias", Alias );
 		}
 		if ( NewTSID.length() > 0 ) {
-			_parameters.set ( "NewTSID", NewTSID );
+			parameters.set ( "NewTSID", NewTSID );
 		}
 		if ( Description.length() > 0 ) {
-			_parameters.set ( "Description", Description );
+			parameters.set ( "Description", Description );
 		}
 		if ( SetStart.length() > 0 ) {
-			_parameters.set ( "SetStart", SetStart );
+			parameters.set ( "SetStart", SetStart );
 		}
 		if ( SetEnd.length() > 0 ) {
-			_parameters.set ( "SetEnd", SetEnd );
+			parameters.set ( "SetEnd", SetEnd );
 		}
 		if ( Units.length() > 0 ) {
-			_parameters.set ( "Units", Units );
+			parameters.set ( "Units", Units );
 		}
 		if ( InitialValue.length() > 0 ) {
-			_parameters.set ( "InitialValue", InitialValue );
+			parameters.set ( "InitialValue", InitialValue );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 	else {	// Current syntax...
 		Vector tokens = StringUtil.breakStringList ( token1,
@@ -296,11 +298,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
+		try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
 				(String)tokens.elementAt(1), routine, "," );
-			_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-			_parameters.set ( "Alias", Alias );
-			_parameters.setHowSet ( Prop.SET_UNKNOWN );
+			parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+			parameters.set ( "Alias", Alias );
+			parameters.setHowSet ( Prop.SET_UNKNOWN );
+			setCommandParameters ( parameters );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -339,14 +342,17 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Level for non-user warnings to go to log file.
 
 	// Make sure there are time series available to operate on...
+	
+	PropList parameters = getCommandParameters ();
+	CommandProcessor processor = getCommandProcessor();
 
-	String Alias = _parameters.getValue ( "Alias" );
-	String NewTSID = _parameters.getValue ( "NewTSID" );
-	String Description = _parameters.getValue ( "Description" );
-	String SetStart = _parameters.getValue ( "SetStart" );
-	String SetEnd = _parameters.getValue ( "SetEnd" );
-	String Units = _parameters.getValue ( "Units" );
-	String InitialValue = _parameters.getValue ( "InitialValue" );
+	String Alias = parameters.getValue ( "Alias" );
+	String NewTSID = parameters.getValue ( "NewTSID" );
+	String Description = parameters.getValue ( "Description" );
+	String SetStart = parameters.getValue ( "SetStart" );
+	String SetEnd = parameters.getValue ( "SetEnd" );
+	String Units = parameters.getValue ( "Units" );
+	String InitialValue = parameters.getValue ( "InitialValue" );
 	double InitialValue_double = 0.0;
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		InitialValue_double = StringUtil.atod ( InitialValue );
@@ -369,7 +375,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", "OutputStart" );
 			CommandProcessorRequestResultsBean bean = null;
 			bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -388,7 +394,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", SetStart );
 			CommandProcessorRequestResultsBean bean = null;
-			bean = _processor.processRequest( "DateTime", request_params);
+			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -420,7 +426,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", "OutputEnd" );
 			CommandProcessorRequestResultsBean bean = null;
 			bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -439,7 +445,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", SetEnd );
 			CommandProcessorRequestResultsBean bean = null;
-			bean = _processor.processRequest( "DateTime", request_params);
+			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -521,7 +527,7 @@ CommandWarningException, CommandException
 	// taken...
 
 	Vector TSResultsList_Vector = null;
-	try { Object o = _processor.getPropContents( "TSResultsList" );
+	try { Object o = processor.getPropContents( "TSResultsList" );
 			TSResultsList_Vector = (Vector)o;
 	}
 	catch ( Exception e ){
@@ -533,7 +539,7 @@ CommandWarningException, CommandException
 	}
 	if ( TSResultsList_Vector != null ) {
 		TSResultsList_Vector.addElement ( ts );
-		try {	_processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 		}
 		catch ( Exception e ){
 			message = "Cannot set updated time series list.  Skipping.";

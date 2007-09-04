@@ -21,14 +21,15 @@ import javax.swing.JFrame;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -40,7 +41,7 @@ This class initializes, checks, and runs the setInputPeriod() command.
 InputStart, InputEnd.
 </p>
 */
-public class setInputPeriod_Command extends SkeletonCommand implements Command
+public class setInputPeriod_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -186,15 +187,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Set parameters and new defaults...
 
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( InputStart.length() > 0 ) {
-			_parameters.set ( "InputStart", InputStart );
+			parameters.set ( "InputStart", InputStart );
 		}
 		if ( InputEnd.length() > 0 ) {
-			_parameters.set ( "InputEnd", InputEnd );
+			parameters.set ( "InputEnd", InputEnd );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 	else {	// Current syntax...
 		Vector tokens = StringUtil.breakStringList ( command,
@@ -206,8 +208,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
-		_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine,"," );
+		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), routine,"," ) );
 	}
 }
 
@@ -231,8 +233,12 @@ public void runCommand ( String command_tag, int warning_level )
 throws CommandWarningException, CommandException
 {	String routine = "setInputPeriod_Command.runCommand", message;
 	int warning_count = 0;
-	String InputStart = _parameters.getValue ( "InputStart" );
-	String InputEnd = _parameters.getValue ( "InputEnd" );
+	
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
+	
+	String InputStart = parameters.getValue ( "InputStart" );
+	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	PropList dateprops = new PropList ( "setInputPeriod" );
@@ -289,8 +295,8 @@ throws CommandWarningException, CommandException
 			command_tag,++warning_count), routine, message );
 			throw new InvalidCommandParameterException ( message );
 		}
-		_processor.setPropContents ( "InputStart", InputStart_DateTime);
-		_processor.setPropContents ( "InputEnd", InputEnd_DateTime );
+		processor.setPropContents ( "InputStart", InputStart_DateTime);
+		processor.setPropContents ( "InputEnd", InputEnd_DateTime );
 	}
 	catch ( Exception e ) {
 		message = "Error setting input period.";

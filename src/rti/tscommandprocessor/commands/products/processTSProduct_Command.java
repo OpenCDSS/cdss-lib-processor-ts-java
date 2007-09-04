@@ -33,15 +33,16 @@ import RTi.TS.TSSupplier;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -53,7 +54,7 @@ This class initializes, checks, and runs the processTSProduct() command.
 TSResultsList, WorkingDir.
 </p>
 */
-public class processTSProduct_Command extends SkeletonCommand implements Command
+public class processTSProduct_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -91,12 +92,14 @@ throws InvalidCommandParameterException
 	String View = parameters.getValue ( "View" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String warning = "";
+	
+	CommandProcessor processor = getCommandProcessor();
 
 	if ( (TSProductFile == null) || (TSProductFile.length() == 0) ) {
 		warning += "\nThe TSProduct file must be specified.";
 	}
 	else {	String working_dir = null;
-			try { Object o = _processor.getPropContents ( "WorkingDir" );
+			try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
 				if ( o != null ) {
 					working_dir = (String)o;
@@ -150,7 +153,7 @@ throws InvalidCommandParameterException
 	}
 	else if ( (OutputFile != null) && !OutputFile.equals("") ) {
 		String working_dir = null;
-		try { Object o = _processor.getPropContents ( "WorkingDir" );
+		try { Object o = processor.getPropContents ( "WorkingDir" );
 			// Working directory is available so use it...
 			if ( o != null ) {
 				working_dir = (String)o;
@@ -239,13 +242,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String RunMode = ((String)tokens.elementAt(2)).trim();
 		String View = ((String)tokens.elementAt(3)).trim();
 		String OutputFile = ((String)tokens.elementAt(4)).trim();
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSProductFile.length() > 0 ) {
-			_parameters.set ( "TSProductFile", TSProductFile );
+			parameters.set ( "TSProductFile", TSProductFile );
 		}
 		if ( RunMode.length() > 0 ) {
-			_parameters.set ( "RunMode", RunMode );
+			parameters.set ( "RunMode", RunMode );
 		}
 		if ( View.length() > 0 ) {
 			if ( View.equalsIgnoreCase("Preview") ) {
@@ -254,12 +257,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			else if ( View.equalsIgnoreCase("NoPreview") ) {
 				View = _False;
 			}
-			_parameters.set ( "View", View );
+			parameters.set ( "View", View );
 		}
 		if ( OutputFile.length() > 0 ) {
-			_parameters.set ( "OutputFile", OutputFile );
+			parameters.set ( "OutputFile", OutputFile );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 }
 
@@ -289,7 +293,8 @@ CommandWarningException, CommandException
 
 	// Check whether the application wants output files to be created...
 	
-	try {	Object o = _processor.getPropContents ( "CreateOutput" );
+	CommandProcessor processor = getCommandProcessor();
+	try {	Object o = processor.getPropContents ( "CreateOutput" );
 		if ( o != null ) {
 			boolean CreateOutput_boolean = ((Boolean)o).booleanValue();
 			if  ( !CreateOutput_boolean ) {
@@ -306,16 +311,17 @@ CommandWarningException, CommandException
 		Message.printWarning(10, routine, message );
 	}
 
-	String TSProductFile = _parameters.getValue ( "TSProductFile" );
-	String RunMode = _parameters.getValue ( "RunMode" );
+	PropList parameters = getCommandParameters();
+	String TSProductFile = parameters.getValue ( "TSProductFile" );
+	String RunMode = parameters.getValue ( "RunMode" );
 	if ( (RunMode == null) || RunMode.equals("") ) {
 		RunMode = _GUIAndBatch;
 	}
-	String View = _parameters.getValue ( "View" );
+	String View = parameters.getValue ( "View" );
 	if ( (View == null) || View.equals("") ) {
 		View = _True;
 	}
-	String OutputFile = _parameters.getValue ( "OutputFile" );
+	String OutputFile = parameters.getValue ( "OutputFile" );
 	if (	(View == null) || View.equals("") &&
 		((OutputFile == null) || OutputFile.equals("")) ) {
 		// No output file so view is true by default...
@@ -326,7 +332,7 @@ CommandWarningException, CommandException
 
 	WindowListener tsview_window_listener = null;
 	
-	try { Object o = _processor.getPropContents ( "TSViewWindowListener" );
+	try { Object o = processor.getPropContents ( "TSViewWindowListener" );
 		// TSViewWindowListener is available so use it...
 		if ( o != null ) {
 			tsview_window_listener = (WindowListener)o;
@@ -372,14 +378,14 @@ CommandWarningException, CommandException
 				p.addTSViewWindowListener (
 					tsview_window_listener );
 			}
-			p.addTSSupplier ( (TSSupplier)_processor );
+			p.addTSSupplier ( (TSSupplier)processor );
 			TSProduct tsp = new TSProduct (
 						IOUtil.getPathUsingWorkingDir(
 						TSProductFile),
 						override_props );
 			// Specify annotation providers if available...
 			Vector ap_Vector = null;			
-			try { Object o = _processor.getPropContents (
+			try { Object o = processor.getPropContents (
 					"TSProductAnnotationProviderList" );
 					if ( o != null ) {
 							ap_Vector = (Vector)o;

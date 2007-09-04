@@ -29,10 +29,12 @@ import javax.swing.JFrame;
 import RTi.TS.RiverWareTS;
 import RTi.TS.TS;
 
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -40,7 +42,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -52,7 +53,7 @@ This class initializes, checks, and runs the writeRiverWare() command.
 TSResultsList, WorkingDir.
 </p>
 */
-public class writeRiverWare_Command extends SkeletonCommand implements Command
+public class writeRiverWare_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -92,12 +93,13 @@ throws InvalidCommandParameterException
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
 
+	CommandProcessor processor = getCommandProcessor();
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		warning += "\nThe output file: \"" + OutputFile +
 			"\" must be specified.";
 	}
 	else {	String working_dir = null;
-		try { Object o = _processor.getPropContents ( "WorkingDir" );
+		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
 			}
@@ -232,25 +234,26 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String SetScale = ((String)tokens.elementAt(5)).trim();
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		_parameters.set ( "TSList", TSList );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		parameters.set ( "TSList", TSList );
 		if ( OutputFile.length() > 0 ) {
-			_parameters.set ( "OutputFile", OutputFile );
+			parameters.set ( "OutputFile", OutputFile );
 		}
 		if ( Units.length() > 0 ) {
-			_parameters.set("Units", Units);
+			parameters.set("Units", Units);
 		}
 		if ( Scale.length() > 0 ) {
-			_parameters.set ( "Scale", Scale );
+			parameters.set ( "Scale", Scale );
 		}
 		if ( SetUnits.length() > 0 ) {
-			_parameters.set ( "SetUnits", SetUnits );
+			parameters.set ( "SetUnits", SetUnits );
 		}
 		if ( SetScale.length() > 0 ) {
-			_parameters.set ( "SetScale", SetScale );
+			parameters.set ( "SetScale", SetScale );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 }
 
@@ -278,7 +281,8 @@ CommandWarningException, CommandException
 
 	// Check whether the processor wants output files to be created...
 
-	try {	Object o = _processor.getPropContents ( "CreateOutput" );
+	CommandProcessor processor = getCommandProcessor ();
+	try {	Object o = processor.getPropContents ( "CreateOutput" );
 			if ( o != null ) {
 				boolean CreateOutput_boolean = ((Boolean)o).booleanValue();
 				if  ( !CreateOutput_boolean ) {
@@ -295,9 +299,10 @@ CommandWarningException, CommandException
 		Message.printWarning(10, routine, message );
 	}
 
-	String TSList = _parameters.getValue ( "TSList" );
-	String TSID = _parameters.getValue ( "TSID" );
-	String OutputFile = _parameters.getValue ( "OutputFile" );
+	PropList parameters = getCommandParameters();
+	String TSList = parameters.getValue ( "TSList" );
+	String TSID = parameters.getValue ( "TSID" );
+	String OutputFile = parameters.getValue ( "OutputFile" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -305,7 +310,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -339,7 +344,7 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputStart );
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warning_level,
@@ -359,7 +364,7 @@ CommandWarningException, CommandException
 		}
 	}
 	else {	// Get from the processor (can be null)...
-		try {	Object o_OutputStart = _processor.getPropContents ( "OutputStart" );
+		try {	Object o_OutputStart = processor.getPropContents ( "OutputStart" );
 			if ( o_OutputStart != null ) {
 				OutputStart_DateTime = (DateTime)o_OutputStart;
 			}
@@ -376,7 +381,7 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputEnd );
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			Message.printWarning(warning_level,
@@ -396,7 +401,7 @@ CommandWarningException, CommandException
 		}
 	}
 	else {	// Get from the processor...
-		try {	Object o_OutputEnd = _processor.getPropContents ( "OutputEnd" );
+		try {	Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
 			if ( o_OutputEnd != null ) {
 				OutputEnd_DateTime = (DateTime)o_OutputEnd;
 			}
@@ -425,7 +430,7 @@ CommandWarningException, CommandException
 		// Don't pass units to below...
 		RiverWareTS.writeTimeSeries ( tsout, OutputFile,
 			OutputStart_DateTime,
-			OutputEnd_DateTime, _parameters, true );
+			OutputEnd_DateTime, parameters, true );
 	}
 	catch ( Exception e ) {
 		message = "Error writing time series to RiverWare file.";

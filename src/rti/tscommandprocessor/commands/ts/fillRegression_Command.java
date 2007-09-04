@@ -40,15 +40,16 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -59,7 +60,7 @@ This class initializes, checks, and runs the fillRegression() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class fillRegression_Command extends SkeletonCommand implements Command
+public class fillRegression_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -343,39 +344,40 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			}
 		}
 		v = null;
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
-			_parameters.set ( "TSID", TSID );
+			parameters.set ( "TSID", TSID );
 		}
 		if ( IndependentTSID.length() > 0 ) {
-			_parameters.set ( "IndependentTSID", IndependentTSID );
+			parameters.set ( "IndependentTSID", IndependentTSID );
 		}
 		if ( NumberOfEquations.length() > 0 ) {
-			_parameters.set("NumberOfEquations", NumberOfEquations);
+			parameters.set("NumberOfEquations", NumberOfEquations);
 		}
 		if ( AnalysisMonth.length() > 0 ) {
-			_parameters.set ( "AnalysisMonth", AnalysisMonth );
+			parameters.set ( "AnalysisMonth", AnalysisMonth );
 		}
 		if ( Transformation.length() > 0 ) {
-			_parameters.set ( "Transformation", Transformation );
+			parameters.set ( "Transformation", Transformation );
 		}
 		if ( Intercept.length() > 0 ) {
-			_parameters.set ( "Intercept", Intercept );
+			parameters.set ( "Intercept", Intercept );
 		}
 		if ( AnalysisStart.length() > 0 ) {
-			_parameters.set ( "AnalysisStart", AnalysisStart );
+			parameters.set ( "AnalysisStart", AnalysisStart );
 		}
 		if ( AnalysisEnd.length() > 0 ) {
-			_parameters.set ( "AnalysisEnd", AnalysisEnd );
+			parameters.set ( "AnalysisEnd", AnalysisEnd );
 		}
 		if ( FillStart.length() > 0 ) {
-			_parameters.set ( "FillStart", FillStart );
+			parameters.set ( "FillStart", FillStart );
 		}
 		if ( FillEnd.length() > 0 ) {
-			_parameters.set ( "FillEnd", FillEnd );
+			parameters.set ( "FillEnd", FillEnd );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 
 	else {	// Current syntax...
@@ -392,8 +394,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
+		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine, "," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -431,15 +433,18 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning level for non-user messages
 
 	// Make sure there are time series available to operate on...
+	
+	PropList parameters = getCommandParameters ();
+	CommandProcessor processor = getCommandProcessor();
 
-	String TSID = _parameters.getValue ( "TSID" );
+	String TSID = parameters.getValue ( "TSID" );
 	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "CommandTag", command_tag );
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesForTSID", request_params);
+		processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
@@ -470,14 +475,14 @@ CommandWarningException, CommandException
 	}
 	// The independent identifier may or may not have TEMPTS at the front
 	// but is handled by getTimeSeries...
-	String IndependentTSID = _parameters.getValue ( "IndependentTSID" );
+	String IndependentTSID = parameters.getValue ( "IndependentTSID" );
 	
 	request_params = new PropList ( "" );
 	request_params.set ( "CommandTag", command_tag );
 	request_params.set ( "TSID", IndependentTSID );
 	bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesForTSID", request_params);
+		processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID +
@@ -510,18 +515,18 @@ CommandWarningException, CommandException
 	// Now set the fill properties for TSUtil.fillRegress()...
 
 	PropList props = new PropList ( "fillRegression" );
-	String NumberOfEquations =_parameters.getValue ( "NumberOfEquations" );
+	String NumberOfEquations = parameters.getValue ( "NumberOfEquations" );
 	if ( NumberOfEquations == null ) {
 		NumberOfEquations = _OneEquation;	// default
 	}
 	props.set ( "NumberOfEquations", NumberOfEquations );
 
-	String AnalysisMonth =_parameters.getValue("AnalysisMonth");
+	String AnalysisMonth = parameters.getValue("AnalysisMonth");
 	if ( AnalysisMonth != null ) {
 		props.set ( "AnalysisMonth", AnalysisMonth );
 	}
 
-	String Transformation =_parameters.getValue("Transformation");
+	String Transformation = parameters.getValue("Transformation");
 	if (	(Transformation == null) ||
 		Transformation.equalsIgnoreCase(_Linear) ) {
 		Transformation = _None;	// default (old _Linear is obsolete)
@@ -555,30 +560,30 @@ CommandWarningException, CommandException
 
 	// Set the analysis/fill periods...
 
-	String AnalysisStart = _parameters.getValue("AnalysisStart");
+	String AnalysisStart = parameters.getValue("AnalysisStart");
 	if ( AnalysisStart != null ) {
 		props.set ( "AnalysisStart=" + AnalysisStart );
 	}
-	String AnalysisEnd =_parameters.getValue("AnalysisEnd");
+	String AnalysisEnd = parameters.getValue("AnalysisEnd");
 	if ( AnalysisEnd != null ) {
 		props.set ( "AnalysisEnd="+ AnalysisEnd );
 	}
 
-	String FillStart = _parameters.getValue("FillStart");
+	String FillStart = parameters.getValue("FillStart");
 	if ( FillStart != null ) {
 		props.set ( "FillStart="+ FillStart );
 	}
-	String FillEnd = _parameters.getValue("FillEnd");
+	String FillEnd = parameters.getValue("FillEnd");
 	if ( FillEnd != null ) {
 		props.set ( "FillEnd="+ FillEnd );
 	}
 
-	String FillFlag = _parameters.getValue("FillFlag");
+	String FillFlag = parameters.getValue("FillFlag");
 	if ( (FillFlag != null) && !FillFlag.equals("") ) {
 		props.set ( "FillFlag="+ FillFlag );
 	}
 
-	String Intercept = _parameters.getValue("Intercept");
+	String Intercept = parameters.getValue("Intercept");
 	if ( (Intercept != null) && !Intercept.equals("") ) {
 		props.set ( "Intercept="+ Intercept );
 	}
@@ -599,7 +604,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", FillStart );
 			bean = null;
 			try { bean =
-				_processor.processRequest( "DateTime", request_params);
+				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting FillStart DateTime(DateTime=" +
@@ -638,7 +643,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", FillEnd );
 			bean = null;
 			try { bean =
-				_processor.processRequest( "DateTime", request_params);
+				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting FillEnd DateTime(DateTime=" +

@@ -27,8 +27,10 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -36,7 +38,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
@@ -51,7 +52,7 @@ This class initializes, checks, and runs the writeStateMod() command.
 OutputYearType, TSResultsList, WorkingDir.
 </p>
 */
-public class writeStateMod_Command extends SkeletonCommand implements Command
+public class writeStateMod_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -89,6 +90,8 @@ throws InvalidCommandParameterException
 	String MissingValue = parameters.getValue ( "MissingValue" );
 	String Precision = parameters.getValue ( "Precision" );
 	String warning = "";
+	
+	CommandProcessor processor = getCommandProcessor();
 
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		if (	TSList.equalsIgnoreCase(_AllMatchingTSID) &&
@@ -102,7 +105,7 @@ throws InvalidCommandParameterException
 		warning += "\nThe output file must be specified.";
 	}
 	else {	String working_dir = null;		
-			try { Object o = _processor.getPropContents ( "WorkingDir" );
+			try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
 				if ( o != null ) {
 					working_dir = (String)o;
@@ -232,16 +235,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		}
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		_parameters.set ( "TSList", TSList );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		parameters.set ( "TSList", TSList );
 		if ( OutputFile.length() > 0 ) {
-			_parameters.set ( "OutputFile", OutputFile );
+			parameters.set ( "OutputFile", OutputFile );
 		}
 		if ( Precision.length() > 0 ) {
-			_parameters.set ( "Precision", Precision );
+			parameters.set ( "Precision", Precision );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 }
 
@@ -270,8 +274,10 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning level for non-user log messages
 
 	// Check whether the application wants output files to be created...
+	CommandProcessor processor = getCommandProcessor();
+	PropList parameters = getCommandParameters();
 	
-	try {	Object o = _processor.getPropContents ( "CreateOutput" );
+	try {	Object o = processor.getPropContents ( "CreateOutput" );
 		if ( o != null ) {
 			boolean CreateOutput_boolean = ((Boolean)o).booleanValue();
 			if  ( !CreateOutput_boolean ) {
@@ -288,9 +294,9 @@ CommandWarningException, CommandException
 		Message.printWarning(10, routine, message );
 	}
 
-	String TSList = _parameters.getValue ( "TSList" );
-	String TSID = _parameters.getValue ( "TSID" );
-	String OutputFile = _parameters.getValue ( "OutputFile" );
+	String TSList = parameters.getValue ( "TSList" );
+	String TSID = parameters.getValue ( "TSID" );
+	String OutputFile = parameters.getValue ( "OutputFile" );
 
 	// Get the time series to process...
 	
@@ -299,7 +305,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		_processor.processRequest( "GetTimeSeriesToProcess", request_params);
+		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -336,9 +342,9 @@ CommandWarningException, CommandException
 		command_tag,++warning_count), routine, message );
 	}
 
-	String OutputStart = _parameters.getValue ( "OutputStart" );
+	String OutputStart = parameters.getValue ( "OutputStart" );
 	DateTime OutputStart_DateTime = null;
-	String OutputEnd = _parameters.getValue ( "OutputEnd" );
+	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	DateTime OutputEnd_DateTime = null;
 
 	if ( OutputStart != null ) {
@@ -347,7 +353,7 @@ CommandWarningException, CommandException
 		request_params.set ( "DateTime", OutputStart );
 		bean = null;
 		try { bean =
-			_processor.processRequest( "DateTime", request_params);
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting OutputStart DateTime(DateTime=" +
@@ -380,7 +386,7 @@ CommandWarningException, CommandException
 	}
 	}
 	else {	// Get from the processor...
-		try {	Object o = _processor.getPropContents ( "OutputStart" );
+		try {	Object o = processor.getPropContents ( "OutputStart" );
 				if ( o != null ) {
 					OutputStart_DateTime = (DateTime)o;
 				}
@@ -397,7 +403,7 @@ CommandWarningException, CommandException
 			request_params.set ( "DateTime", OutputEnd );
 			bean = null;
 			try { bean =
-				_processor.processRequest( "DateTime", request_params);
+				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting OutputEnd DateTime(DateTime=" +
@@ -430,7 +436,7 @@ CommandWarningException, CommandException
 		}
 		}
 		else {	// Get from the processor...
-			try {	Object o = _processor.getPropContents ( "OutputEnd" );
+			try {	Object o = processor.getPropContents ( "OutputEnd" );
 					if ( o != null ) {
 						OutputEnd_DateTime = (DateTime)o;
 					}
@@ -442,11 +448,11 @@ CommandWarningException, CommandException
 			}
 	}
 
-	String Precision = _parameters.getValue ( "Precision" );
-	String MissingValue = _parameters.getValue ( "MissingValue" );
+	String Precision = parameters.getValue ( "Precision" );
+	String MissingValue = parameters.getValue ( "MissingValue" );
 
 	String OutputYearType = "Calendar";	// Default
-	try { Object o = _processor.getPropContents ( "OutputYearType" );
+	try { Object o = processor.getPropContents ( "OutputYearType" );
 		// Output year type is available so use it...
 		if ( o != null ) {
 			OutputYearType = (String)o;
@@ -490,7 +496,7 @@ CommandWarningException, CommandException
 		// Get the comments to add to the top of the file.
 
 		Vector OutputComments_Vector = null;
-		try { Object o = _processor.getPropContents ( "OutputComments" );
+		try { Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
 			if ( o != null ) {
 				OutputComments_Vector = (Vector)o;

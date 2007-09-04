@@ -24,15 +24,16 @@ import RTi.TS.TSIdent;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
 import RTi.Util.String.StringUtil;
 
 /**
@@ -42,7 +43,7 @@ This class initializes, checks, and runs the copy() command.
 <p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
-public class copy_Command extends SkeletonCommand implements Command
+public class copy_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -169,15 +170,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Set parameters and new defaults...
 
-		_parameters = new PropList ( getCommandName() );
-		_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+		PropList parameters = new PropList ( getCommandName() );
+		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( Alias.length() > 0 ) {
-			_parameters.set ( "Alias", Alias );
+			parameters.set ( "Alias", Alias );
 		}
 		if ( TSID.length() > 0 ) {
-			_parameters.set ( "TSID", TSID );
+			parameters.set ( "TSID", TSID );
 		}
-		_parameters.setHowSet ( Prop.SET_UNKNOWN );
+		parameters.setHowSet ( Prop.SET_UNKNOWN );
+		setCommandParameters ( parameters );
 	}
 
 	else {	// Current syntax...
@@ -205,11 +207,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
+		try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
 				(String)tokens.elementAt(1), routine, "," );
-			_parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-			_parameters.set ( "Alias", Alias );
-			_parameters.setHowSet ( Prop.SET_UNKNOWN );
+
+			parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+			parameters.set ( "Alias", Alias );
+			parameters.setHowSet ( Prop.SET_UNKNOWN );
+			setCommandParameters ( parameters );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -247,9 +251,12 @@ CommandWarningException, CommandException
 
 	// Make sure there are time series available to operate on...
 
-	String Alias = _parameters.getValue ( "Alias" );
-	String TSID = _parameters.getValue ( "TSID" );
-	String NewTSID = _parameters.getValue ( "NewTSID" );
+	PropList parameters = getCommandParameters();
+	CommandProcessor processor = getCommandProcessor();
+	
+	String Alias = parameters.getValue ( "Alias" );
+	String TSID = parameters.getValue ( "TSID" );
+	String NewTSID = parameters.getValue ( "NewTSID" );
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
@@ -260,7 +267,7 @@ CommandWarningException, CommandException
 			request_params.set ( "TSID", TSID );
 			CommandProcessorRequestResultsBean bean = null;
 			try { bean =
-				_processor.processRequest( "GetTimeSeriesForTSID", request_params);
+				processor.processRequest( "GetTimeSeriesForTSID", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
@@ -331,7 +338,7 @@ CommandWarningException, CommandException
 	// taken...
 	
 	Vector TSResultsList_Vector = null;
-	try { Object o = _processor.getPropContents( "TSResultsList" );
+	try { Object o = processor.getPropContents( "TSResultsList" );
 			TSResultsList_Vector = (Vector)o;
 	}
 	catch ( Exception e ){
@@ -343,7 +350,7 @@ CommandWarningException, CommandException
 	}
 	if ( TSResultsList_Vector != null ) {
 		TSResultsList_Vector.addElement ( tscopy );
-		try {	_processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 		}
 		catch ( Exception e ){
 			message = "Cannot set updated time series list.  Copy will not be in results.";

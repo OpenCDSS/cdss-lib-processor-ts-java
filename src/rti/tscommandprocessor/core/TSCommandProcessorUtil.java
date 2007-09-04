@@ -3,6 +3,7 @@ package rti.tscommandprocessor.core;
 import java.util.Vector;
 
 import RTi.Util.IO.Command;
+import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
 /**
@@ -15,12 +16,16 @@ public class TSCommandProcessorUtil {
 /**
 Get the commands above an index position.
 @param processor The processor that is managing commands.
-@param pos Index (0+) above which to get commands.
+@param pos Index (0+) before which to get commands.  The command at the indicated
+position is NOT included in the search.
 */
 private static Vector getCommandsBeforeIndex ( TSCommandProcessor processor, int pos )
 {	Vector commands = new Vector();
 	int size = processor.size();
-	for ( int i = 0; i < size; i++ ) {
+	if ( pos > size ) {
+		pos = size;
+	}
+	for ( int i = 0; i < pos; i++ ) {
 		commands.addElement ( processor.get(i));
 	}
 	return commands;
@@ -138,12 +143,15 @@ in the TSCommandProcessor.  This is used, for example, to provide a list of
 identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
-@return a Vector of String containing the time series identifiers.
+@return a Vector of String containing the time series identifiers, or an empty
+Vector.
 */
 public static Vector getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
-{
+{	String routine = "TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand";
 	// Get the position of the command in the list...
 	int pos = processor.indexOf(command);
+	Message.printStatus ( 2, routine,
+			"Position in list is " + pos + " for command:" + command );
 	if ( pos < 0 ) {
 		// Just return a blank list...
 		return new Vector();

@@ -898,7 +898,8 @@ private int __num_prepended_commands = 0;	// The number of commands that
 private int	_num_TS_expressions = 0;	// Number of TS xxx expressions,
 						// which is used to size the
 						// BinaryTS, if needed.
-private NWSRFS_DMI __nwsrfs_dmi = null;		// DMI to use to read from
+private Vector __nwsrfs_dmi_Vector = new Vector();
+						// List of NWSRFS_DMI to use to read from
 						// NWSRFS FS5Files.
 private String	_output_commands = null;	// Output file for commands file
 						// (used when list is used).
@@ -3667,37 +3668,23 @@ throws Exception
 	// be used if a path is not specified in the input name.  In this case,
 	// the user has possibly indicated that files should be found using the
 	// Apps Defaults.
-	NWSRFS_DMI nwsrfs_dmi = __nwsrfs_dmi;
-	boolean opened_new_dmi = false;
+
 	TSIdent tsident = new TSIdent ( TSID );
 	String input_name = tsident.getInputName();
 	// Convert to a full path because this what will be stored in
 	// the __nwsrfs_dmi.
-	input_name = IOUtil.getPathUsingWorkingDir( input_name );
-	if ( (nwsrfs_dmi == null) || (!input_name.equals("") &&
-			!input_name.equalsIgnoreCase(
-					__nwsrfs_dmi.getFS5FilesLocation() ) )) {
-		// Need to open a new DMI because the one that is currently open
-		// does not match the requested path.
-		if ( nwsrfs_dmi == null ) {
-			Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
-					input_name + "\"" );
-		}
-		else {	Message.printStatus( 2, routine, "FS5Files location from GUI \"" +
-				__nwsrfs_dmi.getFS5FilesLocation() + "\" does not match request.  " +
-				"Opening new FS5Files from TSID:  \"" + input_name + "\"" );
-		}
-		nwsrfs_dmi = new NWSRFS_DMI( input_name );
-		opened_new_dmi = true;
+	String input_name_full = IOUtil.getPathUsingWorkingDir( input_name );
+	NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI( input_name_full );
+	if ( nwsrfs_dmi == null ) {
+		Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
+					input_name_full + "\"" );
+		nwsrfs_dmi = new NWSRFS_DMI( input_name_full );
 	}
 	TS ts = null;
 	try {	ts = nwsrfs_dmi.readTimeSeries (
 			TSID, query_date1, query_date2, Units, true );
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
-		if ( opened_new_dmi ) {
-			nwsrfs_dmi.close();
-		}
 	}
 	catch ( Exception e ) {
 		message = "Error reading NWSRFS FS5Files time series \"" +
@@ -5618,15 +5605,8 @@ private static Vector getGraphIdentifiersFromCommands ( Vector commands,
 }
 
 /**
-Return the default HydroBaseDMI that is being used (InputName = "").
-@return the HydroBaseDMI that is being used (may return null).
-*/
-private HydroBaseDMI getHydroBaseDMI ()
-{	return getHydroBaseDMI ( "" );
-}
-
-/**
-Return the HydroBaseDMI that is being used.
+Return the HydroBaseDMI that is being used.  Use a blank input name to get
+the default.
 @param input_name Input name for the DMI, can be blank.
 @return the HydroBaseDMI that is being used (may return null).
 */
@@ -5727,6 +5707,33 @@ public Adapter getNDFDAdapter (String input_name )
 	return null;
 }
 */
+
+/**
+Return the NWSRFS_DMI that is being used.  Use a blank input name to get
+the default.
+@param input_name Input name for the DMI, can be blank.  Typically is the
+path to the FS5Files.
+@return the NWSRFS_DMI that is being used (may return null).
+*/
+protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name )
+{	int size = __nwsrfs_dmi_Vector.size();
+	if ( input_name == null ) {
+		input_name = "";
+	}
+	NWSRFS_DMI nwsrfs_dmi = null;
+	for ( int i = 0; i < size; i++ ) {
+		nwsrfs_dmi = (NWSRFS_DMI)__nwsrfs_dmi_Vector.elementAt(i);
+		if ( nwsrfs_dmi.getInputName().equalsIgnoreCase(input_name) ) {
+			if ( Message.isDebugOn ) {
+				Message.printDebug ( 1, "",
+				"Returning NWSRFS_DMI[" + i +"] InputName=\""+
+				nwsrfs_dmi.getInputName() + "\"" );
+			}
+			return nwsrfs_dmi;
+		}
+	}
+	return null;
+}
 
 /**
 Return the output period end, or null if all data are to be output.
@@ -10512,8 +10519,18 @@ throws Exception
 	}
 	else if ((input_type != null) &&
 		input_type.equalsIgnoreCase("NWSRFS_FS5Files") ) {
-		ts = __nwsrfs_dmi.readTimeSeries ( tsident_string,
-			query_date1, query_date2, units, true );
+		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name );
+		if ( nwsrfs_dmi == null ) {
+			Message.printWarning ( 2, routine,
+				"Unable to get NWSRFS FS5Files connection for " +
+				"input name \"" + input_name +
+				"\".  Unable to read time series." );
+				ts = null;
+		}
+		else {
+			ts = nwsrfs_dmi.readTimeSeries ( tsident_string,
+					query_date1, query_date2, units, true );
+		}
 	}
 	else if ((input_type != null) &&
 		input_type.equalsIgnoreCase("RiversideDB") ) {
@@ -11273,6 +11290,45 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 }
 
 */
+
+/**
+Set a NWSRFS_DMI (NWSRFS FS5Files DMI) instance in the Vector that is being maintained for use.
+The input name in the DMI is used to lookup the instance.  If a match is found,
+the old instance is optionally closed and the new instance is set in the same
+location.  If a match is not found, the new instance is added at the end.
+@param nwsrfs_dmi NWSRFS_DMI to add to the list.  Null will be ignored.
+@param close_old If an old DMI instance is matched, close the DMI instance if
+true.  The main issue is that if something else is using the DMI instance (e.g.,
+the TSTool GUI) it may be necessary to leave the old instance open.
+*/
+protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
+{	if ( nwsrfs_dmi == null ) {
+		return;
+	}
+	int size = __nwsrfs_dmi_Vector.size();
+	NWSRFS_DMI nwsrfs_dmi2 = null;
+	String input_name = nwsrfs_dmi.getInputName();
+	for ( int i = 0; i < size; i++ ) {
+		nwsrfs_dmi2 = (NWSRFS_DMI)__nwsrfs_dmi_Vector.elementAt(i);
+		if ( nwsrfs_dmi2.getInputName().equalsIgnoreCase(input_name)){
+			// The input name of the current instance
+			// matches that of the instance in the Vector.
+			// Replace the instance in the Vector by the
+			// new instance...
+			if ( close_old ) {
+				try {	nwsrfs_dmi2.close();
+				}
+				catch ( Exception e ) {
+					// Probably can ignore.
+				}
+			}
+			__nwsrfs_dmi_Vector.setElementAt ( nwsrfs_dmi, i );
+			return;
+		}
+	}
+	// Add a new instance to the Vector...
+	__nwsrfs_dmi_Vector.addElement ( nwsrfs_dmi );
+}
 
 /*
 Set the time series in either the __tslist vector or the BinaryTS file,

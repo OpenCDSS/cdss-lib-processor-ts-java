@@ -25,13 +25,14 @@ import javax.swing.JFrame;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.SkeletonCommand;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -45,7 +46,7 @@ This class initializes, checks, and runs the openHydroBase() command.
 <p>The CommandProcessor must return the following properties:  HydroBaseDMIList.
 </p>
 */
-public class openHydroBase_Command extends SkeletonCommand implements Command
+public class openHydroBase_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -160,8 +161,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
-		try {	_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," );
+		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
@@ -198,13 +199,14 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 
 	// Get the input needed to process the file...
-	String OdbcDsn = _parameters.getValue ( "OdbcDsn" );
-	String DatabaseServer = _parameters.getValue ( "DatabaseServer" );
-	String DatabaseName = _parameters.getValue ( "DatabaseName" );
-	String RunMode = _parameters.getValue ( "RunMode" );
-	String UseStoredProcedures = _parameters.getValue (
+	PropList parameters = getCommandParameters();
+	String OdbcDsn = parameters.getValue ( "OdbcDsn" );
+	String DatabaseServer = parameters.getValue ( "DatabaseServer" );
+	String DatabaseName = parameters.getValue ( "DatabaseName" );
+	String RunMode = parameters.getValue ( "RunMode" );
+	String UseStoredProcedures = parameters.getValue (
 		"UseStoredProcedures" );
-	String InputName = _parameters.getValue ( "InputName" );
+	String InputName = parameters.getValue ( "InputName" );
 	if ( RunMode == null ) {
 		RunMode = _GUIAndBatch;
 	}
@@ -321,7 +323,7 @@ CommandWarningException, CommandException
 		}
 	}
 	else {	message =
-		"Not running \"" + _command_string +
+		"Not running \"" + getCommandString() +
 		"\" because run mode is not compatible with RunMode=" + RunMode;
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -363,8 +365,9 @@ throws CommandException
 
 	// Get the DMI instances from the processor...
 
+	CommandProcessor processor = getCommandProcessor();
 	Vector dmilist = null;
-	try { Object o = _processor.getPropContents ( "HydroBaseDMIList" );
+	try { Object o = processor.getPropContents ( "HydroBaseDMIList" );
 			if ( o != null ) {
 				dmilist = (Vector)o;
 			}
@@ -399,7 +402,7 @@ throws CommandException
 				}
 			}
 			dmilist.setElementAt ( hbdmi, i );
-			try { _processor.setPropContents ( "HydroBaseDMIList",
+			try { processor.setPropContents ( "HydroBaseDMIList",
 				dmilist );
 			}
 			catch ( Exception e ){
@@ -416,7 +419,7 @@ throws CommandException
 	// Add a new instance to the Vector...
 	dmilist.addElement ( hbdmi );
 	// Set back in the processor...
-	try { _processor.setPropContents ( "HydroBaseDMIList", dmilist );
+	try { processor.setPropContents ( "HydroBaseDMIList", dmilist );
 	}
 	catch ( Exception e ){
 		message = "Cannot set updated HydroBaseDMI list.";

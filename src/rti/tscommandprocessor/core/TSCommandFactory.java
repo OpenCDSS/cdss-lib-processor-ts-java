@@ -84,7 +84,7 @@ import rti.tscommandprocessor.commands.logging.startLog_Command;
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Command;
 
-//RiverWare commands
+// RiverWare commands
 
 import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
 
@@ -123,6 +123,7 @@ import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
+import rti.tscommandprocessor.commands.util.testCommand_Command;
 
 /**
 This class instantiates Commands for time series processing.
@@ -326,6 +327,13 @@ throws UnknownCommandException
 	}
 	else if ( StringUtil.startsWithIgnoreCase( command_string,"startLog") ){
 		return new startLog_Command ();
+	}
+	
+	// "t" commands...
+
+	else if ( StringUtil.startsWithIgnoreCase(
+		command_string,"testCommand") ) {
+		return new testCommand_Command ();
 	}
 
 	// "TS Alias = " commands...

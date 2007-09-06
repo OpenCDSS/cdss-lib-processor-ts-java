@@ -8885,22 +8885,17 @@ throws Exception
 			continue;
 		}
 		// Command factory for remaining commands...
-		else {	// Try the generic Command class code...
+		else {	// Try the Command class code...
 			try {	// Make sure the command is valid...
-				if ( Message.isDebugOn ) {
-					Message.printDebug ( 1, routine,
-					"Trying to create Command for \"" +
-					expression + "\"" );
-				}
-				TSCommandFactory cf = new TSCommandFactory ();
-				Command c = cf.newCommand ( expression );
 				// Initialize the command (parse)...
+				// TODO SAM 2007-09-05 Need to evaluate where the
+				// initialization occurs (probably the initial edit or load)?
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,
 					"Initializing the Command for \"" +
 					expression + "\"" );
 				}
-				c.initializeCommand ( expression,
+				command.initializeCommand ( expression,
 					__ts_processor,
 					command_tag, 2, true );
 				// REVISIT SAM 2005-05-11 Is this the best
@@ -8912,8 +8907,8 @@ throws Exception
 					"Checking the parameters for command \""
 					+ expression + "\"" );
 				}
-				c.checkCommandParameters (
-					c.getCommandParameters(),
+				command.checkCommandParameters (
+					command.getCommandParameters(),
 					command_tag, 2 );
 				// Run the command...
 				if ( Message.isDebugOn ) {
@@ -8921,12 +8916,13 @@ throws Exception
 					"Running command through new code..." );
 				}
 				
-				c.runCommand ( command_tag, 2 );
+				command.runCommand ( command_tag, 2 );
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,
 					"...back from running command." );
 				}
 			}
+			/* TODO SAM 2007-09-05 Need to put in load code.
 			catch ( UnknownCommandException e ) {
 				message =
 				"Do not know how to process command:\n" +
@@ -8939,6 +8935,7 @@ throws Exception
 				}
 				continue;
 			}
+			*/
 			catch ( InvalidCommandSyntaxException e ) {
 				message =
 				"Unable to process command (invalid syntax).";

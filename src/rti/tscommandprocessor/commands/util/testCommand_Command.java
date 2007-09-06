@@ -9,6 +9,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
@@ -179,65 +180,73 @@ CommandWarningException, CommandException
 	String DiscoveryStatus = parameters.getValue ( "DiscoveryStatus" );
 	String RunStatus = parameters.getValue ( "RunStatus" );
 	
+	String routine = getClass().getName() + ".runCommand";
+	Message.printStatus ( 2, routine,
+			"InitializeStatus=\"" + InitializeStatus + "\" " +
+			"DiscoveryStatus=\"" + DiscoveryStatus + "\" " +
+			"RunStatus=\"" + RunStatus + "\"" );
+
+	CommandStatus status = getCommandStatus();
+	
 	if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.UNKNOWN.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.INITIALIZATION,
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.UNKNOWN,
 						"Command status is unknown.", ""));
 	}
 	else if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.SUCCESS.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.INITIALIZATION,
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.SUCCESS,
 						"Success.", ""));
 	}
 	else if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.WARNING.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.INITIALIZATION,
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.WARNING,
 						"There is a warning.", "Don't have a recommendation."));
 	}
 	else if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.FAILURE.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.INITIALIZATION,
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						"There is a failure.", "Don't have a recommendation."));
 	}
 	
 	if ( DiscoveryStatus.equalsIgnoreCase(CommandStatusType.UNKNOWN.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.DISCOVERY,
+		status.addToLog ( CommandPhaseType.DISCOVERY,
 				new CommandLogRecord(CommandStatusType.UNKNOWN,
 						"Command status is unknown.", ""));
 	}
-	else if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.SUCCESS.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.DISCOVERY,
+	else if ( DiscoveryStatus.equalsIgnoreCase(CommandStatusType.SUCCESS.toString())) {
+		status.addToLog ( CommandPhaseType.DISCOVERY,
 				new CommandLogRecord(CommandStatusType.SUCCESS,
 						"Success.", ""));
 	}
-	else if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.WARNING.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.DISCOVERY,
+	else if ( DiscoveryStatus.equalsIgnoreCase(CommandStatusType.WARNING.toString())) {
+		status.addToLog ( CommandPhaseType.DISCOVERY,
 				new CommandLogRecord(CommandStatusType.WARNING,
 						"There is a warning.", "Don't have a recommendation."));
 	}
-	else if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.FAILURE.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.DISCOVERY,
+	else if ( DiscoveryStatus.equalsIgnoreCase(CommandStatusType.FAILURE.toString())) {
+		status.addToLog ( CommandPhaseType.DISCOVERY,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						"There is a failure.", "Don't have a recommendation."));
 	}
 	
 	if ( RunStatus.equalsIgnoreCase(CommandStatusType.UNKNOWN.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.UNKNOWN,
 						"Command status is unknown.", ""));
 	}
 	else if ( RunStatus.equalsIgnoreCase(CommandStatusType.SUCCESS.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.SUCCESS,
 						"Success.", ""));
 	}
 	else if ( RunStatus.equalsIgnoreCase(CommandStatusType.WARNING.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.WARNING,
 						"There is a warning.", "Don't have a recommendation."));
 	}
 	else if ( RunStatus.equalsIgnoreCase(CommandStatusType.FAILURE.toString())) {
-		getCommandStatus().addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						"There is a failure.", "Don't have a recommendation."));
 	}

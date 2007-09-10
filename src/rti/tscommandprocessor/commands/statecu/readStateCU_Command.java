@@ -13,19 +13,25 @@
 package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Vector;
 
 import javax.swing.JFrame;
 
 import RTi.TS.TS;
+import RTi.TS.YearTS;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -85,6 +91,7 @@ throws InvalidCommandParameterException
 	//String TSID = parameters.getValue ( "TSID" );
 	String NewScenario = parameters.getValue ( "NewScenario" );
 	String AutoAdjust = parameters.getValue ( "AutoAdjust" );
+	String CheckData = parameters.getValue ( "CheckData" );
 	String warning = "";
 
 	CommandProcessor processor = getCommandProcessor();
@@ -161,13 +168,84 @@ throws InvalidCommandParameterException
 			!AutoAdjust.equalsIgnoreCase("False") ) {
 				warning +=
 					"\nThe AutoAdjust value (" + AutoAdjust + ") must be True or False.";
-		}
+	}
+	
+	if ( (CheckData != null) && !CheckData.equals("") &&
+			!CheckData.equalsIgnoreCase("True") &&
+			!CheckData.equalsIgnoreCase("False") ) {
+				warning +=
+					"\nThe CheckData value (" + CheckData + ") must be True or False.";
+	}
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
+	}
+}
+
+/**
+Check the irrigation practice time series for integrity, mainly to make sure that
+the acreage terms add up.  This method may be made public at some point if can
+be used by StateDMI commands that read or write the file.
+@param tslist List of StateCU_IrrigationPracticeTS to check.
+@param status CommandStatus to append check warnings.
+*/
+private void checkIrrigationPracticeTS ( Vector tslist, CommandStatus status )
+{	
+	int size = 0;
+	if ( tslist != null ) {
+		size = tslist.size();
+	}
+	StateCU_IrrigationPracticeTS ipy_ts = null;
+	YearTS AcresSWFlood_yts = null;
+	YearTS AcresSWSprinkler_yts = null;
+	YearTS AcresGWFlood_yts = null;
+	YearTS AcresGWSprinkler_yts = null;
+	YearTS AcresTotal_yts = null;
+	double AcresSWFlood_double;
+	double AcresSWSprinkler_double;
+	double AcresGWFlood_double;
+	double AcresGWSprinkler_double;
+	double AcresTotal_double;
+	double tolerance = 1.0;	// Check to nearest integer since acreage is written as whole number
+	int precision = 0;
+	// TODO SAM 2007-09-09 Need some utilities to help with checks
+	// Need to intelligently compute the precision from the tolerance
+	DateTime date_end;		// End of period for looping.
+	String id;
+	double calculated_total;	// Calculated total of parts.
+	int warning_count = 0;
+	for ( int i = 0; i < size; i++ ) {
+		ipy_ts = (StateCU_IrrigationPracticeTS)tslist.elementAt(i);
+		id = ipy_ts.getID();
+		AcresSWFlood_yts = ipy_ts.getAcswflTS();
+		AcresSWSprinkler_yts = ipy_ts.getAcswsprTS();
+		AcresGWFlood_yts = ipy_ts.getAcgwflTS();
+		AcresGWSprinkler_yts = ipy_ts.getAcgwsprTS();
+		AcresTotal_yts = ipy_ts.getTacreTS();
+		// Loop through the period and check the acreage.
+		date_end = ipy_ts.getDate2();
+		for ( DateTime date = new DateTime(ipy_ts.getDate1());
+			date.lessThanOrEqualTo(date_end); date.addYear(1) ) {
+			AcresSWFlood_double = AcresSWFlood_yts.getDataValue(date);
+			AcresSWSprinkler_double = AcresSWSprinkler_yts.getDataValue(date);
+			AcresGWFlood_double = AcresGWFlood_yts.getDataValue(date);
+			AcresGWSprinkler_double = AcresGWSprinkler_yts.getDataValue(date);
+			AcresTotal_double = AcresTotal_yts.getDataValue(date);
+			calculated_total = AcresSWFlood_double + AcresSWSprinkler_double +
+				AcresGWFlood_double + AcresGWSprinkler_double;
+			if ( Math.abs(calculated_total - AcresTotal_double) > tolerance ) {
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								"Location \"" + id + "\" acreage terms do not add to total in " +
+								date.getYear() + ".  Total of parts = " +
+								StringUtil.formatString(calculated_total,"%."+precision+"f") +
+								" Total from file = " + StringUtil.formatString(AcresTotal_double,"%."+precision+"f"),
+								"Verify data processing." ) );
+			}
+		}
 	}
 }
 
@@ -185,30 +263,25 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command_string, String command_tag,
-				int warning_level )
+public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String message;
 
 	if ( StringUtil.startsWithIgnoreCase(command_string,"TS") ) {
-		// Syntax is TS Alias = readStateMod()
+		// Syntax is TS Alias = readStateCU()
 		_use_alias = true;
 		message = "TS Alias = readStateCU() is not yet supported.";
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	else {	// Syntax is readStateMod()
+	else {	// Syntax is readStateCU()
 		_use_alias = false;
-		super.parseCommand (command_string, command_tag,warning_level);
+		super.parseCommand ( command_string );
 	}
 }
 	
@@ -218,21 +291,18 @@ Run the commands:
 readStateCU(InputFile="X",InputStart="X",InputEnd="X",TSID="X",NewScenario="X",
 AutoAdust=X)
 </pre>
-@param processor The CommandProcessor that is executing the command, which will
-provide necessary data inputs and receive output(s).
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "readStateCU_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;	// Log level for non-user warnings
 
@@ -244,7 +314,8 @@ CommandWarningException, CommandException
 	DateTime InputEnd_DateTime = null;
 	String TSID = parameters.getValue ( "TSID" );
 	String NewScenario = parameters.getValue ( "NewScenario" );
-	String AutoAdjust = parameters.getValue ( "AutoAdjus" );
+	String AutoAdjust = parameters.getValue ( "AutoAdjust" );
+	String CheckData = parameters.getValue ( "CheckData" );
 	
 	// REVISIT need to check prop
 	boolean IncludeLocationTotal_boolean = true;
@@ -357,6 +428,15 @@ CommandWarningException, CommandException
 			}
 	}
 
+	// Default is to check the data (True).  False can be used if the user
+	// knows that the data are incomplete.
+	boolean CheckData_boolean = true;
+	if ( (CheckData != null) && (CheckData.length() > 0) ) {
+		if ( CheckData.equalsIgnoreCase("False")) {
+			CheckData_boolean = false;
+		}
+	}
+
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count +
 			" warnings about command parameters.";
@@ -391,10 +471,35 @@ CommandWarningException, CommandException
 		else if(StateCU_IrrigationPracticeTS.isIrrigationPracticeTSFile(
 				InputFile ) ) {
 			file_type = "irrigation practice";
-			tslist = StateCU_IrrigationPracticeTS.toTSVector(
-				StateCU_IrrigationPracticeTS.readStateCUFile (
-					InputFile, InputStart_DateTime, InputEnd_DateTime ),
-				IncludeDataSetTotal_boolean, null, null );
+			CommandStatus status = getCommandStatus();
+			try {	Vector ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
+					InputFile, InputStart_DateTime, InputEnd_DateTime );
+					// Get the individual time series for use by TSTool.
+					tslist = StateCU_IrrigationPracticeTS.toTSVector(
+							ipylist, IncludeDataSetTotal_boolean, null, null );
+					if ( CheckData_boolean ) {
+						// Check the time series for integrity (acreage adds, etc.)...
+						checkIrrigationPracticeTS ( ipylist, status );
+					}
+					else {
+						// If no exception is thrown then the command is successful
+						status.addToLog ( CommandPhaseType.RUN,
+								new CommandLogRecord(CommandStatusType.SUCCESS,
+								"Command appears to be successful.", "" ) );		
+					}
+			}
+			catch ( IOException e ) {
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+						"Error reading irrigation practice file \"" +
+						InputFile + "\"", "Check location and contents." ) );
+			}
+			catch ( Exception e ) {
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+						"Unexpected error reading irrigation practice file \"" +
+						InputFile + "\"", "Check the log file to troubleshoot." ) );
+			}
 		}
 		else if ( StateCU_TS.isReportFile ( InputFile ) ) {
 			file_type = "model results";
@@ -496,17 +601,19 @@ CommandWarningException, CommandException
 
 /**
 Return the string representation of the command.
+@param parameters the list of parameters to format to the final command.
 */
-public String toString ( PropList props )
-{	if ( props == null ) {
+public String toString ( PropList parameters )
+{	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
-	String InputFile = props.getValue("InputFile");
-	String InputStart = props.getValue("InputStart");
-	String InputEnd = props.getValue("InputEnd");
-	String TSID = props.getValue("TSID");
-	String NewScenario = props.getValue("NewScenario");
-	String AutoAdjust = props.getValue("AutoAdjust");
+	String InputFile = parameters.getValue("InputFile");
+	String InputStart = parameters.getValue("InputStart");
+	String InputEnd = parameters.getValue("InputEnd");
+	String TSID = parameters.getValue("TSID");
+	String NewScenario = parameters.getValue("NewScenario");
+	String AutoAdjust = parameters.getValue("AutoAdjust");
+	String CheckData = parameters.getValue("CheckData");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -543,6 +650,12 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "AutoAdjust=" + AutoAdjust );
+	}
+	if ( (CheckData != null) && (CheckData.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "CheckData=" + CheckData );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

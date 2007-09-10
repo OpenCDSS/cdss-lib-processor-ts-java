@@ -82,18 +82,13 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	//int warning_count = 0;
 	//String routine = "sortTimeSeries_Command.parseCommand", message;
@@ -123,20 +118,17 @@ Run the commands:
 <pre>
 sortTimeSeries()
 </pre>
-@param processor The CommandProcessor that is executing the command, which will
-provide necessary data inputs and receive output(s).
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
 {	String routine = "sortTimeSeries_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	Vector tslist = null;
 	
 	CommandProcessor processor = getCommandProcessor();

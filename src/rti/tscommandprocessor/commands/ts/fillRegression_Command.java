@@ -240,20 +240,15 @@ supports very-old syntax (separate commands for different combinations of
 parameters), newer syntax (one command but fixed-parameter list), and current
 syntax (free-format parameters).
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_count = 0;
+{	int warning_level = 2;
 	String routine = "fillRegression_Command.parseCommand", message;
 
 	if (	(command.indexOf('=') < 0) ||
@@ -388,9 +383,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			// IndependentTSID...
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
@@ -400,9 +393,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}
@@ -414,10 +405,7 @@ Run the commands:
 regress*()
 fillRegression()
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -425,11 +413,13 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "fillRegression_Command.runCommand", message;
 	int warning_count = 0;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int log_level = 3;	// Warning level for non-user messages
 
 	// Make sure there are time series available to operate on...

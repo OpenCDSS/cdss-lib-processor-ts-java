@@ -206,21 +206,16 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command_string, String command_tag,
-				int warning_level )
+public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String routine = "readStateMod_Command.parseCommand", message;
-
+	int warning_level = 2;
 	if ( StringUtil.startsWithIgnoreCase(command_string,"TS") ) {
 		// Syntax is TS Alias = readStateMod()
 		_use_alias = true;
@@ -231,8 +226,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		_use_alias = false;
 		if ( command_string.indexOf("=") > 0 ) {
 			// New syntax...
-			super.parseCommand (command_string, command_tag,
-				warning_level);
+			super.parseCommand ( command_string );
 		}
 		else {	// Parse the old command...
 			Vector tokens = StringUtil.breakStringList (
@@ -263,21 +257,18 @@ Run the commands:
 <pre>
 readStateMod(InputFile="X",InputStart="X",InputEnd="X",Interval=X)
 </pre>
-@param processor The CommandProcessor that is executing the command, which will
-provide necessary data inputs and receive output(s).
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "readStateMod_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;	// Log level for non-user warnings
 

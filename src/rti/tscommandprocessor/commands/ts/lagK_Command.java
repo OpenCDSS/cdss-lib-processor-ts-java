@@ -244,21 +244,16 @@ throws Throwable
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command, String command_tag,int warning_level)
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String routine = "lagK_Command.parseCommand", message;
-
-	int warning_count = 0;
+	int warning_level = 2;
 
 	if ( Message.isDebugOn ) {
 		Message.printDebug ( 10, routine,
@@ -296,9 +291,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// list.
 		message = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
@@ -321,10 +314,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command
 			+ "\".  Error parsing parameters.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+		Message.printWarning ( warning_level, routine, message );
 		throw new InvalidCommandSyntaxException ( message );
 	}
 }
@@ -334,10 +324,7 @@ Run the command:
 <pre>
 TS X = lagK (TSID="...")
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -345,12 +332,14 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException,
        CommandException
 {	String routine = "lagK_Command.runCommand", message = "";
         int dl = 10;
 	int log_level = 3;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
 	PropList parameters = getCommandParameters();

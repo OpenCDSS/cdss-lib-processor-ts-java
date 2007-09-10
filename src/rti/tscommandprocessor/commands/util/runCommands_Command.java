@@ -12,7 +12,7 @@
 //------------------------------------------------------------------------------
 // EndHeader
 
-package rti.tscommandprocessor.commands.ts;
+package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
 import java.util.Vector;
@@ -147,22 +147,19 @@ Run the commands:
 <pre>
 runCommands(InputFile="X")
 </pre>
-@param processor The CommandProcessor that is executing the command, which will
-provide necessary data inputs and receive output(s).
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "runCommands_Command.runCommand", message;
 	int warning_count = 0;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	
 	CommandProcessor processor = getCommandProcessor();
 	PropList parameters = getCommandParameters();

@@ -152,20 +152,17 @@ Run the commands:
 <pre>
 startLog()
 </pre>
-@param processor The CommandProcessor that is executing the command, which will
-provide necessary data inputs and receive output(s).
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
 {	String routine = "startLog_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
 	PropList parameters = getCommandParameters();

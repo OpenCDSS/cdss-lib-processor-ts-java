@@ -25,6 +25,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -114,12 +115,21 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String InitializeStatus = __InitializeStatus_JComboBox.getSelected();
+{	String routine = getClass().getName() + ".commitEdits";
+	String InitializeStatus = __InitializeStatus_JComboBox.getSelected();
 	String DiscoveryStatus = __DiscoveryStatus_JComboBox.getSelected();
 	String RunStatus = __RunStatus_JComboBox.getSelected();
+	Message.printStatus ( 2, routine, "Parameters before setCommandParameter(Initialize) = " +
+			__command.getCommandParameters() );
 	__command.setCommandParameter ( "InitializeStatus", InitializeStatus );
+	Message.printStatus ( 2, routine, "Parameters before setCommandParameter(Discovery) = " +
+			__command.getCommandParameters() );
 	__command.setCommandParameter ( "DiscoveryStatus", DiscoveryStatus );
+	Message.printStatus ( 2, routine, "Parameters before setCommandParameter(Run) = " +
+			__command.getCommandParameters() );
 	__command.setCommandParameter ( "RunStatus", RunStatus );
+	Message.printStatus ( 2, routine, "Parameters after setCommandParameter(Run) = " +
+			__command.getCommandParameters() );
 }
 
 /**
@@ -271,21 +281,12 @@ private void refresh ()
 	String RunStatus = "";
 	if ( __first_time ) {
 		__first_time = false;
-		Vector v = StringUtil.breakStringList (
-			__command.toString(),"()",
-			StringUtil.DELIM_SKIP_BLANKS );
-		PropList props = null;
-		if (	(v != null) && (v.size() > 1) &&
-			(((String)v.elementAt(1)).indexOf("=") > 0) ) {
-			props = PropList.parse (
-				(String)v.elementAt(1), routine, "," );
-		}
-		if ( props == null ) {
-			props = new PropList ( __command.getCommandName() );
-		}
-		InitializeStatus = props.getValue ( "InitializeStatus" );
-		DiscoveryStatus = props.getValue ( "DiscoveryStatus" );
-		RunStatus = props.getValue ( "RunStatus" );
+		PropList parameters = __command.getCommandParameters();
+		Message.printStatus ( 2, routine, "Parameters at startup = " +
+				__command.getCommandParameters() );
+		InitializeStatus = parameters.getValue ( "InitializeStatus" );
+		DiscoveryStatus = parameters.getValue ( "DiscoveryStatus" );
+		RunStatus = parameters.getValue ( "RunStatus" );
 		if (	JGUIUtil.isSimpleJComboBoxItem(
 			__InitializeStatus_JComboBox, InitializeStatus,
 			JGUIUtil.NONE, null, null ) ) {
@@ -388,4 +389,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end compareFiles_JDialog
+}

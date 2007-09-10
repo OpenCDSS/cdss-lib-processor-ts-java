@@ -53,26 +53,31 @@ throws InvalidCommandParameterException
 	String RunStatus = parameters.getValue ( "RunStatus" );
 	String warning = "";
 
-	// The existence of the parent directories or files is not checked
-	// because the files may be created dynamically after the command is
-	// edited.
-
-	/* FIXME SAM 2007-09-05 Check against CommandStatusType
-	if ( (WarnIfDifferent != null) && !WarnIfDifferent.equals("") ) {
-		if (	!WarnIfDifferent.equalsIgnoreCase(_False) &&
-			!WarnIfDifferent.equalsIgnoreCase(_True) ) {
-			warning += "\nThe WarnIfDifferent parameter \"" +
-				WarnIfDifferent + "\" must be False or True.";
+	// TODO SAM 2007-09-09 Need to use Enum when Java 1.5+
+	String status = null;
+	for ( int i = 0; i < 3; i++ ) {
+		if ( i == 0 ) {
+			status = InitializeStatus;
+		}
+		else if ( i == 1 ) {
+			status = DiscoveryStatus;
+		}
+		else if ( i == 2 ) {
+			status = RunStatus;
+		}
+		if ( (status != null) &&
+			(status.length() > 0) &&
+			(!InitializeStatus.equalsIgnoreCase(CommandStatusType.UNKNOWN.toString()) &&
+			!InitializeStatus.equalsIgnoreCase(CommandStatusType.SUCCESS.toString()) &&
+			!InitializeStatus.equalsIgnoreCase(CommandStatusType.WARNING.toString()) &&
+			!InitializeStatus.equalsIgnoreCase(CommandStatusType.FAILURE.toString())) ) {
+			warning += "\nI" + status + " must be " + CommandStatusType.UNKNOWN +
+			", " + CommandStatusType.UNKNOWN +
+			", " + CommandStatusType.SUCCESS +
+			", " + CommandStatusType.WARNING +
+			", or " + CommandStatusType.FAILURE;
 		}
 	}
-	if ( (WarnIfSame != null) && !WarnIfSame.equals("") ) {
-		if (	!WarnIfSame.equalsIgnoreCase(_False) &&
-			!WarnIfSame.equalsIgnoreCase(_True) ) {
-			warning += "\nThe WarnIfSame parameter \"" +
-				WarnIfSame + "\" must be False or True.";
-		}
-	}
-	*/
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "InitializeStatus" );
@@ -114,20 +119,15 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_count = 0;
+{	int warning_level = 2;
 	String routine = "testCommand_Command.parseCommand", message;
 
 	Vector tokens = StringUtil.breakStringList ( command,
@@ -147,9 +147,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}
@@ -160,18 +158,13 @@ Run the commands:
 <pre>
 compareFiles(InputFile1="X",InputFile2="X",WarnIfDifferent=X,WarnIfSame=X)
 </pre>
-@param processor The CommandProcessor that is executing the command, which will
-provide necessary data inputs and receive output(s).
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	PropList parameters = getCommandParameters();

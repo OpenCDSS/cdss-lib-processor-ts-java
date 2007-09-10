@@ -152,20 +152,15 @@ public boolean editCommand ( JFrame parent )
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_count = 0;
+{	int warning_level = 2;
 	String routine = "fillConstant_Command.parseCommand", message;
 
 	if ( command.indexOf('=') < 0 ) {
@@ -217,9 +212,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			// IndependentTSID...
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
@@ -229,9 +222,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}

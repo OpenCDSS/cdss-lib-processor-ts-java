@@ -112,20 +112,15 @@ public boolean editCommand ( JFrame parent )
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_count = 0;
+{	int warning_level = 2;
 	String routine = "cumulate_Command.parseCommand", message;
 
 	if ( command.indexOf('=') < 0 ) {
@@ -167,9 +162,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			// IndependentTSID...
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		// Get the input needed to process the file...
@@ -179,9 +172,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}
@@ -192,10 +183,7 @@ Run the commands:
 <pre>
 cumulate(TSID="X",HandleMissingHow=X)
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -203,10 +191,12 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "cumulate_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;	// Warning level for non-user messages.
 

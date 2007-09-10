@@ -30,6 +30,9 @@
 
 package rti.tscommandprocessor.core;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Vector;
 
 import java.awt.event.WindowListener;	// To know when graph closes to close app
@@ -42,11 +45,14 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorListener;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.GenericCommand;
+import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.Message.Message;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.RequestParameterInvalidException;
 import RTi.Util.IO.RequestParameterNotFoundException;
+import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
 import RTi.Util.Time.DateTime;
 
@@ -407,8 +413,7 @@ application but may be changed by commands during execution), as a String.</td>
 @exception UnrecognizedRequestException if an unknown property is requested.
 */
 public Object getPropContents ( String prop ) throws Exception
-{	String routine = "TSCommandProcessor.getPropContents";
-	if ( prop.equalsIgnoreCase("AutoExtendPeriod") ) {
+{	if ( prop.equalsIgnoreCase("AutoExtendPeriod") ) {
 		return getPropContents_AutoExtendPeriod();
 	}
 	else if ( prop.equalsIgnoreCase("DataTestList") ) {
@@ -656,19 +661,20 @@ Determine the index of a command in the processor.  A reference comparison occur
 @return the index (0+) of the matching command, or -1 if not found.
 */
 public int indexOf ( Command command )
-{	String routine = getClass().getName() + ".indexOf";
+{	// Uncomment to troubleshoot
+	//String routine = getClass().getName() + ".indexOf";
 	int size = size();
 	Command c;
-	Message.printStatus ( 2, routine, "Checking " + size + " commands for command " + command );
+	//Message.printStatus ( 2, routine, "Checking " + size + " commands for command " + command );
 	for ( int i = 0; i < size; i++ ) {
 		c = (Command)__Command_Vector.elementAt(i);
-		Message.printStatus ( 2, routine, "Comparing to command " + c );
+		//Message.printStatus ( 2, routine, "Comparing to command " + c );
 		if ( c == command ) {
-			Message.printStatus ( 2, routine, "Found command." );
+			//Message.printStatus ( 2, routine, "Found command." );
 			return i;
 		}
 	}
-	Message.printStatus ( 2, routine, "Did not find command." );
+	//Message.printStatus ( 2, routine, "Did not find command." );
 	return -1;
 }
 
@@ -1109,6 +1115,9 @@ throws Exception
 	}
 	else if ( request.equalsIgnoreCase("SetHydroBaseDMI") ) {
 		return processRequest_SetHydroBaseDMI ( request, request_params );
+	}
+	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
+		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
 	else if ( request.equalsIgnoreCase("SetTimeSeries") ) {
 		return processRequest_SetTimeSeries ( request, request_params );
@@ -1613,7 +1622,7 @@ throws Exception
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	NWSRFS_DMI dmi = (NWSRFS_DMI)o;
-	// Add an open HydroBaseDMI instance, closing a previous connection
+	// Add an open NWSRFS_DMI instance, closing a previous connection
 	// of the same name if it exists.
 	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
@@ -1651,6 +1660,72 @@ throws Exception
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
 	return bean;
+}
+
+/**
+Read the commands file and initialize new commands.
+@param path Path to the commands file - this should be an absolute path.
+@param create_generic_command_if_not_recognized If true, create a GenericCommand
+if the command is not recognized.  This is being used during transition of old
+string commands to full Command classes.
+@param append If true, the commands will be appended to the existing commands.
+@exception IOException if there is a problem reading the file.
+*/
+public void readCommandsFile ( String path,
+		boolean create_generic_command_if_not_recognized,
+		boolean append )
+throws IOException
+{	//String routine = getClass().getName() + ".readCommandsFile";
+	BufferedReader br = null;
+	br = new BufferedReader( new FileReader(path) );
+	String line;
+	Command command = null;
+	TSCommandFactory cf = new TSCommandFactory();
+	// If not appending, remove all...
+	if ( !append ) {
+		removeAllCommands();
+	}
+	// Now process each line in the file and turn into a command...
+	while ( true ) {
+		line = br.readLine();
+		if ( line == null ) {
+			break;
+		}
+		// Create a command from the line...
+		if ( create_generic_command_if_not_recognized ) {
+			try {	command = cf.newCommand ( line, create_generic_command_if_not_recognized );
+			}
+			catch ( UnknownCommandException e ) {
+				// Should not happen because of parameter passed above
+			}
+		}
+		else {
+			try {	command = cf.newCommand ( line, create_generic_command_if_not_recognized );
+			}
+			catch ( UnknownCommandException e ) {
+				// TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load
+				// In this case skip the command, although the above case
+				// may always be needed?
+			}
+		}
+		// Initialize the command...
+		try {
+			command.initializeCommand(
+				line,	// Command string, needed to do full parse on parameters
+				this,	// Processor, needed to make requests
+				true);	// Do full initialization
+		}
+		catch ( InvalidCommandSyntaxException e ) {
+			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
+		}
+		catch ( InvalidCommandParameterException e2) {
+			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
+		}
+		// Add the command...
+		addCommand ( command );
+	}
+	// Close the file...
+	br.close();
 }
 
 /**

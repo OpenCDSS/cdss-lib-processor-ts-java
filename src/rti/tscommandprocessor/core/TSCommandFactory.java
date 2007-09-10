@@ -114,7 +114,6 @@ import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
-import rti.tscommandprocessor.commands.ts.runCommands_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.setInputPeriod_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
@@ -123,6 +122,7 @@ import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
+import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
 
 /**

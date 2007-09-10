@@ -317,8 +317,10 @@ syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand(String command, String command_tag, int warning_level)
-throws InvalidCommandSyntaxException, InvalidCommandParameterException {
+public void parseCommand ( String command )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{	int warning_level = 2;
+
 	// The old format of parsing is still supported for the 
 	//	"TS alias = readNwsCard(.....)
 	// version of the command.  In old format of the TS Alias version of 
@@ -377,10 +379,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 			// Must have at least the command name and the InputFile
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag,++warning_count),
-				routine, message);
+			Message.printWarning ( warning_level,routine, message);
+			++warning_count;
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	
@@ -392,10 +392,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag,++warning_count),
-				routine, message);
+			Message.printWarning ( warning_level,routine, message);
+			++warning_count;
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		PropList parameters = getCommandParameters ();
@@ -422,10 +420,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 				__Alias = "Invalid_Alias";
 				message = "No alias was specified, although "
 					+ "the command started with \"TS ...\"";
-				Message.printWarning(warning_level, 
-					MessageUtil.formatMessageTag(
-					command_tag, ++warning_count),
-					routine, message);
+				Message.printWarning(warning_level, routine, message);
+				++warning_count;
 				throw new InvalidCommandSyntaxException(
 					message);
 			}

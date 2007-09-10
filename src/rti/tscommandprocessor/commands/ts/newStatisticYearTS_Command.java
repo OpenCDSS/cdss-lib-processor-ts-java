@@ -183,20 +183,15 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_count = 0;
+{	int warning_level = 2;
 	String routine = "newStatisticYearTS.parseCommand", message;
 
 	// Get the part of the command after the TS Alias =...
@@ -204,9 +199,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( pos < 0 ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = newStatisticYearTS(...)";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	String token0 = command.substring ( 0, pos ).trim();
@@ -214,9 +207,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( (token0 == null) || (token1 == null) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = newStatisticYearTS(...)";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
@@ -225,9 +216,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = newStatisticYearTS(...)";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	String Alias = (String)v.elementAt(1);
@@ -238,9 +227,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// parameters...
 		message = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the file...
@@ -254,9 +241,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 }
@@ -267,10 +252,7 @@ Run the commands:
 TS Alias = newStatisticYearTS(TSID="X",NewTSID="X",Statistic=X,TestValue=X,
 AllowMissingCount=X,AnalysisStart="X",AnalysisEnd="X",SearchStart="X")
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -278,11 +260,13 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag, int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "newStatisticYearTS.runCommand", message;
 	int warning_count = 0;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int log_level = 3;	// Non-user warning level
 
 	// Make sure there are time series available to operate on...

@@ -350,7 +350,7 @@ public void actionPerformed( ActionEvent event )
 		if ( !__error_wait ) {
 			// REVISIT [2005-06-01] What is the logic of command tag?
 			try {
-				__command.runCommand( null, 2 );
+				__command.runCommand( -1 );
 			} catch ( Exception e ) {
 				Message.printWarning ( 2, mthd, e );
 				mssg = "Error executing the analysis."

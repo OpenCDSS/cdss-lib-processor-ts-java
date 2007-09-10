@@ -211,12 +211,13 @@ syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand(String command, String command_tag, int warning_level)
+public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	int index = command.indexOf("(");
 	String str = command.substring(index);
 	String routine = "newDataTest_Command.parseCommand", message;
 	
+	int warning_level = 2;
 	int warning_count = 0;
 
 	Vector tokens = StringUtil.breakStringList ( command,
@@ -226,10 +227,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		// Must have at least the DataTest and TestExpression
 		message = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag,++warning_count),
-			routine, message);
+		Message.printWarning ( warning_level, routine, message);
+		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	
@@ -240,18 +239,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag,++warning_count),
-			routine, message);
+		Message.printWarning ( warning_level, routine, message);
+		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
 	if (!StringUtil.startsWithIgnoreCase(command.trim(), "DataTest ")) {
 		message = "Command did not start with \"DataTest ...\"";
-		Message.printWarning(warning_level, 
-			MessageUtil.formatMessageTag(command_tag,
-			++warning_count), routine, message);
+		Message.printWarning(warning_level, routine, message);
+		++warning_count;
 		throw new InvalidCommandSyntaxException(message);
 	}
 
@@ -267,9 +263,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 		message = "No alias was specified, although "
 			+ "the command started with \"TS ...\"";
 		Message.printWarning(warning_level, 
-			MessageUtil.formatMessageTag(
-			command_tag, ++warning_count),
 			routine, message);
+		++warning_count;
 		throw new InvalidCommandSyntaxException(
 			message);
 	}
@@ -286,10 +281,7 @@ Run the command:
 <pre>
 newDataTest(TestExpression="x")
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command being processed (0+).
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -297,14 +289,13 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag,
-			 int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{
-	String routine = "newDataTest_Command.runCommand", message;
-
+{	String routine = "newDataTest_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 
 	// Get the command properties not already stored as members.
@@ -427,4 +418,4 @@ public String toString ( PropList props )
 	return DataTest + getCommandName() + "(" + b.toString() + ")";
 }
 
-} // end newDataTest_Command
+}

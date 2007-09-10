@@ -705,6 +705,8 @@ import RTi.TS.YearTS;
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.DataFormat;
 import RTi.Util.IO.DataUnits;
@@ -7013,7 +7015,6 @@ throws Exception
 	//String message_tag = "ProcessCommands";
 					// Tag used with messages generated in
 					// this method.
-
 	for ( int i = 0; i < size; i++ ) {
 		// For example, setWorkingDir() is often prepended automatically
 		// to start in the working directory.  In this case,
@@ -8896,8 +8897,7 @@ throws Exception
 					expression + "\"" );
 				}
 				command.initializeCommand ( expression,
-					__ts_processor,
-					command_tag, 2, true );
+					__ts_processor, true );
 				// REVISIT SAM 2005-05-11 Is this the best
 				// place for this or should it be in the
 				// runCommand()?...
@@ -8910,32 +8910,21 @@ throws Exception
 				command.checkCommandParameters (
 					command.getCommandParameters(),
 					command_tag, 2 );
+				// Clear the run status for the command...
+				if ( command instanceof CommandStatusProvider ) {
+					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.RUN);
+				}
 				// Run the command...
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,
 					"Running command through new code..." );
 				}
-				
-				command.runCommand ( command_tag, 2 );
+				command.runCommand ( i_for_message );
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,
 					"...back from running command." );
 				}
 			}
-			/* TODO SAM 2007-09-05 Need to put in load code.
-			catch ( UnknownCommandException e ) {
-				message =
-				"Do not know how to process command:\n" +
-					expression;
-				Message.printWarning ( 1,
-				MessageUtil.formatMessageTag(command_tag,
-				++error_count), routine, message );
-				if (Message.isDebugOn) {
-					Message.printDebug(3, routine, e);
-				}
-				continue;
-			}
-			*/
 			catch ( InvalidCommandSyntaxException e ) {
 				message =
 				"Unable to process command (invalid syntax).";

@@ -162,23 +162,18 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.  
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand (	String command, String command_tag,
-				int warning_level )
+public void parseCommand (	String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	
-	int warning_count = 0;
-	String routine = "fillUsingDiversionComments_Command.parseCommand",
+{	String routine = "fillUsingDiversionComments_Command.parseCommand",
 	  message;
+	int warning_level = 2;
+	int warning_count = 0;
 
 	Vector tokens = StringUtil.breakStringList ( command,
 			"()", StringUtil.DELIM_SKIP_BLANKS );
@@ -186,9 +181,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// Must have at least the command name, TSID
 		message = "Syntax error in \"" + command +
 		"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-						command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
+		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the file...
@@ -198,9 +192,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
 		"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-						command_tag,++warning_count), routine, message);
+		Message.printWarning ( warning_level, routine, message);
+		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
 	}
 }
@@ -248,14 +241,14 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
 
 /**
 Method to execute the fillUsingDiversionComments() command.
-@param command_tag specfic tag or identifier for this command.
-@param warningLevel The message warning level to write to the log file with.
+@param command_number Command number being run.
 @exception Exception if there is an error processing the command.
 */
-public void runCommand ( String command_tag, int warningLevel )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	
+{	int warningLevel = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;
 	String message, routine = "fillUsingDiversionComments_Command.runCommand";

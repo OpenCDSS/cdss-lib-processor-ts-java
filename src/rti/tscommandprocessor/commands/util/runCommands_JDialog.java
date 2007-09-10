@@ -12,7 +12,7 @@
 // 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
 // ----------------------------------------------------------------------------
 
-package rti.tscommandprocessor.commands.ts;
+package rti.tscommandprocessor.commands.util;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;

@@ -262,25 +262,17 @@ throws Throwable
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command,
-			   String command_tag,
-			   int    warning_level )
+public void parseCommand ( String command )
 throws 	InvalidCommandSyntaxException,
 	InvalidCommandParameterException
-{
-	String mthd = "changeInterval_Command.parseCommand", mssg;
-
-	int warning_count = 0;
+{	String mthd = "changeInterval_Command.parseCommand", mssg;
+	int warning_level = 2;
 
 	if ( Message.isDebugOn ) {
 		mssg = "Command to parse is: " + command;
@@ -321,10 +313,7 @@ throws 	InvalidCommandSyntaxException,
 			// list.
 			mssg = "Syntax error in \"" + command +
 				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag,++warning_count),
-				mthd, mssg);
+			Message.printWarning ( warning_level, mthd, mssg);
 			throw new InvalidCommandSyntaxException ( mssg );
 		}
 	
@@ -347,10 +336,7 @@ throws 	InvalidCommandSyntaxException,
 		catch ( Exception e ) {
 			mssg = "Syntax error in \"" + command
 				+ "\".  Not enough tokens.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag, ++warning_count ),
-				mthd, mssg );
+			Message.printWarning ( warning_level, mthd, mssg );
 			throw new InvalidCommandSyntaxException ( mssg );
 		}
 	}

@@ -74,6 +74,7 @@ private JTextField	__NewScenario_JTextField = null;// Field for new scenario
 private SimpleJComboBox	__AutoAdjust_JComboBox = null;  // For development to
 						// deal with non-standard issues in data (e.g., crop
 						// names that include "."
+private SimpleJComboBox	__CheckData_JComboBox = null;  // Check data?
 private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
 						// or Cancel?
@@ -192,6 +193,7 @@ private void checkInput ()
 	String TSID = __TSID_JTextField.getText().trim();
 	String NewScenario = __NewScenario_JTextField.getText().trim();
 	String AutoAdjust = __AutoAdjust_JComboBox.getSelected();
+	String CheckData = __CheckData_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -210,6 +212,9 @@ private void checkInput ()
 	}
 	if (AutoAdjust.length() > 0) {
 		props.set("AutoAdjust", AutoAdjust);
+	}
+	if (CheckData.length() > 0) {
+		props.set("CheckData", CheckData);
 	}
 	try { // This will warn the user...
 		__command.checkCommandParameters(props, null, 1);
@@ -230,12 +235,14 @@ private void commitEdits ()
 	String TSID = __TSID_JTextField.getText().trim();
 	String NewScenario = __NewScenario_JTextField.getText().trim();
 	String AutoAdjust = __AutoAdjust_JComboBox.getSelected();
+	String CheckData = __CheckData_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "InputStart", InputStart );
 	__command.setCommandParameter ( "InputEnd", InputEnd );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "NewScenario", NewScenario );
 	__command.setCommandParameter ( "AutoAdjust", AutoAdjust );
+	__command.setCommandParameter ( "CheckData", CheckData );
 }
 
 /**
@@ -252,6 +259,7 @@ throws Throwable
 	__TSID_JTextField = null;
 	__NewScenario_JTextField = null;
 	__AutoAdjust_JComboBox = null;
+	__CheckData_JComboBox = null;
 	__command = null;
 	__ok_JButton = null;
 	__path_JButton = null;
@@ -272,7 +280,7 @@ private void initialize ( JFrame parent, Command command )
 		Object o = processor.getPropContents("WorkingDir");
 		// Working directory is available so use it...
 		if (o != null) {
-			__working_dir = (String) o;
+			__working_dir = (String)o;
 		}
 	} catch (Exception e) {
 		// Not fatal, but of use to developers.
@@ -393,8 +401,7 @@ private void initialize ( JFrame parent, Command command )
     	"To help uniquely identify time series (default=none)."),
     	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically adjust:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically adjust?:" ), 
    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
    	__AutoAdjust_JComboBox = new SimpleJComboBox ( false );
    	__AutoAdjust_JComboBox.addItem ( "" );
@@ -406,6 +413,19 @@ private void initialize ( JFrame parent, Command command )
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
        	"Convert data type with \".\" to \"-\"."),
        	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check data after read?:" ), 
+       		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CheckData_JComboBox = new SimpleJComboBox ( false );
+    __CheckData_JComboBox.addItem ( "" );
+    __CheckData_JComboBox.addItem ( __command._False );
+    __CheckData_JComboBox.addItem ( __command._True );
+    __CheckData_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __CheckData_JComboBox,
+       		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+           	"Check data integrity after read (default=True)?"),
+           	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
        	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -502,6 +522,7 @@ private void refresh ()
 	String TSID="";
 	String NewScenario="";
 	String AutoAdjust = "";
+	String CheckData = "";
 	if ( __first_time ) {
 		__first_time = false;
 		PropList props = __command.getCommandParameters();
@@ -511,6 +532,7 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		NewScenario = props.getValue ( "NewScenario" );
 		AutoAdjust = props.getValue ( "AutoAdjust" );
+		CheckData = props.getValue ( "CheckData" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText (InputFile);
 		}
@@ -544,6 +566,24 @@ private void refresh ()
 						AutoAdjust + "\".  Correct or Cancel." );
 				}
 		}
+		if (	JGUIUtil.isSimpleJComboBoxItem(
+				__CheckData_JComboBox,
+				CheckData, JGUIUtil.NONE, null, null ) ) {
+				__CheckData_JComboBox.select ( CheckData);
+		}
+		else {	if (	(CheckData == null) ||
+					CheckData.equals("") ) {
+					// New command...select the default...
+					__CheckData_JComboBox.select ( 0 );
+				}
+				else {	Message.printWarning ( 1,
+						routine,
+						"Existing " + __command.getCommandName() +
+						"() references an " +
+						"invalid\n"+ "CheckData parameter \"" +
+						CheckData + "\".  Correct or Cancel." );
+				}
+		}
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
@@ -552,6 +592,7 @@ private void refresh ()
 	TSID = __TSID_JTextField.getText().trim();
 	NewScenario = __NewScenario_JTextField.getText().trim();
 	AutoAdjust = __AutoAdjust_JComboBox.getSelected();
+	CheckData = __CheckData_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "InputStart=" + InputStart );
@@ -559,6 +600,7 @@ private void refresh ()
 	props.add ( "TSID=" + TSID );
 	props.add ( "NewScenario=" + NewScenario );
 	props.add ( "AutoAdjust=" + AutoAdjust );
+	props.add ( "CheckData=" + CheckData );
 	__command_JTextArea.setText(__command.toString(props) );
 
 	// Check the path and determine what the label on the path button should

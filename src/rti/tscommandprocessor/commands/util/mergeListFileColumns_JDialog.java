@@ -181,7 +181,7 @@ public void actionPerformed(ActionEvent event)
 				try {	commitEdits ();
 					JGUIUtil.setWaitCursor (
 						__parent_JFrame, true );
-					__command.runCommand ( "", 2 );
+					__command.runCommand ( 0 );
 					JGUIUtil.setWaitCursor(
 						__parent_JFrame, false );
 				}

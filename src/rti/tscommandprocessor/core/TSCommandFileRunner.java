@@ -40,4 +40,8 @@ throws Exception
 	// TODO SAM 2007-09-09 Evaluate whether InitialWorkingDir needs set
 }
 
+public TSCommandProcessor get__processor() {
+    return __processor;
+}
+
 }

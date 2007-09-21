@@ -644,45 +644,33 @@ package rti.tscommandprocessor.core;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.lang.String;
-import java.io.BufferedReader;
-import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Hashtable;
-import java.util.StringTokenizer;
 import java.util.Vector;
 
+import rti.common.transfer.TSIdentityTO;
+import rti.common.transfer.TSRequestTO;
+import rti.common.type.PersistenceType;
 import rti.domain.timeseries.TimeSeries;
 import rti.domain.timeseries.TimeSeriesFabricator;
-import rti.transfer.TimeSeriesIdBean;
-import rti.type.TimeSeriesInputType;
-
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
-
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
 import DWR.StateCU.StateCU_TS;
-
-import DWR.StateMod.StateMod_TS;
 import DWR.StateMod.StateMod_BTS;
-
-//import RTi.DataServices.Adapter.NDFD.Adapter;
+import DWR.StateMod.StateMod_TS;
 import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
-import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
-
+import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
-
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
-
 import RTi.TS.BinaryTS;
 import RTi.TS.DateValueTS;
 import RTi.TS.DayTS;
@@ -701,7 +689,6 @@ import RTi.TS.TSSupplier;
 import RTi.TS.TSUtil;
 import RTi.TS.UsgsNwisTS;
 import RTi.TS.YearTS;
-
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -715,7 +702,6 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageJDialog;
@@ -10353,12 +10339,17 @@ throws Exception
 		}
 	}
 	else if (	(input_type != null) &&
-		input_type.equalsIgnoreCase(TimeSeriesInputType.DATE_VALUES.toString()) ) {
+		input_type.equalsIgnoreCase(PersistenceType.DATE_VALUES.getTSIdentString()) ) {
 		// Test new data services for DateValue file...
 		try {	TSIdent tsident_full = new TSIdent ( tsident_string );
-				TimeSeriesIdBean requestBean = new TimeSeriesIdBean ( tsident_full );
-				TimeSeries timeseries = new TimeSeriesFabricator().getTimeSeries(requestBean);
-				ts = timeseries.getTs();
+		        TSRequestTO tsRequestTO = new TSRequestTO ();// tsident_full 
+		        TSIdentityTO tsIdentityTO = new TSIdentityTO();
+		        tsIdentityTO.setPersistenceTypeStr(PersistenceType.DATE_VALUES.toString());
+		        tsIdentityTO.setTsIdentString(tsident_full.toString());
+		        tsRequestTO.setTsIdentityTO(tsIdentityTO);
+				boolean GET_ALL_DATA = false;
+                TimeSeries timeseries = new TimeSeriesFabricator().getDomainObject(tsRequestTO, GET_ALL_DATA );
+				ts = timeseries.getTS();
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine, e );

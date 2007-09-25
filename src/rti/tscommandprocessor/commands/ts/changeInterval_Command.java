@@ -354,10 +354,7 @@ Alias X = changeInterval (TSID="...",
 			 OutputFillMethod="...",
 			 HandleMissingInputHow="...")
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number Number of command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -365,8 +362,7 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag,
-			 int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
@@ -375,6 +371,8 @@ throws InvalidCommandParameterException,
 	String message = "";
             	
 	int warning_count = 0;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int log_level = 3;	// Warning message level for non-user messages
 	
 	PropList parameters = getCommandParameters();
@@ -429,7 +427,7 @@ throws InvalidCommandParameterException,
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\" from processor.";
+		"\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -439,7 +437,7 @@ throws InvalidCommandParameterException,
 	TS original_ts = null;
 	if ( o_TS == null ) {
 		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\" from processor.";
+		"\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );

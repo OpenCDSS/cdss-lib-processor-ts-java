@@ -99,7 +99,7 @@ throws InvalidCommandParameterException
 	try {	
 		// A null logfile means that the current log file should
 		// be re-opened.
-		if (LogFile != null) {
+		if ( (LogFile != null) && (working_dir != null) ) {
 			String adjusted_path = IOUtil.adjustPath(working_dir, 
 				LogFile);
 			File f = new File(adjusted_path);

@@ -444,10 +444,7 @@ Run the command:
 readNWSCard (InputFile="x",InputStart="x",InputEnd="x",Read24HourAsDay="x",
 NewUnits="x")
 </pre>
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -455,16 +452,15 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( String command_tag,
-			 int warning_level )
+public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{
-	String routine = "readNwsCard_Command.runCommand", message;
-
+{	String routine = "readNwsCard_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
 	int warning_count = 0;
-	Vector TSList     = null;	// Keep the list of time series	
+	Vector TSList = null;	// Keep the list of time series	
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();

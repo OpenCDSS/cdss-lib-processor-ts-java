@@ -1909,7 +1909,7 @@ Run the specified commands.  If no commands are specified, run all that are bein
 public void runCommands ( Vector commands, PropList props )
 throws Exception
 {
-	__tsengine.processCommands(commands, props);
+	__tsengine.processCommands ( commands, props );
 }
 
 /**

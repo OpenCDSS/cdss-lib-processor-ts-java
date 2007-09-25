@@ -266,15 +266,9 @@ private void initialize ( JFrame parent, Command command )
     	size = tsids.size();
     }
     if ( size == 0 ) {
-    	Message.printWarning ( 1,
-    		"fillUsingDiversionComments_JDialog.initialize",
-    		"You must define time series before inserting a " +
-    		"fillUsingDiversionComments() command." );
-    	response ( false );
+    	tsids = new Vector();
     }
-    else {
-    	__TSID_JComboBox.setData ( tsids );
-    }
+   	__TSID_JComboBox.setData ( tsids );
 	// Always allow a "*" to let all time series be filled...
 	__TSID_JComboBox.add ( "*" );
 	__TSID_JComboBox.addItemListener ( this );

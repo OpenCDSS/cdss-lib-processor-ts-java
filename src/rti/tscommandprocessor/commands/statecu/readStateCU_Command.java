@@ -95,6 +95,8 @@ throws InvalidCommandParameterException
 	String warning = "";
 
 	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.RUN);
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
 		warning += "\nThe input file must be specified.";
 	}
@@ -472,6 +474,8 @@ CommandWarningException, CommandException
 				InputFile ) ) {
 			file_type = "irrigation practice";
 			CommandStatus status = getCommandStatus();
+			// Clear the status...
+			status.clearLog(CommandPhaseType.RUN);
 			try {	Vector ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
 					InputFile, InputStart_DateTime, InputEnd_DateTime );
 					// Get the individual time series for use by TSTool.

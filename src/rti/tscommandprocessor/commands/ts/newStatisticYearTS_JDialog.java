@@ -310,6 +310,11 @@ private void initialize ( JFrame parent, Command command )
 	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
+	if ( tsids == null ) {
+		// User will not be able to select anything.
+		tsids = new Vector();
+	}
+	
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );

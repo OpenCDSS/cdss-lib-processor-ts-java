@@ -644,33 +644,49 @@ package rti.tscommandprocessor.core;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.lang.String;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Hashtable;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
-import rti.common.transfer.TSIdentityTO;
-import rti.common.transfer.TSRequestTO;
-import rti.common.type.PersistenceType;
-import rti.domain.timeseries.TimeSeries;
-import rti.domain.timeseries.TimeSeriesFabricator;
+// Code that will be used when service code is fully implemented...
+//import rti.common.transfer.TSIdentityTO;
+//import rti.common.transfer.TSRequestTO;
+//import rti.common.type.PersistenceType;
+//import rti.domain.timeseries.TimeSeries;
+//import rti.domain.timeseries.TimeSeriesFabricator;
+//import rti.transfer.TimeSeriesIdBean;
+//import rti.type.TimeSeriesInputType;
+
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
+
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
+
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
 import DWR.StateCU.StateCU_TS;
-import DWR.StateMod.StateMod_BTS;
+
 import DWR.StateMod.StateMod_TS;
+import DWR.StateMod.StateMod_BTS;
+
+//import RTi.DataServices.Adapter.NDFD.Adapter;
 import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
-import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
+import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
+
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
+
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
+
 import RTi.TS.BinaryTS;
 import RTi.TS.DateValueTS;
 import RTi.TS.DayTS;
@@ -689,6 +705,7 @@ import RTi.TS.TSSupplier;
 import RTi.TS.TSUtil;
 import RTi.TS.UsgsNwisTS;
 import RTi.TS.YearTS;
+
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -702,6 +719,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageJDialog;
@@ -3662,7 +3680,7 @@ throws Exception
 	// Convert to a full path because this what will be stored in
 	// the __nwsrfs_dmi.
 	String input_name_full = IOUtil.getPathUsingWorkingDir( input_name );
-	NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI( input_name_full );
+	NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI( input_name_full, true );
 	if ( nwsrfs_dmi == null ) {
 		Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
 					input_name_full + "\"" );
@@ -5703,8 +5721,9 @@ the default.
 path to the FS5Files.
 @return the NWSRFS_DMI that is being used (may return null).
 */
-protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name )
-{	int size = __nwsrfs_dmi_Vector.size();
+protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_not_found )
+{	String routine = getClass().getName() + ".getNWSRFSFS5FilesDMI";
+	int size = __nwsrfs_dmi_Vector.size();
 	if ( input_name == null ) {
 		input_name = "";
 	}
@@ -5713,12 +5732,33 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name )
 		nwsrfs_dmi = (NWSRFS_DMI)__nwsrfs_dmi_Vector.elementAt(i);
 		if ( nwsrfs_dmi.getInputName().equalsIgnoreCase(input_name) ) {
 			if ( Message.isDebugOn ) {
-				Message.printDebug ( 1, "",
+				Message.printDebug ( 1, routine,
 				"Returning NWSRFS_DMI[" + i +"] InputName=\""+
 				nwsrfs_dmi.getInputName() + "\"" );
 			}
 			return nwsrfs_dmi;
 		}
+	}
+	if ( Message.isDebugOn ) {
+		Message.printDebug ( 1, "",
+		"Could not find a matching NWSRFS FS5Files DMI for InputName=\""+
+		input_name + "\"" );
+	}
+	if ( open_if_not_found ) {
+			try {	Message.printStatus( 2, routine,
+					"Opening new NWSRFS FS5Files DMI using path \"" +
+					input_name + "\"" );
+					nwsrfs_dmi = new NWSRFS_DMI( input_name );
+					nwsrfs_dmi.open();
+					// Save so we can get to it again when we need it...
+					setNWSRFSFS5FilesDMI ( nwsrfs_dmi, true );
+					return nwsrfs_dmi;
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 3, routine,
+						"Could not open NWSRFS FS5Files." );
+				Message.printWarning(3, routine, e);
+			}
 	}
 	return null;
 }
@@ -6792,7 +6832,7 @@ file) and can be output using the processTimeSeries() method).
 <b>Filling with historic averages is handled for monthly time series
 so that original data averages are used.</b>
 @param command_Vector The Vector of Command from the TSCommandProcessor,
-to be processed.
+to be processed.  If null, process all.
 @param app_PropList if not null, then properties are set as the commands are
 run.  This is typically used when running commands prior to using an edit
 dialog in the TSTool GUI, as follows:
@@ -6828,13 +6868,16 @@ processing.
 
 </table>
 */
-protected void processCommands ( Vector command_Vector,
-		PropList app_PropList )
+protected void processCommands ( Vector command_Vector,	PropList app_PropList )
 throws Exception
 {	String	message, routine = "TSEngine.processTimeSeriesCommands";
 	String	tsident_string = null;
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
+	if ( command_Vector == null ) {
+		// Process all commands if a subset has not been provided.
+		command_Vector = __ts_processor.getCommands();
+	}
 	
 	// Save the passed in properties (formed in the TSCommandProcessor) request
 	// call, so that they can be retrieved with other requests.
@@ -6894,7 +6937,7 @@ throws Exception
 	}
 	*/
 
-	int size = __ts_processor.size();
+	int size = command_Vector.size();
 	Message.printStatus ( 1, routine, "Processing " + size+" commands..." );
 	StopWatch stopwatch = new StopWatch();
 	stopwatch.start();
@@ -6925,7 +6968,7 @@ throws Exception
 		ts = null;	// Initialize each time to allow for checks
 				// below.
 		tokens = null;
-		command = __ts_processor.get(i);
+		command = (Command)command_Vector.elementAt(i);
 		expression = command.toString();
 		if ( expression == null ) {
 			continue;
@@ -7014,7 +7057,7 @@ throws Exception
 		ts = null;
 		ts_action = NONE;
 		//expression = (String)tsexpression_list.elementAt(i);
-		command = __ts_processor.get(i);
+		command = (Command)command_Vector.elementAt(i);
 		expression = command.toString();
 		if ( expression == null ) {
 			continue;
@@ -8882,8 +8925,7 @@ throws Exception
 					"Initializing the Command for \"" +
 					expression + "\"" );
 				}
-				command.initializeCommand ( expression,
-					__ts_processor, true );
+				command.initializeCommand ( expression, __ts_processor, true );
 				// REVISIT SAM 2005-05-11 Is this the best
 				// place for this or should it be in the
 				// runCommand()?...
@@ -10338,6 +10380,7 @@ throws Exception
 			ts = null;
 		}
 	}
+	/* TODO SAM Re-enable services code
 	else if (	(input_type != null) &&
 		input_type.equalsIgnoreCase(PersistenceType.DATE_VALUES.getTSIdentString()) ) {
 		// Test new data services for DateValue file...
@@ -10356,6 +10399,7 @@ throws Exception
 			ts = null;
 		}
 	}
+*/
 	else if (	(input_type != null) &&
 			input_type.equalsIgnoreCase("DIADvisor") ) {
 		// New style TSID~input_type~input_name for DIADvisor...
@@ -10496,18 +10540,9 @@ throws Exception
 	}
 	else if ((input_type != null) &&
 		input_type.equalsIgnoreCase("NWSRFS_FS5Files") ) {
-		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name );
-		if ( nwsrfs_dmi == null ) {
-			Message.printWarning ( 2, routine,
-				"Unable to get NWSRFS FS5Files connection for " +
-				"input name \"" + input_name +
-				"\".  Unable to read time series." );
-				ts = null;
-		}
-		else {
-			ts = nwsrfs_dmi.readTimeSeries ( tsident_string,
+		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name, true );
+		ts = nwsrfs_dmi.readTimeSeries ( tsident_string,
 					query_date1, query_date2, units, true );
-		}
 	}
 	else if ((input_type != null) &&
 		input_type.equalsIgnoreCase("RiversideDB") ) {

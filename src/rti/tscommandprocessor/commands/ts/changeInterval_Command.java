@@ -308,11 +308,10 @@ throws 	InvalidCommandSyntaxException,
 		// the parameters list within the parenthesis.
 		Vector tokens = StringUtil.breakStringList ( substring,
 			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || tokens.size() < 2 ) {
+		if ( tokens == null ) {
 			// Must have at least the command name and the parameter
 			// list.
-			mssg = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
+			mssg = "Syntax error in \"" + command + "\".";
 			Message.printWarning ( warning_level, mthd, mssg);
 			throw new InvalidCommandSyntaxException ( mssg );
 		}

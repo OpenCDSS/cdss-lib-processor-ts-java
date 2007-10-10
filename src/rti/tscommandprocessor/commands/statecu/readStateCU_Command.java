@@ -99,6 +99,11 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.RUN);
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
 		warning += "\nThe input file must be specified.";
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.WARNING,
+				"The input file has not been specified.",
+				"Specify a StateCU IPY file to read.  " +
+				"May be OK if created dynamically during run." ) );
 	}
 	else {	try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
@@ -113,8 +118,9 @@ throws InvalidCommandParameterException
 				Message.printDebug(10, routine, message );
 			}
 	
-		try {	String adjusted_path = IOUtil.adjustPath (
-				__working_dir, InputFile);
+		try {	
+			// Adjust the path to the working directory...
+			String adjusted_path = IOUtil.adjustPath ( __working_dir, InputFile);
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -122,8 +128,17 @@ throws InvalidCommandParameterException
 				"\nThe input file parent directory does " +
 				"not exist: \"" + adjusted_path + "\".";
 			}
-			f = null;
+			// Check the full name
+			else if ( !f.exists() ) {
+				warning += "\nThe input file must be specified.";
+				status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.WARNING,
+					"The input file \"" + adjusted_path + "\" does not exist.",
+					"Specify a valid StateCU IPY file to read.  " +
+					"May be OK if created dynamically during run." ) );
+			}
 			f2 = null;
+			f = null;
 		}
 		catch ( Exception e ) {
 			warning +=
@@ -131,7 +146,13 @@ throws InvalidCommandParameterException
 				"    \"" + __working_dir +
 				"\"\ncannot be used to adjust the file:\n" +
 				"    \"" + InputFile + "\".";
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.WARNING,
+					"The working directory \"" + __working_dir +
+					"\" cannot be used to adjust the file \"" +	InputFile + "\"",
+					"Verify that the input file location is still correct." ) );
 		}
+
 	}
 
 	if (	(InputStart != null) && !InputStart.equals("") &&
@@ -144,6 +165,10 @@ throws InvalidCommandParameterException
 				"\nThe input start date/time \"" +InputStart +
 				"\" is not a valid date/time.\n"+
 				"Specify a date/time or InputStart.";
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.WARNING,
+					"The input start date/time \"" + InputStart + "\" is not a valid date/time.",
+					"Specify a valid date/time or \"InputStart\" to use the global input start." ) );
 		}
 	}
 	if (	(InputEnd != null) && !InputEnd.equals("") &&
@@ -156,6 +181,10 @@ throws InvalidCommandParameterException
 				"\nThe input end date/time \"" + InputEnd +
 				"\" is not a valid date/time.\n"+
 				"Specify a date/time or InputEnd.";
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.WARNING,
+					"The input end date/time \"" + InputEnd + "\" is not a valid date/time.",
+					"Specify a valid date/time or \"InputEnd\" to use the global input end." ) );
 		}
 	}
 	// TODO SAM Need to check TSID - see newTimeSeries but support checking wildcards
@@ -163,6 +192,10 @@ throws InvalidCommandParameterException
 		(NewScenario.indexOf(" ") > 0) ) {
 			warning +=
 				"\nThe NewScenario must not contain spaces.";
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.WARNING,
+					"The NewScenario must not contain spaces.",
+					"Remove spaces from the scenario." ) );
 	}
 	
 	if ( (AutoAdjust != null) && !AutoAdjust.equals("") &&
@@ -170,6 +203,10 @@ throws InvalidCommandParameterException
 			!AutoAdjust.equalsIgnoreCase("False") ) {
 				warning +=
 					"\nThe AutoAdjust value (" + AutoAdjust + ") must be True or False.";
+				status.addToLog ( CommandPhaseType.INITIALIZATION,
+						new CommandLogRecord(CommandStatusType.WARNING,
+						"The AutoAdjust value \"" + AutoAdjust + "\" is not valid.",
+						"Change to True or False." ) );
 	}
 	
 	if ( (CheckData != null) && !CheckData.equals("") &&
@@ -177,6 +214,10 @@ throws InvalidCommandParameterException
 			!CheckData.equalsIgnoreCase("False") ) {
 				warning +=
 					"\nThe CheckData value (" + CheckData + ") must be True or False.";
+				status.addToLog ( CommandPhaseType.INITIALIZATION,
+						new CommandLogRecord(CommandStatusType.WARNING,
+						"The CheckData value \"" + CheckData + "\" is not valid.",
+						"Change to True or False." ) );
 	}
 	
 	if ( warning.length() > 0 ) {
@@ -218,7 +259,6 @@ private void checkIrrigationPracticeTS ( Vector tslist, CommandStatus status )
 	DateTime date_end;		// End of period for looping.
 	String id;
 	double calculated_total;	// Calculated total of parts.
-	int warning_count = 0;
 	for ( int i = 0; i < size; i++ ) {
 		ipy_ts = (StateCU_IrrigationPracticeTS)tslist.elementAt(i);
 		id = ipy_ts.getID();

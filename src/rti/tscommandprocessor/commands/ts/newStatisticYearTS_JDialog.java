@@ -509,8 +509,7 @@ private void refresh ()
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the blank...
-				__TSID_JComboBox.select ( 0 );
+			else {	// Do not select anything...
 			}
 		}
 		if ( NewTSID != null ) {

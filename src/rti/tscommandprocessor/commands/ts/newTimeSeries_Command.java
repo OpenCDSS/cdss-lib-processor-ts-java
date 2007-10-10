@@ -196,6 +196,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
+	// Get the alias from the first token before the equal sign...
+	
 	Vector v = StringUtil.breakStringList ( token0, " ",
 			StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
@@ -206,99 +208,29 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	String Alias = (String)v.elementAt(1);
 
-	// Get the input needed to process the file...
+	// Get the command parameters from the token on the right of the =...
 
-	if ( token1.indexOf('=') < 0 ) {
-		// No parameters have = in them...
-		// TODO SAM 2005-09-20 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
-		//
-		// Old syntax without named parameters.
-		// Parse an existing command
-		// Assume TS X =
-		// newTimeSeries(tsident,desc,start,end,units,val)...
-		// Don't skip blanks below because units can be blank...
-		v = StringUtil.breakStringList ( token1, "(),",
-			StringUtil.DELIM_ALLOW_STRINGS );
-		if ( (v == null) || (v.size() != 7) ) {
-			message = "Syntax error in \"" + command +
-				"\".  Expecting:  TS Alias = newTimeSeries(" +
-				"NewTSID,Description,SetStart,SetEnd,Units,"+
-				"InitialValue)";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		// Command is element[0]
-		String NewTSID = ((String)v.elementAt(1)).trim();
-		String Description = ((String)v.elementAt(2)).trim();
-		String SetStart = ((String)v.elementAt(3)).trim();
-		if ( SetStart.equals("*") ) {
-			SetStart = "";
-		}
-		String SetEnd = ((String)v.elementAt(4)).trim();
-		if ( SetEnd.equals("*") ) {
-			SetEnd = "";
-		}
-		String Units = ((String)v.elementAt(5)).trim();
-		String InitialValue = ((String)v.elementAt(6)).trim();
+	Vector tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	if ( (tokens == null) || (tokens.size() < 2) ) {
+		// Must have at least the command name and its parameters...
+		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = newTimeSeries(...)";
+		Message.printWarning ( warning_level, routine, message);
+		throw new InvalidCommandSyntaxException ( message );
+	}
 
-		// Set parameters and new defaults...
-
-		PropList parameters = new PropList ( getCommandName() );
+	try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
+			(String)tokens.elementAt(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		if ( Alias.length() > 0 ) {
-			parameters.set ( "Alias", Alias );
-		}
-		if ( NewTSID.length() > 0 ) {
-			parameters.set ( "NewTSID", NewTSID );
-		}
-		if ( Description.length() > 0 ) {
-			parameters.set ( "Description", Description );
-		}
-		if ( SetStart.length() > 0 ) {
-			parameters.set ( "SetStart", SetStart );
-		}
-		if ( SetEnd.length() > 0 ) {
-			parameters.set ( "SetEnd", SetEnd );
-		}
-		if ( Units.length() > 0 ) {
-			parameters.set ( "Units", Units );
-		}
-		if ( InitialValue.length() > 0 ) {
-			parameters.set ( "InitialValue", InitialValue );
-		}
+		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}
-	else {	// Current syntax...
-		Vector tokens = StringUtil.breakStringList ( token1,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			// Must have at least the command name and its
-			// parameters...
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-
-		try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
-			parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-			parameters.set ( "Alias", Alias );
-			parameters.setHowSet ( Prop.SET_UNKNOWN );
-			setCommandParameters ( parameters );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
+	catch ( Exception e ) {
+		message = "Syntax error in \"" + command + "\".";
+		Message.printWarning ( warning_level, routine, message);
+		throw new InvalidCommandSyntaxException ( message );
 	}
 }
-
 
 /**
 Run the commands:

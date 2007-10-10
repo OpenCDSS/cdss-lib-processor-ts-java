@@ -31,6 +31,7 @@
 package rti.tscommandprocessor.core;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Vector;
@@ -129,17 +130,29 @@ public TSCommandProcessor ()
 }
 
 /**
-Add a command at the end of the list.
+Add a command at the end of the list and notify command list listeners of the
+add.
 @param command Command to add.
-@param index Index (0+) at which to insert the command.
 */
 public void addCommand ( Command command )
+{
+	addCommand ( command, true );
+}
+
+/**
+Add a command at the end of the list.
+@param command Command to add.
+@param notifyCommandListListeners Indicate whether registered CommandListListeners should
+be notified.
+*/
+public void addCommand ( Command command, boolean notifyCommandListListeners )
 {	String routine = "TSCommandProcessor.addCommand";
 	__Command_Vector.addElement( command );
-	notifyCommandListListenersOfAdd ( __Command_Vector.size() - 1,
+	if ( notifyCommandListListeners ) {
+		notifyCommandListListenersOfAdd ( __Command_Vector.size() - 1,
 			__Command_Vector.size() - 1 );
-	Message.printStatus(2, routine, "Added command object \"" +
-			command + "\"." );
+	}
+	Message.printStatus(2, routine, "Added command object \"" +	command + "\"." );
 }
 
 /**
@@ -1670,22 +1683,30 @@ if the command is not recognized.  This is being used during transition of old
 string commands to full Command classes.
 @param append If true, the commands will be appended to the existing commands.
 @exception IOException if there is a problem reading the file.
+@exception FileNotFoundException if the specified commands file does not exist.
 */
 public void readCommandsFile ( String path,
 		boolean create_generic_command_if_not_recognized,
 		boolean append )
-throws IOException
+throws IOException, FileNotFoundException
 {	//String routine = getClass().getName() + ".readCommandsFile";
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
 	String line;
 	Command command = null;
 	TSCommandFactory cf = new TSCommandFactory();
+	// Use this to control whether listeners should be notified for each
+	// insert.  Why would this be done?  If, for example, a GUI should display
+	// the progress in reading/initializing the commands.
+	//
+	// Why would this not be done?  Becuse of performance issues.
+	boolean notify_listeners_for_each_add = true;
 	// If not appending, remove all...
 	if ( !append ) {
 		removeAllCommands();
 	}
 	// Now process each line in the file and turn into a command...
+	int num_added = 0;
 	while ( true ) {
 		line = br.readLine();
 		if ( line == null ) {
@@ -1721,11 +1742,19 @@ throws IOException
 		catch ( InvalidCommandParameterException e2) {
 			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
 		}
-		// Add the command...
-		addCommand ( command );
+		// TODO SAM 2007-10-09 Evaluate whether to call listeners each time.
+		// Could be good to indicate progress of load
+		// Add the command, without notifying listeners of changes...
+		addCommand ( command, notify_listeners_for_each_add );
+		++num_added;
 	}
 	// Close the file...
 	br.close();
+	// Now notify listeners about the add one time (only need to do if it
+	// was not getting done for each add...
+	if ( !notify_listeners_for_each_add ) {
+		notifyCommandListListenersOfAdd ( 0, (num_added - 1) );
+	}
 }
 
 /**

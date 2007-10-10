@@ -138,7 +138,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// Old syntax without named parameters.
 		Vector v = StringUtil.breakStringList ( token0," ",
 			StringUtil.DELIM_SKIP_BLANKS );
-		if ( (v == null) || (v.size() != 2) ) {
+		if ( v == null ) {
 			message = "Syntax error in \"" + command +
 				"\".  Expecting:  TS Alias = copy(TSID)";
 			Message.printWarning ( warning_level, routine, message);
@@ -147,7 +147,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String Alias = (String)v.elementAt(1);
 		v = StringUtil.breakStringList ( token1,"(),",
 			StringUtil.DELIM_SKIP_BLANKS );
-		if ( (v == null) || (v.size() != 2) ) {
+		if ( v == null ) {
 			message = "Syntax error in \"" + command +
 				"\".  Expecting:  TS Alias = copy(TSID)";
 			Message.printWarning ( warning_level, routine, message);

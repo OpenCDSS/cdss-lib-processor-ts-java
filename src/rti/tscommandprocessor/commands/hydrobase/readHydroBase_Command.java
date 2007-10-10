@@ -295,11 +295,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	
 	Vector tokens = StringUtil.breakStringList ( command_string,
 		"()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || tokens.size() < 2 ) {
+	if ( tokens == null ) {
 		// Must have at least the command name and something to indicate
 		// the read...
-		message = "Syntax error in \"" + command_string +
-				"\".  Not enough tokens.";
+		message = "Syntax error in \"" + command_string + "\".";
 		Message.printWarning ( warning_level, routine, message);
 		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
@@ -311,8 +310,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
-		message = "Syntax error in \"" + command_string +
-			"\".  Not enough tokens.";
+		message = "Syntax error in \"" + command_string + "\".";
 		Message.printWarning ( warning_level, routine, message);
 		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );

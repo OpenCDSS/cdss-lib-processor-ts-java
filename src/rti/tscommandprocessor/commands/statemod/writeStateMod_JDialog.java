@@ -390,6 +390,7 @@ private void initialize ( JFrame parent, Command command )
 	}
 	// Always allow a "*" to let all time series be filled (put at end)...
 	tsids.addElement ( "*" );
+	__TSID_JComboBox = new SimpleJComboBox ( true );
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addActionListener ( this );
 	__TSID_JComboBox.addTextFieldKeyListener ( this );

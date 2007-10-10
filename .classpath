@@ -2,16 +2,17 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="externals/HydroBaseDMI/HydroBaseDMI_142.jar"/>
-	<classpathentry kind="lib" path="externals/RiversideDB_DMI/RiversideDB_DMI_142.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RTi_Common"/>
-	<classpathentry kind="lib" path="externals/RTi_Common/RTi_Common_142.jar"/>
-	<classpathentry kind="lib" path="externals/SatmonSysDMI/SatmonSysDMI_142.jar"/>
-	<classpathentry kind="lib" path="externals/StateCU/StateCU_142.jar"/>
-	<classpathentry kind="lib" path="externals/StateMod/StateMod_142.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NWSRFS_DMI"/>
-	<classpathentry kind="lib" path="externals/NWSRFS_DMI/NWSRFS_DMI_142_Extended.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/COMMON"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/DOMAIN"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Util"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/TS"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/DMI"/>
+	<classpathentry kind="lib" path="/TSTool/externals/Abbot/abbot.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/HydroBaseDMI"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/GRTS"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/RiversideDB_DMI"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SatmonSysDMI"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/StateCU"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/DataTest"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

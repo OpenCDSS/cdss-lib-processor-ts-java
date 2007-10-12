@@ -646,6 +646,10 @@ private WindowListener getPropContents_TSViewWindowListener()
 	return __tsengine.getTSViewWindowListener();
 }
 
+// FIXME SAM 2007-10-12 This should be put in a full request with the command
+// as input, so the previous setWorkingDir() commands can be executed.
+// Then there will be no need to trick the processor, as is being done now in
+// TSTool.
 /**
 Handle the WorkingDir property request.  The working directory is the home of the
 commands file if read/saved, or may be dynamically modified with the setWorkingDir()
@@ -654,7 +658,7 @@ For this class, it will be the initial working directory if the processor has no
 run, or the results of running the processor.
 Use getInitialWorkingDir to get the initial working directory.
 @return The working directory, as a String.
- */
+*/
 private String getPropContents_WorkingDir()
 {
 	return __tsengine.getWorkingDir();
@@ -764,13 +768,16 @@ private void notifyCommandListListenersOfRemove ( int index0, int index1 )
 /**
 Notify registered CommandProcessorListeners about a command completing.
 @param icommand The index (0+) of the command that is completing.
+@param ncommand The number of commands being processed.  This will often be the
+total number of commands but calling code may process a subset.
 @param command The instance of the command that is completing.
 */
-protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand, Command command )
+protected void notifyCommandProcessorListenersOfCommandCompleted (
+		int icommand, int ncommand, Command command )
 {	// This method is protected to allow TSEngine to call
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
-			__CommandProcessorListener_array[i].commandCompleted(icommand,size(),command,-1.0F,"Command completed.");
+			__CommandProcessorListener_array[i].commandCompleted(icommand,ncommand,command,-1.0F,"Command completed.");
 		}
 	}
 }
@@ -778,13 +785,16 @@ protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand,
 /**
 Notify registered CommandProcessorListeners about a command starting.
 @param icommand The index (0+) of the command that is starting.
+@param ncommand The number of commands being processed.  This will often be the
+total number of commands but calling code may process a subset.
 @param command The instance of the command that is starting.
 */
-protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, Command command )
+protected void notifyCommandProcessorListenersOfCommandStarted (
+		int icommand, int ncommand, Command command )
 {	// This method is protected to allow TSEngine to call
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
-			__CommandProcessorListener_array[i].commandStarted(icommand,size(),command,-1.0F,"Command started.");
+			__CommandProcessorListener_array[i].commandStarted(icommand,ncommand,command,-1.0F,"Command started.");
 		}
 	}
 }
@@ -1087,7 +1097,10 @@ Returned values from this request are:
 public CommandProcessorRequestResultsBean processRequest ( String request, PropList request_params )
 throws Exception
 {	//return __tsengine.getPropContents ( prop );
-	if ( request.equalsIgnoreCase("CalculateTSAverageLimits") ) {
+	if ( request.equalsIgnoreCase("AppendTimeSeries") ) {
+		return processRequest_AppendTimeSeries ( request, request_params );
+	}
+	else if ( request.equalsIgnoreCase("CalculateTSAverageLimits") ) {
 		return processRequest_CalculateTSAverageLimits ( request, request_params );
 	}
 	else if ( request.equalsIgnoreCase("DateTime") ) {
@@ -1146,6 +1159,29 @@ throws Exception
 		// an error and pass back useful information.
 		throw new UnrecognizedRequestException ( warning );
 	}
+}
+
+/**
+Process the AppendTimeSeries request.
+*/
+private CommandProcessorRequestResultsBean processRequest_AppendTimeSeries (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "TS" );
+	if ( o == null ) {
+			String warning = "Request AppendTimeSeries() does not provide a TS parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	TS ts = (TS)o;
+	__tsengine.appendTimeSeries ( ts );
+	// No data are returned in the bean.
+	return bean;
 }
 
 /**

@@ -40,7 +40,20 @@ throws Exception
 	// TODO SAM 2007-09-09 Evaluate whether InitialWorkingDir needs set
 }
 
+/**
+Return the command processor used by the runner.
+@return the command processor used by the runner
+@deprecated Use getProcessor()
+*/
 public TSCommandProcessor get__processor() {
+    return getProcessor();
+}
+
+/**
+Return the command processor used by the runner.
+@return the command processor used by the runner
+*/
+public TSCommandProcessor getProcessor() {
     return __processor;
 }
 

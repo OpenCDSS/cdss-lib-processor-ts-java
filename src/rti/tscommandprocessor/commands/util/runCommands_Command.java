@@ -30,6 +30,10 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 
+import RTi.TS.TS;
+import rti.tscommandprocessor.core.TSCommandFileRunner;
+import rti.tscommandprocessor.core.TSCommandProcessor;
+
 /**
 <p>
 This class initializes, checks, and runs the runCommands() command.
@@ -165,6 +169,7 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 
 	String InputFile = parameters.getValue ( "InputFile" );
+	String AppendResults = parameters.getValue ( "AppendResults" );
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count +
@@ -176,29 +181,39 @@ CommandWarningException, CommandException
 	}
 
 	// Save the working directory because each commands file needs to run
-	// with the working directory correspondig to the commands directory...
+	// with the working directory corresponding to the commands directory.
+	// Reset it to the same below just in case the call to run the commands
+	// results in a temporary change in the working directory.
 	String workingdir_save = IOUtil.getProgramWorkingDir();
+	
+	Message.printStatus ( 2, routine,
+			"Reading commands file \"" + InputFile + "\"" );
+
+	String fullname = InputFile;
+	fullname = IOUtil.getPathUsingWorkingDir ( InputFile );
+	
 	try {	// Read the commands file as a Vector of String...
 
-		Message.printStatus ( 2, routine,
-		"Reading commands file \"" + InputFile + "\"" );
 
-		String fullname = InputFile;
-	
-		fullname = IOUtil.getPathUsingWorkingDir ( InputFile );
-		Vector commands = IOUtil.fileToStringList ( fullname );
+		//Vector commands = IOUtil.fileToStringList ( fullname );
 
 		// Process the commands using the current commands processor
 
-		PropList props2 = new PropList ( "" );
-		props2.set ( "Recursive=True" );
+		//PropList props2 = new PropList ( "" );
+		//props2.set ( "Recursive=True" );
 		// Set the working directory to the location of the commands
 		// file...
-		File fullname_File = new File ( fullname );
-		IOUtil.setProgramWorkingDir ( fullname_File.getParent() );
+		// TODO SAM 2007-10-11 remove when done
+		//File fullname_File = new File ( fullname );
+		//IOUtil.setProgramWorkingDir ( fullname_File.getParent() );
 		Message.printStatus ( 2, routine,
 		"Processing commands from file " + fullname.toString() );
 		
+		TSCommandFileRunner runner = new TSCommandFileRunner ();
+		runner.readCommandFile(fullname);
+		runner.runCommands();
+		
+		/* TODO SAM 2007-10-11 Remove if code tests out
 		PropList request_params = new PropList ( "" );
 		request_params.setUsingObject ( "Commands", commands );
 		request_params.setUsingObject ( "Properties", props2 );
@@ -210,6 +225,26 @@ CommandWarningException, CommandException
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
 		}
+		*/
+		
+		// If it was requested to append the results to the calling processor, get
+		// the results from the runner and do so...
+		
+		if ( (AppendResults != null) && AppendResults.equalsIgnoreCase("true")) {
+			TSCommandProcessor processor2 = runner.getProcessor();
+			Object o_tslist = processor2.getPropContents("TSResultsList");
+			PropList request_params = new PropList ( "" );
+			if ( o_tslist != null ) {
+				Vector tslist = (Vector)o_tslist;
+				int size = tslist.size();
+				TS ts;
+				for ( int i = 0; i < size; i++ ) {
+					ts = (TS)tslist.elementAt(i);
+					request_params.setUsingObject( "TS", ts );
+					processor.processRequest( "AppendTimeSeries", request_params );
+				}
+			}
+		}
 		
 		Message.printStatus ( 2, routine,
 		"...done processing commands from file." );
@@ -220,7 +255,7 @@ CommandWarningException, CommandException
 		// Reset the working directory...
 		IOUtil.setProgramWorkingDir ( workingdir_save );
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing commands file.";
+		message = "Error processing commands file \"" + fullname + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

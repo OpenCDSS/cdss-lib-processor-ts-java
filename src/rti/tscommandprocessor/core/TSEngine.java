@@ -1025,6 +1025,22 @@ private void addTSViewWindowListener ( WindowListener listener )
 }
 
 /**
+Append time series to the results list.
+@param ts Time series to append
+@throws Exception if there is an error appending the time series
+*/
+protected void appendTimeSeries ( TS ts )
+throws Exception
+{
+	// Position is zero index so request one more than the actual size.
+	int size = 0;
+	if ( __tslist != null ) {
+		size = __tslist.size();
+	}
+	setTimeSeries ( ts, size );
+}
+
+/**
 Indicate whether a time series' data period should automatically be extended
 to the output period (to allow for filling).
 @return True if the period should be automatically extended.
@@ -6885,6 +6901,7 @@ throws Exception
 	if ( app_PropList == null ) {
 		app_PropList = new PropList ( "TSEngine" );
 	}
+	// Save class version...
 	__processor_PropList = app_PropList;
 
 	// Initialize the working directory to the initial directory that is
@@ -6904,10 +6921,11 @@ throws Exception
 	if ( __processor_PropList != null ) {
 		String CreateOutput = app_PropList.getValue ( "CreateOutput" );
 		if ( (CreateOutput != null) && CreateOutput.equalsIgnoreCase("False")){
-			CreateOutput_boolean = true;
+			CreateOutput_boolean = false;
 		}
 	}
-	Message.printStatus(2, routine,"CreateOutput=" + __processor_PropList.getValue("CreateOutput"));
+	Message.printStatus(2, routine,"CreateOutput=" + __processor_PropList.getValue("CreateOutput") +
+			" => " + CreateOutput_boolean );
 	
 	// Indicate whether time series should be cleared between runs.
 	// If true, do not clear the time series between recursive
@@ -6926,8 +6944,13 @@ throws Exception
 			AppendResults_boolean = false;
 		}
 	}
-	Message.printStatus(2, routine,"Recursive=" + __processor_PropList.getValue("Recursive"));
+	Message.printStatus(2, routine,"Recursive=" + __processor_PropList.getValue("Recursive") +
+			" => " + Recursive_boolean );
 	/* FIXME SAM 2007-08-10 Need to enable recursion.
+	 * For now the runCommands() command uses the TSCommandFileRunner, but this
+	 * is a separate processor and does not have the state of the current
+	 * processor in memory.  This is OK for now because it is being used mainly for
+	 * testing.
 	Vector tsexpression_list = null;	// Local copy of command strings
 						// to process.
 	if ( Recursive_boolean ) {
@@ -6938,7 +6961,7 @@ throws Exception
 	*/
 
 	int size = command_Vector.size();
-	Message.printStatus ( 1, routine, "Processing " + size+" commands..." );
+	Message.printStatus ( 1, routine, "Processing " + size + " commands..." );
 	StopWatch stopwatch = new StopWatch();
 	stopwatch.start();
 	String expression = null;
@@ -7066,9 +7089,9 @@ throws Exception
 		Message.printStatus ( 1, routine,
 			">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 		Message.printStatus ( 1, routine,
-			"Start processing command \"" + expression +"\"");
+			"Start processing command \"" + expression + "\" " + (i + 1) + " of " + size );
 		// Notify any listeners that the command is running...
-		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, command );
+		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
 
 		if ( expression.equals("") ) {
 			// Empty line...
@@ -9052,7 +9075,7 @@ throws Exception
 			break;
 		}
 		// Notify any listeners that the command is done running...
-		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, command );
+		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 	}
 
 	// Change so from this point user always has to acknowledge the

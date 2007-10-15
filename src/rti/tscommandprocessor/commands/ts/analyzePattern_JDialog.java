@@ -318,24 +318,11 @@ private void initialize ( JFrame parent,
 	
 	// GUI Title
 	String title = "Edit " + __command.getCommandName() + "() Command";
-
-	// Get the __working_dir from the processor
-	
-	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			__working_dir = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		Message.printDebug(10, mthd, message );
-	}
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );

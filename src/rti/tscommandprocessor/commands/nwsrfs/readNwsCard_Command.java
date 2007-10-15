@@ -102,16 +102,17 @@ throws InvalidCommandParameterException {
 
 	// Input file
 	if ( InputFile != null && InputFile.length() != 0 ) {
+		
 		InputFile = IOUtil.getPathUsingWorkingDir(InputFile);
 		File f = new File(InputFile);
 		if (!f.exists()) {
 			warning += "\nThe NWS Card File \"" + InputFile
 				+ "\" does not exist.";
 		}
-		/*
-		String working_dir = (String)
-			_processor.getPropContents ( "WorkingDir" );
+		/* FIXME SAM 2007-10-14 Need to use dynamic working directory.
 		try {
+			String working_dir = (String)getCommandProcessor().getPropContents ( "WorkingDir" );
+
 		  	String adjusted_path = IOUtil.adjustPath (
 				 working_dir, InputFile );	 
 					 

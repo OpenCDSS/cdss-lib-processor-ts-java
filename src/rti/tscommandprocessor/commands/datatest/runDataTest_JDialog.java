@@ -33,6 +33,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
@@ -50,9 +53,7 @@ import RTi.Util.Time.DateTime;
 
 /**
 The runDataTest_JDialog edits the TS Alias = runDataTest() and non-TS Alias
-readNWSCard() commands.  If the "WorkingDir" command processor property is 
-defined, then the dialog will allow the input file path to be truncated to a 
-relative path.
+readNWSCard() commands.
 */
 public class runDataTest_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
@@ -309,8 +310,7 @@ private void initialize(JFrame parent, Command command) {
 /*
 	__parent_JFrame = parent;
 	__command = command;
-	__working_dir = (String) __command.getCommandProcessor().
-		getPropContents ( "WorkingDir" );
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 

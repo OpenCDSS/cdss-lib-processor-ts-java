@@ -48,6 +48,9 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 public class compareFiles_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
@@ -285,22 +288,11 @@ private void initialize ( JFrame parent, Command command )
 {	__command = (compareFiles_Command)command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
-	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			__working_dir = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		String routine = __command.getCommandName() + "_JDialog.initialize";
-		Message.printDebug(10, routine, message );
-	}
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -309,15 +301,23 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command compares text files.  Comment lines starting "+
 		"with # are ignored." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A line by line comparison is made."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    if ( __working_dir != null ) {
+    	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"It is recommended that file names be relative to the working directory, which is:"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    " + __working_dir),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    }
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"First file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile1_JTextField = new JTextField ( 50 );
@@ -325,11 +325,11 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __InputFile1_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse1_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse1_JButton,
+    JGUIUtil.addComponent(main_JPanel, __browse1_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Second file to compare:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Second file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile2_JTextField = new JTextField ( 50 );
 	__InputFile2_JTextField.addKeyListener ( this );
@@ -339,7 +339,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfDifferent_JComboBox = new SimpleJComboBox ( false );
 	__WarnIfDifferent_JComboBox.addItem ( "" );	// Default

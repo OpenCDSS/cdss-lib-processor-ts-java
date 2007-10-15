@@ -25,6 +25,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -331,28 +334,12 @@ private void initialize ( JFrame parent, Command command, boolean runnable )
 {	__parent_JFrame = parent;
 	__command = (mergeListFileColumns_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
-	if ( processor != null ) {
-		try { Object o = processor.getPropContents ( "WorkingDir" );
-			// Working directory is available so use it...
-			if ( o != null ) {
-				__working_dir = (String)o;
-				if ( __working_dir.equals("") ) {
-					__working_dir = null;	// Not available.
-				}
-			}
-		}
-		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			String message = "Error requesting WorkingDir from processor - not using.";
-			String routine = __command.getCommandName() + "_checkCommandParameters";
-			Message.printDebug(10, routine, message );
-		}
-	}
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 	__runnable = runnable;
 
 	addWindowListener(this);
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 

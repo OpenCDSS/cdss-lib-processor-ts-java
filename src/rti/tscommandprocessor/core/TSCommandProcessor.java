@@ -346,6 +346,13 @@ speed performance during initial testing.
 </tr>
 
 <tr>
+<td><b>InitialWorkingDir</b></td>
+<td>The initial working directory for the processor, typically the directory
+where the commands file lives.
+</td>
+</tr>
+
+<tr>
 <td><b>InputEnd</b></td>
 <td>The input end from the setInputPeriod() command, as a DateTime object.
 </td>
@@ -417,8 +424,9 @@ application can close when the TSView window is closed.</td>
 
 <tr>
 <td><b>WorkingDir</b></td>
-<td>The working directory for the processor (initially the same as the
-application but may be changed by commands during execution), as a String.</td>
+<td>The current working directory for the processor, reflecting the initial
+working directory and changes from setWorkingDir() commands.
+</td>
 </tr>
 
 </table>
@@ -646,19 +654,11 @@ private WindowListener getPropContents_TSViewWindowListener()
 	return __tsengine.getTSViewWindowListener();
 }
 
-// FIXME SAM 2007-10-12 This should be put in a full request with the command
-// as input, so the previous setWorkingDir() commands can be executed.
-// Then there will be no need to trick the processor, as is being done now in
-// TSTool.
 /**
-Handle the WorkingDir property request.  The working directory is the home of the
-commands file if read/saved, or may be dynamically modified with the setWorkingDir()
-command - unclear if should be discouraged but in the legacy software.
-For this class, it will be the initial working directory if the processor has not been
-run, or the results of running the processor.
-Use getInitialWorkingDir to get the initial working directory.
+Handle the WorkingDir property request.  The working directory is set based on
+the initial working directory and subsequent setWorkingDir() commands.
 @return The working directory, as a String.
-*/
+ */
 private String getPropContents_WorkingDir()
 {
 	return __tsengine.getWorkingDir();
@@ -724,6 +724,20 @@ public void insertCommandAt ( String command_string, int index )
 	insertCommandAt ( command, index );
 	Message.printStatus(2, routine, "Creating generic command from string \"" +
 			command_string + "\"." );
+}
+
+/**
+Return a setWorkingDir(xxx) command where xxx is the initial working directory.
+This command should be prepended to the list of setWorkingDir() commands that
+are processed when determining the working directory for an edit dialog or other
+command-context action.
+*/
+private Command newInitialSetWorkingDirCommand()
+{	// For now put in a generic command since no specific Command class is available...
+	GenericCommand c = new GenericCommand ();
+	c.setCommandString( "setWorkingDir(\"" + __tsengine.getInitialWorkingDir() + "\")" );
+	return c;
+	// TODO SAM 2007-08-22 Need to implement the command class
 }
 
 /**
@@ -1121,6 +1135,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("GetTSIDListNoInputAboveCommand") ) {
 		return processRequest_GetTSIDListNoInputAboveCommand ( request, request_params );
 	}
+	else if ( request.equalsIgnoreCase("GetWorkingDirForCommand") ) {
+		return processRequest_GetWorkingDirForCommand ( request, request_params );
+	}
 	else if ( request.equalsIgnoreCase("IndexOf") ) {
 		return processRequest_IndexOf ( request, request_params );
 	}
@@ -1380,6 +1397,64 @@ throws Exception
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
 	results.setUsingObject("TSIDList", tsids );
+	return bean;
+}
+
+/**
+Process the GetWorkingDirForCommand request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetWorkingDirForCommand (
+		String request, PropList request_params )
+throws Exception
+{	TSCommandProcessorRequestResultsBean bean =
+		new TSCommandProcessorRequestResultsBean();
+	// Get the necessary parameters...
+	Object o = request_params.getContents ( "Command" );
+	if ( o == null ) {
+			String warning = "Request GetWorkingDirForCommand() does not provide a Command parameter.";
+			bean.setWarningText ( warning );
+			bean.setWarningRecommendationText (
+					"This is likely a software code error.");
+			throw new RequestParameterNotFoundException ( warning );
+	}
+	Command command = (Command)o;
+	// Get the index of the requested command...
+	int index = indexOf ( command );
+	// Get the setWorkingDir() commands...
+	Vector needed_commands_String_Vector = new Vector();
+	needed_commands_String_Vector.addElement ( "setWorkingDir" );
+	Vector setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
+			index,
+			this,
+			needed_commands_String_Vector,
+			false );	// Get all, not just last
+	// Always add the starting working directory to the top to
+	// make sure an initial condition is set...
+	setWorkingDir_CommandVector.insertElementAt ( newInitialSetWorkingDirCommand(), 0 );
+	// Create a local command processor
+	TSCommandProcessor ts_processor = new TSCommandProcessor();
+	ts_processor.setPropContents("InitialWorkingDir", getPropContents("InitialWorkingDir"));
+	int size = setWorkingDir_CommandVector.size();
+	// Add all the commands (currently no method to add all because this is normally
+	// not done).
+	for ( int i = 0; i < size; i++ ) {
+		ts_processor.addCommand ( (Command)setWorkingDir_CommandVector.elementAt(i));
+	}
+	// Run the commands to set the working directory in the temporary processor...
+	try {	ts_processor.runCommands(
+			null,	// Process all commands in this processor
+			null );	// No need for controlling properties since controlled by commands
+	}
+	catch ( Exception e ) {
+		// This is a software problem.
+		String routine = getClass().getName() + ".processRequest_GetWorkingDirForCommand";
+		Message.printWarning(2, routine, "Error getting working directory for command." );
+		Message.printWarning(2, routine, e);
+	}
+	// Return the working directory as a String.  This can then be used in editors, for
+	// example.  The WorkingDir property will have been set in the temporary processor.
+	PropList results = bean.getResultsPropList();
+	results.set( "WorkingDir", (String)ts_processor.getPropContents ( "WorkingDir") );
 	return bean;
 }
 
@@ -1728,6 +1803,7 @@ throws IOException, FileNotFoundException
 {	//String routine = getClass().getName() + ".readCommandsFile";
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
+	__tsengine.setInitialWorkingDir ( path );
 	String line;
 	Command command = null;
 	TSCommandFactory cf = new TSCommandFactory();
@@ -2021,6 +2097,14 @@ interface.  The following properties are handled.
 </tr>
 
 <tr>
+<td><b>InitialWorkingDir</b></td>
+<td>A String containing the path to the initial working directory, from which all
+paths are determined.  This is usually the directory to the commands file, or the
+startup directory.
+</td>
+</tr>
+
+<tr>
 <td><b>InputEnd</b></td>
 <td>The date/time for the end of reading data, as a DateTime.
 </td>
@@ -2047,6 +2131,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 	}
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList" ) ) {
 		__tsengine.setHydroBaseDMIList ( (Vector)contents );
+	}
+	else if ( prop.equalsIgnoreCase("InitialWorkingDir" ) ) {
+		__tsengine.setInitialWorkingDir ( (String)contents );
 	}
 	else if ( prop.equalsIgnoreCase("InputEnd") ) {
 		__tsengine.setInputEnd ( (DateTime)contents );

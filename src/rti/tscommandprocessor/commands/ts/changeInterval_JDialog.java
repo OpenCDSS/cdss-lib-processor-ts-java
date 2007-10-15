@@ -73,7 +73,6 @@ public class changeInterval_JDialog extends JDialog
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
 private changeInterval_Command __command = null;// Command object.
-private String	__working_dir = null;		// Working directory.
 
 private JTextField	__Alias_JTextField = null;
 						// Field for time series alias
@@ -334,23 +333,9 @@ private void initialize ( JFrame parent, Command command )
 	// GUI Title
 	String title = "Edit " + __command.getCommandName() + "() Command";
 	
-	// Get the __working_dir from the processor
-	
-	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			__working_dir = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		Message.printDebug(10, routine, message );
-	}
-	
 	addWindowListener( this );
 	
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -378,11 +363,6 @@ private void initialize ( JFrame parent, Command command )
 		"Other time series information will be copied from the"
 		+ " original."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}	
 
 	// Time series alias
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 

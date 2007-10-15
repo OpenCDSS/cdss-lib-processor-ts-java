@@ -3,6 +3,8 @@ package rti.tscommandprocessor.core;
 import java.util.Vector;
 
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
@@ -12,6 +14,66 @@ are here to prevent the processor from getting to large and in some cases becaus
 being migrated.
 */
 public class TSCommandProcessorUtil {
+	
+/**
+Get the commands before the indicated index position.  Only the requested commands
+are returned.  Use this, for example, to get the setWorkingDir() commands above
+the insert position for a readXXX() command, so the working directory can be
+defined and used in the editor dialog.
+@return List of commands (as Vector of Command instances) before the index that match the commands in
+the needed_commands_Vector.  This will always return a non-null Vector, even if
+no commands are in the Vector.
+@param index The index in the command list before which to search for other commands.
+@param processor A TSCommandProcessor with commands to search.
+@param needed_commands_String_Vector Vector of commands (as String) that need to be processed
+(e.g., "setWorkingDir").  Only the main command name should be defined.
+@param last_only if true, only the last item above the insert point
+is returned.  If false, all matching commands above the point are returned in
+the order from top to bottom.
+*/
+public static Vector getCommandsBeforeIndex (
+	int index,
+	TSCommandProcessor processor,
+	Vector needed_commands_String_Vector,
+	boolean last_only )
+{	// Now search backwards matching commands for each of the requested
+	// commands...
+	int size = 0;
+	if ( needed_commands_String_Vector != null ) {
+		size = needed_commands_String_Vector.size();
+	}
+	String needed_command_string;
+	Vector found_commands = new Vector();
+	// Get the commands from the processor
+	Vector commands = processor.getCommands();
+	Command command;
+	// Now loop up through the command list...
+	for ( int ic = (index - 1); ic >= 0; ic-- ) {
+		command = (Command)commands.elementAt(ic);
+		for ( int i = 0; i < size; i++ ) {
+			needed_command_string = (String)needed_commands_String_Vector.elementAt(i);
+			//((String)_command_List.getItem(ic)).trim() );
+			if (	needed_command_string.regionMatches(true,0,command.toString().trim(),0,
+					needed_command_string.length() ) ) {
+					found_commands.addElement ( command );
+					if ( last_only ) {
+						// Don't need to search any more...
+						break;
+					}
+				}
+			}
+		}
+		// Reverse the commands so they are listed in the order of the list...
+		size = found_commands.size();
+		if ( size <= 1 ) {
+			return found_commands;
+		}
+		Vector found_commands_sorted = new Vector(size);
+		for ( int i = size - 1; i >= 0; i-- ) {
+			found_commands_sorted.addElement ( found_commands.elementAt(i));
+		}
+		return found_commands_sorted;
+}
 	
 /**
 Get the commands above an index position.
@@ -162,6 +224,29 @@ public static Vector getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommand
 	return getTSIdentifiersFromCommands ( commands );
 }
 
+/**
+Get the working directory for a command (e.g., for editing).
+@param processor the TSCommandProcessor to use to get data.
+@param command Command for which to get the working directory.
+@return The working directory in effect for a command.
+*/
+public static String getWorkingDirForCommand ( TSCommandProcessor processor, Command command )
+{	String routine = "TSTool_JFrame.commandProcessor_GetWorkingDirForCommand";
+	PropList request_params = new PropList ( "" );
+	request_params.setUsingObject ( "Command", command );
+	CommandProcessorRequestResultsBean bean = null;
+	try { bean =
+		processor.processRequest( "GetWorkingDirForCommand", request_params );
+		return bean.getResultsPropList().getValue("WorkingDir");
+	}
+	catch ( Exception e ) {
+		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command +
+		"\" from processor).";
+		Message.printWarning(3, routine, e);
+		Message.printWarning(3, routine, message );
+	}
+	return null;
+}
 
 /**
 Evaluate whether a command appears to be a pure time series identifier (not a

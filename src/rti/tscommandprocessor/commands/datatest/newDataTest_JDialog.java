@@ -23,6 +23,9 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 
@@ -30,9 +33,7 @@ import RTi.Util.IO.Command;
 
 /**
 The newDataTest_JDialog edits the TS Alias = newDataTest() and non-TS Alias
-readNWSCard() commands.  If the "WorkingDir" command processor property is 
-defined, then the dialog will allow the input file path to be truncated to a 
-relative path.
+readNWSCard() commands.
 */
 public class newDataTest_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
@@ -289,8 +290,7 @@ private void initialize(JFrame parent, Command command) {
 /*
 	__parent_JFrame = parent;
 	__command = command;
-	__working_dir = (String) __command.getCommandProcessor().
-		getPropContents ( "WorkingDir" );
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 

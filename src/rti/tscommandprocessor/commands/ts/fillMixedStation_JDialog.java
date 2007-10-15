@@ -803,20 +803,7 @@ private void initialize ( JFrame parent, Command command )
 		setTitle ( "Mixed Station Analysis" );
 	}
 	
-	// Get the __working_dir from the
-	
-	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			__working_dir = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		String routine = __command.getCommandName() + ".initialize";
-		Message.printDebug(10, routine, message );
-	}
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 

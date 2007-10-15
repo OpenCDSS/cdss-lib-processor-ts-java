@@ -50,6 +50,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.io.File;
 
 import java.util.Vector;
@@ -322,19 +325,7 @@ TSEngine.getTSIdentifiersFromCommands().
 private void initialize (	JFrame parent, Command command)
 {	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
-	
-	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			__working_dir = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		String routine = __command.getCommandName() + "_JDialog.initialize";
-		Message.printDebug(10, routine, message );
-	}
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 

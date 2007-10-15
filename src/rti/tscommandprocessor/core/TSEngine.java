@@ -851,10 +851,6 @@ private int	__calendar_type = CALENDAR_YEAR;// Calendar type is the default.
 private boolean __cancel_processing = true;	// Indicates whether time series
 						// command processing should be
 						// cancelled
-//private Vector	_commands = null;		// Original commands as Vector
-						// (used when running in batch
-						// mode).
-//private String [] _commands_array = null;	// Commands as array.
 
 private boolean	_detailedheader = false;	// Indicates whether detailed
 						// header should be added to
@@ -880,6 +876,13 @@ private boolean __ignore_lezero = false;	// Indicates whether values
 						// <= 0 should be treated as
 						// missing when calculating
 						// historical averages.
+
+/**
+The initial working directory.  This is used to adjust the working directory with
+setWorkingDir() commands.
+*/
+private String __InitialWorkingDir_String;
+
 private double	_missing = -999.0;		// Missing data value to use
 						// with StateMod output.
 private double	_missing_range[] = null;	// Range for missing data.
@@ -5661,17 +5664,20 @@ protected Vector getHydroBaseDMIList ()
 }
 
 /**
-Return the value of the "InitialWorkingDir" processor property as a String, or null
-if not available.  This is the result of the processor taking an initial working
-directory and modifying it with setWorkingDir() commands.
+Return the value of the initial working directory as a String, or null
+if not available.  The directory is used to initialize the setWorkingDir() commands.
 */
 protected String getInitialWorkingDir()
 {
+	/* FIXME SAM 2007-10-13 Remove when tested out - the initial working dir is no longer
+	 * a dynamic property and must be set up front.
 	if ( __processor_PropList == null ){
 		return null;
 	}
 	else {	return __processor_PropList.getValue ( "InitialWorkingDir");
 	}
+	*/
+	return __InitialWorkingDir_String;
 }
 
 /**
@@ -6909,7 +6915,11 @@ throws Exception
 	// is the result of processing and the initial directory may never have
 	// been changed dynamically.
 	
+	/* TODO SAM 2007-10-13 Remove when test out.  The initial working dir is no
+	 * longer dynamic but is a data member on the processor.
 	String InitialWorkingDir = __processor_PropList.getValue ( "InitialWorkingDir" );
+	*/
+	String InitialWorkingDir = getInitialWorkingDir();
 	if ( InitialWorkingDir != null ) {
 		__processor_PropList.set ( "WorkingDir", InitialWorkingDir );
 	}
@@ -11249,6 +11259,16 @@ Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() comma
 */
 protected void setHydroBaseDMIList ( Vector dmilist )
 {	__hbdmi_Vector = dmilist;
+}
+
+/**
+Set the initial working directory.  This is typically the location of the
+commands file.  All file locations are relative to this location or are adjusted
+with setWorkingDir() commands.
+@param InitialWorkingDir.
+*/
+protected void setInitialWorkingDir ( String InitialWorkingDir )
+{	__InitialWorkingDir_String = InitialWorkingDir;
 }
 
 /**

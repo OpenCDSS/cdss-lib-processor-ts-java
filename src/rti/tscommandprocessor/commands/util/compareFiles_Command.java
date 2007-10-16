@@ -23,6 +23,10 @@ import javax.swing.JFrame;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -76,21 +80,36 @@ throws InvalidCommandParameterException
 	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
 	String warning = "";
 
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.INITIALIZATION);
+	
 	// The existence of the parent directories or files is not checked
 	// because the files may be created dynamically after the command is
 	// edited.
 
 	if ( (InputFile1 == null) || (InputFile1.length() == 0) ) {
-		warning += "\nThe first input file must be specified.";
+		warning += "\nThe first input file to compare must be specified.";
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						"The first input file to compare is not specified.",
+						"Specify the first file name."));
 	}
 	if ( (InputFile2 == null) || (InputFile2.length() == 0) ) {
-		warning += "\nThe second input file must be specified.";
+		warning += "\nThe second input file to compare must be specified.";
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						"The second input file to compare is not specified.",
+						"Specify the second file name."));
 	}
 	if ( (WarnIfDifferent != null) && !WarnIfDifferent.equals("") ) {
 		if (	!WarnIfDifferent.equalsIgnoreCase(_False) &&
 			!WarnIfDifferent.equalsIgnoreCase(_True) ) {
 			warning += "\nThe WarnIfDifferent parameter \"" +
 				WarnIfDifferent + "\" must be False or True.";
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						"The WarnIfDifferent parameter is invalid.",
+						"Specify the parameter as False or True."));
 		}
 	}
 	if ( (WarnIfSame != null) && !WarnIfSame.equals("") ) {
@@ -98,6 +117,10 @@ throws InvalidCommandParameterException
 			!WarnIfSame.equalsIgnoreCase(_True) ) {
 			warning += "\nThe WarnIfSame parameter \"" +
 				WarnIfSame + "\" must be False or True.";
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						"The WarnIfSame parameter is invalid.",
+						"Specify the parameter as False or True."));
 		}
 	}
 	// Check for invalid parameters...
@@ -116,15 +139,23 @@ throws InvalidCommandParameterException
 	}
 	if ( warning_Vector != null ) {
 		int size = warning_Vector.size();
+		StringBuffer b = new StringBuffer();
 		for ( int i = 0; i < size; i++ ) {
 			warning += "\n" + (String)warning_Vector.elementAt (i);
+			b.append ( (String)warning_Vector.elementAt(i));
 		}
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.WARNING,
+					b.toString(),
+					"Specify only valid parameters - see documentation."));
 	}
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
+	}
+	else {
+		status.addToLog(CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.SUCCESS,"",""));
 	}
 }
 
@@ -222,6 +253,9 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters();
 	
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.RUN);
+	
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
@@ -242,18 +276,26 @@ CommandWarningException, CommandException
 	String InputFile1_full = IOUtil.getPathUsingWorkingDir ( InputFile1 );
 	String InputFile2_full = IOUtil.getPathUsingWorkingDir ( InputFile2 );
 	if ( !IOUtil.fileExists(InputFile1_full) ) {
-		message = "Input file \"" + InputFile1_full +
+		message = "First input file \"" + InputFile1_full +
 			"\" does not exist.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					"First input file \"" + InputFile1_full + "\" does not exist.",
+					"Verify that the file exists at the time the command is run."));
 	}
 	if ( !IOUtil.fileExists(InputFile2_full) ) {
-		message = "Input file \"" + InputFile2_full +
+		message = "Second input file \"" + InputFile2_full +
 			"\" does not exist.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					"Second input file \"" + InputFile2_full + "\" does not exist.",
+					"Verify that the file exists at the time the command is run."));
 	}
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count +
@@ -278,17 +320,15 @@ CommandWarningException, CommandException
 				// both are done at the same time...
 				break;
 			}
-			// REVISIT SAM 2006-04-20
+			// TODO SAM 2006-04-20
 			// The following needs to handle comments at the end...
 			if ( (iline1 == null) && (iline2 != null) ) {
-				// First file is are done so files are
-				// different...
+				// First file is are done so files are different...
 				++diff_count;
 				break;
 			}
 			if ( (iline2 == null) && (iline1 != null) ) {
-				// Second file is are done so files are
-				// different...
+				// Second file is are done so files are different...
 				++diff_count;
 				break;
 			}
@@ -307,6 +347,9 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					"Unknown error comparing files.", "See the log file for details."));
 		throw new CommandException ( message );
 	}
 	if ( WarnIfDifferent_boolean && (diff_count > 0) ) {
@@ -314,6 +357,10 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.WARNING,
+					message,
+					"Check files because difference is not expected.") );
 		throw new CommandException ( message );
 	}
 	if ( WarnIfSame_boolean && (diff_count == 0) ) {
@@ -321,6 +368,10 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.WARNING,
+					message,
+					"Check files because match is not expected.") );
 		throw new CommandException ( message );
 	}
 }

@@ -22,7 +22,8 @@ Read the commands from a file.
 */
 public void readCommandFile ( String path )
 throws FileNotFoundException, IOException
-{	__processor.readCommandsFile ( path,
+{	__processor.readCommandsFile (
+		path,	// InitialWorkingDir will be set to commands file location
 		true,	// Create GenericCommand instances for unknown commands
 		false );	// Do not append the commands.
 }
@@ -36,8 +37,6 @@ throws Exception
 	__processor.runCommands(
 			null,		// Subset of Command instances to run - just run all
 			null );		// Properties to control run
-	
-	// TODO SAM 2007-09-09 Evaluate whether InitialWorkingDir needs set
 }
 
 /**

@@ -709,8 +709,12 @@ import RTi.TS.YearTS;
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandStatusProvider;
+import RTi.Util.IO.CommandStatusProviderUtil;
+import RTi.Util.IO.CommandStatusUtil;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.DataFormat;
 import RTi.Util.IO.DataUnits;
@@ -7077,7 +7081,11 @@ throws Exception
 	//String message_tag = "ProcessCommands";
 					// Tag used with messages generated in
 					// this method.
-	for ( int i = 0; i < size; i++ ) {
+	int i;	// Put here so can check count outside of end of loop
+	boolean prev_command_complete_notified = false;// If previous command completion listeners were notified
+										// May not occur if "continue" in loop.
+	Command command_prev = null;	// previous command in loop
+	for ( i = 0; i < size; i++ ) {
 		// For example, setWorkingDir() is often prepended automatically
 		// to start in the working directory.  In this case,
 		// the first user-defined command will have:
@@ -7085,6 +7093,16 @@ throws Exception
 		i_for_message = i - __num_prepended_commands + 1;
 		command_tag = ""+i_for_message;	// Command number as integer 1+,
 						// for message/log handler.
+		// If for some reason the previous command did not notify listeners of its completion (e.g., due to
+		// continue in loop, do it now)...
+		if ( !prev_command_complete_notified && (command_prev != null) ) {
+			__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( (i - 1), size, command_prev );
+		}
+		prev_command_complete_notified = false;
+		// Save the previous command before resetting to new command below.
+		if ( i > 0 ) {
+			command_prev = command;
+		}
 		try {	// Catch errors in all the expressions.
 			// Do not indent the body inside the try!
 		ts = null;
@@ -8958,6 +8976,12 @@ throws Exception
 					"Initializing the Command for \"" +
 					expression + "\"" );
 				}
+				if ( command instanceof CommandStatusProvider ) {
+					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
+				}
+				if ( command instanceof CommandStatusProvider ) {
+					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
+				}
 				command.initializeCommand ( expression, __ts_processor, true );
 				// REVISIT SAM 2005-05-11 Is this the best
 				// place for this or should it be in the
@@ -8987,22 +9011,39 @@ throws Exception
 				}
 			}
 			catch ( InvalidCommandSyntaxException e ) {
-				message =
-				"Unable to process command (invalid syntax).";
-				Message.printWarning ( 1,
-				MessageUtil.formatMessageTag(command_tag,
-				++error_count), routine, message );
+				message = "Unable to process command (invalid syntax).";
+				if ( command instanceof CommandStatusProvider &&
+						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
+					// No need to print a message to the screen because a visual marker will be shown, but log...
+					Message.printWarning ( 2,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+				}
+				else {	// Command has not been updated to set warning/failure in status so show here
+					Message.printWarning ( 1,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+				}
+				// Log the exception.
 				if (Message.isDebugOn) {
 					Message.printDebug(3, routine, e);
 				}
 				continue;
 			}
 			catch ( InvalidCommandParameterException e ) {
-				message = "Unable to process command " +
-					"(invalid parameter).";
-				Message.printWarning ( 1,
-				MessageUtil.formatMessageTag(command_tag,
-				++error_count), routine, message );
+				message = "Unable to process command invalid parameter).";
+				if ( command instanceof CommandStatusProvider &&
+						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
+					// No need to print a message to the screen because a visual marker will be shown, but log...
+					Message.printWarning ( 2,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+				}
+				else {	// Command has not been updated to set warning/failure in status so show here
+					Message.printWarning ( 1,
+							MessageUtil.formatMessageTag(command_tag,
+									++error_count), routine, message );
+				}
 				if (Message.isDebugOn) {
 					Message.printWarning(3, routine, e);
 				}
@@ -9011,33 +9052,59 @@ throws Exception
 			catch ( CommandWarningException e ) {
 				message = "Warnings were generated processing "+
 					"command (output may be incomplete).";
-				Message.printWarning ( 1,
-				MessageUtil.formatMessageTag(command_tag,
-				++error_count), routine, message );
+				if ( command instanceof CommandStatusProvider &&
+						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
+					// No need to print a message to the screen because a visual marker will be shown, but log...
+					Message.printWarning ( 2,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+				}
+				else {	// Command has not been updated to set warning/failure in status so show here
+					Message.printWarning ( 1,
+							MessageUtil.formatMessageTag(command_tag,
+									++error_count), routine, message );
+				}
 				if (Message.isDebugOn) {
 					Message.printDebug(3, routine, e);
 				}
 				continue;
 			}
 			catch ( CommandException e ) {
-				message = "Error processing command " +
-					"(unable to complete command).";
-				Message.printWarning ( 1,
-				MessageUtil.formatMessageTag(command_tag,
-				++error_count), routine, message );
-				Message.printWarning ( 3, routine, e );
+				message = "Error processing command (unable to complete command).";
+				if ( command instanceof CommandStatusProvider &&
+						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
+					// No need to print a message to the screen because a visual marker will be shown, but log...
+					Message.printWarning ( 2,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+				}
+				else {	// Command has not been updated to set warning/failure in status so show here
+					Message.printWarning ( 1,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+				}
 				if (Message.isDebugOn) {
 					Message.printDebug(3, routine, e);
 				}
 				continue;
 			}
 			catch ( Exception e ) {
-				message = "Error processing command " +
-					"(unable to complete command).";
-				Message.printWarning ( 1,
-				MessageUtil.formatMessageTag(command_tag,
-				++error_count), routine, message );
-				Message.printWarning ( 3, routine, message );
+				message = "Unexpected error processing command (unable to complete command).";
+				if ( command instanceof CommandStatusProvider ) {
+					// Add to the log as a failure...
+					Message.printWarning ( 2,
+						MessageUtil.formatMessageTag(command_tag,
+						++error_count), routine, message );
+					((CommandStatusProvider)command).getCommandStatus().addToLog(CommandPhaseType.RUN,
+							new CommandLogRecord(CommandStatusType.FAILURE,
+									"Unexpected exception \"" + e.getMessage() + "\"",
+									"See log file for details.") );
+				}
+				else {
+					Message.printWarning ( 1,
+							MessageUtil.formatMessageTag(command_tag,
+									++error_count), routine, message );
+				}
 				Message.printWarning ( 3, routine, e );
 				continue;
 			}
@@ -9085,9 +9152,17 @@ throws Exception
 			break;
 		}
 		// Notify any listeners that the command is done running...
+		prev_command_complete_notified = true;
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 	}
-
+	// If necessary, do a final notify for the last command...
+	if ( !prev_command_complete_notified ) {
+		if ( i == size ) {
+			--i;
+		}
+		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
+	}
+	
 	// Change so from this point user always has to acknowledge the
 	// warnings...
 
@@ -9132,9 +9207,9 @@ throws Exception
 			if ( size > 0 ) {
 				Message.printWarning ( 1, routine,
 				"The following time series were not found:" );
-				for ( int i = 0; i < size; i++ ) {
+				for ( int i2 = 0; i2 < size; i2++ ) {
 					Message.printWarning ( 1, routine,
-					"   "+(String)_missing_ts.elementAt(i));
+					"   "+(String)_missing_ts.elementAt(i2));
 				}
 			}
 			Message.printWarning ( 1, routine,

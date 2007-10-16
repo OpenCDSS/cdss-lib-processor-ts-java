@@ -1,17 +1,3 @@
-//------------------------------------------------------------------------------
-// runCommands_Command - handle the runCommands() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2006-05-02	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					readStateMod().
-// 2007-02-12	SAM, RTi				Remove dependence on TSCommandProcessor.
-//					Update code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
@@ -24,7 +10,10 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
@@ -33,6 +22,7 @@ import RTi.Util.IO.PropList;
 import RTi.TS.TS;
 import rti.tscommandprocessor.core.TSCommandFileRunner;
 import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 /**
 <p>
@@ -88,8 +78,7 @@ throws InvalidCommandParameterException
 				Message.printDebug(10, routine, message );
 			}
 	
-		try {	String adjusted_path = IOUtil.adjustPath (
-				working_dir, InputFile);
+		try {	String adjusted_path = IOUtil.adjustPath ( working_dir, InputFile);
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -179,20 +168,35 @@ CommandWarningException, CommandException
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
-
-	// Save the working directory because each commands file needs to run
-	// with the working directory corresponding to the commands directory.
-	// Reset it to the same below just in case the call to run the commands
-	// results in a temporary change in the working directory.
-	String workingdir_save = IOUtil.getProgramWorkingDir();
 	
-	Message.printStatus ( 2, routine,
-			"Reading commands file \"" + InputFile + "\"" );
+	// Get the working directory from the processor that is running the commands.
 
-	String fullname = InputFile;
-	fullname = IOUtil.getPathUsingWorkingDir ( InputFile );
+	String WorkingDir = null;
+	try { Object o = processor.getPropContents ( "WorkingDir" );
+		// Working directory is available so use it...
+		if ( o != null ) {
+			WorkingDir = (String)o;
+		}
+	}
+	catch ( Exception e ) {
+		// Not fatal, but of use to developers.
+		message = "Error requesting WorkingDir from processor - not using.";
+		Message.printDebug(10, routine, message );
+	}
+	if ( WorkingDir == null ) {
+		// Use the aplication working directory...
+		WorkingDir = IOUtil.getProgramWorkingDir ();
+	}
+
+	String fullname = null;
+	String WorkingDir_save = null;
+	try {
+		fullname = IOUtil.adjustPath ( WorkingDir, InputFile);
 	
-	try {	// Read the commands file as a Vector of String...
+		//String fullname = InputFile;
+		//fullname = IOUtil.getPathUsingWorkingDir ( InputFile );
+	
+		//try {	// Read the commands file as a Vector of String...
 
 
 		//Vector commands = IOUtil.fileToStringList ( fullname );
@@ -201,17 +205,33 @@ CommandWarningException, CommandException
 
 		//PropList props2 = new PropList ( "" );
 		//props2.set ( "Recursive=True" );
-		// Set the working directory to the location of the commands
-		// file...
-		// TODO SAM 2007-10-11 remove when done
-		//File fullname_File = new File ( fullname );
-		//IOUtil.setProgramWorkingDir ( fullname_File.getParent() );
+		
+		// Set the global working directory to the location of the commands
+		// file.  This is used by some low-level code to complete file paths.
+		// Since this code is not getting the dynamic working directory, it is
+		// necessary to reset the global value temporarily (this is not thread-safe!).
+		
+		WorkingDir_save = IOUtil.getProgramWorkingDir();
+		File fullname_File = new File ( fullname );
+		IOUtil.setProgramWorkingDir ( fullname_File.getParent() );
+		
 		Message.printStatus ( 2, routine,
-		"Processing commands from file " + fullname.toString() );
+		"Processing commands from file \"" + fullname.toString() + "\" using command file runner.");
 		
 		TSCommandFileRunner runner = new TSCommandFileRunner ();
 		runner.readCommandFile(fullname);
 		runner.runCommands();
+		
+		// Set the CommandStatus for this command to the most severe status of the
+		// commands file that was just run.
+		
+		CommandStatus status = getCommandStatus();
+		status.clearLog( CommandPhaseType.RUN );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(
+						TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor()),
+						"Severity is max of commands file that was run (may not be a problem).",
+						"Refer to log file if warning/failure."));
 		
 		/* TODO SAM 2007-10-11 Remove if code tests out
 		PropList request_params = new PropList ( "" );
@@ -248,17 +268,24 @@ CommandWarningException, CommandException
 		
 		Message.printStatus ( 2, routine,
 		"...done processing commands from file." );
+		
 		// Reset the working directory...
-		IOUtil.setProgramWorkingDir ( workingdir_save );
+		
+		IOUtil.setProgramWorkingDir ( WorkingDir_save );
 	}
 	catch ( Exception e ) {
 		// Reset the working directory...
-		IOUtil.setProgramWorkingDir ( workingdir_save );
+		//IOUtil.setProgramWorkingDir ( workingdir_save );
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing commands file \"" + fullname + "\".";
+		message = "Error processing commands file \"" + InputFile +
+		"\", full path=\"" + fullname + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
+		// Also execute this to make sure working directory gets reset OK.
+		if ( WorkingDir_save != null ) {
+			IOUtil.setProgramWorkingDir ( WorkingDir_save );
+		}
 		throw new CommandException ( message );
 	}
 }

@@ -3,7 +3,11 @@ package rti.tscommandprocessor.core;
 import java.util.Vector;
 
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatusProvider;
+import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -91,6 +95,29 @@ private static Vector getCommandsBeforeIndex ( TSCommandProcessor processor, int
 		commands.addElement ( processor.get(i));
 	}
 	return commands;
+}
+
+/**
+Get the maximum command status severity for the processor.  This is used, for example, when
+determining an overall status for a runCommands() command.
+@param processor Command processor to check status.
+@return most severe command status from all commands in a processor.
+*/
+public static CommandStatusType getCommandStatusMaxSeverity ( TSCommandProcessor processor )
+{
+	int size = processor.size();
+	Command command;
+	CommandStatusType most_severe = CommandStatusType.UNKNOWN;
+	CommandStatusType from_command;
+	for ( int i = 0; i < size; i++ ) {
+		command = processor.get(i);
+		if ( command instanceof CommandStatusProvider ) {
+			from_command = CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command);
+			//Message.printStatus (2,"", "Highest severity \"" + command.toString() + "\"=" + from_command.toString());
+			most_severe = CommandStatusType.maxSeverity(most_severe,from_command);
+		}
+	}
+	return most_severe;
 }
 
 /**

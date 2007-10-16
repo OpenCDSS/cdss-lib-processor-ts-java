@@ -31,6 +31,7 @@
 package rti.tscommandprocessor.core;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -1667,17 +1668,6 @@ throws Exception
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Vector commands = (Vector)o;
-	// Initial working directory for path adjustments...
-	Object o2 = request_params.getContents ( "InitialWorkingDir" );
-	if ( o2 == null ) {
-			String warning =
-				"Request RunCommands() does not provide an InitialWorkingDir parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
-	}
-	String InitialWorkingDir = (String)o2;
 	// Whether commands should create output...
 	Object o3 = request_params.getContents ( "CreateOutput" );
 	if ( o3 == null ) {
@@ -1691,7 +1681,6 @@ throws Exception
 	Boolean CreateOutput_Boolean = (Boolean)o3;
 	// Set properties as per the legacy application.
 	PropList props = new PropList ( "TSEngine");
-	props.set ( "InitialWorkingDir", InitialWorkingDir );
 	props.set ( "CreateOutput", "" + CreateOutput_Boolean );
 	// TODO SAM 2007-08-22 Need to evaluate recursion for complex workflow and testing
 	// Call the TSEngine method.
@@ -1803,7 +1792,8 @@ throws IOException, FileNotFoundException
 {	//String routine = getClass().getName() + ".readCommandsFile";
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
-	__tsengine.setInitialWorkingDir ( path );
+	File path_File = new File(path);
+	__tsengine.setInitialWorkingDir ( path_File.getParent() );
 	String line;
 	Command command = null;
 	TSCommandFactory cf = new TSCommandFactory();

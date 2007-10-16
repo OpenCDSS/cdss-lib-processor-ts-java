@@ -121,6 +121,7 @@ import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 // Utility commands.
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
+import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
@@ -206,6 +207,10 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("copy") ) {
 		return new copy_Command ();
 	}
+	else if ( StringUtil.startsWithIgnoreCase(
+			command_string,"CreateRegressionTestCommandFile") ) {
+			return new CreateRegressionTestCommandFile_Command ();
+		}
 	else if ( StringUtil.startsWithIgnoreCase(
 		command_string,"cumulate") ) {
 		return new cumulate_Command ();

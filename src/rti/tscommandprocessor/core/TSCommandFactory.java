@@ -215,6 +215,15 @@ throws UnknownCommandException
 		command_string,"cumulate") ) {
 		return new cumulate_Command ();
 	}
+	
+	// "e" commands...
+	
+	else if ( StringUtil.startsWithIgnoreCase(
+			command_string,"fillConstant") ) {
+		Command command = new GenericCommand();
+		command.setCommandString("exit");
+		return command;
+	}
 
 	// "f" commands...
 

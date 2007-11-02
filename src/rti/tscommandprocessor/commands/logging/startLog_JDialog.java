@@ -53,6 +53,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -218,6 +219,29 @@ throws Throwable
 	__ok_JButton = null;
 	super.finalize ();
 }
+/**
+Get the working directory for a command (e.g., for editing).
+@param processor the TSCommandProcessor to use to get data.
+@param command Command for which to get the working directory.
+@return The working directory in effect for a command.
+*/
+private String getWorkingDirForCommand ( CommandProcessor processor, Command command )
+{	String routine = getClass().getName() + ".getWorkingDirForCommand";
+	PropList request_params = new PropList ( "" );
+	request_params.setUsingObject ( "Command", command );
+	CommandProcessorRequestResultsBean bean = null;
+	try { bean =
+		processor.processRequest( "GetWorkingDirForCommand", request_params );
+		return bean.getResultsPropList().getValue("WorkingDir");
+	}
+	catch ( Exception e ) {
+		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command +
+		"\" from processor).";
+		Message.printWarning(3, routine, e);
+		Message.printWarning(3, routine, message );
+	}
+	return null;
+}
 
 /**
 Instantiates the GUI components.
@@ -227,7 +251,10 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, Command command )
 {	__command = (startLog_Command)command;
 	__working_dir = null;
-	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
+	// Because this command is shared by StateDMI_Processor, do it the generic way, NOT as commented -
+	// basically paste in the code from the method indicated below.
+	//__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
+	__working_dir = getWorkingDirForCommand ( __command.getCommandProcessor(), __command );
 
 	addWindowListener( this );
 

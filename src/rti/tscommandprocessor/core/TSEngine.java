@@ -852,9 +852,6 @@ private boolean _binary_ts_used = false;	// Indicates whether a BinaryTS
 						// output.
 
 private int	__calendar_type = CALENDAR_YEAR;// Calendar type is the default.
-private boolean __cancel_processing = true;	// Indicates whether time series
-						// command processing should be
-						// cancelled
 
 private boolean	_detailedheader = false;	// Indicates whether detailed
 						// header should be added to
@@ -880,12 +877,6 @@ private boolean __ignore_lezero = false;	// Indicates whether values
 						// <= 0 should be treated as
 						// missing when calculating
 						// historical averages.
-
-/**
-The initial working directory.  This is used to adjust the working directory with
-setWorkingDir() commands.
-*/
-private String __InitialWorkingDir_String;
 
 private double	_missing = -999.0;		// Missing data value to use
 						// with StateMod output.
@@ -2167,7 +2158,7 @@ throws Exception
 			__include_missing_ts = include_missing_ts_old;
 		}
 		// Cancel processing if the user has indicated to do so...
-		if ( __cancel_processing ) {
+		if ( __ts_processor.getCancelProcessingRequested() ) {
 			return;
 		}
 	}
@@ -5668,23 +5659,6 @@ protected Vector getHydroBaseDMIList ()
 }
 
 /**
-Return the value of the initial working directory as a String, or null
-if not available.  The directory is used to initialize the setWorkingDir() commands.
-*/
-protected String getInitialWorkingDir()
-{
-	/* FIXME SAM 2007-10-13 Remove when tested out - the initial working dir is no longer
-	 * a dynamic property and must be set up front.
-	if ( __processor_PropList == null ){
-		return null;
-	}
-	else {	return __processor_PropList.getValue ( "InitialWorkingDir");
-	}
-	*/
-	return __InitialWorkingDir_String;
-}
-
-/**
 Return the input period end, or null if all available data are to be queried.
 @return the input period end, or null if all available data are to be queried.
 */
@@ -6259,20 +6233,6 @@ protected WindowListener getTSViewWindowListener ()
 }
 
 /**
-Return the value of the "WorkingDir" processor property as a String, or null
-if not available.  This is the result of the processor taking an initial working
-directory and modifying it with setWorkingDir() commands.
-*/
-protected String getWorkingDir()
-{
-	if ( __processor_PropList == null ){
-		return null;
-	}
-	else {	return __processor_PropList.getValue ( "WorkingDir");
-	}
-}
-
-/**
 Determine whether the averaging period is set (start and end dates need to be
 non-null and years not equal to zero).
 @return true if the averaging period has been specified (and we can use its
@@ -6505,10 +6465,11 @@ public boolean isParameterValid ( String parameter, String value )
 /**
 Process the events from the MessageJDialog class.  If the "Cancel" button has
 been pressed, then indicate that the time series processing should stop.
+@param command If "Cancel", then a request will be made to cancel processing.
 */
 public void messageJDialogAction ( String command )
 {	if ( command.equalsIgnoreCase("Cancel") ) {
-		__cancel_processing = true;
+		__ts_processor.setCancelProcessingRequested(true);
 	}
 }
 
@@ -6852,13 +6813,13 @@ throws Exception
 //more robust
 /**
 Process a list of time series commands, resulting in a vector of time series
-(and/or setting data members and properties in memory).  The commands include
-ALL commands.  The resulting time series are saved in memory (or a BinaryTS
-file) and can be output using the processTimeSeries() method).
+(and/or setting data members and properties in memory).  The resulting time series are
+saved in memory (or a BinaryTS file) and can be output using the processTimeSeries() method).
 <b>Filling with historic averages is handled for monthly time series
 so that original data averages are used.</b>
 @param command_Vector The Vector of Command from the TSCommandProcessor,
-to be processed.  If null, process all.
+to be processed.  If null, process all.  Non-null is typically only used, for example,
+if a user has selected commands in a GUI.
 @param app_PropList if not null, then properties are set as the commands are
 run.  This is typically used when running commands prior to using an edit
 dialog in the TSTool GUI, as follows:
@@ -6923,7 +6884,7 @@ throws Exception
 	 * longer dynamic but is a data member on the processor.
 	String InitialWorkingDir = __processor_PropList.getValue ( "InitialWorkingDir" );
 	*/
-	String InitialWorkingDir = getInitialWorkingDir();
+	String InitialWorkingDir = __ts_processor.getInitialWorkingDir();
 	if ( InitialWorkingDir != null ) {
 		__processor_PropList.set ( "WorkingDir", InitialWorkingDir );
 	}
@@ -7053,7 +7014,6 @@ throws Exception
 	// The following will be set to true if a cancel occurs during
 	// processing.
 	MessageJDialog.addMessageJDialogListener ( this );
-	__cancel_processing = false;
 
 	// Now loop through the expressions, query time series, and manipulate
 	// to produce a list of final time series.  The following loop does the
@@ -7085,6 +7045,8 @@ throws Exception
 	boolean prev_command_complete_notified = false;// If previous command completion listeners were notified
 										// May not occur if "continue" in loop.
 	Command command_prev = null;	// previous command in loop
+	// Indicat the state of the processor...
+	__ts_processor.setIsRunning ( true );
 	for ( i = 0; i < size; i++ ) {
 		// For example, setWorkingDir() is often prepended automatically
 		// to start in the working directory.  In this case,
@@ -7102,6 +7064,23 @@ throws Exception
 		// Save the previous command before resetting to new command below.
 		if ( i > 0 ) {
 			command_prev = command;
+		}
+		// Check for a cancel, which would have been set by pressing
+		// the cancel button on the warning dialog or by using the
+		// other TSTool menus...
+		if ( __ts_processor.getCancelProcessingRequested() ) {
+			// Set Warning dialog settings back to normal...
+			Message.setPropValue ( "WarningDialogViewLogButton=false" );
+			Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
+			Message.setPropValue ( "WarningDialogCancelButton=false" );
+			Message.setPropValue ( "ShowWarningDialog=true" );
+			// Set flag so code interested in processor knows it is not running...
+			__ts_processor.setIsRunning ( false );
+			// Reset the cancel processing request and let interested code know that
+			// processing has been cancelled.
+			__ts_processor.setCancelProcessingRequested ( false );
+			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+			return;
 		}
 		try {	// Catch errors in all the expressions.
 			// Do not indent the body inside the try!
@@ -9146,10 +9125,8 @@ throws Exception
 			System.gc();
 			// May be able to save commands.
 		}
-		if ( __cancel_processing ) {
-			// Cancel the processing and break out of the loop...
-			__cancel_processing = false;
-			break;
+		finally {
+			// Always want to get to here.
 		}
 		// Notify any listeners that the command is done running...
 		prev_command_complete_notified = true;
@@ -9162,6 +9139,16 @@ throws Exception
 		}
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 	}
+	
+	// Indicate that processing is done and now there is no need to worry about
+	// cancelling.
+	__ts_processor.setIsRunning ( false );
+	if ( __ts_processor.getCancelProcessingRequested() ) {
+		// Have gotten to here probably because the last command was processed
+		// and need to notify the listeners.
+		__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
+	}
+	__ts_processor.setCancelProcessingRequested ( false );
 	
 	// Change so from this point user always has to acknowledge the
 	// warnings...
@@ -11334,16 +11321,6 @@ Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() comma
 */
 protected void setHydroBaseDMIList ( Vector dmilist )
 {	__hbdmi_Vector = dmilist;
-}
-
-/**
-Set the initial working directory.  This is typically the location of the
-commands file.  All file locations are relative to this location or are adjusted
-with setWorkingDir() commands.
-@param InitialWorkingDir.
-*/
-protected void setInitialWorkingDir ( String InitialWorkingDir )
-{	__InitialWorkingDir_String = InitialWorkingDir;
 }
 
 /**

@@ -121,6 +121,33 @@ running, to indicate progress.
 private CommandProcessorListener [] __CommandProcessorListener_array = null;
 
 /**
+The initial working directory for processing, typically the location of the commands
+file from read/write.  This is used to adjust the working directory with
+setWorkingDir() commands.
+*/
+private String __InitialWorkingDir_String = null;
+
+/**
+The current workding directory for processing, which was initialized to
+InitialWorkingDir and modified by setWorkingDir() commands.
+*/
+private String __WorkingDir_String = null;
+
+/**
+Indicates whether the processor is currently running (false if has not started
+or has completed).  The running occurs in TSEngine.processCommands().
+*/
+private volatile boolean __is_running = false;
+
+/**
+Indicates whether the processing loop should be cancelled.  This is a request
+(e.g., from a GUI) that needs to be handled as soon as possible during command
+processing.  It is envisioned that cancel can always occur between commands and
+as time allows it will also be enabled within a command.
+*/
+private volatile boolean __cancel_processing_requested = false;
+
+/**
 Construct a command processor with no commands.
 */
 public TSCommandProcessor ()
@@ -274,6 +301,15 @@ public Command get( int pos )
 }
 
 /**
+Indicate whether cancelling processing has been requested.
+@return true if cancelling has been requested.
+*/
+public boolean getCancelProcessingRequested ()
+{
+	return __cancel_processing_requested;
+}
+
+/**
 Return the list of commands.
 @return the list of commands.
 */
@@ -288,6 +324,22 @@ Get the name of the commands file associated with the processor.
 public String getCommandsFileName ()
 {
 	return __commands_filename;
+}
+
+/**
+Return the initial working directory for the processor.
+@return the initial working directory for the processor.
+*/
+public String getInitialWorkingDir ()
+{	return __InitialWorkingDir_String;
+}
+
+/**
+Indicate whether the processing is running.
+@return true if the command processor is running, false if not.
+*/
+public boolean getIsRunning ()
+{	return __is_running;
 }
 
 /**
@@ -551,7 +603,7 @@ Use getPropContents_WorkingDir to get the working directory after processing.
  */
 private String getPropContents_InitialWorkingDir()
 {
-	return __tsengine.getInitialWorkingDir();
+	return getInitialWorkingDir();
 }
 
 /**
@@ -662,7 +714,7 @@ the initial working directory and subsequent setWorkingDir() commands.
  */
 private String getPropContents_WorkingDir()
 {
-	return __tsengine.getWorkingDir();
+	return getWorkingDir();
 }
 
 /**
@@ -671,6 +723,14 @@ Return the TSSupplier name.
 */
 public String getTSSupplierName()
 {	return __tsengine.getTSSupplierName();
+}
+
+/**
+Return the initial working directory for the processor.
+@return the initial working directory for the processor.
+*/
+public String getWorkingDir ()
+{	return __WorkingDir_String;
 }
 
 /**
@@ -736,7 +796,7 @@ command-context action.
 private Command newInitialSetWorkingDirCommand()
 {	// For now put in a generic command since no specific Command class is available...
 	GenericCommand c = new GenericCommand ();
-	c.setCommandString( "setWorkingDir(\"" + __tsengine.getInitialWorkingDir() + "\")" );
+	c.setCommandString( "setWorkingDir(\"" + getInitialWorkingDir() + "\")" );
 	return c;
 	// TODO SAM 2007-08-22 Need to implement the command class
 }
@@ -776,6 +836,23 @@ private void notifyCommandListListenersOfRemove ( int index0, int index1 )
 {	if ( __CommandListListener_array != null ) {
 		for ( int i = 0; i < __CommandListListener_array.length; i++ ) {
 			__CommandListListener_array[i].commandRemoved(index0, index1);
+		}
+	}
+}
+
+/**
+Notify registered CommandProcessorListeners about a command being cancelled.
+@param icommand The index (0+) of the command that is cancelled.
+@param ncommand The number of commands being processed.  This will often be the
+total number of commands but calling code may process a subset.
+@param command The instance of the neareset command that is being cancelled.
+*/
+protected void notifyCommandProcessorListenersOfCommandCancelled (
+		int icommand, int ncommand, Command command )
+{	// This method is protected to allow TSEngine to call
+	if ( __CommandProcessorListener_array != null ) {
+		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
+			__CommandProcessorListener_array[i].commandCancelled(icommand,ncommand,command,-1.0F,"Command cancelled.");
 		}
 	}
 }
@@ -1793,7 +1870,7 @@ throws IOException, FileNotFoundException
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
 	File path_File = new File(path);
-	__tsengine.setInitialWorkingDir ( path_File.getParent() );
+	setInitialWorkingDir ( path_File.getParent() );
 	String line;
 	Command command = null;
 	TSCommandFactory cf = new TSCommandFactory();
@@ -2044,6 +2121,16 @@ throws Exception
 }
 
 /**
+Request that processing be cancelled.  This sets a flag that is detected in the
+TSEngine.processCommands() method.  Processing will be cancelled as soon as the current command
+completes its processing.
+@param cancel_processing_requested Set to true to cancel processing.
+*/
+public void setCancelProcessingRequested ( boolean cancel_processing_requested )
+{	__cancel_processing_requested = cancel_processing_requested;
+}
+
+/**
 Set the name of the commands file where the commands are saved.
 @param filename Name of commands file (should be absolute since
 it will be used in output headers).
@@ -2051,6 +2138,31 @@ it will be used in output headers).
 public void setCommandsFileName ( String filename )
 {
 	__commands_filename = filename;
+}
+
+/**
+Set the initial working directory for the processor.  This is typically the location
+of the commands file, or a temporary directory if the commands have not been saved.
+Also set the current working directory by calling setWorkingDir() with the same
+information.
+@param WorkingDir The current working directory.
+*/
+public void setInitialWorkingDir ( String InitialWorkingDir )
+{
+	__InitialWorkingDir_String = InitialWorkingDir;
+	setWorkingDir ( __InitialWorkingDir_String );
+}
+
+/**
+Indicate whether the processor is running.  This should be set in processCommands()
+and can be monitored by code (e.g., GUI) that has behavior that depends on whether
+the processor is running.  The method is protected to allow it to be called from
+TSEngine but would normally not be called from other code.
+@param is_running indicates whether the processor is running (processing commands).
+*/
+protected void setIsRunning ( boolean is_running )
+{
+	__is_running = is_running;
 }
 
 /**
@@ -2123,7 +2235,7 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 		__tsengine.setHydroBaseDMIList ( (Vector)contents );
 	}
 	else if ( prop.equalsIgnoreCase("InitialWorkingDir" ) ) {
-		__tsengine.setInitialWorkingDir ( (String)contents );
+		setInitialWorkingDir ( (String)contents );
 	}
 	else if ( prop.equalsIgnoreCase("InputEnd") ) {
 		__tsengine.setInputEnd ( (DateTime)contents );
@@ -2139,6 +2251,16 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 		prop +	"\".";
 		throw new UnrecognizedRequestException ( message );
 	}
+}
+
+/**
+Set the working directory for the processor.  This is typically set by
+setInitialWorkingDir() and setWorkingDir() commands.
+@param WorkingDir The current working directory.
+*/
+public void setWorkingDir ( String WorkingDir )
+{
+	__WorkingDir_String = WorkingDir;
 }
 
 /**

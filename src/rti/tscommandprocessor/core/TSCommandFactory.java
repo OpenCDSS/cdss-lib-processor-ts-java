@@ -113,6 +113,7 @@ import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
+import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.setInputPeriod_Command;
@@ -276,6 +277,9 @@ throws UnknownCommandException
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("newStatisticYearTS") ) {
 		return new newStatisticYearTS_Command ();
+	}
+	else if ( isTScommand && TScommand.equalsIgnoreCase("newPatternTimeSeries") ) {
+		return new NewPatternTimeSeries_Command ();
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("newTimeSeries") ) {
 		return new newTimeSeries_Command ();

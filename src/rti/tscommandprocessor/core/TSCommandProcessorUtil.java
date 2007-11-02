@@ -2,6 +2,7 @@ package rti.tscommandprocessor.core;
 
 import java.util.Vector;
 
+import RTi.TS.TS;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
@@ -17,7 +18,29 @@ This class contains static utility methods to support TSCommandProcessor.  These
 are here to prevent the processor from getting to large and in some cases because code is
 being migrated.
 */
-public class TSCommandProcessorUtil {
+public class TSCommandProcessorUtil
+{
+	
+/**
+Append a time series to the processor time series results list.
+@param processor the CommandProcessor to use to get data.
+@param command Command for which to get the working directory.
+@param ts Time series to append.
+*/
+public static void appendTimeSeriesToResultsList ( CommandProcessor processor, Command command, TS ts )
+{	String routine = "TSCommandProcessorUtil.appendTimeSeriesToResultsList";
+	PropList request_params = new PropList ( "" );
+	request_params.setUsingObject ( "TS", ts );
+	//CommandProcessorRequestResultsBean bean = null;
+	try { //bean =
+		processor.processRequest( "AppendTimeSeries", request_params );
+	}
+	catch ( Exception e ) {
+		String message = "Error requesting AppendTimeSeries(TS=\"...\" from processor).";
+		Message.printWarning(3, routine, e);
+		Message.printWarning(3, routine, message );
+	}
+}
 	
 /**
 Get the commands before the indicated index position.  Only the requested commands
@@ -257,7 +280,7 @@ Get the working directory for a command (e.g., for editing).
 @param command Command for which to get the working directory.
 @return The working directory in effect for a command.
 */
-public static String getWorkingDirForCommand ( TSCommandProcessor processor, Command command )
+public static String getWorkingDirForCommand ( CommandProcessor processor, Command command )
 {	String routine = "TSTool_JFrame.commandProcessor_GetWorkingDirForCommand";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "Command", command );

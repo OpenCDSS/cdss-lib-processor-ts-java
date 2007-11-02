@@ -8392,11 +8392,12 @@ throws Exception
 				StringUtil.DELIM_SKIP_BLANKS,2).
 				equalsIgnoreCase( "lagK") &&
 			!StringUtil.getToken(expression," =(",
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
+			!StringUtil.getToken(expression," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).
 				equalsIgnoreCase( "newStatisticYearTS") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "newTimeSeries") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newTimeSeries") &&
 			!StringUtil.getToken(expression," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).
 				equalsIgnoreCase( "readHydroBase") &&
@@ -8416,6 +8417,7 @@ throws Exception
 			//	TS Alias = changeInterval()
 			//	TS Alias = copy()
 			//	TS Alias = lagK()
+			//  TS Alias = newPatternTimeSeries()
 			//	TS Alias = newStatisticYearTS()
 			//	TS Alias = newTimeSeries()
 			//	TS Alias = readHydroBase()
@@ -9185,10 +9187,13 @@ throws Exception
 		StringUtil.formatString(stopwatch.getSeconds(),"%.2f") +
 		" seconds" );
 
-	// Check for fatal errors...
+	// Check for fatal errors (for Command classes, only warn if failures since
+	// others are likely not a problem)...
 
 	Message.setPropValue ( "WarningDialogViewLogButton=true" );
-	if ( (_fatal_error_count > 0) || (error_count > 0) ) {
+	CommandStatusType max_severity = CommandStatusProviderUtil.getHighestSeverity ( command_Vector );
+	if ( (_fatal_error_count > 0) || (error_count > 0) ||
+			max_severity.greaterThan(CommandStatusType.WARNING)) {
 		if ( IOUtil.isBatch() ) {
 			size = _missing_ts.size();
 			if ( size > 0 ) {
@@ -9200,7 +9205,7 @@ throws Exception
 				}
 			}
 			Message.printWarning ( 1, routine,
-			"There were warnings processing commands.  " +
+			"There were warnings or failures processing commands.  " +
 			"The output may be incomplete." );
 			// FIXME SAM 2007-08-20 Need to figure out how to get the
 			// exit status out of the processor and allow calling

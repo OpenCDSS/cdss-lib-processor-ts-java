@@ -6,7 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/TS"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/DMI"/>
-	<classpathentry kind="lib" path="/TSTool/externals/Abbot/abbot.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/HydroBaseDMI"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/GRTS"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/RiversideDB_DMI"/>
@@ -14,5 +13,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/StateCU"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/DataTest"/>
+	<classpathentry kind="lib" path="externals/abbot.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

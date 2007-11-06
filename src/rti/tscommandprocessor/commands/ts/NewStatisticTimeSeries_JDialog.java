@@ -1,17 +1,3 @@
-// ----------------------------------------------------------------------------
-// newStatisticYearTS_JDialog.java - editor for newStatisticYearTS()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-09-08	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					copy_JDialog.
-// 2005-09-22	SAM, RTi		Add AllowMissingCount parameter.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -51,14 +37,14 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.TimeInterval;
 
-public class newStatisticYearTS_JDialog extends JDialog
+public class NewStatisticTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
 private JFrame		__parent_JFrame = null;	// parent JFrame
-private newStatisticYearTS_Command __command = null;	// Command to edit.
+private NewStatisticTimeSeries_Command __command = null;	// Command to edit.
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private JTextField	__Alias_JTextField = null;// Field for time series alias
 private SimpleJComboBox	__TSID_JComboBox = null;// Time series available to
@@ -67,15 +53,19 @@ private JTextArea	__NewTSID_JTextArea = null;
 						// New TSID.
 private SimpleJComboBox	__Statistic_JComboBox = null;
 						// Statistic to analyze.
+/* TODO SAM 2007-11-05 Enable later
 private JTextField	__TestValue_JTextField = null;
 						// Test value for the statistic.
+						 */
 private JTextField	__AllowMissingCount_JTextField = null;
 						// Missing data count allowed
 						// in analysis interval.
 private JTextField	__AnalysisStart_JTextField = null;
 private JTextField	__AnalysisEnd_JTextField = null;
 						// Fields for analysis period
+/* TODO SAM 2007-11-05 Probably don't need
 private JTextField	__SearchStart_JTextField = null;
+*/
 private SimpleJButton	__edit_JButton = null;	// Edit button
 private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
 private boolean		__error_wait = false;	// Is there an error that we
@@ -85,11 +75,11 @@ private boolean		__first_time = true;
 private boolean		__ok = false;		// Whether OK has been pressed.
 
 /**
-newStatisticYearTS_JDialog constructor.
+NewStatisticTimeSeries_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public newStatisticYearTS_JDialog ( JFrame parent, Command command )
+public NewStatisticTimeSeries_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -100,7 +90,7 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
-	String routine = "newStatisticYearTS_JDialog.actionPerformed";
+	String routine = "NewStatisticTimeSeries_JDialog.actionPerformed";
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -150,7 +140,7 @@ public void actionPerformed( ActionEvent event )
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
 private void checkGUIState()
-{	// REVISIT SAM 2005-09-08
+{	// TODO SAM 2005-09-08
 	// Once more statistics are added, may need to disable TestValue, etc.	
 }
 
@@ -165,12 +155,12 @@ private void checkInput ()
 	String TSID = __TSID_JComboBox.getSelected();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
-	String TestValue = __TestValue_JTextField.getText().trim();
+	//String TestValue = __TestValue_JTextField.getText().trim();
 	String AllowMissingCount =
 		__AllowMissingCount_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	String SearchStart = __SearchStart_JTextField.getText().trim();
+	//String SearchStart = __SearchStart_JTextField.getText().trim();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -185,9 +175,9 @@ private void checkInput ()
 	if ( (Statistic != null) && (Statistic.length() > 0) ) {
 		props.set ( "Statistic", Statistic );
 	}
-	if ( (TestValue != null) && (TestValue.length() > 0) ) {
-		props.set ( "TestValue", TestValue );
-	}
+	//if ( (TestValue != null) && (TestValue.length() > 0) ) {
+	//	props.set ( "TestValue", TestValue );
+	//}
 	if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
 		props.set ( "AllowMissingCount", AllowMissingCount );
 	}
@@ -197,9 +187,9 @@ private void checkInput ()
 	if ( AnalysisEnd.length() > 0 ) {
 		props.set ( "AnalysisEnd", AnalysisEnd );
 	}
-	if ( SearchStart.length() > 0 ) {
-		props.set ( "SearchStart", SearchStart );
-	}
+	//if ( SearchStart.length() > 0 ) {
+	//	props.set ( "SearchStart", SearchStart );
+	//}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -218,21 +208,21 @@ private void commitEdits ()
 	String TSID = __TSID_JComboBox.getSelected();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Statistic = __Statistic_JComboBox.getSelected();
-	String TestValue = __TestValue_JTextField.getText().trim();
+	//String TestValue = __TestValue_JTextField.getText().trim();
 	String AllowMissingCount =
 		__AllowMissingCount_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	String SearchStart = __SearchStart_JTextField.getText().trim();
+	//String SearchStart = __SearchStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Statistic", Statistic );
-	__command.setCommandParameter ( "TestValue", TestValue );
+	//__command.setCommandParameter ( "TestValue", TestValue );
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
-	__command.setCommandParameter ( "SearchStart", SearchStart );
+	//__command.setCommandParameter ( "SearchStart", SearchStart );
 }
 
 /**
@@ -244,11 +234,11 @@ throws Throwable
 	__TSID_JComboBox = null;
 	__NewTSID_JTextArea = null;
 	__Statistic_JComboBox = null;
-	__TestValue_JTextField = null;
+	//__TestValue_JTextField = null;
 	__AllowMissingCount_JTextField = null;
 	__AnalysisStart_JTextField = null;
 	__AnalysisEnd_JTextField = null;
-	__SearchStart_JTextField = null;
+	//__SearchStart_JTextField = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__ok_JButton = null;
@@ -264,35 +254,42 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	__parent_JFrame = parent;
-	__command = (newStatisticYearTS_Command)command;
+	__command = (NewStatisticTimeSeries_Command)command;
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a year time series as a statistic extracted from " +
-		"another time series, giving the result an alias." ),
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"<HTML><B>THIS IS AN EXPERIMENTAL COMMAND NOT YET TESTED FOR PRODUCTION WORK.</B></HTML>" ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A statistic is a yearly quantity computed from a sample, " +
-		"where in this case the sample is values in the time seies."),
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Create a time series as a repeating statistic determined from " +
+		"another time series, giving the result an alias." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"A statistic is a value computed from a sample, " +
+		"where in this case the sample is values from the same date/time in each year of the time series."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"For example, the Mean statistic will result in the output time series having " +
+    	"the mean of all January 1 data on each January 1 in the result."),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optionally, specify a new time series identifier (TSID)" +
-		" information for the output time series." ), 
+		" information for the new time series." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This is highly recommended if there is any chance that the " +
 		"new time series will be mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Alias_JTextField = new JTextField ( "" );
 	__Alias_JTextField.addKeyListener ( this );
@@ -302,7 +299,7 @@ private void initialize ( JFrame parent, Command command )
 		"Often the location from the TSID, or a short string."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
@@ -326,6 +323,7 @@ private void initialize ( JFrame parent, Command command )
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
+	__NewTSID_JTextArea.setEditable ( false );
 	__NewTSID_JTextArea.addKeyListener ( this );
 	// Make 3-high to fit in the edit button...
         JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
@@ -334,17 +332,17 @@ private void initialize ( JFrame parent, Command command )
 		"Specify to avoid confusion with TSID from original TS."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
-        JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
 		new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
-	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoices (
+	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoicesForSimpleSample (
 				TimeInterval.YEAR, null ) );
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
@@ -354,6 +352,7 @@ private void initialize ( JFrame parent, Command command )
 		"Statistic to generate."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+        /*
         JGUIUtil.addComponent(main_JPanel, new JLabel ("Test value:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TestValue_JTextField = new JTextField (10);
@@ -363,7 +362,8 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Test value (needed for some statistics)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+        */
+        
         JGUIUtil.addComponent(main_JPanel, new JLabel ("Allow missing count:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingCount_JTextField = new JTextField (10);
@@ -371,7 +371,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Number of missing values allowed in analysis interval."),
+		"Number of missing values allowed in sample (default=-1, all)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -388,6 +388,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
+	/*
         JGUIUtil.addComponent(main_JPanel, new JLabel ("Search start:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SearchStart_JTextField = new JTextField (10);
@@ -397,6 +398,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Search start (needed for some statistics)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		*/
 
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -419,8 +421,7 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 
-	setTitle ( "Edit TS Alias = " + __command.getCommandName() +
-		"() Command" );
+	setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
 
 	setResizable ( true );
         pack();
@@ -471,16 +472,16 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "newStatisticYearTS_JDialog.refresh";
+{	String routine = "NewStatisticTimeSeries_JDialog.refresh";
 	String Alias = "";
 	String TSID = "";
 	String NewTSID = "";
 	String Statistic = "";
-	String TestValue = "";
+	//String TestValue = "";
 	String AllowMissingCount = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
-	String SearchStart = "";
+	//String SearchStart = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -489,11 +490,11 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		NewTSID = props.getValue ( "NewTSID" );
 		Statistic = props.getValue ( "Statistic" );
-		TestValue = props.getValue ( "TestValue" );
+		//TestValue = props.getValue ( "TestValue" );
 		AllowMissingCount = props.getValue ( "AllowMissingCount" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
-		SearchStart = props.getValue ( "SearchStart" );
+		//SearchStart = props.getValue ( "SearchStart" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -532,9 +533,11 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
+		/*
 		if ( TestValue != null ) {
 			__TestValue_JTextField.setText ( TestValue );
 		}
+		*/
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText (
 			AllowMissingCount );
@@ -545,30 +548,32 @@ private void refresh ()
 		if ( AnalysisEnd != null ) {
 			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
 		}
+		/*
 		if ( SearchStart != null ) {
 			__SearchStart_JTextField.setText( SearchStart );
 		}
+		*/
 	}
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
 	TSID = __TSID_JComboBox.getSelected();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	Statistic = __Statistic_JComboBox.getSelected();
-	TestValue = __TestValue_JTextField.getText();
+	//TestValue = __TestValue_JTextField.getText();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	SearchStart = __SearchStart_JTextField.getText().trim();
+	//SearchStart = __SearchStart_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "TSID=" + TSID );
 	props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Statistic=" + Statistic );
-	props.add ( "TestValue=" + TestValue );
+	//props.add ( "TestValue=" + TestValue );
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
-	props.add ( "SearchStart=" + SearchStart );
+	//props.add ( "SearchStart=" + SearchStart );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 
@@ -607,4 +612,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end newStatisticYearTS_JDialog
+}

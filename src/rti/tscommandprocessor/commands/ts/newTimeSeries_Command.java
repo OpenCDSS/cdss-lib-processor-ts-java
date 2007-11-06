@@ -198,8 +198,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	// Get the alias from the first token before the equal sign...
 	
-	Vector v = StringUtil.breakStringList ( token0, " ",
-			StringUtil.DELIM_SKIP_BLANKS );
+	Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = newTimeSeries(...)";

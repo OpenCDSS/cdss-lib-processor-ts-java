@@ -112,6 +112,7 @@ import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
 import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
+import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
@@ -274,6 +275,9 @@ throws UnknownCommandException
 
 	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("newDataTest") ) {
 		return new newDataTest_Command();
+	}
+	else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticTimeSeries") ) {
+		return new NewStatisticTimeSeries_Command ();
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("newStatisticYearTS") ) {
 		return new newStatisticYearTS_Command ();

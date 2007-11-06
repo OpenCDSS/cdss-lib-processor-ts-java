@@ -8383,33 +8383,27 @@ throws Exception
 		//}
 		else if ( expression.regionMatches(true,0,"TS ",0,3) &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "changeInterval") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "changeInterval") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "copy") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "copy") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "lagK") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "lagK") &&
 			!StringUtil.getToken(expression," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "newStatisticYearTS") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
+			!StringUtil.getToken(expression," =(",
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newStatisticYearTS") &&
 			!StringUtil.getToken(expression," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newTimeSeries") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "readHydroBase") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readHydroBase") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "readNDFD") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNDFD") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "readNwsCard") &&
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNwsCard") &&
 			!StringUtil.getToken(expression," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).
-				equalsIgnoreCase( "readStateMod") ) {
+				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readStateMod") ) {
 			// All these cases are time series to be inserted.
 			// Declare a time series and set it to some function
 			// Do not handle the following because they are handled

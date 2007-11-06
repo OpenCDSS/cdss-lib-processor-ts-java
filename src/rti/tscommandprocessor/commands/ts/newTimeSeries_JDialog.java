@@ -348,8 +348,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	setTitle ( "Edit TS Alias = " + __command.getCommandName() +
-		"() Command" );
+	setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
         pack();
         JGUIUtil.center( this );

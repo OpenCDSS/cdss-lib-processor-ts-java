@@ -14,8 +14,12 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -62,46 +66,65 @@ throws InvalidCommandParameterException
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String SearchStart = parameters.getValue ( "SearchStart" );
 	String warning = "";
+	
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.INITIALIZATION);
 
+	String message;
 	if ( (Alias == null) || Alias.equals("") ) {
-		warning += "\nThe time series alias must be specified.";
+		message = "The time series alias must be specified.";
+		warning += "\n" + message;
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify an alias." ) );
 	}
 	if ( (TSID == null) || TSID.equals("") ) {
-		warning += "\nThe time series identifier must be specified.";
+		message = "The time series identifier must be specified.";
+		warning += "\n" + message;
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify a time series identifier." ) );
 	}
-	// REVISIT SAM 2005-08-29
+	// TODO SAM 2005-08-29
 	// Need to decide whether to check NewTSID - it might need to support
 	// wildcards.
-	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
-		throw new InvalidCommandParameterException ( warning );
-	}
 	if ( (Statistic == null) || Statistic.equals("") ) {
-		warning += "\nThe statistic must be specified.";
+		message = "The statistic must be specified.";
+		warning += "\n" + message;
+		status.addToLog ( CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify a Statistic." ) );
 	}
 	if ( (TestValue != null) && !TestValue.equals("") ) {
 		// If a test value is specified, for now make sure it is a
 		// number.  It is possible that in the future it could be a
 		// special value (date, etc.) but for now focus on numbers.
 		if ( !StringUtil.isDouble(TestValue) ) {
-			warning += "\nThe test value (" + TestValue +
-					") is not a number.";
+			message = "The test value (" + TestValue + ") is not a number.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify a number for the test value." ) );
 		}
 	}
-	// REVISIT SAM 2005-09-12
+	// TODO SAM 2005-09-12
 	// Need to evaluate whether the test value is needed, depending on the
 	// statistic
 	if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
 		if ( !StringUtil.isInteger(AllowMissingCount) ) {
-			warning += "\nThe AllowMissingCount value (" +
-				AllowMissingCount + ") is not an integer.";
+			message = "The AllowMissingCount value (" + AllowMissingCount + ") is not an integer.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify an integer for AllowMissingCount." ) );
 		}
 		else {	// Make sure it is an allowable value >= 0...
 			if ( StringUtil.atoi(AllowMissingCount) < 0 ) {
-				warning += "\nThe AllowMissingCount value (" +
-				AllowMissingCount + ") must be >= 0.";
+				message = "The AllowMissingCount value (" +	AllowMissingCount + ") must be >= 0.";
+				warning += "\n" + message;
+				status.addToLog ( CommandPhaseType.INITIALIZATION,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Specify a value >= 0." ) );
 			}
 		}
 	}
@@ -111,11 +134,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe Analysis start date \"" +
-				AnalysisStart +
-				"\" is not a valid date.\n"+
-				"Specify a date or OutputStart.";
+			message = "The Analysis start date \"" + AnalysisStart + "\" is not a valid date/time.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
 	if (	(AnalysisEnd != null) && !AnalysisEnd.equals("") &&
@@ -124,11 +147,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( AnalysisEnd );
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe Analysis end date \"" +
-				AnalysisEnd +
-				"\" is not a valid date.\n"+
-				"Specify a date or OutputEnd.";
+			message = "The Analysis end date \"" + AnalysisEnd + "\" is not a valid date.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
 	if (	(SearchStart != null) && !SearchStart.equals("") &&
@@ -137,11 +160,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( SearchStart );
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe search start date \"" +
-				SearchStart +
-				"\" is not a valid date.\n"+
-				"Specify a date or OutputEnd.";
+			message = "The Search start date \"" + AnalysisStart + "\" is not a valid date/time.";
+			warning += "\n" + message;
+			status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
 	if ( warning.length() > 0 ) {
@@ -150,6 +173,7 @@ throws InvalidCommandParameterException
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -249,6 +273,8 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.RUN);
 
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
@@ -280,6 +306,9 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Verify the AnalysisStart information." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 
@@ -291,6 +320,9 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Verify the AnalysisStart information." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	AnalysisStart_DateTime = (DateTime)prop_contents;
@@ -302,6 +334,9 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Verify the AnalysisStart information." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		
@@ -319,6 +354,9 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Verify the AnalysisEnd information." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 
@@ -330,6 +368,9 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+				status.addToLog ( CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								message, "Verify the AnalysisEnd information." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
@@ -341,6 +382,9 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+			status.addToLog ( CommandPhaseType.RUN,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Verify the AnalysisEnd information." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 	
@@ -378,6 +422,9 @@ CommandWarningException, CommandException
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Likely a software problem - please report." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TS = bean_PropList.getContents ( "TS");
@@ -399,6 +446,9 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+		new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Verify the time series identifier.  Previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
 
@@ -442,6 +492,9 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
+		status.addToLog ( CommandPhaseType.RUN,
+		new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "See the log file for details." ) );
 	}
 
 	// Update the data to the processor so that appropriate actions are
@@ -457,6 +510,8 @@ CommandWarningException, CommandException
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
+	
+	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

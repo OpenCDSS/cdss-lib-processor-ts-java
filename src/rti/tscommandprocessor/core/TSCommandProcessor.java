@@ -121,6 +121,13 @@ running, to indicate progress.
 private CommandProcessorListener [] __CommandProcessorListener_array = null;
 
 /**
+Indicate whether output should be created.  If true, then output files will be created.
+If false, commands will run but output files will not be created.  The latter may be used
+during troubleshooting to increase performance.
+*/
+private Boolean __CreateOutput_Boolean = new Boolean(true);
+
+/**
 The initial working directory for processing, typically the location of the commands
 file from read/write.  This is used to adjust the working directory with
 setWorkingDir() commands.
@@ -327,6 +334,14 @@ public String getCommandsFileName ()
 }
 
 /**
+Indicate whether output files should be created when processing.
+@return true if files should be created, false if not.
+*/
+public Boolean getCreateOutput ()
+{	return __CreateOutput_Boolean;
+}
+
+/**
 Return the initial working directory for the processor.
 @return the initial working directory for the processor.
 */
@@ -490,6 +505,9 @@ public Object getPropContents ( String prop ) throws Exception
 {	if ( prop.equalsIgnoreCase("AutoExtendPeriod") ) {
 		return getPropContents_AutoExtendPeriod();
 	}
+	else if ( prop.equalsIgnoreCase("CreateOutput") ) {
+		return getPropContents_CreateOutput();
+	}
 	else if ( prop.equalsIgnoreCase("DataTestList") ) {
 		return getPropContents_DataTestList();
 	}
@@ -554,6 +572,15 @@ private Boolean getPropContents_AutoExtendPeriod()
 {
 	boolean b = __tsengine.autoExtendPeriod();
 	return new Boolean ( b );
+}
+
+/**
+Handle the CreateOutput property request.
+@return Boolean indicating whether output should be created.
+ */
+private Boolean getPropContents_CreateOutput()
+{
+	return __CreateOutput_Boolean;
 }
 
 /**
@@ -2138,6 +2165,15 @@ it will be used in output headers).
 public void setCommandsFileName ( String filename )
 {
 	__commands_filename = filename;
+}
+
+/**
+Indicate output files should be created.
+@param CreateOutput_boolean true if output should be created, false if not.
+*/
+protected void setCreateOutput ( Boolean CreateOutput_Boolean )
+{
+	__CreateOutput_Boolean = CreateOutput_Boolean;
 }
 
 /**

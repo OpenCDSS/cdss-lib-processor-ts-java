@@ -61,6 +61,10 @@ import RTi.Util.Message.Message;
 public class writeRiverWare_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
+	
+private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+	
 private SimpleJButton	__browse_JButton = null,// Button to browse for file
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
@@ -152,14 +156,12 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory") ) {
+		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
 			__OutputFile_JTextField.setText (
 			IOUtil.toAbsolutePath(__working_dir,
 			__OutputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory") ) {
+		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory ) ) {
 			try {	__OutputFile_JTextField.setText (
 				IOUtil.toRelativePath ( __working_dir,
 				__OutputFile_JTextField.getText() ) );
@@ -297,7 +299,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, Command command )
 {	__command = (writeRiverWare_Command)command;
     CommandProcessor processor = __command.getCommandProcessor();
-    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
+    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 	
 	addWindowListener( this );
 
@@ -310,35 +312,31 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a RiverWare format file," +
-		" which can be specified using a full or" ),
+		" which can be specified using a full or relative path (relative to the working directory)." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"relative path (relative to the working directory)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+       	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the file name follow the convention " +
 		"ObjectName.SlotName." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If TS list is \"" + __command._AllMatchingTSID + "\", "+
-		"pick a single time series, " +
-		"or enter a wildcard time series identifier pattern."),
+		"pick a single time series, or enter a wildcard time series identifier pattern."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Only the first time series will be written."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Only the first time series will be written (limitation of file format)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	Vector tslist_Vector = new Vector();
 	tslist_Vector.addElement ( __command._AllMatchingTSID );
@@ -351,10 +349,10 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the time series to write."),
+		"How to get the time series to write (default=AllTS)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Identifier (TSID) to match:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
@@ -472,10 +470,10 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
@@ -525,19 +523,19 @@ private void refresh ()
 	String SetUnits = "";
 	String SetScale = "";
 	String Precision = "";
-	PropList props = null;
+	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
-		props = __command.getCommandParameters();
-		TSList = props.getValue ( "TSList" );
-		TSID = props.getValue ( "TSID" );
-		OutputFile = props.getValue("OutputFile");
-		Units = props.getValue("Units");
-		Scale = props.getValue("Scale");
-		SetUnits = props.getValue("SetUnits");
-		SetScale = props.getValue("SetScale");
-		Precision = props.getValue("Precision");
+		parameters = __command.getCommandParameters();
+		TSList = parameters.getValue ( "TSList" );
+		TSID = parameters.getValue ( "TSID" );
+		OutputFile = parameters.getValue("OutputFile");
+		Units = parameters.getValue("Units");
+		Scale = parameters.getValue("Scale");
+		SetUnits = parameters.getValue("SetUnits");
+		SetScale = parameters.getValue("SetScale");
+		Precision = parameters.getValue("Precision");
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( __command._AllTS );
@@ -606,25 +604,25 @@ private void refresh ()
 	SetUnits = __SetUnits_JTextField.getText().trim();
 	SetScale = __SetScale_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
-	props = new PropList ( __command.getCommandName() );
-	props.add ( "TSList=" + TSList );
-	props.add ( "TSID=" + TSID );
-	props.add ( "OutputFile=" + OutputFile );
-	props.add ( "Units=" + Units );
-	props.add ( "Scale=" + Scale );
-	props.add ( "SetUnits=" + SetUnits );
-	props.add ( "SetScale=" + SetScale );
-	props.add ( "Precision=" + Precision );
-	__command_JTextArea.setText( __command.toString ( props ) );
+	parameters = new PropList ( __command.getCommandName() );
+	parameters.add ( "TSList=" + TSList );
+	parameters.add ( "TSID=" + TSID );
+	parameters.add ( "OutputFile=" + OutputFile );
+	parameters.add ( "Units=" + Units );
+	parameters.add ( "Scale=" + Scale );
+	parameters.add ( "SetUnits=" + SetUnits );
+	parameters.add ( "SetScale=" + SetScale );
+	parameters.add ( "Precision=" + Precision );
+	__command_JTextArea.setText( __command.toString ( parameters ) );
 	// Check the path and determine what the label on the path button should
 	// be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( OutputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( "Remove Working Directory" );
+			__path_JButton.setText ( __RemoveWorkingDirectory );
 		}
-		else {	__path_JButton.setText ( "Add Working Directory" );
+		else {	__path_JButton.setText ( __AddWorkingDirectory );
 		}
 	}
 }

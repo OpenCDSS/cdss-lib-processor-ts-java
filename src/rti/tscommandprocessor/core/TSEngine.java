@@ -711,6 +711,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusProviderUtil;
 import RTi.Util.IO.CommandStatusUtil;
@@ -740,22 +741,35 @@ import RTi.Util.Time.TimeUtil;
 public class TSEngine implements MessageJDialogListener,
 TSSupplier, WindowListener
 {
+	
+/**
+"ts_action" values for processTimeSeriesAction, indicating how to process
+a time series from a command.  These will eventually go away when all processing
+is handled in the commands.
+*/
 public final static int
-			INSERT_TS = 1,	// "ts_action" values for processTimeSeriesAction
+			INSERT_TS = 1,	
 			UPDATE_TS = 2,
 			EXIT = 3,
 			NONE = 4;
 
-public final String TEMPTS = "TEMPTS";		// Use to streamline processing
-public final String TEMPTS_SP="TEMPTS ";	// Use to streamline processing
-						// of old-style commands.
+/**
+Indicate that temporary time series should be retrieved within a command but not
+managed in the processor.  This may go away due to limited use and issues with
+design.
+*/
+public final String TEMPTS = "TEMPTS";
+public final String TEMPTS_SP="TEMPTS ";
 
+/**
+Used to specify which time series are to be processed with the TSList command
+parameter.
+*/
 public final String __AllTS = "AllTS";
 public final String __AllMatchingTSID = "AllMatchingTSID";
 public final String __LastMatchingTSID = "LastMatchingTSID";
 public final String __SelectedTS = "SelectedTS";
-						// Used to specify which time
-						// series are to be processed.
+						
 
 public final int BINARY_MONTH_CUTOFF = 100000;	// Number of time series to
 						// trigger use of a binary file
@@ -899,19 +913,13 @@ private int __num_prepended_commands = 0;	// The number of commands that
 						// initialize the working
 						// directory).
 
-private int	_num_TS_expressions = 0;	// Number of TS xxx expressions,
-						// which is used to size the
-						// BinaryTS, if needed.
+/**
+Number of TS xxx expressions, which is used to size the BinaryTS, if needed.
+*/
+private int	__num_TS_expressions = 0;	
 private Vector __nwsrfs_dmi_Vector = new Vector();
 						// List of NWSRFS_DMI to use to read from
 						// NWSRFS FS5Files.
-private String	_output_commands = null;	// Output file for commands file
-						// (used when list is used).
-private int	_output_format = OUTPUT_NONE;	// Output format.  This used to
-						// be OUTPUT_STATEMOD but change
-						// to OUTPUT_NONE to allow a
-						// check for a legacy setting
-						// from the -o options.
 private String	_output_file = "tstool.out";	// Default output file name.
 private DateTime __OutputStart_DateTime = null;	// Global start date/time for
 						// output.
@@ -974,6 +982,14 @@ Construct a TSEngine to work in parallel with a TSCommandProcessor.
 protected TSEngine ( TSCommandProcessor ts_processor )
 {
 	__ts_processor = ts_processor;
+	
+	// TODO SAM 2007-11-06
+	// The following is used to allow cancel during processing.  However, it may
+	// be phased out if the CommandStatus handling approach works.
+	// Put the code here so that the listener is not re-registered each time that the
+	// processor is run.
+	
+	MessageJDialog.addMessageJDialogListener ( this );
 }
 
 /**
@@ -1961,11 +1977,12 @@ throws Exception
 /**
 Execute the new createFromList() (old -slist, -data_interval, -data_type)
 command.
+@param wl Warning level for important warnings (1=popup, 2=to log only).
 @param command_tag Command number used for messaging.
 @param command Command to parse.
 @exception Exception if there is an error.
 */
-private void do_createFromList ( String command_tag, String command )
+private void do_createFromList ( int wl, String command_tag, String command )
 throws Exception
 {	String routine = "TSEngine.do_createFromList";
 	String message;
@@ -2141,7 +2158,7 @@ throws Exception
 		// TODO SAM 2007-03-12 Need to avoid global flag.
 		include_missing_ts_old = __include_missing_ts;
 		try {	__include_missing_ts = include_missing_ts;
-			ts = readTimeSeries ( command_tag,
+			ts = readTimeSeries ( wl, command_tag,
 				tsident_string.toString() );
 			__include_missing_ts = include_missing_ts_old;
 			if ( ts != null ) {
@@ -5153,73 +5170,6 @@ throws Exception
 }
 
 /**
-Execute the writeDateValue() command:
-<pre>
-writeDateValue(OutputFile="X",TSList="X",OutputStart="X",OutputEnd="X")
-
-or old-style:
-
-writeDateValue(filename)
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_writeDateValue ( String command )
-throws Exception
-{	String routine = "TSEngine.do_writeDateValue";
-	Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || (tokens.size() < 2) ) {
-		// Should never happen because the command name was parsed
-		// before...
-		throw new Exception ( "Bad command: \"" + command + "\"" );
-	}
-	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine, "," );
-	String OutputFile = props.getValue ( "OutputFile" );
-	String OutputStart = props.getValue ( "OutputStart" );
-	String OutputEnd = props.getValue ( "OutputEnd" );
-	String TSList = props.getValue ( "TSList" );
-
-	// Check for old-style syntax...
-
-	String token = (String)tokens.elementAt(1);
-	if ( (OutputFile == null) && (token.indexOf("=") < 0) ) {
-		// Assume that the token is the file name...
-		OutputFile = StringUtil.remove(token.trim(),"\"");
-	}
-
-	Vector tslist = null;
-	if ( (TSList != null) && TSList.equalsIgnoreCase("SelectedTS") ) {
-		tslist = getSelectedTimeSeriesList ( false );
-	}
-	else {	// Default is to output all time series...
-		tslist = __tslist;
-	}
-
-	DateTime output_date1 = null, output_date2 = null;
-	if ( OutputStart != null ) {
-		output_date1 = DateTime.parse ( OutputStart );
-	}
-	else {	output_date1 = __OutputStart_DateTime;
-	}
-	if ( OutputEnd != null ) {
-		output_date2 = DateTime.parse ( OutputEnd );
-	}
-	else {	output_date2 = __OutputEnd_DateTime;
-	}
-
-	Message.printStatus ( 1, routine, "Writing DateValue file \"" +
-		OutputFile + "\" for " + output_date1 + " to " + output_date2 );
-
-	DateValueTS.writeTimeSeriesList ( tslist, OutputFile,
-		output_date1, output_date2, "", true );
-	tslist = null;
-	tokens = null;
-}
-
-/**
 Execute the writeNwsCard() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -5413,7 +5363,6 @@ throws Throwable
 	_missing_ts = null;
 	// TODO SAM 2007-02-18 Need to enable NDFD
 	//__NDFDAdapter_Vector = null;
-	_output_commands = null;
 	_output_file = null;
 	_reference_date = null;
 	__tslist = null;
@@ -5919,7 +5868,7 @@ throws Exception
 		Message.printStatus ( 1, "TSEngine.getTimeSeries",
 		"Reading temporary time series \"" +
 		tsident.substring(6).trim() );
-		TS ts = readTimeSeries ( command_tag,
+		TS ts = readTimeSeries ( 2, command_tag,
 			tsident.substring(6).trim() );
 		if ( ts != null ) {
 			ts.setStatus ( TEMPTS );
@@ -6858,7 +6807,8 @@ processing.
 protected void processCommands ( Vector command_Vector,	PropList app_PropList )
 throws Exception
 {	String	message, routine = "TSEngine.processTimeSeriesCommands";
-	String	tsident_string = null;
+	String message_tag = "ProcessCommands";
+		// Tag used with messages generated in this method.
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
 	if ( command_Vector == null ) {
@@ -6892,11 +6842,15 @@ throws Exception
 	
 	// Indicate whether output products/files should be created, or
 	// just time series (to allow interactive graphing).
-	boolean CreateOutput_boolean = true;
+	boolean CreateOutput_boolean = __ts_processor.getCreateOutput().booleanValue();
 	if ( __processor_PropList != null ) {
 		String CreateOutput = app_PropList.getValue ( "CreateOutput" );
 		if ( (CreateOutput != null) && CreateOutput.equalsIgnoreCase("False")){
+			__ts_processor.setCreateOutput ( new Boolean(false));
 			CreateOutput_boolean = false;
+		}
+		else {
+			__ts_processor.setCreateOutput ( new Boolean(true));
 		}
 	}
 	Message.printStatus(2, routine,"CreateOutput=" + __processor_PropList.getValue("CreateOutput") +
@@ -6939,7 +6893,8 @@ throws Exception
 	Message.printStatus ( 1, routine, "Processing " + size + " commands..." );
 	StopWatch stopwatch = new StopWatch();
 	stopwatch.start();
-	String expression = null;
+	//String expression = null;
+	String command_String = null;
 	// Free all data from the previous run...
 	if ( !AppendResults_boolean ) {
 		clearResults ();
@@ -6962,58 +6917,63 @@ throws Exception
 	String first_token = null;
 	boolean in_comment = false;
 	Command command = null;	// The command to process
+	CommandStatus command_status = null;	// Put outside of may try to be able to use in catch.
+	__num_TS_expressions = 0;				// Used with BinaryTS to size the file
 	for ( int i = 0; i < size; i++ ) {
 		ts = null;	// Initialize each time to allow for checks
 				// below.
 		tokens = null;
 		command = (Command)command_Vector.elementAt(i);
-		expression = command.toString();
-		if ( expression == null ) {
+		command_String = command.toString();
+		if ( command_String == null ) {
 			continue;
 		}
-		expression = expression.trim();
-		if ( expression.equals("") ) {
+		command_String = command_String.trim();
+		if ( command_String.equals("") ) {
 			continue;
 		}
 		// This is just a rough check to see if we have to go through
 		// the effort of computing limits, which slows down the
 		// processing...
-		if ( expression.startsWith("/*") ) {
+		if ( command_String.startsWith("/*") ) {
 			in_comment = true;
 			continue;
 		}
-		else if ( expression.startsWith("*/") ) {
+		else if ( command_String.startsWith("*/") ) {
 			in_comment = false;
 			continue;
 		}
 		if ( in_comment ) {
 			continue;
 		}
-		if ( expression.regionMatches(true,0,"TS ",0,3) ) {
+		if ( command_String.regionMatches(true,0,"TS ",0,3) ) {
 			// Time series instances.  Keep a count which will be
 			// used to size the BinaryTS file...
-			++_num_TS_expressions;
+			++__num_TS_expressions;
 		}
 		else {	// If the first token has at least 3 ".", assume it is
 			// a time series identifier (until we figure out a
 			// better way to find out - could check interval!?)...
-			first_token = StringUtil.getToken ( expression, " \t",
+			first_token = StringUtil.getToken ( command_String, " \t",
 				StringUtil.DELIM_SKIP_BLANKS, 0);
 			if ( StringUtil.patternCount(first_token,".") >= 3 ) {
-				++_num_TS_expressions;
+				++__num_TS_expressions;
 			}
 		}
 	}
 
 	// Change setting to allow warning messages to be turned off during
-	// the main loop...
+	// the main loop.  This capability should not be needed if a command
+	// uses the new command status processing.
 
-	Message.setPropValue ( "WarningDialogOKNoMoreButton=true" );
-	Message.setPropValue ( "WarningDialogCancelButton=true" );
-	Message.setPropValue ( "WarningDialogViewLogButton=true" );
-	// The following will be set to true if a cancel occurs during
-	// processing.
-	MessageJDialog.addMessageJDialogListener ( this );
+	int popup_warning_level = 2;		// Do not popup warnings (only to log)
+	boolean popup_warning_dialog = false;// Do not popup warnings (handle in command status)
+	if ( popup_warning_dialog ) {
+		popup_warning_level = 1;
+		Message.setPropValue ( "WarningDialogOKNoMoreButton=true" );
+		Message.setPropValue ( "WarningDialogCancelButton=true" );
+		Message.setPropValue ( "WarningDialogViewLogButton=true" );
+	}
 
 	// Now loop through the expressions, query time series, and manipulate
 	// to produce a list of final time series.  The following loop does the
@@ -7070,10 +7030,12 @@ throws Exception
 		// other TSTool menus...
 		if ( __ts_processor.getCancelProcessingRequested() ) {
 			// Set Warning dialog settings back to normal...
-			Message.setPropValue ( "WarningDialogViewLogButton=false" );
-			Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
-			Message.setPropValue ( "WarningDialogCancelButton=false" );
-			Message.setPropValue ( "ShowWarningDialog=true" );
+			if ( popup_warning_dialog ) {
+				Message.setPropValue ( "WarningDialogViewLogButton=false" );
+				Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
+				Message.setPropValue ( "WarningDialogCancelButton=false" );
+				Message.setPropValue ( "ShowWarningDialog=true" );
+			}
 			// Set flag so code interested in processor knows it is not running...
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that
@@ -7088,46 +7050,50 @@ throws Exception
 		ts_action = NONE;
 		//expression = (String)tsexpression_list.elementAt(i);
 		command = (Command)command_Vector.elementAt(i);
-		expression = command.toString();
-		if ( expression == null ) {
+		command_String = command.toString();
+		if ( command_String == null ) {
 			continue;
 		}
-		expression = expression.trim();
+		command_String = command_String.trim();
+		// All commands will implement CommandStatusProvider so get it...
+		command_status = ((CommandStatusProvider)command).getCommandStatus();
+		// Clear the run status (internally will set to UNKNOWN).
+		command_status.clearLog(CommandPhaseType.RUN);
 		Message.printStatus ( 1, routine,
 			">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 		Message.printStatus ( 1, routine,
-			"Start processing command \"" + expression + "\" " + (i + 1) + " of " + size );
+			"Start processing command " + (i + 1) + " of " + size + ": \"" + command_String + "\" " );
 		// Notify any listeners that the command is running...
 		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
 
-		if ( expression.equals("") ) {
+		if ( command_String.equals("") ) {
 			// Empty line...
 			continue;
 		}
-		if ( expression.startsWith("#") ) {
+		if ( command_String.startsWith("#") ) {
 			// Comment...
 			continue;
 		}
-		else if ( expression.startsWith("/*") ) {
+		else if ( command_String.startsWith("/*") ) {
 			in_comment = true;
 			continue;
 		}
-		else if ( expression.startsWith("*/") ) {
+		else if ( command_String.startsWith("*/") ) {
 			in_comment = false;
 			continue;
 		}
 		if ( in_comment ) {
 			continue;
 		}
-		if ( expression.regionMatches(true,0,"addConstant",0,11) ) {
+		if ( command_String.regionMatches(true,0,"addConstant",0,11) ) {
 			// addConstant command (don't use space because it may
 			// occur in dates)...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				"(,)", StringUtil.DELIM_SKIP_BLANKS|
 				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() < 3 ) {
 				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			// First see if a time series is in memory that
@@ -7173,46 +7139,28 @@ throws Exception
 			tokens = null;
 		}
 		// SAMX - start
-		else if (	expression.regionMatches(true,0,"add",0,3) ||
-			expression.regionMatches(true,0,"subtract",0,8) ) {
-			do_add ( command_tag, expression );
+		else if ( command_String.regionMatches(true,0,"add",0,3) ||
+				command_String.regionMatches(true,0,"subtract",0,8) ) {
+			do_add ( command_tag, command_String );
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"adjustExtremes",0,14)){
+		else if(command_String.regionMatches(true,0,"adjustExtremes",0,14)){
 			// Adjust extreme values...
-			do_adjustExtremes ( expression );
+			do_adjustExtremes ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches( true,0,"ARMA",0,4) ) {
+		else if ( command_String.regionMatches( true,0,"ARMA",0,4) ) {
 			// Apply ARMA algorithm...
-			do_ARMA ( expression );
+			do_ARMA ( command_String );
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"-averageperiod",0,14)){
-			Message.printWarning ( 1, routine,
-			"-averageperiod is obsolete.\n" +
-			"Use setAveragePeriod().\n" +
-			"Automatically using setAveragePeriod()." );
-			++update_count;
-			do_setAveragePeriod ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"-batch",0,6)) {
-			// Old syntax command.  Leave around because this
-			// functionality has never really been implemented but
-			// needs to be (e.g., call TSTool from web site and
-			// tell it to create a plot?).
-			Message.printStatus ( 1, routine,
-			"Running in batch mode." );
-			IOUtil.isBatch ( true );
-		}
-		else if ( expression.regionMatches(true,0,"blend",0,5)) {
+		else if ( command_String.regionMatches(true,0,"blend",0,5)) {
 			// Don't use space because TEMPTS will not parse right.
-			Vector v = StringUtil.breakStringList(expression,
+			Vector v = StringUtil.breakStringList(command_String,
 				"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
 			if ( (v == null) || (v.size() < 3) ) {
 				Message.printWarning ( 2, routine,
-				"Syntax error in \"" + expression + "\"" );
+				"Syntax error in \"" + command_String + "\"" );
 				++error_count;
 				v = null;
 				continue;
@@ -7231,7 +7179,7 @@ throws Exception
 			if ( ts == null ) {
 				Message.printWarning ( 1, routine,
 				"Unable to find time series \"" + alias +
-				"\" for\n" + expression + "\"." );
+				"\" for\n" + command_String + "\"." );
 				++error_count;
 				v = null;
 				continue;
@@ -7245,7 +7193,7 @@ throws Exception
 			if ( independentTS == null ) {
 				Message.printWarning ( 1, routine,
 				"Unable to find time series \"" + independent +
-				"\" for \"" + expression + "\"." );
+				"\" for \"" + command_String + "\"." );
 				++error_count;
 			}
 			else {	TSUtil.blend ( ts, independentTS );
@@ -7254,98 +7202,30 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-binary_day_cutoff",0,18)) {
-			Message.printWarning ( 1, routine,
-			"-binary_day_cutoff is obsolete.\n" +
-			"Use setBinaryTSDayCutoff().\n" +
-			"Automatically using setBinaryTSDayCutoff()." );
-			++update_count;
-			do_setBinaryTSDayCutoff ( expression );
+		else if(command_String.regionMatches(true,0,"createFromList",0,14)){
+			do_createFromList ( popup_warning_level, command_tag, command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-binary_month_cutoff",0,20)) {
-			Message.printWarning ( 1, routine,
-			"-binary_month_cutoff is not enabled." );
-			++error_count;
-			//tokens = StringUtil.breakStringList ( expression,
-			//	" \t", StringUtil.DELIM_SKIP_BLANKS );
-			//if ( (tokens == null) || (tokens.size() != 2) ) {
-			//	Message.printWarning ( 1, routine,
-			//	"Bad command: \"" + expression + "\"" );
-			//	++error_count;
-			//	continue;
-			//}
-			//_binary_month_cutoff = StringUtil.atoi(
-			//	(String)tokens.elementAt(1) );
+		else if ( command_String.regionMatches(true,0,"createTraces",0,12)){
+			do_createTraces ( command_tag, command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-binary_ts_file",0,20)) {
-			Message.printWarning ( 1, routine,
-			"-binary_ts_file is obsolete.\n" +
-			"Use setBinaryTSFile().\n" +
-			"Automatically using setBinaryTSFile()." );
-			++update_count;
-			do_setBinaryTSFile ( expression );
-			continue;
-		}
-		else if(expression.regionMatches(true,0,"createFromList",0,14)){
-			do_createFromList ( command_tag, expression );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"createTraces",0,12)){
-			do_createTraces ( command_tag, expression );
-			continue;
-		}
-		// REVISIT SAM 2005-09-14
+		// TODO SAM 2005-09-14
 		// Evaluate how this works with other TSAnalyst capabilities
-		else if ( expression.regionMatches(
-			true,0,"createYearStatisticsReport",0,26)){
-			do_createYearStatisticsReport ( expression );
+		else if ( command_String.regionMatches(true,0,"createYearStatisticsReport",0,26)){
+			do_createYearStatisticsReport ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"convertDataUnits",0,16)){
-			do_convertDataUnits ( expression );
+		else if ( command_String.regionMatches(true,0,"convertDataUnits",0,16)){
+			do_convertDataUnits ( command_String );
 			continue;
 		}
-		else if ( expression.equalsIgnoreCase("-cy") ) {
-			Message.printWarning ( 1, routine,
-			"-cy is obsolete.\n" +
-			"Use setOutputYearType().\n" +
-			"Automatically using setOutputYearType()." );
-			++update_count;
-			do_setOutputYearType ( expression );
-			continue;
-		}
-		else if(expression.regionMatches(true,0,"-data_interval",0,14)){
-			Message.printWarning ( 1, routine,
-			"-data_interval is obsolete.\nUse createFromList()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"-datasource",0,11)) {
-			// Handled by HBParse.  Ignore here.  The data source
-			// name is in the same arg so don't need to increment.
-			continue;
-		}
-		else if(expression.regionMatches(true,0,"-data_type",0,10)){
-			Message.printWarning ( 1, routine,
-			"-data_type is obsolete.\nUse createFromList()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"DateTime ",0,9) ) {
+		else if ( command_String.regionMatches(true,0,"DateTime ",0,9) ) {
 			// Declare a DateTime and set to a literal
-			do_DateTime ( expression );
+			do_DateTime ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,
-			"day_to_month_reservoir",0,22) ) {
+		else if ( command_String.regionMatches(true,0,"day_to_month_reservoir",0,22) ) {
 			// Leave this code in for backward compatibility but the
 			// new TSTool (as of 2002-08-27) uses
 			// TS Alias = dayToMonthReservoir()...
@@ -7362,16 +7242,16 @@ throws Exception
 			Message.printStatus ( 1, routine,
 			"Processing reservoir storage..." );
 			Vector v = 
-				StringUtil.breakStringList(expression, "(,) ",
+				StringUtil.breakStringList(command_String, "(,) ",
 				StringUtil.DELIM_SKIP_BLANKS );
 			if ( v.size() != 4) {
 				Message.printWarning ( 1, routine, 
 				"Invalid day_to_month_reservoir(): \"" +
-				expression + "\"" );
+				command_String + "\"" );
 				++error_count;
 				continue;
 			}
-			ts = readTimeSeries ( command_tag,
+			ts = readTimeSeries ( popup_warning_level, command_tag,
 				((String)v.elementAt(1)).trim() );
 			if ( ts != null ) {
 				// Now have a daily time series... Convert to
@@ -7401,33 +7281,18 @@ throws Exception
 			ts_action = INSERT_TS;
 			v = null;
 		}
-		else if ( expression.regionMatches(
-			true,0,"deselectTimeSeries",0,18)){
+		else if ( command_String.regionMatches(true,0,"deselectTimeSeries",0,18)){
 			// Deselect time series for output...
-			do_selectTimeSeries ( expression, false );
+			do_selectTimeSeries ( command_String, false );
 			ts_action = NONE;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-detailedheader",0,15) ) {
-			Message.printWarning ( 1, routine,
-			"-detailedheader is obsolete.\n" +
-			"Use setOutputDetailedHeaders().\n" +
-			"Automatically using setOutputDetailedHeaders()." );
-			++update_count;
-			do_setOutputDetailedHeaders ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"-d",0,2) ) {
-			do_setDebugLevel ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"divide",0,6)) {
+		else if ( command_String.regionMatches(true,0,"divide",0,6)) {
 			// Don't use space because TEMPTS will not parse right.
-			Vector v = StringUtil.breakStringList(expression,
+			Vector v = StringUtil.breakStringList(command_String,
 				"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
 			if ( (v == null) || (v.size() < 3) ) {
 				Message.printWarning ( 2, routine,
-				"Syntax error in \"" + expression + "\"" );
+				"Syntax error in \"" + command_String + "\"" );
 				++error_count;
 				v = null;
 				continue;
@@ -7446,7 +7311,7 @@ throws Exception
 			if ( ts == null ) {
 				Message.printWarning ( 1, routine,
 				"Unable to find time series \"" + alias +
-				"\" for\n" + expression + "\"." );
+				"\" for\n" + command_String + "\"." );
 				++error_count;
 				v = null;
 				continue;
@@ -7460,7 +7325,7 @@ throws Exception
 			if ( independentTS == null ) {
 				Message.printWarning ( 1, routine,
 				"Unable to find time series \"" + independent +
-				"\" for \"" + expression + "\"." );
+				"\" for \"" + command_String + "\"." );
 				++error_count;
 			}
 			else {	TSUtil.divide ( ts, independentTS );
@@ -7469,8 +7334,8 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-		else if ( expression.equalsIgnoreCase("end") ||
-			expression.equalsIgnoreCase("exit") ) {
+		else if ( command_String.equalsIgnoreCase("end") ||
+				command_String.equalsIgnoreCase("exit") ) {
 			// Exit the processing, but do historic average
 			// filling...
 			Message.printStatus ( 1, routine,
@@ -7478,7 +7343,7 @@ throws Exception
 			ts_action = EXIT;
 			break;
 		}
-		else if ( expression.regionMatches(
+		else if ( command_String.regionMatches(
 			true,0,"fillCarryForward",0,16) ) {
 			// Just warn, but the old code still works.  At some
 			// point it will be disabled...
@@ -7488,11 +7353,11 @@ throws Exception
 			++update_count;
 			// Fill missing data in the time series by carrying
 			// forward the last known value...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				"(,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 2 ) {
 				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			// Parse the identifier...
@@ -7528,25 +7393,15 @@ throws Exception
 			}
 			tokens = null;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-filldata",0,9) ) {
-			Message.printWarning ( 1, routine,
-			"-filldata is obsolete.\n" +
-			"Use setPatternFile().\n" +
-			"Automatically using setPatternFile()." );
-			++update_count;
-			do_setPatternFile ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches(
+		else if ( command_String.regionMatches(
 			true,0,"fillDayTSFrom2MonthTSAnd1DayTS",0,30) ) {
 			// Fill missing data in the time series using
 			// D1 = D2*M1/M2
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 5 ) {
 				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			// Parse the identifier...
@@ -7573,32 +7428,19 @@ throws Exception
 			ts_action = UPDATE_TS;
 			tokens = null;
 		}
-		else if(expression.regionMatches(true,0,"fillFromTS",0,10)) {
-			ts = do_fillFromTS(command_tag,expression);
+		else if(command_String.regionMatches(true,0,"fillFromTS",0,10)) {
+			ts = do_fillFromTS(command_tag,command_String);
 			// Update occurs in the method.
 			ts_action = NONE;
 		}
-		else if ( expression.regionMatches(true,0,"-fillhistave",0,12)){
-			Message.printWarning ( 1, routine,
-			"-fillhistave is obsolete.\n" +
-			"Use fillHistMonthAverage() or " +
-			"fillHistYearAverage().\n" +
-			"Automatically using appropriate new command." );
-			++update_count;
-			// Also an error...
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(
-			true,0,"fillInterpolate",0,15) ) {
+		else if ( command_String.regionMatches(true,0,"fillInterpolate",0,15) ) {
 			// Fill missing data in the time series using
 			// interpolation...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				"(,) ", StringUtil.DELIM_SKIP_BLANKS |
 				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 4 ) {
-				message = 
-				"Bad command \"" + expression + "\"";
+				message = "Bad command \"" + command_String + "\"";
 				Message.printWarning ( 1, routine, message );
 				++error_count;
 				continue;
@@ -7635,92 +7477,44 @@ throws Exception
 				}
 				else {	Message.printWarning ( 1, routine,
 					"Unable to find TS referenced in \"" +
-					expression + "\"" );
+					command_String + "\"" );
 					ts_action = NONE;
 				}
 			}
 			tokens = null;
 		}
-		else if ( expression.regionMatches( true,0,
-			"fillpattern_setconstbefore",0,26)){
-			Message.printWarning ( 1, routine,
-			"fillpattern_setconstbefore() is obsolete.  " +
-			"Use fillpattern() and setConstant()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches( true,0,"fillPattern",0,11)){
+		else if ( command_String.regionMatches( true,0,"fillPattern",0,11)){
 			// Fill a monthly time series using historical monthly
 			// pattern averages.
-			do_fillPattern ( expression );
+			do_fillPattern ( command_String );
 		}
-		else if ( expression.regionMatches( true,0,"fillProrate",0,11)){
+		else if ( command_String.regionMatches( true,0,"fillProrate",0,11)){
 			// Fill missing data in the time series by prorating
 			// one time series to another...
-			do_fillProrate ( expression );
+			do_fillProrate ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches( true,0,"fillRepeat",0,10) ){
-			// Fill missing data in the time series by repeating
-			// values...
-			do_fillRepeat ( expression );
+		else if ( command_String.regionMatches( true,0,"fillRepeat",0,10) ){
+			// Fill missing data in the time series by repeating values...
+			do_fillRepeat ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-fillUsingComments",0,18)){
-			Message.printWarning ( 1, routine,
-			"-fillUsingComments is obsolete.\n" +
-			"Use fillUsingDiversionComments().");
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches( true,0,"free",0,4) ) {
+		else if ( command_String.regionMatches( true,0,"free",0,4) ) {
 			// Free the time series...
-			do_free ( expression );
+			do_free ( command_String );
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"-ignorelezero",0,13) ){
-			Message.printWarning ( 1, routine,
-			"-ignorelezero is obsolete.\n" +
-			"Use setIgnoreLEZero().\n" +
-			"Automatically using setIgnoreLEZero()." );
-			++update_count;
-			do_setIgnoreLEZero ( expression );
+		else if ( command_String.regionMatches(true,0,"setIncludeMissingTS",0,19)) {
+			do_setIncludeMissingTS ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"-include_missing_ts",0,19)) {
-			Message.printWarning ( 1, routine,
-			"-include_missing_ts is obsolete.\n" +
-			"Use setIncludeMissingTS().  Automatically using\n" +
-			"setIncludeMissingTS(true)" );
-			++update_count;
-			do_setIncludeMissingTS ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches(
-			true,0,"setIncludeMissingTS",0,19)) {
-			do_setIncludeMissingTS ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches( true,0,"-missing",0,8) ) {
-			Message.printWarning ( 1, routine,
-			"-missing is obsolete.\n" +
-			"Use setMissingDataValue().\n" +
-			"Automatically using setMissingDataValue()." );
-			++update_count;
-			do_setMissingDataValue ( expression );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"multiply",0,8)) {
+		else if ( command_String.regionMatches(true,0,"multiply",0,8)) {
 			// Don't use space because TEMPTS will not parse right.
-			Vector v = StringUtil.breakStringList(expression,
+			Vector v = StringUtil.breakStringList(command_String,
 				"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
 			if ( (v == null) || (v.size() < 3) ) {
 				Message.printWarning ( 2, routine,
-				"Syntax error in \"" + expression + "\"" );
+				"Syntax error in \"" + command_String + "\"" );
 				++error_count;
 				v = null;
 				continue;
@@ -7739,7 +7533,7 @@ throws Exception
 			if ( ts == null ) {
 				Message.printWarning ( 1, routine,
 				"Unable to find time series \"" + alias +
-				"\" for\n" + expression + "\"." );
+				"\" for\n" + command_String + "\"." );
 				++error_count;
 				v = null;
 				continue;
@@ -7754,7 +7548,7 @@ throws Exception
 			if ( independentTS == null ) {
 				Message.printWarning ( 1, routine,
 				"Unable to find time series \"" + independent +
-				"\" for \"" + expression + "\"." );
+				"\" for \"" + command_String + "\"." );
 				++error_count;
 			}
 			else {	TSUtil.multiply ( ts, independentTS );
@@ -7763,74 +7557,15 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-		else if ( expression.regionMatches( true,0,"-ocommands",0,10) ){
-			tokens = StringUtil.breakStringList ( expression,
-				" \t", StringUtil.DELIM_SKIP_BLANKS );
-			if ( (tokens == null) || (tokens.size() != 2) ) {
-				Message.printWarning ( 1, routine,
-				"Bad command: \"" + expression + "\"" );
-				++error_count;
-				continue;
-			}
-			_output_commands = (String)tokens.elementAt(1);
-			Message.printStatus ( 1, routine,
-			"Commands will be written to \""+_output_commands+"\"");
-			continue;
-		}
-		else if ( expression.regionMatches( true,0,"-ostatemod",0,10) ){
-			// Output in StateMod format...
-			Message.printStatus ( 1, routine,
-			"Output will be in StateMod format" );
-			Message.printWarning ( 1, routine,
-			"-ostatemod is obsolete.\n" +
-			"Use writeStateMod().\n" +
-			"Will automatically use writeStateMod() after " +
-			"retrieving time series." );
-			++update_count;
-			_output_format = OUTPUT_STATEMOD;
-		}
-		else if ( expression.regionMatches( true,0,"-osummary",0,9) ){
-			Message.printStatus ( 1, routine,
-			"Output will be in summary format" );
-			_output_format = OUTPUT_SUMMARY;
-		}
-		else if ( expression.regionMatches(
-			true,0,"-osummarynostats",0,16) ){
-			Message.printStatus ( 1, routine,
-			"Output will be in summary format (no statistics)" );
-			_output_format = OUTPUT_SUMMARY_NO_STATS;
-		}
-		// Put this after all the other -o options...
-		else if ( expression.regionMatches( true,0,"-o",0,2) ){
-			// Output in StateMod format...
-			Message.printWarning ( 1, routine,
-			"\"-o File\" is obsolete.\n" +
-			"Use writeStateMod() or other output commands.\n" +
-			"Will automatically use with other -o* commands." );
-			++update_count;
-			tokens = StringUtil.breakStringList ( expression,
-				" \t", StringUtil.DELIM_SKIP_BLANKS );
-			if ( (tokens == null) || (tokens.size() != 2) ) {
-				Message.printWarning ( 1, routine,
-				"Bad command: \"" + expression + "\"" );
-				++error_count;
-				continue;
-			}
-			_output_file = (String)tokens.elementAt(1);
-			Message.printStatus ( 1, routine,
-			"Output will be written to \"" + _output_file + "\"" );
-			tokens = null;
-			continue;
-		}
-		else if (expression.regionMatches(true,0,"readDateValue",0,13)){
+		else if (command_String.regionMatches(true,0,"readDateValue",0,13)){
 			// Read the DateValue file, putting all the time
 			// series into memory...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS|
 				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 2 ) {
 				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			String infile = ((String)tokens.elementAt(1)).trim();
@@ -7871,15 +7606,15 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
-		else if (expression.regionMatches(true,0,"readMODSIM",0,10)){
+		else if (command_String.regionMatches(true,0,"readMODSIM",0,10)){
 			// Read the MODSIM file, putting all the time
 			// series into memory...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS|
 				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 2 ) {
 				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			String infile = ((String)tokens.elementAt(1)).trim();
@@ -7920,66 +7655,52 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
-		else if (expression.regionMatches(
-			true,0,"readNWSRFSESPTraceEnsemble",0,26) ) {
+		else if (command_String.regionMatches(true,0,"readNWSRFSESPTraceEnsemble",0,26) ) {
 			// Read an ESPTraceEnsemble file, putting all the time
 			// series traces into memory...
-			do_readNWSRFSESPTraceEnsemble ( expression );
+			do_readNWSRFSESPTraceEnsemble ( command_String );
 			// No action needed at end...
 			continue;
 		}
-		else if (expression.regionMatches(
-			true,0,"readNWSRFSFS5Files",0,13)){
+		else if (command_String.regionMatches(true,0,"readNWSRFSFS5Files",0,13)){
 			// Read 1+ time series from NWSRFS FS5Files, putting all
 			// the time series traces into memory...
-			do_readNWSRFSFS5Files ( expression );
+			do_readNWSRFSFS5Files ( command_String );
 			// No action needed at end...
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,"regress",0,7) ) {
-			Message.printWarning ( 1, routine,
-			"regress() is obsolete.  Use fillRegression()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"replaceValue",0,12)){
+		else if ( command_String.regionMatches(true,0,"replaceValue",0,12)){
 			// Replace values in the time series with a constant
 			// value.
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				"(,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 7 ) {
 				Message.printWarning ( 2, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				++error_count;
 				continue;
 			}
 			// Parse the identifier...
 			alias = ((String)tokens.elementAt(1)).trim();
-			String minvalue_string =
-				((String)tokens.elementAt(2)).trim();
-			String maxvalue_string =
-				((String)tokens.elementAt(3)).trim();
-			String constant_string =
-				((String)tokens.elementAt(4)).trim();
-			String date1_string =
-				((String)tokens.elementAt(5)).trim();
-			String date2_string =
-				((String)tokens.elementAt(6)).trim();
+			String minvalue_string = ((String)tokens.elementAt(2)).trim();
+			String maxvalue_string = ((String)tokens.elementAt(3)).trim();
+			String constant_string = ((String)tokens.elementAt(4)).trim();
+			String date1_string = ((String)tokens.elementAt(5)).trim();
+			String date2_string = ((String)tokens.elementAt(6)).trim();
 			DateTime date1 = null;
 			DateTime date2 = null;
 			// Convert the string arguments to values that can be
 			// used in the replaceValue() method...
 			if ( !StringUtil.isDouble(constant_string) ) {
 				Message.printWarning ( 2, routine,
-				"Bad constant value in \"" + expression + "\"");
+				"Bad constant value in \"" + command_String + "\"");
 				++error_count;
 				continue;
 			}
 			double constant = StringUtil.atod(constant_string);
 			if ( !StringUtil.isDouble(minvalue_string) ) {
 				Message.printWarning ( 2, routine,
-				"Bad minimum value in \"" + expression + "\"");
+				"Bad minimum value in \"" + command_String + "\"");
 				++error_count;
 				continue;
 			}
@@ -7987,7 +7708,7 @@ throws Exception
 			if (	!maxvalue_string.equals("") &&
 				!StringUtil.isDouble(maxvalue_string) ) {
 				Message.printWarning ( 2, routine,
-				"Bad maximum value in \"" + expression + "\"");
+				"Bad maximum value in \"" + command_String + "\"");
 				++error_count;
 				continue;
 			}
@@ -8036,13 +7757,13 @@ throws Exception
 			date1 = null;
 			date2 = null;
 		}
-		else if(expression.regionMatches(true,0,"runningAverage",0,14)){
+		else if(command_String.regionMatches(true,0,"runningAverage",0,14)){
 			// Convert the time series to a running average...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 4 ) {
 				Message.printStatus ( 1, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			// Parse the name and dates...
@@ -8109,90 +7830,37 @@ throws Exception
 			}
 			tokens = null;
 		}
-		else if ( expression.regionMatches( true,0,"runProgram",0,10)){
+		else if ( command_String.regionMatches( true,0,"runProgram",0,10)){
 			// Run an external program...
-			do_runProgram ( expression );
+			do_runProgram ( command_String );
 			ts_action = NONE;
 		}
-		else if ( expression.regionMatches(
-			true,0,"selectTimeSeries",0,16)){
+		else if ( command_String.regionMatches( true,0,"selectTimeSeries",0,16)){
 			// Select time series for output...
-			do_selectTimeSeries ( expression, true );
+			do_selectTimeSeries ( command_String, true );
 			ts_action = NONE;
 		}
-		else if ( expression.regionMatches(
-			true,0,"setAutoExtendPeriod",0,19) ) {
+		else if ( command_String.regionMatches(	true,0,"setAutoExtendPeriod",0,19) ) {
 			// Set the _auto_exend_period flag...
-			do_setAutoExtendPeriod ( expression );
+			do_setAutoExtendPeriod ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"setAveragePeriod",0,16) ) {
+		else if ( command_String.regionMatches( true,0,"setAveragePeriod",0,16) ) {
 			// Set the averaging period (_averaging_date1 and
 			// _averaging_date2)...
-			do_setAveragePeriod ( expression );
+			do_setAveragePeriod ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"setBinaryTSDayCutoff",0,20)) {
-			do_setBinaryTSDayCutoff ( expression );
+		else if ( command_String.regionMatches( true,0,"setBinaryTSDayCutoff",0,20)) {
+			do_setBinaryTSDayCutoff ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"setBinaryTSPeriod",0,17) ) {
-			// Set the BinaryTS period (_binaryts_date1 and
-			// _binaryts_date2)...
-			do_setBinaryTSPeriod ( expression );
+		else if ( command_String.regionMatches(	true,0,"setBinaryTSPeriod",0,17) ) {
+			// Set the BinaryTS period (_binaryts_date1 and _binaryts_date2)...
+			do_setBinaryTSPeriod ( command_String );
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"setconstbefore",0,14)){
-			Message.printWarning ( 1, routine, "setconstbefore() " +
-			"is obsolete.  Use setConstant()." );
-			++update_count;
-			++error_count;
-			// Put this before setconst so the more specific
-			// string is checked first...
-			// Fill constant function...
-			Vector v = 
-				StringUtil.breakStringList(expression, "(,) ",
-				StringUtil.DELIM_SKIP_BLANKS );
-			if ( v.size() < 4 ) {
-				Message.printWarning ( 1, routine, 
-				"Bad command: \"" + expression + "\"" );
-				continue;
-			}
-			// command is in the 0 position, TSID in 1...
-			tsident_string = (String)v.elementAt(1);
-			ts = readTimeSeries ( command_tag, tsident_string );
-			if ( ts == null ) {
-				Message.printWarning ( 1, routine,
-				"No time series available for \"" +
-				tsident_string + "\"" );
-			}
-			else {	// Constant is second argument and date is
-				// third...
-				double fillvalue =
-				StringUtil.atod((String)v.elementAt(2));
-				DateTime d2 = null;
-				try {	d2 = DateTime.parse
-					((String)v.elementAt(3));
-				}
-				catch ( Exception e ) {
-					Message.printWarning ( 1, routine,
-					"Error parsing date \"" +
-					((String)v.elementAt(3)) +
-					"\" not adding TS for \"" +
-					expression + "\"" );
-					continue;
-				}
-				// Get the starting date from the requested
-				// period and set constant using that date...
-				TSUtil.setConstant( ts,
-				ts.getDate1(), d2, fillvalue );
-			}
-		}
-		else if ( expression.regionMatches(
-			true,0,"setConstantBefore",0,17) ) {
+		else if ( command_String.regionMatches(true,0,"setConstantBefore",0,17) ) {
 			// PUT THIS BEFORE setConstant!!!
 			Message.printWarning ( 1, routine,
 			"setConstantBefore() is obsolete.  Use setConstant().");
@@ -8200,11 +7868,11 @@ throws Exception
 			++error_count;
 			// Set all data in the time series to a constant
 			// value, but only on or before the given date...
-			tokens = StringUtil.breakStringList ( expression,
+			tokens = StringUtil.breakStringList ( command_String,
 				"(,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 4 ) {
 				Message.printWarning ( 2, routine,
-				"Bad command \"" + expression + "\"" );
+				"Bad command \"" + command_String + "\"" );
 				++error_count;
 				continue;
 			}
@@ -8247,178 +7915,120 @@ throws Exception
 			beforedate = null;
 			datestring = null;
 		}
-		else if ( expression.regionMatches(true,0,"setConstant",0,11) ){
-			do_setConstant ( expression );
+		else if ( command_String.regionMatches(true,0,"setConstant",0,11) ){
+			do_setConstant ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,
-			"setDatabaseEngine", 0,17) ) {
-			Message.printWarning ( 1, routine,
-			"setDatabaseEngine is obsolete.\nUse openHydroBase().");
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,
-			"setDatabaseHost", 0,15) ) {
-			Message.printWarning ( 1, routine,
-			"setDatabaseHost is obsolete.\nUse openHydroBase()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if (expression.regionMatches(true,0,"setDataSource",0,13)){
-			Message.printWarning ( 1, routine,
-			"setDataSource is obsolete.\nUse openHydroBase()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"setDataValue",0,12)){
+		else if ( command_String.regionMatches(true,0,"setDataValue",0,12)){
 			// Set a single value in the time series...
-			do_setDataValue ( expression );
+			do_setDataValue ( command_String );
 			continue;
 		}
-		else if (expression.regionMatches(true,0,"setDebugLevel",0,13)){
-			do_setDebugLevel ( expression );
+		else if (command_String.regionMatches(true,0,"setDebugLevel",0,13)){
+			do_setDebugLevel ( command_String );
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"setFromTS",0,9)) {
-			ts = do_setFromTS(command_tag, expression);
+		else if(command_String.regionMatches(true,0,"setFromTS",0,9)) {
+			ts = do_setFromTS(command_tag, command_String);
 			// Update occurs in method.
 			ts_action = NONE;
 		}
-		else if ( expression.regionMatches(true,0,
-			"setIgnoreLEZero", 0,15) ) {
-			do_setIgnoreLEZero ( expression );
+		else if ( command_String.regionMatches(true,0,"setIgnoreLEZero", 0,15) ) {
+			do_setIgnoreLEZero ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,"setMax",0,6)) {
+		else if ( command_String.regionMatches(true,0,"setMax",0,6)) {
 			// Don't use space because TEMPTS will not parse right.
-			do_setMax ( command_tag, expression );
+			do_setMax ( command_tag, command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"setMissingDataValue",0,19) ) {
-			do_setMissingDataValue ( expression );
+		else if ( command_String.regionMatches(true,0,"setMissingDataValue",0,19) ) {
+			do_setMissingDataValue ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,"setToMin",0,8)) {
+		else if ( command_String.regionMatches(true,0,"setToMin",0,8)) {
 			// Don't use space because TEMPTS will not parse right.
-			do_setToMin ( command_tag, expression );
+			do_setToMin ( command_tag, command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,
-			"setOutputDetailedHeaders", 0,24) ) {
-			do_setOutputDetailedHeaders ( expression );
+		else if ( command_String.regionMatches(true,0,"setOutputDetailedHeaders", 0,24) ) {
+			do_setOutputDetailedHeaders ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(
-			true,0,"setOutputPeriod",0,15) ) {
+		else if ( command_String.regionMatches(true,0,"setOutputPeriod",0,15) ) {
 			// Set the output period (__OutputStart_DateTime and
 			// __OutputEnd_DateTime)
-			do_setOutputPeriod ( expression );
+			do_setOutputPeriod ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,"setOutputYearType",
-			0,17) ) {
+		else if ( command_String.regionMatches(true,0,"setOutputYearType",0,17) ) {
 			// Set the output year type.
-			do_setOutputYearType ( expression );
+			do_setOutputYearType ( command_String );
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"setPatternFile",0,14)){
+		else if(command_String.regionMatches(true,0,"setPatternFile",0,14)){
 			// Support old and new...
-			do_setPatternFile ( expression );
+			do_setPatternFile ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,
-			"setUseDiversionComments", 0,23) ) {
-			Message.printWarning ( 1, routine,
-			"setUseDiversionComments() is obsolete.\n" +
-			"Use fillUsingDiversionComments()." );
-			++update_count;
-			++error_count;
+		else if ( command_String.regionMatches(true,0,"setWorkingDir", 0,13) ) {
+			do_setWorkingDir ( command_String, app_PropList );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,
-			"setWorkingDir", 0,13) ) {
-			do_setWorkingDir ( expression, app_PropList );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,
-			"setWarningLevel", 0,13) ) {
-			do_setWarningLevel ( expression );
+		else if ( command_String.regionMatches(true,0,"setWarningLevel", 0,13) ) {
+			do_setWarningLevel ( command_String );
 			continue;
 		}
 		// Put the following before the "shift" command...
-		else if ( expression.regionMatches(
-			true,0,"shiftTimeByInterval",0,15) ) {
+		else if ( command_String.regionMatches(true,0,"shiftTimeByInterval",0,15) ) {
 			// Shift a time series temporally...
-			do_shiftTimeByInterval ( expression );
+			do_shiftTimeByInterval ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches( true,0,"shift",0,5) ) {
+		else if ( command_String.regionMatches( true,0,"shift",0,5) ) {
 			// Shift the time series from one date to another...
-			do_shift ( expression );
+			do_shift ( command_String );
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,"-slist",0,6) ) {
-			Message.printWarning ( 1, routine,
-			"-slist is obsolete.\nUse createFromList()." );
-			++update_count;
-			++error_count;
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"statemodMax",0,11) ){
+		else if ( command_String.regionMatches(true,0,"statemodMax",0,11) ){
 			// Read two StateMod files and create a new list of
 			// time series that has the maximum of each time series
-			do_stateModMax ( expression );
+			do_stateModMax ( command_String );
 			// No action needed at end...
 			continue;
 		}
-		//else if ( expression.regionMatches(true,0,"subtract",0,8) ) {
+		//else if ( command_String.regionMatches(true,0,"subtract",0,8) ) {
 		//
 		// This is handled in the "add" code since it is so similar.
 		//
 		//}
-		else if ( expression.regionMatches(true,0,"TS ",0,3) &&
-			!StringUtil.getToken(expression," =(",
+		else if ( command_String.regionMatches(true,0,"TS ",0,3) &&
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "changeInterval") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "copy") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "lagK") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newStatisticYearTS") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newTimeSeries") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readHydroBase") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNDFD") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNwsCard") &&
-			!StringUtil.getToken(expression," =(",
+			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readStateMod") ) {
 			// All these cases are time series to be inserted.
 			// Declare a time series and set it to some function
-			// Do not handle the following because they are handled
-			// in the new TSCommandFactory code:
-			//	TS Alias = changeInterval()
-			//	TS Alias = copy()
-			//	TS Alias = lagK()
-			//  TS Alias = newPatternTimeSeries()
-			//	TS Alias = newStatisticYearTS()
-			//	TS Alias = newTimeSeries()
-			//	TS Alias = readHydroBase()
-			//	TS Alias = readNDFD()
-			//	TS Alias = readNwsCard()
-			//	TS Alias = readStateMod()
-			tokens = StringUtil.breakStringList ( expression,
+			// Do not handle because they are handled in the TSCommandFactory.
+			tokens = StringUtil.breakStringList ( command_String,
 				" =(,)", StringUtil.DELIM_SKIP_BLANKS );
 			// Position to add is the next in the list...
 			ts_pos = getTimeSeriesSize();
@@ -8430,31 +8040,29 @@ throws Exception
 			// All TS methods result in a new time series being
 			// inserted...
 			ts_action = INSERT_TS;
-			if ( method.equalsIgnoreCase(
-				"newEndOfMonthTSFromDayTS") ) {
+			if ( method.equalsIgnoreCase("newEndOfMonthTSFromDayTS") ) {
 				// TS Alias =
 				// newEndOfMonthTSFromDayTS(TSID,Days)
 				// Reparse to allow spaces in the dates...
 				tokens = StringUtil.breakStringList (
-					expression, "=(,)",
+						command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 4 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
-				ts = do_newEndOfMonthTSFromDayTS ( expression );
+				ts = do_newEndOfMonthTSFromDayTS ( command_String );
 			}
 			else if ( method.equalsIgnoreCase("disaggregate") ) {
 				// Can't use " " as delimiter because of
 				// TEMPTS...
-				tokens = StringUtil.breakStringList (
-				expression,
+				tokens = StringUtil.breakStringList (command_String,
 				"=(,)", StringUtil.DELIM_SKIP_BLANKS );
 				if ( tokens.size() < 7 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression + "\"" );
+					"Bad command \"" + command_String + "\"" );
 					++error_count;
 					continue;
 				}
@@ -8489,11 +8097,10 @@ throws Exception
 					ts = null;
 				}
 			}
-			else if ( method.equalsIgnoreCase(
-				"newDayTSFromMonthAndDayTS") ) {
+			else if ( method.equalsIgnoreCase("newDayTSFromMonthAndDayTS") ) {
 				if ( tokens.size() < 3 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression + "\"" );
+					"Bad command \"" + command_String + "\"" );
 					++error_count;
 					continue;
 				}
@@ -8549,7 +8156,7 @@ throws Exception
 			else if ( method.equalsIgnoreCase("normalize") ) {
 				if ( tokens.size() != 7 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
@@ -8578,82 +8185,82 @@ throws Exception
 				// readDateValue(file,TSID,Units,start,end)
 				// Reparse to allow spaces in the dates...
 				tokens = StringUtil.breakStringList (
-					expression, "=(,)",
+					command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 7 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
-				ts = do_TS_readDateValue ( expression );
+				ts = do_TS_readDateValue ( command_String );
 			}
 			else if ( method.equalsIgnoreCase("readMODSIM") ) {
 				// TS Alias =
 				// readMODSIM(file,TSID,Units,start,end)
 				// Reparse to allow spaces in the dates...
 				tokens = StringUtil.breakStringList (
-					expression, "=(,)",
+						command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 7 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
-				ts = do_readMODSIM ( expression );
+				ts = do_readMODSIM ( command_String );
 			}
 			else if (method.equalsIgnoreCase("readNWSRFSFS5Files")){
-				ts = do_TS_readNWSRFSFS5Files ( expression );
+				ts = do_TS_readNWSRFSFS5Files ( command_String );
 			}
 			else if ( method.equalsIgnoreCase("readRiverWare") ) {
 				// TS Alias= readRiverWare(file,Units,start,end)
 				// Reparse to allow spaces in the dates...
 				tokens = StringUtil.breakStringList (
-					expression, "=(,)",
+					command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 6 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
-				ts = do_readRiverWare ( expression );
+				ts = do_readRiverWare ( command_String );
 			}
 			// SAMX - in the GUI as general case...
 			else if ( method.equalsIgnoreCase("readTimeSeries") ) {
 				// Reparse to strip quotes from file name...
 				tokens = StringUtil.breakStringList (
-					expression, "=()",
+						command_String, "=()",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 3 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
 				// Read the time series...
-				ts = readTimeSeries( command_tag,
+				ts = readTimeSeries( popup_warning_level, command_tag,
 					((String)tokens.elementAt(2)).trim());
 			}
 			else if ( method.equalsIgnoreCase("readUsgsNwis") ) {
 				// TS Alias = readUsgsNwis(file,start,end)
 				tokens = StringUtil.breakStringList (
-					expression, "=(),",
+						command_String, "=(),",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 5 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
-				ts = do_readUsgsNwis ( expression );
+				ts = do_readUsgsNwis ( command_String );
 			}
 			else if ( method.equalsIgnoreCase("relativeDiff") ) {
 				// Relative diff of time series...
 				if ( tokens.size() != 6 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +"\"");
+					"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
@@ -8683,15 +8290,14 @@ throws Exception
 				else {	ts = null;
 					Message.printWarning ( 1, routine,
 					"Bad command (TS not found) \"" +
-					expression +"\"");
+					command_String +"\"");
 					++error_count;
 				}
 			}
 			else if ( method.equalsIgnoreCase("weightTraces") ) {
 				if ( tokens.size() < 7 ) {
 					Message.printWarning ( 1, routine,
-					"Bad command \"" + expression +
-					"\"" );
+					"Bad command \"" + command_String +	"\"" );
 					++error_count;
 					continue;
 				}
@@ -8703,7 +8309,7 @@ throws Exception
 					"AbsoluteWeights") ) {
 					Message.printWarning ( 1, routine,
 					"Weight method is not recognized for \""
-					+ expression + "\"" );
+					+ command_String + "\"" );
 					++error_count;
 					continue;
 				}
@@ -8721,7 +8327,7 @@ throws Exception
 							Message.printWarning(1,
 							routine, "Non-integer "+
 							"trace number in \"" +
-							expression + "\"" );
+							command_String + "\"" );
 							++error_count;
 							continue;
 						}
@@ -8734,7 +8340,7 @@ throws Exception
 							Message.printWarning(1,
 							routine, "Non-number "+
 							"weight in \"" +
-							expression + "\"" );
+							command_String + "\"" );
 							++error_count;
 							continue;
 						}
@@ -8796,106 +8402,57 @@ throws Exception
 			}
 			tokens = null;
 		}
-		else if ( expression.regionMatches(true,0,"-units",0,6) ) {
-			tokens =StringUtil.breakStringList(expression, "(,) ",
-				StringUtil.DELIM_SKIP_BLANKS );
-			Message.printWarning ( 1, routine,
-					"-units is obsolete.\n" +
-					"Other commands now handle units." );
-					++update_count;
-		}
-		else if(expression.regionMatches(true,0,"writeDateValue",0,14)){
-			// Write the time series in memory to a DateValue
-			// time series file...
-			if ( !CreateOutput_boolean ) {
-				Message.printStatus ( 1, routine,
-				"Skipping \"" + expression +
-				"\" because output is to be ignored." );
-				continue;
-			}
-			do_writeDateValue(expression);
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"writeNwsCard",0,12)){
+		else if ( command_String.regionMatches(true,0,"writeNwsCard",0,12)){
 			// Write the time series in memory to an NWS Card
 			// time series file...
 			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
-				"Skipping \"" + expression +
+				"Skipping \"" + command_String +
 				"\" because output is to be ignored." );
 				continue;
 			}
-			do_writeNwsCard(expression);
+			do_writeNwsCard(command_String);
 			// No action needed at end...
 			continue;
 		}
-		else if(expression.regionMatches(true,0,"writeStateCU",0,12) ){
+		else if(command_String.regionMatches(true,0,"writeStateCU",0,12) ){
 			// Write the time series in memory to a StateCU time
 			// series file...
 			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
-				"Skipping \"" + expression +
+				"Skipping \"" + command_String +
 				"\" because output is to be ignored." );
 				continue;
 			}
-			do_writeStateCU ( expression,
+			do_writeStateCU ( command_String,
 					formatOutputHeaderComments(command_Vector) );
 			// No action needed at end...
 			continue;
 		}
-		else if ( expression.regionMatches(true,0,"writeSummary",0,12)){
+		else if ( command_String.regionMatches(true,0,"writeSummary",0,12)){
 			// Write the time series in memory to a summary
 			// format...
 			if ( !CreateOutput_boolean ) {
 				Message.printStatus ( 1, routine,
-				"Skipping \"" + expression +
+				"Skipping \"" + command_String +
 				"\" because output is to be ignored." );
 				continue;
 			}
-			do_writeSummary ( expression );
+			do_writeSummary ( command_String );
 			// No action needed at end...
-			continue;
-		}
-		// SAMX - end
-		else if ( expression.equalsIgnoreCase("-wy") ) {
-			Message.printWarning ( 1, routine,
-			"-wy is obsolete.\n" +
-			"Use setOutputYearType().\n" +
-			"Automatically using setOutputYearType()." );
-			++update_count;
-			do_setOutputYearType ( expression );
-			continue;
-		}
-		// Put after -wy...
-		else if ( expression.regionMatches(true,0,"-w",0,2) ) {
-			do_setWarningLevel ( expression );
-			continue;
-		}
-
-		// Check for obsolete commands (do this last to minimize the
-		// amount of processing through this code)...
-
-		else if ( expression.regionMatches(
-			true,0,"setRegressionPeriod",0,19) ) {
-			// Set the regression period - this is no longer needed.
-			Message.printWarning ( 1, routine,
-			"setRegressionPeriod() is used for " +
-			"backward-compatibility).\n" +
-			"Set dates in fillRegression() instead.  Ignoring.");
-			++update_count;
 			continue;
 		}
 
 		// Detect a time series identifier, which needs to be processed
 		// to read the time series...
-		else if ( TSCommandProcessorUtil.isTSID(expression) ) {
+		else if ( TSCommandProcessorUtil.isTSID(command_String) ) {
 			// Probably a raw time series identifier.
 			// Try to read it...
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, routine,
 				"Reading TS now..." );
 			}
-			ts = readTimeSeries ( command_tag, expression );
+			ts = readTimeSeries ( popup_warning_level, command_tag, command_String );
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, routine, "...read TS" );
 			}
@@ -8906,39 +8463,20 @@ throws Exception
 				++error_count;
 				throw new Exception (
 				"Null TS from read.  Unable to process " +
-				"command \"" + expression + "\"" );
+				"command \"" + command_String + "\"" );
 			}
 			ts_action = INSERT_TS;
 			// Append to the end of the time series list...
 			ts_pos = getTimeSeriesSize();
 		}
-		else if ( TimeUtil.isDateTime ( StringUtil.getToken(expression,
-			" \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
-			// Old-style date...
-			Message.printWarning ( 1, routine, "Setting output " +
-			"period with MM/YYYY MM/YYYY is obsolete.\n" +
-			"Use setOutputPeriod().\n" +
-			"Automatically using setOutputPeriod()." );
+	
+		// Check for obsolete commands (do this last to minimize the
+		// amount of processing through this code)...
+		
+		else if ( processCommands_CheckForObsoleteCommands(command_String, message_tag, i_for_message) ) {
+			// Had a match so increment the counters.
 			++update_count;
-			do_setOutputPeriod ( expression );
-			continue;
-		}
-		// Check for obsolete commands...
-		else if ( expression.regionMatches(true,0,"fillconst(",0,10) ) {
-			++update_count;
-			message ="fillconst() is obsolete.  Use setConstant().";
-			Message.printWarning ( 1,
-			MessageUtil.formatMessageTag(command_tag,
-			++error_count), routine, message );
-			continue;
-		}
-		else if ( expression.regionMatches(true,0,"setconst(",0,9) ) {
-			++update_count;
-			message = "setconst() is obsolete.  Use setConstant().";
-			Message.printWarning ( 1,
-			MessageUtil.formatMessageTag(command_tag,
-			++error_count), routine, message );
-			continue;
+			++error_count;
 		}
 		// Command factory for remaining commands...
 		else {	// Try the Command class code...
@@ -8948,8 +8486,7 @@ throws Exception
 				// initialization occurs (probably the initial edit or load)?
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,
-					"Initializing the Command for \"" +
-					expression + "\"" );
+					"Initializing the Command for \"" +	command_String + "\"" );
 				}
 				if ( command instanceof CommandStatusProvider ) {
 					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);
@@ -8957,7 +8494,7 @@ throws Exception
 				if ( command instanceof CommandStatusProvider ) {
 					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
 				}
-				command.initializeCommand ( expression, __ts_processor, true );
+				command.initializeCommand ( command_String, __ts_processor, true );
 				// REVISIT SAM 2005-05-11 Is this the best
 				// place for this or should it be in the
 				// runCommand()?...
@@ -8965,7 +8502,7 @@ throws Exception
 				if ( Message.isDebugOn ) {
 					Message.printDebug ( 1, routine,
 					"Checking the parameters for command \""
-					+ expression + "\"" );
+					+ command_String + "\"" );
 				}
 				command.checkCommandParameters (
 					command.getCommandParameters(),
@@ -8995,7 +8532,7 @@ throws Exception
 						++error_count), routine, message );
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
-					Message.printWarning ( 1,
+					Message.printWarning ( popup_warning_level,
 						MessageUtil.formatMessageTag(command_tag,
 						++error_count), routine, message );
 				}
@@ -9015,7 +8552,7 @@ throws Exception
 						++error_count), routine, message );
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
-					Message.printWarning ( 1,
+					Message.printWarning ( popup_warning_level,
 							MessageUtil.formatMessageTag(command_tag,
 									++error_count), routine, message );
 				}
@@ -9025,8 +8562,7 @@ throws Exception
 				continue;
 			}
 			catch ( CommandWarningException e ) {
-				message = "Warnings were generated processing "+
-					"command (output may be incomplete).";
+				message = "Warnings were generated processing command (output may be incomplete).";
 				if ( command instanceof CommandStatusProvider &&
 						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
 					// No need to print a message to the screen because a visual marker will be shown, but log...
@@ -9035,7 +8571,7 @@ throws Exception
 						++error_count), routine, message );
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
-					Message.printWarning ( 1,
+					Message.printWarning ( popup_warning_level,
 							MessageUtil.formatMessageTag(command_tag,
 									++error_count), routine, message );
 				}
@@ -9054,7 +8590,7 @@ throws Exception
 						++error_count), routine, message );
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
-					Message.printWarning ( 1,
+					Message.printWarning ( popup_warning_level,
 						MessageUtil.formatMessageTag(command_tag,
 						++error_count), routine, message );
 				}
@@ -9070,13 +8606,13 @@ throws Exception
 					Message.printWarning ( 2,
 						MessageUtil.formatMessageTag(command_tag,
 						++error_count), routine, message );
-					((CommandStatusProvider)command).getCommandStatus().addToLog(CommandPhaseType.RUN,
+					command_status.addToLog(CommandPhaseType.RUN,
 							new CommandLogRecord(CommandStatusType.FAILURE,
 									"Unexpected exception \"" + e.getMessage() + "\"",
 									"See log file for details.") );
 				}
 				else {
-					Message.printWarning ( 1,
+					Message.printWarning ( popup_warning_level,
 							MessageUtil.formatMessageTag(command_tag,
 									++error_count), routine, message );
 				}
@@ -9094,35 +8630,48 @@ throws Exception
 		}
 
 		Message.printStatus ( 1, routine,
-		"Retrieved time series for \"" + expression + "\" (" +  (i + 1)
+		"Retrieved time series for \"" + command_String + "\" (" +  (i + 1)
 		+ " of " + size + " commands)" );
 
 		} // Main catch
 		catch ( Exception e ) {
-			Message.printWarning ( 1,
+			Message.printWarning ( popup_warning_level,
 			MessageUtil.formatMessageTag(command_tag,
 			++error_count), routine,
 			"There was an error processing command: \"" +
-			expression + "\"" );
+			command_String + "\"" );
 			Message.printWarning ( 3, routine, e );
-			// Then continue with next expression, unless the
-			// binary...
+			if ( command instanceof CommandStatusProvider ) {
+				// Add to the command log as a failure...
+				command_status.addToLog(CommandPhaseType.RUN,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+								"Unexpected error \"" + e.getMessage() + "\"",
+								"See log file for details.") );
+			}
+			// Then continue with next expression, unless the binary...
 			if ( _binary_ts_used ) {
 				return;
 			}
 		}
 		catch ( OutOfMemoryError e ) {
-			Message.printWarning ( 1,
+			Message.printWarning ( popup_warning_level,
 			MessageUtil.formatMessageTag(command_tag,
 			++error_count), routine,
-			"TSTool ran out of memory.  Exit and restart.\n" +
-			"Try increasing the -mx setting in tstool.bat." );
+			"The command processor ran out of memory.  Exit and restart.\n" +
+			"Try increasing the -Xmx setting for the Java Runtime Environment." );
+			if ( command instanceof CommandStatusProvider ) {
+				// Add to the command log as a failure...
+				command_status.addToLog(CommandPhaseType.RUN,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						"Out of memory error \"" + e.getMessage() + "\"",
+						"Try increasing JRE memory with -Xmx.  See log file for details.  See troubleshooting documentation.") );
+			}
 			Message.printWarning ( 2, routine, e );
 			System.gc();
 			// May be able to save commands.
 		}
 		finally {
-			// Always want to get to here.
+			// Always want to get to here for each command.
 		}
 		// Notify any listeners that the command is done running...
 		prev_command_complete_notified = true;
@@ -9146,13 +8695,14 @@ throws Exception
 	}
 	__ts_processor.setCancelProcessingRequested ( false );
 	
-	// Change so from this point user always has to acknowledge the
-	// warnings...
-
-	Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
-	Message.setPropValue ( "WarningDialogCancelButton=false" );
-	Message.setPropValue ( "ShowWarningDialog=true" );
-	Message.setPropValue ( "WarningDialogViewLogButton=false" );
+	if ( popup_warning_dialog ) {
+		// Change so from this point user always has to acknowledge the
+		// warnings...
+		Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
+		Message.setPropValue ( "WarningDialogCancelButton=false" );
+		Message.setPropValue ( "ShowWarningDialog=true" );
+		Message.setPropValue ( "WarningDialogViewLogButton=false" );
+	}
 
 	if ( _binary_ts_used ) {
 		if ( __tslist != null ) {
@@ -9161,14 +8711,12 @@ throws Exception
 			__tslist.removeAllElements();
 		}
 
-		Message.printStatus ( 1, routine, "Retrieved " +
-		getTimeSeriesSize() + " time series." );
+		Message.printStatus ( 1, routine, "Retrieved " + getTimeSeriesSize() + " time series." );
 		Message.printStatus ( 1, routine, "Time series have been saved"+
 		" to the temporary BinaryTS file \"" +
 		_binary_ts_file + "\" and can now be used for output." );
 	}
-	else {	Message.printStatus ( 1, routine, "Retrieved " + __tslist.size()
-		+ " time series." );
+	else {	Message.printStatus ( 1, routine, "Retrieved " + __tslist.size() + " time series." );
 	}
 
 	size = getTimeSeriesSize();
@@ -9184,21 +8732,27 @@ throws Exception
 	// Check for fatal errors (for Command classes, only warn if failures since
 	// others are likely not a problem)...
 
-	Message.setPropValue ( "WarningDialogViewLogButton=true" );
+	int ml = 2;	// Message level for cleanup warnings
+	if ( popup_warning_dialog ) {
+		Message.setPropValue ( "WarningDialogViewLogButton=true" );
+		ml = 1;
+	}
 	CommandStatusType max_severity = CommandStatusProviderUtil.getHighestSeverity ( command_Vector );
 	if ( (_fatal_error_count > 0) || (error_count > 0) ||
 			max_severity.greaterThan(CommandStatusType.WARNING)) {
+
 		if ( IOUtil.isBatch() ) {
 			size = _missing_ts.size();
 			if ( size > 0 ) {
-				Message.printWarning ( 1, routine,
-				"The following time series were not found:" );
+				// FIXME SAM 2007-11-06 Put in CheckTimeSeries()...
+				Message.printWarning ( ml, routine,
+					"The following time series were not found:" );
 				for ( int i2 = 0; i2 < size; i2++ ) {
-					Message.printWarning ( 1, routine,
+					Message.printWarning ( ml, routine,
 					"   "+(String)_missing_ts.elementAt(i2));
 				}
 			}
-			Message.printWarning ( 1, routine,
+			Message.printWarning ( ml, routine,
 			"There were warnings or failures processing commands.  " +
 			"The output may be incomplete." );
 			// FIXME SAM 2007-08-20 Need to figure out how to get the
@@ -9206,51 +8760,278 @@ throws Exception
 			// code to exit.
 			//__gui.quitProgram ( 1 );
 		}
-		else {	Message.printWarning ( 1, routine,
+		else {	Message.printWarning ( ml, routine,
 			"There were warnings processing commands.  " +
 			"The output may be incomplete.\n" +
 			"See the log file for information." );
 		}
 	}
 	if ( update_count > 0 ) {
-		Message.printWarning ( 1, routine,
+		Message.printWarning ( ml, routine,
 		"There were warnings printed for obsolete commands.\n" +
 		"See the log file for information.  The output may be " +
 		"incomplete." );
 	}
-	Message.setPropValue ( "WarningDialogViewLogButton=false" );
+	if ( popup_warning_dialog ) {
+		Message.setPropValue ( "WarningDialogViewLogButton=false" );
+	}
 
 	// Clean up...
 	message = null;
-	tsident_string = null;
 	ts = null;
 }
 
 /**
-Process a list of time series to produce an output product.
-This version is typically called only when running in batch mode because the
-legacy settings (like -ostatemod) have been set in a command file.  The
-overloaded version is called with the appropriate arguments.  Currently, only
--ostatemod, -osummary, -osummarynostats, and -o File are evaluated.
-@exception IOException if there is an error generating the results.
+Check for obsolete commands and print an appropriate message.  Handling of warning increments is done in the
+calling code.
+@param command_String Command as string to check.
+@param message_tag Message tag for logging.
+@param i_for_message Command number for messages (1+).
 */
-protected void processTimeSeries ()
-throws IOException
-{	PropList proplist = new PropList ( "processTimeSeries" );
-	if ( _output_format == OUTPUT_STATEMOD ) {
-		proplist.set ( "OutputFormat=-ostatemod" );
-		proplist.set ( "OutputFile=" + _output_file );
+private boolean processCommands_CheckForObsoleteCommands( String command_String, String message_tag, int i_for_message)
+throws Exception
+{	String routine = getClass().getName() + ".processCommands_CheckForObsoleteCommands";
+	// Check for obsolete commands.  Do this at the end
+	// because this logic may seldom be hit if valid commands are
+	// processed above.  Print at level 1 because these messages
+	// need to be addressed.
+	
+	boolean is_obsolete = false;
+	if (command_String.regionMatches(true,0,"-averageperiod",0,14)){
+		Message.printWarning ( 1, routine,
+		"-averageperiod is obsolete.\n" +
+		"Use setAveragePeriod().\n" +
+		"Automatically using setAveragePeriod()." );
+		is_obsolete = true;
+		do_setAveragePeriod ( command_String );
 	}
-	else if ( _output_format == OUTPUT_SUMMARY ) {
-		proplist.set ( "OutputFormat=-osummary" );
-		proplist.set ( "OutputFile=" + _output_file );
+	else if ( command_String.regionMatches(true,0,"-batch",0,6)) {
+		// Old syntax command.  Leave around because this
+		// functionality has never really been implemented but
+		// needs to be (e.g., call TSTool from web site and
+		// tell it to create a plot?).
+		Message.printStatus ( 1, routine,"Running in batch mode." );
+		is_obsolete = true;
+		IOUtil.isBatch ( true );
 	}
-	else if ( _output_format == OUTPUT_SUMMARY_NO_STATS ) {
-		proplist.set ( "OutputFormat=-osummarynostats" );
-		proplist.set ( "OutputFile=" + _output_file );
+	else if ( command_String.regionMatches(true,0,"-binary_day_cutoff",0,18)) {
+		Message.printWarning ( 1, routine,
+		"-binary_day_cutoff is obsolete.\n" +
+		"Use setBinaryTSDayCutoff().\n" +
+		"Automatically using setBinaryTSDayCutoff()." );
+		is_obsolete = true;
+		do_setBinaryTSDayCutoff ( command_String );
 	}
-	processTimeSeries ( null, proplist );
-	proplist = null;
+	else if ( command_String.regionMatches(true,0,"-binary_ts_file",0,20)) {
+		Message.printWarning ( 1, routine,
+		"-binary_ts_file is obsolete.\n" +
+		"Use setBinaryTSFile().\n" +
+		"Automatically using setBinaryTSFile()." );
+		is_obsolete = true;
+		do_setBinaryTSFile ( command_String );
+	}
+	else if ( command_String.equalsIgnoreCase("-cy") ) {
+		Message.printWarning ( 1, routine,
+		"-cy is obsolete.\n" +
+		"Use setOutputYearType().\n" +
+		"Automatically using setOutputYearType()." );
+		is_obsolete = true;
+		do_setOutputYearType ( command_String );
+	}
+	else if(command_String.regionMatches(true,0,"-data_interval",0,14)){
+		Message.printWarning ( 1, routine,
+		"-data_interval is obsolete.\nUse createFromList()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"-datasource",0,11)) {
+		// Handled by HBParse.  Ignore here.  The data source
+		// name is in the same arg so don't need to increment.
+	}
+	else if(command_String.regionMatches(true,0,"-data_type",0,10)){
+		Message.printWarning ( 1, routine,
+		"-data_type is obsolete.\nUse createFromList()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(
+		true,0,"-detailedheader",0,15) ) {
+		Message.printWarning ( 1, routine,
+		"-detailedheader is obsolete.\n" +
+		"Use setOutputDetailedHeaders().\n" +
+		"Automatically using setOutputDetailedHeaders()." );
+		is_obsolete = true;
+		do_setOutputDetailedHeaders ( command_String );
+	}
+	else if ( command_String.regionMatches(true,0,"-d",0,2) ) {
+		is_obsolete = true;
+		do_setDebugLevel ( command_String );
+	}
+	else if ( command_String.regionMatches(true,0,"fillconst(",0,10) ) {
+		is_obsolete = true;
+		String message ="fillconst() is obsolete.  Use fillConstant().";
+		Message.printWarning ( 1,
+		//MessageUtil.formatMessageTag(command_tag,
+		//++error_count),
+		routine, message );
+	}
+	else if ( command_String.regionMatches(	true,0,"-filldata",0,9) ) {
+		Message.printWarning ( 1, routine,
+		"-filldata is obsolete.\n" +
+		"Use setPatternFile().\n" +
+		"Automatically using setPatternFile()." );
+		is_obsolete = true;
+		do_setPatternFile ( command_String );
+	}
+	else if ( command_String.regionMatches(true,0,"-fillhistave",0,12)){
+		Message.printWarning ( 1, routine,
+		"-fillhistave is obsolete.\n" +
+		"Use fillHistMonthAverage() or " +
+		"fillHistYearAverage().\n" +
+		"Automatically using appropriate new command." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches( true,0,"fillpattern_setconstbefore",0,26)){
+		Message.printWarning ( 1, routine,
+		"fillpattern_setconstbefore() is obsolete.  " +
+		"Use fillpattern() and setConstant()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"-fillUsingComments",0,18)){
+		Message.printWarning ( 1, routine,
+		"-fillUsingComments is obsolete.\n" +
+		"Use fillUsingDiversionComments().");
+		is_obsolete = true;
+	}
+	else if(command_String.regionMatches(true,0,"-ignorelezero",0,13) ){
+		Message.printWarning ( 1, routine,
+		"-ignorelezero is obsolete.\n" +
+		"Use setIgnoreLEZero().\n" +
+		"Automatically using setIgnoreLEZero()." );
+		is_obsolete = true;
+		do_setIgnoreLEZero ( command_String );
+	}
+	else if ( command_String.regionMatches(true,0,"-include_missing_ts",0,19)) {
+		Message.printWarning ( 1, routine,
+		"-include_missing_ts is obsolete.\n" +
+		"Use setIncludeMissingTS().  Automatically using\n" +
+		"setIncludeMissingTS(true)" );
+		is_obsolete = true;
+		do_setIncludeMissingTS ( command_String );
+	}
+	else if ( command_String.regionMatches( true,0,"-missing",0,8) ) {
+		Message.printWarning ( 1, routine,
+		"-missing is obsolete.\n" +
+		"Use setMissingDataValue().\n" +
+		"Automatically using setMissingDataValue()." );
+		is_obsolete = true;
+		do_setMissingDataValue ( command_String );
+	}
+	else if ( command_String.regionMatches( true,0,"-ostatemod",0,10) ){
+		Message.printWarning ( 1, routine,
+		"-ostatemod is obsolete.\nUse writeStateMod()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches( true,0,"-osummary",0,9) ){
+		Message.printStatus ( 1, routine,
+			"\"-osummary\" is obsolete.\n" +
+			"Use writeSummary() or other output commands." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"-osummarynostats",0,16) ){
+		Message.printStatus ( 1, routine,
+			"\"-osummarynostats\" is obsolete.\n" +
+			"Use writeSummary() or other output commands." );
+		is_obsolete = true;
+	}
+	// Put this after all the other -o options...
+	else if ( command_String.regionMatches( true,0,"-o",0,2) ){
+		// Output in StateMod format...
+		Message.printWarning ( 1, routine,
+		"\"-o File\" is obsolete.\n" +
+		"Use writeStateMod() or other output commands." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"regress",0,7) ) {
+		Message.printWarning ( 1, routine,
+		"regress() is obsolete.  Use fillRegression()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"setconst(",0,9) ) {
+		is_obsolete = true;
+		String message = "setconst() is obsolete.  Use setConstant().";
+		Message.printWarning ( 1, routine, message );
+	}
+	else if(command_String.regionMatches(true,0,"setconstbefore",0,14)){
+		Message.printWarning ( 1, routine, "setconstbefore() " +
+		"is obsolete.  Use setConstant()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"setDatabaseEngine", 0,17) ) {
+		Message.printWarning ( 1, routine,
+		"setDatabaseEngine is obsolete.\nUse openHydroBase().");
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"setDatabaseHost", 0,15) ) {
+		Message.printWarning ( 1, routine,
+		"setDatabaseHost is obsolete.\nUse openHydroBase()." );
+		is_obsolete = true;
+	}
+	else if (command_String.regionMatches(true,0,"setDataSource",0,13)){
+		Message.printWarning ( 1, routine,
+		"setDataSource is obsolete.\nUse openHydroBase()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"setUseDiversionComments", 0,23) ) {
+		Message.printWarning ( 1, routine,
+		"setUseDiversionComments() is obsolete.\n" +
+		"Use fillUsingDiversionComments()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"-slist",0,6) ) {
+		Message.printWarning ( 1, routine,
+		"-slist is obsolete.\nUse createFromList()." );
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"-units",0,6) ) {
+		Message.printWarning ( 1, routine,
+				"-units is obsolete.\n" +
+				"Other commands now handle units." );
+		is_obsolete = true;
+	}
+	else if ( command_String.equalsIgnoreCase("-wy") ) {
+		Message.printWarning ( 1, routine,
+		"-wy is obsolete.\n" +
+		"Use setOutputYearType().\n" +
+		"Automatically using setOutputYearType()." );
+		is_obsolete = true;
+		do_setOutputYearType ( command_String );
+	}
+	// Put after -wy...
+	else if ( command_String.regionMatches(true,0,"-w",0,2) ) {
+		do_setWarningLevel ( command_String );
+		Message.printWarning ( 1, routine,
+			"-w is obsolete.\n" +
+			"Use setWarningLevel() instead.");
+		is_obsolete = true;
+	}
+	else if ( command_String.regionMatches(true,0,"setRegressionPeriod",0,19) ) {
+		// Set the regression period - this is no longer needed.
+		Message.printWarning ( 1, routine,
+		"setRegressionPeriod() is used for " +
+		"backward-compatibility).\n" +
+		"Set dates in fillRegression() instead.  Ignoring.");
+		is_obsolete = true;
+	}
+	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String,
+		" \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
+		// Old-style date...
+		Message.printWarning ( 1, routine, "Setting output " +
+		"period with MM/YYYY MM/YYYY is obsolete.\n" +
+		"Use setOutputPeriod().\n" +
+		"Automatically using setOutputPeriod()." );
+		is_obsolete = true;
+		do_setOutputPeriod ( command_String );
+	}
+	return is_obsolete;
 }
 
 /**
@@ -10271,26 +10052,32 @@ throws Exception
 
 /**
 Get a time series from the database/file using current date and units settings.
+@param wl Warning level if the time series is not found.  Typically this will be 1 if
+mimicing the old processing, and 2+ during transition to the new command status
+approach.
 @param tsident_string Time series identifier.
 @return the time series.
 @exception Exception if there is an error reading the time series.
 */
-protected TS readTimeSeries ( String command_tag, String tsident_string )
+protected TS readTimeSeries ( int wl, String command_tag, String tsident_string )
 throws Exception
-{	return readTimeSeries ( command_tag, tsident_string, false );
+{	return readTimeSeries ( wl, command_tag, tsident_string, false );
 }
 
 /**
 Get a time series from the database/file using current date and units settings.
+@param wl Warning level if the time series is not found.  Typically this will be 1 if
+mimicing the old processing, and 2+ during transition to the new command status
+approach.
 @param tsident_string Time series identifier.
 @param full_period Indicates whether the full period should be queried.
 @return the time series.
 @exception Exception if there is an error reading the time series.
 */
-protected TS readTimeSeries ( String command_tag, String tsident_string,
+protected TS readTimeSeries ( int wl, String command_tag, String tsident_string,
 				boolean full_period )
 throws Exception
-{	return readTimeSeries (command_tag, tsident_string, full_period, false);
+{	return readTimeSeries ( wl, command_tag, tsident_string, full_period, false);
 }
 
 /**
@@ -10309,6 +10096,9 @@ periods:
 	period is within the returned data, the period is not changed (it is not
 	shortened).</li>
 </ol>
+@param wl Warning level if the time series is not found.  Typically this will be 1 if
+mimicing the old processing, and 2+ during transition to the new command status
+approach.
 @param tsident_string Time series identifier for time series.
 @param full_period If true, indicates that the full period is to be queried.
 If false, the output period will be queried.
@@ -10317,13 +10107,13 @@ If false, return a zero-filled time series.
 SAMX - need to phase out "full_period".
 @exception Exception if there is an error reading the time series.
 */
-private TS readTimeSeries (	String command_tag, String tsident_string,
-				boolean full_period,
-				boolean ignore_errors )
+private TS readTimeSeries (	int wl, String command_tag, String tsident_string,
+		boolean full_period,
+		boolean ignore_errors )
 throws Exception
 {	TS	ts = null;
 	String	routine = "TSEngine.readTimeSeries";
-
+	
 	// Figure out what dates to use for the query...
 
 	DateTime query_date1 = null;	// Default is to query all data
@@ -10374,16 +10164,18 @@ throws Exception
 		}
 		else {	// Not able to query the time series and we are not
 			// supposed to create empty time series...
-			Message.printWarning ( 1,
+			String message = 
+				"Null TS from read and not creating blank - unable to" +
+				" process command:\n\""+ tsident_string +"\".\n" +
+				"You must correct the command.  " +
+				"Make sure that the data are in "+
+				"the database or\ninput file" +
+				" or use time series creation commands.";
+			Message.printWarning ( wl,
 			MessageUtil.formatMessageTag(command_tag,
-			++_fatal_error_count), routine,
-			"Null TS from read and not creating blank - unable to" +
-			" process command:\n\""+ tsident_string +"\".\n" +
-			"You must correct the command.  " +
-			"Make sure that the data are in "+
-			"the database or\ninput file" +
-			" or use time series creation commands." );
+			++_fatal_error_count), routine, message );
 			_missing_ts.addElement(tsident_string);
+			throw new TimeSeriesNotFoundException ( message );
 		}
 	}
 	else {	if ( Message.isDebugOn ) {
@@ -11483,9 +11275,9 @@ throws Exception
 	// and open the BinaryTS file if necessary...
 
 	if (	(((ts.getDataIntervalBase() == TimeInterval.MONTH) &&
-		(_num_TS_expressions > _binary_month_cutoff)) || 
+		(__num_TS_expressions > _binary_month_cutoff)) || 
 		((ts.getDataIntervalBase() == TimeInterval.DAY) &&
-		(_num_TS_expressions > _binary_day_cutoff))) &&
+		(__num_TS_expressions > _binary_day_cutoff))) &&
 		(getTimeSeriesSize() == 0) ) {
 		//
 		// Need to use the binary TS file...
@@ -11518,11 +11310,11 @@ throws Exception
 			}
 			Message.printStatus ( 1, routine,
 				"Creating BinaryTS file \"" + _binary_ts_file +
-				"\" to hold " + _num_TS_expressions +
+				"\" to hold " + __num_TS_expressions +
 				" time series for " + date1.toString() + " to "+
 				date2.toString() );
 			_binary_ts = new BinaryTS (
-					_binary_ts_file, _num_TS_expressions,
+					_binary_ts_file, __num_TS_expressions,
 					ts.getDataIntervalBase(),
 					ts.getDataIntervalMult(),
 					date1, date2, "rw", true );
@@ -11538,7 +11330,7 @@ throws Exception
 	}
 	else if ( getTimeSeriesSize() == 0 ) {
 		Message.printStatus ( 1, routine, "Time series will be held " +
-		"in memory for output (estimating " + _num_TS_expressions +
+		"in memory for output (estimating " + __num_TS_expressions +
 		" time series)." );
 	}
 

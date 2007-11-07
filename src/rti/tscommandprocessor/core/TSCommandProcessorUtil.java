@@ -144,6 +144,29 @@ public static CommandStatusType getCommandStatusMaxSeverity ( TSCommandProcessor
 }
 
 /**
+Determine whether commands should create output by checking the CreateOutput parameter.
+This is a processor level property.  If there is a problem, return true (create output).
+@param processor the CommandProcessor to use to get data.
+@return true if output should be created when processing commands, false if not.
+*/
+public static boolean getCreateOutput ( CommandProcessor processor )
+{	String routine = "TSCommandProcessorUtil.getCreateOutput";
+	try {
+		Object o = processor.getPropContents ( "CreateOutput" );
+		if ( o != null ) {
+			return ((Boolean)o).booleanValue();
+		}
+	}
+	catch ( Exception e ) {
+		// Not fatal, but of use to developers.
+		String message = "Error requesting CreateOutput from processor - will create output.";
+		Message.printWarning(3, routine, message );
+		Message.printWarning(3, routine, e );
+	}
+	return true;
+}
+
+/**
 Get a list of identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted and does NOT contain the
 input type or name.
@@ -275,13 +298,33 @@ public static Vector getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommand
 }
 
 /**
+Get the current working directory for the processor.
+@param processor the CommandProcessor to use to get data.
+@return The working directory in effect for a command.
+*/
+public static String getWorkingDir ( CommandProcessor processor )
+{	String routine = "TSCommandProcessorUtil.getWorkingDir";
+	try {	Object o = processor.getPropContents ( "WorkingDir" );
+		if ( o != null ) {
+			return (String)o;
+		}
+	}
+	catch ( Exception e ) {
+		// Not fatal, but of use to developers.
+		String message = "Error requesting WorkingDir from processor.";
+		Message.printWarning(3, routine, message );
+	}
+	return null;
+}
+
+/**
 Get the working directory for a command (e.g., for editing).
-@param processor the TSCommandProcessor to use to get data.
+@param processor the CommandProcessor to use to get data.
 @param command Command for which to get the working directory.
 @return The working directory in effect for a command.
 */
 public static String getWorkingDirForCommand ( CommandProcessor processor, Command command )
-{	String routine = "TSTool_JFrame.commandProcessor_GetWorkingDirForCommand";
+{	String routine = "TSCommandProcessorUtil.commandProcessor_GetWorkingDirForCommand";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "Command", command );
 	CommandProcessorRequestResultsBean bean = null;

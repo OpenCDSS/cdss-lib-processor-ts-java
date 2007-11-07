@@ -1,24 +1,4 @@
-//------------------------------------------------------------------------------
-// writeRiverWare_Command - handle the writeRiverWare() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-31	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					sortTimeSeries().
-// 2005-06-01	SAM, RTi		Add Precision parameter.
-// 2005-08-30	SAM, RTi		Check for CreateOutput property in the
-//					processor when running.
-// 2005-05-24	SAM, RTi		Check for OutputStart and OutputEnd
-//					when running - was not recognizing the
-//					global output period.
-// 2007-02-11	SAM, RTi		Remove direct dependency on TSCommandProcessor.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
-package rti.tscommandprocessor.commands.riverware;
+package rti.tscommandprocessor.commands.datevalue;
 
 import java.io.File;
 import java.util.List;
@@ -28,9 +8,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-// FIXME SAM 2007-08-30 Need to move RiverWare to its own DAO package
-import RTi.TS.RiverWareTS;
-import RTi.TS.TS;
+import RTi.TS.DateValueTS;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -55,13 +33,11 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the writeRiverWare() command.
+This class initializes, checks, and runs the WriteDateValue() command.
 </p>
-<p>The CommandProcessor must return the following properties:  CreateOutput,
-TSResultsList, WorkingDir.
 </p>
 */
-public class writeRiverWare_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteDateValue_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -69,7 +45,7 @@ Protected data members shared with the dialog and other related classes.
 */
 protected final String _AllTS = "AllTS";
 protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
+//protected final String _AllMatchingTSID = "AllMatchingTSID";
 
 /**
 Output file that is created by this command.
@@ -79,9 +55,9 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public writeRiverWare_Command ()
+public WriteDateValue_Command ()
 {	super();
-	setCommandName ( "writeRiverWare" );
+	setCommandName ( "WriteDateValue" );
 }
 
 /**
@@ -93,23 +69,19 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
-	//String Units = parameters.getValue ( "Units" );
-	String Scale = parameters.getValue ( "Scale" );
-	//String SetUnits = parameters.getValue ( "SetUnits" );
-	String SetScale = parameters.getValue ( "SetScale" );
-	String Precision = parameters.getValue ( "Precision" );
+	String OutputStart = parameters.getValue ( "OutputStart" );
+	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
+	String message;
 
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	String message;
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		message = "The output file: \"" + OutputFile + "\" must be specified.";
 		warning += "\n" + message;
@@ -136,94 +108,73 @@ throws InvalidCommandParameterException
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
 				message = "The output file parent directory does " +
-					"not exist: \"" + adjusted_path + "\".";
+				"not exist: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Create output directory." ) );
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Create output directory." ) );
 			}
 			f = null;
 			f2 = null;
 		}
 		catch ( Exception e ) {
 			message = "The output file:\n" +
-				"    \"" + OutputFile +
-				"\"\ncannot be adjusted using the working directory:\n" +
-				"    \"" + working_dir + "\".";
+			"    \"" + OutputFile +
+			"\"\ncannot be adjusted using the working directory:\n" +
+			"    \"" + working_dir + "\".";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify that output file and working directory paths are compatible." ) );
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
 
-	/* TODO SAM 2005-05-31 Might need to check units against global
-	list - right now units are not universally choosable.
-	if ( (Units != null) && !Units.equals("") ) {
-	}
-	*/
-	if ( (Scale != null) && !Scale.equals("") ) {
-		if ( !StringUtil.isDouble(Scale) ) {
-			message = "The scale: \"" + Scale + "\" is not a number.";
+	if ( (OutputStart != null) && !OutputStart.equals("")) {
+		try {	DateTime datetime1 = DateTime.parse(OutputStart);
+			if ( datetime1 == null ) {
+				throw new Exception ("bad date");
+			}
+		}
+		catch (Exception e) {
+			message = "Output start date/time \"" + OutputStart + "\" is not a valid date/time.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a number > 0 for the scale." ) );
+							message, "Specify a valid output start date/time." ) );
+		}
+	}
+	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
+		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
+			if ( datetime2 == null ) {
+				throw new Exception ("bad date");
+			}
+		}
+		catch (Exception e) {
+			message = "Output end date/time \"" + OutputEnd + "\" is not a valid date/time.";
+			warning += "\n" + message;
+				status.addToLog ( CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify a valid output end date/time." ) );
+		}
+	}
 
-		}
-		else if ( StringUtil.atod(Scale) <= 0 ) {
-			message = "The scale: \"" + Scale +	"\" must be > 0.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a scale > 0." ) );
-			
-		}
-	}
-	/* TODO SAM 2005-05-31 Might need to check units against global
-	list - right now units are not universally choosable.
-	if ( (SetUnits != null) && !SetUnits.equals("") ) {
-	}
-	*/
-	if ( (SetScale != null) && !SetScale.equals("") ) {
-		if ( !StringUtil.isDouble(SetScale) ) {
-			message = "The set_scale: \"" + SetScale + "\" is not a number.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a set scale as a number > 0." ) );
-		}
-		else if ( StringUtil.atod(SetScale) <= 0 ) {
-			message = "The set_scale: \"" + SetScale + "\" must be > 0.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a set scale > 0." ) );
-		}
-	}
-	if ( (Precision != null) && !Precision.equals("") ) {
-		if ( !StringUtil.isInteger(Precision) ) {
-			message = "The precision: \"" + Precision +	"\" is not an integer.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify the precision as an integer." ) );
-		}
-		else if ( StringUtil.atoi(Precision) < 0 ) {
-			message = "The precision: \"" + Precision + "\" must be >= 0.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a precision >= 0." ) );
-		}
-	}
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level), routine,
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), routine, warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+Edit the command.
+@param parent The parent JFrame to which the command dialog will belong.
+@return true if the command was edited (e.g., "OK" was pressed), and false if
+not (e.g., "Cancel" was pressed.
+*/
+public boolean editCommand ( JFrame parent )
+{	// The command will be modified if changed...
+	return (new WriteDateValue_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -247,17 +198,6 @@ private File getOutputFile ()
 }
 
 /**
-Edit the command.
-@param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed.
-*/
-public boolean editCommand ( JFrame parent )
-{	// The command will be modified if changed...
-	return (new writeRiverWare_JDialog ( parent, this )).ok();
-}
-
-/**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
@@ -268,32 +208,21 @@ parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "writeRiverWare_Command.parseCommand", message;
+{	String routine = "WriteDateValue_Command.parseCommand", message;
 	int warning_level = 2;
 	if ( command_string.indexOf("=") > 0 ) {
 		// New syntax...
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,
-			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
-		if ( tokens.size() != 6 ) {
+		Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+		if ( tokens.size() != 2 ) {
 			message =
-			"Invalid syntax for command.  Expecting 5 parameters.";
+			"Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
 		String OutputFile = ((String)tokens.elementAt(1)).trim();
-		String Units = ((String)tokens.elementAt(2)).trim();
-		if ( Units.equals("*") ) {
-			Units = "";
-		}
-		String Scale = ((String)tokens.elementAt(3)).trim();
-		String SetUnits = ((String)tokens.elementAt(4)).trim();
-		if ( SetUnits.equals("*") ) {
-			SetUnits = "";
-		}
-		String SetScale = ((String)tokens.elementAt(5)).trim();
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
 		PropList parameters = new PropList ( getCommandName() );
@@ -301,18 +230,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.set ( "TSList", TSList );
 		if ( OutputFile.length() > 0 ) {
 			parameters.set ( "OutputFile", OutputFile );
-		}
-		if ( Units.length() > 0 ) {
-			parameters.set("Units", Units);
-		}
-		if ( Scale.length() > 0 ) {
-			parameters.set ( "Scale", Scale );
-		}
-		if ( SetUnits.length() > 0 ) {
-			parameters.set ( "SetUnits", SetUnits );
-		}
-		if ( SetScale.length() > 0 ) {
-			parameters.set ( "SetScale", SetScale );
 		}
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
@@ -330,7 +247,7 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "writeRiverWare_Command.runCommand", message;
+{	String routine = "WriteDateValue_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -338,7 +255,7 @@ CommandWarningException, CommandException
 	// Clear the output file
 	
 	setOutputFile ( null );
-
+	
 	// Check whether the processor wants output files to be created...
 
 	CommandProcessor processor = getCommandProcessor();
@@ -347,8 +264,13 @@ CommandWarningException, CommandException
 			"Skipping \"" + toString() + "\" because output is not being created." );
 	}
 
+	// Check whether the processor wants output files to be created...
+
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
+	if ( TSList == null ) {
+		TSList = _AllTS;
+	}
 	String TSID = parameters.getValue ( "TSID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
@@ -358,9 +280,6 @@ CommandWarningException, CommandException
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
-	if ( TSList == null ) {
-		TSList = _AllTS;
-	}
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
@@ -399,7 +318,6 @@ CommandWarningException, CommandException
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
 
-	// TODO SAM 2007-02-12 Need to enable OutputStart, OutputEnd in command
 	String OutputStart = null;
 	DateTime OutputStart_DateTime = null;
 	if ( OutputStart != null ) {
@@ -489,40 +407,29 @@ CommandWarningException, CommandException
 		}
 	}
 
-	if ( warning_count > 0 ) {
-		message = "Error preparing data to write RiverWare file.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
-		throw new CommandException ( message );
-	}
-
 	// Now try to write...
 
 	try {
 		// Convert to an absolute path...
 		String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
-		Message.printStatus ( 2, routine, "Writing RiverWare file \"" + OutputFile_full + "\"" );
-		// Only write the first time series...
-		TS tsout = (TS)tslist.elementAt(0);
-		// Don't pass units to below...
-		RiverWareTS.writeTimeSeries ( tsout, OutputFile_full,
-			OutputStart_DateTime,
-			OutputEnd_DateTime, parameters, true );
+		Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
+		DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
+				OutputStart_DateTime, OutputEnd_DateTime, "", true );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-		message = "Error writing time series to RiverWare file.";
+		message = "Error writing time series to DateValue file.";
 		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
+		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "See log file for details." ) );
+						message, "Check log file for details." ) );
 		throw new CommandException ( message );
 	}
+	
+	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -541,23 +448,13 @@ public String toString ( PropList parameters )
 {	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
-	String TSList = parameters.getValue("TSList");
-	String TSID = parameters.getValue("TSID");
-	String OutputFile = parameters.getValue("OutputFile");
-	String Units = parameters.getValue("Units");
-	String Scale = parameters.getValue("Scale");
-	String SetUnits = parameters.getValue("SetUnits");
-	String SetScale = parameters.getValue("SetScale");
-	String Precision = parameters.getValue("Precision");
+	String OutputFile = parameters.getValue ( "OutputFile" );
+	String OutputStart = parameters.getValue ( "OutputStart" );
+	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String TSList = parameters.getValue ( "TSList" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
-	}
-	if ( (TSID != null) && (TSID.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSID=\"" + TSID + "\"" );
 	}
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -565,35 +462,23 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
-	if ( (Units != null) && (Units.length() > 0) ) {
+	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Units=\"" + Units + "\"" );
+		b.append ( "OutputStart=\"" + OutputStart + "\"" );
 	}
-	if ( (Scale != null) && (Scale.length() > 0) ) {
+	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Scale=" + Scale );
+		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
-	if ( (SetUnits != null) && (SetUnits.length() > 0) ) {
+	if ( (TSList != null) && (TSList.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "SetUnits=\"" + SetUnits + "\"" );
-	}
-	if ( (SetScale != null) && (SetScale.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SetScale=" + SetScale );
-	}
-	if ( (Precision != null) && (Precision.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Precision=" + Precision );
+		b.append ( "TSList=\"" + TSList + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -19,16 +19,13 @@
 
 package rti.tscommandprocessor.commands.ts;
 
-import javax.swing.JFrame;
-
 import java.util.Vector;
 
-import RTi.TS.TS;
-import RTi.TS.MonthTSLimits;
-import RTi.TS.TSUtil;
+import javax.swing.JFrame;
 
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
+import RTi.TS.MonthTSLimits;
+import RTi.TS.TS;
+import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -39,6 +36,8 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;

@@ -3,16 +3,11 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/NWSRFS_DMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Util"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/TS"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/DMI"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/HydroBaseDMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/GRTS"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/RiversideDB_DMI"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SatmonSysDMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/StateCU"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/DataTest"/>
 	<classpathentry kind="lib" path="externals/abbot.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/RTi_COMMON"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

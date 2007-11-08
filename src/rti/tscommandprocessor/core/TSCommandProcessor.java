@@ -30,6 +30,7 @@
 
 package rti.tscommandprocessor.core;
 
+import java.awt.event.WindowListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -37,39 +38,28 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Vector;
 
-import java.awt.event.WindowListener;	// To know when graph closes to close app
-
-// RTi utility code.
-
+import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
+import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
+import RTi.TS.TS;
+import RTi.TS.TSIdent;
+import RTi.TS.TSLimits;
+import RTi.TS.TSSupplier;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandListListener;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorListener;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.GenericCommand;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.Message.Message;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.RequestParameterInvalidException;
 import RTi.Util.IO.RequestParameterNotFoundException;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
+import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
-
-import RTi.TS.TS;
-import RTi.TS.TSIdent;
-import RTi.TS.TSLimits;
-import RTi.TS.TSSupplier;
-
-// HydroBase commands.
-
-import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-
-// NWSRFS_DMI commands.
-
-import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 
 // TS general commands.
 

@@ -2,6 +2,7 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.util.Vector;
+
 import javax.swing.JFrame;
 
 import RTi.Util.IO.AbstractCommand;

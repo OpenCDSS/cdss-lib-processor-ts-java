@@ -23,17 +23,19 @@
 
 package rti.tscommandprocessor.commands.hydrobase;
 
-import javax.swing.JFrame;
-
 import java.util.Vector;
 
+import javax.swing.JFrame;
+
+import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
+import DWR.DMI.HydroBaseDMI.HydroBase_Structure;
+import DWR.DMI.HydroBaseDMI.HydroBase_Util;
+import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
-
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
@@ -43,14 +45,10 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.AbstractCommand;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-
-import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-import DWR.DMI.HydroBaseDMI.HydroBase_Structure;
-import DWR.DMI.HydroBaseDMI.HydroBase_Util;
-import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 
 /**
 <p>

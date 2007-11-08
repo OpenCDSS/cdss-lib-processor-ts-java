@@ -14,21 +14,21 @@
 // ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
-import java.io.PrintWriter;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.Vector;
 
-import RTi.Util.Math.MathUtil;
-import RTi.Util.IO.PropList;
+import RTi.TS.TS;
 import RTi.TS.TSRegression;
+import RTi.TS.TSUtil;
+import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.PropList;
+import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeUtil;
-import RTi.TS.TS;
-import RTi.TS.TSUtil;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.Time.StopWatch;
+import RTi.Util.Time.TimeUtil;
 
 /**
 This class executes the Mixed Station Analysis computing a series of

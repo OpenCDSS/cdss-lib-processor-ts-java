@@ -65,9 +65,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
-import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
 import RTi.TS.TSIdent;
+
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -76,6 +75,9 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+
+import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
+import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
 
 /**
 The readHydroBase_JDialog edits the readHydroBase() and

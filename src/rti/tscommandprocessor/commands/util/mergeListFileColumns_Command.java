@@ -14,23 +14,23 @@
 
 package rti.tscommandprocessor.commands.util;
 
+import javax.swing.JFrame;
+
 import java.io.File;
 import java.util.Vector;
 
-import javax.swing.JFrame;
-
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;

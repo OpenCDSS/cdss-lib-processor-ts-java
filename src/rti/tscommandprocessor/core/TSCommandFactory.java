@@ -52,23 +52,58 @@ package rti.tscommandprocessor.core;
 //import RTi.DataServices.Adapter.NDFD.openNDFD_Command;
 //import RTi.DataServices.Adapter.NDFD.readNDFD_Command;
 
+import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandFactory;
+import RTi.Util.IO.GenericCommand;
+import RTi.Util.IO.UnknownCommandException;
+
+import RTi.Util.String.StringUtil;
+
+// DataTest commands
+// FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
+
 import rti.tscommandprocessor.commands.datatest.newDataTest_Command;
 import rti.tscommandprocessor.commands.datatest.runDataTest_Command;
+
+// DateValue commands
+
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
+
+// GRTS commands (time series products).
+
+import rti.tscommandprocessor.commands.products.processTSProduct_Command;
+
+// HydroBase commands.
+
 import rti.tscommandprocessor.commands.hydrobase.fillUsingDiversionComments_Command;
 import rti.tscommandprocessor.commands.hydrobase.openHydroBase_Command;
 import rti.tscommandprocessor.commands.hydrobase.readHydroBase_Command;
+
+// Logging commands.
+
 import rti.tscommandprocessor.commands.logging.startLog_Command;
+
+// NWSRFS commands.
+
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Command;
-import rti.tscommandprocessor.commands.products.processTSProduct_Command;
+
+// RiverWare commands
+
 import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
+
+// StateCU commands.
+
 import rti.tscommandprocessor.commands.statecu.readStateCU_Command;
-import rti.tscommandprocessor.commands.statemod.readStateModB_Command;
-import rti.tscommandprocessor.commands.statemod.readStateMod_Command;
+
+// StateMod commands.
+
 import rti.tscommandprocessor.commands.statemod.writeStateMod_Command;
-import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
-import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
+import rti.tscommandprocessor.commands.statemod.readStateMod_Command;
+import rti.tscommandprocessor.commands.statemod.readStateModB_Command;
+
+// General time series commands.
+ 
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
@@ -77,25 +112,25 @@ import rti.tscommandprocessor.commands.ts.cumulate_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
-import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
+import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
+import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
+import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.setInputPeriod_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
-import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
+
+// Utility commands.
+
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
+import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
-import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandFactory;
-import RTi.Util.IO.GenericCommand;
-import RTi.Util.IO.UnknownCommandException;
-import RTi.Util.String.StringUtil;
 
 /**
 This class instantiates Commands for time series processing.

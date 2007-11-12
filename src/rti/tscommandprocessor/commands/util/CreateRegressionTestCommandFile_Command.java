@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Vector;
-
 import javax.swing.JFrame;
 
 import RTi.Util.IO.AbstractCommand;
@@ -13,12 +12,12 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
-import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;

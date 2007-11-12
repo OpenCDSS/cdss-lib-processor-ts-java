@@ -46,6 +46,7 @@ import javax.swing.JFrame;
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
+
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -57,6 +58,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;

@@ -18,6 +18,10 @@ import javax.swing.JFrame;
 
 import RTi.DataTest.Action;
 import RTi.DataTest.DataTest;
+
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
+
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -27,9 +31,9 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
+
 import RTi.Util.String.StringUtil;
+
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;

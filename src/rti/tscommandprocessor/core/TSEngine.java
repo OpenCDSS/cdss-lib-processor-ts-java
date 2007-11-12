@@ -644,28 +644,49 @@ package rti.tscommandprocessor.core;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.lang.String;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Hashtable;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
+// Code that will be used when service code is fully implemented...
+//import rti.common.transfer.TSIdentityTO;
+//import rti.common.transfer.TSRequestTO;
+//import rti.common.type.PersistenceType;
+//import rti.domain.timeseries.TimeSeries;
+//import rti.domain.timeseries.TimeSeriesFabricator;
+//import rti.transfer.TimeSeriesIdBean;
+//import rti.type.TimeSeriesInputType;
+
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
+
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
+
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
 import DWR.StateCU.StateCU_TS;
-import DWR.StateMod.StateMod_BTS;
+
 import DWR.StateMod.StateMod_TS;
+import DWR.StateMod.StateMod_BTS;
+
+//import RTi.DataServices.Adapter.NDFD.Adapter;
 import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
-import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
+import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
+
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
+
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
 import RTi.GRTS.TSViewJFrame;
+
 import RTi.TS.BinaryTS;
 import RTi.TS.DateValueTS;
 import RTi.TS.DayTS;
@@ -684,6 +705,7 @@ import RTi.TS.TSSupplier;
 import RTi.TS.TSUtil;
 import RTi.TS.UsgsNwisTS;
 import RTi.TS.YearTS;
+
 import RTi.Util.GUI.ReportJFrame;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -692,8 +714,8 @@ import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusProviderUtil;
-import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.DataFormat;
 import RTi.Util.IO.DataUnits;
@@ -702,6 +724,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageJDialog;

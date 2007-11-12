@@ -35,11 +35,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.util.Vector;
 
+import java.io.FileReader;
+import java.io.BufferedReader;
+
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -50,26 +53,25 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-import RTi.TS.TS;
+
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.ReportJFrame;
-import RTi.Util.GUI.SimpleFileFilter;
-import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.GUI.SimpleJList;
 import RTi.Util.GUI.SimpleJMenuItem;
+import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleFileFilter;
+import RTi.Util.GUI.SimpleJList;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
+import RTi.TS.TS;
 
 public class fillMixedStation_JDialog extends JDialog
 	implements ActionListener,

@@ -28,28 +28,30 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import DWR.StateMod.StateMod_TS;
-import RTi.TS.StringMonthTS;
-import RTi.TS.TS;
-import RTi.TS.TSIdent;
+
 import RTi.TS.TSLimits;
-import RTi.TS.TSUtil;
+
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.Math.MathUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.TS.TSIdent;
+import RTi.TS.StringMonthTS;
+import RTi.TS.TS;
+import RTi.TS.TSUtil;
 
 public class analyzePattern_Command extends AbstractCommand
 	implements Command

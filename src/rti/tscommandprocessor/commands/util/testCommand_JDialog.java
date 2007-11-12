@@ -1,15 +1,16 @@
 package rti.tscommandprocessor.commands.util;
 
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -24,8 +25,10 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.String.StringUtil;
 
 /**
 Editor dialog for the testCommand() command.

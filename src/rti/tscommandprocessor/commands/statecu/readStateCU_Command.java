@@ -18,12 +18,12 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
-import DWR.StateCU.StateCU_CropPatternTS;
-import DWR.StateCU.StateCU_IrrigationPracticeTS;
-import DWR.StateCU.StateCU_TS;
 import RTi.TS.TS;
 import RTi.TS.YearTS;
+
 import RTi.Util.IO.AbstractCommand;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -33,14 +33,16 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+
+import DWR.StateCU.StateCU_CropPatternTS;
+import DWR.StateCU.StateCU_IrrigationPracticeTS;
+import DWR.StateCU.StateCU_TS;
 
 /**
 <p>

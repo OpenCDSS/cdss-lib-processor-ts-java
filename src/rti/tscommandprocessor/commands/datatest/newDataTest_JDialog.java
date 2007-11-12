@@ -23,8 +23,12 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
+
 import RTi.Util.IO.Command;
 
 /**

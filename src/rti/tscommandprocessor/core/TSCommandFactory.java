@@ -102,6 +102,15 @@ import rti.tscommandprocessor.commands.statemod.writeStateMod_Command;
 import rti.tscommandprocessor.commands.statemod.readStateMod_Command;
 import rti.tscommandprocessor.commands.statemod.readStateModB_Command;
 
+// Summary commands.
+
+import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
+
+// Time-related commands.
+
+import rti.tscommandprocessor.commands.time.SetInputPeriod_Command;
+import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
+
 // General time series commands.
  
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
@@ -121,7 +130,6 @@ import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
-import rti.tscommandprocessor.commands.ts.setInputPeriod_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 // Utility commands.
@@ -131,6 +139,7 @@ import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Comm
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
+import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 
 /**
 This class instantiates Commands for time series processing.
@@ -334,11 +343,14 @@ throws UnknownCommandException
 		return new scale_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"setInputPeriod") ) {
-		return new setInputPeriod_Command ();
+		return new SetInputPeriod_Command ();
+	}
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputPeriod") ) {
+		return new SetOutputPeriod_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"setQueryPeriod") ) {
 		// Phasing into new syntax...
-		return new setInputPeriod_Command ();
+		return new SetInputPeriod_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"sortTimeSeries") ) {
 		return new sortTimeSeries_Command ();
@@ -361,11 +373,17 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string, "writeNWSRFSESPTraceEnsemble")) {
 		return new writeNWSRFSESPTraceEnsemble_Command();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"writeRiverWare") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteProperty") ) {
+		return new WriteProperty_Command ();
+	}
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteRiverWare") ) {
 		return new writeRiverWare_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"writeStateMod") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteStateMod") ) {
 		return new writeStateMod_Command ();
+	}
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteSummary") ) {
+		return new WriteSummary_Command ();
 	}
 
 	// Did not match a command...

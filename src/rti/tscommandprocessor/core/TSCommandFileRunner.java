@@ -22,7 +22,7 @@ Read the commands from a file.
 */
 public void readCommandFile ( String path )
 throws FileNotFoundException, IOException
-{	__processor.readCommandsFile (
+{	__processor.readCommandFile (
 		path,	// InitialWorkingDir will be set to commands file location
 		true,	// Create GenericCommand instances for unknown commands
 		false );	// Do not append the commands.

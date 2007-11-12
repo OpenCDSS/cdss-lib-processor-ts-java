@@ -4728,70 +4728,6 @@ throws Exception
 }
 
 /**
-Execute the new setOutputPeriod() or old MM/YYYY command.
-@param command Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setOutputPeriod ( String command )
-throws Exception
-{	Vector tokens = StringUtil.breakStringList ( command,
-			"(,)", StringUtil.DELIM_SKIP_BLANKS );
-	if ( command.regionMatches( true,0,"setOutputPeriod",0,15) ) {
-		if ( (tokens == null) || (tokens.size() != 3) ) {
-			throw new Exception (
-			"Bad command \"" + command + "\"" );
-		}
-		String date1 = ((String)tokens.elementAt(1)).trim();
-		String date2 = ((String)tokens.elementAt(2)).trim();
-		// Parse the dates.  They may be named dates...
-		if ( date1.equals("") || date1.equals("*") ) {
-			// Want to use all available...
-			__OutputStart_DateTime = null;
-		}
-		else {	__OutputStart_DateTime =
-				(DateTime)_datetime_Hashtable.get(date1);
-			if ( __OutputStart_DateTime == null ) {
-				// Did not find a date in the hash table so
-				// parse it...
-				__OutputStart_DateTime = DateTime.parse (date1);
-			}
-		}
-		if ( date2.equals("") || date2.equals("*") ) {
-			// Want to use all available...
-			__OutputEnd_DateTime = null;
-		}
-		else {	__OutputEnd_DateTime =
-				(DateTime)_datetime_Hashtable.get(date2);
-			if ( __OutputEnd_DateTime == null ) {
-				// Did not find a date in the hash table so
-				// parse it...
-				__OutputEnd_DateTime = DateTime.parse ( date2 );
-			}
-		}
-		Message.printStatus ( 1, "TSEngine.do_setOutputPeriod",
-			"Output period set to " + __OutputStart_DateTime +
-			" to " + __OutputEnd_DateTime );
-		tokens = null;
-	}
-	else {	// Might be old-style MM/YYYY format...
-		if ( (tokens == null) || (tokens.size() != 2) ) {
-			throw new Exception (
-			"Bad command \"" + command + "\"" );
-		}
-		if ( TimeUtil.isDateTime ( (String)tokens.elementAt(0) ) ) { 
-			__OutputStart_DateTime =
-				DateTime.parse((String)tokens.elementAt(0));
-			__OutputEnd_DateTime =
-				DateTime.parse((String)tokens.elementAt(1));
-			Message.printStatus ( 1, "TSEngine.do_setOutputPeriod",
-			"Output period set to " + __OutputStart_DateTime +
-			" to " + __OutputEnd_DateTime );
-		}
-	}
-	tokens = null;
-}
-
-/**
 Execute the new setOutputYearType() or old -cy, -wy command.
 @param expression Expression to parse.
 @exception Exception if there is an error.
@@ -5218,28 +5154,6 @@ throws Exception
 		Message.printWarning ( 1, routine,
 		"Unable to write StateCU file \"" + outfile + "\"" );
 	}
-}
-
-/**
-Execute the writeSummary() command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_writeSummary ( String command )
-throws Exception
-{	String routine = "TSEngine.do_writeSummary";
-	Vector tokens = StringUtil.breakStringList ( command,
-		" (,)", StringUtil.DELIM_SKIP_BLANKS|
-		StringUtil.DELIM_ALLOW_STRINGS );
-	if ( tokens.size() != 2 ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	String outfile = ((String)tokens.elementAt(1)).trim();
-	Message.printStatus ( 1, routine,
-	"Writing summary file \"" + outfile + "\"" );
-	// The following will process the _binary_ts...
-	writeSummary ( __tslist, outfile );
-	tokens = null;
 }
 
 /**
@@ -7067,22 +6981,32 @@ throws Exception
 		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
 
 		if ( command_String.equals("") ) {
-			// Empty line...
+			// Empty line.  Mark as processing successful.
+			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
 		if ( command_String.startsWith("#") ) {
-			// Comment...
+			// Comment.  Mark as processing successful.
+			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
 		else if ( command_String.startsWith("/*") ) {
 			in_comment = true;
+			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
 		else if ( command_String.startsWith("*/") ) {
 			in_comment = false;
+			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
 		if ( in_comment ) {
+			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
 		if ( command_String.regionMatches(true,0,"addConstant",0,11) ) {
@@ -7955,12 +7879,6 @@ throws Exception
 			do_setOutputDetailedHeaders ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"setOutputPeriod",0,15) ) {
-			// Set the output period (__OutputStart_DateTime and
-			// __OutputEnd_DateTime)
-			do_setOutputPeriod ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"setOutputYearType",0,17) ) {
 			// Set the output year type.
 			do_setOutputYearType ( command_String );
@@ -8426,19 +8344,6 @@ throws Exception
 			}
 			do_writeStateCU ( command_String,
 					formatOutputHeaderComments(command_Vector) );
-			// No action needed at end...
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"writeSummary",0,12)){
-			// Write the time series in memory to a summary
-			// format...
-			if ( !CreateOutput_boolean ) {
-				Message.printStatus ( 1, routine,
-				"Skipping \"" + command_String +
-				"\" because output is to be ignored." );
-				continue;
-			}
-			do_writeSummary ( command_String );
 			// No action needed at end...
 			continue;
 		}
@@ -8932,14 +8837,12 @@ throws Exception
 	}
 	else if ( command_String.regionMatches( true,0,"-osummary",0,9) ){
 		Message.printStatus ( 1, routine,
-			"\"-osummary\" is obsolete.\n" +
-			"Use writeSummary() or other output commands." );
+			"\"-osummary\" is obsolete.  Use WriteSummary() or other output commands." );
 		is_obsolete = true;
 	}
 	else if ( command_String.regionMatches(true,0,"-osummarynostats",0,16) ){
 		Message.printStatus ( 1, routine,
-			"\"-osummarynostats\" is obsolete.\n" +
-			"Use writeSummary() or other output commands." );
+			"\"-osummarynostats\" is obsolete.  Use WriteSummary() or other output commands." );
 		is_obsolete = true;
 	}
 	// Put this after all the other -o options...
@@ -9026,10 +8929,8 @@ throws Exception
 		// Old-style date...
 		Message.printWarning ( 1, routine, "Setting output " +
 		"period with MM/YYYY MM/YYYY is obsolete.\n" +
-		"Use setOutputPeriod().\n" +
-		"Automatically using setOutputPeriod()." );
+		"Use SetOutputPeriod()." );
 		is_obsolete = true;
-		do_setOutputPeriod ( command_String );
 	}
 	return is_obsolete;
 }
@@ -11228,6 +11129,22 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	__nwsrfs_dmi_Vector.addElement ( nwsrfs_dmi );
 }
 
+/**
+Set the output period end.
+@param end Output period end.
+*/
+protected void setOutputEnd ( DateTime end )
+{	__OutputEnd_DateTime = end;
+}
+
+/**
+Set the output period start.
+@param start Output period start.
+*/
+protected void setOutputStart ( DateTime start )
+{	__OutputStart_DateTime = start;
+}
+
 /*
 Set the time series in either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is set, it updates the time series that is in
@@ -11669,89 +11586,6 @@ private void writeStateModTS (	Vector tslist, String output_file,
 	}
 	else {	Message.printWarning ( 1, routine, "Unable to write " +
 		"StateMod time series of different intervals." );
-	}
-}
-
-/**
-Write a summary time series file given the current time series.  This can be
-called using both the in-memory list of time series or the list to be output.
-Other than the time series list and the filename, all other parameters are taken
-from settings previously set.
-@param tslist Vector of time series to write.  Currently this is ignored if
-a BinaryTS has been created for daily data.
-@param output_file Name of file to write.
-@exception IOException if there is an error writing the file.
-*/
-private void writeSummary ( Vector tslist, String output_file )
-throws IOException
-{	String routine = "TSEngine.writeSummary";
-
-	// Write a summary using default properties, similar to the Save...
-	// Time Series As... menu in the GUI.
-
-	try {	// First need to get the summary strings...
-		PropList sumprops = new PropList ( "Summary" );
-		sumprops.set ( "Format", "Summary" );
-		if ( __calendar_type == WATER_YEAR ) {
-			sumprops.set ( "CalendarType", "WaterYear" );
-		}
-		else {	sumprops.set ( "CalendarType", "CalendarYear" );
-		}
-		if ( _detailedheader ) {
-			sumprops.set("PrintGenesis","true");
-		}
-		else {	sumprops.set("PrintGenesis","false");
-		}
-		// Check the first time series.  If NWSCARD or DateValue, don't
-		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
-			transition to HydroBase comments being only additional
-			information
-		if ( _non_co_detected ) {
-			sumprops.set ( "UseCommentsForHeader", "false" );
-		}
-		else {	sumprops.set ( "UseCommentsForHeader", "true" );
-		}
-		*/
-		sumprops.set ( "PrintHeader", "true" );
-		sumprops.set ( "PrintComments", "true" );
-		//if ( output_format == OUTPUT_SUMMARY ) {
-			// Get the statistics...
-			sumprops.set ( "PrintMinStats", "true" );
-			sumprops.set ( "PrintMaxStats", "true" );
-			sumprops.set ( "PrintMeanStats", "true" );
-			sumprops.set ( "PrintNotes", "true" );
-		/* REVISIT
-		}
-		else if ( output_format == OUTPUT_SUMMARY_NO_STATS ) {
-			// Don't want the statistics or the notes but do want
-			// a line at the bottom (kludge for Ayres software)...
-			sumprops.set ( "PrintMinStats", "false" );
-			sumprops.set ( "PrintMaxStats", "false" );
-			sumprops.set ( "PrintMeanStats", "false" );
-			sumprops.set ( "PrintNotes", "false" );
-		}
-		*/
-
-		if ( __OutputStart_DateTime != null ) {
-			sumprops.set (
-			"OutputStart",__OutputStart_DateTime.toString());
-		}
-		if ( __OutputEnd_DateTime != null ) {
-			sumprops.set (
-			"OutputEnd",__OutputEnd_DateTime.toString());
-		}
-
-		//if ( IOUtil.isBatch() || !_preview_output) { }
-		// For now just create the file.  Later may add preview...
-		//Vector summary = TSUtil.formatOutput ( output_file,
-		TSUtil.formatOutput ( output_file, tslist, sumprops );	
-		// Just write the summary to the given file...
-		//IOUtil.printStringList ( output_file, summary);
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Unable to print summary to file \"" + output_file + "\"" );
 	}
 }
 

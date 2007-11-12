@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.datevalue;
+package rti.tscommandprocessor.commands.util;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -43,9 +43,9 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-Command editor dialog for the WriteDateValue() command.
+Command editor dialog for the WriteProperty() command.
 */
-public class WriteDateValue_JDialog extends JDialog
+public class WriteProperty_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
 
@@ -56,13 +56,12 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__browse_JButton = null,// Browse Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Button to add/remove path
-private WriteDateValue_Command __command = null;// Command to edit
+private WriteProperty_Command __command = null;// Command to edit
 private String		__working_dir = null;	// Working directory.
 private JTextArea	__command_JTextArea=null;// Command as TextField
 private JTextField	__OutputFile_JTextField = null; // Field for time series identifier
-private JTextField	__OutputStart_JTextField = null;
-private JTextField	__OutputEnd_JTextField = null;
-private SimpleJComboBox	__TSList_JComboBox = null;
+private SimpleJComboBox	__Property_JComboBox = null;
+private SimpleJComboBox	__Append_JComboBox = null;
 private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
 						// or Cancel?
@@ -72,11 +71,11 @@ private boolean		__ok = false;		// Indicates whether the user
 									// dialog.
 
 /**
-WriteDateValue_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WriteDateValue_JDialog (	JFrame parent, Command command )
+public WriteProperty_JDialog (	JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -99,10 +98,8 @@ public void actionPerformed( ActionEvent event )
 		else {	fc = JFileChooserFactory.createJFileChooser(
 				__working_dir );
 		}
-		fc.setDialogTitle("Select DateValue Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("txt", "DateValue Time Series File");
-		fc.addChoosableFileFilter(sff);
-		sff = new SimpleFileFilter("dv", "DateValue Time Series File");
+		fc.setDialogTitle("Select Property File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Property File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -134,17 +131,14 @@ public void actionPerformed( ActionEvent event )
 	else if ( o == __path_JButton ) {
 		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
 			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__OutputFile_JTextField.getText() ) );
+			IOUtil.toAbsolutePath(__working_dir,__OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
 			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__OutputFile_JTextField.getText() ) );
+				IOUtil.toRelativePath ( __working_dir,__OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"WriteDateValue_JDialog",
+				Message.printWarning ( 1, "WriteProperty_JDialog",
 				"Error converting file to relative path." );
 			}
 		}
@@ -160,23 +154,19 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String OutputStart = __OutputStart_JTextField.getText().trim();
-	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String TSList = __TSList_JComboBox.getSelected();
+	String Property = __Property_JComboBox.getSelected();
+	String Append = __Append_JComboBox.getSelected();
 
 	__error_wait = false;
 	
-	if ( TSList.length() > 0 ) {
-		parameters.set ( "TSList", TSList );
-	}
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-	if ( OutputStart.length() > 0 ) {
-		parameters.set ( "OutputStart", OutputStart );
+	if ( Property.length() > 0 ) {
+		parameters.set ( "Property", Property );
 	}
-	if ( OutputEnd.length() > 0 ) {
-		parameters.set ( "OutputEnd", OutputEnd );
+	if ( Property.length() > 0 ) {
+		parameters.set ( "Append", Append );
 	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -193,14 +183,12 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+{	String Property = __Property_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String OutputStart = __OutputStart_JTextField.getText().trim();
-	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	__command.setCommandParameter ( "TSList", TSList );
+	String Append = __Append_JComboBox.getSelected();
+	__command.setCommandParameter ( "Property", Property );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
-	__command.setCommandParameter ( "OutputStart", OutputStart );
-	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "Append", Append );
 }
 
 /**
@@ -211,9 +199,8 @@ throws Throwable
 {	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__OutputFile_JTextField = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__TSList_JComboBox = null;
+	__Property_JComboBox = null;
+	__Append_JComboBox = null;
 	__command = null;
 	__ok_JButton = null;
 	__path_JButton = null;
@@ -228,7 +215,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (WriteDateValue_Command)command;
+{	__command = (WriteProperty_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
@@ -242,24 +229,19 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a DateValue format file," +
-		" which can be specified using a full or relative path (relative to the working directory)." ),
+		"Write a property to a file.  This is useful for automated software testing." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"It is recommended that the output file be relative to the current working directory." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file " +
-		"to overwrite (or edit the file name after selection)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to a "+
-		"precision appropriate for output time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"DateValue file to write:" ), 
+		"Property file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -269,40 +251,31 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to write:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputStart_JTextField = new JTextField (20);
-	__OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output start (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputEnd_JTextField = new JTextField (20);
-	__OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output end (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( "" );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	tslist_Vector.addElement ( __command._AllTS );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
+	__Property_JComboBox = new SimpleJComboBox(false);
+	__Property_JComboBox.setData ( TSCommandProcessorUtil.getPropertyNameList(processor) );
+	__Property_JComboBox.addItemListener (this);
+	JGUIUtil.addComponent(main_JPanel, __Property_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates the time series to output (default=AllTS)."),
+		"Properties are maintained by the command processor."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Append to file?:"),
+    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    Vector Append_Vector = new Vector();
+    Append_Vector.addElement ( "" );
+    Append_Vector.addElement ( __command._False );
+    Append_Vector.addElement ( __command._True );
+	__Append_JComboBox = new SimpleJComboBox(false);
+    __Append_JComboBox.setData ( Append_Vector );
+   	__Append_JComboBox.addItemListener (this);
+   	JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
+    	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    		"Default=" + __command._True),
+    		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -385,11 +358,10 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteDateValue_JDialog.refresh";
+{	String routine = "WriteProperty_JDialog.refresh";
 	String OutputFile = "";
-	String OutputStart = "";
-	String OutputEnd = "";
-	String TSList = "";
+	String Property = "";
+	String Append = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -397,31 +369,41 @@ private void refresh ()
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
-		OutputStart = parameters.getValue ( "OutputStart" );
-		OutputEnd = parameters.getValue ( "OutputEnd" );
-		TSList = parameters.getValue ( "TSList" );
+		Property = parameters.getValue ( "Property" );
+		Append = parameters.getValue ( "Append" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
-		if ( OutputStart != null ) {
-			__OutputStart_JTextField.setText (OutputStart);
-		}
-		if ( OutputEnd != null ) {
-			__OutputEnd_JTextField.setText (OutputEnd);
-		}
-		if ( TSList == null ) {
+		if ( Property == null ) {
 			// Select default...
-			__TSList_JComboBox.select ( 0 );
+			__Property_JComboBox.select ( 0 );
 		}
 		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
-				__TSList_JComboBox.select ( TSList );
+				__Property_JComboBox,
+				Property, JGUIUtil.NONE, null, null ) ) {
+				__Property_JComboBox.select ( Property );
 			}
 			else {	Message.printWarning ( 1, routine,
 				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
+				"references an invalid\nProperty value \"" +
+				Property +
+				"\".  Select a different value or Cancel.");
+				__error_wait = true;
+			}
+		}
+		if ( Append == null ) {
+			// Select default...
+			__Append_JComboBox.select ( 0 );
+		}
+		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
+				__Append_JComboBox,
+				Append, JGUIUtil.NONE, null, null ) ) {
+				__Append_JComboBox.select ( Append );
+			}
+			else {	Message.printWarning ( 1, routine,
+				"Existing command " +
+				"references an invalid\nAppend value \"" +
+				Append +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
@@ -429,14 +411,12 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	OutputStart = __OutputStart_JTextField.getText().trim();
-	OutputEnd = __OutputEnd_JTextField.getText().trim();
-	TSList = __TSList_JComboBox.getSelected();
+	Property = __Property_JComboBox.getSelected();
+	Append = __Append_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
-	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "OutputFile=" + OutputFile );
-	parameters.add ( "OutputStart=" + OutputStart );
-	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "Property=" + Property );
+	parameters.add ( "Append=" + Append );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
@@ -489,5 +469,5 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end WriteDateValue_JDialog
+} // end WriteProperty_JDialog
 

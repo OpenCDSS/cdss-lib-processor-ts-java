@@ -98,7 +98,7 @@ private boolean		__ok = false;		// Indicates whether the user
 						// dialog.
 
 /**
-writeStateMod_JDialog constructor.
+WriteStateMod_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param app_PropList Properties from the application.
 @param command Command to edit.

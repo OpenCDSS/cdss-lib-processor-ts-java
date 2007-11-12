@@ -197,6 +197,18 @@ throws InvalidCommandParameterException
 					"Specify a date, OutputStart, or OutputEnd."));
 		}
 	}
+	
+	// Check for invalid parameters...
+	Vector valid_Vector = new Vector();
+	valid_Vector.add ( "Alias" );
+	valid_Vector.add ( "NewTSID" );
+	valid_Vector.add ( "Description" );
+	valid_Vector.add ( "SetStart" );
+	valid_Vector.add ( "SetEnd" );
+	valid_Vector.add ( "Units" );
+	valid_Vector.add ( "PatternValues" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),

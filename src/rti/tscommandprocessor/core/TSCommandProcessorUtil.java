@@ -4,8 +4,11 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
@@ -18,7 +21,7 @@ This class contains static utility methods to support TSCommandProcessor.  These
 are here to prevent the processor from getting to large and in some cases because code is
 being migrated.
 */
-public class TSCommandProcessorUtil
+public abstract class TSCommandProcessorUtil
 {
 	
 /**
@@ -164,6 +167,20 @@ public static boolean getCreateOutput ( CommandProcessor processor )
 		Message.printWarning(3, routine, e );
 	}
 	return true;
+}
+
+/**
+Return the list of property names available from the processor.
+These properties can be requested using getPropContents().
+@return the list of property names available from the processor.
+*/
+public static Vector getPropertyNameList( CommandProcessor processor )
+{
+	// This could use reflection.
+	if ( processor instanceof TSCommandProcessor ) {
+		return ((TSCommandProcessor)processor).getPropertyNameList();
+	}
+	return new Vector();
 }
 
 /**
@@ -367,6 +384,48 @@ protected static boolean isTSID ( String command )
 	}
 	else {	return false;
 	}
+}
+
+/**
+Validate command parameter names and generate standard feedback.
+@param valid_Vector List of valid parameter names (others will be flagged as invalid).
+@param command The command being checked.
+@param warning A warning String that is receiving warning messages, for logging.  It
+will be appended to if there are more issues.
+@return the warning string, longer if invalid parameters are detected.
+*/
+public static String validateParameterNames (
+		Vector valid_Vector,
+		Command command,
+		String warning )
+{	if ( command == null ) {
+		return warning;
+	}
+	PropList parameters = command.getCommandParameters();
+	Vector warning_Vector = null;
+	try {	warning_Vector = parameters.validatePropNames (
+			valid_Vector, null, null, "parameter" );
+	}
+	catch ( Exception e ) {
+		// Ignore.  Should not happen.
+		warning_Vector = null;
+	}
+	if ( warning_Vector != null ) {
+		int size = warning_Vector.size();
+		StringBuffer b = new StringBuffer();
+		for ( int i = 0; i < size; i++ ) {
+			warning += "\n" + (String)warning_Vector.elementAt (i);
+			b.append ( (String)warning_Vector.elementAt(i));
+		}
+		if ( command instanceof CommandStatusProvider ) { 
+			CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.WARNING,
+					b.toString(),
+					"Specify only valid parameters - see documentation."));
+		}
+	}
+	return warning;
 }
 
 }

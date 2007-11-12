@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.datevalue;
+package rti.tscommandprocessor.commands.summary;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -25,7 +25,6 @@ import javax.swing.JTextField;
 import java.io.File;
 import java.util.Vector;
 
-import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -40,43 +39,41 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
-/**
-Command editor dialog for the WriteDateValue() command.
-*/
-public class WriteDateValue_JDialog extends JDialog
-implements ActionListener, KeyListener, ItemListener, WindowListener
+public class WriteSummary_JDialog extends JDialog
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
-
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__browse_JButton = null,// Browse Button
+	
+private SimpleJButton	__browse_JButton = null,// Button to browse for file
+			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Button to add/remove path
-private WriteDateValue_Command __command = null;// Command to edit
-private String		__working_dir = null;	// Working directory.
-private JTextArea	__command_JTextArea=null;// Command as TextField
-private JTextField	__OutputFile_JTextField = null; // Field for time series identifier
+			__path_JButton = null;	// Convert between relative and
+						// absolute paths.
+private WriteSummary_Command		__command = null;// Command to edit
+private JTextArea	__command_JTextArea=null;// Command display
+private JTextField	__OutputFile_JTextField = null;// Field for time series
+						// identifier
 private JTextField	__OutputStart_JTextField = null;
 private JTextField	__OutputEnd_JTextField = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
+private String		__working_dir = null;	// Working directory.
 private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+// are waiting to be cleared up
+// or Cancel?
 private boolean		__first_time = true;
 private boolean		__ok = false;		// Indicates whether the user
-									// has pressed OK to close the
-									// dialog.
+// has pressed OK to close the
+// dialog.
 
 /**
-WriteDateValue_JDialog constructor.
+WriteSummary_JDialog constructor.
 @param parent JFrame class instantiating this class.
-@param command Command to edit.
+@param command Command to edit
 */
-public WriteDateValue_JDialog (	JFrame parent, Command command )
+public WriteSummary_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -99,10 +96,8 @@ public void actionPerformed( ActionEvent event )
 		else {	fc = JFileChooserFactory.createJFileChooser(
 				__working_dir );
 		}
-		fc.setDialogTitle("Select DateValue Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("txt", "DateValue Time Series File");
-		fc.addChoosableFileFilter(sff);
-		sff = new SimpleFileFilter("dv", "DateValue Time Series File");
+		fc.setDialogTitle("Select Summary File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("txt", "Summary File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -115,8 +110,12 @@ public void actionPerformed( ActionEvent event )
 			}
 	
 			if (path != null) {
+				if ( fc.getFileFilter() == sff ) {
+					// Enforce extension...
+					path = IOUtil.enforceFileExtension(path, "txt");
+				}
 				__OutputFile_JTextField.setText(path );
-				JGUIUtil.setLastFileDialogDirectory(directory );
+				JGUIUtil.setLastFileDialogDirectory( directory);
 				refresh();
 			}
 		}
@@ -144,7 +143,7 @@ public void actionPerformed( ActionEvent event )
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"WriteDateValue_JDialog",
+				"WriteSummary_JDialog",
 				"Error converting file to relative path." );
 			}
 		}
@@ -208,110 +207,110 @@ Free memory for garbage collection.
 */
 protected void finalize ()
 throws Throwable
-{	__cancel_JButton = null;
+{	__browse_JButton = null;
+	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__OutputFile_JTextField = null;
-	__OutputStart_JTextField = null;
-	__OutputEnd_JTextField = null;
-	__TSList_JComboBox = null;
 	__command = null;
 	__ok_JButton = null;
 	__path_JButton = null;
-	__browse_JButton = null;
 	__working_dir = null;
 	super.finalize ();
 }
 
 /**
 Instantiates the GUI components.
-@param parent Frame class instantiating this class.
+@param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (WriteDateValue_Command)command;
+{	__command = (WriteSummary_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 
-    Insets insetsTLBR = new Insets(1,2,1,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a DateValue format file," +
-		" which can be specified using a full or relative path (relative to the working directory)." ),
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Write time series to a summary format file," +
+		" which can be specified using a full or" ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"relative path (relative to the working directory)."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The Browse button can be used to select an existing file " +
 		"to overwrite (or edit the file name after selection)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to a "+
-		"precision appropriate for output time series."),
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"WriteSummary() will use the output period for output, if defined."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"DateValue file to write:" ), 
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Summary file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+     JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputStart_JTextField = new JTextField (20);
-	__OutputStart_JTextField.addKeyListener (this);
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output start (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    		"Overrides the global output start (default=write all data)."),
+    		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputEnd_JTextField = new JTextField (20);
-	__OutputEnd_JTextField.addKeyListener (this);
+    		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output end (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    		"Overrides the global output end (default=write all data)."),
+    		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( "" );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	tslist_Vector.addElement ( __command._AllTS );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates the time series to output (default=AllTS)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __command_JTextArea = new JTextArea ( 4, 50 );
-    __command_JTextArea.setLineWrap ( true );
-    __command_JTextArea.setWrapStyleWord ( true );
-    __command_JTextArea.setEditable ( false );
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-    		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    	Vector tslist_Vector = new Vector();
+    	tslist_Vector.addElement ( "" );
+    	tslist_Vector.addElement ( __command._SelectedTS );
+    	tslist_Vector.addElement ( __command._AllTS );
+    	__TSList_JComboBox = new SimpleJComboBox(false);
+    	__TSList_JComboBox.setData ( tslist_Vector );
+    	__TSList_JComboBox.addItemListener (this);
+    	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
+    		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    		"Indicates the time series to output (default=AllTS)."),
+    		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+        		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __command_JTextArea = new JTextArea ( 4, 50 );
+        __command_JTextArea.setLineWrap ( true );
+        __command_JTextArea.setWrapStyleWord ( true );
+        __command_JTextArea.setEditable ( false );
+        JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+        		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -319,19 +318,18 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative
 		// path...
-		__path_JButton = new SimpleJButton( "Remove Working Directory",
-			"Remove Working Directory", this);
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
 	}
-	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
+	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", "OK", this);
+	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
@@ -366,12 +364,11 @@ public void keyPressed ( KeyEvent event )
 }
 
 public void keyReleased ( KeyEvent event )
-{	refresh();
+{	// Only refresh if the event is in the file TextField...
+	refresh();
 }
 
-public void keyTyped ( KeyEvent event )
-{
-}
+public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
@@ -489,5 +486,5 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end WriteDateValue_JDialog
+} // end WriteSummary_JDialog
 

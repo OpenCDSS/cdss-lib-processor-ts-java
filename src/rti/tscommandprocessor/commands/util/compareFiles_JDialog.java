@@ -54,15 +54,10 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 public class compareFiles_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private final String	__AddWorkingDirectoryFile1 =
-				"Add Working Directory (File 1)";
-private final String	__AddWorkingDirectoryFile2 =
-				"Add Working Directory (File 2)";
-private final String	__RemoveWorkingDirectoryFile1 =
-				"Remove Working Directory (File 1)";
-private final String	__RemoveWorkingDirectoryFile2 =
-				"Remove Working Directory (File 2)";
-
+private final String __AddWorkingDirectoryFile1 = "Add Working Directory (File 1)";
+private final String __AddWorkingDirectoryFile2 = "Add Working Directory (File 2)";
+private final String __RemoveWorkingDirectoryFile1 = "Remove Working Directory (File 1)";
+private final String __RemoveWorkingDirectoryFile2 = "Remove Working Directory (File 2)";
 
 private SimpleJButton	__browse1_JButton = null,
 			__browse2_JButton = null,
@@ -301,8 +296,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command compares text files.  Comment lines starting "+
-		"with # are ignored." ),
+		"This command compares text files.  Comment lines starting with # are ignored." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A line by line comparison is made."),

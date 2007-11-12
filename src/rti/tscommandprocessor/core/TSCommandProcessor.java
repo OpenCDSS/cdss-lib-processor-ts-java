@@ -745,6 +745,21 @@ private String getPropContents_WorkingDir()
 }
 
 /**
+Return the list of property names available from the processor.
+These properties can be requested using getPropContents().
+@return the list of property names available from the processor.
+*/
+public Vector getPropertyNameList()
+{
+	Vector v = new Vector();
+	v.addElement ( "InputStart" );
+	v.addElement ( "InputEnd" );
+	v.addElement ( "OutputStart" );
+	v.addElement ( "OutputEnd" );
+	return v;
+}
+
+/**
 Return the TSSupplier name.
 @return the TSSupplier name ("TSEngine").
 */
@@ -1688,8 +1703,7 @@ This processes the time series into a product such as a graph or report.
 private CommandProcessorRequestResultsBean processRequest_ProcessTimeSeriesResultsList (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	// Indices for time series...
 	Object o_Indices = request_params.getContents ( "Indices" );
@@ -1888,8 +1902,27 @@ string commands to full Command classes.
 @param append If true, the commands will be appended to the existing commands.
 @exception IOException if there is a problem reading the file.
 @exception FileNotFoundException if the specified commands file does not exist.
+@deprecated Use readCommandFile
 */
 public void readCommandsFile ( String path,
+		boolean create_generic_command_if_not_recognized,
+		boolean append )
+throws IOException, FileNotFoundException
+{
+	readCommandsFile ( path,	create_generic_command_if_not_recognized, append );
+}
+
+/**
+Read the commands file and initialize new commands.
+@param path Path to the commands file - this should be an absolute path.
+@param create_generic_command_if_not_recognized If true, create a GenericCommand
+if the command is not recognized.  This is being used during transition of old
+string commands to full Command classes.
+@param append If true, the commands will be appended to the existing commands.
+@exception IOException if there is a problem reading the file.
+@exception FileNotFoundException if the specified commands file does not exist.
+*/
+public void readCommandFile ( String path,
 		boolean create_generic_command_if_not_recognized,
 		boolean append )
 throws IOException, FileNotFoundException
@@ -2278,6 +2311,12 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 	}
 	else if ( prop.equalsIgnoreCase("InputStart") ) {
 		__tsengine.setInputStart ( (DateTime)contents );
+	}
+	else if ( prop.equalsIgnoreCase("OutputEnd") ) {
+		__tsengine.setOutputEnd ( (DateTime)contents );
+	}
+	else if ( prop.equalsIgnoreCase("OutputStart") ) {
+		__tsengine.setOutputStart ( (DateTime)contents );
 	}
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (Vector)contents );

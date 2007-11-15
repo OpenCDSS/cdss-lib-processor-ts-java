@@ -30,6 +30,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeUtil;
 
 /**
 <p>
@@ -69,45 +70,47 @@ dialogs).
 public void checkCommandParameters (	PropList parameters, String command_tag,
 					int warning_level )
 throws InvalidCommandParameterException
-{	String Alias = parameters.getValue ( "Alias" );
+{	String routine = getClass().getName() + ".checkCommandParameters";
+    String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String PatternValues = parameters.getValue ( "PatternValues" );
 	String warning = "";
+    String message;
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
+    
+    TSIdent tsident = null; // Checked below to verify interval against time
 
 	if ( (Alias == null) || Alias.equals("") ) {
-		warning += "\nThe time series alias must be specified.";
-		status.addToLog(CommandPhaseType.INITIALIZATION,
+        message = "The time series alias must be specified.";
+		warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(
-				CommandStatusType.FAILURE,
-				"The time series alias must be specified.",
+				CommandStatusType.FAILURE, message,
 				"Provide a time series alias when defining the command."));
 	}
 	if ( (NewTSID == null) || NewTSID.equals("") ) {
-		warning +=
-		"\nThe new time series identifier must be specified.";
-		status.addToLog(CommandPhaseType.INITIALIZATION,
+        message = "The new time series identifier must be specified.";
+		warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(
-				CommandStatusType.FAILURE,
-				"The new time series identifier must be specified.",
+				CommandStatusType.FAILURE, message,
 				"Provide a new time series identifier when defining the command."));
 	}
 	else {
-		try { TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
+		try {
+            tsident = TSIdent.parseIdentifier( NewTSID );
 			try { TimeInterval.parseInterval(tsident.getInterval());
 			}
 			catch ( Exception e2 ) {
-				warning += "\nNewTSID interval \"" + tsident.getInterval() +
-				"\" is not a valid interval.";
-				status.addToLog(CommandPhaseType.INITIALIZATION,
+                message = "NewTSID interval \"" + tsident.getInterval() + "\" is not a valid interval.";
+				warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(
-				CommandStatusType.FAILURE,
-				"NewTSID interval \"" + tsident.getInterval() +
-				"\" is not a valid interval.",
+				CommandStatusType.FAILURE, message,
 				"Provide a valid interval when defining the command."));
 			}
 		}
@@ -115,25 +118,19 @@ throws InvalidCommandParameterException
 			// TODO SAM 2007-03-12 Need to catch a specific exception like
 			// InvalidIntervalException so that more intelligent messages can be
 			// generated.
-			warning += "\nNewTSID \"" + NewTSID + "\" is not a valid identifier." +
-			"Use the command editor to enter required fields.";
-			status.addToLog(CommandPhaseType.INITIALIZATION,
+            message = "NewTSID \"" + NewTSID + "\" is not a valid identifier." +
+            "Use the command editor to enter required fields.";
+			warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(
-			CommandStatusType.FAILURE,
-			"NewTSID \"" + NewTSID +
-			"\" is not a valid interval.",
+			CommandStatusType.FAILURE, message,
 			"Use the command editor to enter required fields."));
 		}
 	}
 	// TODO SAM 2005-08-29
 	// Need to decide whether to check NewTSID - it might need to support
 	// wildcards.
-	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
-		throw new InvalidCommandParameterException ( warning );
-	}
+
 	if ( (PatternValues != null) && !PatternValues.equals("") ) {
 		// If pattern values are specified, make sure they are a sequence of numbers...
 		// Allow blanks if they want to allow missing to remain
@@ -149,13 +146,11 @@ throws InvalidCommandParameterException
 		for ( int i = 0; i < size; i++ ) {
 			token = (String)tokens.elementAt(i);
 			if ( !StringUtil.isDouble(token) ) {
-				warning += "\nPattern value (" + (i + 1) + "): " + token +
-				" is not a number.";
-				status.addToLog(CommandPhaseType.INITIALIZATION,
+                message = "Pattern value (" + (i + 1) + "): " + token + " is not a number.";
+				warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(
-					CommandStatusType.FAILURE,
-					"Pattern value (" + (i + 1) + "): " + token +
-					" is not a number.",
+					CommandStatusType.FAILURE, message,
 					"Provide a valid number."));
 			}
 			else {
@@ -166,34 +161,54 @@ throws InvalidCommandParameterException
 	if (	(SetStart != null) && !SetStart.equals("") &&
 		!SetStart.equalsIgnoreCase("OutputStart") &&
 		!SetStart.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse(SetStart);
+		try {
+		    DateTime dt = DateTime.parse(SetStart);
+            if ( tsident!= null ) {
+                Integer c = TimeUtil.compareDateTimePrecisionToTimeInterval(dt,tsident.getInterval());
+                if ( (c == null) || (c.intValue() != 0) ) {
+                    message = "Set start precision does not match the time series data interval \"" +
+                    tsident.getInterval() + "\" interval.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(
+                                    CommandStatusType.FAILURE, message,
+                            "Specify the set start date/time to a precision that matches the time series data."));
+                }
+            }
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe set start date \"" +	SetStart +
-				"\" is not a valid date.\n"+
-				"Specify a date, OutputStart, or OutputEnd.";
+            message = "The set start date \"" + SetStart + "\" is not a valid date.";
+			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(
-					CommandStatusType.FAILURE,
-					"The set start date \"" + SetStart + "\" is not a valid date.",
+					CommandStatusType.FAILURE, message,
 					"Specify a date, OutputStart, or OutputEnd."));
 		}
 	}
 	if (	(SetEnd != null) && !SetEnd.equals("") &&
 		!SetEnd.equalsIgnoreCase("OutputStart") &&
 		!SetEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( SetEnd );
+		try {
+            DateTime dt = DateTime.parse( SetEnd );
+            if ( tsident!= null ) {
+                Integer c = TimeUtil.compareDateTimePrecisionToTimeInterval(dt,tsident.getInterval());
+                if ( (c == null) || (c.intValue() != 0) ) {
+                    message = "Set end precision does not match the time series data interval \"" +
+                    tsident.getInterval() + "\" interval.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(
+                                CommandStatusType.FAILURE, message,
+                        "Specify the set start date/time to a precision that matches the time series data."));
+                }
+            }
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe set end date \"" + SetEnd +
-				"\" is not a valid date.\n"+
-				"Specify a date or OutputEnd.";
+            message = "The set end date \"" + SetEnd + "\" is not a valid date.";
+			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(
-					CommandStatusType.FAILURE,
-					"The set end date \"" + SetStart + "\" is not a valid date.",
+					CommandStatusType.FAILURE, message,
 					"Specify a date, OutputStart, or OutputEnd."));
 		}
 	}
@@ -211,7 +226,7 @@ throws InvalidCommandParameterException
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
+		MessageUtil.formatMessageTag(command_tag,warning_level), routine,
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}

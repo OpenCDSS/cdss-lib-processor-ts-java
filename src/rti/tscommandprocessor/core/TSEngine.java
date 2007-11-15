@@ -3246,113 +3246,6 @@ throws Exception
 }
 
 /**
-Execute the commands:
-<pre>
-free(TSID="pattern")
-</pre>
-@param command Command to execute.
-@exception Exception if there is an error.
-*/
-private void do_free ( String command )
-throws Exception
-{	String routine = "TSEngine.do_free";
-	String TSID = "";
-	if ( command.indexOf('=') < 0 ) {
-		// Old syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			" (,)", StringUtil.DELIM_SKIP_BLANKS );
-		if ( tokens.size() != 2 ) {
-			throw new Exception (
-			"Bad command \"" + command + "\"" );
-		}
-		// Parse the identifier...
-		TSID = ((String)tokens.elementAt(1)).trim();
-	}
-	else {	// New syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was
-			// parsed before...
-			throw new Exception (
-			"Bad command: \"" + command + "\"" );
-		}
-		// Get the input needed to process the file...
-		PropList props = PropList.parse (
-			(String)tokens.elementAt(1), routine, "," );
-		TSID = props.getValue ( "TSID" );
-	}
-
-	if ( TSID == null ) {
-		String message =
-		"Need TSID or pattern to free time series.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-
-	TS ts = null;
-	int ts_pos = 0;
-	if ( TSID.equals("*") ) {
-		// Free everything in memory...
-		__tslist.removeAllElements ();
-		return;
-	}
-	else if ( TSID.indexOf('*') < 0 ) {
-		// Specific identifier (no wildcard) - find it and be done...
-		ts_pos = indexOf ( TSID );
-		if ( ts_pos >= 0 ) {
-			ts = (TS)__tslist.elementAt(ts_pos);
-			if ( ts.getAlias().length() > 0 ) {
-				Message.printStatus ( 2, routine,
-				"Freeing time series resources for \"" +
-				ts.getAlias() + "\" \"" +
-				ts.getIdentifierString() + "\" at [" +
-				ts_pos +"]");
-			}
-			else {	Message.printStatus ( 2, routine,
-				"Freeing time series resources for \"" +
-				ts.getIdentifierString() + "\" at [" +
-				ts_pos +"]");
-			}
-			__tslist.removeElementAt(ts_pos);
-		}
-		else {	String message = "Unable to find time series \"" +
-				TSID + "\" for free() command.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-		return;
-	}
-	// Else (wild card) - search through all the time series in memory,
-	// freeing those with identifiers that match the pattern...
-	int count = 0;
-	int nts = getTimeSeriesSize();
-	for ( int its = 0; its < nts; its++ ) {
-		ts = getTimeSeries(its);	// Will throw Exception
-		if ( !ts.getIdentifier().matches(TSID) ) {
-			continue;
-		}
-		else {	Message.printStatus ( 1, routine,
-			"Freeing resources for \"" +
-			ts.getAlias() + " " +
-			ts.getIdentifierString() + "\" at [" + its +"]");
-			__tslist.removeElementAt(its);
-			// Decrement to handle new list size...
-			--nts;
-			--its;
-			++count;
-		}
-	}
-	if ( count == 0 ) {
-		// Probably an error.
-		String message =
-		"No time series were matched for \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-}
-
-/**
 Execute the newEndOfMonthTSFromDayTS() command:
 <pre>
 TS Alias = newEndOfMonthTSFromDayTS(TSID,Days)
@@ -7423,11 +7316,6 @@ throws Exception
 			do_fillRepeat ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches( true,0,"free",0,4) ) {
-			// Free the time series...
-			do_free ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"setIncludeMissingTS",0,19)) {
 			do_setIncludeMissingTS ( command_String );
 			continue;
@@ -10895,6 +10783,23 @@ throws Exception
 		readTimeSeries2 ( ts, null, full_period );
 	}
 	ts = null;
+}
+
+/**
+Remove all time series in the results list.
+*/
+protected void removeAllTimeSeries ()
+{
+    __tslist.removeAllElements();
+}
+
+/**
+Remove the time series at the specified index.
+@param index Index of the time series to remove.
+*/
+protected void removeTimeSeries ( int index )
+{
+    __tslist.removeElementAt ( index );
 }
 
 /**

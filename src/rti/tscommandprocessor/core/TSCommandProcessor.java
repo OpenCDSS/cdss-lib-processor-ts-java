@@ -1273,6 +1273,12 @@ throws Exception
 	else if ( request.equalsIgnoreCase("ReadTimeSeries2") ) {
 		return processRequest_ReadTimeSeries2 ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("RemoveAllFromTimeSeriesResultsList") ) {
+        return processRequest_RemoveAllFromTimeSeriesResultsList ( request, request_params );
+    }
+    else if ( request.equalsIgnoreCase("RemoveTimeSeriesFromResultsList") ) {
+        return processRequest_RemoveTimeSeriesFromResultsList ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("RunCommands") ) {
 		return processRequest_RunCommands ( request, request_params );
 	}
@@ -1439,8 +1445,7 @@ throws Exception
 			String warning =
 				"Request GetTimeSeriesForTSID() does not provide a TSID parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText (	"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	String TSID = (String)o;
@@ -1764,6 +1769,40 @@ throws Exception
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
 	return bean;
+}
+
+/**
+Process the RemoveAllFromTimeSeriesResultsList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveAllFromTimeSeriesResultsList (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    __tsengine.removeAllTimeSeries ();
+    //PropList results = bean.getResultsPropList();
+    // No data are returned in the bean.
+    return bean;
+}
+
+/**
+Process the RemoveTimeSeriesFromResultsList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveTimeSeriesFromResultsList (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "Index" );
+    if ( o == null ) {
+            String warning = "Request RemoveTimeSeriesFromResultsList() does not provide an Index parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    Integer Index = (Integer)o;
+    __tsengine.removeTimeSeries ( Index.intValue() );
+    return bean;
 }
 
 /**

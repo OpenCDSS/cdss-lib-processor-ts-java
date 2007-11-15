@@ -28,7 +28,11 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -37,9 +41,7 @@ import RTi.Util.IO.PropList;
 
 /**
 <p>
-This class initializes, checks, and runs the sortTimeSeries() command.
-</p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
+This class initializes, checks, and runs the SortTimeSeries() command.
 </p>
 */
 public class sortTimeSeries_Command extends AbstractCommand implements Command
@@ -50,7 +52,7 @@ Constructor.
 */
 public sortTimeSeries_Command ()
 {	super();
-	setCommandName ( "sortTimeSeries" );
+	setCommandName ( "SortTimeSeries" );
 }
 
 /**
@@ -62,10 +64,14 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	// Currently no parameters for this command
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -90,27 +96,8 @@ parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	//int warning_count = 0;
-	//String routine = "sortTimeSeries_Command.parseCommand", message;
-
-	//Vector tokens = StringUtil.breakStringList ( command,
-	//	"()", StringUtil.DELIM_SKIP_BLANKS );
-	/*
-	if ( (tokens == null) || tokens.size() < 2 ) {
-		message = "Invalid syntax for \"" + command +
-			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-		}
-		// Get the input needed to process the file...
-		_parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine,"," );
-	}
-	*/
-	// REVISIT SAM 2005-05-03 Probably need to add a parameter to sort
-	// by location, name, etc.
-	// Currently no parameters are needed.
-	setCommandParameters ( new PropList ( getCommandName() ) );
+{	
+    setCommandParameters ( new PropList ( getCommandName() ) );
 }
 
 /**
@@ -126,39 +113,49 @@ not produce output).
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "sortTimeSeries_Command.runCommand", message;
+{	String routine = "SortTimeSeries_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	Vector tslist = null;
 	
-	CommandProcessor processor = getCommandProcessor();
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	
 	try { Object o = processor.getPropContents ( "TSResultsList" );
 			tslist = (Vector)o;
 	}
 	catch ( Exception e ) {
 		// Not fatal, but of use to developers.
-		message = "Error requesting TSResultsList from processor - no data.";
+		message = "Error requesting TSResultsList from processor.";
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report to software support." ) );
 		Message.printWarning(3, routine, message );
 	}
 	int warning_count = 0;
 	if ( (tslist == null) || (tslist.size() == 0) ) {
 		// Don't do anything...
-		Message.printStatus ( 2, routine,
-		"No time series are available.  Not sorting." );
-		return;
+		Message.printStatus ( 2, routine,"No time series are available.  Not sorting." );
 	}
-	try {	Vector tslist_sorted = TSUtil.sort ( tslist );
-		processor.setPropContents ( "TSResultsList", tslist_sorted );
-	}
-	catch ( Exception e ) {
-		message = "Error sorting time series.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
-		Message.printWarning ( 3, routine, e );
-		throw new CommandException ( message );
-	}
+    else {
+        try {	Vector tslist_sorted = TSUtil.sort ( tslist );
+                processor.setPropContents ( "TSResultsList", tslist_sorted );
+        }
+        catch ( Exception e ) {
+            message = "Unexpected error sorting time series.";
+            Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),
+                    routine, message );
+            Message.printWarning ( 3, routine, e );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report to software support." ) );
+            throw new CommandException ( message );
+	   }
+    }
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 // Can rely on base class for toString().

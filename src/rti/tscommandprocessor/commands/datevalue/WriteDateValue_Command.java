@@ -89,7 +89,8 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {	String working_dir = null;
+	else {
+        String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
@@ -287,8 +288,8 @@ CommandWarningException, CommandException
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +

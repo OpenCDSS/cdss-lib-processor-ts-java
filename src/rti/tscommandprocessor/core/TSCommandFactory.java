@@ -136,6 +136,7 @@ import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
+import rti.tscommandprocessor.commands.util.Free_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
@@ -254,6 +255,10 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillUsingDiversionComments") ) {
 		return new fillUsingDiversionComments_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"Free(") ||
+            StringUtil.startsWithIgnoreCase(command_string,"Free (")) {
+        return new Free_Command ();
+    }
 	
 	// "l" commands...
 
@@ -324,7 +329,7 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"readStateCU") ) {
 		return new readStateCU_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"readStateMod") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateMod") ) {
 		return new readStateMod_Command ();
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("readStateMod") ) {

@@ -66,6 +66,8 @@ package rti.tscommandprocessor.commands.ts;
 import java.util.Vector;
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIterator;
@@ -74,8 +76,12 @@ import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -89,8 +95,6 @@ import RTi.Util.Time.DateTime;
 /**
 <p>
 This class initializes, checks, and runs the compareTimeSeries() command.
-</p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
 public class compareTimeSeries_Command extends AbstractCommand
@@ -108,7 +112,7 @@ Constructor.
 */
 public compareTimeSeries_Command ()
 {	super();
-	setCommandName ( "compareTimeSeries" );
+	setCommandName ( "CompareTimeSeries" );
 }
 
 /**
@@ -134,29 +138,47 @@ throws InvalidCommandParameterException
 	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
 	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
 	String warning = "";
+    String message;
+    
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (MatchLocation != null) && !MatchLocation.equals("") ) {
 		if (	!MatchLocation.equals(_False) &&
 			!MatchLocation.equals(_True) ) {
-			warning += "\nThe MatchLocation parameter \"" +
-				MatchLocation + "\" must be False or True.";
+            message = "The MatchLocation parameter \"" + MatchLocation + "\" must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify False or True (or do not specify to use default of True)." ) );
 		}
 	}
 	if ( (MatchDataType != null) && !MatchDataType.equals("") ) {
 		if (	!MatchDataType.equals(_False) &&
 			!MatchDataType.equals(_True) ) {
-			warning += "\nThe MatchDataType parameter \"" +
-				MatchDataType + "\" must be False or True.";
+            message = "The MatchDataType parameter \"" + MatchDataType + "\" must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify False or True (or do not specify to use default of False)." ) );
 		}
 	}
 	if ( (Precision != null) && !Precision.equals("") ) {
 		if ( !StringUtil.isInteger(Precision) ) {
-			warning += "\nThe precision: \"" + Precision +
-				"\" is not an integer.";
+            message = "The precision: \"" + Precision + "\" is not an integer.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the precision as an integer (or blank to not round)." ) );
+            
 		}
 		if ( StringUtil.atoi(Precision) < 0 ) {
-			warning += "\nThe precision: \"" + Precision +
-				"\" must be >= 0.";
+            message = "The precision: \"" + Precision + "\" must be >= 0.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the precision as an integer >= 0 (or blank to not round)." ) );
 		}
 	}
 	if ( (Tolerance != null) && !Tolerance.equals("") ) {
@@ -170,12 +192,19 @@ throws InvalidCommandParameterException
 		for ( int i = 0; i < size; i++ ) {
 			string = (String)v.elementAt(i);
 			if ( !StringUtil.isDouble(string) ) {
-				warning += "\nThe tolerance: \"" + string +
-					"\" is not a number.";
+                message = "The tolerance: \"" + string + "\" is not a number.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the tolerance as a number." ) );
+                
 			}
 			if ( StringUtil.atod(string) < 0.0 ) {
-				warning += "\nThe tolerance: \"" + Tolerance +
-					"\" must be >= 0.0.";
+                message = "The tolerance: \"" + Tolerance + "\" must be >= 0.0.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the tolerance as a number >= 0.0." ) );
 			}
 		}
 	}
@@ -184,10 +213,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe analysis start date/time \"" +
-				AnalysisStart +"\" is not a valid date/time.\n"+
-				"Specify a date or OutputStart.";
+            message = "The analysis start date/time \"" + AnalysisStart +"\" is not a valid date/time.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
 	if (	(AnalysisEnd != null) && !AnalysisEnd.equals("") &&
@@ -195,38 +225,48 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( AnalysisEnd);
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe dependent end date/time \"" +
-				AnalysisEnd + "\" is not a valid date/time.\n"+
-				"Specify a date or OutputEnd.";
+            message = "The dependent end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
-	if (	(DiffFlag != null) &&
-		(DiffFlag.length() != 1) ) {
-		warning += "\nThe difference flag \"" + DiffFlag +
-				"\" must be 1 character long.";
+	if ( (DiffFlag != null) && (DiffFlag.length() != 1) ) {
+        message = "The difference flag \"" + DiffFlag + "\" must be 1 character long.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a 1-character value for the flag." ) );
 	}
 	if ( (CreateDiffTS != null) && !CreateDiffTS.equals("") ) {
-		if (	!CreateDiffTS.equals(_False) &&
-			!CreateDiffTS.equals(_True) ) {
-			warning += "\nThe CreateDiffTS parameter \"" +
-			CreateDiffTS + "\" must be False or True.";
+		if ( !CreateDiffTS.equals(_False) &&	!CreateDiffTS.equals(_True) ) {
+            message = "The CreateDiffTS parameter \"" + CreateDiffTS + "\" must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify False or True (or blank for default of False)." ) );
 		}
 	}
 	if ( (WarnIfDifferent != null) && !WarnIfDifferent.equals("") ) {
-		if (	!WarnIfDifferent.equals(_False) &&
-			!WarnIfDifferent.equals(_True) ) {
-			warning += "\nThe WarnIfDifferent parameter \"" +
-				WarnIfDifferent + "\" must be False or True.";
+		if ( !WarnIfDifferent.equals(_False) &&	!WarnIfDifferent.equals(_True) ) {
+            message = "The WarnIfDifferent parameter \"" + WarnIfDifferent + "\" must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify False or True (or blank for default of False)." ) );
 		}
 	}
 	if ( (WarnIfSame != null) && !WarnIfSame.equals("") ) {
-		if (	!WarnIfSame.equals(_False) &&
-			!WarnIfSame.equals(_True) ) {
-			warning += "\nThe WarnIfSame parameter \"" +
-				WarnIfSame + "\" must be False or True.";
+		if ( !WarnIfSame.equals(_False) && !WarnIfSame.equals(_True) ) {
+            message = "The WarnIfSame parameter \"" + WarnIfSame + "\" must be False or True.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify False or True (or blank for default of False)." ) );
 		}
 	}
+    
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "MatchLocation" );
@@ -239,26 +279,16 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "CreateDiffTS" );
 	valid_Vector.add ( "WarnIfDifferent" );
 	valid_Vector.add ( "WarnIfSame" );
-	Vector warning_Vector = null;
-	try {	warning_Vector = parameters.validatePropNames (
-			valid_Vector, null, null, "parameter" );
-	}
-	catch ( Exception e ) {
-		// Ignore.  Should not happen.
-		warning_Vector = null;
-	}
-	if ( warning_Vector != null ) {
-		int size = warning_Vector.size();
-		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.elementAt (i);
-		}
-	}
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -286,12 +316,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "compareTimeSeries_Command.parseCommand", message;
 
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
-	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command +
-			"\".  Not enough tokens.";
+	if ( (tokens == null) ) {
+		message = "Invalid syntax for \"" + command + "\".  Expecting CompareTimeSeries(...).";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -301,8 +329,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
+			message = "Syntax error in \"" + command + "\".  Not enough tokens.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -310,11 +337,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the commands:
-<pre>
-compareTimeSeries(MatchLocation=X,MatchDataType=X,Precision=X,
-Tolerance="X,X,X,...",DiffFlag="X",CreateDiffTS=X,WarnIfDifferent=X,WarnIfSame=X)
-</pre>
+Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -324,7 +347,7 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "compareTimeSeries_Command.runCommand", message;
+{	String routine = "CompareTimeSeries_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -332,6 +355,9 @@ CommandWarningException, CommandException
 	int size = 0;
 	
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+    
 	PropList parameters = getCommandParameters();
 	
 	Vector tslist = null;
@@ -339,26 +365,30 @@ CommandWarningException, CommandException
 			tslist = (Vector)o;
 	}
 	catch ( Exception e ){
-		message = "Cannot get time series list to process.";
+		message = "Error requesting TSResultsList from processor.";
 		Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag, ++warning_count),
 				routine,message);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report to software support." ) );
 	}
 	
-	if ( (tslist == null) || (tslist.size() == 0) ) {
+	if ( (tslist == null) || (tslist.size() <= 1) ) {
 		// Don't do anything...
-		Message.printStatus ( 2, routine,
-		"No time series are available.  Not comparing." );
+		Message.printStatus ( 2, routine, "No time series are available.  Not comparing." );
 		return;
 	}
 	// Check to make sure that the intervals are the same...
 	if ( !TSUtil.areIntervalsSame(tslist) ) {
-		message = "Time series intervals are not consistent.  Not able"+
-		" to compare time series.";
+		message = "Time series intervals are not consistent.  Not able to compare time series.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+              new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Verify that the time series intervals are consistent." ) );
 		throw new CommandException ( message );
 	}
 	String MatchLocation = parameters.getValue ( "MatchLocation" );
@@ -450,10 +480,13 @@ CommandWarningException, CommandException
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisStart DateTime(DateTime=" +
-			AnalysisStart + "\" from processor.";
+			AnalysisStart + "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+               status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -465,6 +498,9 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+               status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	AnalysisStart_DateTime = (DateTime)prop_contents;
@@ -476,6 +512,9 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the analysis start as a valid date/time." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -493,6 +532,9 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -504,6 +546,9 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+               status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
@@ -515,6 +560,9 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the analysis end as a valid date/time." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -1190,6 +1238,9 @@ CommandWarningException, CommandException
 						MessageUtil.formatMessageTag(command_tag, ++warning_count),
 						routine, message );
 				Message.printWarning ( 3, routine, e );
+                   status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report the problem to software support." ) );
 				throw new CommandException ( message );
 			}
 			Message.printStatus ( 2, "",
@@ -1197,19 +1248,24 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "Error comparing time series.";
+		message = "Unexpected error comparing time series.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );
+           status.addToLog ( CommandPhaseType.RUN,
+                   new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Report the problem to software support." ) );
 		throw new CommandException ( message );
 	}
 	if ( WarnIfDifferent_boolean && (tsdiff_count > 0) ) {
-		message = "" + tsdiff_count + " of " + size +
-		" time series had differences.";
+		message = "" + tsdiff_count + " of " + size + " time series had differences.";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );
+           status.addToLog ( CommandPhaseType.RUN,
+                   new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Verify that time series being different is OK." ) );
 		throw new CommandException ( message );
 	}
 	if ( WarnIfSame_boolean && (tsdiff_count == 0) ) {
@@ -1217,6 +1273,9 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that all time seres being the same is OK." ) );
 		throw new CommandException ( message );
 	}
 }

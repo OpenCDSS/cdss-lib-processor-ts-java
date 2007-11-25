@@ -481,17 +481,18 @@ CommandWarningException, CommandException
 	// Now try to read...
 
 	try {
-        Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile + "\"" );
+        String InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile);
+        Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile_full + "\"" );
 	
 		Vector tslist = null;
-		if ( StateMod_DiversionRight.isDiversionRightFile(InputFile)) {
+		if ( StateMod_DiversionRight.isDiversionRightFile(InputFile_full)) {
 			if ( (Interval == null) || Interval.equals("") ) {
 				Interval = "Year";
 			}
 			TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
 			// Read the diversion rights file and convert to time series
 			// (default is to sum time series at a location).
-			Vector ddr_Vector = StateMod_WellRight.readStateModFile ( InputFile );
+			Vector ddr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
 			// Convert the rights to time series (one per location)...
 			tslist = StateMod_Util.createWaterRightTimeSeriesList (
 					ddr_Vector,        // raw water rights
@@ -506,14 +507,14 @@ CommandWarningException, CommandException
 					null,			// ...
 					true );            // do read data
 		}
-		else if ( StateMod_InstreamFlowRight.isInstreamFlowRightFile(InputFile)) {
+		else if ( StateMod_InstreamFlowRight.isInstreamFlowRightFile(InputFile_full)) {
 			if ( (Interval == null) || Interval.equals("") ) {
 				Interval = "Year";
 			}
 			TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
 			// Read the instream flow rights file and convert to time series
 			// (default is to sum time series at a location).
-			Vector ifr_Vector = StateMod_WellRight.readStateModFile ( InputFile );
+			Vector ifr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
 			// Convert the rights to time series (one per location)...
 			tslist = StateMod_Util.createWaterRightTimeSeriesList (
 					ifr_Vector,        // raw water rights
@@ -528,14 +529,14 @@ CommandWarningException, CommandException
 					null,			// ...
 					true );            // do read data
 		}
-		else if ( StateMod_ReservoirRight.isReservoirRightFile(InputFile)) {
+		else if ( StateMod_ReservoirRight.isReservoirRightFile(InputFile_full)) {
 			if ( (Interval == null) || Interval.equals("") ) {
 				Interval = "Year";
 			}
 			TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
 			// Read the reservoir rights file and convert to time series
 			// (default is to sum time series at a location).
-			Vector rer_Vector = StateMod_WellRight.readStateModFile ( InputFile );
+			Vector rer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
 			// Convert the rights to time series (one per location)...
 			tslist = StateMod_Util.createWaterRightTimeSeriesList (
 					rer_Vector,        // raw water rights
@@ -550,14 +551,14 @@ CommandWarningException, CommandException
 					null,			// ...
 					true );            // do read data
 		}
-		else if ( StateMod_WellRight.isWellRightFile(InputFile)) {
+		else if ( StateMod_WellRight.isWellRightFile(InputFile_full)) {
 			if ( (Interval == null) || Interval.equals("") ) {
 				Interval = "Year";
 			}
 			TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
 			// Read the well rights file and convert to time series
 			// (default is to sum time series at a location).
-			Vector wer_Vector = StateMod_WellRight.readStateModFile ( InputFile );
+			Vector wer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
 			// Convert the rights to time series (one per location)...
 			tslist = StateMod_Util.createWaterRightTimeSeriesList (
 					wer_Vector,        // raw water rights
@@ -573,17 +574,17 @@ CommandWarningException, CommandException
 					true );            // do read data
 		}
 		else {	// Read a traditional time series file
-			int interval = StateMod_TS.getFileDataInterval(InputFile);
+			int interval = StateMod_TS.getFileDataInterval(InputFile_full);
 
 			if ( (interval == TimeInterval.MONTH) || (interval == TimeInterval.DAY) ) {
 				tslist = StateMod_TS.readTimeSeriesList (
-				InputFile, InputStart_DateTime,
+				InputFile_full, InputStart_DateTime,
 				InputEnd_DateTime,
 				null,	// Requested units
 				true );	// Read all data
 			}
 			else {
-                message = "StateMod file \"" + InputFile + "\" is not a recognized interval (bad file format?).";
+                message = "StateMod file \"" + InputFile_full + "\" is not a recognized interval (bad file format?).";
 				Message.printWarning ( warning_level, 
 						MessageUtil.formatMessageTag(command_tag,
 						++warning_count), routine, message );

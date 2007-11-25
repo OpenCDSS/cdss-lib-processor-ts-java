@@ -514,6 +514,12 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("HaveOutputPeriod") ) {
 		return getPropContents_HaveOutputPeriod();
 	}
+    else if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
+        return getPropContents_HydroBaseDMIList();
+    }
+    else if ( prop.equalsIgnoreCase("HydroBaseDMIListSize") ) {
+        return getPropContents_HydroBaseDMIListSize();
+    }
 	else if ( prop.equalsIgnoreCase("IncludeMissingTS") ) {
 		return getPropContents_IncludeMissingTS();
 	}
@@ -570,7 +576,7 @@ be extended during reads.
 */
 private Boolean getPropContents_AutoExtendPeriod()
 {
-	boolean b = __tsengine.autoExtendPeriod();
+	boolean b = __tsengine.getAutoExtendPeriod();
 	return new Boolean ( b );
 }
 
@@ -609,6 +615,21 @@ Handle the HydroBaseDMIList property request.
 private Vector getPropContents_HydroBaseDMIList()
 {
 	return __tsengine.getHydroBaseDMIList();
+}
+
+/**
+Handle the HydroBaseDMIListSize property request.
+@return Number of open HydroBaseDMI instances.
+ */
+private Integer getPropContents_HydroBaseDMIListSize()
+{
+    Vector v = __tsengine.getHydroBaseDMIList();
+    if ( v == null ) {
+        return new Integer(0);
+    }
+    else {
+        return new Integer(v.size());
+    }
 }
 
 /**
@@ -752,6 +773,7 @@ These properties can be requested using getPropContents().
 public Vector getPropertyNameList()
 {
 	Vector v = new Vector();
+    v.addElement ( "HydroBaseDMIListSize" );
 	v.addElement ( "InputStart" );
 	v.addElement ( "InputEnd" );
 	v.addElement ( "OutputStart" );
@@ -1474,8 +1496,7 @@ throws Exception
 	if ( o == null ) {
 			String warning = "Request GetTimeSeriesToProcess() does not provide a TSList parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText (	"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	// Else continue...
@@ -1492,8 +1513,7 @@ throws Exception
 	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
-	Message.printStatus(2,"From TSEngine",
-			((Vector)(tslist.elementAt(0))).toString() );
+	Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );
 	results.setUsingObject("TSToProcessList", (Vector)(tslist.elementAt(0)) );
 	results.setUsingObject("Indices", (int [])(tslist.elementAt(1)) );
 	return bean;
@@ -2256,7 +2276,8 @@ information.
 @param WorkingDir The current working directory.
 */
 public void setInitialWorkingDir ( String InitialWorkingDir )
-{
+{   String routine = getClass().getName() + ".setInitialWorkingDir";
+    Message.printStatus(2, routine, "Setting the initial working directory to \"" + InitialWorkingDir + "\"" );
 	__InitialWorkingDir_String = InitialWorkingDir;
 	setWorkingDir ( __InitialWorkingDir_String );
 }

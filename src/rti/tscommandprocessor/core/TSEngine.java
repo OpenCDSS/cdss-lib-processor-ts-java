@@ -719,6 +719,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.DataFormat;
 import RTi.Util.IO.DataUnits;
+import RTi.Util.IO.GenericCommand;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -834,70 +835,144 @@ Filter indicating that output should be data coverage (% non-missing).
 */
 public final int OUTPUT_FILTER_DATA_COVERAGE = 2;
 
-public final int WATER_YEAR = 1;		// Output in water year.
-public final int CALENDAR_YEAR = 2;		// Output in calendar year.
+/**
+Output in water year, for use with setOutputYearType().
+*/
+private final int __WATER_YEAR = 1;
+
+/**
+Output in calendar year.
+*/
+private final int __CALENDAR_YEAR = 2;
 
 // Data members...
 
-private boolean __auto_extend_period = true;	// If true, then if the output
-						// period is specified, time
-						// series will be extended to
-						// at least include the output
-						// period.
-private DateTime _averaging_date1 = null;	// Start date for averaging.
-private DateTime _averaging_date2 = null;	// End date for averaging.
-private int _binary_day_cutoff = BINARY_DAY_CUTOFF;
-						// Number of time series to
-						// trigger use of a binary file
-						// to process daily files.
-private int _binary_month_cutoff = BINARY_MONTH_CUTOFF;
-						// Number of time series to
-						// trigger use of a binary file
-						// to process monthly files.
-private BinaryTS _binary_ts = null;		// Binary time series.  This
-						// is null unless the number of
-						// time series is high.
-private DateTime _binaryts_date1 = null;	// Start date for BinaryTS.
-private DateTime _binaryts_date2 = null;	// End date for BinaryTS.
-private String _binary_ts_file = "C:\\temp\\tstool.bts";
-						// Binary file for output.
-private boolean _binary_ts_used = false;	// Indicates whether a BinaryTS
-						// file is being used to process
-						// output.
+/**
+If true, then if the output period is specified, time series will be extended to
+at least include the output period.
+*/
+private boolean __AutoExtendPeriod_boolean = true;
 
-private int	__calendar_type = CALENDAR_YEAR;// Calendar type is the default.
+/**
+Start date/time for averaging.
+*/
+private DateTime __AverageStart_DateTime = null;
 
-private boolean	_detailedheader = false;	// Indicates whether detailed
-						// header should be added to
-						// output.
-private Hashtable _datetime_Hashtable = new Hashtable ();
-						// List of DateTime initialized
-						// from commands.
-// SAMX - why can't this be local in the method that uses it?
-private int	_fatal_error_count = 0;		// Count of errors.
-private Vector	_fill_pattern_ts = new Vector (20,10);
-						// Vector of StringMonthTS
-						// fill patterns used with
-						// fillPattern().
-private Vector __hbdmi_Vector = new Vector();	// HydroBase DMI instance
-						// Vector, to allow more than
-						// one database instance to
-						// be open at a time, only
-						// used with openHydroBase().
-private boolean __include_missing_ts = false;	// Indicates whether missing
-						// time series should be added
-						// automatically
-private boolean __ignore_lezero = false;	// Indicates whether values
-						// <= 0 should be treated as
-						// missing when calculating
-						// historical averages.
+/**
+End date for averaging.
+*/
+private DateTime __AverageEnd_DateTime = null;
 
-private double	_missing = -999.0;		// Missing data value to use
-						// with StateMod output.
-private double	_missing_range[] = null;	// Range for missing data.
-private Vector	_missing_ts = new Vector();	// Vector to save list of time
-						// series identifiers that are
-						// not found.
+// TODO SAM 2007-11-16 Evaluate removing binary time series
+/**
+Number of time series to trigger use of a binary file to process daily files.
+*/
+private int __binary_day_cutoff = BINARY_DAY_CUTOFF;
+
+/**
+Number of time series to trigger use of a binary file to process monthly files.
+*/
+private int __binary_month_cutoff = BINARY_MONTH_CUTOFF;
+
+/**
+Binary time series.  This is null unless the number of time series is high.
+*/
+private BinaryTS __binary_ts = null;
+
+/**
+Start date for BinaryTS.
+*/
+private DateTime __binaryts_date1 = null;
+
+/**
+End date for BinaryTS.
+*/
+private DateTime __binaryts_date2 = null;
+
+/**
+File for BinaryTS output.
+*/
+private String __binary_ts_file = "C:\\temp\\tstool.bts";
+
+/**
+Indicates whether a BinaryTS file is being used to process output.
+*/
+private boolean __BinaryTSUsed_boolean = false;
+
+/**
+List of data tests that are defined.
+*/
+private Vector __datatestlist = null;
+
+/**
+List of DateTime initialized from commands.
+*/
+private Hashtable __datetime_Hashtable = new Hashtable ();
+
+/**
+DMI for DIADvisor operational database.
+*/
+private DIADvisorDMI __DIADvisor_dmi = null;
+
+/**
+DMI for DIADvisor archive database.
+*/
+private DIADvisorDMI __DIADvisor_archive_dmi = null;
+
+// TODO 2007-11-16 - why can't this be local in the method that uses it?
+/**
+Count of errors.
+*/
+private int	_fatal_error_count = 0;
+
+/**
+Vector of StringMonthTS fill patterns used with fillPattern().
+*/
+private Vector	__fill_pattern_ts = new Vector (20,10);
+
+/**
+HydroBase DMI instance Vector, to allow more than one database instance to
+be open at a time, only used with openHydroBase().
+*/
+private Vector __hbdmi_Vector = new Vector();
+
+/**
+Indicates whether values <= 0 should be treated as missing when calculating
+historical averages.
+*/
+private boolean __IgnoreLEZero_boolean = false;
+
+/**
+Indicates whether missing time series should be added automatically.
+*/
+private boolean __IncludeMissingTS_boolean = false;
+
+/**
+Start date for read.
+*/
+private DateTime __InputStart_DateTime = null;
+
+/**
+End date for read.
+*/
+private DateTime __InputEnd_DateTime = null;        
+
+// TODO SAM 2007-11-16 Move to local StateMod command parameter.
+/**
+Missing data value to use with StateMod output.
+*/
+private double	__missing = -999.0;
+
+/**
+Missing data value to use with StateMod output.
+*/
+private double	__missing_range[] = null;
+
+/**
+Vector to save list of time series identifiers that are not found.
+*/
+private Vector	__missing_ts = new Vector();
+
 // TODO SAM 2007-02-18 need to reenable NDFD
 //private Vector __NDFDAdapter_Vector = new Vector();
 						// NDFD Adapter instance
@@ -905,29 +980,55 @@ private Vector	_missing_ts = new Vector();	// Vector to save list of time
 						// one database instance to
 						// be open at a time, only
 						// used with openNDFD().
-private int __num_prepended_commands = 0;	// The number of commands that
-						// are at the beginning of the
-						// __commands, which have been
-						// automatically added (e.g., a
-						// setWorkingDir() command to
-						// initialize the working
-						// directory).
+
+// TODO SAM 2007-11-16 Can this be removed now that InitialWorkingDir is specified at startup?
+/**
+The number of commands that are at the beginning of the __commands, which have been
+automatically added (e.g., a setWorkingDir() command to initialize the working
+directory).
+*/
+private int __num_prepended_commands = 0;
 
 /**
 Number of TS xxx expressions, which is used to size the BinaryTS, if needed.
 */
-private int	__num_TS_expressions = 0;	
+private int	__num_TS_expressions = 0;
+
+/**
+List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
+*/
 private Vector __nwsrfs_dmi_Vector = new Vector();
-						// List of NWSRFS_DMI to use to read from
-						// NWSRFS FS5Files.
-private String	_output_file = "tstool.out";	// Default output file name.
-private DateTime __OutputStart_DateTime = null;	// Global start date/time for
-						// output.
-private DateTime __OutputEnd_DateTime = null;	// Global end date/time for
-						// output.
-private	boolean	_preview_output = false;	// Indicates whether exported
-						// data should be previewed.
-						// The default is false.
+
+/**
+Default output file name.
+*/
+private String	__output_file = "tstool.out";
+
+/**
+Indicates whether detailed header should be added to output.
+*/
+private boolean __OutputDetailedHeader_boolean = false; 
+
+/**
+Year type for output (calendar year is the default).
+*/
+private int __OutputYearType_int = __CALENDAR_YEAR;
+
+/**
+Global output start date/time.
+*/
+private DateTime __OutputStart_DateTime = null;
+
+/**
+Global output end date/time.
+*/
+private DateTime __OutputEnd_DateTime = null;
+
+/**
+Indicates whether exported output should be previewed.  The default is false.
+ */
+private	boolean	__PreviewExportedOutput_boolean = false;
+
 /**
 Properties generated/maintained by the processor.  These are initialized when calling
 processCommands() and may be modified during command processing.  There are
@@ -937,43 +1038,38 @@ which requires the working directory at that point of the workflow.
 */
 private PropList __processor_PropList = null;
 
-private DateTime __InputStart_DateTime = null;		// Start date for read.
-private DateTime __InputEnd_DateTime = null;		// End date for read.
-private DIADvisorDMI __DIADvisor_dmi = null;	// DMI for DIADvisor operational
-						// database.
-private DIADvisorDMI __DIADvisor_archive_dmi = null;
-						// DMI for DIADvisor archive
-						// database.
-private SatMonSysDMI __smsdmi = null;		// DMI for ColoradoSMS.
-private RiversideDB_DMI __rdmi = null;		// DMI for RiversideDB.
-private DateTime _reference_date = null;	// Reference date for year to
-						// date report (only use month
-						// and day).
+/**
+DMI for RiversideDB.
+*/
+private RiversideDB_DMI __rdmi = null;
+
+/**
+Reference date for year to date report (only use month and day).
+*/
+private DateTime __reference_date = null;
+
+/**
+DMI for DIADvisor archive database.
+*/
+private SatMonSysDMI __smsdmi = null;
+
 /**
 The TSCommandProcessor instance that is managing this TSEngine instance.
 A valid instance should be passed during construction.
 */
 private TSCommandProcessor __ts_processor = null;
 
-//private	Vector	_tsexpression_list = null;	// List of time series
-						// expressions to process.
-private	Vector	_tsexpression_list2 = null;	// List of time series
-						// expressions to process, when
-						// nested commands are used
-						// (e.g., with runCommands()).
 /**
 Vector of time series vector that is the result of processing.
 This will always be non-null so check _binary_ts_used.
 */
-private Vector	__tslist = new Vector(50,50);		
-private Vector	__tslist_output = null;		// Time series vector that is
-						// actually output (limited by
-						// selections in the GUI).
-private WindowListener _tsview_window_listener = null;
-						// WindowListener for
-						// TSViewJFrame objects
+private Vector	__tslist = new Vector(50,50);
 
-private Vector __datatestlist = null;
+/**
+WindowListener for TSViewJFrame objects, used when calling app wants to listen for
+window events on lot windows.
+*/
+private WindowListener _tsview_window_listener = null;
 
 /**
 Construct a TSEngine to work in parallel with a TSCommandProcessor.
@@ -1055,15 +1151,6 @@ throws Exception
 }
 
 /**
-Indicate whether a time series' data period should automatically be extended
-to the output period (to allow for filling).
-@return True if the period should be automatically extended.
-*/
-protected boolean autoExtendPeriod()
-{	return __auto_extend_period;
-}
-
-/**
 Calculate the average values for a time series.
 @return the average data for a time series using the averaging and
 output period.  If a monthly time series, a MonthTSLimits will be returned.
@@ -1107,21 +1194,16 @@ throws Exception
 	if ( ts.getDataIntervalBase() == TimeInterval.MONTH ) {
 		// Set the flag to pass to the limits code...
 		int limits_flag = 0;
-		if ( __ignore_lezero ) {
+		if ( getIgnoreLEZero() ) {
 			limits_flag = TSLimits.IGNORE_LESS_THAN_OR_EQUAL_ZERO;
 		}
 		try {	if ( haveAveragingPeriod() ) {
-				// Get the average values from the averaging
-				// period...
+				// Get the average values from the averaging period...
 				if ( i <= 0 ) {
-					Message.printStatus ( 2, routine,
-					"Specified averaging period is:  " +
-					_averaging_date1.toString() + " to " +
-					_averaging_date2.toString() );
+					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
+					getAverageStart() + " to " + getAverageEnd() );
 				}
-				average_limits = new MonthTSLimits( (MonthTS)ts,
-					_averaging_date1,
-					_averaging_date2, limits_flag);
+				average_limits = new MonthTSLimits( (MonthTS)ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
 			else {	// Get the average values from the available
 				// period...
@@ -1145,21 +1227,17 @@ throws Exception
 	else if ( ts.getDataIntervalBase() == TimeInterval.YEAR ) {
 		// Set the flag to pass to the limits code...
 		int limits_flag = 0;
-		if ( __ignore_lezero ) {
+		if ( getIgnoreLEZero() ) {
 			limits_flag = TSLimits.IGNORE_LESS_THAN_OR_EQUAL_ZERO;
 		}
 		try {	if ( haveAveragingPeriod() ) {
 				// Get the average values from the averaging
 				// period...
 				if ( i <= 0 ) {
-					Message.printStatus ( 2, routine,
-					"Specified averaging period is:  " +
-					_averaging_date1.toString() + " to " +
-					_averaging_date2.toString() );
+					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
+					getAverageStart() + " to " + getAverageEnd().toString() );
 				}
-				average_limits = new TSLimits( ts,
-					_averaging_date1,
-					_averaging_date2, limits_flag);
+				average_limits = new TSLimits( ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
 			else {	// Get the average values from the available
 				// period...
@@ -1495,16 +1573,15 @@ Delete the BinaryTS associated with the TSEngine, containing the results of
 time series expression processing.
 */
 private void deleteBinaryTS ()
-{	try {	if ( _binary_ts != null ) {
-			_binary_ts.delete ();
-			_binary_ts = null;
-			_binary_ts_used = false;
+{	try {	if ( getBinaryTS() != null ) {
+			__binary_ts.delete ();
+			setBinaryTS ( null );
+			setBinaryTSUsed ( false );
 		}
 	}
 	catch ( Exception e ) {
 		// For now ignore...
-		Message.printWarning ( 2, "TSEngine.deleteBinaryTS",
-		"Error deleting BinaryTS file" );
+		Message.printWarning ( 2, "TSEngine.deleteBinaryTS", "Error deleting BinaryTS file" );
 		Message.printWarning ( 2, "TSEngine.deleteBinaryTS", e );
 	}
 }
@@ -1529,7 +1606,7 @@ throws Exception
 	TSAnalyst analyst = new TSAnalyst();
 	// Start the data coverage report...
 	try {	PropList props = new PropList ( "tsanalyst" );
-		if ( __calendar_type == WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			props.set( "CalendarType=WaterYear" );
 		}
 		else {	// Default...
@@ -2156,23 +2233,20 @@ throws Exception
 		// on this command because the global flag is used in the
 		// readTimeSeries method.
 		// TODO SAM 2007-03-12 Need to avoid global flag.
-		include_missing_ts_old = __include_missing_ts;
-		try {	__include_missing_ts = include_missing_ts;
-			ts = readTimeSeries ( wl, command_tag,
-				tsident_string.toString() );
-			__include_missing_ts = include_missing_ts_old;
+		include_missing_ts_old = getIncludeMissingTS();
+		try {	setIncludeMissingTS ( include_missing_ts );
+			ts = readTimeSeries ( wl, command_tag, tsident_string.toString() );
+			setIncludeMissingTS ( include_missing_ts_old );
 			if ( ts != null ) {
-				if ( (DefaultUnits != null) &&
-						(ts.getDataUnits().length() == 0) ) {
+				if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
 					// Time series has no units so assign default.
 					ts.setDataUnits ( DefaultUnits );
 				}
-				processTimeSeriesAction ( INSERT_TS, ts,
-							getTimeSeriesSize());
+				processTimeSeriesAction ( INSERT_TS, ts, getTimeSeriesSize());
 			}
 		}
 		catch ( Exception e ) {
-			__include_missing_ts = include_missing_ts_old;
+			setIncludeMissingTS ( include_missing_ts_old );
 		}
 		// Cancel processing if the user has indicated to do so...
 		if ( __ts_processor.getCancelProcessingRequested() ) {
@@ -2432,7 +2506,7 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	// Set the date...
-	try {	_datetime_Hashtable.put ( (String)tokens.elementAt(1),
+	try {	__datetime_Hashtable.put ( (String)tokens.elementAt(1),
 			(Object)DateTime.parse((String)tokens.elementAt(2)));
 	}
 	catch ( Exception e ) {
@@ -2660,14 +2734,13 @@ throws Exception
 	StringMonthTS patternts = searchForFillPatternTS ( PatternID );
 	if ( patternts == null ) {
 		++warning_count;
-		message = "Unable to find fill pattern time series "+
-		"\"" + PatternID + "\" to fill time series.";
+		message = "Unable to find fill pattern time series \"" + PatternID + "\" to fill time series.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 	// Properties used when filling the time series...
 	PropList fillprops = new PropList ( "fillprops" );
-	if ( __ignore_lezero ) {
+	if ( getIgnoreLEZero() ) {
 		fillprops.set ( "IgnoreLessThanOrEqualZero", "true" );
 	}
 	// Get the time series to process...
@@ -2677,8 +2750,7 @@ throws Exception
 	int nts = tslist.size();
 	if ( nts == 0 ) {
 		++warning_count;
-		message = "Unable to find time series to fill using TSID \"" +
-		TSID + "\".";
+		message = "Unable to find time series to fill using TSID \"" + TSID + "\".";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
@@ -3898,12 +3970,12 @@ throws Exception
 	// Parse the flag...
 	String toggle = ((String)tokens.elementAt(1)).trim();
 	if ( toggle.equalsIgnoreCase("True") ) {
-		__auto_extend_period = true;
+		setAutoExtendPeriod ( true );
 		Message.printStatus ( 1, routine, "TS period will " +
 		"automatically be extended to the output period." );
 	}
 	else if ( toggle.equalsIgnoreCase("False") ) {
-		__auto_extend_period = false;
+		setAutoExtendPeriod ( false );
 		Message.printStatus ( 1, routine, "TS period will NOT " +
 		"automatically be extended to the output period." );
 	}
@@ -3944,7 +4016,7 @@ throws Exception
 	// Need to figure out how this impacts averaging, etc.
 	if ( !date1_string.equals("*") && !date1_string.equals("")) {
 		// Try getting a named date/time...
-		averaging_date1=(DateTime)_datetime_Hashtable.get(date1_string);
+		averaging_date1=(DateTime)__datetime_Hashtable.get(date1_string);
 		if ( averaging_date1 == null ) {
 			// Need to parse the string...
 			try {	averaging_date1 = DateTime.parse(date1_string);
@@ -3957,33 +4029,32 @@ throws Exception
 		}
 	}
 	if ( !date2_string.equals("*") && !date1_string.equals("") ) {
-		averaging_date2=(DateTime)_datetime_Hashtable.get(date2_string);
+		averaging_date2=(DateTime)__datetime_Hashtable.get(date2_string);
 		if ( averaging_date2 == null ) {
 			// Need to parse the string...
 			try {	averaging_date2 = DateTime.parse(date2_string);
 			}
 			catch ( Exception e ) {
-				throw new Exception (
-				"Error processing end date for \"" + command+
-				"\"." );
+				throw new Exception ( "Error processing end date for \"" + command+	"\"." );
 			}
 		}
 	}
 	// If we have gotten to here, then we have dates that can be set (using
 	// strings, which is a little awkward)...
 	if ( date1_string.equals("*") || date1_string.equals("") ) {
-		_averaging_date1 = null;
+		setAverageStart (null);
 	}
-	else {	_averaging_date1 = new DateTime ( averaging_date1 );
+	else {
+        setAverageStart ( new DateTime ( averaging_date1 ) );
 	}
 	if ( date2_string.equals("*") || date2_string.equals("") ) {
-		_averaging_date2 = null;
+		setAverageEnd ( null );
 	}
-	else {	_averaging_date2 = new DateTime ( averaging_date2 );
+	else {
+        setAverageEnd ( new DateTime ( averaging_date2 ) );
 	}
-	Message.printStatus ( 1, "TSEngine.do_SetAveragePeriod",
-		"Average period set to " + _averaging_date1 +
-		" to " + _averaging_date2 );
+	Message.printStatus ( 2, "TSEngine.do_SetAveragePeriod",
+		"Average period set to " + getAverageStart() + " to " + getAverageEnd() );
 	// Clean up...
 	tokens = null;
 	date1_string = null;
@@ -4003,14 +4074,11 @@ throws Exception
 	Vector tokens = StringUtil.breakStringList ( expression,
 			"() \t", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() != 2) ) {
-		throw new Exception (
-		"Bad command: \"" + expression + "\"" );
+		throw new Exception ("Bad command: \"" + expression + "\"" );
 	}
-	_binary_day_cutoff = StringUtil.atoi(
-		((String)tokens.elementAt(1)).trim() );
+	__binary_day_cutoff = StringUtil.atoi(((String)tokens.elementAt(1)).trim() );
 	Message.printStatus ( 1, "TSEngine.do_setBinaryTSDayCutoff",
-	"BinaryTS file will be used for daily data" +
-	" if >= " + _binary_day_cutoff + " daily time series." );
+	"BinaryTS file will be used for daily data if >= " + __binary_day_cutoff + " daily time series." );
 	tokens = null;
 }
 
@@ -4029,9 +4097,9 @@ throws Exception
 		throw new Exception (
 		"Bad command: \"" + expression + "\"" );
 	}
-	_binary_ts_file = ((String)tokens.elementAt(1)).trim();
+	__binary_ts_file = ((String)tokens.elementAt(1)).trim();
 	Message.printStatus ( 1, "TSEngine.do_setBinaryTSFile",
-	"BinaryTS file base name is \"" + _binary_ts_file + "\"" );
+	"BinaryTS file base name is \"" + __binary_ts_file + "\"" );
 	tokens = null;
 }
 
@@ -4052,10 +4120,10 @@ throws Exception
 	String date1 = ((String)tokens.elementAt(1)).trim();
 	String date2 = ((String)tokens.elementAt(2)).trim();
 	// Parse the dates.  They may be named dates...
-	_binaryts_date1 = (DateTime)_datetime_Hashtable.get( date1);
-	if ( _binaryts_date1 == null ) {
+	__binaryts_date1 = (DateTime)__datetime_Hashtable.get( date1);
+	if ( __binaryts_date1 == null ) {
 		// Did not find a date in the hash table so parse it...
-		try {	_binaryts_date1 = DateTime.parse ( date1 );
+		try {	__binaryts_date1 = DateTime.parse ( date1 );
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 1,
@@ -4063,10 +4131,10 @@ throws Exception
 			"Error parsing setBinaryTSPeriod() date \""+date1+"\"");
 		}
 	}
-	_binaryts_date2 = (DateTime)_datetime_Hashtable.get( date2);
-	if ( _binaryts_date2 == null ) {
+	__binaryts_date2 = (DateTime)__datetime_Hashtable.get( date2);
+	if ( __binaryts_date2 == null ) {
 		// Did not find a date in the hash table so parse it...
-		try {	_binaryts_date2 = DateTime.parse ( date2 );
+		try {	__binaryts_date2 = DateTime.parse ( date2 );
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 1,
@@ -4075,7 +4143,7 @@ throws Exception
 		}
 	}
 	Message.printStatus ( 1, "TSEngine.do_setBinaryTSPeriod",
-	"BinaryTS period set to " + _binaryts_date1 + " to " + _binaryts_date2);
+	"BinaryTS period set to " + __binaryts_date1 + " to " + __binaryts_date2);
 	tokens = null;
 }
 
@@ -4409,35 +4477,29 @@ private void do_setIgnoreLEZero ( String command )
 throws Exception
 {	String routine = "TSEngine.doSetIgnoreLEZero";
 	if ( command.regionMatches(true,0,"-ignorelezero",0,13) ) {
-		__ignore_lezero = true;
-		Message.printStatus ( 1, routine,
-		"Values <= 0 will be treated as missing when" +
-		" computing historic averages." );
+		setIgnoreLEZero ( true );
+		Message.printStatus ( 2, routine, "Values <= 0 will be treated as missing when computing historic averages." );
 	}
 	else if ( command.regionMatches(true,0, "setIgnoreLEZero", 0,15) ) {
 		// Check the second token for "true" or "false".
-		Vector tokens = StringUtil.breakStringList ( command,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
+		Vector tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 2) ) {
 			throw new Exception ( "Bad command \"" + command+"\"" );
 		}
 		// Parse the flag...
 		String toggle = (String)tokens.elementAt(1);
 		if ( toggle.equalsIgnoreCase("True") ) {
-			__ignore_lezero = true;
-			Message.printStatus ( 1, routine,
-			"Values <= 0 WILL be treated as missing when" +
-			" computing historic averages." );
+			setIgnoreLEZero ( true );
+			Message.printStatus ( 2, routine,
+			"Values <= 0 WILL be treated as missing when computing historic averages." );
 		}
 		else if ( toggle.equalsIgnoreCase("False") ) {
-			__ignore_lezero = false;
-			Message.printStatus ( 1, routine,
-			"Values <= 0 WILL NOT be treated as missing when" +
-			" computing historic averages." );
+            setIgnoreLEZero ( false );
+			Message.printStatus ( 2, routine,
+			"Values <= 0 WILL NOT be treated as missing when computing historic averages." );
 		}
 		else {	throw new Exception (
-			"Unrecognized value \"" + toggle +
-			"\" (expecting true or false)");
+			"Unrecognized value \"" + toggle + "\" (expecting true or false)");
 		}
 		tokens = null;
 		toggle = null;
@@ -4453,33 +4515,27 @@ private void do_setIncludeMissingTS ( String expression )
 throws Exception
 {	String routine = "TSEngine.do_setIncludeMissingTS";
 	if ( expression.regionMatches(true,0,"-include_missing_ts",0,19) ) {
-		__include_missing_ts = true;
-		Message.printStatus ( 1, routine,
-		"Missing time series will have default time series inserted." );
+		setIncludeMissingTS ( true );
+		Message.printStatus ( 2, routine,"Missing time series will have default time series inserted." );
 	}
 	else if ( expression.regionMatches(true,0, "setIncludeMissingTS",0,19)){
 		// Check the second token for "true" or "false".
 		Vector tokens = StringUtil.breakStringList ( expression,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 2) ) {
-			throw new Exception ( "Bad command \"" + expression +
-				"\"" );
+			throw new Exception ( "Bad command \"" + expression + "\"" );
 		}
 		// Parse the flag...
 		String toggle = (String)tokens.elementAt(1);
 		if ( toggle.equalsIgnoreCase("True") ) {
-			__include_missing_ts = true;
-			Message.printStatus ( 1, routine, "Missing time " +
-			"series will have default time series inserted." );
+			setIncludeMissingTS ( true );
+			Message.printStatus ( 1, routine, "Missing time series will have default time series inserted." );
 		}
 		else if ( toggle.equalsIgnoreCase("False") ) {
-			__include_missing_ts = false;
-			Message.printStatus ( 1, routine, "Missing time " +
-			"series will not have default time series inserted." );
+			setIncludeMissingTS ( false );
+			Message.printStatus ( 1, routine, "Missing time series will not have default time series inserted." );
 		}
-		else {	throw new Exception (
-			"Unrecognized value \"" + toggle +
-			"\" (expecting true or false)");
+		else {	throw new Exception ("Unrecognized value \"" + toggle + "\" (expecting true or false)");
 		}
 		tokens = null;
 		toggle = null;
@@ -4573,12 +4629,13 @@ throws Exception
 		"Bad command \"" + expression + "\"" );
 	}
 	if ( tokens.size() == 2 ) {
-		_missing_range = new double[1];
-		_missing_range[0] =StringUtil.atod((String)tokens.elementAt(1));
+		__missing_range = new double[1];
+		__missing_range[0] =StringUtil.atod((String)tokens.elementAt(1));
 	}
-	else {	_missing_range = new double[2];
-		_missing_range[0] =StringUtil.atod((String)tokens.elementAt(1));
-		_missing_range[1] =StringUtil.atod((String)tokens.elementAt(2));
+	else {
+        __missing_range = new double[2];
+		__missing_range[0] =StringUtil.atod((String)tokens.elementAt(1));
+		__missing_range[1] =StringUtil.atod((String)tokens.elementAt(2));
 	}
 	tokens = null;
 }
@@ -4591,29 +4648,26 @@ Execute the new setOutputDetailedHeaders() or old -detailedheader command.
 private void do_setOutputDetailedHeaders ( String expression )
 throws Exception
 {	if ( expression.regionMatches( true,0,"-detailedheader",0,15) ) {
-		_detailedheader = true;
+		setOutputDetailedHeader ( true );
 	}
-	else if ( expression.regionMatches(true,0,
-		"setOutputDetailedHeaders", 0,24) ) {
+	else if ( expression.regionMatches(true,0,"setOutputDetailedHeaders", 0,24) ) {
 		// Check the second token for "true" or "false".
 		Vector tokens = StringUtil.breakStringList ( expression,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 2) ) {
-			throw new Exception (
-			"Bad command \"" + expression + "\"" );
+			throw new Exception ( "Bad command \"" + expression + "\"" );
 		}
 		// Parse the name and dates...
 		String toggle = (String)tokens.elementAt(1);
 		if ( toggle.equalsIgnoreCase("True") ) {
-			_detailedheader = true;
+			setOutputDetailedHeader ( true );
 		}
 		else if ( toggle.equalsIgnoreCase("False") ) {
-			_detailedheader = false;
+			setOutputDetailedHeader ( false );
 		}
 		else {	throw new Exception (
 			"Unrecognized value \"" + toggle +
-			"\" (expecting true or false) for \"" + expression +
-			"\"" );
+			"\" (expecting true or false) for \"" + expression + "\"" );
 		}
 		tokens = null;
 		toggle = null;
@@ -4629,38 +4683,32 @@ private void do_setOutputYearType ( String expression )
 throws Exception
 {	String routine = "TSEngine.do_setOutputYearType";	
 	if ( expression.equalsIgnoreCase("-cy") ) {
-		Message.printStatus ( 1, routine,
-		"Output will be in calendar year." );
-		__calendar_type = CALENDAR_YEAR;
+		Message.printStatus ( 2, routine, "Output will be in calendar year." );
+		setOutputYearType ( __CALENDAR_YEAR );
 	}
 	else if ( expression.equalsIgnoreCase("-wy") ) {
-		Message.printStatus ( 1, routine,
-		"Output will be in water year." );
-		__calendar_type = WATER_YEAR;
+		Message.printStatus ( 2, routine, "Output will be in water year." );
+		setOutputYearType ( __WATER_YEAR );
 	}
 	else if ( expression.regionMatches(true,0,"setOutputYearType", 0,17) ) {
 		// Check the second token for the year type.
 		Vector tokens = StringUtil.breakStringList ( expression,
 			" (,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( tokens.size() != 2 ) {
-			throw new Exception (
-			"Bad command \"" + expression + "\"" );
+			throw new Exception ("Bad command \"" + expression + "\"" );
 		}
 		// Parse the name and dates...
 		String year_type = (String)tokens.elementAt(1);
 		if ( year_type.equalsIgnoreCase("Water") ) {
-			__calendar_type = WATER_YEAR;
-			Message.printStatus ( 2, routine,
-			"Output will be in Water year" );
+			setOutputYearType ( __WATER_YEAR );
+			Message.printStatus ( 2, routine, "Output will be in Water year" );
 		}
 		else if ( year_type.equalsIgnoreCase("Calendar") ) {
-			__calendar_type = CALENDAR_YEAR;
-			Message.printStatus ( 2, routine,
-			"Output will be in Calendar year" );
+			setOutputYearType ( __CALENDAR_YEAR );
+			Message.printStatus ( 2, routine, "Output will be in Calendar year" );
 		}
 		else {	throw new Exception (
-			"Unrecognized year type \"" + year_type + "\" for \"" +
-			expression + "\".");
+			"Unrecognized year type \"" + year_type + "\" for \"" +	expression + "\".");
 		}
 		tokens = null;
 		year_type = null;
@@ -4686,19 +4734,15 @@ throws Exception
 	"\" for fill pattern file." );
 	// Read the fill pattern file.  Since multiple options are allowed,
 	// create a temporary Vector and then append to the main vector...
-	Vector fill_pattern_ts = StateMod_TS.readPatternTimeSeriesList(
-		fillpatternfile, true );
+	Vector fill_pattern_ts = StateMod_TS.readPatternTimeSeriesList(	fillpatternfile, true );
 	if ( fill_pattern_ts == null ) {
-		throw new Exception (
-		"No pattern time series read from \"" + fillpatternfile + "\"");
+		throw new Exception ("No pattern time series read from \"" + fillpatternfile + "\"");
 	}
 	else {	int listsize = fill_pattern_ts.size();
 		Message.printStatus ( 2, routine,
-		"Read "+listsize+" pattern time series from \""+
-		fillpatternfile + "\"" );
+		"Read "+listsize+" pattern time series from \""+ fillpatternfile + "\"" );
 		for ( int j = 0; j < listsize; j++ ) {
-			_fill_pattern_ts.addElement (
-				fill_pattern_ts.elementAt(j) );
+			__fill_pattern_ts.addElement (fill_pattern_ts.elementAt(j) );
 		}
 	}
 	fill_pattern_ts = null;
@@ -4822,11 +4866,9 @@ throws Exception
 			if ( app_PropList != null ) {
 				app_PropList.set ( "WorkingDir", dir );
 			}
-			Message.printStatus ( 1, routine,
-			"Setting working directory to \"" + dir + "\"" );
+			Message.printStatus ( 1, routine, "Setting working directory to \"" + dir + "\"" );
 		}
-		else {	String message = "Working directory \"" + dir +
-			"\" does not exist.  Not setting.";
+		else {	String message = "Working directory \"" + dir +	"\" does not exist.  Not setting.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -4846,30 +4888,24 @@ throws Exception
 {	Vector	tokens = null;
 	if ( expression.regionMatches(true,0, "setWarningLevel", 0,15) ) {
 		// New style...
-		tokens = StringUtil.breakStringList ( expression,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
+		tokens = StringUtil.breakStringList ( expression, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 	}
 	else if ( expression.length() >= 2 ) {
 		// Old style -w#... or -w #...
-		if (	(expression.length() == 2) ||
-			((expression.length() > 2) &&
-			(expression.charAt(2) == ' ')) ){
+		if ((expression.length() == 2) || ((expression.length() > 2) &&	(expression.charAt(2) == ' ')) ){
 			// Parse the whole thing...
-			tokens = StringUtil.breakStringList ( expression,
-				" ,", StringUtil.DELIM_SKIP_BLANKS );
+			tokens = StringUtil.breakStringList ( expression," ,", StringUtil.DELIM_SKIP_BLANKS );
 		}
 		else {	// Parse from the 3rd character on and then insert a
 			// dummy command...
-			tokens = StringUtil.breakStringList (
-				expression.substring(2),
+			tokens = StringUtil.breakStringList (expression.substring(2),
 				" ,", StringUtil.DELIM_SKIP_BLANKS );
 			tokens.insertElementAt("-w",0);
 		}
 	}
 	// Now the same token structure...
 	if ( tokens == null ) {
-		throw new Exception (
-		"Bad command \"" + expression + "\"" );
+		throw new Exception ("Bad command \"" + expression + "\"" );
 	}
 	int size = tokens.size();
 	if ( size == 1 ) {
@@ -4879,23 +4915,19 @@ throws Exception
 	}
 	else if ( size == 2 ) {
 		// Set warning level to same value for all...
-		int warning = StringUtil.atoi(
-			((String)tokens.elementAt(1)).trim());
+		int warning = StringUtil.atoi(((String)tokens.elementAt(1)).trim());
 		Message.setWarningLevel( Message.TERM_OUTPUT, warning );
 		Message.setWarningLevel( Message.LOG_OUTPUT, warning );
 	}
 	else if ( size == 3 ) {
 		// Set warning level to different values for log and display...
-		int warning = StringUtil.atoi(
-			((String)tokens.elementAt(1)).trim());
+		int warning = StringUtil.atoi(((String)tokens.elementAt(1)).trim());
 		Message.setWarningLevel( Message.TERM_OUTPUT, warning );
-		warning = StringUtil.atoi(
-			((String)tokens.elementAt(2)).trim());
+		warning = StringUtil.atoi(((String)tokens.elementAt(2)).trim());
 		Message.setWarningLevel( Message.LOG_OUTPUT, warning );
 	}
 	else {	tokens = null;
-		throw new Exception (
-		"Bad command \"" + expression + "\"" );
+		throw new Exception ("Bad command \"" + expression + "\"" );
 	}
 	// Clean up...
 	tokens = null;
@@ -4910,8 +4942,7 @@ private void do_stateModMax ( String command )
 throws Exception
 {	String routine = "TSEngine.do_StateModMax";
 	Vector tokens = StringUtil.breakStringList ( command,
-		" (,)", StringUtil.DELIM_SKIP_BLANKS|
-		StringUtil.DELIM_ALLOW_STRINGS );
+		" (,)", StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
 	if ( tokens.size() != 3 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
@@ -4923,28 +4954,22 @@ throws Exception
 	Vector tslist2 = null;
 	// Intervals must be the same...
 	if ( interval1 != interval2 ) {
-		Message.printStatus ( 1, routine,
-		"Data intervals for files are not the same:\n" +
-		"\"" + command + "\"" );
+		Message.printStatus ( 1, routine, "Data intervals for files are not the same:\n" + "\"" + command + "\"" );
 		return;
 	}
-	Message.printStatus ( 1, routine,
-	"Reading StateMod file \"" + infile1 + "\"" );
+	Message.printStatus ( 1, routine, "Reading StateMod file \"" + infile1 + "\"" );
 	try {	tslist1 = StateMod_TS.readTimeSeriesList ( infile1,
 			__InputStart_DateTime, __InputEnd_DateTime, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Error reading StateMod file \"" + infile1 + "\"." );
+		Message.printWarning ( 1, routine, "Error reading StateMod file \"" + infile1 + "\"." );
 	}
-	Message.printStatus ( 1, routine,
-	"Reading StateMod file \"" + infile2 + "\"" );
+	Message.printStatus ( 1, routine, "Reading StateMod file \"" + infile2 + "\"" );
 	try {	tslist2 = StateMod_TS.readTimeSeriesList ( infile2,
 			__InputStart_DateTime, __InputEnd_DateTime, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Error reading StateMod file \"" + infile2 + "\"." );
+		Message.printWarning ( 1, routine, "Error reading StateMod file \"" + infile2 + "\"." );
 	}
 	// Process the time series to clean up.  This extends the periods to the
 	// output period if necessary...
@@ -4965,8 +4990,7 @@ throws Exception
 			continue;
 		}
 		// Find the same time series in the second list...
-		pos = TSUtil.indexOf (	tslist2, ts1.getLocation(),
-					"Location", 1 );
+		pos = TSUtil.indexOf (	tslist2, ts1.getLocation(),	"Location", 1 );
 		if ( pos < 0 ) {
 			Message.printWarning ( 1, routine,
 			"Cannot find matching 2nd time series "+ "for \"" +
@@ -4980,8 +5004,7 @@ throws Exception
 		}
 	}
 	// Now add the time series to the end of the normal list...
-	Message.printStatus ( 1, routine, "Created " + vsize +
-		" StateMod max() time series" );
+	Message.printStatus ( 1, routine, "Created " + vsize + " StateMod max() time series" );
 	readTimeSeries2 ( tslist1, true );
 	int ts_pos = getTimeSeriesSize();
 	for ( int iv = 0; iv < vsize; iv++ ) {
@@ -5064,15 +5087,14 @@ throws Exception
 	}
 	// Parse the name and dates...
 	String alias = (String)tokens.elementAt(1);
-	DateTime olddate = (DateTime)_datetime_Hashtable.get(
+	DateTime olddate = (DateTime)__datetime_Hashtable.get(
 		(String)tokens.elementAt(2));
 	if ( olddate == null ) {
 		Message.printStatus(1,routine, "Unable to look up date \"" +
 		(String)tokens.elementAt(2) + "\"" );
 		olddate = DateTime.parse ( (String)tokens.elementAt(2) );
 	}
-	DateTime newdate = (DateTime)_datetime_Hashtable.get(
-		(String)tokens.elementAt(3));
+	DateTime newdate = (DateTime)__datetime_Hashtable.get((String)tokens.elementAt(3));
 	if ( newdate == null ) {
 		Message.printStatus(1,routine, "Unable to look up date \"" +
 		(String)tokens.elementAt(3) + "\"" );
@@ -5147,33 +5169,32 @@ Free memory for garbage collection.
 */
 protected void finalize ()
 throws Throwable
-{	_averaging_date1 = null;
-	_averaging_date2 = null;
-	_binary_ts_file = null;
-	if ( _binary_ts_used ) {
+{	__AverageStart_DateTime = null;
+	__AverageEnd_DateTime = null;
+	__binary_ts_file = null;
+	if ( getBinaryTSUsed() ) {
 		// Free the binary file...
-		if ( _binary_ts != null ) {
-			_binary_ts.delete ();
-			_binary_ts = null;
+		if ( __binary_ts != null ) {
+			__binary_ts.delete ();
+			__binary_ts = null;
 		}
 	}
-	_datetime_Hashtable = null;
+	__datetime_Hashtable = null;
 	__OutputStart_DateTime = null;
 	__OutputEnd_DateTime = null;
 	__InputStart_DateTime = null;
 	__InputEnd_DateTime = null;
-	_binaryts_date1 = null;
-	_binaryts_date2 = null;
-	_fill_pattern_ts = null;
+	__binaryts_date1 = null;
+	__binaryts_date2 = null;
+	__fill_pattern_ts = null;
 	__hbdmi_Vector = null;
-	_missing_range = null;
-	_missing_ts = null;
+	__missing_range = null;
+	__missing_ts = null;
 	// TODO SAM 2007-02-18 Need to enable NDFD
 	//__NDFDAdapter_Vector = null;
-	_output_file = null;
-	_reference_date = null;
+	__output_file = null;
+	__reference_date = null;
 	__tslist = null;
-	__tslist_output = null;
 	super.finalize();
 }
 
@@ -5232,12 +5253,45 @@ protected String [] formatOutputHeaderComments ( Vector commands )
 }
 
 /**
+Indicate whether a time series' data period should automatically be extended
+to the output period (to allow for filling).
+@return True if the period should be automatically extended.
+*/
+protected boolean getAutoExtendPeriod()
+{   return __AutoExtendPeriod_boolean;
+}
+
+/**
+Return the average period end, or null if all available data are to be used.
+@return the average period end, or null if all available data are to be used.
+*/
+protected DateTime getAverageEnd()
+{   return __AverageEnd_DateTime;
+}
+
+/**
+Return the average start, or null if all available data are to be used.
+@return the average period start, or null if all available data are to be used.
+*/
+protected DateTime getAverageStart()
+{   return __AverageStart_DateTime;
+}
+
+/**
 Get the BinaryTS reference.  This should be used only to call the BinaryTS
 get*() methods.
 @return the BinaryTS associated with the TSEngine, or null if not used.
 */
 private BinaryTS getBinaryTS ()
-{	return _binary_ts;
+{	return __binary_ts;
+}
+
+/**
+Indicate whether a BinaryTS is used for temporary data.
+@return True if a BinaryTS is being used.
+*/
+protected boolean getBinaryTSUsed()
+{   return __BinaryTSUsed_boolean;
 }
 
 /**
@@ -5271,7 +5325,7 @@ throws Exception
 
 	// Check for user DateTime instances...
 
-	DateTime date = (DateTime)_datetime_Hashtable.get ( date_string );
+	DateTime date = (DateTime)__datetime_Hashtable.get ( date_string );
 	if ( date != null ) {
 		// Found date in the hash table so use it...
 		return date;
@@ -5415,6 +5469,23 @@ protected Vector getHydroBaseDMIList ()
 }
 
 /**
+Indicate whether a values less than or equal zero should be excluded when computing historical averages.
+@return True if values <= 0 should be excluded when computing historical averages.
+*/
+protected boolean getIgnoreLEZero()
+{   return __IgnoreLEZero_boolean;
+}
+
+/**
+Indicate whether missing time series should result in an empty time series (rather
+than a warning and no time series).
+@return True if blank time series should be generated when they cannot be read.
+*/
+protected boolean getIncludeMissingTS()
+{   return __IncludeMissingTS_boolean;
+}
+
+/**
 Return the input period end, or null if all available data are to be queried.
 @return the input period end, or null if all available data are to be queried.
 */
@@ -5428,6 +5499,14 @@ Return the input start, or null if all available data are to be read at input.
 */
 protected DateTime getInputStart()
 {	return __InputStart_DateTime;
+}
+
+/**
+Return the list of TSID strings for which time series could not be read.
+@return the list of TSID strings for which time series could not be read.
+*/
+protected Vector getMissingTS()
+{   return __missing_ts;
 }
 
 // REVISIT SAM 2006-07-13
@@ -5519,6 +5598,15 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 	return null;
 }
 
+
+/**
+Indicate whether output should include detailed time series information in headers.
+@return True if the output should include detailed headers.
+*/
+protected boolean getOutputDetailedHeader()
+{   return __OutputDetailedHeader_boolean;
+}
+
 /**
 Return the output period end, or null if all data are to be output.
 @return the output period end, or null if all data are to be output.
@@ -5540,16 +5628,33 @@ Return the output year type, to be used for commands that create output.
 @return the output year type, as "Calendar" or "Water".
 */
 protected String getOutputYearType()
-{	
-	if ( __calendar_type == CALENDAR_YEAR ) {
+{	int OutputYearType_int = getOutputYearTypeInt();
+	if ( OutputYearType_int == __CALENDAR_YEAR ) {
 		return "Calendar";
 	}
-	else if ( __calendar_type == WATER_YEAR ) {
+	else if ( OutputYearType_int == __WATER_YEAR ) {
 		return "Water";
 	}
 	else {
 		return "";
 	}
+}
+
+/**
+Return the output year type as an internal integer, to be used for commands that create output.
+@return the output year type, as "Calendar" or "Water".
+*/
+private int getOutputYearTypeInt()
+{   
+    return __OutputYearType_int;
+}
+
+/**
+Indicate whether output that is exported should be previewed first.
+@return True if output that is exported should be previewed first..
+*/
+protected boolean getPreviewExportedOutput()
+{   return __PreviewExportedOutput_boolean;
 }
 
 /**
@@ -5704,9 +5809,9 @@ throws Exception
 {	if ( position < 0 ) {
 		return null;
 	}
-	if ( _binary_ts_used ) {
-		if ( _binary_ts != null ) {
-			return _binary_ts.readTimeSeries ( position );
+	if ( getBinaryTSUsed() ) {
+		if ( __binary_ts != null ) {
+			return __binary_ts.readTimeSeries ( position );
 		}
 	}
 	else {	if ( __tslist == null ) {
@@ -5752,8 +5857,8 @@ BinaryTS, as appropriate.
 @return number of time series available for output.
 */
 protected int getTimeSeriesSize ()
-{	if ( _binary_ts_used ) {
-		return _binary_ts.size();
+{	if ( getBinaryTSUsed() ) {
+		return __binary_ts.size();
 	}
 	else {	return __tslist.size();
 	}
@@ -5777,11 +5882,12 @@ determined, with one of the following values:
 its second element an int[] indicating the positions in the time series list,
 to be used to update the time series.  Use the size of the Vector (in the first
 element) to determine the number of time series to process.  The order of the
-time series will be from first to last.
+time series will be from first to last.  A non-null list is guaranteed to be
+returned.
 */
 protected Vector getTimeSeriesToProcess ( String TSList, String TSID )
 {	Vector tslist = new Vector();	// List of time series to process
-	int nts = getTimeSeriesSize();
+	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
 	int [] tspos = new int[nts];	// Positions of time series to process.
 					// Size to match the full list but may
 					// not be filled initially - trim before returning.
@@ -5995,12 +6101,10 @@ non-null and years not equal to zero).
 dates without fear of nulls or zero years).
 */
 private boolean haveAveragingPeriod ()
-{	if (	(_averaging_date1 == null) ||
-		(_averaging_date2 == null) ) {
+{	if ( (getAverageStart() == null) || (getAverageEnd() == null) ) {
 		return false;
 	}
-	if (	(_averaging_date1.getYear() == 0) ||
-		(_averaging_date2.getYear() == 0) ) {
+	if ( (getAverageStart().getYear() == 0) || (getAverageEnd().getYear() == 0) ) {
 		return false;
 	}
 	return true;
@@ -6042,9 +6146,10 @@ protected boolean haveOutputPeriod ()
 /**
 Indicate whether missing time series are automatically included in output.
 @return true if missing time series are automatically included in output.
+@deprecated use getIncludeMissingTS
 */
 protected boolean includeMissingTS()
-{	return __include_missing_ts;
+{	return getIncludeMissingTS();
 }
 
 /**
@@ -6086,11 +6191,11 @@ private int indexOf ( String string, int sequence_number )
 	if ( (string == null) || string.equals("") ) {
 		return -1;
 	}
-	if ( _binary_ts_used ) {
-		if ( _binary_ts == null ) {
+	if ( getBinaryTSUsed() ) {
+		if ( __binary_ts == null ) {
 			return -1;
 		}
-		else {	pos = _binary_ts.indexOf ( string, "Alias", -1 );
+		else {	pos = __binary_ts.indexOf ( string, "Alias", -1 );
 		}
 	}
 	else {	if ( sequence_number >= 0 ) {
@@ -6106,14 +6211,13 @@ private int indexOf ( String string, int sequence_number )
 	// Now search the identifiers (can't totally rely on indexOf() because
 	// the alias must also be empty)...
 	int size = 0;
-	if ( _binary_ts_used ) {
-		if ( _binary_ts == null ) {
+	if ( getBinaryTSUsed() ) {
+		if ( __binary_ts == null ) {
 			return -1;
 		}
-		else {	size = _binary_ts.size();
+		else {	size = __binary_ts.size();
 			for ( int i = (size - 1); i >= 0; i-- ) {
-				try {	if (	_binary_ts.getIdentifier(i
-						).equals( string) ) { //&&
+				try {	if (	__binary_ts.getIdentifier(i).equals( string) ) { //&&
 						//_binary_ts.getAlias(i
 						//).equals("") ) {}
 						return i;
@@ -6194,7 +6298,7 @@ Indicate whether a BinaryTS is used.
 @return true if a BinaryTS is used for time series, false if not.
 */
 protected boolean isBinaryTSUsed ()
-{	return _binary_ts_used;
+{	return __BinaryTSUsed_boolean;
 }
 
 /**
@@ -6702,14 +6806,8 @@ throws Exception
 	stopwatch.start();
 	//String expression = null;
 	String command_String = null;
-	// Free all data from the previous run...
-	if ( !AppendResults_boolean ) {
-		clearResults ();
-	}
-	_binary_ts = null;
-	_binary_ts_used = false;
+
 	TS ts = null;
-	_missing_ts.removeAllElements();
 	Vector tokens = null;	// For parsing commands.
 	String method = null;	// Method to execute
 	String	alias = null,	// First (and often only) alias
@@ -6781,6 +6879,11 @@ throws Exception
 		Message.setPropValue ( "WarningDialogCancelButton=true" );
 		Message.setPropValue ( "WarningDialogViewLogButton=true" );
 	}
+    
+    // Clear any settings that may have been left over from the previous run and which
+    // can impact the current run.
+    
+    processCommands_ResetDataForRunStart ( AppendResults_boolean );
 
 	// Now loop through the expressions, query time series, and manipulate
 	// to produce a list of final time series.  The following loop does the
@@ -7042,62 +7145,6 @@ throws Exception
 			do_DateTime ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"day_to_month_reservoir",0,22) ) {
-			// Leave this code in for backward compatibility but the
-			// new TSTool (as of 2002-08-27) uses
-			// TS Alias = dayToMonthReservoir()...
-			// Convert daily time series to monthly using reservoir
-			// conventions (end of month)...
-			// Expect that TSID, nearness limit and flag for
-			// linear interpolation are set.
-			// THIS IS AN OLD STYLE COMMAND.  READ THE TIME SERIES
-			// AND THEN INSERT.
-			Message.printWarning ( 1, routine,
-			"day_to_month_reservoir is obsolete.\n" +
-			"Use dayToMonthReservoir()." );
-			++update_count;
-			Message.printStatus ( 1, routine,
-			"Processing reservoir storage..." );
-			Vector v = 
-				StringUtil.breakStringList(command_String, "(,) ",
-				StringUtil.DELIM_SKIP_BLANKS );
-			if ( v.size() != 4) {
-				Message.printWarning ( 1, routine, 
-				"Invalid day_to_month_reservoir(): \"" +
-				command_String + "\"" );
-				++error_count;
-				continue;
-			}
-			ts = readTimeSeries ( popup_warning_level, command_tag,
-				((String)v.elementAt(1)).trim() );
-			if ( ts != null ) {
-				// Now have a daily time series... Convert to
-				// monthly using the nearest values...
-				PropList changeprops = new PropList (
-				"day_to_month_reservoir" );
-				changeprops.set ( "UseNearestToEnd",
-					((String)v.elementAt(2)).trim() );
-				Message.printStatus ( 1, routine,
-				"Changing interval..." );
-				MonthTS monthts = (MonthTS)
-					TSUtil.changeInterval (
-					ts, TimeInterval.MONTH, 1,
-					changeprops );
-				// Now fill with linear interpolation...
-				if ( ((String)v.elementAt(3)).equalsIgnoreCase(
-					"true") ) {
-					Message.printStatus ( 1, routine,
-					"Filling by interpolation..." );
-					TSUtil.fillInterpolate ( monthts,
-					(DateTime)null, (DateTime)null );
-				}
-				ts_pos = getTimeSeriesSize();
-				changeprops = null;
-				ts = monthts;
-			}
-			ts_action = INSERT_TS;
-			v = null;
-		}
 		else if ( command_String.regionMatches(true,0,"deselectTimeSeries",0,18)){
 			// Deselect time series for output...
 			do_selectTimeSeries ( command_String, false );
@@ -7151,17 +7198,14 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-		else if ( command_String.equalsIgnoreCase("end") ||
-				command_String.equalsIgnoreCase("exit") ) {
-			// Exit the processing, but do historic average
-			// filling...
-			Message.printStatus ( 1, routine,
-			"Exit - stop processing time series." );
+		else if ( command_String.equalsIgnoreCase("end") ||	command_String.equalsIgnoreCase("exit") ||
+                command_String.equalsIgnoreCase("exit()") ) {
+			// Exit the processing, but do historic average filling...
+			Message.printStatus ( 1, routine, "Exit - stop processing time series." );
 			ts_action = EXIT;
 			break;
 		}
-		else if ( command_String.regionMatches(
-			true,0,"fillCarryForward",0,16) ) {
+		else if ( command_String.regionMatches(	true,0,"fillCarryForward",0,16) ) {
 			// Just warn, but the old code still works.  At some
 			// point it will be disabled...
 			Message.printWarning ( 1, routine,
@@ -7897,8 +7941,7 @@ throws Exception
 					its = null;
 				}
 				else {	Message.printWarning ( 1, routine,
-					"Unable to find time series \"" +
-					alias + "\" to disaggregate." );
+					"Unable to find time series \"" + alias + "\" to disaggregate." );
 					++error_count;
 					ts = null;
 				}
@@ -7913,8 +7956,7 @@ throws Exception
 				// Create a new time series...
 				alias = (String)tokens.elementAt(3);
 				ts = TSUtil.newTimeSeries(alias,true);
-				if (	(__OutputStart_DateTime == null) ||
-					(__OutputEnd_DateTime == null) ) {
+				if ( (__OutputStart_DateTime == null) || (__OutputEnd_DateTime == null) ) {
 					Message.printWarning ( 1, routine,
 					"You must specify the output period "+
 					"when using newDayTSFromMonthAnd" +
@@ -7923,16 +7965,13 @@ throws Exception
 					continue;
 				}
 				// Make sure the date has a day precision...
-				DateTime date1 =
-					new DateTime ( __OutputStart_DateTime );
+				DateTime date1 = new DateTime ( __OutputStart_DateTime );
 				date1.setPrecision(DateTime.PRECISION_DAY);
 				date1.setDay ( 1 );
 				ts.setDate1 ( date1 );
-				DateTime date2 =
-					new DateTime ( __OutputEnd_DateTime);
+				DateTime date2 = new DateTime ( __OutputEnd_DateTime);
 				date2.setPrecision(DateTime.PRECISION_DAY);
-				date2.setDay ( TimeUtil.numDaysInMonth(
-					date2.getMonth(), date2.getYear()) );
+				date2.setDay ( TimeUtil.numDaysInMonth(	date2.getMonth(), date2.getYear()) );
 				ts.setDate2 ( date2 );
 				ts.allocateDataSpace ();
 				ts.setIdentifier ( (String)
@@ -8272,8 +8311,10 @@ throws Exception
 			++error_count;
 		}
 		// Command factory for remaining commands...
-		else {	// Try the Command class code...
-			try {	// Make sure the command is valid...
+		else {
+            // Try the Command class code...
+			try {
+                // Make sure the command is valid...
 				// Initialize the command (parse)...
 				// TODO SAM 2007-09-05 Need to evaluate where the
 				// initialization occurs (probably the initial edit or load)?
@@ -8288,41 +8329,42 @@ throws Exception
 					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
 				}
 				command.initializeCommand ( command_String, __ts_processor, true );
-				// REVISIT SAM 2005-05-11 Is this the best
-				// place for this or should it be in the
+				// TODO SAM 2005-05-11 Is this the best place for this or should it be in the
 				// runCommand()?...
 				// Check the command parameters...
 				if ( Message.isDebugOn ) {
-					Message.printDebug ( 1, routine,
-					"Checking the parameters for command \""
-					+ command_String + "\"" );
+					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + command_String + "\"" );
 				}
-				command.checkCommandParameters (
-					command.getCommandParameters(),
-					command_tag, 2 );
+				command.checkCommandParameters ( command.getCommandParameters(), command_tag, 2 );
 				// Clear the run status for the command...
 				if ( command instanceof CommandStatusProvider ) {
 					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.RUN);
 				}
 				// Run the command...
 				if ( Message.isDebugOn ) {
-					Message.printDebug ( 1, routine,
-					"Running command through new code..." );
+					Message.printDebug ( 1, routine, "Running command through new code..." );
 				}
 				command.runCommand ( i_for_message );
 				if ( Message.isDebugOn ) {
-					Message.printDebug ( 1, routine,
-					"...back from running command." );
+					Message.printDebug ( 1, routine, "...back from running command." );
 				}
 			}
 			catch ( InvalidCommandSyntaxException e ) {
 				message = "Unable to process command (invalid syntax).";
-				if ( command instanceof CommandStatusProvider &&
-						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
-					// No need to print a message to the screen because a visual marker will be shown, but log...
-					Message.printWarning ( 2,
-						MessageUtil.formatMessageTag(command_tag,
-						++error_count), routine, message );
+				if ( command instanceof CommandStatusProvider ) {
+				       if (	CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                               greaterThan(CommandStatusType.UNKNOWN) ) {
+				           // No need to print a message to the screen because a visual marker will be shown, but log...
+				           Message.printWarning ( 2,
+				                   MessageUtil.formatMessageTag(command_tag,
+				                           ++error_count), routine, message );
+                       }
+                       if ( command instanceof GenericCommand ) {
+                            // The command class will not have added a log record so do it here...
+                            ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Check the log for more details." ) );
+                       }
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
@@ -8337,12 +8379,20 @@ throws Exception
 			}
 			catch ( InvalidCommandParameterException e ) {
 				message = "Unable to process command invalid parameter).";
-				if ( command instanceof CommandStatusProvider &&
-						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
-					// No need to print a message to the screen because a visual marker will be shown, but log...
-					Message.printWarning ( 2,
-						MessageUtil.formatMessageTag(command_tag,
-						++error_count), routine, message );
+				if ( command instanceof CommandStatusProvider ) {
+				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                            greaterThan(CommandStatusType.UNKNOWN) ) {
+				        // No need to print a message to the screen because a visual marker will be shown, but log...
+				        Message.printWarning ( 2,
+				                MessageUtil.formatMessageTag(command_tag,
+				                        ++error_count), routine, message );
+                    }
+                    if ( command instanceof GenericCommand ) {
+                        // The command class will not have added a log record so do it here...
+                        ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Check the log for more details." ) );
+                    }
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
@@ -8356,12 +8406,20 @@ throws Exception
 			}
 			catch ( CommandWarningException e ) {
 				message = "Warnings were generated processing command (output may be incomplete).";
-				if ( command instanceof CommandStatusProvider &&
-						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
-					// No need to print a message to the screen because a visual marker will be shown, but log...
-					Message.printWarning ( 2,
-						MessageUtil.formatMessageTag(command_tag,
-						++error_count), routine, message );
+				if ( command instanceof CommandStatusProvider ) {
+				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                            greaterThan(CommandStatusType.UNKNOWN) ) {
+				        // No need to print a message to the screen because a visual marker will be shown, but log...
+				        Message.printWarning ( 2,
+				                MessageUtil.formatMessageTag(command_tag,
+				                        ++error_count), routine, message );
+                    }
+                    if ( command instanceof GenericCommand ) {
+                        // The command class will not have added a log record so do it here...
+                        ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Check the log file for more details." ) );
+                    }
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
@@ -8375,12 +8433,32 @@ throws Exception
 			}
 			catch ( CommandException e ) {
 				message = "Error processing command (unable to complete command).";
-				if ( command instanceof CommandStatusProvider &&
-						CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).greaterThan(CommandStatusType.UNKNOWN) ) {
-					// No need to print a message to the screen because a visual marker will be shown, but log...
-					Message.printWarning ( 2,
-						MessageUtil.formatMessageTag(command_tag,
-						++error_count), routine, message );
+				if ( command instanceof CommandStatusProvider ) {
+				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                            greaterThan(CommandStatusType.UNKNOWN) ) {
+				        // No need to print a message to the screen because a visual marker will be shown, but log...
+				        Message.printWarning ( 2,
+				                MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
+                    }
+                    if ( command instanceof GenericCommand ) {
+                        // The command class will not have added a log record so do it here.  Because the
+                        // exception thrown by GenericCommand.runCommand() is not very specific, verify that
+                        // this is a recognized command...
+                        TSCommandFactory cf = new TSCommandFactory ();
+                        try {
+                            cf.newCommand(command.toString());
+                        }
+                        catch ( UnknownCommandException e2 ) {
+                            ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                            "Unknown command \"" + command.toString() + "\".",
+                                            "Verify the spelling of the command name - " +
+                                            "recreate with command editor if necessary." ) );
+                        }
+                        ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Check the log file for more details." ) );
+                    }
 				}
 				else {	// Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
@@ -8397,8 +8475,8 @@ throws Exception
 				if ( command instanceof CommandStatusProvider ) {
 					// Add to the log as a failure...
 					Message.printWarning ( 2,
-						MessageUtil.formatMessageTag(command_tag,
-						++error_count), routine, message );
+						MessageUtil.formatMessageTag(command_tag,++error_count), routine, message );
+                    // Always add to the log because this type of exception is unexpected from a Command object.
 					command_status.addToLog(CommandPhaseType.RUN,
 							new CommandLogRecord(CommandStatusType.FAILURE,
 									"Unexpected exception \"" + e.getMessage() + "\"",
@@ -8442,7 +8520,7 @@ throws Exception
 								"See log file for details.") );
 			}
 			// Then continue with next expression, unless the binary...
-			if ( _binary_ts_used ) {
+			if ( getBinaryTSUsed() ) {
 				return;
 			}
 		}
@@ -8497,17 +8575,16 @@ throws Exception
 		Message.setPropValue ( "WarningDialogViewLogButton=false" );
 	}
 
-	if ( _binary_ts_used ) {
+	if ( getBinaryTSUsed() ) {
 		if ( __tslist != null ) {
-			// Clear out the __tslist because it is not used...
-			// Needed?
+			// Clear out the __tslist because it is not used -  Needed?
 			__tslist.removeAllElements();
 		}
 
 		Message.printStatus ( 1, routine, "Retrieved " + getTimeSeriesSize() + " time series." );
 		Message.printStatus ( 1, routine, "Time series have been saved"+
 		" to the temporary BinaryTS file \"" +
-		_binary_ts_file + "\" and can now be used for output." );
+		__binary_ts_file + "\" and can now be used for output." );
 	}
 	else {	Message.printStatus ( 1, routine, "Retrieved " + __tslist.size() + " time series." );
 	}
@@ -8531,31 +8608,26 @@ throws Exception
 		ml = 1;
 	}
 	CommandStatusType max_severity = CommandStatusProviderUtil.getHighestSeverity ( command_Vector );
-	if ( (_fatal_error_count > 0) || (error_count > 0) ||
-			max_severity.greaterThan(CommandStatusType.WARNING)) {
+	if ( (_fatal_error_count > 0) || (error_count > 0) || max_severity.greaterThan(CommandStatusType.WARNING)) {
 
 		if ( IOUtil.isBatch() ) {
-			size = _missing_ts.size();
+			size = getMissingTS().size();
 			if ( size > 0 ) {
 				// FIXME SAM 2007-11-06 Put in CheckTimeSeries()...
-				Message.printWarning ( ml, routine,
-					"The following time series were not found:" );
+				Message.printWarning ( ml, routine,"The following time series were not found:" );
 				for ( int i2 = 0; i2 < size; i2++ ) {
-					Message.printWarning ( ml, routine,
-					"   "+(String)_missing_ts.elementAt(i2));
+					Message.printWarning ( ml, routine,"   "+(String)getMissingTS().elementAt(i2));
 				}
 			}
 			Message.printWarning ( ml, routine,
-			"There were warnings or failures processing commands.  " +
-			"The output may be incomplete." );
+			"There were warnings or failures processing commands.  The output may be incomplete." );
 			// FIXME SAM 2007-08-20 Need to figure out how to get the
 			// exit status out of the processor and allow calling
 			// code to exit.
 			//__gui.quitProgram ( 1 );
 		}
 		else {	Message.printWarning ( ml, routine,
-			"There were warnings processing commands.  " +
-			"The output may be incomplete.\n" +
+			"There were warnings processing commands.  The output may be incomplete.\n" +
 			"See the log file for information." );
 		}
 	}
@@ -8658,6 +8730,65 @@ throws Exception
 		is_obsolete = true;
 		do_setDebugLevel ( command_String );
 	}
+    else if ( command_String.regionMatches(true,0,"day_to_month_reservoir",0,22) ) {
+        is_obsolete = true;
+        // Leave this code in for backward compatibility but the
+        // new TSTool (as of 2002-08-27) uses
+        // TS Alias = dayToMonthReservoir()...
+        // Convert daily time series to monthly using reservoir
+        // conventions (end of month)...
+        // Expect that TSID, nearness limit and flag for
+        // linear interpolation are set.
+        // THIS IS AN OLD STYLE COMMAND.  READ THE TIME SERIES
+        // AND THEN INSERT.
+        Message.printWarning ( 1, routine,
+        "day_to_month_reservoir is obsolete.\n" +
+        "Use dayToMonthReservoir()." );
+        /*
+        ++update_count;
+        Message.printStatus ( 1, routine,
+        "Processing reservoir storage..." );
+        Vector v = 
+            StringUtil.breakStringList(command_String, "(,) ",
+            StringUtil.DELIM_SKIP_BLANKS );
+        if ( v.size() != 4) {
+            Message.printWarning ( 1, routine, 
+            "Invalid day_to_month_reservoir(): \"" +
+            command_String + "\"" );
+            ++error_count;
+            continue;
+        }
+        ts = readTimeSeries ( popup_warning_level, command_tag,
+            ((String)v.elementAt(1)).trim() );
+        if ( ts != null ) {
+            // Now have a daily time series... Convert to
+            // monthly using the nearest values...
+            PropList changeprops = new PropList (
+            "day_to_month_reservoir" );
+            changeprops.set ( "UseNearestToEnd",
+                ((String)v.elementAt(2)).trim() );
+            Message.printStatus ( 1, routine,
+            "Changing interval..." );
+            MonthTS monthts = (MonthTS)
+                TSUtil.changeInterval (
+                ts, TimeInterval.MONTH, 1,
+                changeprops );
+            // Now fill with linear interpolation...
+            if ( ((String)v.elementAt(3)).equalsIgnoreCase(
+                "true") ) {
+                Message.printStatus ( 1, routine,
+                "Filling by interpolation..." );
+                TSUtil.fillInterpolate ( monthts,
+                (DateTime)null, (DateTime)null );
+            }
+            ts_pos = getTimeSeriesSize();
+            changeprops = null;
+            ts = monthts;
+        }
+        ts_action = INSERT_TS;
+        v = null;
+        */
+    }
 	else if ( command_String.regionMatches(true,0,"fillconst(",0,10) ) {
 		is_obsolete = true;
 		String message ="fillconst() is obsolete.  Use fillConstant().";
@@ -8824,6 +8955,40 @@ throws Exception
 }
 
 /**
+Reset all the data to initial values, to be controlled by the commands.
+In particular, reset the dates that might have been set in a previous run and which
+need to be reset for the current run.
+@param AppendResults_boolean Indicates whether the results from the current run should be
+appended to a previous run.
+*/
+private void processCommands_ResetDataForRunStart ( boolean AppendResults_boolean )
+throws Exception
+{
+    // The following are the initial defaults...
+    setAutoExtendPeriod ( true );
+    setBinaryTSUsed ( false );
+    __datatestlist = null;
+    __datetime_Hashtable.clear();
+    __fill_pattern_ts.removeAllElements();
+    setIncludeMissingTS ( false );
+    setIgnoreLEZero ( false );
+    setInputStart ( null );
+    setInputEnd ( null );
+    getMissingTS().removeAllElements();
+    setOutputDetailedHeader ( false );
+    setOutputStart ( null );
+    setOutputEnd ( null );
+    setOutputYearType ( __CALENDAR_YEAR );
+    setPreviewExportedOutput ( false );
+    __reference_date = null;
+    // Free all data from the previous run...
+    if ( !AppendResults_boolean ) {
+        clearResults ();
+    }
+    setBinaryTS ( null );
+}
+
+/**
 Process a list of time series to produce an output product.
 The time series are typically generated from a previous call to
 processCommands() or processTimeSeriesCommands().
@@ -8860,23 +9025,26 @@ throws IOException
 {	String	message = null,	// Message string
 		routine = "TSEngine.processTimeSeries";
 
+    // List of time series to output, determined from the time series in memory
+    // and a list of selected array positions (e.g., from a GUI.
+
+    Vector tslist_output = null;
+
 	// Define a local proplist to better deal with null...
 	PropList props = proplist;
 	if ( props == null ) {
 		props = new PropList ( "" );
 	}
 
-	if ( _binary_ts_used ) {
-		Message.printStatus ( 1, routine,
-		"Creating output from BinaryTS file..." );
+	if ( getBinaryTSUsed() ) {
+		Message.printStatus ( 2, routine, "Creating output from BinaryTS file..." );
 	}
 	else {	if ( (__tslist == null) || (__tslist.size()==0) ) {
 			message = "No time series to process.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		} 
-		Message.printStatus ( 1, routine,
-		"Creating output from previously queried time series..." );
+		Message.printStatus ( 1, routine, "Creating output from previously queried time series..." );
 	}
 
 	// Put together the Vector to output, given the requested ts_indices.
@@ -8888,11 +9056,12 @@ throws IOException
 	int nts = __tslist.size();
 	if ( ts_indices == null ) {
 		// Use the entire list...
-		__tslist_output = __tslist;
+		tslist_output = __tslist;
 	}
-	else {	int ts_indices_size = ts_indices.length;
-		if ( __tslist_output == null ) {
-			__tslist_output = new Vector ( ts_indices_size );
+	else {
+        int ts_indices_size = ts_indices.length;
+		if ( tslist_output == null ) {
+			tslist_output = new Vector ( ts_indices_size );
 		}
 		else {	// This does not work because if the Vector is passed
 			// to TSViewJFrame, etc., the Vector is reused but the
@@ -8900,12 +9069,11 @@ throws IOException
 			// create a new Vector for each output product.  The
 			// time series themselves can be re-used.
 			//__tslist_output.removeAllElements();
-			__tslist_output = new Vector ( ts_indices_size );
+			tslist_output = new Vector ( ts_indices_size );
 		}
 		for ( int i = 0; i < ts_indices_size; i++ ) {
 			if ( (ts_indices[i] >= 0) && (ts_indices[i] < nts) ) {
-				__tslist_output.addElement (
-				__tslist.elementAt(ts_indices[i]) );
+				tslist_output.addElement ( __tslist.elementAt(ts_indices[i]) );
 			}
 		}
 	}
@@ -8916,7 +9084,7 @@ throws IOException
 
 	int output_format = OUTPUT_NONE;
 	String precision_string = "*";
-	_preview_output = false;
+	setPreviewExportedOutput ( false );
 
 	String prop_value = props.getValue ( "OutputFormat" );
 	Message.printStatus ( 1, routine,"Output format is \""+prop_value+"\"");
@@ -8940,10 +9108,11 @@ throws IOException
 		}
 		else if ( prop_value.equalsIgnoreCase("-oyear_to_date_report")){
 			output_format = OUTPUT_YEAR_TO_DATE_REPORT;
-			try {	_reference_date = DateTime.parse(parameters);
+			try {
+                __reference_date = DateTime.parse(parameters);
 			}
 			catch ( Exception e ) {
-				_reference_date = null;
+				__reference_date = null;
 			}
 		}
 
@@ -8952,8 +9121,7 @@ throws IOException
 		else if ( prop_value.equalsIgnoreCase("-odatevalue") ) {
 			output_format = OUTPUT_DATEVALUE;
 		}
-		else if ( prop_value.equalsIgnoreCase(
-			"-onwsrfsesptraceensemble") ) {
+		else if ( prop_value.equalsIgnoreCase("-onwsrfsesptraceensemble") ) {
 			output_format = OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE;
 		}
 		else if ( prop_value.equalsIgnoreCase("-onwscard") ) {
@@ -9008,8 +9176,7 @@ throws IOException
 		else if (prop_value.equalsIgnoreCase("-oPredictedValue_graph")){
 			output_format = OUTPUT_PredictedValue_GRAPH;
 		}
-		else if ( prop_value.equalsIgnoreCase(
-			"-oPredictedValueResidual_graph")){
+		else if ( prop_value.equalsIgnoreCase("-oPredictedValueResidual_graph")){
 			output_format = OUTPUT_PredictedValueResidual_GRAPH;
 		}
 		else if ( prop_value.equalsIgnoreCase("-oxyscatter_graph")){
@@ -9019,34 +9186,35 @@ throws IOException
 	prop_value = props.getValue ( "OutputFile" );
 	if ( prop_value != null ) {
 		if ( prop_value.equalsIgnoreCase("-preview") ) {
-			_preview_output = true;
+			setPreviewExportedOutput ( true );
 		}
-		else {	_output_file = prop_value;
+		else {
+            __output_file = prop_value;
 		}
 	}
 	prop_value = props.getValue ( "Precision" );
 	if ( prop_value != null ) {
-		if (	prop_value.equals("*") ||
-			StringUtil.isInteger(prop_value) ) {
+		if ( prop_value.equals("*") || StringUtil.isInteger(prop_value) ) {
 			precision_string = prop_value;
 		}
-		else {	_output_file = prop_value;
+		else {
+            __output_file = prop_value;
 		}
 	}
 
 	if ( output_format == OUTPUT_STATEMOD ) {
-		try {	writeStateModTS ( __tslist_output, _output_file,
+		try {
+            writeStateModTS ( tslist_output, __output_file,
 			precision_string, formatOutputHeaderComments(__ts_processor.getCommands()) );
 		} catch ( Exception e ) {
-			message = "Error writing StateMod file \"" +
-			_output_file + "\"";
+			message = "Error writing StateMod file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
 			Message.printWarning ( 2, routine, e );
 			// Why is this done - batch mode only???
 			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
+			if ( getBinaryTS() != null ) {
+				__binary_ts.delete ();
+				__binary_ts = null;
 			}
 			throw new IOException ( message );
 		}
@@ -9068,8 +9236,7 @@ throws IOException
 
 		try {	// For now, put the code in here at the bottom of this
 			// file...
-			Vector report = createDataCoverageReport (
-				__tslist_output );
+			Vector report = createDataCoverageReport ( tslist_output );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -9095,26 +9262,24 @@ throws IOException
 
 		try {	// For now, put the code in here at the bottom of this
 			// file...
-			Vector report = createDataLimitsReport(__tslist_output);
+			Vector report = createDataLimitsReport(tslist_output);
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
+			Message.printWarning ( 1, routine, "Error printing summary." );
 			Message.printWarning ( 2, routine, e );
 		}
 	}
 	else if ( output_format == OUTPUT_DATEVALUE ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with year to date report.";
-			Message.printWarning ( 1, routine, message );
+		if ( getBinaryTSUsed() ) {
+			message = "BinaryTS cannot be used with year to date report.";
+			Message.printWarning ( 2, routine, message );
 			throw new IOException ( message );
 		}
 		try {
 		TS	tspt = null;
-		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
-			tspt = (TS)__tslist_output.elementAt(0);
+		if ( (tslist_output != null) && (tslist_output.size() > 0)){
+			tspt = (TS)tslist_output.elementAt(0);
 		}
 		String units = null;
 		if ( tspt != null ) {
@@ -9124,7 +9289,7 @@ throws IOException
 
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
-		if ( TSUtil.intervalsMatch ( __tslist_output )) {
+		if ( TSUtil.intervalsMatch ( tslist_output )) {
 			// Need date precision to be day...
 			//DateTime date1 = _date1;
 			// Why was this set here????
@@ -9145,23 +9310,22 @@ throws IOException
 			//	_output_file,
 			//	date1, date2, units, true );
 			
-			DateValueTS.writeTimeSeriesList ( __tslist_output,
-				_output_file, __OutputStart_DateTime,
-				__OutputEnd_DateTime,
-				units, true );
+			DateValueTS.writeTimeSeriesList ( tslist_output,
+				__output_file, __OutputStart_DateTime,
+				__OutputEnd_DateTime, units, true );
 		}
-		else {	Message.printWarning ( 1, routine, "Unable to write " +
+		else {
+            Message.printWarning ( 1, routine, "Unable to write " +
 			"DateValue time series of different intervals." );
 		}
 		} catch ( Exception e ) {
-			message = "Error writing DateValue file \"" +
-			_output_file + "\"";
+			message = "Error writing DateValue file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
 			Message.printWarning ( 2, routine, e );
 			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
+			if ( __binary_ts != null ) {
+				__binary_ts.delete ();
+				setBinaryTS ( null );
 			}
 			throw new IOException ( message );
 		}
@@ -9169,14 +9333,10 @@ throws IOException
 	else if ( output_format == OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE ) {
 		try {	
 			PropList esp_props = new PropList ( "esp" );
-			NWSRFS_ESPTraceEnsemble esp =
-				new NWSRFS_ESPTraceEnsemble (
-				__tslist_output, esp_props );
-			esp.writeESPTraceEnsembleFile ( _output_file );
+			NWSRFS_ESPTraceEnsemble esp = new NWSRFS_ESPTraceEnsemble (	tslist_output, esp_props );
+			esp.writeESPTraceEnsembleFile ( __output_file );
 		} catch ( Exception e ) {
-			message =
-			"Error writing NWSRFS ESP Trace Ensemble file \"" +
-			_output_file + "\"";
+			message = "Error writing NWSRFS ESP Trace Ensemble file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
 			Message.printWarning ( 2, routine, e );
 			throw new IOException ( message );
@@ -9209,7 +9369,7 @@ throws IOException
 
 		PropList sumprops = new PropList ( "" );
 		sumprops.set ( "DayType", daytype );
-		if ( __calendar_type == WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			sumprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {	sumprops.set ( "CalendarType", "CalendarYear" );
@@ -9217,20 +9377,17 @@ throws IOException
 
 		try {	// For now, put the code in here at the bottom of this
 			// file...
-			Vector report = createMonthSummaryReport (
-				__tslist_output, sumprops );
+			Vector report = createMonthSummaryReport ( tslist_output, sumprops );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
+			Message.printWarning ( 1, routine, "Error printing summary." );
 			Message.printWarning ( 2, routine, e );
 		}
 	}
 	else if ( output_format == OUTPUT_NWSCARD_FILE ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with NWS Card output.";
+		if ( getBinaryTSUsed() ) {
+			message = "BinaryTS cannot be used with NWS Card output.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
@@ -9238,14 +9395,13 @@ throws IOException
 		try {
 		TS	tspt = null;
 		int	list_size = 0;
-		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
-			tspt = (TS)__tslist_output.elementAt(0);
-			list_size = __tslist_output.size();
+		if ( (tslist_output != null) && (tslist_output.size() > 0)){
+			tspt = (TS)tslist_output.elementAt(0);
+			list_size = tslist_output.size();
 		}
 		// NWS Card files can only contain one time series...
 		if ( list_size != 1 ) {
-			message =
-			"Only 1 time series can be written to a NWS Card file";
+			message = "Only 1 time series can be written to a NWS Card file";
 			Message.printWarning ( 1, routine, message );
 			throw new Exception ( message );
 		}
@@ -9258,12 +9414,11 @@ throws IOException
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
 		int interval_mult = 1;
-		if ( _binary_ts_used ) {
-			interval_mult = _binary_ts.getDataIntervalMult();
+		if ( getBinaryTSUsed() ) {
+			interval_mult = __binary_ts.getDataIntervalMult();
 		}
 		else {
-			interval_mult = ((TS)
-			__tslist_output.elementAt(0)).getDataIntervalMult();
+			interval_mult = ((TS)tslist_output.elementAt(0)).getDataIntervalMult();
 		}
 		// Need date precision to be hour and NWS uses hour 1 - 24 so
 		// adjust dates accordingly.
@@ -9278,30 +9433,26 @@ throws IOException
 		if ( __OutputEnd_DateTime != null ) {
 			date2 = new DateTime ( __OutputEnd_DateTime );
 			date2.setPrecision (DateTime.PRECISION_HOUR);
-			date2.setDay ( TimeUtil.numDaysInMonth(
-				date2.getMonth(), date2.getYear() ));
+			date2.setDay ( TimeUtil.numDaysInMonth(	date2.getMonth(), date2.getYear() ));
 			date2.addDay ( 1 );
 			date2.setHour ( 0 );
 		}
-		NWSCardTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
-			_output_file, date1, date2, units, true );
+		NWSCardTS.writeTimeSeries ( (TS)tslist_output.elementAt(0),	__output_file, date1, date2, units, true );
 		} catch ( Exception e ) {
-			message = "Error writing NWS Card file \"" +
-			_output_file + "\"";
+			message = "Error writing NWS Card file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
 			Message.printWarning ( 2, routine, e );
 			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
+			if ( getBinaryTS() != null ) {
+				__binary_ts.delete ();
+				setBinaryTS ( null );
 			}
 			throw new IOException ( message );
 		}
 	}
 	else if ( output_format == OUTPUT_RIVERWARE_FILE ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with RiverWare file.";
+		if ( getBinaryTSUsed() ) {
+			message = "BinaryTS cannot be used with RiverWare file.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
@@ -9309,9 +9460,9 @@ throws IOException
 		try {
 		TS	tspt = null;
 		int	list_size = 0;
-		if ( (__tslist_output != null) && (__tslist_output.size() > 0)){
-			tspt = (TS)__tslist_output.elementAt(0);
-			list_size = __tslist_output.size();
+		if ( (tslist_output != null) && (tslist_output.size() > 0)){
+			tspt = (TS)tslist_output.elementAt(0);
+			list_size = tslist_output.size();
 		}
 		// RiverWare files can only contain one time series...
 		if ( list_size != 1 ) {
@@ -9328,19 +9479,17 @@ throws IOException
 
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
-		RiverWareTS.writeTimeSeries ( (TS)__tslist_output.elementAt(0),
-			_output_file, __OutputStart_DateTime,
-			__OutputEnd_DateTime, units,
-			1.0, null, -1.0, true );
+		RiverWareTS.writeTimeSeries ( (TS)tslist_output.elementAt(0),
+			__output_file, __OutputStart_DateTime,
+			__OutputEnd_DateTime, units, 1.0, null, -1.0, true );
 		} catch ( Exception e ) {
-			message = "Error writing RiverWare file \"" +
-			_output_file + "\"";
+			message = "Error writing RiverWare file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
 			Message.printWarning ( 2, routine, e );
 			// Free the binary file...
-			if ( _binary_ts != null ) {
-				_binary_ts.delete ();
-				_binary_ts = null;
+			if ( __binary_ts != null ) {
+				__binary_ts.delete ();
+				__binary_ts = null;
 			}
 			throw new IOException ( message );
 		}
@@ -9348,30 +9497,26 @@ throws IOException
 	else if ( output_format == OUTPUT_SHEFA_FILE ) {
 		try {
 			Vector units_Vector = null;
-			Vector PE_Vector = ShefATS.getPEForTimeSeries (
-					__tslist_output );
+			Vector PE_Vector = ShefATS.getPEForTimeSeries (tslist_output );
 			Vector Duration_Vector = null;
 			Vector AltID_Vector = null;
 			PropList shef_props = new PropList ( "SHEF" );
 			shef_props.set ( "HourMax=24" );
-			ShefATS.writeTimeSeriesList ( __tslist_output,
-				_output_file, __OutputStart_DateTime,
+			ShefATS.writeTimeSeriesList ( tslist_output,
+				__output_file, __OutputStart_DateTime,
 				__OutputEnd_DateTime,
 				units_Vector, PE_Vector,
 				Duration_Vector, AltID_Vector, shef_props );
 		} catch ( Exception e ) {
-			message = "Error writing SHEF A file \"" +
-			_output_file + "\"";
+			message = "Error writing SHEF A file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
 			Message.printWarning ( 2, routine, e );
 			throw new IOException ( message );
 		}
 	}
-	else if ( (output_format == OUTPUT_SUMMARY) ||
-		(output_format == OUTPUT_SUMMARY_NO_STATS) ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with year to date report.";
+	else if ( (output_format == OUTPUT_SUMMARY) || (output_format == OUTPUT_SUMMARY_NO_STATS) ) {
+		if ( getBinaryTSUsed() ) {
+			message = "BinaryTS cannot be used with year to date report.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
@@ -9379,12 +9524,13 @@ throws IOException
 		// First need to get the summary strings...
 		PropList sumprops = new PropList ( "Summary" );
 		sumprops.set ( "Format", "Summary" );
-		if ( __calendar_type == WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			sumprops.set ( "CalendarType", "WaterYear" );
 		}
-		else {	sumprops.set ( "CalendarType", "CalendarYear" );
+		else {
+            sumprops.set ( "CalendarType", "CalendarYear" );
 		}
-		if ( _detailedheader ) {
+		if ( getOutputDetailedHeader() ) {
 			sumprops.set("PrintGenesis","true");
 		}
 		else {	sumprops.set("PrintGenesis","false");
@@ -9421,31 +9567,17 @@ throws IOException
 			sumprops.set ( "PrintNotes", "false" );
 		}
 
-		if ( IOUtil.isBatch() || !_preview_output) {
-			try {	Vector summary = TSUtil.formatOutput (
-				_output_file,
-				__tslist_output, sumprops );	
+		if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
+			try {
+                Vector summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );	
 				// Just write the summary to the given file...
-/* REVISIT - SAM 2004-02-13 - why is this commented out if NOT frost dates?
-				if (	(_output_filter ==
-					OUTPUT_FILTER_DATA_COVERAGE)
-					&& !_frost_dates_detected ) {
-					// Add the summary to the results...
-					summary.addElement ( "" );
-					summary =
-					StringUtil.addListToStringList (
-					summary,
-					TSAnalyst.getDataCoverageReport() );
-				}
-*/
-				IOUtil.printStringList ( _output_file, summary);
+				IOUtil.printStringList ( __output_file, summary);
 			} catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Unable to print summary to file \"" +
-				_output_file + "\"" );
+				Message.printWarning ( 1, routine,"Unable to print summary to file \"" + __output_file + "\"" );
 			}
 		}
-		else {	PropList reportProps=new PropList("ReportJFrame.props");
+		else {
+            PropList reportProps=new PropList("ReportJFrame.props");
 			reportProps.set ( "HelpKey", "TSTool" );
 			reportProps.set ( "TotalWidth", "750" );
 			reportProps.set ( "TotalHeight", "550" );
@@ -9460,8 +9592,7 @@ throws IOException
 			reportProps.set ( "PageLength", "100000" );
 
 			try {
-				Vector summary = TSUtil.formatOutput ( 
-				__tslist_output, sumprops );
+				Vector summary = TSUtil.formatOutput ( tslist_output, sumprops );
 				// Now display (the user can save as a file,
 				// etc.).
 /*
@@ -9498,13 +9629,13 @@ throws IOException
 		// some point, need to initialize all the view data at the
 		// same time in case the user changes views interactively after
 		// the initial view.
-		if ( _binary_ts_used ) {
+		if ( getBinaryTSUsed() ) {
 			message = "BinaryTS cannot be used with tables.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
 		// Temporary copy of data...
-		Vector tslist = __tslist_output;
+		Vector tslist = tslist_output;
 		try {
 		if ( IOUtil.isBatch() ) {
 			Message.printWarning ( 1, routine,
@@ -9516,11 +9647,9 @@ throws IOException
 		// Set graph properties for a simple graph...
 		graphprops.set ( "ExtendedLegend", "true" );
 		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
-		graphprops.set ( "DataUnits", 
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		graphprops.set ( "YAxisLabelString",
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		if ( __calendar_type == WATER_YEAR ) {
+		graphprops.set ( "DataUnits", ((TS)tslist.elementAt(0)).getDataUnits() );
+		graphprops.set ( "YAxisLabelString", ((TS)tslist.elementAt(0)).getDataUnits() );
+		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			graphprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {	graphprops.set ( "CalendarType", "CalendarYear" );
@@ -9570,9 +9699,8 @@ throws IOException
 		}
 	}
 	else if ( output_format == OUTPUT_YEAR_TO_DATE_REPORT ) {
-		if ( _binary_ts_used ) {
-			message =
-			"BinaryTS cannot be used with year to date report.";
+		if ( getBinaryTSUsed() ) {
+			message = "BinaryTS cannot be used with year to date report.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
@@ -9590,13 +9718,12 @@ throws IOException
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
 
-		try {	Vector report = createYearToDateReport (__tslist_output,
-				_reference_date, null );
+		try {
+            Vector report = createYearToDateReport (tslist_output,__reference_date, null );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
+			Message.printWarning ( 1, routine,"Error printing summary." );
 			Message.printWarning ( 2, routine, e );
 		}
 	}
@@ -9614,28 +9741,25 @@ throws IOException
 			(output_format == OUTPUT_XY_SCATTER_GRAPH) ) {
 		// A graph type.  For now, this does not understand BinaryTS
 		// output...
-		if ( _binary_ts_used ) {
+		if ( getBinaryTSUsed() ) {
 			message = "BinaryTS cannot be used with graphs.";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
 		// Temporary copy of data...
-		Vector tslist = __tslist_output;
+		Vector tslist = tslist_output;
 		try {
 		if ( IOUtil.isBatch() ) {
-			Message.printWarning ( 1, routine,
-			"Can only graph from GUI" );
+			Message.printWarning ( 1, routine, "Can only graph from GUI" );
 			return;
 		}
 
 		PropList graphprops = new PropList ( "Graph" );
 		graphprops.set ( "ExtendedLegend", "true" );
 		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
-		graphprops.set ( "DataUnits", 
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		graphprops.set ( "YAxisLabelString",
-			((TS)tslist.elementAt(0)).getDataUnits() );
-		if ( __calendar_type == WATER_YEAR ) {
+		graphprops.set ( "DataUnits", ((TS)tslist.elementAt(0)).getDataUnits() );
+		graphprops.set ( "YAxisLabelString",((TS)tslist.elementAt(0)).getDataUnits() );
+		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			graphprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {	graphprops.set ( "CalendarType", "CalendarYear" );
@@ -9928,7 +10052,7 @@ throws Exception
 			return ts;
 		}
 		// Else do not ignore errors...
-		if ( __include_missing_ts && haveOutputPeriod() ) {
+		if ( getIncludeMissingTS() && haveOutputPeriod() ) {
 			// Even if time series is missing, create an empty one
 			// for output.
 			ts = TSUtil.newTimeSeries ( tsident_string, true );
@@ -9939,8 +10063,7 @@ throws Exception
 				// Leave original dates as is.  The
 				// following will fill with missing...
 				ts.allocateDataSpace();
-				Vector v = StringUtil.breakStringList (
-					tsident_string, "~", 0 );
+				Vector v = StringUtil.breakStringList (	tsident_string, "~", 0 );
 				// Version without the input...
 				String tsident_string2;
 				tsident_string2 = (String)v.elementAt(0);
@@ -9963,11 +10086,12 @@ throws Exception
 			Message.printWarning ( wl,
 			MessageUtil.formatMessageTag(command_tag,
 			++_fatal_error_count), routine, message );
-			_missing_ts.addElement(tsident_string);
+			getMissingTS().addElement(tsident_string);
 			throw new TimeSeriesNotFoundException ( message );
 		}
 	}
-	else {	if ( Message.isDebugOn ) {
+	else {
+        if ( Message.isDebugOn ) {
 			Message.printDebug ( 1, routine, "Retrieved TS" );
 		}
 		// Now do the second set of processing on the time series (e.g.,
@@ -10679,11 +10803,12 @@ throws Exception
 	// REVISIT SAM 2005-09-02
 	// This is really a hold-over and might need to be phased out...
 
-	if ( _missing_range != null ) {
-		if ( _missing_range.length == 2 ) {
-			ts.setMissingRange ( _missing_range );
+	if ( __missing_range != null ) {
+		if ( __missing_range.length == 2 ) {
+			ts.setMissingRange ( __missing_range );
 		}
-		else {	ts.setMissing ( _missing_range[0] );
+		else {
+            ts.setMissing ( __missing_range[0] );
 		}
 	}
 
@@ -10723,7 +10848,7 @@ throws Exception
 	// time series start or the max period end is after the time series end
 	// a change interval is needed...
 
-	if ( haveOutputPeriod() && __auto_extend_period ) {
+	if ( haveOutputPeriod() && getAutoExtendPeriod() ) {
 		Vector v = new Vector ( 2 );
 		TSLimits limits = new TSLimits();
 		limits.setDate1 ( ts.getDate1() );
@@ -10843,25 +10968,65 @@ private StringMonthTS searchForFillPatternTS ( String fill_pattern )
 {	if ( fill_pattern == null ) {
 		return null;
 	}
-	if ( _fill_pattern_ts == null ) {
+	if ( __fill_pattern_ts == null ) {
 		return null;
 	}
 	
-	int nfill_pattern_ts = _fill_pattern_ts.size();
+	int nfill_pattern_ts = __fill_pattern_ts.size();
 
 	StringMonthTS fill_pattern_ts_i = null;
 	for ( int i = 0; i < nfill_pattern_ts; i++ ) {
-		fill_pattern_ts_i =(StringMonthTS)_fill_pattern_ts.elementAt(i);
+		fill_pattern_ts_i =(StringMonthTS)__fill_pattern_ts.elementAt(i);
 		if ( fill_pattern_ts_i == null ) {
 			continue;
 		}
-		if (	fill_pattern.equalsIgnoreCase(
-			fill_pattern_ts_i.getLocation()) ) {
+		if ( fill_pattern.equalsIgnoreCase(	fill_pattern_ts_i.getLocation()) ) {
 			return fill_pattern_ts_i;
 		}
 	}
 	fill_pattern_ts_i = null;
 	return null;
+}
+
+/**
+Set the value of the AutoExtendPeriod property.
+@param AutoExtendPeriod_boolean Value of property.
+*/
+private void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean )
+{
+    __AutoExtendPeriod_boolean = AutoExtendPeriod_boolean;
+}
+
+/**
+Set the average period end.
+@param end Average period end.
+*/
+protected void setAverageEnd ( DateTime end )
+{   __AverageEnd_DateTime = end;
+}
+
+/**
+Set the average period start.
+@param start Average period start.
+*/
+protected void setAverageStart ( DateTime start )
+{   __AverageStart_DateTime = start;
+}
+
+/**
+Set the binary time series used with the processor.
+@param BinaryTSUsed_boolean true if a BinaryTS is used, false if not.
+*/
+protected void setBinaryTS ( BinaryTS binary_ts )
+{   __binary_ts = binary_ts;
+}
+
+/**
+Set whether a binary time series is used for temporary data.
+@param BinaryTSUsed_boolean true if a BinaryTS is used, false if not.
+*/
+protected void setBinaryTSUsed ( boolean BinaryTSUsed_boolean )
+{   __BinaryTSUsed_boolean = BinaryTSUsed_boolean;
 }
 
 /**
@@ -10918,6 +11083,24 @@ Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() comma
 */
 protected void setHydroBaseDMIList ( Vector dmilist )
 {	__hbdmi_Vector = dmilist;
+}
+
+/**
+Set the value of the IgnoreLEZero property.
+@param IgnoreLEZero_boolean Value of property.
+*/
+private void setIgnoreLEZero ( boolean IgnoreLEZero_boolean )
+{
+    __IgnoreLEZero_boolean = IgnoreLEZero_boolean;
+}
+
+/**
+Set the value of the IncludeMissingTS property.
+@param IncludeMissingTS_boolean Value of property.
+*/
+private void setIncludeMissingTS ( boolean IncludeMissingTS_boolean )
+{
+    __IncludeMissingTS_boolean = IncludeMissingTS_boolean;
 }
 
 /**
@@ -11034,6 +11217,16 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	__nwsrfs_dmi_Vector.addElement ( nwsrfs_dmi );
 }
 
+
+/**
+Set the value of the OutputDetailedHeader property.
+@param OutputDetailedHeader_boolean Value of property.
+*/
+private void setOutputDetailedHeader ( boolean OutputDetailedHeader_boolean )
+{
+    __OutputDetailedHeader_boolean = OutputDetailedHeader_boolean;
+}
+
 /**
 Set the output period end.
 @param end Output period end.
@@ -11050,7 +11243,25 @@ protected void setOutputStart ( DateTime start )
 {	__OutputStart_DateTime = start;
 }
 
-/*
+// TODO SAM 2007-11-16 Convert to enumeration when moved to Java 1.5.
+/**
+Set the output year type.
+@param OutputYearType_int Output year type as an integer.
+*/
+protected void setOutputYearType ( int OutputYearType_int )
+{   __OutputYearType_int = OutputYearType_int;
+}
+
+/**
+Set the value of the PreviewExportedOutput property.
+@param PreviewExportedOutput_boolean Value of property.
+*/
+private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean )
+{
+    __PreviewExportedOutput_boolean = PreviewExportedOutput_boolean;
+}
+
+/**
 Set the time series in either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is set, it updates the time series that is in
 the file, within the constraints of the BinaryTS file (e.g., the period cannot
@@ -11097,31 +11308,29 @@ throws Exception
 	// and open the BinaryTS file if necessary...
 
 	if (	(((ts.getDataIntervalBase() == TimeInterval.MONTH) &&
-		(__num_TS_expressions > _binary_month_cutoff)) || 
+		(__num_TS_expressions > __binary_month_cutoff)) || 
 		((ts.getDataIntervalBase() == TimeInterval.DAY) &&
-		(__num_TS_expressions > _binary_day_cutoff))) &&
+		(__num_TS_expressions > __binary_day_cutoff))) &&
 		(getTimeSeriesSize() == 0) ) {
 		//
 		// Need to use the binary TS file...
 		//
-		_binary_ts_used = true;
+		setBinaryTSUsed ( true );
 		// First time series so open the file...
 		try {	// Remove it first...
-			if ( IOUtil.fileReadable(_binary_ts_file) ) {
-				File bts = new File( _binary_ts_file );
+			if ( IOUtil.fileReadable(__binary_ts_file) ) {
+				File bts = new File( __binary_ts_file );
 				bts.delete();
 			}
 			// Now create.  Make sure to set the dates to the right
 			// precision...
-			if (	(_binaryts_date1 == null) ||
-				(_binaryts_date2 == null) ) {
+			if ( (__binaryts_date1 == null) || (__binaryts_date2 == null) ) {
 				Message.printWarning ( 1, routine,
-				"The BinaryTS period must be specified when " +
-				"using a BinaryTS temporary file." );
+				"The BinaryTS period must be specified when using a BinaryTS temporary file." );
 				return;
 			}
-			DateTime date1 = new DateTime (_binaryts_date1);
-			DateTime date2 = new DateTime (_binaryts_date2);
+			DateTime date1 = new DateTime (__binaryts_date1);
+			DateTime date2 = new DateTime (__binaryts_date2);
 			if ( ts.getDataIntervalBase() == TimeInterval.DAY ) {
 				// Reset the precision on the dates...
 				date1.setPrecision ( DateTime.PRECISION_DAY);
@@ -11131,22 +11340,21 @@ throws Exception
 					date2.getMonth(), date2.getYear()));
 			}
 			Message.printStatus ( 1, routine,
-				"Creating BinaryTS file \"" + _binary_ts_file +
+				"Creating BinaryTS file \"" + __binary_ts_file +
 				"\" to hold " + __num_TS_expressions +
 				" time series for " + date1.toString() + " to "+
 				date2.toString() );
-			_binary_ts = new BinaryTS (
-					_binary_ts_file, __num_TS_expressions,
+			__binary_ts = new BinaryTS (
+					__binary_ts_file, __num_TS_expressions,
 					ts.getDataIntervalBase(),
 					ts.getDataIntervalMult(),
 					date1, date2, "rw", true );
 		}
 		catch ( Exception e ) {
 			String message =
-				"Unable to open temporary BinaryTS file \"" +
-				_binary_ts_file + "\"";
-				Message.printWarning ( 1, routine, message );
-				Message.printWarning ( 1, routine, e );
+				"Unable to open temporary BinaryTS file \"" + __binary_ts_file + "\"";
+				Message.printWarning ( 2, routine, message );
+				Message.printWarning ( 2, routine, e );
 				throw new Exception ( message );
 		}
 	}
@@ -11156,9 +11364,9 @@ throws Exception
 		" time series)." );
 	}
 
-	if ( _binary_ts_used ) {
-		if ( _binary_ts != null ) {
-			_binary_ts.writeTimeSeries ( ts, position );
+	if ( getBinaryTSUsed() ) {
+		if ( getBinaryTS() != null ) {
+			__binary_ts.writeTimeSeries ( ts, position );
 		}
 	}
 	else {	if ( __tslist == null ) {
@@ -11303,7 +11511,10 @@ DEPENDENT ON THE SPECIFIC TIME SERIES COMMENTS USED WITH CDSS.
 @param ts Time series to update.
 */
 private void updateComments ( TS ts )
-{	Vector comments = ts.getComments();
+{	if ( ts == null ) {
+        return;
+    }
+    Vector comments = ts.getComments();
 	int size = 0;
 	if ( comments != null ) {
 		size = comments.size();
@@ -11346,7 +11557,7 @@ private void writeStateModTS (	Vector tslist, String output_file,
 {	String routine = "TSEngine.writeStateModTS";
 	// Type of calendar for output...
 	String calendar = "";
-	if ( __calendar_type == WATER_YEAR ) {
+	if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 		calendar = "WaterYear";
 	}
 	else {	calendar = "CalendarYear";
@@ -11363,12 +11574,11 @@ private void writeStateModTS (	Vector tslist, String output_file,
 	else {	// Precision is determined from units and possibly data type...
 		// Default, get the precision from the units of the first time
 		// series...
-		if ( _binary_ts_used ) {
-			try {	String units = _binary_ts.getDataUnits(0);
-				Message.printStatus ( 1, "",
-				"Data units are " + units );
-				DataFormat outputformat =
-					DataUnits.getOutputFormat(units,10);
+		if ( getBinaryTSUsed() ) {
+			try {
+                String units = __binary_ts.getDataUnits(0);
+				Message.printStatus ( 1, "", "Data units are " + units );
+				DataFormat outputformat = DataUnits.getOutputFormat(units,10);
 				if ( outputformat != null ) {
 					precision = outputformat.getPrecision();
 					if ( precision > 0 ) {
@@ -11378,8 +11588,7 @@ private void writeStateModTS (	Vector tslist, String output_file,
 					}
 				}
 				outputformat = null;
-				Message.printStatus ( 1, "",
-				"Precision from output format is " + precision);
+				Message.printStatus ( 1, "", "Precision from output format is " + precision);
 			}
 			catch ( Exception e ) {
 				// use default precision...
@@ -11428,29 +11637,26 @@ private void writeStateModTS (	Vector tslist, String output_file,
 		}
 	}
 
-	if ( _binary_ts_used || TSUtil.intervalsMatch ( tslist )) {
+	if ( getBinaryTSUsed() || TSUtil.intervalsMatch ( tslist )) {
 		// The time series to write have the same interval so write
 		// using the first interval....
 		int interval = 0;
-		if ( _binary_ts_used ) {
-			interval = _binary_ts.getDataIntervalBase();
+		if ( getBinaryTSUsed() ) {
+			interval = __binary_ts.getDataIntervalBase();
 		}
-		else {	interval =
-			((TS)tslist.elementAt(0)).getDataIntervalBase();
+		else {	interval = ((TS)tslist.elementAt(0)).getDataIntervalBase();
 		}
-		if ( _binary_ts != null ) {
-			/* REVISIT
+		if ( getBinaryTS() != null ) {
+			/* TODO
 			StateMod_TS.writeTimeSeriesList (
 				(String)null, output_file, comments,
 				_binary_ts, calendar, _missing,
 				precision );
 			*/
 			Message.printWarning ( 1, routine,
-				"Writing StateMod time series from a " +
-				"binary file is not currently supported." );
+				"Writing StateMod time series from a binary file is not currently supported." );
 		}
-		else if((interval == TimeInterval.DAY) ||
-			(interval == TimeInterval.MONTH) ) {
+		else if((interval == TimeInterval.DAY) ||(interval == TimeInterval.MONTH) ) {
 			PropList smprops = new PropList ( "StateMod" );
 			// Don't set input file since it is null...
 			smprops.set ( "OutputFile", output_file );
@@ -11459,23 +11665,22 @@ private void writeStateModTS (	Vector tslist, String output_file,
 				(Object)comments );
 			}
 			if ( __OutputStart_DateTime != null ) {
-				smprops.set("OutputStart=" +
-					__OutputStart_DateTime.toString());
+				smprops.set("OutputStart=" + __OutputStart_DateTime.toString());
 			}
 			if ( __OutputEnd_DateTime != null ) {
-				smprops.set ( "OutputEnd=" +
-					__OutputEnd_DateTime.toString());
+				smprops.set ( "OutputEnd=" + __OutputEnd_DateTime.toString());
 			}
 			smprops.set ( "CalendarType", calendar );
-			smprops.set ( "MissingDataValue", "" + _missing );
+			smprops.set ( "MissingDataValue", "" + __missing );
 			smprops.set ( "OutputPrecision", "" + precision );
-			if ( _detailedheader ) {
+			if ( getOutputDetailedHeader() ) {
 				smprops.set ( "PrintGenesis", "true" );
 			}
-			else {	smprops.set ( "PrintGenesis", "false" );
+			else {
+                smprops.set ( "PrintGenesis", "false" );
 			}
-			try {	StateMod_TS.writeTimeSeriesList ( tslist,
-								smprops );
+			try {
+                StateMod_TS.writeTimeSeriesList ( tslist,smprops );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1, routine,

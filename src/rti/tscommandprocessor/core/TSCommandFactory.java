@@ -56,7 +56,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
 import RTi.Util.IO.GenericCommand;
 import RTi.Util.IO.UnknownCommandException;
-
+import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
 // DataTest commands
@@ -138,7 +138,9 @@ import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.Free_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
+import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
+import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 
@@ -147,9 +149,18 @@ This class instantiates Commands for time series processing.
 */
 public class TSCommandFactory implements CommandFactory
 {
+    
+/**
+Constructor.
+*/
+public TSCommandFactory ()
+{
+    super();
+}
 	
 /**
-Return a new time series command, based on the command name.
+Return a new time series command, based on the command name.  DO NOT create a
+GenericCommand if the command is not recognized.
 @return a new time series command, based on the command name.
 @param command_string The command string to process.
 @throws UnknownCommandException if the command name is not recognized.
@@ -173,6 +184,7 @@ public Command newCommand ( String command_string,
 		boolean create_generic_command_if_not_recognized )
 throws UnknownCommandException
 {	command_string = command_string.trim();
+    String routine = "TSCommandFactory.newCommand";
 
 	// Parse out arguments for TS alias = foo() commands to be able to
 	// handle nulls here
@@ -228,7 +240,7 @@ throws UnknownCommandException
 	
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillConstant") ) {
 		Command command = new GenericCommand();
-		command.setCommandString("exit");
+		command.setCommandString("Exit");
 		return command;
 	}
 
@@ -335,6 +347,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("readStateMod") ) {
 		return new readStateMod_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"RemoveFile") ) {
+        return new RemoveFile_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"runCommands") ) {
 		return new runCommands_Command ();
 	}
@@ -363,6 +378,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase( command_string,"startLog") ){
 		return new startLog_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase( command_string,"StartRegressionTestResultsReport") ){
+        return new StartRegressionTestResultsReport_Command ();
+    }
 	
 	// "t" commands...
 
@@ -397,12 +415,13 @@ throws UnknownCommandException
 		// Create a generic command...
 		Command c = new GenericCommand ();
 		c.setCommandString( command_string );
+        Message.printStatus ( 2, routine, "Creating GenericCommand for unknown command \"" +
+                command_string + "\"" );
 		return c;
 	}
 	else {
 		// Throw an exception if the command is not recognized.
-		throw new UnknownCommandException ( "Unknown command \"" +
-			command_string + "\"" );
+		throw new UnknownCommandException ( "Unknown command \"" + command_string + "\"" );
 	}
 }
 

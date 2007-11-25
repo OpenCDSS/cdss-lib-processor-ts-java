@@ -30,7 +30,6 @@ import RTi.Util.IO.PropList;
 <p>
 This class initializes, checks, and runs the WriteProperty() command.
 </p>
-</p>
 */
 public class WriteProperty_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -101,8 +100,8 @@ throws InvalidCommandParameterException
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
-				message = "The output file parent directory does " +
-				"not exist: \"" + adjusted_path + "\".";
+				message = "The output parent directory does " +
+				"not exist for the output file: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -114,7 +113,7 @@ throws InvalidCommandParameterException
 		catch ( Exception e ) {
 			message = "The output file:\n" +
 			"    \"" + OutputFile +
-			"\"\ncannot be adjusted using the working directory:\n" +
+			"\"\ncannot be adjusted to an absolute path using the working directory:\n" +
 			"    \"" + working_dir + "\".";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,

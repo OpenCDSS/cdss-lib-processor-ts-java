@@ -1,24 +1,4 @@
-//------------------------------------------------------------------------------
-// startLog_Command - handle the startLog() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-13	Steven A. Malers, RTi	Initial version (copy and modify
-//					sortTimeSeries).
-// 2005-05-19	SAM, RTi		Move from TSTool package.
-// 2005-05-20	SAM, RTi		Add Suffix parameter.
-// 2005-12-12	J. Thomas Sapienza, RTi Added check for null log file names in
-//					the check parameter method so that by
-//					not specifying a name, the command will
-//					re-open the current log file.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
-package rti.tscommandprocessor.commands.logging;
+package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
 import java.util.List;
@@ -48,10 +28,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the startLog() command.
+This class initializes, checks, and runs the StartRegressionTestResultsReport() command.
 </p>
 */
-public class startLog_Command extends AbstractCommand implements Command, FileGenerator
+public class StartRegressionTestResultsReport_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -68,9 +48,9 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public startLog_Command ()
+public StartRegressionTestResultsReport_Command ()
 {	super();
-	setCommandName ( "StartLog" );
+	setCommandName ( "StartRegressionTestResultsReport" );
 }
 
 /**
@@ -82,12 +62,11 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag,int warning_level )
 throws InvalidCommandParameterException
 {	String routine = getCommandName() + "_checkCommandParameters";
-	String LogFile = parameters.getValue ( "LogFile" );
-	String Suffix = parameters.getValue ( "Suffix" );
+	String OutputFile = parameters.getValue ( "OutputFile" );
+	//String Suffix = parameters.getValue ( "Suffix" );
 	String working_dir = null;
 	String warning = "";
 	String message;
@@ -114,20 +93,18 @@ throws InvalidCommandParameterException
 	}
 
 	try {	
-		// A null logfile means that the current log file should
-		// be re-opened.
-		if ( (LogFile != null) && (working_dir != null) ) {
-			String adjusted_path = IOUtil.adjustPath(working_dir, 
-				LogFile);
+		// A null output file means that the current file should be re-opened.
+		if ( (OutputFile != null) && (working_dir != null) ) {
+			String adjusted_path = IOUtil.adjustPath(working_dir,OutputFile);
 			File f = new File(adjusted_path);
 			File f2 = new File(f.getParent());
 			if (!f2.exists()) {
-				message = "The log file parent folder \"" + f.getParent() +
-				"\" does not exist for: \"" + adjusted_path + "\".";
+				message = "The output file parent folder \"" + f.getParent() +
+				"\" does not exist: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
 						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify that the log file parent folder exists." ) );
+								message, "Verify that the ouput file folder exists." ) );
 			}
 			f = null;
 			f2 = null;
@@ -139,7 +116,7 @@ throws InvalidCommandParameterException
 		if ( Message.isDebugOn ) {
 			e.printStackTrace();
 		}
-		message = "\nThe log file \"" + LogFile +
+		message = "\nThe output file \"" + OutputFile +
 		"\" cannot be adjusted to an absolute path using the working directory \"" +
 		working_dir + "\".";
 		warning += "\n" + message;
@@ -147,7 +124,8 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Verify that the path information is consistent." ) );
 	}
-	if ( (Suffix != null) && (Suffix.length() != 0) &&
+    /*
+	if (	(Suffix != null) && (Suffix.length() != 0) &&
 		!Suffix.equalsIgnoreCase(_Date) &&
 		!Suffix.equalsIgnoreCase(_DateTime) ) {
 		message = "The suffix must be blank, \"" + _Date + "\", or \"" + _DateTime + "\".";
@@ -156,11 +134,12 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Change the suffix to an allowable value." ) );
 	}
+    */
 	
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
-	valid_Vector.add ( "Logfile" );
-	valid_Vector.add ( "Suffix" );
+	valid_Vector.add ( "Outputfile" );
+	//valid_Vector.add ( "Suffix" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 	
 	if ( warning.length() > 0 ) {
@@ -181,7 +160,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new startLog_JDialog ( parent, this )).ok();
+	return (new StartRegressionTestResultsReport_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -214,7 +193,7 @@ not produce output).
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "startLog_Command.runCommand", message;
+{	String routine = getClass().getName() + ".runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -225,63 +204,58 @@ throws CommandWarningException, CommandException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
 	
-	String LogFile_full = null;	// File with path, used below and in final catch.
+	String OutputFile_full = null;	// File with path, used below and in final catch.
+    String Suffix = null;   // For now do not allow a suffix
 	try {
-		String LogFile = parameters.getValue ( "LogFile" );
-		String Suffix = parameters.getValue ( "Suffix" );
-		if ( (LogFile == null) || (LogFile.length() == 0) ) {
-			// Restart the current log file...
-			Message.restartLogFile();
+		String OutputFile = parameters.getValue ( "OutputFile" );
+		//String Suffix = parameters.getValue ( "Suffix" );
+		// Open a new log file.  Append the suffix if it has been specified.
+		if ( (Suffix == null) || (Suffix.length() == 0) ) {
+			// Make sure to do nothing below...
+			Suffix = "";
 		}
-		else {
-			// Open a new log file.  Append the suffix if it has been specified.
-			if ( (Suffix == null) || (Suffix.length() == 0) ) {
-				// Make sure to do nothing below...
-				Suffix = "";
-			}
-			else if ( Suffix.equalsIgnoreCase(_Date) ) {
-				DateTime d = new DateTime (	DateTime.DATE_CURRENT );
-				Suffix = "." +
-					StringUtil.formatString(d.getYear(),"%04d") +
-					StringUtil.formatString(d.getMonth(),"%02d") +
-					StringUtil.formatString(d.getDay(),"%02d");
-			}
-			else if ( Suffix.equalsIgnoreCase(_DateTime) ) {
-				DateTime d = new DateTime (	DateTime.DATE_CURRENT );
-				// Make sure there is no space and can't use
-				// colons here because Windows uses that for
-				// drive letters...
-				Suffix = "." + 
-					StringUtil.formatString(d.getYear(),"%04d") +
-					StringUtil.formatString(d.getMonth(),"%02d") +
-					StringUtil.formatString(d.getDay(),"%02d") + "_" +
-					StringUtil.formatString(d.getHour(),"%02d") +
-					StringUtil.formatString(d.getMinute(),"%02d") +
-					StringUtil.formatString(d.getSecond(),"%02d");
-			}
-			if ( Suffix.length() > 0 ) {
-				String ext = IOUtil.getFileExtension (LogFile );
-				if ( ext == null ) {
-					// Just append...
-					LogFile = LogFile + Suffix;
-				}
-				else {	// Insert before the last extension...
-					LogFile = LogFile.substring(0,LogFile.length()-ext.length()-1)+ Suffix + "." + ext;
-				}
-			}
-			LogFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile);
-			Message.openNewLogFile ( LogFile_full );
-			setOutputFile ( new File(LogFile_full));
+		else if ( Suffix.equalsIgnoreCase(_Date) ) {
+			DateTime d = new DateTime (	DateTime.DATE_CURRENT );
+			Suffix = "." +
+				StringUtil.formatString(d.getYear(),"%04d") +
+				StringUtil.formatString(d.getMonth(),"%02d") +
+				StringUtil.formatString(d.getDay(),"%02d");
 		}
+		else if ( Suffix.equalsIgnoreCase(_DateTime) ) {
+			DateTime d = new DateTime (	DateTime.DATE_CURRENT );
+			// Make sure there is no space and can't use
+			// colons here because Windows uses that for
+			// drive letters...
+		Suffix = "." + 
+				StringUtil.formatString(d.getYear(),"%04d") +
+				StringUtil.formatString(d.getMonth(),"%02d") +
+				StringUtil.formatString(d.getDay(),"%02d") + "_" +
+				StringUtil.formatString(d.getHour(),"%02d") +
+				StringUtil.formatString(d.getMinute(),"%02d") +
+				StringUtil.formatString(d.getSecond(),"%02d");
+		}
+		if ( Suffix.length() > 0 ) {
+			String ext = IOUtil.getFileExtension (OutputFile );
+			if ( ext == null ) {
+			// Just append...
+				OutputFile = OutputFile + Suffix;
+			}
+			else {	// Insert before the last extension...
+				OutputFile = OutputFile.substring(0,OutputFile.length()-ext.length()-1)+ Suffix + "." + ext;
+			}
+		}
+		OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		TSCommandProcessorUtil.openNewRegressionTestReportFile ( OutputFile_full, false );
+		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-		message = "Error (re)starting the log file \"" + LogFile_full + "\".";
+		message = "Error (re)starting the regression test report file \"" + OutputFile_full + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check the old log file or command window for details." ) );
+						message, "Check the log file or command window for details." ) );
 		throw new CommandException ( message );
 	}
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);

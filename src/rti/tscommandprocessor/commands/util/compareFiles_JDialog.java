@@ -437,24 +437,14 @@ private void refresh ()
 	String InputFile2 = "";
 	String WarnIfDifferent = "";
 	String WarnIfSame = "";
+    PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		Vector v = StringUtil.breakStringList (
-			__command.toString(),"()",
-			StringUtil.DELIM_SKIP_BLANKS );
-		PropList props = null;
-		if (	(v != null) && (v.size() > 1) &&
-			(((String)v.elementAt(1)).indexOf("=") > 0) ) {
-			props = PropList.parse (
-				(String)v.elementAt(1), routine, "," );
-		}
-		if ( props == null ) {
-			props = new PropList ( __command.getCommandName() );
-		}
-		InputFile1 = props.getValue ( "InputFile1" );
-		InputFile2 = props.getValue ( "InputFile2" );
-		WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
-		WarnIfSame = props.getValue ( "WarnIfSame" );
+		parameters = __command.getCommandParameters();
+		InputFile1 = parameters.getValue ( "InputFile1" );
+		InputFile2 = parameters.getValue ( "InputFile2" );
+		WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
+		WarnIfSame = parameters.getValue ( "WarnIfSame" );
 		if ( InputFile1 != null ) {
 			__InputFile1_JTextField.setText ( InputFile1 );
 		}

@@ -14,6 +14,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
@@ -28,9 +29,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 <p>
 This class initializes, checks, and runs the runCommands() command.
 </p>
-<p>The CommandProcessor must return the following properties:
-WorkingDir.
-</p>
 */
 public class runCommands_Command extends AbstractCommand implements Command
 {
@@ -40,7 +38,7 @@ Constructor.
 */
 public runCommands_Command ()
 {	super();
-	setCommandName ( "runCommands" );
+	setCommandName ( "RunCommands" );
 }
 
 /**
@@ -52,16 +50,22 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
 	String warning = "";
+    String message;
 	
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
-		warning += "\nThe input file must be specified.";
+        message = "The input file must be specified.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an input file." ) );
 	}
 	else {	String working_dir = null;
 	
@@ -72,49 +76,40 @@ throws InvalidCommandParameterException
 					}
 			}
 			catch ( Exception e ) {
-				// Not fatal, but of use to developers.
-				String message = "Error requesting WorkingDir from processor - not using.";
-				String routine = getCommandName() + ".checkCommandParameters";
-				Message.printDebug(10, routine, message );
+				message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Software error - report problem to support." ) );
 			}
 	
-		try {	String adjusted_path = IOUtil.adjustPath ( working_dir, InputFile);
+		try {
+            String adjusted_path = IOUtil.adjustPath ( working_dir, InputFile);
 			File f = new File ( adjusted_path );
-			File f2 = new File ( f.getParent() );
-			if ( !f2.exists() ) {
-				warning +=
-				"\nThe input file parent directory does " +
-				"not exist: \"" + adjusted_path + "\".";
-			}
+			if ( !f.exists() ) {
+                message = "The input file does not exist: \"" + adjusted_path + "\".";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the command file to run exists." ) );
+            }
 			f = null;
-			f2 = null;
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe working directory:\n" +
-				"    \"" + working_dir +
-				"\"\ncannot be adjusted using:\n" +
-				"    \"" + InputFile + "\".";
+            message = "The input file \"" + InputFile +
+            "\" ncannot be adjusted to an absolute path using the working directory \"" +
+            working_dir + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that command file to run and working directory paths are compatible." ) );
 		}
 	}
 
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
-	Vector warning_Vector = null;
-	try {	warning_Vector = parameters.validatePropNames (
-			valid_Vector, null, null, "parameter" );
-	}
-	catch ( Exception e ) {
-		// Ignore.  Should not happen.
-		warning_Vector = null;
-	}
-	if ( warning_Vector != null ) {
-		int size = warning_Vector.size();
-		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.elementAt (i);
-		}
-	}
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -122,6 +117,7 @@ throws InvalidCommandParameterException
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -136,10 +132,7 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
-Run the commands:
-<pre>
-runCommands(InputFile="X")
-</pre>
+Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -149,20 +142,21 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "runCommands_Command.runCommand", message;
+{	String routine = "RunCommands_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	PropList parameters = getCommandParameters();
 
 	String InputFile = parameters.getValue ( "InputFile" );
 	String AppendResults = parameters.getValue ( "AppendResults" );
 	
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings about command parameters.";
+		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -171,82 +165,34 @@ CommandWarningException, CommandException
 	
 	// Get the working directory from the processor that is running the commands.
 
-	String WorkingDir = null;
-	try { Object o = processor.getPropContents ( "WorkingDir" );
-		// Working directory is available so use it...
-		if ( o != null ) {
-			WorkingDir = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		message = "Error requesting WorkingDir from processor - not using.";
-		Message.printDebug(10, routine, message );
-	}
-	if ( WorkingDir == null ) {
-		// Use the aplication working directory...
-		WorkingDir = IOUtil.getProgramWorkingDir ();
-	}
-
-	String fullname = null;
-	String WorkingDir_save = null;
+	String WorkingDir = TSCommandProcessorUtil.getWorkingDir(processor);
+	String InputFile_full = null;
 	try {
-		fullname = IOUtil.adjustPath ( WorkingDir, InputFile);
-	
-		//String fullname = InputFile;
-		//fullname = IOUtil.getPathUsingWorkingDir ( InputFile );
-	
-		//try {	// Read the commands file as a Vector of String...
-
-
-		//Vector commands = IOUtil.fileToStringList ( fullname );
-
-		// Process the commands using the current commands processor
-
-		//PropList props2 = new PropList ( "" );
-		//props2.set ( "Recursive=True" );
-		
-		// Set the global working directory to the location of the commands
-		// file.  This is used by some low-level code to complete file paths.
-		// Since this code is not getting the dynamic working directory, it is
-		// necessary to reset the global value temporarily (this is not thread-safe!).
-		
-		WorkingDir_save = IOUtil.getProgramWorkingDir();
-		File fullname_File = new File ( fullname );
-		IOUtil.setProgramWorkingDir ( fullname_File.getParent() );
-		
+        InputFile_full = IOUtil.adjustPath ( WorkingDir, InputFile);
 		Message.printStatus ( 2, routine,
-		"Processing commands from file \"" + fullname.toString() + "\" using command file runner.");
+		"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
 		
 		TSCommandFileRunner runner = new TSCommandFileRunner ();
-		runner.readCommandFile(fullname);
+        // This will set the initial working directory of the runner to that of the command file...
+		runner.readCommandFile(InputFile_full);
 		runner.runCommands();
 		
 		// Set the CommandStatus for this command to the most severe status of the
 		// commands file that was just run.
-		
-		CommandStatus status = getCommandStatus();
-		status.clearLog( CommandPhaseType.RUN );
+		CommandStatusType max_severity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
 		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(
-						TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor()),
+						max_severity,
 						"Severity is max of commands file that was run (may not be a problem).",
-						"Refer to log file if warning/failure."));
-		
-		/* TODO SAM 2007-10-11 Remove if code tests out
-		PropList request_params = new PropList ( "" );
-		request_params.setUsingObject ( "Commands", commands );
-		request_params.setUsingObject ( "Properties", props2 );
-		try { processor.processRequest( "ProcessCommands", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error requesting ProcessCommands() from processor.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-		}
-		*/
-		
+						"See below for more and refer to log file if warning/failure."));
+        // FIXME SAM 2007-11-24 Need to figure out how to pass on status log records from failing command files.
+        // Copy status logs below...
+        //CommandStatusUtil.copyLogRecords ( status, )
+        
+        // Also add a record to the regression report...
+        
+        TSCommandProcessorUtil.appendToRegressionTestReport(processor,max_severity,InputFile_full);
+				
 		// If it was requested to append the results to the calling processor, get
 		// the results from the runner and do so...
 		
@@ -266,28 +212,17 @@ CommandWarningException, CommandException
 			}
 		}
 		
-		Message.printStatus ( 2, routine,
-		"...done processing commands from file." );
-		
-		// Reset the working directory...
-		
-		IOUtil.setProgramWorkingDir ( WorkingDir_save );
+		Message.printStatus ( 2, routine,"...done processing commands from file." );
 	}
 	catch ( Exception e ) {
-		// Reset the working directory...
-		//IOUtil.setProgramWorkingDir ( workingdir_save );
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing commands file \"" + InputFile +
-		"\", full path=\"" + fullname + "\".";
+		message = "Error processing commands file \"" + InputFile + "\", full path=\"" + InputFile_full + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
-		// Also execute this to make sure working directory gets reset OK.
-		if ( WorkingDir_save != null ) {
-			IOUtil.setProgramWorkingDir ( WorkingDir_save );
-		}
 		throw new CommandException ( message );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

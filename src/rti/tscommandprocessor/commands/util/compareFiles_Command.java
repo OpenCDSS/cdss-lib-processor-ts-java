@@ -27,6 +27,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
@@ -69,8 +70,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
@@ -159,14 +159,14 @@ parameters are determined to be invalid.
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "compareFiles_Command.parseCommand", message;
+	String routine = "CompareFiles_Command.parseCommand", message;
 
 	Vector tokens = StringUtil.breakStringList ( command,
 		"()", StringUtil.DELIM_SKIP_BLANKS );
 
 	CommandStatus status = getCommandStatus();
 	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command + "\".  Expecting compareFiles(...).";
+		message = "Invalid syntax for \"" + command + "\".  Expecting CompareFiles(...).";
 		Message.printWarning ( warning_level, routine, message);
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
@@ -179,7 +179,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
-			message = "Invalid syntax for \"" + command + "\".  Expecting compareFiles(...).";
+			message = "Invalid syntax for \"" + command + "\".  Expecting CompareFiles(...).";
 			Message.printWarning ( warning_level, routine, message);
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -215,10 +215,7 @@ private String readLine ( BufferedReader in )
 }
 
 /**
-Run the commands:
-<pre>
-compareFiles(InputFile1="X",InputFile2="X",WarnIfDifferent=X,WarnIfSame=X)
-</pre>
+Run the command.
 @param command_line Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -228,13 +225,14 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "compareFiles_Command.runCommand", message;
+{	String routine = "CompareFiles_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	
 	PropList parameters = getCommandParameters();
 	
+    CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
 	
@@ -246,17 +244,15 @@ CommandWarningException, CommandException
 	boolean WarnIfSame_boolean = false;		// Default
 	int diff_count = 0;				// Number of lines that
 							// are different
-	if (	(WarnIfDifferent != null) &&
-		WarnIfDifferent.equalsIgnoreCase(_True)){
+	if ( (WarnIfDifferent != null) && WarnIfDifferent.equalsIgnoreCase(_True)){
 		WarnIfDifferent_boolean = true;
 	}
-	if (	(WarnIfSame != null) &&
-		WarnIfSame.equalsIgnoreCase(_True)){
+	if ( (WarnIfSame != null) && WarnIfSame.equalsIgnoreCase(_True)){
 		WarnIfSame_boolean = true;
 	}
 
-	String InputFile1_full = IOUtil.getPathUsingWorkingDir ( InputFile1 );
-	String InputFile2_full = IOUtil.getPathUsingWorkingDir ( InputFile2 );
+	String InputFile1_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile1);
+	String InputFile2_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile2 );
 	if ( !IOUtil.fileExists(InputFile1_full) ) {
 		message = "First input file \"" + InputFile1_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
@@ -285,10 +281,8 @@ CommandWarningException, CommandException
 	}
 
 	try {	// Open the files...
-		BufferedReader in1 = new BufferedReader(new FileReader(
-			IOUtil.getPathUsingWorkingDir(InputFile1_full)));
-		BufferedReader in2 = new BufferedReader(new FileReader(
-			IOUtil.getPathUsingWorkingDir(InputFile2_full)));
+		BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
+		BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
 		// Loop through the files, comparing non-comment lines...
 		String iline1, iline2;
 		while ( true ) {
@@ -298,8 +292,7 @@ CommandWarningException, CommandException
 				// both are done at the same time...
 				break;
 			}
-			// TODO SAM 2006-04-20
-			// The following needs to handle comments at the end...
+			// TODO SAM 2006-04-20 The following needs to handle comments at the end...
 			if ( (iline1 == null) && (iline2 != null) ) {
 				// First file is are done so files are different...
 				++diff_count;
@@ -319,14 +312,14 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different.");
 	}
 	catch ( Exception e ) {
-		message = "Error comparing files.";
+		message = "Unexpected error comparing files.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-					"Unknown error comparing files.", "See the log file for details."));
+					message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
 	if ( WarnIfDifferent_boolean && (diff_count > 0) ) {

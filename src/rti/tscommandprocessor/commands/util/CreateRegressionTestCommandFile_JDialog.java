@@ -319,7 +319,7 @@ private void initialize ( JFrame parent, Command command )
 	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __FilenamePattern_JTextField = new JTextField ( 50 );
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-    		"Default is \"test*.TSTool\""), 
+    		"Default is \"Test_*.TSTool\""), 
     		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (

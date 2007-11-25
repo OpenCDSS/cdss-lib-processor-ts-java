@@ -1,5 +1,8 @@
 package rti.tscommandprocessor.core;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -23,6 +26,26 @@ being migrated.
 */
 public abstract class TSCommandProcessorUtil
 {
+
+/**
+Used to handle regression test results during testing.
+*/
+private static PrintWriter __regression_test_fp = null;
+   
+/**
+Add a record to the regression test results report.  The report is a simple text file
+that indicates whether a test passed.
+@param processor CommandProcessor that is being run.
+@param max_severity the maximum severity from the command that was run.
+@param InputFile_full the full path to the command file that was run. 
+*/
+public static void appendToRegressionTestReport(CommandProcessor processor, CommandStatusType max_severity,
+        String InputFile_full )
+{
+    if ( __regression_test_fp != null ) {
+        __regression_test_fp.println ( StringUtil.formatString(max_severity,"%-10.10s") + "  " + InputFile_full);
+    }
+}
 	
 /**
 Append a time series to the processor time series results list.
@@ -43,6 +66,17 @@ public static void appendTimeSeriesToResultsList ( CommandProcessor processor, C
 		Message.printWarning(3, routine, e);
 		Message.printWarning(3, routine, message );
 	}
+}
+
+/**
+Close the regression test report file.
+*/
+public static void closeRegressionTestReportFile ()
+{
+    if ( __regression_test_fp != null ) {
+        __regression_test_fp.close();
+        __regression_test_fp = null;
+    }
 }
 	
 /**
@@ -384,6 +418,17 @@ protected static boolean isTSID ( String command )
 	}
 	else {	return false;
 	}
+}
+
+/**
+Open a new regression test report file.
+@param OutputFile_full Full path to report file to open.
+@param Append_boolean indicates whether the file should be opened in append mode.
+*/
+public static void openNewRegressionTestReportFile ( String OutputFile_full, boolean Append_boolean )
+throws FileNotFoundException
+{
+    __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
 }
 
 /**

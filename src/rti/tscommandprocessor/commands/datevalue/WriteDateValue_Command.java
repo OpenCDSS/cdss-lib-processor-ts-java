@@ -315,8 +315,7 @@ CommandWarningException, CommandException
 	}
 	Vector tslist = (Vector)o_TSList;
 	if ( tslist.size() == 0 ) {
-		message = "Unable to find time series to write using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+		message = "Zero time series in list to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
@@ -415,27 +414,31 @@ CommandWarningException, CommandException
 		}
 	}
 
-	// Now try to write...
+	// Now try to write.  Only do so if the number of time series is 1+.  Otherwise an exception will occur.
+    // TODO SAM 2007-11-19 Evaluate whether DateValueTS.writeTimeSeriesList() should allow empty list,
+    // resulting in just a header in the output.  This might be useful during testing
 
-	try {
-		// Convert to an absolute path...
-		String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
-		Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
-		DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
+    if ( (tslist != null) && (tslist.size() > 0) ) {
+        try {
+            // Convert to an absolute path...
+            String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+            Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
+            DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
 				OutputStart_DateTime, OutputEnd_DateTime, "", true );
-		// Save the output file name...
-		setOutputFile ( new File(OutputFile_full));
-	}
-	catch ( Exception e ) {
-		message = "Error writing time series to DateValue file.";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-		Message.printWarning ( 3, routine, e );
-		status.addToLog ( CommandPhaseType.RUN,
+            // Save the output file name...
+            setOutputFile ( new File(OutputFile_full));
+        }
+        catch ( Exception e ) {
+            message = "Error writing time series to DateValue file.";
+            Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            Message.printWarning ( 3, routine, e );
+            status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Check log file for details." ) );
-		throw new CommandException ( message );
-	}
+            throw new CommandException ( message );
+        }
+    }
 	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }

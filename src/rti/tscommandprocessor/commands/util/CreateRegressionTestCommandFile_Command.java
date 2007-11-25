@@ -4,17 +4,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
+
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
@@ -28,11 +33,9 @@ import RTi.Util.String.StringUtil;
 <p>
 This class initializes, checks, and runs the CreateRegressionTestCommandFile() command.
 </p>
-<p>The CommandProcessor must return the following properties:  WorkingDir.
-</p>
 */
 public class CreateRegressionTestCommandFile_Command extends AbstractCommand
-implements Command
+implements Command, FileGenerator
 {
 
 /**
@@ -40,6 +43,11 @@ Data members used for parameter values.
 */
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+Output file that is created by this command.
+*/
+private File __OutputFile_File = null;
 
 /**
 Constructor.
@@ -66,6 +74,7 @@ throws InvalidCommandParameterException
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Append = parameters.getValue ( "Append" );
 	String warning = "";
+    String message;
 
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
@@ -75,28 +84,26 @@ throws InvalidCommandParameterException
 	// edited.
 
 	if ( (SearchFolder == null) || (SearchFolder.length() == 0) ) {
-		warning += "\nThe search folder must be specified.";
-		status.addToLog(CommandPhaseType.INITIALIZATION,
+        message = "The search folder must be specified.";
+		warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						"The search folder is not specified.",
-						"Specify the search folder."));
+						message, "Specify the search folder."));
 	}
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-		warning += "\nThe output file must be specified.";
-		status.addToLog(CommandPhaseType.INITIALIZATION,
+        message = "The output file must be specified.";
+		warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						"The output file is not specified.",
-						"Specify the output file name."));
+						message, "Specify the output file name."));
 	}
 	if ( (Append != null) && !Append.equals("") ) {
-		if (	!Append.equalsIgnoreCase(_False) &&
-			!Append.equalsIgnoreCase(_True) ) {
-			warning += "\nThe Append parameter \"" +
-			Append + "\" must be False or True.";
-			status.addToLog(CommandPhaseType.INITIALIZATION,
+		if ( !Append.equalsIgnoreCase(_False) && !Append.equalsIgnoreCase(_True) ) {
+            message = "The Append parameter \"" + Append + "\" must be False or True.";
+			warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-						"The Append parameter (\"" + Append + ") is invalid.",
-						"Specify the parameter as False or True."));
+						message, "Specify the parameter as False or True."));
 		}
 	}
 
@@ -106,34 +113,9 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "FilenamePattern" );
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Append" );
-	Vector warning_Vector = null;
-	try {	warning_Vector = parameters.validatePropNames (
-			valid_Vector, null, null, "parameter" );
-	}
-	catch ( Exception e ) {
-		// Ignore.  Should not happen.
-		warning_Vector = null;
-	}
-	if ( warning_Vector != null ) {
-		int size = warning_Vector.size();
-		StringBuffer b = new StringBuffer();
-		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.elementAt (i);
-			b.append ( (String)warning_Vector.elementAt(i));
-		}
-		status.addToLog(CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.WARNING,
-					b.toString(),
-					"Specify only valid parameters - see documentation."));
-	}
-	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
-		throw new InvalidCommandParameterException ( warning );
-	}
-	else {
-		status.addToLog(CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.SUCCESS,"",""));
-	}
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -146,7 +128,19 @@ public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new CreateRegressionTestCommandFile_JDialog ( parent, this )).ok();
 }
-    
+
+/**
+Return the list of files that were created by this command.
+*/
+public List getGeneratedFileList ()
+{
+    Vector list = new Vector();
+    if ( getOutputFile() != null ) {
+        list.addElement ( getOutputFile() );
+    }
+    return list;
+}
+
 /**
 Visits all files and directories under the given directory and if
 the file matches a valid commands file it is added to the test list.
@@ -178,7 +172,15 @@ throws IOException
            commands_file_Vector.add(path.toString());
         }
     }
-} 
+}
+
+/**
+Return the output file generated by this file.  This method is used internally.
+*/
+private File getOutputFile ()
+{
+    return __OutputFile_File;
+}
 
 /**
 Parse the command string into a PropList of parameters.
@@ -235,6 +237,7 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters();
 	
+    CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
 	
@@ -242,12 +245,12 @@ CommandWarningException, CommandException
 	String FilenamePattern = parameters.getValue ( "FilenamePattern" );
 	String FilenamePattern_Java = "";
 	if ( FilenamePattern == null ) {
-		// The pattern we want is "test*.TSTool" where the . is literal.
+		// The pattern we want is "Test_*.TSTool" where the . is literal.
 		// For Java string matching, need to replace * with .* and . with \...
-		FilenamePattern_Java = "^[tT]est.*\\x2eTSTool";
+		FilenamePattern_Java = "^[tT][Ee][Ss][Tt]_.*\\x2eTSTool";
 	}
 	else {
-		//FilenamePattern_Java = StringUtil.replaceString(FilenamePattern,"*",".*");
+		FilenamePattern_Java = StringUtil.replaceString(FilenamePattern,"*",".*");
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Append = parameters.getValue ( "Append" );
@@ -256,17 +259,15 @@ CommandWarningException, CommandException
 		Append_boolean = false;
 	}
 
-	String SearchFolder_full = IOUtil.getPathUsingWorkingDir ( SearchFolder );
-	String OutputFile_full = IOUtil.getPathUsingWorkingDir ( OutputFile );
+	String SearchFolder_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor), SearchFolder );
+	String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor), OutputFile );
 	if ( !IOUtil.fileExists(SearchFolder_full) ) {
-		message = "The folder to search \"" + SearchFolder_full +
-			"\" does not exist.";
+		message = "The folder to search \"" + SearchFolder_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
 		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					"The folder to search \"" + SearchFolder_full + "\" does not exist.",
+				new CommandLogRecord(CommandStatusType.FAILURE, message,
 					"Verify that the folder exists at the time the command is run."));
 	}
 	/* TODO SAM 2007-10-15 Need to check for parent folder
@@ -296,8 +297,11 @@ CommandWarningException, CommandException
 		// Open the output file...
 		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, Append_boolean));
 		File OutputFile_full_File = new File(OutputFile_full);
+        // FIXME SAM 2007-11-20 Disable this for now because it might interfere with the
+        // individual logs for each command file regression test
 		// Open a log file for the runner...
-		out.println ( "StartLog(LogFile=\"" + OutputFile_full_File.getName() + ".log\")");
+		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\")");
+		//out.println ( "StartLog(LogFile=\"" + OutputFile_full_File.getName() + ".log\")");
 		// Find the list of matching files...
 		Vector files = new Vector();
 		getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java );
@@ -306,9 +310,11 @@ CommandWarningException, CommandException
 		for ( int i = 0; i < size; i++ ) {
 			// The commands files to run are relative to the commands file being created.
 			commands_file_to_run = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.elementAt(i) );
-			out.println ( "runCommands(InputFile=\"" + commands_file_to_run + "\")");
+			out.println ( "RunCommands(InputFile=\"" + commands_file_to_run + "\")");
 		}
 		out.close();
+        // Save the output file name...
+        setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
 		message = "Error creating regression commands file.";
@@ -321,6 +327,16 @@ CommandWarningException, CommandException
 					"Unknown error creating regression test commands file.", "See the log file for details."));
 		throw new CommandException ( message );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the output file that is created by this command.  This is only used internally.
+*/
+private void setOutputFile ( File file )
+{
+    __OutputFile_File = file;
 }
 
 /**

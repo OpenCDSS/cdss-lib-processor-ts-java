@@ -23,9 +23,15 @@ package rti.tscommandprocessor.commands.hydrobase;
 import java.util.Vector;
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -64,7 +70,7 @@ Constructor.
 */
 public openHydroBase_Command ()
 {	super();
-	setCommandName ( "openHydroBase" );
+	setCommandName ( "OpenHydroBase" );
 }
 
 /**
@@ -76,10 +82,14 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String OdbcDsn = parameters.getValue ( "OdbcDsn" );
+{	String warning = "";
+    String message;
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
+    
+    String OdbcDsn = parameters.getValue ( "OdbcDsn" );
 	if ( OdbcDsn == null ) {
 		OdbcDsn = "";
 	}
@@ -95,22 +105,35 @@ throws InvalidCommandParameterException
 	//String RunMode = parameters.getValue ( "RunMode" );
 	//String UseStoredProcedures = parameters.getValue("UseStoredProcedures");
 	//String InputName = parameters.getValue ( "InputName" );
-	String warning = "";
 
 	if (	(OdbcDsn.equals("") && DatabaseServer.equals("")) ||
 		(!OdbcDsn.equals("") && !DatabaseServer.equals("")) ) {
-		warning +=
-			"\nAn ODBC DSN or Database Server must be specified "+
-			"(but not both).";
+        message = "An ODBC DSN or Database Server must be specified (but not both).";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the ODBC DSN ... OR a databas server." ) );
 	}
 
 	if ( DatabaseServer.equals("") ) {
 		if ( !DatabaseName.equals("") ) {
-			warning +=
-			"\nA database name can be specified only when the " +
-			"database server is specified.";
+            message = "A database name can be specified only when the database server is specified.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Do not specify the database name when the ODBC DSN is specified." ) );
 		}
 	}
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "OdbcDsn" );
+    valid_Vector.add ( "DatabaseServer" );
+    valid_Vector.add ( "DatabaseName" );
+    valid_Vector.add ( "RunMode" );
+    valid_Vector.add ( "UseStoredProcedures" );
+    valid_Vector.add ( "InputName" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -118,6 +141,8 @@ throws InvalidCommandParameterException
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -142,17 +167,20 @@ parameters are determined to be invalid.
 */
 public void parseCommand (	String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "openHydroBase_Command.parseCommand", message;
+{	String routine = "OpenHydroBase_Command.parseCommand", message;
 	int warning_level = 2;
-	int warning_count = 0;
+    
+    CommandStatus status = getCommandStatus();
 	
 	Vector tokens = StringUtil.breakStringList ( command,
 		"()", StringUtil.DELIM_SKIP_BLANKS );
 
-	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command +
-			"\".  Not enough tokens.";
+	if ( (tokens == null) ) {
+		message = "Invalid syntax for \"" + command + "\".  Expecting OpenHydroBase(...).";
 		Message.printWarning ( warning_level, routine, message);
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify command syntax using command editor." ) );
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the command...
@@ -161,10 +189,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
+			message = "Syntax error in \"" + command + "\".  Expecting OpenHydroBase(...).";
 			Message.printWarning ( warning_level, routine, message);
-			++warning_count;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify command syntax using command editor." ) );
 			throw new InvalidCommandSyntaxException ( message );
 		}
 	}
@@ -191,6 +220,9 @@ CommandWarningException, CommandException
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 
 	// Get the input needed to process the file...
 	PropList parameters = getCommandParameters();
@@ -198,8 +230,7 @@ CommandWarningException, CommandException
 	String DatabaseServer = parameters.getValue ( "DatabaseServer" );
 	String DatabaseName = parameters.getValue ( "DatabaseName" );
 	String RunMode = parameters.getValue ( "RunMode" );
-	String UseStoredProcedures = parameters.getValue (
-		"UseStoredProcedures" );
+	String UseStoredProcedures = parameters.getValue ("UseStoredProcedures" );
 	String InputName = parameters.getValue ( "InputName" );
 	if ( RunMode == null ) {
 		RunMode = _GUIAndBatch;
@@ -245,10 +276,8 @@ CommandWarningException, CommandException
 					DatabaseName = null;
 				}
 				
-				if (UseStoredProcedures
-				    .equalsIgnoreCase("true")) {
-				    	// instantiate a HydroBaseDMI that
-					// uses stored procedures
+				if (UseStoredProcedures.equalsIgnoreCase("true")) {
+				    	// instantiate a HydroBaseDMI that uses stored procedures
 					hbdmi =new HydroBaseDMI("SQLServer2000",
 						DatabaseServer, DatabaseName, 
 						ports[i], null, null, true);
@@ -270,9 +299,7 @@ CommandWarningException, CommandException
 				}
 				catch (Exception e) {
 					Message.printWarning(3, routine, e);
-					message = "Error opening HydroBase "
-						+ "connection to port #"
-						+ ports[i];
+					message = "Error opening HydroBase connection to port # " + ports[i];
 					Message.printWarning(warning_level,
 						MessageUtil.formatMessageTag(
 						command_tag, warning_count), 
@@ -281,19 +308,24 @@ CommandWarningException, CommandException
 			}
 			
 			if (!successful) {
-				throw new Exception("Could not connect to a "
-					 + "HydroBase database on any of the "
-					 + "possible ports (" + portString
-					 + ").");
+                message = "Could not connect to a HydroBase database on any of the "
+                     + "possible ports (" + portString + ").";
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify the HydroBase database information." ) );
+				throw new Exception( message );
 			}
 		}
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 3, routine, e );
-			message = "Error opening HydroBase connection";
+			message = "Unexpected error opening HydroBase connection";
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the HydroBase database information." ) );
 			throw new CommandException ( message );
 		}
 		// Set the input name for the connection.  This is used to allow
@@ -316,23 +348,27 @@ CommandWarningException, CommandException
 			// Skip...
 		}
 	}
-	else {	message =
+	else {
+        message =
 		"Not running \"" + getCommandString() +
 		"\" because run mode is not compatible with RunMode=" + RunMode;
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify that command should not be run." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -352,6 +388,9 @@ private int setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old, int warning
 		int warning_count, String command_tag )
 throws CommandException
 {	String routine = getCommandName() + ".setHydroBaseDMI";
+
+    CommandStatus status = getCommandStatus();
+    
 	String message;
 	if ( hbdmi == null ) {
 		return warning_count;
@@ -368,10 +407,12 @@ throws CommandException
 	}
 	catch ( Exception e ) {
 		// Not fatal, but of use to developers.
-		message =
-			"Error requesting HydroBaseDMIList from processor - starting new list.";
+		message = "Error requesting HydroBaseDMIList from processor - starting new list.";
 		routine = getCommandName() + ".setHydroBaseDMI";
-		Message.printDebug(10, routine, message );
+		Message.printWarning(3, routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Report the problem to software support." ) );
 	}
 	
 	int size = 0;
@@ -396,8 +437,7 @@ throws CommandException
 				}
 			}
 			dmilist.setElementAt ( hbdmi, i );
-			try { processor.setPropContents ( "HydroBaseDMIList",
-				dmilist );
+			try { processor.setPropContents ( "HydroBaseDMIList",dmilist );
 			}
 			catch ( Exception e ){
 				message = "Cannot set updated HydroBaseDMI list.";
@@ -405,6 +445,9 @@ throws CommandException
 					MessageUtil.formatMessageTag(
 					command_tag, ++warning_count),
 					routine,message);
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Report the problem to software support." ) );
 				throw new CommandException ( message );
 			}
 			return warning_count;
@@ -421,6 +464,9 @@ throws CommandException
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Report the problem to software support." ) );
 		throw new CommandException ( message );
 	}
 	return warning_count;

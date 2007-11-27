@@ -105,7 +105,7 @@ private JTextField	__Alias_JTextField=null,// Alias for time series,
 						// non-alias version
 			__InputStart_JTextField,// Text fields for query
 			__InputEnd_JTextField,	// period, both versions.
-			/* REVISIT SAM 2006-04-28
+			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			__FillDailyDivFlag_JTextField,
 						// Flag to use indicating
@@ -116,7 +116,7 @@ private JTextField	__Alias_JTextField=null,// Alias for time series,
 						// Flag to use indicating
 						// diversion values filled with
 						// diversion comments.
-			/* REVISIT SAM 2006-04-28
+			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 private SimpleJComboBox	__FillDailyDiv_JComboBox,
 						// Indicate whether to fill
@@ -209,7 +209,7 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if (
-		/* REVISIT SAM 2006-04-28
+		/* TODO SAM 2006-04-28 Review code
 		As per Ray Bennett always do the fill
 		(o == __FillDailyDiv_JComboBox) ||
 		*/
@@ -232,14 +232,14 @@ private void checkGUIState()
 		//if (  __Interval_JTextField != null ) {
 		//	Interval = __Interval_JTextField.getText().trim();
 		//}
-		// REVISIT SAM 2006-04-25
+		// TODO SAM 2006-04-25 Remove hard-coded types
 		// Should not need to hard-code these data types but there
 		// is no better way to do it at the moment.
 		if (	DataType.equalsIgnoreCase("DivTotal") ||
 			DataType.equalsIgnoreCase("DivClass") ||
 			DataType.equalsIgnoreCase("RelTotal") ||
 			DataType.equalsIgnoreCase("RelClass") ) {
-			/* REVISIT SAM 2006-04-28
+			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			if ( Interval.equalsIgnoreCase("Day") ) {
 				JGUIUtil.setEnabled (
@@ -258,7 +258,7 @@ private void checkGUIState()
 			JGUIUtil.setEnabled (
 				__FillUsingDivCommentsFlag_JTextField, true );
 		}
-		else {	/* REVISIT SAM 2006-04-28
+		else {	/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			JGUIUtil.setEnabled ( __FillDailyDiv_JComboBox, false );
 			JGUIUtil.setEnabled (
@@ -338,7 +338,7 @@ private void checkInput ()
 		props.set ( "InputEnd", InputEnd );
 	}
 	// Additional parameters used to help provide additional data...
-	/* REVISIT SAM 2006-04-28
+	/* TODO SAM 2006-04-28 Review code
 	As per Ray Bennett always do the fill
 	String FillDailyDiv =__FillDailyDiv_JComboBox.getSelected();
 	if ( FillDailyDiv.length() > 0 ) {
@@ -422,7 +422,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputEnd", InputEnd );
-	/* REVISIT SAM 2006-04-28
+	/* TODO SAM 2006-04-28 Review code
 	As per Ray Bennett always do the fill
 	String FillDailyDiv = __FillDailyDiv_JComboBox.getSelected();
 	__command.setCommandParameter ( "FillDailyDiv", FillDailyDiv );
@@ -455,7 +455,7 @@ throws Throwable
 	__InputName_JTextField = null;
 	__InputStart_JTextField = null;
 	__InputEnd_JTextField = null;
-	/* REVISIT SAM 2006-04-28
+	/* TODO SAM 2006-04-28 Review code
 	As per Ray Bennett always do the fill
 	__FillDailyDiv_JComboBox = null;
 	__FillDailyDivFlag_JTextField = null;
@@ -476,11 +476,9 @@ Return the "WhereN" parameter for the requested input filter.
 */
 private String getWhere ( int ifg )
 {
-	// REVISIT SAM 2006-04-24
-	// Need to enable other input filter panels
+	// TODO SAM 2006-04-24 Need to enable other input filter panels
 	String delim = ";";	// To separate input filter parts
-	InputFilter_JPanel filter_panel =
-			__input_filter_HydroBase_structure_sfut_JPanel;
+	InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
 	String where = filter_panel.toString(ifg,delim).trim();
 	return where;
 }
@@ -554,14 +552,14 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
 	if ( __use_alias ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read a single time series from the HydroBase database."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	else {	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read one or more time series from the HydroBase database."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       		JGUIUtil.addComponent(main_JPanel, new JLabel (
+       	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The data type and interval must be selected.  Constrain the " +
 		"query using the \"where\" clauses, if necessary." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -651,7 +649,7 @@ private void initialize ( JFrame parent, Command command )
 	if ( !__use_alias ) {
 		int buffer = 3;
 		Insets insets = new Insets(0,buffer,0,0);
-		/* REVISIT SAM 2004-08-29 - enable later -
+		/* TODO SAM 2004-08-29 - enable later -
 		right now it slows things down
 		try {	// Add input filters for stations...
 
@@ -725,7 +723,7 @@ private void initialize ( JFrame parent, Command command )
 			Message.printWarning ( 2, routine, e );
 		}
 
-		/* REVISIT SAM 2004-08-29 enable later
+		/* TODO SAM 2004-08-29 enable later
 		try {	// Structure irrig summary TS...
 
 			__input_filter_HydroBase_irrigts_JPanel = new
@@ -847,7 +845,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	/* REVISIT SAM 2006-04-27
+	/* TODO SAM 2006-04-27
 	As per Ray Bennett this should always be done.
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Fill daily diversions:"),
@@ -934,17 +932,17 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add ( __ok_JButton );
 
 	if ( __use_alias ) {
-		setTitle ( "Edit TS Alias = readHydroBase() Command" );
+		setTitle ( "Edit TS Alias = " + __command.getCommandName() + " Command" );
 	}
-	else {	setTitle ( "Edit readHydroBase() Command" );
+	else {	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 	}
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
@@ -995,7 +993,7 @@ private void refresh ()
 	String filter_delim = ";";
 	String InputStart = "";
 	String InputEnd = "";
-	/* REVISIT SAM 2006-04-28
+	/* TODO SAM 2006-04-28 Review code
 	As per Ray Bennett always do the fill
 	String FillDailyDiv = "";
 	String FillDailyDivFlag = "";
@@ -1014,34 +1012,27 @@ private void refresh ()
 		InputName = props.getValue ( "InputName" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
-		/* REVISIT SAM 2006-04-28
+		/* TODO SAM 2006-04-28 Review code
 		As per Ray Bennett always do the fill
 		FillDailyDiv = props.getValue ( "FilLDailyDiv" );
 		FillDailyDivFlag = props.getValue ( "FilLDailyDivFlag" );
 		*/
-		FillUsingDivComments =
-			props.getValue ( "FillUsingDivComments" );
-		FillUsingDivCommentsFlag =
-			props.getValue ( "FillUsingDivCommentsFlag" );
+		FillUsingDivComments = props.getValue ( "FillUsingDivComments" );
+		FillUsingDivCommentsFlag = props.getValue ( "FillUsingDivCommentsFlag" );
 		if ( __use_alias && (Alias != null) ) {
 			__Alias_JTextField.setText ( Alias );
 		}
 		if ( __use_alias && (TSID != null) ) {
 			try {	TSIdent tsident = new TSIdent ( TSID );
 				if ( __Location_JTextField != null ) {
-					__Location_JTextField.setText (
-					tsident.getLocation() );
+					__Location_JTextField.setText (	tsident.getLocation() );
 				}
 				if ( __DataSource_JTextField != null ) {
-					__DataSource_JTextField.setText(
-					tsident.getSource() );
+					__DataSource_JTextField.setText(tsident.getSource() );
 				}
-				__DataType_JTextField.setText (
-					tsident.getType() );
-				__Interval_JTextField.setText (
-					tsident.getInterval() );
-				__InputName_JTextField.setText (
-					tsident.getInputName() );
+				__DataType_JTextField.setText (	tsident.getType() );
+				__Interval_JTextField.setText (	tsident.getInterval() );
+				__InputName_JTextField.setText (tsident.getInputName() );
 			}
 			catch ( Exception e ) {
 				// For now do nothing.
@@ -1062,25 +1053,19 @@ private void refresh ()
 			}
 		}
 		if ( !__use_alias ) {
-			InputFilter_JPanel filter_panel =
-				__input_filter_HydroBase_structure_sfut_JPanel;
+			InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
 			int nfg = filter_panel.getNumFilterGroups();
 			String where;
 			for ( int ifg = 0; ifg < nfg; ifg ++ ) {
 				where = props.getValue ( "Where" + (ifg + 1) );
-				if ( where != null ) {
+				if ( (where != null) && (where.length() > 0) ) {
 					// Set the filter...
-					try {	filter_panel.setInputFilter (
-						ifg, where, filter_delim );
+					try {	filter_panel.setInputFilter (ifg, where, filter_delim );
 					}
 					catch ( Exception e ) {
-						Message.printWarning ( 1,
-						routine,
-						"Error setting where " +
-						"information using \"" + where
-						+ "\"" );
-						Message.printWarning ( 2,
-						routine, e );
+						Message.printWarning ( 1, routine,
+						"Error setting where information using \"" + where + "\"" );
+						Message.printWarning ( 2, routine, e );
 					}
 				}
 			}
@@ -1091,7 +1076,7 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
-		/* REVISIT SAM 2006-04-28
+		/* TODO SAM 2006-04-28 Review code
 		As per Ray Bennett always do the fill
 		if ( FillDailyDiv == null ) {
 			// Select default...
@@ -1134,8 +1119,7 @@ private void refresh ()
 			}
 		}
 		if ( FillUsingDivCommentsFlag != null ) {
-			__FillUsingDivCommentsFlag_JTextField.setText(
-			FillUsingDivCommentsFlag);
+			__FillUsingDivCommentsFlag_JTextField.setText(FillUsingDivCommentsFlag);
 		}
 	}
 	// Regardless, reset the command from the fields...
@@ -1172,7 +1156,7 @@ private void refresh ()
 		props.add ( "Interval=" + Interval );
 		props.add ( "InputName=" + InputName );
 		// Add the where clause...
-		// REVISIT SAM 2004-08-26 eventually allow filter panels similar
+		// TODO SAM 2004-08-26 eventually allow filter panels similar
 		// to main GUI - right now only do water class...
 		InputFilter_JPanel filter_panel =
 			__input_filter_HydroBase_structure_sfut_JPanel;
@@ -1194,7 +1178,7 @@ private void refresh ()
 	props.add ( "InputStart=" + InputStart );
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	props.add ( "InputEnd=" + InputEnd );
-	/* REVISIT SAM 2006-04-28
+	/* TODO SAM 2006-04-28 Review code
 	As per Ray Bennett always do the fill
 	FillDailyDiv = __FillDailyDiv_JComboBox.getSelected();
 	props.add ( "FillDailyDiv=" + FillDailyDiv );

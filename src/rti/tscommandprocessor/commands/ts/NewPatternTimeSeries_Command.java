@@ -297,7 +297,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
-	try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
+	try {
+        PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
 			(String)tokens.elementAt(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
@@ -375,9 +376,7 @@ CommandWarningException, CommandException
 						routine, message );
 				status.addToLog(CommandPhaseType.RUN,
 						new CommandLogRecord(
-						CommandStatusType.FAILURE,
-						"Null value for SetStart DateTime(DateTime=" +
-						"OutputStart" +	"\") returned from processor.",
+						CommandStatusType.FAILURE,message,
 						"Specify SetStart or make sure that a setOutputPeriod() command has been specified prior to this command."));
 				throw new InvalidCommandParameterException ( message );
 			}

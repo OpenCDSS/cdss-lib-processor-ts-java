@@ -175,6 +175,11 @@ CommandWarningException, CommandException
 		TSCommandFileRunner runner = new TSCommandFileRunner ();
         // This will set the initial working directory of the runner to that of the command file...
 		runner.readCommandFile(InputFile_full);
+        // Set the database connection information...
+        // FIXME SAM 2007-11-25 This needs to be generic "DataSource" objects.
+        TSCommandProcessor runner_processor = runner.getProcessor();
+        runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
+        // Run the commands.
 		runner.runCommands();
 		
 		// Set the CommandStatus for this command to the most severe status of the

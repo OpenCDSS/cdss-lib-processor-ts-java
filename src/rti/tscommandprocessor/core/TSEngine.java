@@ -3423,41 +3423,32 @@ readNWSRFSESPTraceEnsemble(InputFile="X")
 private void do_readNWSRFSESPTraceEnsemble ( String command )
 throws Exception
 {	String routine = "TSEngine.do_readNWSRFSESPTraceEnsemble";
-	Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
-		// Should never happen because the command name was parsed
-		// before...
+		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
-	if (	!IOUtil.classCanBeLoaded(
-		"RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble") ) {
+	if (	!IOUtil.classCanBeLoaded("RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble") ) {
 		Message.printWarning ( 2, routine,
 		"Features for command are unavailable:  \"" + command + "\"" );
-		throw new Exception ( "Command unavailable: \"" + command +
-		"\"" );
+		throw new Exception ( "Command unavailable: \"" + command +	"\"" );
 	}
 	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine, "," );
+	PropList props = PropList.parse ((String)tokens.elementAt(1), routine, "," );
 	String InputFile = props.getValue ( "InputFile" );
 
 	Vector tslist = null;
-	Message.printStatus ( 1, routine,
-	"Reading NWSRFS ESPTraceEnsemble file \"" + InputFile + "\"" );
-	// REVISIT - need to pass requested date, units, etc.
-	// to the constructor??
-	NWSRFS_ESPTraceEnsemble ensemble =
-		new NWSRFS_ESPTraceEnsemble ( InputFile, true );
-		tslist = ensemble.getTimeSeriesVector ();
+	Message.printStatus ( 1, routine, "Reading NWSRFS ESPTraceEnsemble file \"" + InputFile + "\"" );
+	// REVISIT - need to pass requested date, units, etc. to the constructor??
+    String InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),InputFile);
+	NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, true );
+	tslist = ensemble.getTimeSeriesVector ();
 	// Add the time series to the end of the normal list...
 	if ( tslist != null ) {
 		// Further process the time series...
-		// This makes sure the period is at least that of the output
-		// period...
+		// This makes sure the period is at least that of the output period...
 		int vsize = tslist.size();
-		Message.printStatus ( 1, routine, "Read " + vsize +
-		" NWSRFS ESPTraceEnsemble time series" );
+		Message.printStatus ( 1, routine, "Read " + vsize + " NWSRFS ESPTraceEnsemble time series" );
 		readTimeSeries2 ( tslist, true );
 		int ts_pos = getTimeSeriesSize();
 		for ( int iv = 0; iv < vsize; iv++ ) {
@@ -3466,8 +3457,7 @@ throws Exception
 	}
 	// Free resources from ESP list...
 	tslist = null;
-	// Force a garbage collect because this is an
-	// intensive task...
+	// Force a garbage collect because this is an intensive task...
 	System.gc();
 }
 
@@ -7916,23 +7906,16 @@ throws Exception
 					++error_count;
 					continue;
 				}
-				// Change time series interval by
-				// disaggregating...
+				// Change time series interval by disaggregating...
 				alias = ((String)tokens.elementAt(2)).trim();
 				TS its = getTimeSeries ( command_tag, alias );
 				if ( its != null ) {
-					String dmethod = ((String)
-						tokens.elementAt(3)).trim();
-					String interval_string =
-						(String)tokens.elementAt(4);
-					// REVISIT - catch exception
-					TimeInterval interval =
-						TimeInterval.parseInterval(
-							interval_string );
-					String datatype_string =
-						(String)tokens.elementAt(5);
-					String units_string =
-						(String)tokens.elementAt(6);
+					String dmethod = ((String)tokens.elementAt(3)).trim();
+					String interval_string = (String)tokens.elementAt(4);
+					// TODO - catch exception
+					TimeInterval interval = TimeInterval.parseInterval(interval_string );
+					String datatype_string =(String)tokens.elementAt(5);
+					String units_string =(String)tokens.elementAt(6);
 					ts = TSUtil.disaggregate (
 						its, dmethod, datatype_string,
 						units_string,

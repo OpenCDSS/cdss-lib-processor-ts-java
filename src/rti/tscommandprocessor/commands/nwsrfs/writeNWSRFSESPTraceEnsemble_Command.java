@@ -11,9 +11,13 @@
 
 package rti.tscommandprocessor.commands.nwsrfs;
 
+import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
+
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -21,9 +25,14 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
@@ -39,17 +48,18 @@ import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 This class initializes, checks, and runs the writeNWSRFSESPTraceEnsemble() 
 command.
 </p>
-<p>The CommandProcessor must return the following properties:  
-TSResultsList and WorkingDir.
-</p>
 */
-public class writeNWSRFSESPTraceEnsemble_Command 
-extends AbstractCommand
-implements Command {
+public class writeNWSRFSESPTraceEnsemble_Command extends AbstractCommand implements Command, FileGenerator
+{
 
 protected static final String
 	_FALSE = "False",
 	_TRUE = "True";
+
+/**
+Output file that is created by this command.
+*/
+private File __OutputFile_File = null;
 
 /**
 Constructor.
@@ -57,7 +67,7 @@ Constructor.
 public writeNWSRFSESPTraceEnsemble_Command ()
 {
 	super();
-	setCommandName ( "writeNWSRFSESPTraceEnsemble" );
+	setCommandName ( "WriteNWSRFSESPTraceEnsemble" );
 }
 
 /**
@@ -69,11 +79,15 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters ( PropList parameters,
-				     String command_tag,
-				     int warning_level )
-throws InvalidCommandParameterException {
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
+throws InvalidCommandParameterException
+{
 	String warning = "";
+    String message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
+    CommandProcessor processor = getCommandProcessor();
 	
 	// Get the property values. 
 	String OutputFile = parameters.getValue("OutputFile");
@@ -88,16 +102,69 @@ throws InvalidCommandParameterException {
 	String TSList = parameters.getValue("TSList");
 	
 	// OutputFile
-	if (OutputFile != null && OutputFile.length() != 0 ) {
-		OutputFile = IOUtil.getPathUsingWorkingDir(OutputFile);
-	} 
-	else {
-		warning += "\nThe Output File must be specified.";
-	}
+    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+        message = "The output file: \"" + OutputFile + "\" must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an output file." ) );
+    }
+    else {
+        String working_dir = null;
+        try { Object o = processor.getPropContents ( "WorkingDir" );
+            if ( o != null ) {
+                working_dir = (String)o;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Software error - report problem to support." ) );
+        }
+
+        try {   String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+            File f = new File ( adjusted_path );
+            File f2 = new File ( f.getParent() );
+            if ( !f2.exists() ) {
+                message = "The output file parent directory does " +
+                "not exist: \"" + adjusted_path + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Create the output directory." ) );
+            }
+            f = null;
+            f2 = null;
+        }
+        catch ( Exception e ) {
+            message = "The output file:\n" +
+            "    \"" + OutputFile +
+            "\"\ncannot be adjusted using the working directory:\n" +
+            "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that output file and working directory paths are compatible." ) );
+        }
+    }
 	
 	if( TSList == null || TSList.length() == 0 ) {
 		TSList = "AllTS";
 	}
+    
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "OutputFile" );
+    valid_Vector.add ( "CarryoverGroup" );
+    valid_Vector.add ( "ForecastGroup" );
+    valid_Vector.add ( "Segment" );
+    valid_Vector.add ( "SegmentDescription" );
+    valid_Vector.add ( "Latitude" );
+    valid_Vector.add ( "Longitude" );
+    valid_Vector.add ( "RFC" );
+    valid_Vector.add ( "TSList" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -107,6 +174,7 @@ throws InvalidCommandParameterException {
 			warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -129,6 +197,26 @@ throws Throwable {
 }
 
 /**
+Return the list of files that were created by this command.
+*/
+public List getGeneratedFileList ()
+{
+    Vector list = new Vector();
+    if ( getOutputFile() != null ) {
+        list.addElement ( getOutputFile() );
+    }
+    return list;
+}
+
+/**
+Return the output file generated by this file.  This method is used internally.
+*/
+private File getOutputFile ()
+{
+    return __OutputFile_File;
+}
+
+/**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
@@ -146,12 +234,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	int warning_level = 2;
 	int warning_count = 0;
 
-	Vector tokens = StringUtil.breakStringList(command, "()", 
-		StringUtil.DELIM_SKIP_BLANKS);
+	Vector tokens = StringUtil.breakStringList(command, "()", 0);
 	if ((tokens == null) || tokens.size() < 2) {
 		// Must have at least the command name and the InputFile
-		message = "Syntax error in \"" + command 
-			+ "\".  Not enough tokens.";
+		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
 		Message.printWarning ( warning_level, routine, message);
 		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
@@ -163,8 +249,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
-		message = "Syntax error in \"" + command +
-			"\".  Not enough tokens.";
+		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
 		Message.printWarning ( warning_level,routine, message);
 		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
@@ -172,12 +257,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 }
 
 /**
-Run the command:
-<pre>
-writeNWSRFSESPTraceEnsemble(OutputFile="x",CarryoverGroup="x",ForecastGroup="x",
-Segment="x",SegmentDescription="x",Latitude="x",Longitude="x",RFC="x",
-TSList="x")
-</pre>
+Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -196,6 +276,9 @@ throws InvalidCommandParameterException,
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;	// Log message level for non-user warnings
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters ();
@@ -224,37 +307,49 @@ throws InvalidCommandParameterException,
 		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\" from processor).";
+		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList + "\" from processor).";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Report the problem to software support."));
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to scale using TSList=\"" + TSList +
-		".";
+		message = "Unable to find time series to scale using TSList=\"" + TSList + ".";
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Report the problem to software support."));
 	}
 	else {	tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
-			message = "Unable to find time series to write using TSList=\"" + 
-			TSList + ".";
+			message = "Unable to find time series to write using TSList=\"" + TSList + ".";
 			Message.printWarning ( log_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count), routine, message );
+            status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message,
+                    "Verify that a list of time series to output is correctly specified."));
 		}
 	}
 	
 	if ((tslist == null) || (tslist.size() == 0)) {
-		message = "Unable to find time series to write using TSList=\"" 
-			+ TSList + "\".";
+		message = "Unable to find time series to write using TSList=\"" + TSList + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
+        status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Verify that a list of time series to output is correctly specified."));
 	}
 	Message.printStatus( 2, routine, "Will write " + tslist.size() + " time series traces.");
 
@@ -281,18 +376,24 @@ throws InvalidCommandParameterException,
 	if ( RFC != null ) {
 		props.set ( "RFC", RFC );
 	}
-	
+	String OutputFile_full = OutputFile;
 	try {
 		NWSRFS_ESPTraceEnsemble esp = new NWSRFS_ESPTraceEnsemble( tslist, props );
-		esp.writeESPTraceEnsembleFile ( OutputFile );
+        OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		esp.writeESPTraceEnsembleFile ( OutputFile_full );
+        // Save the output file name...
+        setOutputFile ( new File(OutputFile_full));
 	}
 	catch (Exception e) {
-		message = "An error occurred while writing to the file \""
-			+ OutputFile + "\".";
+		message = "An unexpected error occurred while writing to the file \"" + OutputFile_full + "\".";
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag(command_tag, 
 				++warning_count), routine, message);
 		Message.printWarning ( 3, routine, e );
+        status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Check the log file for more details."));
 	}
 	
 	// Throw CommandWarningException in case of problems.
@@ -306,14 +407,20 @@ throws InvalidCommandParameterException,
 			plural_verb = "was";
 		}
 		
-		message = "There " + plural_verb + " " + warning_count +
-			" warning" + plural_s + " processing the command.";
+		message = "There " + plural_verb + " " + warning_count + " warning" + plural_s + " processing the command.";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+			MessageUtil.formatMessageTag(command_tag, ++warning_count ),routine, message );
 		throw new CommandWarningException ( message );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the output file that is created by this command.  This is only used internally.
+*/
+private void setOutputFile ( File file )
+{
+    __OutputFile_File = file;
 }
 
 /**

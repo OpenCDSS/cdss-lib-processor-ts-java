@@ -25,6 +25,8 @@ package rti.tscommandprocessor.commands.hydrobase;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -36,8 +38,12 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -56,8 +62,6 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 <p>
 This class initializes, checks, and runs the fillUsingDiversionComments() command.
 </p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
-</p>
 */
 public class fillUsingDiversionComments_Command extends AbstractCommand
 implements Command
@@ -75,7 +79,7 @@ Constructor.
 */
 public fillUsingDiversionComments_Command ()
 {	super();
-	setCommandName ( "fillUsingDiversionComments" );
+	setCommandName ( "FillUsingDiversionComments" );
 }
 
 /**
@@ -87,8 +91,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	
 	String TSID = parameters.getValue ( "TSID" );
@@ -98,54 +101,90 @@ throws InvalidCommandParameterException
 	String FillUsingCIU = parameters.getValue ( "FillUsingCIU" );
 	String FillUsingCIUFlag = parameters.getValue ( "FillUsingCIUFlag" );
 	String warning = "";
+    String message = "";
+    
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	if ( (TSID == null) || (TSID.length() == 0) ) {
-				warning += "\nA TSID must be specified.";
+        message = "A TSID must be specified.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a time series identifier." ) );
+                
 	}
-	if ( (FillStart != null) && !FillStart.equals("") &&
-		!FillStart.equalsIgnoreCase("OutputStart")){
+	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
 		try {	DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe fill start date/time \"" + FillStart +
-				"\" is not a valid date/time.\n"+
-				"Specify a date or OutputStart.";
+            message = "The fill start date/time \"" + FillStart + "\" is not a valid date/time.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a date or OutputStart." ) );
+
 		}
 	}
-	if ( (FillEnd != null) && !FillEnd.equals("") &&
-		!FillEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
 		try {	DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe fill end date/time \"" + FillEnd +
-				"\" is not a valid date/time.\n"+
-				"Specify a date or OutputEnd.";
+            message = "The fill end date/time \"" + FillEnd + "\" is not a valid date/time.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a date or OutputEnd." ) );
+
 		}
 	}
-	if ( (FillFlag != null) && !(FillFlag.equalsIgnoreCase("Auto")) &&
-			(FillFlag.length() != 1) ) {
-		warning += "\nThe fill flag must be 1 character long or set to Auto.";
-	}
+	if ( (FillFlag != null) && !(FillFlag.equalsIgnoreCase("Auto")) && (FillFlag.length() != 1) ) {
+        message = "The fill flag must be 1 character long or set to Auto.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a 1-character fill flag or Auto." ) );
+    }
 	if ( FillUsingCIU != null && !(FillUsingCIU.equalsIgnoreCase("True")) && 
 			!(FillUsingCIU.equalsIgnoreCase("False")) &&
 			!(FillUsingCIU.equalsIgnoreCase(""))) {
-		warning += "\nFill Using CIU must be true, false or blank.\n";
+        message = "Fill Using CIU is invalid.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Fill Using CIU must be true, false or blank." ) );
 	}
 	if ( FillUsingCIU != null && 
 			FillUsingCIU.equalsIgnoreCase( "true" ) && 
 			FillUsingCIUFlag != null && 
 			!(FillUsingCIUFlag.equalsIgnoreCase("Auto")) &&
 			FillUsingCIUFlag.length() != 1 ) {
-		warning += "\nThe fill using CIU flag must be 1 character long or set to Auto.";
+        message = "The fill using CIU flag must be 1 character long or set to Auto.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a 1-character fill flag or Auto." ) );
 	}
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "FillStart" );
+    valid_Vector.add ( "FillEnd" );
+    valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "FillUsingCIU" );
+    valid_Vector.add ( "FillUsingCIUFlag" );
+    valid_Vector.add ( "RecalcLimits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -170,17 +209,15 @@ parameters are determined to be invalid.
 */
 public void parseCommand (	String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "fillUsingDiversionComments_Command.parseCommand",
+{	String routine = "FillUsingDiversionComments_Command.parseCommand",
 	  message;
 	int warning_level = 2;
 	int warning_count = 0;
 
-	Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command,"()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name, TSID
-		message = "Syntax error in \"" + command +
-		"\".  Not enough tokens.";
+		message = "Syntax error in \"" + command + "\".  Expecting FillUsingDiversionComments(...)";
 		Message.printWarning ( warning_level, routine, message);
 		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
@@ -190,8 +227,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
-		message = "Syntax error in \"" + command +
-		"\".  Not enough tokens.";
+		message = "Syntax error in \"" + command + "\".  Expecting FillUsingDiversionComments(...)";
 		Message.printWarning ( warning_level, routine, message);
 		++warning_count;
 		throw new InvalidCommandSyntaxException ( message );
@@ -209,7 +245,10 @@ Calls TSCommandProcessor to re-calulate limits for this time series.
 private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
 		int warningLevel, int warning_count, String command_tag )
 {
-	String routine = "fillUsingDiversionComments_Command.recalculateLimits";
+	String routine = "fillUsingDiversionComments_Command.recalculateLimits", message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "TS", ts );
@@ -218,20 +257,26 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
 		TSCmdProc.processRequest( "CalculateTSAverageLimits", request_params);
 	}
 	catch ( Exception e ) {
+        message = "Error recalculating original data limits for \"" + ts.getIdentifierString() + "\"";
 		Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, "Error recalculating original data " + 
-				"limits for \"" + ts.getIdentifierString() + "\""  );
+				routine, message  );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
 		return warning_count;
 	}
 	// Get the calculated limits and set in the original data limits...
 	PropList bean_PropList = bean.getResultsPropList();
 	Object prop_contents = bean_PropList.getContents ( "TSLimits" );
 	if ( prop_contents == null ) {
+        message = "Null value from CalculateTSAverageLimits(" + ts.getIdentifierString() + ")";
 		Message.printWarning(warningLevel,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, "Null value from CalculateTSAverageLimits(" +
-			ts.getIdentifierString() + ")" );
+			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
 		return warning_count;
 	}
 	// Now set the limits.
@@ -260,6 +305,10 @@ CommandWarningException, CommandException
 	String FillUsingCIU = parameters.getValue ( "FillUsingCIU" );
 	String FillUsingCIUFlag = parameters.getValue ( "FillUsingCIUFlag" );
 	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+    CommandProcessor processor = getCommandProcessor();
 	
 	DateTime start = null;
 	DateTime end = null;
@@ -272,6 +321,9 @@ CommandWarningException, CommandException
 		Message.printWarning ( warningLevel, 
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid fill start." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	try {	if ( FillEnd != null ) {
@@ -283,6 +335,9 @@ CommandWarningException, CommandException
 		Message.printWarning ( warningLevel,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid fill end." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -295,20 +350,27 @@ CommandWarningException, CommandException
 	// specified as input.
 	int nts = 0;
 	Object o = null;
-	CommandProcessor processor = getCommandProcessor();
 	try { o = processor.getPropContents ( "TSResultsListSize");
 		if ( o == null ) {
+            message = "Unable to determine number of time series to process.  Assuming 0.";
 			Message.printWarning(log_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, "Unable to determine number of time series to process.  Assuming 0." );
+			routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that time series to fill are specified correctly - may be OK if partial run." ) );
 		}
 		else {	nts = ((Integer)o).intValue();
 		}
 	}
 	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
 		message = "Error requesting TSResultsListSize from processor - not using.";
-		Message.printDebug(10, routine, message );
+        Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 	}
 	int start_pos = 0;	// starting position TSID iterator
 	int end_pos = nts;	// end position for TSID iterator
@@ -322,29 +384,37 @@ CommandWarningException, CommandException
 			processor.processRequest( "IndexOf", request_params);
 		}
 		catch ( Exception e ) {
+            message = "Error requesting IndexOf(TSID=" + TSID + "\" from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Error requesting IndexOf(TSID=" + TSID +
-					"\" from processor." );
+					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            
 		}
 		PropList bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "Index" );
 		if ( prop_contents == null ) {
+            message = "Null value for IndexOf(TSID=" + TSID + "\") returned from processor.";
 			Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, "Null value for IndexOf(TSID=" + TSID +
-				"\") returned from processor." );
+				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 		else {	nts = ((Integer)o).intValue();
 		}
 		if ( nts != 1 ) {
 			// Unable to get a list of time series to process.
-			message = "Unable to find time series \"" +
-			TSID + "\" for " + getCommandName() + "() " +
-			"command.";
+			message = "Unable to find time series \"" + TSID + "\" for " + getCommandName() + "() command.";
 			Message.printWarning ( warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that time series to fill are specified correctly - may be OK if partial run." ) );
 			try {
 				throw new Exception ( message );
 			} catch (Exception e) {
@@ -364,17 +434,25 @@ CommandWarningException, CommandException
 	boolean HaveOutputPeriod_boolean = false;
 	try { o = processor.getPropContents ( "HaveOutputPeriod");
 		if ( o == null ) {
+            message = "Unable to whether output period is available.  Assuming False.";
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Unable to whether output period is available.  Assuming False." );
+					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 		else {	HaveOutputPeriod_boolean = ((Boolean)o).booleanValue();
 		}
 	}
 	catch ( Exception e ) {
-			// Not fatal, but of use to developers.
 			message = "Error requesting HaveOutputPeriod from processor - not using.";
-			Message.printDebug(10, routine, message );
+            Message.printWarning(warningLevel,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 	}
 	
 	// Loop through and fill data for TSID's chosen
@@ -388,10 +466,13 @@ CommandWarningException, CommandException
 			processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
+            message = "Error requesting GetTimeSeries(Index=" + its + "\" from processor.  Skipping.";
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Error requesting GetTimeSeries(Index=" + its +
-					"\" from processor.  Skipping." );
+					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			continue;
 		}
 		PropList bean_PropList = bean.getResultsPropList();
@@ -414,21 +495,27 @@ CommandWarningException, CommandException
 			processor.processRequest( "GetHydroBaseDMI", request_params);
 		}
 		catch ( Exception e ) {
+            message = "Error requesting GetHydroBaseDMI(InputName=" +
+            ts.getIdentifier().getInputName() + "\" from processor.  Skipping time series.";
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Error requesting GetHydroBaseDMI(InputName=" +
-					ts.getIdentifier().getInputName() +
-					"\" from processor.  Skipping time series." );
+					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			continue;
 		}
 		bean_PropList = bean.getResultsPropList();
 		prop_contents = bean_PropList.getContents ( "HydroBaseDMI" );
 		if ( prop_contents == null ) {
+            message = "Null value for GetHydroBaseDMI(InputName=" +
+            ts.getIdentifier().getInputName() + "\") returned from processor.  Skipping time series.";
 			Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, "Null value for GetHydroBaseDMI(InputName=" +
-				ts.getIdentifier().getInputName() +
-				"\") returned from processor.  Skipping time series." );
+				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that a HydroBase database connection is open." ) );
 				continue;
 		}
 		hbdmi = (HydroBaseDMI)prop_contents;
@@ -438,15 +525,16 @@ CommandWarningException, CommandException
 		if ( HaveOutputPeriod_boolean ) {
 			// No need to extend the period...
 			try {
-				HydroBase_Util.fillTSUsingDiversionComments (
-						hbdmi, ts, start, end, FillFlag, false );
+				HydroBase_Util.fillTSUsingDiversionComments ( hbdmi, ts, start, end, FillFlag, false );
 			} catch (Exception e) {
+                message = "Could not fill time series:" + ts + " with diversion comments.";
 				Message.printWarning(warningLevel,
 						MessageUtil.formatMessageTag( command_tag,
-						++warning_count), routine, 
-						"Could not fill time series:" + ts + " with" +
-						"diversion comments.");
+						++warning_count), routine, message );
 				Message.printWarning(3, routine, e );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Check the log file for more details." ) );
 			}
 		}
 		else {	// Extend the period if data are available...
@@ -454,10 +542,13 @@ CommandWarningException, CommandException
 				HydroBase_Util.fillTSUsingDiversionComments (
 						hbdmi, ts, start, end, FillFlag, true );
 			} catch (Exception e) {
+                message = "Could not fill time series:" + ts + " with diversion comments.";
 				Message.printWarning(warningLevel,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, "Could not fill time series:" + ts + " with" +
-						"diversion comments.");
+						routine, message);
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Check the log file for more details." ) );
 				Message.printWarning(3, routine, e );
 			}
 		}
@@ -479,21 +570,28 @@ CommandWarningException, CommandException
 			HydroBase_Structure struct = null;
 			int [] wdid_parts = null;
 			try {
-				wdid_parts = HydroBase_WaterDistrict.parseWDID ( 
-					TSID_Location_part );
+				wdid_parts = HydroBase_WaterDistrict.parseWDID ( TSID_Location_part );
 			} catch (Exception e1) {
-				Message.printWarning(warningLevel, 
-					MessageUtil.formatMessageTag( command_tag,
-					++warning_count), routine, e1.toString());
+				message = "The location ID \"" + TSID_Location_part + "\" is not a WDID.";
+                Message.printWarning(warningLevel,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message);
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "This command can only be applied to structure time series." ) );
 			}
 			int wd = wdid_parts[0];
 			int id = wdid_parts[1];
 			try {
 				struct = hbdmi.readStructureViewForWDID ( wd, id );
 			} catch (Exception e1) {
+                message = "Error reading structure information from HydroBase for ID \"" + TSID_Location_part + "\".";
 				Message.printWarning(warningLevel, 
 					MessageUtil.formatMessageTag( command_tag,
-					++warning_count), routine, e1.toString());
+					++warning_count), routine, message);
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the structure WDID is valid and data are in HydroBase." ) );
 			}
 			// HydroBase currently in use value
 			String ciu = struct.getCiu();
@@ -508,23 +606,18 @@ CommandWarningException, CommandException
 					fillFlag = FillUsingCIUFlag;
 				}
 			}
-			// Based on CIU string, fill missing values with
-			// flag value
+			// Based on CIU string, fill missing values with flag value
 			// H = "Historical structure"
 			// I = "Inactive structure"
-			if( ciu.equalsIgnoreCase( "H" ) || 
-					ciu.equalsIgnoreCase( "I" )) {
+			if( ciu.equalsIgnoreCase( "H" ) || ciu.equalsIgnoreCase( "I" )) {
 				// Recalculate TS Limits
 				warning_count = 
 					recalculateLimits( ts, processor, warningLevel, 
 					warning_count, command_tag );
 				// Fill missing data values at end of period with zeros
 				try {
-					// get the nearest data point from the end of
-					// the period
-					TSData tmpTSData = 
-						TSUtil.findNearestDataPoint(ts, start, 
-						end, true);
+					// get the nearest data point from the end of the period
+					TSData tmpTSData = TSUtil.findNearestDataPoint(ts, start, end, true);
 					if( tmpTSData != null) {
 						PropList const_prop = 
 							HydroBase_Util.createFillConstantPropList(ts,
@@ -539,11 +632,14 @@ CommandWarningException, CommandException
 						//ts = tsFilled;
 					}
 				} catch (Exception e) {
+                    message = "Could not fill time series with CIU code: " + ts.getIdentifier();
 					Message.printWarning(warningLevel, 
 						MessageUtil.formatMessageTag( command_tag,
-						++warning_count), routine, "Could not fill" +
-						" time series:" + ts);
+						++warning_count), routine, message);
 					Message.printWarning(3, routine, e );
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report the problem to software support." ) );
 				}	
 			}
 			// N = "Non-existent structure"
@@ -553,9 +649,7 @@ CommandWarningException, CommandException
 					recalculateLimits( ts, processor, warningLevel, 
 					warning_count, command_tag );
 				try {
-					TSData tmpTSData = 
-						TSUtil.findNearestDataPoint(ts, start, 
-						end, false);
+					TSData tmpTSData = TSUtil.findNearestDataPoint(ts, start, end, false);
 					if( tmpTSData != null) {
 						// Create propList for fill command
 						PropList const_prop = 
@@ -571,11 +665,14 @@ CommandWarningException, CommandException
 					}
 				}
 				catch (Exception e) {
+                    message = "Could not fill time series with CIU code: " + ts.getIdentifier();
 					Message.printWarning(warningLevel, 
 						MessageUtil.formatMessageTag( command_tag,
-						++warning_count), routine, "Could not fill" +
-						" time series:" + ts);
+						++warning_count), routine, message);
 					Message.printWarning(3, routine, e );
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report the problem to software support." ) );
 				}
 			}	
 		}
@@ -594,10 +691,14 @@ CommandWarningException, CommandException
 			processor.processRequest( "ProcessTimeSeriesAction", request_params);
 		}
 		catch ( Exception e ) {
+            message = "Error requesting ProcessTimeSeriesAction(Action=Update" +
+            "\" from processor.  Results will not be visible.";
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Error requesting ProcessTimeSeriesAction(Action=Update" +
-					"\" from processor.  Results will not be visible." );
+					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			continue;
 		}
 		} catch (Exception e) {
@@ -606,6 +707,7 @@ CommandWarningException, CommandException
 					routine, e.toString());
 		}
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

@@ -59,22 +59,25 @@ TSResultsList, WorkingDir.
 */
 public class readStateMod_Command extends AbstractCommand implements Command
 {
-// Flags used when setting the interval
+/**
+Flags used when setting the interval.
+*/
 protected String _Day = "Day";
 protected String _Month = "Month";
 protected String _Year = "Year";
 //protected String _Irregular = "Irregular";
 
-// Flags used when setting the spatial aggregation
+/**
+Flags used when setting the spatial aggregation.
+*/
 protected String _Location = "Location";
 protected String _Parcel = "Parcel";
 protected String _None = "None";
 
-// Indicates whether the TS Alias version of the command is being used...
-
+/**
+Indicates whether the TS Alias version of the command is being used.
+*/
 protected boolean _use_alias = false;
-
-private String __working_dir = null;	// Application working directory
 
 /**
 Constructor.
@@ -93,8 +96,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String routine = getCommandName() + ".checkCommandParameters";
     String InputFile = parameters.getValue ( "InputFile" );

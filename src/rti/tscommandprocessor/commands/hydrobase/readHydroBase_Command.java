@@ -109,8 +109,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String warning = "";
     String message;
@@ -172,13 +171,9 @@ throws InvalidCommandParameterException
 				}
 				else {
                     // TODO SAM 2006-04-25
-					// Most likely the following will not be
-					// executed because parsing the TSID
-					// will generate an
-					// InvalidTimeIntervalException (caught
-					// below).  This may cause the user to
-					// do two checks to catch all input
-					// errors.
+					// Most likely the following will not be executed because parsing the TSID will generate an
+					// InvalidTimeIntervalException (caught below).  This may cause the user to
+					// do two checks to catch all input errors.
 					try { TimeInterval.parseInterval (Interval);
 					}
 					catch ( Exception e ) {
@@ -594,7 +589,7 @@ CommandWarningException, CommandException
 	// Set up properties for the read...
 
 	PropList HydroBase_props = new PropList ( "HydroBase" );
-	/* REVISIT SAM 2006-04-27
+	/* TODO SAM 2006-04-27 Code cleanup
 	As per Ray Bennett always do this.
 	HydroBase_props.set ( "FillDailyDiv=" + FillDailyDiv );
 	if ( (FillDailyDivFlag != null) && !FillDailyDivFlag.equals("") ) {
@@ -659,7 +654,8 @@ CommandWarningException, CommandException
 				tslist.addElement ( ts );
 			}
 		}
-		else {	// Read 1+ time series...
+		else {
+            // Read 1+ time series...
 			// Get the input needed to process the file...
 			String DataType = parameters.getValue ( "DataType" );
 			String Interval = parameters.getValue ( "Interval" );
@@ -694,8 +690,7 @@ CommandWarningException, CommandException
 				HydroBase_Util.lookupHydroBaseDMI (
 					hbdmi_Vector, InputName );
 			if ( hbdmi == null ) {
-				message ="Could not find HydroBase connection with input name \"" + InputName +
-				"\" to query data.";
+				message ="Could not find HydroBase connection with input name \"" + InputName + "\" to query data.";
 				Message.printWarning ( 2, routine, message );
                 status.addToLog ( CommandPhaseType.RUN,
                           new CommandLogRecord(CommandStatusType.FAILURE,
@@ -754,8 +749,7 @@ CommandWarningException, CommandException
 				HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel (hbdmi );
 				Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for CASS." );
 			}
-			else if ( HydroBase_Util.
-				isAgriculturalNASSCropStatsTimeSeriesDataType (	hbdmi, DataType ) ) {
+			else if ( HydroBase_Util.isAgriculturalNASSCropStatsTimeSeriesDataType (	hbdmi, DataType ) ) {
 				// Data from agricultural_CASS_crop_statistics
 				// or agricultural_NASS_crop_statistics...
 				is_NASS = true;
@@ -1144,7 +1138,7 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
 	}
-	/* REVISIT SAM 2006-04-27
+	/* TODO SAM 2006-04-27 Code cleanup
 	As per Ray Bennett always do this.
 	String FillDailyDiv = props.getValue("FillDailyDiv");
 	if ( (FillDailyDiv != null) && (FillDailyDiv.length() > 0) ) {

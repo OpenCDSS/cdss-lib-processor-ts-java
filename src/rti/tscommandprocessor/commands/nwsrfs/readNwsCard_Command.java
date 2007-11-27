@@ -21,6 +21,9 @@
 package rti.tscommandprocessor.commands.nwsrfs;
 
 import javax.swing.JFrame;
+
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.util.Vector;
 import java.io.File;
 
@@ -28,6 +31,10 @@ import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -47,9 +54,6 @@ import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 This class initializes, checks, and runs the TS Alias and non-TS Alias 
 readNwsCard() commands.
 </p>
-<p>The CommandProcessor must return the following properties:  
-TSResultsList and WorkingDir.
-</p>
 */
 public class readNwsCard_Command 
 extends AbstractCommand
@@ -64,9 +68,12 @@ Private data members shared between the checkCommandParameter() and the
 runCommand() methods (prevent code duplication parsing dateTime strings).  
 */
 private DateTime __InputStart = null;
-private DateTime __InputEnd   = null; 
+private DateTime __InputEnd   = null;
 
-private String __Alias = null;
+/**
+Indicates whether the TS Alias version of the command is being used.
+*/
+protected boolean _use_alias = false;
 
 /**
 Constructor.
@@ -74,7 +81,7 @@ Constructor.
 public readNwsCard_Command ()
 {
 	super();
-	setCommandName ( "readNwsCard" );
+	setCommandName ( "ReadNwsCard" );
 }
 
 /**
@@ -89,8 +96,15 @@ dialogs).
 public void checkCommandParameters ( PropList parameters,
 				     String command_tag,
 				     int warning_level )
-throws InvalidCommandParameterException {
+throws InvalidCommandParameterException
+{
+    String routine = getClass().getName() + ".checkCommandParameters";
 	String warning = "";
+    String message;
+    
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
@@ -99,50 +113,64 @@ throws InvalidCommandParameterException {
 	String InputEnd   = parameters.getValue("InputEnd");
 	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
 	String Alias = parameters.getValue("Alias");
+    
+	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
+	    message = "The Alias must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an alias." ) );
+    }
 
-	// Input file
-	if ( InputFile != null && InputFile.length() != 0 ) {
-		
-		InputFile = IOUtil.getPathUsingWorkingDir(InputFile);
-		File f = new File(InputFile);
-		if (!f.exists()) {
-			warning += "\nThe NWS Card File \"" + InputFile
-				+ "\" does not exist.";
-		}
-		/* FIXME SAM 2007-10-14 Need to use dynamic working directory.
-		try {
-			String working_dir = (String)getCommandProcessor().getPropContents ( "WorkingDir" );
+    if (Alias != null && !Alias.equals("")) {
+        if (Alias.indexOf(" ") > -1) {
+            // do not allow spaces in the alias
+            message = "The Alias value cannot contain any spaces.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Remove spaces from the alias." ) );
+        }
+    }
 
-		  	String adjusted_path = IOUtil.adjustPath (
-				 working_dir, InputFile );	 
-					 
-			File f  = new File ( adjusted_path );
-			if ( !f.exists() ) {
-				warning += "\nThe NWS Card file \""
-				+ adjusted_path
-				+ "\' does not exist.";
-			}
-			f  = null;
-		}
-		catch ( Exception e ) {
-			warning += "\nThe working directory:\n"
-				+ "    \"" + working_dir
-				+ "\"\ncannot be adjusted using:\n"
-				+ "    \"" + InputFile + "\".";
-		}
-		*/
-	} 
-	else {
-		warning += "\nThe Input File must be specified.";
-	}
-
-	if (Alias != null && !Alias.equals("")) {
-		if (Alias.indexOf(" ") > -1) {
-			// do not allow spaces in the alias
-			warning += "\nThe Alias value cannot contain any "
-				+ "space.";
-		}
-	}
+    if ( (InputFile == null) || (InputFile.length() == 0) ) {
+        message = "The input file must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an existing input file." ) );
+    }
+    else {  String working_dir = null;
+        try { Object o = processor.getPropContents ( "WorkingDir" );
+                // Working directory is available so use it...
+                if ( o != null ) {
+                    working_dir = (String)o;
+                }
+            }
+            catch ( Exception e ) {
+                message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                Message.printWarning(3, routine, message );
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify an existing input file." ) );
+            }
+    
+        try {
+            //String adjusted_path = 
+                IOUtil.adjustPath (working_dir, InputFile);
+        }
+        catch ( Exception e ) {
+            message = "The output file:\n" +
+            "    \"" + InputFile +
+            "\"\ncannot be adjusted using the working directory:\n" +
+            "    \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that input file and working directory paths are compatible." ) );
+        }
+    }
 
 	if ( NewUnits != null ) {
 		// Will check at run time
@@ -156,18 +184,21 @@ throws InvalidCommandParameterException {
 			// valid entry
 			read24HourAsDay = true;
 		}
-		else if (Read24HourAsDay.equalsIgnoreCase("false")
-		    || Read24HourAsDay.trim().equals("")) {
+		else if (Read24HourAsDay.equalsIgnoreCase("false") || Read24HourAsDay.trim().equals("")) {
 		    	// valid entry
 		    	read24HourAsDay = false;
 		}
 		else {
-			// invalid value -- will default to false, but report
-			// a warning.
-			warning += "\nThe value to specify whether to convert "
-				+ "24 Hour data to Daily should be blank, or "
-				+ "one of \"true\" or \"false\", not \""
-				+ Read24HourAsDay + "\"";
+			// invalid value -- will default to false, but report a warning.
+            message = "The value to specify whether to convert "
+                + "24 Hour data to Daily should be blank, or "
+                + "one of \"True\" or \"False\", not \""
+                + Read24HourAsDay + "\"";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify True, False, or blank." ) );
+
 		}
 	}
 
@@ -177,16 +208,20 @@ throws InvalidCommandParameterException {
 			__InputStart = DateTime.parse(InputStart);
 		} 
 		catch (Exception e) {
-			warning += "\nThe input start date/time \""
-				+ InputStart + "\" is not valid.";
+            message = "The input start date/time \"" + InputStart + "\" is not valid.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid input start." ) );
 		}
 		
 		if (__InputStart != null) {
-			if (__InputStart.getPrecision() 
-			    != DateTime.PRECISION_HOUR) {
-				warning += "\nThe input start date/time \""
-					+ InputStart
-					+ "\" precision is not hour.";
+			if (__InputStart.getPrecision() != DateTime.PRECISION_HOUR) {
+                message = "The input start date/time \"" + InputStart + "\" precision is not hour.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Specify the input start to hour precision." ) );
 			}		
 
 			// When reading 24 hour as day, 24 is a valid hour
@@ -223,16 +258,20 @@ throws InvalidCommandParameterException {
 			__InputEnd = DateTime.parse(InputEnd);
 		} 
 		catch (Exception e) {
-			warning += "\nThe input end date/time \""
-				+ InputEnd + "\" is not valid.";
+            message = "The input end date/time \"" + InputEnd + "\" is not valid.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid input end." ) );
 		}
 		
 		if (__InputEnd != null) {
-			if (__InputEnd.getPrecision() 
-			    != DateTime.PRECISION_HOUR) {
-				warning += "\nThe input end date/time \""
-					+ InputStart
-					+ "\" precision is not hour.";
+			if (__InputEnd.getPrecision() != DateTime.PRECISION_HOUR) {
+                message = "The input end date/time \"" + InputStart + "\" precision is not hour.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the input end to hour precision." ) );
 			}		
 
 			// When reading 24 hour as day, 24 is a valid hour
@@ -266,11 +305,25 @@ throws InvalidCommandParameterException {
 	// Make sure __InputStart precedes __InputEnd
 	if ( __InputStart != null && __InputEnd != null ) {
 		if ( __InputStart.greaterThanOrEqualTo( __InputEnd ) ) {
-			warning += "\n InputStart (" + __InputStart 
-				+ ") should be less than InputEnd (" 
-				+ __InputEnd + ").";
+            message = InputStart + " (" + __InputStart  + ") should be less than InputEnd (" + __InputEnd + ").";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an input start less than the input end." ) );
 		}
 	}
+    
+	// Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    if ( _use_alias ) {
+        valid_Vector.add ( "Alias" );
+    }
+    valid_Vector.add ( "InputFile" );
+    valid_Vector.add ( "InputStart" );
+    valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "NewUnits" );
+    valid_Vector.add ( "Read24HourAsDay" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -280,6 +333,8 @@ throws InvalidCommandParameterException {
 			warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -307,7 +362,7 @@ throws Throwable
 
 /**
 Parse the command string into a PropList of parameters.
-@param command A string command to parse.
+@param command_string A string command to parse.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
@@ -318,133 +373,61 @@ syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command )
+public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-
-	// The old format of parsing is still supported for the 
-	//	"TS alias = readNwsCard(.....)
-	// version of the command.  In old format of the TS Alias version of 
-	// the command, parameter order is important. In the new format, 
-	// parameters are specified as "InputStart=....,InputEnd=...", and so
-	// on.  If an equals sign ("=") is found after the parenthesis that
-	// signals the start of the function arguments, then it is the 
-	// new format.
 	
-	int index = command.indexOf("(");
-	String str = command.substring(index);
+	int index = command_string.indexOf("(");
+	String str = command_string.substring(index);
 	index = str.indexOf("=");
 
-	// if no = is found, then this is the old format of parsing (see
-	// above).
-	if (index < 0) {
-		// Reparse to strip quotes from file name...
-		Vector tokens = StringUtil.breakStringList ( command, "=(,)",
-				StringUtil.DELIM_ALLOW_STRINGS);
-		__Alias = ((String)tokens.elementAt(0)).trim();
-		index = __Alias.indexOf(" ");
-		if (index > -1) {
-			__Alias = __Alias.substring(index).trim();
-		}
-		String InputFile = ((String)tokens.elementAt(2)).trim();
-		String NewUnits = ((String)tokens.elementAt(3)).trim();
-		String InputStart = ((String)tokens.elementAt(4)).trim();
-		String InputEnd = ((String)tokens.elementAt(5)).trim();
-		PropList parameters = new PropList("Command Parameters");
-		parameters.set("InputFile", InputFile);
-		if (!NewUnits.equals("*")) {
-			parameters.set("NewUnits", NewUnits);
-		}
-		if (!InputStart.equals("*")) {
-			parameters.set("InputStart", InputStart);
-		}
-		if (!InputEnd.equals("*")) {
-			parameters.set("InputEnd", InputEnd);
-		}
-		if (!__Alias.trim().equals("")) {
-			parameters.set("Alias", __Alias.trim());
-		}
-		parameters.set("Read24HourAsDay", "false");
-		setCommandParameters ( parameters );
+    // This is the new format of parsing, where parameters are
+	// specified as "InputFilter=", etc.
+	String routine = "ReadNwsCard_Command.parseCommand", message;
+	
+    String Alias = null;
+	int warning_count = 0;
+    if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
+        // There is an alias specified.  Extract the alias from the full command.
+        _use_alias = true;
+        str = command_string.substring(3); 
+        index = str.indexOf("=");
+        int index2 = str.indexOf("(");
+        if (index2 < index) {
+            // no alias specified -- badly-formed command
+            Alias = "Invalid_Alias";
+            message = "No alias was specified, although the command started with \"TS ...\"";
+            Message.printWarning(warning_level, routine, message);
+                ++warning_count;
+            throw new InvalidCommandSyntaxException(message);
+        }
+
+        Alias = str.substring(0, index).trim();
+        // Parse the command parameters...
+        super.parseCommand ( command_string.substring(index+1).trim() );
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        parameters.set ( "Alias", Alias );
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
+        setCommandParameters ( parameters );
+    }
+    else {
+        _use_alias = false;
+        super.parseCommand ( command_string );
+    }
+ 
+ 	// The following is for backwards compatability with old commands files.
+    PropList parameters = getCommandParameters ();
+	if (parameters.getValue("InputStart") == null) {
+		parameters.set("InputStart", parameters.getValue("ReadStart"));
 	}
-	else {
-		// This is the new format of parsing, where parameters are
-		// specified as "InputFilter=", etc.
-		String routine = "readNwsCard_Command.parseCommand", message;
-	
-		int warning_count = 0;
-
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			// Must have at least the command name and the InputFile
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,routine, message);
-			++warning_count;
-			throw new InvalidCommandSyntaxException ( message );
-		}
-	
-		// Get the input needed to process the file...
-		try {
-			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," ) );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level,routine, message);
-			++warning_count;
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		PropList parameters = getCommandParameters ();
-
-		// The following is for backwards compatability with old 
-		// commands files.
-		if (parameters.getValue("InputStart") == null) {
-			parameters.set("InputStart", parameters.getValue(
-				"ReadStart"));
-		}
-		if ( parameters.getValue("InputEnd") == null) {
-			parameters.set("InputEnd", parameters.getValue(
-				"ReadEnd"));
-		}
-
-		if (StringUtil.startsWithIgnoreCase(command, "TS ")) {
-			// there is an alias specified.  Extract the alias
-			// from the full command.
-			str = command.substring(3);	
-			index = str.indexOf("=");
-			int index2 = str.indexOf("(");
-			if (index2 < index) {
-				// no alias specified -- badly-formed command
-				__Alias = "Invalid_Alias";
-				message = "No alias was specified, although "
-					+ "the command started with \"TS ...\"";
-				Message.printWarning(warning_level, routine, message);
-				++warning_count;
-				throw new InvalidCommandSyntaxException(
-					message);
-			}
-
-			__Alias = str.substring(0, index);
-		}
-		else {
-			__Alias = null;
-		}
-
-		if (__Alias != null) {
-			parameters.set("Alias", __Alias.trim());
-		}
+	if ( parameters.getValue("InputEnd") == null) {
+		parameters.set("InputEnd", parameters.getValue(	"ReadEnd"));
 	}
 }
 
 /**
-Run the command:
-<pre>
-readNWSCard (InputFile="x",InputStart="x",InputEnd="x",Read24HourAsDay="x",
-NewUnits="x")
-</pre>
+Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -457,11 +440,17 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String routine = "readNwsCard_Command.runCommand", message;
+{	String routine = "ReadNwsCard_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	Vector TSList = null;	// Keep the list of time series	
+	Vector TSList = null;	// Keep the list of time series
+    
+    // Get and clear the status and clear the run log...
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+    CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
@@ -479,18 +468,14 @@ throws InvalidCommandParameterException,
 
 	// Read the NWS Card file.
 	int TSCount = 0;
+    String InputFile_full = InputFile;
 	try {
-		// InputFile is adjusted in the readTimeSeriesList using the
-		// method IOUtil.getPathUsingWorkingDir().
-		// REVISIT [LT 2005-05-17] Ask SAM if the above adjust is the
-		// same as the adjust done here.  The code for the adjust done
-		// here is much elaborated then the code in method
-		// getPathUsingWorkingDir
+        InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile);
 		TSList = NWSCardTS.readTimeSeriesList (
 			// REVISIT [LT 2005-05-17] May add the TSID parameter 
 			//	(1st parameter here) in the future.
 			(TS) null,    		// Currently not used.
-			InputFile, 		// String 	fname
+			InputFile_full, 		// String 	fname
 			__InputStart,		// DateTime 	date1
 			__InputEnd, 		// DateTime 	date2
 			NewUnits,		// String 	units
@@ -500,9 +485,7 @@ throws InvalidCommandParameterException,
 			
 		if ( TSList != null ) {
 			TSCount = TSList.size();
-			message = "Read \"" + TSCount
-				+ "\" time series from \""
-				+ InputFile + "\"";
+			message = "Read \"" + TSCount + "\" time series from \"" + InputFile_full + "\"";
 			Message.printStatus ( 2, routine, message );
 			TS ts = null;
 			for (int i = 0; i < TSCount; i++) {
@@ -512,28 +495,36 @@ throws InvalidCommandParameterException,
 		}
 	} 
 	catch ( Exception e ) {
-		message = "Error reading NWS Card File. \""
-			+ InputFile + "\"";
+		message = "Error reading NWS Card File. \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
 			routine, message );
 		Message.printWarning ( 3, routine, e );
+        status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Check the log file for details."));
 		throw new CommandException ( message );
 	}
 
-	CommandProcessor processor = getCommandProcessor();
 	// Add the new time series to the TSResultsList.
 	if ( TSList != null && TSCount > 0 ) {
-		// Get the list of time series currently in the command
-		// processor.
+		// Get the list of time series currently in the command processor.
 		Vector TSResultsList_Vector = null;
 		try { Object o = processor.getPropContents( "TSResultsList" );
 				TSResultsList_Vector = (Vector)o;
 		}
 		catch ( Exception e ){
 			message = "Cannot get time series list to add new time series.  Creating new list.";
-			Message.printDebug ( 10,routine,message);
+            Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                        command_tag, ++warning_count ),
+                    routine, message );
+            status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message,
+                    "Report the problem to software support."));
 		}
 		if ( TSResultsList_Vector == null ) {
 			// Not a warning because this can be the first command.
@@ -552,27 +543,35 @@ throws InvalidCommandParameterException,
 				MessageUtil.formatMessageTag(
 				command_tag, ++warning_count),
 				routine,message);
+             status.addToLog(CommandPhaseType.RUN,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Report the problem to software support."));
 		}
 	} 
 	else {
-		message = "Read zero time series from the NWS Card file \"" 
-			+ InputFile + "\"";
+		message = "Read zero time series from the NWS Card file \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
 			routine, message );
+         status.addToLog(CommandPhaseType.RUN,
+                 new CommandLogRecord(
+                 CommandStatusType.FAILURE, message,
+                 "Verify the format of the input file."));
 	}
 
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count +" warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
 			routine, message );
 		throw new CommandWarningException ( message );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -629,14 +628,12 @@ public String toString ( PropList props )
 		b.append("Read24HourAsDay=" + Read24HourAsDay + "");
 	}
 
-	if (Alias != null && Alias.length() > 0) {
-		Alias = "TS " + Alias + " = ";
-	}
-	else {
-		Alias = "";
+    String lead = "";
+	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
+		lead = "TS " + Alias + " = ";
 	}
 
-	return Alias + getCommandName() + "(" + b.toString() + ")";
+	return lead + getCommandName() + "(" + b.toString() + ")";
 }
 
 } // end readNwsCard_Command

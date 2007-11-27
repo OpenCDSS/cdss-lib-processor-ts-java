@@ -314,8 +314,7 @@ CommandWarningException, CommandException
 	}
 	Vector tslist = (Vector)o_TSList;
 	if ( tslist.size() == 0 ) {
-		message = "Unable to find time series to write using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+		message = "Unable to find time series to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,

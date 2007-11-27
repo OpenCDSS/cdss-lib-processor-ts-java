@@ -264,7 +264,7 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillRegression") ) {
 		return new fillRegression_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillUsingDiversionComments") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillUsingDiversionComments") ) {
 		return new fillUsingDiversionComments_Command ();
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"Free(") ||
@@ -304,7 +304,7 @@ throws UnknownCommandException
 
 	// "o" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"openHydroBase") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"OpenHydroBase") ) {
 		return new openHydroBase_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"openNDFD") ) {
@@ -322,16 +322,16 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"readHydroBase") ) {
 		return new readHydroBase_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("readHydroBase") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadHydroBase") ) {
 		return new readHydroBase_Command();
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("readNDFD") ) {
 		//return new readNDFD_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"readNwsCard") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsCard") ) {
 		return new readNwsCard_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("readNwsCard") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadNwsCard") ) {
 		return new readNwsCard_Command();
 	}
 	// Put before shorter command name...
@@ -393,7 +393,7 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteDateValue") ) {
 		return new WriteDateValue_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string, "writeNWSRFSESPTraceEnsemble")) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string, "WriteNWSRFSESPTraceEnsemble")) {
 		return new writeNWSRFSESPTraceEnsemble_Command();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteProperty") ) {

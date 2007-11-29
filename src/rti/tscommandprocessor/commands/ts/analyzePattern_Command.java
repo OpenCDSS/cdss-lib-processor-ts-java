@@ -23,20 +23,29 @@
 package rti.tscommandprocessor.commands.ts;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import DWR.StateMod.StateMod_TS;
 
+import RTi.TS.MonthTS;
 import RTi.TS.TSLimits;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
@@ -53,8 +62,7 @@ import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
-public class analyzePattern_Command extends AbstractCommand
-	implements Command
+public class analyzePattern_Command extends AbstractCommand	implements Command, FileGenerator
 {
 
 // Defines used by this class and its analyzePattern_Dialog counterpart.
@@ -67,12 +75,17 @@ double [] __percentileArray = null;
 String [] __patternIDArray  = null;
 
 /**
+Output file that is created by this command.
+*/
+private File __OutputFile_File = null;
+
+/**
 analyzePattern_Command constructor.
 */
 public analyzePattern_Command ()
 {
 	super ();
-	setCommandName ( "analyzePattern" );
+	setCommandName ( "AnalyzePattern" );
 }
 
 /**
@@ -89,6 +102,7 @@ public void checkCommandParameters ( PropList parameters,
 				     int warning_level )
 throws InvalidCommandParameterException
 {	String warning = "";
+    String message;
 	
 	String TSList     = parameters.getValue ( "TSList"     );
 	String TSID       = parameters.getValue ( "TSID"       );
@@ -102,6 +116,8 @@ throws InvalidCommandParameterException
 	String working_dir = null;
 	
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	try { Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
@@ -110,18 +126,21 @@ throws InvalidCommandParameterException
 		}
 	}
 	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		String routine = getCommandName() + ".checkCommandParameters";
-		Message.printDebug(10, routine, message );
+        message = "Error requesting WorkingDir from processor.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Software error - report problem to support." ) );
 	}
 	
 	// Make sure TSID is specified only when the TSList=_AllMatchingTSID.
 	if ( (TSList != null) && !TSList.equalsIgnoreCase(_AllMatchingTSID) ) {
 		if ( TSID != null ) {
-			warning +=
-				"\nTSID should only be specified when TSList="
-				+ _AllMatchingTSID + ".";
+            message = "TSID should only be specified when TSList=" + _AllMatchingTSID + ".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Change the TSID to blank." ) );
 		}
 	}
 	
@@ -129,18 +148,21 @@ throws InvalidCommandParameterException
 	// AllMatchingTSID is selected.
 	if ( TSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
 		if ( TSID != null ) {
-			Vector selectedV = StringUtil.breakStringList (
-				TSID, ",",
-				StringUtil.DELIM_SKIP_BLANKS );
+			Vector selectedV = StringUtil.breakStringList (TSID, ",",StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
-				warning +=
-				"\n List of time series should not be empty "
-				+ " when the AllMatchingTSID is selected. ";
+                message = "TSID should should not be empty when TSList=" + _AllMatchingTSID + " is specified.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a TSID." ) );
 			}
-		} else { 
-			warning +=
-				"\nTSID should should not be null when TSList="
-				+ _AllMatchingTSID + " is specified.";
+		}
+        else {
+            message = "TSID should should not be empty when TSList=" + _AllMatchingTSID + " is specified.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a TSID." ) );
 		}
 	}
 
@@ -155,15 +177,23 @@ throws InvalidCommandParameterException
 	// mentioned above.
 	int percentileCount = 0;
 	if ( Percentile == null || Percentile.equals("") ) {
-		warning += "\nPercentile list is required.";
-	} else {
-		Vector percentileV = StringUtil.breakStringList (
-			Percentile, ",",
-			StringUtil.DELIM_SKIP_BLANKS );
+        message = "A list of percentile values is required.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                 new CommandLogRecord(CommandStatusType.FAILURE,
+                         message, "Specify a list of percentile values." ) );
+        
+	}
+    else {
+		Vector percentileV = StringUtil.breakStringList ( Percentile, ",",StringUtil.DELIM_SKIP_BLANKS );
 		if ( percentileV == null || percentileV.size()<= 0 ) {
-			warning += "\nError parsing Percentile list \""
-				+ Percentile + "\".";
-		} else {
+            message = "Error parsing Percentile list \"" + Percentile + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                     new CommandLogRecord(CommandStatusType.FAILURE,
+                             message, "Verify that the list of percentile values is numbers separated by commas." ) );
+		}
+        else {
 			percentileCount = percentileV.size();
 			// Make sure to add one for the upper limit of the
 			// classes (0.0,1.0).
@@ -173,26 +203,30 @@ throws InvalidCommandParameterException
 			for ( int n = 0; n < percentileCount; n++ ) {
 				percentileStr =(String)percentileV.elementAt(n);
 				if ( !StringUtil.isDouble( percentileStr ) ) {
-					warning += "\n Percentile \""
-						+ percentileStr
-						+ "\" is not a number.";
+                    message = "Percentile \"" + percentileStr + "\" is not a number.";
+					warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                             new CommandLogRecord(CommandStatusType.FAILURE,
+                                     message, "Specify the percentile value as a number." ) );
 				}
 				// Percentile must be between 0 and 1.
 				currentP = StringUtil.atof( percentileStr );
 				if ( currentP <= 0 || currentP >= 1 ) {
-					warning += "\n Percentile \""
-						+ percentileStr
-						+ "\" is not between (0 and 1).";
+                    message = "Percentile \"" + percentileStr + "\" is not between (0 and 1).";
+					warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Specify the percentile value as a number between 0 and 1." ) );
 				}
 				// Current Percentile should always be < than
 				// the previous one
 				if ( currentP <= previousP ) {
-					warning += "\n Percentile \""
-						+ percentileStr
-						+ "\" must be greater than the"
-						+ " previous Percentile \""
-						+ previousP
-						+ "\".";
+                    message = "Percentile \"" + percentileStr + "\" must be greater than the previous Percentile \""
+                    + previousP + "\".";
+					warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the percentile values are in ascending order." ) );
 				}
 				__percentileArray[n] = currentP;
 				previousP = currentP;
@@ -205,25 +239,34 @@ throws InvalidCommandParameterException
 	// The number of PatternID must be plus one in addition to the
 	// number of percentiles.
 	int patternCount= 0; 
-	if ( PatternID == null || PatternID.equals("")
-		&& !StringUtil.isInteger(PatternID) ) {
-		warning += "\n Pattern list is required.";
-	} else {
-		Vector patternV = StringUtil.breakStringList (
-			PatternID, ",",
-			StringUtil.DELIM_SKIP_BLANKS );
+	if ( PatternID == null || PatternID.equals("") && !StringUtil.isInteger(PatternID) ) {
+        message = "The pattern list is required.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a list of pattern values." ) );
+	}
+    else {
+		Vector patternV = StringUtil.breakStringList ( PatternID, ",",StringUtil.DELIM_SKIP_BLANKS );
 		if ( patternV == null || patternV.size() <= 0 ) {
-			warning += "\nError parsing PatternID list \""
-				+ PatternID
-				+ "\".";
-		} else {
+            message = "Error parsing PatternID list \"" + PatternID + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the list of pattern values contains strings separated by commas." ) );
+            
+		}
+        else {
 			patternCount = patternV.size();
 			if ( ( patternCount - percentileCount ) != 1 ) {
-				warning += "\nThe PatternID count is \""
-					+ patternCount
-					+ "\". It must be equal to \""
-					+ (percentileCount + 1)
-					+ "\" (Percentile count + 1).";
+                message = "The PatternID count is \"" + patternCount +
+                "\". It must be equal to \"" + (percentileCount + 1)
+                    + "\" (Percentile count + 1).";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the number of pattern values is one greater than the number of percentile values." ) );
+                
 			}
 		}
 		__patternIDArray = new String [ patternCount ];
@@ -235,38 +278,54 @@ throws InvalidCommandParameterException
 	
 	// Output file
 	if ( OutputFile == null || OutputFile.length() == 0 ) {
-		warning += "\nThe Output File field is empty.";
-	} else {	
+        message = "The OutputFile is required but has not been specified.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an output file for results." ) );
+	}
+    else {	
 		try {
-			String adjusted_path = IOUtil.adjustPath (
-				 working_dir, OutputFile);
+			String adjusted_path = IOUtil.adjustPath ( working_dir, OutputFile);
 			File f  = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
-				warning += "\nThe file parent directory "
-				+ " does not exist:\n"
-				+ adjusted_path + ".";
+                message = "The parent directory does not exist for the output file: \"" + adjusted_path + "\".";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Create a folder for the output file." ) );
 			}
 			f  = null;
 			f2 = null;
 		}
 		catch ( Exception e ) {
-			warning += "\nThe working directory:\n"
-				+ "    \"" + working_dir
-				+ "\"\ncannot be adjusted using:\n"
-				+ "    \"" + OutputFile
-				+ "\".";
+            message = "The output file \"" + OutputFile + "\" cannot be adjusted using the working directory \"" +
+            working_dir + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the output file path and working directory are compatible." ) );
 		}
 	}
+	// Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "TSList" );
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "Method" );
+    valid_Vector.add ( "Percentile" );
+    valid_Vector.add ( "PatternID" );
+    valid_Vector.add ( "OutputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+			MessageUtil.formatMessageTag(command_tag, warning_level ),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -291,49 +350,29 @@ throws Throwable
 }
 
 /**
-Parse the command string into a PropList of parameters.
-@param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+Return the list of files that were created by this command.
 */
-public void parseCommand ( String command )
-throws 	InvalidCommandSyntaxException,
-	InvalidCommandParameterException
-{	String routine = "analyzePattern_Command.parseCommand", message;
-	int warning_level = 2;
-
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || tokens.size() < 2 ) {
-		// Must have at least the command name and the InputFile
-		message = "Syntax error in \"" + command +
-			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-
-	// Get the input needed to process the file...
-	try {
-		setCommandParameters( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," ) );
-	}
-	catch ( Exception e ) {
-		message = "Syntax error in \"" + command +
-			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level,routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
+public List getGeneratedFileList ()
+{
+    Vector list = new Vector();
+    if ( getOutputFile() != null ) {
+        list.addElement ( getOutputFile() );
+    }
+    return list;
 }
 
 /**
-Run the command:
-<pre>
-analyzePattern (TSList="x", Method=Percentile",Pattern="DRY,AVG,WET",
-		Percentile="25,75",OutputFile="y")
-</pre>
+Return the output file generated by this file.  This method is used internally.
+*/
+private File getOutputFile ()
+{
+    return __OutputFile_File;
+}
+
+//parseCommand is base class
+
+/**
+Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -351,6 +390,9 @@ throws InvalidCommandParameterException,
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;		// Level for non-user messages
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 
 	// Line separator.
 	String __nl = System.getProperty ("line.separator");
@@ -377,6 +419,9 @@ throws InvalidCommandParameterException,
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -387,14 +432,21 @@ throws InvalidCommandParameterException,
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 	}
-	else {	tslist = (Vector)o_TSList;
+	else {
+        tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to process using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( log_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify the TSID (pattern) - may be OK if a partial run." ) );
 		}
 	}
 	int [] tspos = null;
@@ -405,6 +457,9 @@ throws InvalidCommandParameterException,
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 	}
 	else {	tspos = (int [])o_Indices;
 		if ( tspos.length == 0 ) {
@@ -413,16 +468,21 @@ throws InvalidCommandParameterException,
 			Message.printWarning ( log_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 	}
 	
 	int tsCount = tslist.size();
 	if ( tsCount == 0 ) {
-		message = "No time series were found to processing using TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\".";
+		message = "No time series were found to processing using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify how the list of time series is specified - may be OK if a partial run." ) );
 	}
 	
 	// Get the method. Currently only Percentile method is supported.
@@ -441,12 +501,6 @@ throws InvalidCommandParameterException,
 	
 	// OutputFile
 	String OutputFile = parameters.getValue ("OutputFile");
-	if ( OutputFile == null || OutputFile.equals("") ) {
-		message = "\nThe OutputFile parameter must be specified. ";
-		Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag, ++warning_count), routine, message );
-	}
 	
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
@@ -473,6 +527,7 @@ throws InvalidCommandParameterException,
 	int smMult = 1;
 	
 	TS analysisTS;
+    String OutputFile_full = OutputFile;
 	try {
 		// Looping through each time series creating a new StringMonthTS
 		// And keep the StringMonthTS in a vector of time series
@@ -489,36 +544,54 @@ throws InvalidCommandParameterException,
 				processor.processRequest( "GetTimeSeries", request_params);
 			}
 			catch ( Exception e ) {
+                message = "Error requesting GetTimeSeries(Index=" + tspos[nTS] + ") from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
-						"\" from processor." );
+						routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			}
 			bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "TS" );
 			if ( prop_contents == null ) {
+                message = "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+                ") returned from processor - skipping.";
 				Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
-					"\") returned from processor - skipping." );
+					routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 					// Skip the time series...
 					continue;
 			}
 			else {	analysisTS = (TS)prop_contents;
 			}
+            
+            if ( !(analysisTS instanceof MonthTS) ) {
+                message = "Time series does not monthly data (skipping):  " + analysisTS.getIdentifierString();
+                Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the TSList parameter specifies only monthly time series." ) );
+                    continue;
+            }
 
 		   	// Create stringMonthTS to receive the analysis results
-			TSIdent smIdent  = new TSIdent(
-				analysisTS.getIdentifier() );
+			TSIdent smIdent  = new TSIdent(	analysisTS.getIdentifier() );
 			smIdent.setType ( "Pattern");
 			smIdent.setInterval ( smBase, smMult );
 
 			// Create the new time series using the new identifier.
-			stringMonthTS = new StringMonthTS(
-				smIdent.getIdentifier(), startDate, endDate );
+			stringMonthTS = new StringMonthTS(smIdent.getIdentifier(), startDate, endDate );
 			if ( stringMonthTS == null ) {
-				message =
-				"Could not create the StringMonth time series.";
+				message = "Could not create the StringMonth time series.";
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 				throw new CommandWarningException ( message );
 			}
 			// Update the stringMonth time series properties with
@@ -530,7 +603,7 @@ throws InvalidCommandParameterException,
 			//	   series. Make sure to reset these properties
 			//	   to the values needed by the new time series.
 			stringMonthTS.copyHeader        ( analysisTS );
-		// REVISIT What dataType?			
+		// TODO What dataType?			
 		//	stringMonthTS.setDataType       ( NewDataType );
 			stringMonthTS.setIdentifier     ( smIdent  );
 			stringMonthTS.setDataInterval   ( smBase, smMult );
@@ -540,30 +613,20 @@ throws InvalidCommandParameterException,
 			// Get the actual startDate end the endDate for this
 			// time series. These may different from the dates
 			// used to create the stringMonthTS.
-			DateTime _startDate =
-				new DateTime( analysisTS.getDate1() );
-			DateTime _endDate   =
-				new DateTime( analysisTS.getDate2() );
+			DateTime _startDate = new DateTime( analysisTS.getDate1() );
+			DateTime _endDate   = new DateTime( analysisTS.getDate2() );
 			double [] values      = null;
 			int    [] sortedOrder = null;
 			int nValues;
 
 			for ( int month = 1; month <= 12; month++ ) {
 
-				values = TSUtil.toArrayByMonth (
-					analysisTS,
-					_startDate,
-					_endDate,
-					month);
+				values = TSUtil.toArrayByMonth ( analysisTS, _startDate, _endDate, month);
 
 				// Size of the returning array.
 				nValues = values.length;
 				sortedOrder = new int[nValues];
-				MathUtil.sort ( values,
-		  	    		MathUtil.SORT_QUICK,
-		  	    		MathUtil.SORT_ASCENDING,
-		  	    		sortedOrder,
-		  	    		true );
+				MathUtil.sort ( values, MathUtil.SORT_QUICK, MathUtil.SORT_ASCENDING, sortedOrder, true );
 
 				// Find the first year, to use as offset.
 				int yearOffset = _startDate.getYear();
@@ -586,43 +649,29 @@ throws InvalidCommandParameterException,
 					// Build the dateTime
 					DateTime _date = new DateTime();
 					_date.setMonth( month );
-					_date.setYear( yearOffset +
-						sortedOrder[n] );
+					_date.setYear( yearOffset +	sortedOrder[n] );
 
-					if ( analysisTS.isDataMissing(
-					    analysisTS.getDataValue(_date) ) ) {
+					if ( analysisTS.isDataMissing(analysisTS.getDataValue(_date) ) ) {
 					    	
 					    	if ( Message.isDebugOn ) {
-					    		message = n + "  "
-					    		+ _date.toString()
-					    		+ " "
-					    		+ analysisTS.
-					    		getDataValue(_date)
-					    		+ __nl;
-							Message.printDebug(
-								2, routine, message );
+					    		message = n + "  " + _date.toString() + " "
+					    		+ analysisTS.getDataValue(_date) + __nl;
+							Message.printDebug(	2, routine, message );
 						}
 						
 						continue;
-					} else {
+					}
+                    else {
 						missingCount = n;
 						non_missingCount = nValues-n;
-						currentUpperLimit =
-							missingCount +
-							non_missingCount *
-							__percentileArray[
-						  	   percentileIndex ];
-						currentPatternID =
-						   	   __patternIDArray[
-							   percentileIndex ];
+						currentUpperLimit =	missingCount + non_missingCount *__percentileArray[percentileIndex ];
+						currentPatternID = __patternIDArray[percentileIndex ];
 						found = true;
 					}
 				}
 				
 				if ( Message.isDebugOn ) {
-					message = " miss " + missingCount 
-						+ " non miss "
-						+ non_missingCount + __nl;
+					message = " miss " + missingCount + " non miss " + non_missingCount + __nl;
 					Message.printDebug (2, routine, message );
 				}
 
@@ -633,37 +682,25 @@ throws InvalidCommandParameterException,
 					// Build the dateTime
 					DateTime _date = new DateTime();
 					_date.setMonth( month );
-					_date.setYear( yearOffset +
-						sortedOrder[n] );
+					_date.setYear( yearOffset +	sortedOrder[n] );
 
 					// If beyond the current limits, compute
 					// the next
 					if ( n >= currentUpperLimit ) {
 						percentileIndex +=1;
-						currentUpperLimit =
-						    missingCount +
-						    non_missingCount *
-						   	__percentileArray[
-							    percentileIndex ];
-						currentPatternID =
-						    __patternIDArray[
-							percentileIndex ];
+						currentUpperLimit = missingCount + non_missingCount * __percentileArray[percentileIndex ];
+						currentPatternID = __patternIDArray[percentileIndex ];
 					}
 
 					// Set the date and value in the TS
-					stringMonthTS.setDataValue (
-						_date, currentPatternID );
+					stringMonthTS.setDataValue (_date, currentPatternID );
 					
 					if ( Message.isDebugOn ) {
 						message = " " + _date.toString()
-	           				+ " " + analysisTS.getDataValue
-	           					( _date )
-		   				+ " " + stringMonthTS.
-		   					getDataValueAsString (
-		   						_date )
+	           				+ " " + analysisTS.getDataValue ( _date )
+		   				+ " " + stringMonthTS.getDataValueAsString ( _date )
 		   				+ __nl;
-						Message.printDebug (
-							2, routine, message );
+						Message.printDebug (2, routine, message );
 					}
 
 				}
@@ -689,8 +726,10 @@ throws InvalidCommandParameterException,
 	   	}
 	   	catch ( Exception e ) {
 	   		// Not fatal, but of use to developers.
-	   		message = "Error requesting OutputYearType from processor - using calendar.";
-	   		Message.printDebug(10, routine, message );
+	   	    message = "Error requesting OutputYearType from processor - using calendar.";
+	   	    status.addToLog ( CommandPhaseType.RUN,
+                   new CommandLogRecord(CommandStatusType.WARNING,
+                           message, "Report the problem to software support." ) );
 	   	}
         props.add ( "CalendarType=" + CalendarType );
                 
@@ -700,15 +739,18 @@ throws InvalidCommandParameterException,
         DateTime OutputStart_DateTime = startDate;
         DateTime OutputEnd_DateTime = endDate;
         
-    	try { Object o = processor.getPropContents ( "OutputStart" );
+    	try {
+            Object o = processor.getPropContents ( "OutputStart" );
 			if ( o != null ) {
 				OutputStart_DateTime = (DateTime)o;
 			}
     	}
     	catch ( Exception e ) {
     		// Not fatal, but of use to developers.
-    		message = "Error requesting OutputStart from processor - not using.";
-    		Message.printDebug(10, routine, message );
+    		message = "Error requesting OutputStart from processor.";
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Report the problem to software support." ) );
     	}
     	try { Object o = processor.getPropContents ( "OutputEnd" );
 			if ( o != null ) {
@@ -718,21 +760,39 @@ throws InvalidCommandParameterException,
     	catch ( Exception e ) {
     		// Not fatal, but of use to developers.
     		message = "Error requesting OutputEnd from processor - not using.";
-    		Message.printDebug(10, routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Report the problem to software support." ) );
     	}
-                
-		StateMod_TS.writePatternTimeSeriesList(OutputFile, 
+        OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		StateMod_TS.writePatternTimeSeriesList(OutputFile_full, 
 							StringMonthTS_List,
 							OutputStart_DateTime,
 							OutputEnd_DateTime,
 							props );
+		// Save the output file name...
+        setOutputFile ( new File(OutputFile_full));
 
 	} catch ( Exception e ) {
 		Message.printWarning ( log_level, routine, e );
-		message = "Error processing the pattern analysis";
+		message = "Unexpected error processing the pattern analysis.";
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Report the problem to software support - see the log file for details." ) );
 		throw new CommandWarningException ( message);
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
+
+/**
+Set the output file that is created by this command.  This is only used internally.
+*/
+private void setOutputFile ( File file )
+{
+    __OutputFile_File = file;
+}
+
 
 /**
 Return the string representation of the command.

@@ -37,8 +37,7 @@ import RTi.Util.Time.TimeUtil;
 This class initializes, checks, and runs the NewPatternTimeSeries() command.
 </p>
 */
-public class NewPatternTimeSeries_Command extends AbstractCommand
-implements Command
+public class NewPatternTimeSeries_Command extends AbstractCommand implements Command
 {
 	
 /**
@@ -424,16 +423,13 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for SetEnd DateTime(DateTime=" +
-				"OutputEnd" +	"\") returned from processor.";
+				message = "Null value for SetEnd DateTime(DateTime=OutputEnd) returned from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
 				status.addToLog(CommandPhaseType.RUN,
 						new CommandLogRecord(
-						CommandStatusType.FAILURE,
-						"Null value for SetEnd DateTime(DateTime=" +
-						"OutputEnd" +	"\") returned from processor.",
+						CommandStatusType.FAILURE, message,
 						"Specify SetEnd or make sure that a setOutputPeriod() command has been specified prior to this command."));
 				throw new InvalidCommandParameterException ( message );
 			}
@@ -450,10 +446,14 @@ CommandWarningException, CommandException
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
 				message = "Null value for SetStart DateTime(DateTime=" +
-				SetEnd +	"\") returned from processor.";
+				SetEnd + ") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+                status.addToLog(CommandPhaseType.RUN,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Report the problem to software support."));
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	SetEnd_DateTime = (DateTime)prop_contents;
@@ -461,11 +461,14 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "SetEnd \"" + SetEnd + "\" is invalid." +
-		"  Specify a valid SetEnd or global OutputStart.";
+		message = "SetEnd \"" + SetEnd + "\" is invalid.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Specify a valid SetEnd or global OutputStart."));
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -479,24 +482,19 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message =
-			"Unable to create the new time series using NewTSID=\""+
-			NewTSID + "\".";
+		message = "Unable to create an empty new time series using NewTSID=\""+ NewTSID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
 		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(
-				CommandStatusType.FAILURE,
-				"Unable to create the new time series using NewTSID=\""+
-				NewTSID + "\".",
+				CommandStatusType.FAILURE, message,
 				"Verify the TSID format using the command editor."));
 		throw new CommandException ( message );
 	}
-	try {	// Try to fill out the time series...
-		// Allocate memory and set other
-		// information...
+	try {
+        // Try to fill out the time series. Allocate memory and set other information...
 		ts.setIdentifier ( NewTSID );
 		if ( (Description != null) && (Description.length() > 0) ) {
 			ts.setDescription ( Description );
@@ -516,33 +514,51 @@ CommandWarningException, CommandException
 			command_tag,++warning_count),routine,message );
 			status.addToLog(CommandPhaseType.RUN,
 					new CommandLogRecord(
-					CommandStatusType.FAILURE,
-					"Unable to allocate memory for time series.",
+					CommandStatusType.FAILURE, message,
 					"Verify that the output period is not huge and check computer memory."));
 		}
 		if ( (__PatternValues_double != null) && (__PatternValues_double.length > 0) ) {
 			TSUtil_SetDataValuesUsingPattern tsworker = new TSUtil_SetDataValuesUsingPattern ();
 			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime, __PatternValues_double );
 		}
-		ts.setAlias ( Alias );
+        
+        ts.setAlias ( Alias );
+
+		// Further process the time series...
+        // This makes sure the period is at least as long as the
+        // output period, and computes the historical averages.
+		Vector tslist = new Vector();
+        tslist.addElement ( ts );
+        PropList request_params = new PropList ( "" );
+        request_params.setUsingObject ( "TSList", tslist );
+        try {
+            processor.processRequest( "ReadTimeSeries2", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error post-processing new pattern time series.";
+            Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+            Message.printWarning(log_level, routine, e);
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            throw new CommandException ( message );
+        }
 	}
 	catch ( Exception e ) {
-		message = "Unable to create a new time series for \""+
-			NewTSID + "\".";
+		message = "Unexpected error creating a new pattern time series for \""+ NewTSID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
 		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(
-				CommandStatusType.FAILURE,
-				"Unable to create a new time series for \""+
-				NewTSID + "\".",
-				"Unable to provide recommendation - check log file for details."));
+				CommandStatusType.FAILURE, message,
+				"Report the problem to software support - check log file for details."));
 	}
 
-	// Update the data to the processor so that appropriate actions are
-	// taken...
+	// Update the data to the processor...
 	
 	try { TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
 	}
@@ -554,8 +570,7 @@ CommandWarningException, CommandException
 				routine,message);
 			status.addToLog(CommandPhaseType.RUN,
 					new CommandLogRecord(
-					CommandStatusType.FAILURE,
-					"Cannot append new time series to results list.  Skipping.",
+					CommandStatusType.FAILURE, message,
 					"Unable to provide recommendation - check log file for details."));
 	}
 
@@ -567,9 +582,8 @@ CommandWarningException, CommandException
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-	else {
-		status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-	}
+	
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

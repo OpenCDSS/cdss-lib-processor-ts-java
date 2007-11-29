@@ -19,6 +19,8 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -30,8 +32,12 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -45,8 +51,6 @@ import RTi.Util.Time.TimeInterval;
 <p>
 This class initializes, checks, and runs the newTimeSeries() command.
 </p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
-</p>
 */
 public class newTimeSeries_Command extends AbstractCommand
 implements Command
@@ -57,7 +61,7 @@ Constructor.
 */
 public newTimeSeries_Command ()
 {	super();
-	setCommandName ( "newTimeSeries" );
+	setCommandName ( "NewTimeSeries" );
 }
 
 /**
@@ -69,8 +73,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
@@ -78,45 +81,57 @@ throws InvalidCommandParameterException
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String InitialValue = parameters.getValue ( "InitialValue" );
 	String warning = "";
+    String message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (Alias == null) || Alias.equals("") ) {
-		warning += "\nThe time series alias must be specified.";
+        message = "The time series alias must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an alias." ) );
 	}
 	if ( (NewTSID == null) || NewTSID.equals("") ) {
-		warning +=
-		"\nThe new time series identifier must be specified.";
+        message = "The new time series identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a new time series identifier." ) );
 	}
 	else {
 		try { TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
 			try { TimeInterval.parseInterval(tsident.getInterval());
 			}
 			catch ( Exception e2 ) {
-				warning += "\nNewTSID interval \"" + tsident.getInterval() +
-				"\" is not a valid interval.";
+                message = "NewTSID interval \"" + tsident.getInterval() + "\" is not a valid interval.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a valid time series interval." ) );
 			}
 		}
 		catch ( Exception e ) {
 			// TODO SAM 2007-03-12 Need to catch a specific exception like
 			// InvalidIntervalException so that more intelligent messages can be
 			// generated.
-			warning += "\nNewTSID is not a valid identifier." +
-			"Use the command editor to enter required fields.";
+            message = "NewTSID is not a valid identifier.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Use the command editor to enter required fields." ) );
 		}
 	}
-	// REVISIT SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support
-	// wildcards.
-	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
-		throw new InvalidCommandParameterException ( warning );
-	}
+
 	if ( (InitialValue != null) && !InitialValue.equals("") ) {
 		// If an initial value is specified, make sure it is a number...
 		if ( !StringUtil.isDouble(InitialValue) ) {
-			warning += "\nThe initial value (" + InitialValue +
-					") is not a number.";
+            message = "The initial value (" + InitialValue + ") is not a number.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the initial value as a number." ) ); 
 		}
 	}
 	if (	(SetStart != null) && !SetStart.equals("") &&
@@ -125,11 +140,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse(SetStart);
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe Set start date \"" +
-				SetStart +
-				"\" is not a valid date.\n"+
-				"Specify a date or OutputStart.";
+            message = "The set start \"" + SetStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
 	if (	(SetEnd != null) && !SetEnd.equals("") &&
@@ -138,19 +153,32 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( SetEnd );
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe Set end date \"" +
-				SetEnd +
-				"\" is not a valid date.\n"+
-				"Specify a date or OutputEnd.";
+            message = "The set end \"" + SetEnd + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "NewTSID" );
+    valid_Vector.add ( "Description" );
+    valid_Vector.add ( "SetStart" );
+    valid_Vector.add ( "SetEnd" );
+    valid_Vector.add ( "Units" );
+    valid_Vector.add ( "InitialValue" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -232,11 +260,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the commands:
-<pre>
-TS Alias = newTimeSeries(NewTSID="X",Description="X",
-SetStart="X",SetEnd="X",Units="X",InitialValue=X)
-</pre>
+Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
@@ -257,6 +281,8 @@ CommandWarningException, CommandException
 	
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 
 	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
@@ -291,11 +317,13 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for SetStart DateTime(DateTime=" +
-				"OutputStart" +	"\") returned from processor.";
+				message = "Null value for SetStart DateTime(DateTime=OutputStart) returned from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Use a SetOutputPeriod() command or specify the set start." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	SetStart_DateTime = (DateTime)prop_contents;
@@ -311,10 +339,13 @@ CommandWarningException, CommandException
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
 				message = "Null value for SetStart DateTime(DateTime=" +
-				SetStart +	"\") returned from processor.";
+				SetStart +	") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Use a SetOutputPeriod() command or specify the set start." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	SetStart_DateTime = (DateTime)prop_contents;
@@ -322,12 +353,14 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "SetStart \"" + SetStart + "\" is invalid." +
-		"  Specify a valid SetStart or global OutputStart.";
+		message = "SetStart \"" + SetStart + "\" is invalid.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 		Message.printWarning(2, routine, e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid set start date/time, or as OutputStart or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -347,6 +380,9 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Use a SetOutputPeriod() command or specify the set end." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	SetEnd_DateTime = (DateTime)prop_contents;
@@ -366,6 +402,9 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Use a SetOutputPeriod() command or specify the set end." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	SetEnd_DateTime = (DateTime)prop_contents;
@@ -373,11 +412,13 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "SetEnd \"" + SetEnd + "\" is invalid." +
-		"  Specify a valid SetEnd or global OutputStart.";
+		message = "SetEnd \"" + SetEnd + "\" is invalid.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid set start date/time, or as OutputStart or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -387,22 +428,29 @@ CommandWarningException, CommandException
 	try {	// Create the time series...
 		ts = TSUtil.newTimeSeries ( NewTSID, true );
 		if ( ts == null ) {
+            message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";
+            Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                    command_tag,++warning_count),routine,message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the NewTSID - contact software support if necessary." ) );
 			throw new Exception ( "Null time series." );
 		}
 	}
 	catch ( Exception e ) {
-		message =
-			"Unable to create the new time series using NewTSID=\""+
-			NewTSID + "\".";
+		message = "Unexpected error creating the new time series using NewTSID=\""+	NewTSID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the NewTSID - contact software support if necessary." ) );
 		throw new CommandException ( message );
 	}
-	try {	// Try to fill out the time series...
-		// Allocate memory and set other
-		// information...
+	try {
+        // Try to fill out the time series.  Allocate memory and set other information...
 		ts.setIdentifier ( NewTSID );
 		if ( (Description != null) && (Description.length() > 0) ) {
 			ts.setDescription ( Description );
@@ -420,6 +468,9 @@ CommandWarningException, CommandException
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the period for the time series is not huge." ) );
 		}
 		if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 			TSUtil.setConstant ( ts, InitialValue_double );
@@ -427,50 +478,31 @@ CommandWarningException, CommandException
 		ts.setAlias ( Alias );
 	}
 	catch ( Exception e ) {
-		message = "Unable to create a new time series for \""+
-			NewTSID + "\".";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count),routine,message );
-		Message.printWarning(3,routine,e);
+        message ="Unexpected error generating the statistic time series from \""+
+        ts.getIdentifier() + "\".";
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(
+        command_tag,++warning_count),routine,message );
+        Message.printWarning(3,routine,e);
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "See the log file for details." ) );
 	}
 
-	// Update the data to the processor so that appropriate actions are
-	// taken...
+	// Update the data to the processor so that appropriate actions are taken...
 
-	Vector TSResultsList_Vector = null;
-	try { Object o = processor.getPropContents( "TSResultsList" );
-			TSResultsList_Vector = (Vector)o;
-	}
-	catch ( Exception e ){
-		message = "Cannot get time series list to add new time series.  Skipping.";
-		Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag, ++warning_count),
-				routine,message);
-	}
-	if ( TSResultsList_Vector != null ) {
-		TSResultsList_Vector.addElement ( ts );
-		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
-		}
-		catch ( Exception e ){
-			message = "Cannot set updated time series list.  Skipping.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag, ++warning_count),
-				routine,message);
-		}
-	}
+    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, ts);
 
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

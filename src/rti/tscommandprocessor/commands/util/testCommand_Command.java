@@ -4,6 +4,8 @@ package rti.tscommandprocessor.commands.util;
 import java.util.Vector;
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -33,7 +35,7 @@ Constructor.
 */
 public testCommand_Command ()
 {	super();
-	setCommandName ( "testCommand" );
+	setCommandName ( "TestCommand" );
 }
 
 /**
@@ -52,21 +54,24 @@ throws InvalidCommandParameterException
 	String DiscoveryStatus = parameters.getValue ( "DiscoveryStatus" );
 	String RunStatus = parameters.getValue ( "RunStatus" );
 	String warning = "";
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// TODO SAM 2007-09-09 Need to use Enum when Java 1.5+
-	String status = null;
+
+    String istatus = null;
 	for ( int i = 0; i < 3; i++ ) {
 		if ( i == 0 ) {
-			status = InitializeStatus;
+			istatus = InitializeStatus;
 		}
 		else if ( i == 1 ) {
-			status = DiscoveryStatus;
+			istatus = DiscoveryStatus;
 		}
 		else if ( i == 2 ) {
-			status = RunStatus;
+			istatus = RunStatus;
 		}
-		if ( (status != null) &&
-			(status.length() > 0) &&
+		if ( (istatus != null) && (istatus.length() > 0) &&
 			(!InitializeStatus.equalsIgnoreCase(CommandStatusType.UNKNOWN.toString()) &&
 			!InitializeStatus.equalsIgnoreCase(CommandStatusType.SUCCESS.toString()) &&
 			!InitializeStatus.equalsIgnoreCase(CommandStatusType.WARNING.toString()) &&
@@ -83,26 +88,16 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "InitializeStatus" );
 	valid_Vector.add ( "DiscoveryStatus" );
 	valid_Vector.add ( "RunStatus" );
-	Vector warning_Vector = null;
-	try {	warning_Vector = parameters.validatePropNames (
-			valid_Vector, null, null, "parameter" );
-	}
-	catch ( Exception e ) {
-		// Ignore.  Should not happen.
-		warning_Vector = null;
-	}
-	if ( warning_Vector != null ) {
-		int size = warning_Vector.size();
-		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.elementAt (i);
-		}
-	}
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -116,48 +111,10 @@ public boolean editCommand ( JFrame parent )
 	return (new testCommand_JDialog ( parent, this )).ok();
 }
 
-/**
-Parse the command string into a PropList of parameters.
-@param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "testCommand_Command.parseCommand", message;
-
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
-
-	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command +
-			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	// Get the input needed to process the command...
-	if ( tokens.size() > 1 ) {
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," ) );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-	}
-}
+// Use base class parseCommand()
 
 /**
-Run the commands:
-<pre>
-compareFiles(InputFile1="X",InputFile2="X",WarnIfDifferent=X,WarnIfSame=X)
-</pre>
+Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -168,6 +125,9 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	PropList parameters = getCommandParameters();
+
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	
 	String InitializeStatus = parameters.getValue ( "InitializeStatus" );
 	String DiscoveryStatus = parameters.getValue ( "DiscoveryStatus" );
@@ -178,8 +138,6 @@ CommandWarningException, CommandException
 			"InitializeStatus=\"" + InitializeStatus + "\" " +
 			"DiscoveryStatus=\"" + DiscoveryStatus + "\" " +
 			"RunStatus=\"" + RunStatus + "\"" );
-
-	CommandStatus status = getCommandStatus();
 	
 	if ( InitializeStatus.equalsIgnoreCase(CommandStatusType.UNKNOWN.toString())) {
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -243,8 +201,8 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						"There is a failure.", "Don't have a recommendation."));
 	}
-	
-
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

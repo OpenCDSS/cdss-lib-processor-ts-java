@@ -298,7 +298,7 @@ CommandWarningException, CommandException
 				routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
+						message, "Report the problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -415,9 +415,10 @@ CommandWarningException, CommandException
 
 	// Now try to write...
 
+    String OutputFile_full = OutputFile;
 	try {
 		// Convert to an absolute path...
-		String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
 		Message.printStatus ( 2, routine, "Writing Summary file \"" + OutputFile_full + "\"" );
 		warning_count = writeSummary ( tslist, OutputFile_full,	OutputStart_DateTime, OutputEnd_DateTime,
 				warning_level, command_tag, warning_count );
@@ -425,7 +426,7 @@ CommandWarningException, CommandException
 		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-		message = "Error writing time series to Summary file.";
+		message = "Error writing time series to summary file \"" + OutputFile_full + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );

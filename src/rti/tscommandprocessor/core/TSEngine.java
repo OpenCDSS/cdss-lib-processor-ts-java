@@ -10120,6 +10120,7 @@ throws Exception
 	String tsident_string2;	// Version without the input...
 	String input_type = null;
 	String input_name = null;
+    String input_name_full = null;  // input name with full path
 	tsident_string2 = (String)v.elementAt(0);
 	if ( v.size() == 2 ) {
 		input_type = (String)v.elementAt(1);
@@ -10127,6 +10128,7 @@ throws Exception
 	else if ( v.size() == 3 ) {
 		input_type = (String)v.elementAt(1);
 		input_name = (String)v.elementAt(2);
+        input_name_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name);
 	}
 
 	// TSIdent uses only the first part of the identifier...
@@ -10139,11 +10141,10 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
-	if (	(input_type != null) &&
-		input_type.equalsIgnoreCase("DateValue") ) {
+	if ( (input_type != null) && input_type.equalsIgnoreCase("DateValue") ) {
 		// New style TSID~input_type~input_name
 		try {	ts = DateValueTS.readTimeSeries ( tsident_string2,
-				input_name, query_date1, query_date2, units,
+				input_name_full, query_date1, query_date2, units,
 				true );
 		}
 		catch ( Exception te ) {
@@ -10152,8 +10153,7 @@ throws Exception
 		}
 	}
 	else if ( source.equalsIgnoreCase("DateValue") ) {
-		// Old style (scenario may or may not be used to find the
-		// file)...
+		// Old style (scenario may or may not be used to find the file)...
 		try {	ts = DateValueTS.readTimeSeries ( tsident_string,
 				query_date1, query_date2, units, true );
 		}
@@ -10190,102 +10190,83 @@ throws Exception
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine,
-			"Error reading time series \"" + tsident_string2 +
-			"\" from DIADvisor" );
+			"Error reading time series \"" + tsident_string2 + "\" from DIADvisor" );
 			Message.printWarning ( 2, routine, te );
-			Message.printWarning ( 2, routine,
-				"Op:" +__DIADvisor_dmi.getLastSQLString() );
-			Message.printWarning ( 2, routine,
-				"Archive:" +
-				__DIADvisor_archive_dmi.getLastSQLString() );
+			Message.printWarning ( 2, routine, "Op:" +__DIADvisor_dmi.getLastSQLString() );
+			Message.printWarning ( 2, routine, "Archive:" +	__DIADvisor_archive_dmi.getLastSQLString() );
 			ts = null;
 		}
-		// For now, if the time series does not have data, set it to
-		// null...
+		// For now, if the time series does not have data, set it to null...
 		if ( ts != null ) {
 			if ( !ts.hasData() ) {
 				Message.printWarning ( 2, routine,
-				"Time series \"" + tsident_string2 +
-				"\" does not have data.  Treating as null." );
+				"Time series \"" + tsident_string2 + "\" does not have data.  Treating as null." );
 				ts = null;
 			}
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("HydroBase") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("HydroBase") ) {
 		if ( Message.isDebugOn ) {
-			Message.printDebug ( 10, routine,
-			"Reading time series..." +
+			Message.printDebug ( 10, routine, "Reading time series..." +
 			tsident_string + "," + query_date1 + "," + query_date2);
 		}
 		try {	HydroBaseDMI hbdmi = getHydroBaseDMI ( input_name );
 			if ( hbdmi == null ) {
-				Message.printWarning ( 2, routine,
-				"Unable to get HydroBase connection for " +
-				"input name \"" + input_name +
-				"\".  Unable to read time series." );
+				Message.printWarning ( 2, routine, "Unable to get HydroBase connection for " +
+				"input name \"" + input_name +	"\".  Unable to read time series." );
 				ts = null;
 			}
-			else {	ts = hbdmi.readTimeSeries ( 
-					tsident_string, query_date1,
-					query_date2, units, true,
-					null );	// HydroBaseDMI read props
-						// Use defaults here
+			else {	ts = hbdmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true,
+                    null );	// HydroBaseDMI read props Use defaults here
 			}
 			if ( Message.isDebugOn ) {
-				Message.printStatus ( 10, routine,
-				"...done reading time series." );
+				Message.printStatus ( 10, routine, "...done reading time series." );
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 3, routine,
-			"Error from HydroBaseDMI.readTimeSeries" );
+			Message.printWarning ( 3, routine, "Error from HydroBaseDMI.readTimeSeries" );
 			Message.printWarning ( 3, routine, e );
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("MexicoCSMN") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("MexicoCSMN") ) {
 		// New style TSID~input_type~input_name for MexicoCSMN...
 		// Pass the front TSID as the first argument and the
 		// input_name file as the second...
 		try {	ts = MexicoCsmnTS.readTimeSeries ( tsident_string2,
-				input_name, query_date1, query_date2, units,
+				input_name_full, query_date1, query_date2, units,
 				true );
 		}
 		catch ( Exception te ) {
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("MODSIM") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("MODSIM") ) {
 		// New style TSID~input_type~input_name
 		try {	ts = ModsimTS.readTimeSeries ( tsident_string2,
-				input_name, query_date1, query_date2, units,
+				input_name_full, query_date1, query_date2, units,
 				true );
 		}
 		catch ( Exception te ) {
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("NWSCARD") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("NWSCARD") ) {
 		// New style TSID~input_type~input_name for NWSCardTS...
 		//Message.printStatus ( 1, routine, "Trying to read \"" +
 		//		tsident_string2 + "\" \"" + input_name + "\"" );
-		ts = NWSCardTS.readTimeSeries ( tsident_string2, input_name,
+		ts = NWSCardTS.readTimeSeries ( tsident_string2, input_name_full,
 			query_date1, query_date2, units, true );
 		//Message.printStatus ( 1, "", "SAMX TSEngine TS id = \"" +
 			//ts.getIdentifier().toString(true) + "\"" );
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("NWSRFS_ESPTraceEnsemble") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("NWSRFS_ESPTraceEnsemble") ) {
 		// Binary ESP Trace Ensemble file...
-		try {	// For now read the file for each trace...
-			// REVISIT SAM 2004-11-29 need to optimize so the
+		try {
+            // For now read the file for each trace...
+			// TODO SAM 2004-11-29 need to optimize so the
 			// file does not need to get reread...
-			NWSRFS_ESPTraceEnsemble ensemble =
-			new NWSRFS_ESPTraceEnsemble ( input_name, true );
+			NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( input_name_full, true );
 			Vector tslist = ensemble.getTimeSeriesVector ();
 			// Loop through and find a matching time series...
 			int size = 0;
@@ -10300,9 +10281,7 @@ throws Exception
 					// but does not include the input
 					// type/name since that was already used
 					// to read the file...
-					if (	tsident.matches(
-						ts2.getIdentifier().
-						toString())){
+					if ( tsident.matches( ts2.getIdentifier().toString())){
 						found = true;
 						break;
 					}
@@ -10313,8 +10292,7 @@ throws Exception
 			}
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading \"" +
-			tsident_string2 +
+			Message.printWarning ( 2, routine, "Error reading \"" +	tsident_string2 +
 			"\" from ESP trace ensemble binary file." );
 			Message.printWarning ( 2, routine, te );
 			ts = null;
@@ -10322,25 +10300,20 @@ throws Exception
 	}
 	else if ((input_type != null) &&
 		input_type.equalsIgnoreCase("NWSRFS_FS5Files") ) {
-		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name, true );
-		ts = nwsrfs_dmi.readTimeSeries ( tsident_string,
-					query_date1, query_date2, units, true );
+		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name_full, true );
+		ts = nwsrfs_dmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("RiversideDB") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("RiversideDB") ) {
 		// New style TSID~input_type~input_name for RiversideDB...
 		if ( __rdmi == null ) {
-			Message.printWarning ( 2, routine,
-			"RiversideDB connection has not been opened." );
+			Message.printWarning ( 2, routine, "RiversideDB connection has not been opened." );
 			ts = null;
 		}
-		else {	try {	ts = __rdmi.readTimeSeries ( tsident_string2,
-					query_date1, query_date2, units, true );
+		else {	try {	ts = __rdmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, true );
 			}
 			catch ( Exception te ) {
 				Message.printWarning ( 2, routine,
-				"Error reading time series \""+tsident_string2 +
-				"\" from RiversideDB" );
+				"Error reading time series \""+tsident_string2 + "\" from RiversideDB" );
 				Message.printWarning ( 2, routine, te );
 				ts = null;
 			}
@@ -10350,45 +10323,36 @@ throws Exception
 		if ( ts != null ) {
 			if ( !ts.hasData() ) {
 				Message.printWarning ( 2, routine,
-				"Time series \"" + tsident_string2 +
-				"\" does not have data.  Treating as null." );
+				"Time series \"" + tsident_string2 + "\" does not have data.  Treating as null." );
 				ts = null;
 			}
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("RiverWare") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("RiverWare") ) {
 		// New style TSID~input_type~input_name for RiverWare...
 		try {	ts = RiverWareTS.readTimeSeries ( tsident_string2,
-				input_name, query_date1, query_date2, units,
+				input_name_full, query_date1, query_date2, units,
 				true );
 		}
 		catch ( Exception te ) {
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("StateCU") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("StateCU") ) {
 		// New style TSID~input_type~input_name for StateCU...
-		try {	if ( StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "CropArea-AllIrrigation") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "CropArea-Groundwater") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "CropArea-Sprinkler") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "Eff-FloodMax") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "Eff-SprinklerMax") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "Eff-SurfaceMax") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "GWUseMode") ||
-				StringUtil.startsWithIgnoreCase(
-				tsident.getType(), "PumpingMax") ) {
-				ts = StateCU_IrrigationPracticeTS.
-					readTimeSeries (
-					tsident_string2, input_name,
+		try {
+            Vector ipy_types = StateCU_IrrigationPracticeTS.getTimeSeriesDataTypes(true, false);
+            boolean is_ipy_type = false;
+            int ipy_types_size = ipy_types.size();
+            for ( int i_ipy = 0; i_ipy < ipy_types_size; i_ipy++ ) {
+                if ( StringUtil.startsWithIgnoreCase(tsident.getType(), (String)ipy_types.elementAt(i_ipy))) {
+                    is_ipy_type = true;
+                    break;
+                }
+            }
+            if ( is_ipy_type ) {
+				ts = StateCU_IrrigationPracticeTS.readTimeSeries (
+					tsident_string2, input_name_full,
 					query_date1, query_date2, units, true );
 			}
 			else if(StringUtil.startsWithIgnoreCase(
@@ -10397,43 +10361,40 @@ throws Exception
 				tsident.getType(), "CropArea-AllCrops") ) {
 				// The second is in the StateCU_TS code.
 				ts = StateCU_CropPatternTS.readTimeSeries (
-					tsident_string2, input_name,
+					tsident_string2, input_name_full,
 					query_date1, query_date2, units, true );
 			}
-			else {	// Funnel through one class - the following will
+			else {
+                // Funnel through one class - the following will
 				// read StateCU output report and frost dates
 				// input files...
 				ts = StateCU_TS.readTimeSeries (
-					tsident_string2, input_name,
+					tsident_string2, input_name_full,
 					query_date1, query_date2, units, true );
 			}
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading \"" +
-			tsident_string2 + "\" from StateCU file." );
+			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateCU file." );
 			Message.printWarning ( 2, routine, te );
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("StateMod") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("StateMod") ) {
 		// New style TSID~input_type~input_name for StateMod...
 		try {	ts = StateMod_TS.readTimeSeries ( tsident_string2,
-				input_name, query_date1, query_date2, units,
+				input_name_full, query_date1, query_date2, units,
 				true );
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, "Error reading \"" +
-			tsident_string2 + "\" from StateMod file." );
+			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateMod file." );
 			Message.printWarning ( 2, routine, te );
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("StateModB") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("StateModB") ) {
 		// New style TSID~input_type~input_name for StateModB...
 		try {	ts = StateMod_BTS.readTimeSeries ( tsident_string2,
-				input_name, query_date1, query_date2, units,
+				input_name_full, query_date1, query_date2, units,
 				true );
 		}
 		catch ( Exception te ) {

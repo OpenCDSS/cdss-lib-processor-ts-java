@@ -211,34 +211,34 @@ throws UnknownCommandException
 
 	// "a" commands...
 
-	if ( StringUtil.startsWithIgnoreCase(command_string,"analyzePattern") ) {
+	if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
 		return new analyzePattern_Command ();
 	}
 
 	// "c" commands...
 
-	else if ( isTScommand && TScommand.equalsIgnoreCase("changeInterval") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("ChangeInterval") ) {
 		return new changeInterval_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"compareFiles") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"CompareFiles") ) {
 		return new compareFiles_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"compareTimeSeries") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"CompareTimeSeries") ) {
 		return new compareTimeSeries_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("copy") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("Copy") ) {
 		return new copy_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateRegressionTestCommandFile") ) {
 		return new CreateRegressionTestCommandFile_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"cumulate") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"Cumulate") ) {
 		return new cumulate_Command ();
 	}
 	
 	// "e" commands...
 	
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillConstant") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"Exit") ) {
 		Command command = new GenericCommand();
 		command.setCommandString("Exit");
 		return command;
@@ -246,22 +246,22 @@ throws UnknownCommandException
 
 	// "f" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillConstant") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillConstant") ) {
 		return new fillConstant_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillHistMonthAverage") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillHistMonthAverage") ) {
 		return new fillHistMonthAverage_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillHistYearAverage") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillHistYearAverage") ) {
 		return new fillHistYearAverage_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillMixedStation") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillMixedStation") ) {
 		return new fillMixedStation_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillMOVE2") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillMOVE2") ) {
 		return new fillMOVE2_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"fillRegression") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillRegression") ) {
 		return new fillRegression_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillUsingDiversionComments") ) {
@@ -274,31 +274,31 @@ throws UnknownCommandException
 	
 	// "l" commands...
 
-	else if ( isTScommand && TScommand.equalsIgnoreCase("lagK") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("LagK") ) {
 		return new lagK_Command ();
 	}
 	
 	// "m" commands...
 	
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"mergeListFileColumns") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"MergeListFileColumns") ) {
 		return new mergeListFileColumns_Command ();
 	}
 
 	// "n" commands...
 
-	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("newDataTest") ) {
+	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("NewDataTest") ) {
 		return new newDataTest_Command();
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticTimeSeries") ) {
 		return new NewStatisticTimeSeries_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("newStatisticYearTS") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticYearTS") ) {
 		return new newStatisticYearTS_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("newPatternTimeSeries") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("NewPatternTimeSeries") ) {
 		return new NewPatternTimeSeries_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("newTimeSeries") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("NewTimeSeries") ) {
 		return new newTimeSeries_Command ();
 	}
 
@@ -307,25 +307,25 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"OpenHydroBase") ) {
 		return new openHydroBase_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"openNDFD") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"OpenNDFD") ) {
 		//return new openNDFD_Command ();
 	}
 
 	// "p" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"processTSProduct") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"ProcessTSProduct") ) {
 		return new processTSProduct_Command ();
 	}
 
 	// "r" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"readHydroBase") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadHydroBase") ) {
 		return new readHydroBase_Command ();
 	}
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadHydroBase") ) {
 		return new readHydroBase_Command();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("readNDFD") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadNDFD") ) {
 		//return new readNDFD_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsCard") ) {
@@ -335,47 +335,47 @@ throws UnknownCommandException
 		return new readNwsCard_Command();
 	}
 	// Put before shorter command name...
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"readStateModB") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateModB") ) {
 		return new readStateModB_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"readStateCU") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateCU") ) {
 		return new readStateCU_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateMod") ) {
 		return new readStateMod_Command ();
 	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("readStateMod") ) {
+	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadStateMod") ) {
 		return new readStateMod_Command ();
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"RemoveFile") ) {
         return new RemoveFile_Command ();
     }
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"runCommands") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"RunCommands") ) {
 		return new runCommands_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"runDataTest") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"RunDataTest") ) {
 		return new runDataTest_Command ();
 	}
 
 	// "s" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"scale") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"Scale") ) {
 		return new scale_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"setInputPeriod") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetInputPeriod") ) {
 		return new SetInputPeriod_Command ();
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputPeriod") ) {
 		return new SetOutputPeriod_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"setQueryPeriod") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetQueryPeriod") ) {
 		// Phasing into new syntax...
 		return new SetInputPeriod_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"sortTimeSeries") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"SortTimeSeries") ) {
 		return new sortTimeSeries_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase( command_string,"startLog") ){
+	else if ( StringUtil.startsWithIgnoreCase( command_string,"StartLog") ){
 		return new startLog_Command ();
 	}
     else if ( StringUtil.startsWithIgnoreCase( command_string,"StartRegressionTestResultsReport") ){
@@ -384,7 +384,7 @@ throws UnknownCommandException
 	
 	// "t" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"testCommand") ) {
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"TestCommand") ) {
 		return new testCommand_Command ();
 	}
 

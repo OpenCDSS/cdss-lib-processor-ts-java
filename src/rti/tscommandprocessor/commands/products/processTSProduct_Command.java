@@ -20,10 +20,13 @@
 package rti.tscommandprocessor.commands.products;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import java.awt.event.WindowListener;
 import javax.swing.JFrame;
+
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.GRTS.TSProcessor;
 import RTi.GRTS.TSProduct;
@@ -36,8 +39,13 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
@@ -50,11 +58,8 @@ import RTi.Util.Time.DateTime;
 <p>
 This class initializes, checks, and runs the processTSProduct() command.
 </p>
-<p>The CommandProcessor must return the following properties:  CreateOutput,
-TSResultsList, WorkingDir.
-</p>
 */
-public class processTSProduct_Command extends AbstractCommand implements Command
+public class processTSProduct_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -68,11 +73,16 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+Output file that is created by this command.
+*/
+private File __OutputFile_File = null;
+
+/**
 Constructor.
 */
 public processTSProduct_Command ()
 {	super();
-	setCommandName ( "processTSProduct" );
+	setCommandName ( "ProcessTSProduct" );
 }
 
 /**
@@ -84,19 +94,25 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TSProductFile = parameters.getValue ( "TSProductFile" );
 	String RunMode = parameters.getValue ( "RunMode" );
 	String View = parameters.getValue ( "View" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String warning = "";
+    String message;
 	
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (TSProductFile == null) || (TSProductFile.length() == 0) ) {
-		warning += "\nThe TSProduct file must be specified.";
+        message = "The TSProduct file must be specified.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a time series product file." ) );
 	}
 	else {	String working_dir = null;
 			try { Object o = processor.getPropContents ( "WorkingDir" );
@@ -107,28 +123,32 @@ throws InvalidCommandParameterException
 			}
 			catch ( Exception e ) {
 				// Not fatal, but of use to developers.
-				String message = "Error requesting WorkingDir from processor - not using.";
-				String routine = getCommandName() + ".checkCommandParameters";
-				Message.printDebug(10, routine, message );
+				message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Software error - report problem to support." ) );
+
 			}
-		try {	String adjusted_path = IOUtil.adjustPath (
-				working_dir, TSProductFile);
+		try {	String adjusted_path = IOUtil.adjustPath ( working_dir, TSProductFile);
 			File f = new File ( adjusted_path );
-			File f2 = new File ( f.getParent() );
-			if ( !f2.exists() ) {
-				warning +=
-				"\nThe TSProduct file parent directory does " +
-				"not exist: \"" + adjusted_path + "\".";
+			if ( !f.exists() ) {
+                message = "The TSProduct file does not exist for: \"" + adjusted_path + "\".";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the time series product file to process exists." ) );
 			}
 			f = null;
-			f2 = null;
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe working directory:\n" +
-				"    \"" + working_dir +
-				"\"\ncannot be adjusted using:\n" +
-				"    \"" + TSProductFile + "\".";
+            message = "The product file \"" + TSProductFile + "\" cannot be adjusted by the working directory \""
+            + working_dir + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message,
+                            "Verify that the path to the time series product file and working directory are compatible." ) );
 		}
 	}
 
@@ -136,20 +156,32 @@ throws InvalidCommandParameterException
 		!RunMode.equalsIgnoreCase(_BatchOnly) &&
 		!RunMode.equalsIgnoreCase(_GUIOnly) &&
 		!RunMode.equalsIgnoreCase(_GUIAndBatch) ) {
-		warning += 
-			"\nThe run mode \"" +RunMode +
-			"\" is not valid.";
+        message = "The run mode \"" + RunMode + "\" is not valid.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message,
+                        "Correct the run mode to be blank, " + _BatchOnly + ", " + _GUIOnly + ", or " +
+                        _GUIAndBatch + "." ) );
 	}
-	if (	(View != null) && !View.equals("") &&
+	if ( (View != null) && !View.equals("") &&
 		!View.equalsIgnoreCase(_True) &&
 		!View.equalsIgnoreCase(_False) ) {
-		warning += 
-			"\nThe View parameter \"" +View +
-			"\" must be " + _True + " or " + _False + ".";
+        message = "The View parameter \"" + View + "\" must be " + _True + " or " + _False + ".";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message,
+                        "Correct the view parameter to be blank, " + _True + ", or " + _False + "." ) );
 	}
 	if (	(View != null) && View.equalsIgnoreCase(_False) &&
 		((OutputFile == null) || (OutputFile.length() == 0)) ) {
-		warning+="\nThe output file must be specified when View=False.";
+        message = "The output file must be specified when View=False.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message,
+                        "Specify an output file for the product." ) );
 	}
 	else if ( (OutputFile != null) && !OutputFile.equals("") ) {
 		String working_dir = null;
@@ -161,9 +193,10 @@ throws InvalidCommandParameterException
 		}
 		catch ( Exception e ) {
 			// Not fatal, but of use to developers.
-			String message = "Error requesting WorkingDir from processor - not using.";
-			String routine = getCommandName() + ".checkCommandParameters";
-			Message.printDebug(10, routine, message );
+			message = "Error requesting WorkingDir from processor.";
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Software error - report problem to support." ) );
 		}
 				
 		try {	String adjusted_path = IOUtil.adjustPath (
@@ -171,28 +204,38 @@ throws InvalidCommandParameterException
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
-				warning +=
-				"\nThe output file parent directory does " +
-				"not exist: \"" + adjusted_path + "\".";
-			}
+                message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
+  				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Create the folder for the output file." ) );
+            }
 			f = null;
 			f2 = null;
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe working directory:\n" +
-				"    \"" + working_dir +
-				"\"\ncannot be adjusted using:\n" +
-				"    \"" + OutputFile + "\".";
+            message = "The output file \"" + OutputFile + "\" cannot be adjusted by the working directory: \"" +
+            working_dir + "\".";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the output file path and working directory are compatible." ) );
 		}
 	}
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "TSProductFile" );
+    valid_Vector.add ( "RunMode" );
+    valid_Vector.add ( "View" );
+    valid_Vector.add ( "OutputFile" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -204,6 +247,26 @@ not (e.g., "Cancel" was pressed.
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new processTSProduct_JDialog ( parent, this )).ok();
+}
+
+/**
+Return the list of files that were created by this command.
+*/
+public List getGeneratedFileList ()
+{
+    Vector list = new Vector();
+    if ( getOutputFile() != null ) {
+        list.addElement ( getOutputFile() );
+    }
+    return list;
+}
+
+/**
+Return the output file generated by this file.  This method is used internally.
+*/
+private File getOutputFile ()
+{
+    return __OutputFile_File;
 }
 
 /**
@@ -220,7 +283,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	//int warning_count = 0;
 	String routine = "processTSProduct_Command.parseCommand", message;
 	int warning_level = 2;
-	if ( command_string.indexOf("=") > 0 ) {
+	if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
 		// New syntax...
 		super.parseCommand ( command_string );
 	}
@@ -263,10 +326,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the commands:
-<pre>
-processTSProduct(TSProductFile="X",RunMode=X,View=X,OutputFile="X")
-</pre>
+Run the command.
 Time series are taken from the
 available list in memory, if available.  Otherwise the time series are re-read.
 @param command_number Command number in sequence.
@@ -282,26 +342,17 @@ CommandWarningException, CommandException
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 
 	// Check whether the application wants output files to be created...
 	
 	CommandProcessor processor = getCommandProcessor();
-	try {	Object o = processor.getPropContents ( "CreateOutput" );
-		if ( o != null ) {
-			boolean CreateOutput_boolean = ((Boolean)o).booleanValue();
-			if  ( !CreateOutput_boolean ) {
-				Message.printStatus ( 2, routine,
-					"Skipping \"" + toString() +
-				"\" because output is to be ignored." );
-				return;
-			}
-		}
-	}
-	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		message = "Error requesting CreateOutput from processor - not using.";
-		Message.printWarning(10, routine, message );
-	}
+    if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
+            Message.printStatus ( 2, routine,
+            "Skipping \"" + toString() + "\" because output is not being created." );
+    }
 
 	PropList parameters = getCommandParameters();
 	String TSProductFile = parameters.getValue ( "TSProductFile" );
@@ -314,8 +365,7 @@ CommandWarningException, CommandException
 		View = _True;
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	if (	(View == null) || View.equals("") &&
-		((OutputFile == null) || OutputFile.equals("")) ) {
+	if (	(View == null) || View.equals("") && ((OutputFile == null) || OutputFile.equals("")) ) {
 		// No output file so view is true by default...
 		View = _True;
 	}
@@ -333,12 +383,13 @@ CommandWarningException, CommandException
 	catch ( Exception e ) {
 		// Not fatal, but of use to developers.
 		message = "Error requesting TSViewWindowListener from processor - not using.";
-		Message.printDebug(10, routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Report problem to software support." ) );
 	}
 
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings about command parameters.";
+		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -347,11 +398,13 @@ CommandWarningException, CommandException
 
 	// Now try to process...
 
+    String TSProductFile_full = TSProductFile;
+    String OutputFile_full = OutputFile;
 	try {	PropList override_props = new PropList ("TSTool");
 		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		if ( (OutputFile != null) && !OutputFile.equals("") ) {
-			override_props.set ( "OutputFile",
-			IOUtil.getPathUsingWorkingDir(OutputFile) );
+            OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+			override_props.set ( "OutputFile", OutputFile_full );
 		}
 		override_props.set ( "CurrentDateTime=", now.toString() );
 		if ( View.equalsIgnoreCase(_True) ) {
@@ -367,51 +420,61 @@ CommandWarningException, CommandException
 			// Only run the command for the requested run mode...
 			TSProcessor p = new TSProcessor();
 			if ( tsview_window_listener != null ) {
-				p.addTSViewWindowListener (
-					tsview_window_listener );
+				p.addTSViewWindowListener (	tsview_window_listener );
 			}
 			p.addTSSupplier ( (TSSupplier)processor );
+            TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
 			TSProduct tsp = new TSProduct (
-						IOUtil.getPathUsingWorkingDir(
-						TSProductFile),
+                    TSProductFile_full,
 						override_props );
 			// Specify annotation providers if available...
 			Vector ap_Vector = null;			
-			try { Object o = processor.getPropContents (
-					"TSProductAnnotationProviderList" );
+			try { Object o = processor.getPropContents ("TSProductAnnotationProviderList" );
 					if ( o != null ) {
 							ap_Vector = (Vector)o;
 					}
 			}
 			catch ( Exception e ) {
 				// Not fatal, but of use to developers.
-				message =
-					"Error requesting TSProductAnnotationProviderList from processor - not using.";
-				Message.printDebug(10, routine, message );
+				message = "Error requesting TSProductAnnotationProviderList from processor.";
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Report problem to software support." ) );
 			}
 			
 			if ( ap_Vector != null ) {
 				int size = ap_Vector.size();
 				TSProductAnnotationProvider ap;
 				for ( int i = 0; i < size; i++ ) {
-					ap = (TSProductAnnotationProvider)
-						ap_Vector.elementAt(i);
-					tsp.addTSProductAnnotationProvider(
-						ap, null);
+					ap = (TSProductAnnotationProvider)ap_Vector.elementAt(i);
+					tsp.addTSProductAnnotationProvider(	ap, null);
 				}
 			}
 			// Now process the product...
 			p.processProduct ( tsp );
+            // Save the output file name...
+            if ( (OutputFile_full != null) && !OutputFile_full.equals("") ) {
+                setOutputFile ( new File(OutputFile_full));
+            }
 		}
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing TSProduct file \"" + TSProductFile + "\".";
+		message = "Error processing TSProduct file \"" + TSProductFile_full + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new CommandException ( message );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the output file that is created by this command.  This is only used internally.
+*/
+private void setOutputFile ( File file )
+{
+    __OutputFile_File = file;
 }
 
 /**

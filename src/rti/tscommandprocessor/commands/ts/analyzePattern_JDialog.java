@@ -332,11 +332,14 @@ private void initialize ( JFrame parent,
 	// Top comments
 	JGUIUtil.addComponent( main_JPanel,
 		new JLabel ( "This command creates the pattern file "
-			+ "for use with the fillPattern() command."),
+			+ "for use with the FillPattern() command."),
 			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Only monthly time series can be processed." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Example percentiles are .25,.75, with corresponding pattern identifiers DRY,AVG,WET." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
        	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -406,8 +409,7 @@ private void initialize ( JFrame parent,
 	av.addElement( __command._ANALYSIS_PERCENTILE  );
 	__Method_SimpleJList = new SimpleJList (av);
 	av = null;
-	__Method_SimpleJList.setSelectionMode(
-		ListSelectionModel.SINGLE_SELECTION );
+	__Method_SimpleJList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
 	__Method_SimpleJList.setVisibleRowCount       ( 1 );
 	// Make sure to set the flag ignoreValueChanged to false and
 	// then back to true when executing the select() methods.

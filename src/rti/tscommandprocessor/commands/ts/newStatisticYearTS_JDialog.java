@@ -281,7 +281,7 @@ private void initialize ( JFrame parent, Command command )
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A statistic is a yearly quantity computed from a sample, " +
-		"where in this case the sample is values in the time seies."),
+		"where in this case the sample is values in the time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optionally, specify a new time series identifier (TSID)" +

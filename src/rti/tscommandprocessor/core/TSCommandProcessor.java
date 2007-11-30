@@ -1985,7 +1985,7 @@ public void readCommandFile ( String path,
 		boolean create_generic_command_if_not_recognized,
 		boolean append )
 throws IOException, FileNotFoundException
-{	//String routine = getClass().getName() + ".readCommandsFile";
+{	String routine = getClass().getName() + ".readCommandFile";
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
 	File path_File = new File(path);
@@ -2033,18 +2033,24 @@ throws IOException, FileNotFoundException
 				line,	// Command string, needed to do full parse on parameters
 				this,	// Processor, needed to make requests
 				true);	// Do full initialization
+            // TODO SAM 2007-10-09 Evaluate whether to call listeners each time.
+            // Could be good to indicate progress of load
+            // Add the command, without notifying listeners of changes...
+            addCommand ( command, notify_listeners_for_each_add );
+            ++num_added;
 		}
+        /*
 		catch ( InvalidCommandSyntaxException e ) {
 			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
 		}
 		catch ( InvalidCommandParameterException e2) {
 			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
 		}
-		// TODO SAM 2007-10-09 Evaluate whether to call listeners each time.
-		// Could be good to indicate progress of load
-		// Add the command, without notifying listeners of changes...
-		addCommand ( command, notify_listeners_for_each_add );
-		++num_added;
+        */
+        catch ( Exception e3 ) {
+            // TODO SAM 2007-11-29 Need to decide whether to handle here or in command with CommandStatus
+            Message.printWarning( 1, routine, "Error creating command \"" + line + "\" - report to software support." );
+        }
 	}
 	// Close the file...
 	br.close();

@@ -385,7 +385,7 @@ CommandWarningException, CommandException
 					routine, message );
                 status.addToLog ( CommandPhaseType.RUN,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
+                                message, "Verify that the fill start date/time is valid." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	FillStart_DateTime = (DateTime)prop_contents;

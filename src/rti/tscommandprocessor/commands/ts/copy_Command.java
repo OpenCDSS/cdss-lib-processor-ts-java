@@ -17,6 +17,8 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -27,20 +29,23 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.TimeInterval;
 
 /**
 <p>
 This class initializes, checks, and runs the copy() command.
-</p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
 </p>
 */
 public class copy_Command extends AbstractCommand implements Command
@@ -51,7 +56,7 @@ Constructor.
 */
 public copy_Command ()
 {	super();
-	setCommandName ( "copy" );
+	setCommandName ( "Copy" );
 }
 
 /**
@@ -63,28 +68,84 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
+    String NewTSID = parameters.getValue ( "NewTSID" );
 	String TSID = parameters.getValue ( "TSID" );
 	String warning = "";
+    String message;
+
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (Alias == null) || Alias.equals("") ) {
-		warning += "\nThe time series alias must be specified.";
+        message = "The time series alias must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a time series alias when defining the command."));
 	}
 	if ( (TSID == null) || TSID.equals("") ) {
-		warning += "\nThe time series identifier must be specified.";
+        message = "The time series identifier for the time series to copy must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a time series identifier when defining the command."));
 	}
-	// REVISIT SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support
-	// wildcards.
+    if ( (NewTSID == null) || NewTSID.equals("") ) {
+        message = "The new time series identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a new time series identifier when defining the command."));
+    }
+    else {
+        try {
+            TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
+            try { TimeInterval.parseInterval(tsident.getInterval());
+            }
+            catch ( Exception e2 ) {
+                message = "NewTSID interval \"" + tsident.getInterval() + "\" is not a valid interval.";
+                warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a valid interval when defining the command."));
+            }
+        }
+        catch ( Exception e ) {
+            // TODO SAM 2007-03-12 Need to catch a specific exception like
+            // InvalidIntervalException so that more intelligent messages can be
+            // generated.
+            message = "NewTSID \"" + NewTSID + "\" is not a valid identifier." +
+            "Use the command editor to enter required fields.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Use the command editor to enter required fields."));
+        }
+    }
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "NewTSID" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -116,102 +177,62 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Get the part of the command after the TS Alias =...
 	int pos = command.indexOf ( "=" );
 	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = copy(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	String token0 = command.substring ( 0, pos ).trim();
 	String token1 = command.substring ( pos + 1 ).trim();
 	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = copy(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	if ( token1.indexOf('=') < 0 ) {
+    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+    if ( v == null ) {
+        message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
+        Message.printWarning ( warning_level, routine, message);
+        throw new InvalidCommandSyntaxException ( message );
+    }
+    String Alias = (String)v.elementAt(1);
+    String TSID = null;
+	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
 		// No parameters have = in them...
-		// REVISIT SAM 2005-08-25 This whole block of code needs to be
+		// TODO SAM 2005-08-25 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new
 		// syntax.
 		//
 		// Old syntax without named parameters.
-		Vector v = StringUtil.breakStringList ( token0," ",
-			StringUtil.DELIM_SKIP_BLANKS );
+
+		v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
 		if ( v == null ) {
-			message = "Syntax error in \"" + command +
-				"\".  Expecting:  TS Alias = copy(TSID)";
+			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String Alias = (String)v.elementAt(1);
-		v = StringUtil.breakStringList ( token1,"(),",
-			StringUtil.DELIM_SKIP_BLANKS );
-		if ( v == null ) {
-			message = "Syntax error in \"" + command +
-				"\".  Expecting:  TS Alias = copy(TSID)";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		String TSID = (String)v.elementAt(1);
-
-		// Set parameters and new defaults...
-
-		PropList parameters = new PropList ( getCommandName() );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		if ( Alias.length() > 0 ) {
-			parameters.set ( "Alias", Alias );
-		}
-		if ( TSID.length() > 0 ) {
-			parameters.set ( "TSID", TSID );
-		}
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
+        // TSID is the only parameter
+        TSID = (String)v.elementAt(1);
 	}
-
-	else {	// Current syntax...
-		Vector v = StringUtil.breakStringList ( token0, " ",
-			StringUtil.DELIM_SKIP_BLANKS );
-		if ( (v == null) || (v.size() != 2) ) {
-			message = "Syntax error in \"" + command +
-				"\".  Expecting:  TS Alias = copy(...)";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		String Alias = (String)v.elementAt(1);
-		Vector tokens = StringUtil.breakStringList ( token1,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			// Must have at least the command name and its
-			// parameters...
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		// Get the input needed to process the file...
-		try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," );
-
-			parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-			parameters.set ( "Alias", Alias );
-			parameters.setHowSet ( Prop.SET_UNKNOWN );
-			setCommandParameters ( parameters );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
+	else {
+        // Current syntax...
+        super.parseCommand( token1 );
 	}
+    
+    // Set parameters and new defaults...
+
+    PropList parameters = getCommandParameters();
+    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+    if ( Alias.length() > 0 ) {
+        parameters.set ( "Alias", Alias );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        parameters.set ( "TSID", TSID );
+    }
+    parameters.setHowSet ( Prop.SET_UNKNOWN );
 }
 
 /**
-Run the commands:
-<pre>
-TS Alias = copy(TSID="X",NewTSID="X")
-</pre>
+Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -233,6 +254,8 @@ CommandWarningException, CommandException
 
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
@@ -251,20 +274,26 @@ CommandWarningException, CommandException
 			}
 			catch ( Exception e ) {
 				message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-				"\" from processor.";
+				"\") from processor.";
 				Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 				Message.printWarning(log_level, routine, e );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			}
 			PropList bean_PropList = bean.getResultsPropList();
 			Object o_TS = bean_PropList.getContents ( "TS");
 			if ( o_TS == null ) {
 				message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-				"\" from processor.";
+				"\") from processor.";
 				Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 			}
 			else {
 				ts = (TS)o_TS;
@@ -274,82 +303,68 @@ CommandWarningException, CommandException
 		ts = null;
 	}
 	if ( ts == null ) {
-		message = "Unable to find time series to copy using TSID \"" +
-		TSID + "\".";
+		message = "Unable to find time series to copy using TSID \"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
 
 	// Now process the time series...
 
 	TS tscopy = null;
-	try {	tscopy = (TS)ts.clone();
+	try {
+        tscopy = (TS)ts.clone();
 		tscopy.setAlias ( Alias );	// Do separate because setting
 						// the NewTSID might cause the
 						// alias set to fail below.
 	}
 	catch ( Exception e ) {
-		message = "Unable to copy time series \""+
-			ts.getIdentifier() + "\".";
+		message = "Unexpected error trying to copy time series \""+ ts.getIdentifier() + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check the log file - report the problem to software support." ) );
 	}
 
-	try {	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+	try {
+        if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 			TSIdent tsident = new TSIdent ( NewTSID );
 			tscopy.setIdentifier ( tsident );
 		}
 		tscopy.setAlias ( Alias );
 	}
 	catch ( Exception e ) {
-		message = "Unable to set new time series identifier \""+
-			NewTSID + "\".";
+		message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check the log file - report the problem to software support." ) );
 	}
 
-	// Updated the data to the processor so that appropriate actions are
-	// taken...
-	
-	Vector TSResultsList_Vector = null;
-	try { Object o = processor.getPropContents( "TSResultsList" );
-			TSResultsList_Vector = (Vector)o;
-	}
-	catch ( Exception e ){
-		message = "Cannot get time series list to add copied time series.  Skipping.";
-		Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag, ++warning_count),
-				routine,message);
-	}
-	if ( TSResultsList_Vector != null ) {
-		TSResultsList_Vector.addElement ( tscopy );
-		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
-		}
-		catch ( Exception e ){
-			message = "Cannot set updated time series list.  Copy will not be in results.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag, ++warning_count),
-				routine,message);
-		}
-	}
+    // Update the data to the processor so that appropriate actions are taken...
+
+    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, tscopy );
 
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

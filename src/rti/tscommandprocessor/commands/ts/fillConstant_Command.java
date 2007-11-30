@@ -153,6 +153,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a 1-character fill flag or blank to not use a flag." ) );
 	}
+    
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
@@ -550,6 +551,9 @@ CommandWarningException, CommandException
                     command_tag, ++warning_count),
                     routine,message);
 			Message.printWarning(3,routine,e);
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
 

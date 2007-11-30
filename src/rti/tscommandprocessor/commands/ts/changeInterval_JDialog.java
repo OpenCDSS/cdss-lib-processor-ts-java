@@ -328,7 +328,6 @@ private void initialize ( JFrame parent, Command command )
 	String routine = "changeInterval_JDialog.initialize";
 	
 	__command 	= (changeInterval_Command) command;
-	CommandProcessor processor = __command.getCommandProcessor();
 	
 	// GUI Title
 	String title = "Edit " + __command.getCommandName() + "() Command";
@@ -458,11 +457,11 @@ private void initialize ( JFrame parent, Command command )
 	__AllowMissingCount_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Number of missing values allowed in original " +
-		"processing interval."),
+		"processing interval (default=0)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Allow missing percent
-	/* REVISIT SAM 2005-02-18 may enable later
+	/* TODO SAM 2005-02-18 may enable later
         JGUIUtil.addComponent(main_JPanel, new JLabel("Allow missing percent:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingPercent_JTextField = new JTextField ( "", 10 );
@@ -489,7 +488,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Use to fill output when converting from large to small " +
-		"interval."),
+		"interval (default=" + __command.__Repeat + "."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Handle missing input how?
@@ -508,7 +507,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicate how to handle missing values in input."),
+		"Indicate how to handle missing values in input (default=" + __command.__KeepMissing + "."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command

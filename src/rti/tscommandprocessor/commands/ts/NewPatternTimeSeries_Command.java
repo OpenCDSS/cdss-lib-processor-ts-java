@@ -91,6 +91,7 @@ throws InvalidCommandParameterException
 				CommandStatusType.FAILURE, message,
 				"Provide a time series alias when defining the command."));
 	}
+    /* TODO SAM 2007-11-29 Need to evaluate whether this is a required check
 	if ( (NewTSID == null) || NewTSID.equals("") ) {
         message = "The new time series identifier must be specified.";
 		warning += "\n" + message;
@@ -126,9 +127,7 @@ throws InvalidCommandParameterException
 			"Use the command editor to enter required fields."));
 		}
 	}
-	// TODO SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support
-	// wildcards.
+    */
 
 	if ( (PatternValues != null) && !PatternValues.equals("") ) {
 		// If pattern values are specified, make sure they are a sequence of numbers...
@@ -229,7 +228,7 @@ throws InvalidCommandParameterException
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
-	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -276,8 +275,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	// Get the alias from the first token before the equal sign...
 	
-	Vector v = StringUtil.breakStringList ( token0, " ",
-			StringUtil.DELIM_SKIP_BLANKS );
+	Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";

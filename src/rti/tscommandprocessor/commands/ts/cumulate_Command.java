@@ -16,6 +16,8 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -26,8 +28,12 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -37,13 +43,10 @@ import RTi.Util.String.StringUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the cumulate() command.
-</p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
+This class initializes, checks, and runs the Cumulate() command.
 </p>
 */
-public class cumulate_Command extends AbstractCommand
-implements Command
+public class cumulate_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -57,7 +60,7 @@ Constructor.
 */
 public cumulate_Command ()
 {	super();
-	setCommandName ( "cumulate" );
+	setCommandName ( "Cumulate" );
 }
 
 /**
@@ -69,32 +72,51 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
 	String warning = "";
+    String message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	if (	(TSID == null) || TSID.equals("") ) {
-		warning +=
-			"\nThe time series identifier must be specified.";
+	if ( (TSID == null) || TSID.equals("") ) {
+        message = "The time series identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Provide a time series identifier." ) );
 	}
 	if (	(HandleMissingHow != null) &&
 		!HandleMissingHow.equals("") &&
 		!HandleMissingHow.equalsIgnoreCase(_CarryForwardIfMissing) &&
 		!HandleMissingHow.equalsIgnoreCase(_SetMissingIfMissing) ) {
-		warning +=
-			"\nHandleMissingHow, if specified, must be " +
-			_CarryForwardIfMissing + " or " +
-			_SetMissingIfMissing;
+        message = "The HandleMissingHow parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "\nHandleMissingHow, if specified, must be " +
+                        _CarryForwardIfMissing + " or " +
+                        _SetMissingIfMissing ) );
 	}
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "HandleMissingHow" );
+    valid_Vector.add ( "Reset" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -111,26 +133,26 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
-@param command A string command to parse.
+@param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command )
+public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "cumulate_Command.parseCommand", message;
-
-	if ( command.indexOf('=') < 0 ) {
-		// REVISIT SAM 2005-08-24 This whole block of code needs to be
+{	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
+        // Current syntax...
+        super.parseCommand( command_string);
+    }
+    else {
+		//TODO SAM 2005-08-24 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new
 		// syntax.
 		//
 		// Old syntax without named parameters.
-		Vector v = StringUtil.breakStringList ( command,"(),",
-			StringUtil.DELIM_SKIP_BLANKS );
+		Vector v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String HandleMissingHow = "";
 		if ( (v != null) && (v.size() == 3) ) {
@@ -154,35 +176,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		setCommandParameters ( parameters );
 	}
 
-	else {	// Current syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			// Must have at least the command name, TSID, and
-			// IndependentTSID...
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		// Get the input needed to process the file...
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," ) );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-	}
 }
 
 /**
-Run the commands:
-<pre>
-cumulate(TSID="X",HandleMissingHow=X)
-</pre>
+Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -201,6 +198,9 @@ CommandWarningException, CommandException
 	int log_level = 3;	// Warning level for non-user messages.
 
 	// Make sure there are time series available to operate on...
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -221,10 +221,13 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\" from processor.";
+		"\", TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -232,9 +235,13 @@ CommandWarningException, CommandException
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to cumulate using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message,
+                                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {	tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
@@ -243,6 +250,10 @@ CommandWarningException, CommandException
 			Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message,
+                            "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 		}
 	}
 	Object o_Indices = bean_PropList.getContents ( "Indices" );
@@ -253,6 +264,9 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+           status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 	}
 	else {	tspos = (int [])o_Indices;
 		if ( tspos.length == 0 ) {
@@ -261,6 +275,9 @@ CommandWarningException, CommandException
 			Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
+               status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 		}
 	}
 	
@@ -292,54 +309,63 @@ CommandWarningException, CommandException
 			processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
+            message = "Error requesting GetTimeSeries(Index=" + tspos[its] +
+            "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Error requesting GetTimeSeries(Index=" + tspos[its] +
-					"\" from processor." );
+					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "TS" );
 		if ( prop_contents == null ) {
+            message = "Null value for GetTimeSeries(Index=" + tspos[its] +
+            ") returned from processor.";
 			Message.printWarning(log_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, "Null value for GetTimeSeries(Index=" + tspos[its] +
-				"\") returned from processor." );
+				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 		else {	ts = (TS)prop_contents;
 		}
 		
 		// TODO SAM 2007-02-17 Evaluate whether to print warning if null TS
 		
-		try {	// Do the processing...
-			Message.printStatus ( 2, routine, "Cumulating \"" +
-				ts.getIdentifier() + "\"." );
+		try {
+            // Do the processing...
+			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\"." );
 			TSUtil.cumulate ( ts, null, null, cumulate_props );
 		}
 		catch ( Exception e ) {
-			message = "Unable to cumulate time series \""+
-				ts.getIdentifier() + "\".";
+			message = "Unexpected error cumulating time series \""+	ts.getIdentifier() + "\".";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
 			Message.printWarning(3,routine,e);
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
 
-	// Resave the data to the processor so that appropriate actions are
-	// taken...
-	// REVISIT SAM 2005-08-25
-	// Is this needed?
+	// Resave the data to the processor so that appropriate actions are taken...
+	// TODO SAM 2005-08-25 Is this needed?
 	//_processor.setPropContents ( "TSResultsList", TSResultsList );
 
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

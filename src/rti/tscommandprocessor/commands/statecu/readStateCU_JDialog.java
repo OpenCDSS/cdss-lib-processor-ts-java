@@ -403,7 +403,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __AutoAdjust_JComboBox,
    		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       	"Convert data type with \".\" to \"-\"."),
+       	"Convert data type with \".\" to \"-\" (default=False)."),
        	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check data after read?:" ), 
@@ -465,10 +465,12 @@ Handle ItemEvent events.
 public void itemStateChanged ( ItemEvent e )
 {	Object o = e.getItemSelectable();
 
-	if (	(o == __AutoAdjust_JComboBox) &&
-		(e.getStateChange() == ItemEvent.SELECTED) ) {
+	if ( (o == __AutoAdjust_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
 		refresh();
 	}
+    else if ( (o == __CheckData_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
+        refresh();
+    }
 }
 
 /**

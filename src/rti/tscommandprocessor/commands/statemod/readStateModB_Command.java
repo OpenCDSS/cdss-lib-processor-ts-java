@@ -22,13 +22,19 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -43,9 +49,6 @@ import DWR.StateMod.StateMod_BTS;
 <p>
 This class initializes, checks, and runs the readStateModB() command.
 </p>
-<p>The CommandProcessor must return the following properties:
-TSResultsList, WorkingDir.
-</p>
 */
 public class readStateModB_Command extends AbstractCommand implements Command
 {
@@ -59,7 +62,7 @@ Constructor.
 */
 public readStateModB_Command ()
 {	super();
-	setCommandName ( "readStateModB" );
+	setCommandName ( "ReadStateModB" );
 }
 
 /**
@@ -71,21 +74,26 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
-	// TODO SAM 2007-02-18 Evaluate support for TSID
-	//String TSID = parameters.getValue ( "TSID" );
+	String TSID = parameters.getValue ( "TSID" );
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	String Version = parameters.getValue ( "Version" );
 	String warning = "";
-	
-	CommandProcessor processor = getCommandProcessor();
+    String message;
+
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
-		warning += "\nThe input file must be specified.";
+        message = "The input file must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an existing input file." ) );
 	}
 	else {	String working_dir = null;
 			try { Object o = processor.getPropContents ( "WorkingDir" );
@@ -95,41 +103,44 @@ throws InvalidCommandParameterException
 				}
 			}
 			catch ( Exception e ) {
-				// Not fatal, but of use to developers.
-				String message = "Error requesting WorkingDir from processor - not using.";
-				String routine = getCommandName() + ".checkCommandParameters";
-				Message.printDebug(10, routine, message );
+                message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			}
-		try {	String adjusted_path = IOUtil.adjustPath (
-				working_dir, InputFile);
-			File f = new File ( adjusted_path );
-			File f2 = new File ( f.getParent() );
-			if ( !f2.exists() ) {
-				warning +=
-				"\nThe input file parent directory does " +
-				"not exist: \"" + adjusted_path + "\".";
-			}
-			f = null;
-			f2 = null;
-		}
-		catch ( Exception e ) {
-			warning +=
-				"\nThe working directory:\n" +
-				"    \"" + working_dir +
-				"\"\ncannot be adjusted using:\n" +
-				"    \"" + InputFile + "\".";
-		}
-	}
+            try {
+                String adjusted_path = 
+                    IOUtil.adjustPath (working_dir, InputFile);
+                    File f = new File ( adjusted_path );
+                    if ( !f.exists() ) {
+                        message = "The input file does not exist:  \"" + adjusted_path + "\".";
+                        warning += "\n" + message;
+                        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that the input file exists - may be OK if created at run time." ) );
+                    }
+            }
+            catch ( Exception e ) {
+                message = "The input file \"" + InputFile +
+                "\" cannot be adjusted using the working directory \"" + working_dir + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that input file and working directory paths are compatible." ) );
+            }
+    }
 	if (	(InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") &&
 		!InputStart.equalsIgnoreCase("InputEnd") ) {
 		try {	DateTime.parse(InputStart);
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe input start date/time \"" +InputStart +
-				"\" is not a valid date/time.\n"+
-				"Specify a date/time or InputStart.";
+            message = "The input start date/time \"" +InputStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
 	if (	(InputEnd != null) && !InputEnd.equals("") &&
@@ -138,15 +149,29 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( InputEnd );
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe input end date/time \"" + InputEnd +
-				"\" is not a valid date/time.\n"+
-				"Specify a date/time or InputEnd.";
+            message = "The input end date/time \"" +InputStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
 	if ( (Version != null) && !StringUtil.isDouble(Version) ) {
-		warning += "\nThe StateMod version must be a number.";
+        message = "The StateMod version must be a number.";
+		warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                 new CommandLogRecord(CommandStatusType.FAILURE,
+                         message, "Specify a number Major.Minor for the StateMod version." ) );
 	}
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "InputFile" );
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "InputStart" );
+    valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "Version" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -154,6 +179,8 @@ throws InvalidCommandParameterException
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -193,10 +220,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the commands:
-<pre>
-readStateModB(InputFile="X",TSID="X",InputStart="X",InputEnd="X",Version="X")
-</pre>
+Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -212,6 +236,8 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int log_level = 3; // Level for non-user warning messages
 	
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
@@ -232,10 +258,13 @@ CommandWarningException, CommandException
 		}
 		catch ( Exception e ) {
 			message = "Error requesting InputStart DateTime(DateTime=" +
-			InputStart + "\" from processor.";
+			InputStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -243,10 +272,13 @@ CommandWarningException, CommandException
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
 			message = "Null value for InputStart DateTime(DateTime=" +
-			InputStart +	"\") returned from processor.";
+			InputStart + ") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the specified date/time is valid." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	InputStart_DateTime = (DateTime)prop_contents;
@@ -257,6 +289,10 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid date/time for the input start, " +
+                        "or InputStart for the global input start." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	}
@@ -267,9 +303,13 @@ CommandWarningException, CommandException
 				}
 		}
 		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
-			message = "Error requesting InputStart from processor - not using.";
-			Message.printDebug(10, routine, message );
+            message = "Error requesting the global InputStart from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 	}
 	
@@ -282,23 +322,29 @@ CommandWarningException, CommandException
 				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
-				message = "Error requesting InputEnd DateTime(DateTime=" +
-				InputEnd + "\" from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-				throw new InvalidCommandParameterException ( message );
+                message = "Error requesting InputEnd DateTime(DateTime=" +
+                InputEnd + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
 			}
 
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for InputEnd DateTime(DateTime=" +
-				InputEnd +	"\") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-				throw new InvalidCommandParameterException ( message );
+                message = "Null value for InputEnd DateTime(DateTime=" +
+                InputEnd +  ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the end date/time is valid." ) );
+                throw new InvalidCommandParameterException ( message );
 			}
 			else {	InputEnd_DateTime = (DateTime)prop_contents;
 			}
@@ -308,6 +354,10 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time for the input end, " +
+                            "or InputEnd for the global input start." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		}
@@ -318,15 +368,18 @@ CommandWarningException, CommandException
 					}
 			}
 			catch ( Exception e ) {
-				// Not fatal, but of use to developers.
-				message = "Error requesting InputEnd from processor - not using.";
-				Message.printDebug(10, routine, message );
+                message = "Error requesting the global InputEnd from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 			}
 	}
 
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings about command parameters.";
+		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -335,19 +388,19 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	try {	Message.printStatus ( 2, routine,
-		"Reading StateMod binary file \"" + InputFile + "\"" );
+    String InputFile_full = InputFile;
+	try {
+        InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile);
+        Message.printStatus ( 2, routine,
+		"Reading StateMod binary file \"" + InputFile_full + "\"" );
 
 		StateMod_BTS bts = null;
 		if ( (Version != null) && StringUtil.isDouble(Version) ) {
-			bts = new StateMod_BTS ( InputFile,
-				StringUtil.atod(Version) );
+			bts = new StateMod_BTS ( InputFile_full, StringUtil.atod(Version) );
 		}
-		else {	bts = new StateMod_BTS ( InputFile );
+		else {	bts = new StateMod_BTS ( InputFile_full );
 		}
-		Vector tslist = bts.readTimeSeriesList (
-			TSID, InputStart_DateTime, InputEnd_DateTime,
-			null, true );
+		Vector tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
 		bts.close();
 		bts = null;
 
@@ -364,6 +417,9 @@ CommandWarningException, CommandException
 						MessageUtil.formatMessageTag(
 						command_tag, ++warning_count),
 						routine,message);
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
 				TSResultsList_Vector = new Vector();
 			}
 
@@ -371,8 +427,7 @@ CommandWarningException, CommandException
 			// This makes sure the period is at least as long as the
 			// output period...
 			int size = tslist.size();
-			Message.printStatus ( 2, routine,
-			"Read " + size + " StateMod binary time series." );
+			Message.printStatus ( 2, routine, "Read " + size + " StateMod binary time series." );
 			PropList request_params = new PropList ( "" );
 			request_params.setUsingObject ( "TSList", tslist );
 			try {
@@ -385,6 +440,9 @@ CommandWarningException, CommandException
 					MessageUtil.formatMessageTag(command_tag,
 					++warning_count), routine, message );
 					Message.printWarning(log_level, routine, e);
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report problem to software support." ) );
 					throw new CommandException ( message );
 			}
 
@@ -394,7 +452,8 @@ CommandWarningException, CommandException
 			
 			// Now reset the list in the processor...
 			if ( TSResultsList_Vector != null ) {
-				try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
+				try {
+                    processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
 				}
 				catch ( Exception e ){
 					message = "Cannot set updated time series list.  Results may not be visible.";
@@ -402,6 +461,9 @@ CommandWarningException, CommandException
 						MessageUtil.formatMessageTag(
 						command_tag, ++warning_count),
 						routine,message);
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report problem to software support." ) );
 				}
 			}
 		}
@@ -411,11 +473,13 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message =
-			"Error reading time series from StateMod binary file.";
+		message = "Unexepected error reading time series from StateMod binary file.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "See log file for details." ) );
 		throw new CommandException ( message );
 	}
 }

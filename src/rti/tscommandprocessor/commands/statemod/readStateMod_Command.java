@@ -129,18 +129,24 @@ throws InvalidCommandParameterException
 			catch ( Exception e ) {
                 message = "Error requesting WorkingDir from processor.";
                 warning += "\n" + message;
-				Message.printWarning(3, routine, message );
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify an existing input file." ) );
+                                message, "Report the problem to software support." ) );
 			}
 	
 		try {
-            //String adjusted_path = 
-                IOUtil.adjustPath (working_dir, InputFile);
+            String adjusted_path = IOUtil.adjustPath (working_dir, InputFile);
+                File f = new File ( adjusted_path );
+                if ( !f.exists() ) {
+                    message = "The input file does not exist:  \"" + adjusted_path + "\".";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the input file exists - may be OK if created at run time." ) );
+                }
 		}
 		catch ( Exception e ) {
-            message = "The output file:\n" +
+            message = "The input file:\n" +
             "    \"" + InputFile +
             "\"\ncannot be adjusted using the working directory:\n" +
             "    \"" + working_dir + "\".";
@@ -158,10 +164,10 @@ throws InvalidCommandParameterException
 		}
 		catch ( Exception e ) {
             message = "The input start date/time \"" +InputStart + "\" is not a valid date/time.";
-			warning += "\n" + message;
+            warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or InputStart to use the global input start." ) );
+                            message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
 	if (	(InputEnd != null) && !InputEnd.equals("") &&
@@ -170,12 +176,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( InputEnd );
 		}
 		catch ( Exception e ) {
-            message = "The input end date/time \"" + InputEnd + "\" is not a valid date/time.";
-			warning += "\n" + message;
+            message = "The input end date/time \"" +InputStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or InputEnd to use the global input end." ) );
-
+                            message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
 	if ( (Interval != null) && !Interval.equals("") &&
@@ -335,13 +340,13 @@ CommandWarningException, CommandException
             bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting InputStart DateTime(DateTime=" + InputStart + "\" from processor.";
+			message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
+                            message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -349,13 +354,13 @@ CommandWarningException, CommandException
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
 			message = "Null value for InputStart DateTime(DateTime=" +
-			InputStart +	"\") returned from processor.";
+			InputStart + ") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
+                            message, "Verify that the specified date/time is valid." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	InputStart_DateTime = (DateTime)prop_contents;
@@ -386,7 +391,7 @@ CommandWarningException, CommandException
                     routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
+                            message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
 		}
 	}
@@ -401,7 +406,7 @@ CommandWarningException, CommandException
 			}
 			catch ( Exception e ) {
 				message = "Error requesting InputEnd DateTime(DateTime=" +
-				InputEnd + "\" from processor.";
+				InputEnd + ") from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
@@ -415,13 +420,13 @@ CommandWarningException, CommandException
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
 				message = "Null value for InputEnd DateTime(DateTime=" +
-				InputEnd +	"\") returned from processor.";
+				InputEnd +	") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
                 status.addToLog ( CommandPhaseType.RUN,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
+                                message, "Verify that the end date/time is valid." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {	InputEnd_DateTime = (DateTime)prop_contents;
@@ -634,7 +639,7 @@ CommandWarningException, CommandException
 					Message.printWarning(log_level, routine, e);
                     status.addToLog ( CommandPhaseType.RUN,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report problem to software support." ) );
+                                    message, "Report the problem to software support." ) );
 					throw new CommandException ( message );
 			}
 

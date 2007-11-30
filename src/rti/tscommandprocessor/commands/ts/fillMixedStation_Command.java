@@ -30,8 +30,12 @@ import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -46,10 +50,10 @@ import RTi.Util.Time.DateTime;
 
 
 /**
-This class can run in command "batch" mode or in tool menu.
+Implment the FillMixedStation() command.
+This command can run in command "batch" mode or in tool menu.
 */
-public class fillMixedStation_Command extends AbstractCommand
-	implements Command
+public class fillMixedStation_Command extends AbstractCommand implements Command
 {
 
 // Defines used by this class and its fillMixedStation_JDialog counterpart.
@@ -85,9 +89,8 @@ fillMixedStation_Command constructor.
 public fillMixedStation_Command ()
 {	
 	super();
-
 	__commandMode = true;
-	setCommandName ( "fillMixedStation" );
+	setCommandName ( "FillMixedStation" );
 }
 
 /**
@@ -100,7 +103,7 @@ public fillMixedStation_Command ( boolean runMode )
 	super();
 
 	__commandMode = runMode;
-	setCommandName ( "fillMixedStation" );
+	setCommandName ( "FillMixedStation" );
 }
 
 /**
@@ -112,17 +115,18 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters ( PropList parameters,
-				     String command_tag,
-				     int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {
 	String routine = getCommandName() + ".checkCommandParameters";
-	
 	String warning = "";
+    String message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// Get the properties from the propList parameters.
-        String DependentTSList  = parameters.getValue ( "DependentTSList"  );
+    String DependentTSList  = parameters.getValue ( "DependentTSList"  );
 	String DependentTSID    = parameters.getValue ( "DependentTSID"    );
 	String IndependentTSList= parameters.getValue ( "IndependentTSList");
 	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
@@ -151,73 +155,75 @@ throws InvalidCommandParameterException
 		}
 	}
 	catch ( Exception e ) {
-		// Not fatal, but of use to developers.
-		String message = "Error requesting WorkingDir from processor - not using.";
-		Message.printDebug(10, routine, message );
+        message = "Error requesting WorkingDir from processor.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Software error - report the problem to support." ) );
 	}
 		
 	// Make sure DependentTSID is specified only when the 
 	// DependentTSList=_AllMatchingTSID.
-	if ( (DependentTSList != null) &&
-	     !DependentTSList.equalsIgnoreCase(_AllMatchingTSID) ) {
+	if ( (DependentTSList != null) && !DependentTSList.equalsIgnoreCase(_AllMatchingTSID) ) {
 		if ( DependentTSID != null ) {
-			warning += "\n\"Dependent time series\" "
-				+ "should only be specified when "
-				+ "\"Dependent TS list = "
-				+ _AllMatchingTSID
-				+ "\" is specified.";
+            message = "The dependent time series identifier should only be specified when "
+                + "DependentTSList=" + _AllMatchingTSID + " is specified.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Correct how the dependent time series list is specified." ) );
 		}
 	}
 	
-	// Make sure one or more time series are selected when
-	// AllMatchingTSID is selected.
+	// Make sure one or more time series are selected when AllMatchingTSID is selected.
 	if ( DependentTSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
 		if ( DependentTSID != null ) {
 			Vector selectedV = StringUtil.breakStringList (
 				DependentTSID, ",",
 				StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
-				warning += "\n\"Dependent TS list\" "
-					+ "should not be empty when "
-					+ "\"DependentTSList = "
-					+ _AllMatchingTSID 
-					+ "\" is specified.";
+                message = "The dependent time series identifier should not be empty when "
+                    + "DependentTSList=" + _AllMatchingTSID + " is specified.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Correct how the dependent time series list is specified." ) );
 			}
-		} else { 
-			warning += "\n\"Dependent TS list\" "
-				+ "should not be null when " 
-				+ "\"DependentTSList = "
-				+ _AllMatchingTSID 
-				+ "\" is specified.";
+		} else {
+            message = "The DependentTSList should not be null when DependentTSList="
+                + _AllMatchingTSID + " is specified.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Correct how the dependent time series list is specified." ) );
 		}
 	}
 	
 	// Make sure IndependentTSID is specified only when the
 	// IndependentTSList=_AllMatchingTSID.
-	if ( (IndependentTSList != null) &&
-	     !IndependentTSList.equalsIgnoreCase(_AllMatchingTSID) ) {
+	if ( (IndependentTSList != null) && !IndependentTSList.equalsIgnoreCase(_AllMatchingTSID) ) {
 		if ( IndependentTSID != null ) {
-			warning += "\n\"Independent time series\" "
-				+ "should only be specified when "
-				+ "\"Independent TS list = "
-				+ _AllMatchingTSID
-				+ "\" is specified.";
+            message = "The independent time series identifier should only be specified when "
+                + "IndependentTSList=" + _AllMatchingTSID + " is specified.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Correct how the independent time series list is specified." ) );
 		}
 	}
 	
-	// Make sure one or more time series are selected when
-	// AllMatchingTSID is selected.
+	// Make sure one or more time series are selected when AllMatchingTSID is selected.
 	if ( IndependentTSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
 		if ( IndependentTSID != null ) {
 			Vector selectedV = StringUtil.breakStringList (
 				IndependentTSID, ",",
 				StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
-				warning += "\n\"Independent TS list\" "
-					+ "should not be empty when "
-					+ "\"IndependentTSList = "
-					+ _AllMatchingTSID 
-					+ "\" is specified.";
+                message = "The IndependentTSID should not be empty when IndependentTSList="
+                    + _AllMatchingTSID 
+                    + "\" is specified.";
+				warning += "\n" + message;
+
 			}
 		} else { 
 			warning += "\n\"Independent TS list\" "

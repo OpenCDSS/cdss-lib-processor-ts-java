@@ -101,7 +101,7 @@ throws InvalidCommandParameterException
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Software error - report problem to support." ) );
+							message, "Software error - report the problem to support." ) );
 		}
 
 		try {	String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);

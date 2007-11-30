@@ -19,6 +19,8 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -29,8 +31,12 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -43,11 +49,8 @@ import RTi.Util.Time.DateTime;
 <p>
 This class initializes, checks, and runs the scale() command.
 </p>
-<p>The CommandProcessor must return the following properties:  TSResultsList.
-</p>
 */
-public class scale_Command extends AbstractCommand
-implements Command
+public class scale_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -61,7 +64,7 @@ Constructor.
 */
 public scale_Command ()
 {	super();
-	setCommandName ( "scale" );
+	setCommandName ( "Scale" );
 }
 
 /**
@@ -73,22 +76,31 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String warning = "";
+    String message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if (	(TSID == null) || TSID.equals("") ) {
-		warning +=
-			"\nThe time series identifier must be specified.";
+        message = "The time series identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Provide a time series identifier." ) );
 	}
-	if (	(ScaleValue == null) || ScaleValue.equals("") ) {
-		warning +=
-			"\nThe scale must be specified.";
+	if ( (ScaleValue == null) || ScaleValue.equals("") ) {
+        message = "The scale value must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Provide a scale value." ) );
 	}
 	else if ( !ScaleValue.equalsIgnoreCase(_DaysInMonth) &&
 		!ScaleValue.equalsIgnoreCase(_DaysInMonthInverse) &&
@@ -97,6 +109,12 @@ throws InvalidCommandParameterException
 			"\nThe scale value \"" + ScaleValue +
 			"\" is not a number, " + _DaysInMonth + ", or " +
 			_DaysInMonthInverse + ".";
+        message = "The scale value (" + ScaleValue + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the scale value as a number, " + _DaysInMonth + ", or " +
+            _DaysInMonthInverse + "." ) );
 	}
 	if (	(AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") &&
@@ -104,11 +122,11 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
-			warning += 
-				"\nThe Analysis start date/time \"" +
-				AnalysisStart +
-				"\" is not a valid date/time.\n"+
-				"Specify a date/time or OutputStart.";
+            message = "The analysis start date/time \"" + AnalysisStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or output end." ) );
 		}
 	}
 	if (	(AnalysisEnd != null) && !AnalysisEnd.equals("") &&
@@ -117,19 +135,31 @@ throws InvalidCommandParameterException
 		try {	DateTime.parse( AnalysisEnd );
 		}
 		catch ( Exception e ) {
-			warning +=
-				"\nThe Analysis end date/time \"" +
-				AnalysisEnd +
-				"\" is not a valid date/time.\n"+
-				"Specify a date/time or OutputEnd.";
+            message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
+    
+    // Check for invalid parameters...
+    Vector valid_Vector = new Vector();
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "ScaleValue" );
+    valid_Vector.add ( "AnalysisStart" );
+    valid_Vector.add ( "AnalysisEnd" );
+    valid_Vector.add ( "NewUnits" );
+    warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,warning_level),
 		warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
+    
+    status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -146,25 +176,29 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
-@param command A string command to parse.
+@param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command )
+public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String routine = "scale_Command.parseCommand", message;
 	int warning_level = 2;
 
-	if ( command.indexOf('=') < 0 ) {
-		// REVISIT SAM 2005-08-24 This whole block of code needs to be
+    if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
+        // Current syntax...
+        super.parseCommand( command_string);
+    }
+    else {
+		// TODO SAM 2005-08-24 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new
 		// syntax.
 		//
 		// Old syntax without named parameters.
-		Vector v = StringUtil.breakStringList ( command,"(),",
+		Vector v = StringUtil.breakStringList ( command_string,"(),",
 			StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String ScaleValue = "";
@@ -212,36 +246,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}
-
-	else {	// Current syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			// Must have at least the command name, TSID, and
-			// IndependentTSID...
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		// Get the input needed to process the file...
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine, "," ) );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-	}
 }
 
 /**
-Run the commands:
-<pre>
-scale(TSID="X",ScaleValue=X,AnalysisStart="X",AnalysisEnd="X",NewUnits="X")
-</pre>
+Run the command.
 ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
@@ -261,6 +269,9 @@ CommandWarningException, CommandException
 	int log_level = 3;  // Level for non-use messages for log file.
 
 	// Make sure there are time series available to operate on...
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -287,10 +298,13 @@ CommandWarningException, CommandException
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisStart DateTime(DateTime=" +
-			AnalysisStart + "\" from processor.";
+			AnalysisStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -298,10 +312,13 @@ CommandWarningException, CommandException
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
 			message = "Null value for AnalysisStart DateTime(DateTime=" +
-			AnalysisStart +	"\") returned from processor.";
+			AnalysisStart +	") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	AnalysisStart_DateTime = (DateTime)prop_contents;
@@ -313,6 +330,9 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -326,10 +346,13 @@ CommandWarningException, CommandException
 		}
 		catch ( Exception e ) {
 			message = "Error requesting AnalysisEnd DateTime(DateTime=" +
-			AnalysisEnd + "\" from processor.";
+			AnalysisEnd + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -341,6 +364,9 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
@@ -352,6 +378,9 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
 
@@ -371,6 +400,9 @@ CommandWarningException, CommandException
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -381,24 +413,36 @@ CommandWarningException, CommandException
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message,
+                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
-	else {	tslist = (Vector)o_TSList;
+	else {
+        tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( log_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message,
+                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 		}
 	}
 	
 	int nts = tslist.size();
 	if ( nts == 0 ) {
-		message = "Unable to find time series to scale using TSList=\"" + TSList +
-			"\" TSID=\"" +	TSID + "\".";
+		message = "Unable to find time series to scale using TSList=\"" + TSList + "\" TSID=\"" +	TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message,
+                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
 	// AnalysisStart, AnalysisEnd, and ScaleValue should have been
@@ -425,48 +469,53 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message,
+                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 			// Go to next time series.
 			continue;
 		}
 		ts = (TS)o_ts;
 		
 		try {	// Do the scaling...
-			Message.printStatus ( 2, routine, "Scaling \"" +
-				ts.getIdentifier()+ "\" by " + ScaleValue );
+			Message.printStatus ( 2, routine, "Scaling \"" + ts.getIdentifier()+ "\" by " + ScaleValue );
 			TSUtil.scale ( ts, AnalysisStart_DateTime,
 				AnalysisEnd_DateTime, -1, ScaleValue );
 			// If requested, change the data units...
 			if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
-				ts.addToGenesis ( "Changed units from \"" +
-				ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
+				ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
 				ts.setDataUnits ( NewUnits );
 			}
 		}
 		catch ( Exception e ) {
-			message = "Unable to scale time series \""+
+			message = "Unexpected error scaling time series \""+
 				ts.getIdentifier() + "\" by " + ScaleValue +".";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
 			Message.printWarning(3,routine,e);
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message,
+                            "See the log file for details - report the problem to software support." ) );
 		}
 	}
 
-	// Resave the data to the processor so that appropriate actions are
-	// taken...
-	// REVISIT SAM 2005-08-25
+	// Resave the data to the processor so that appropriate actions are taken...
+	// TODOSAM 2005-08-25
 	// Is this needed?
 	//_processor.setPropContents ( "TSResultsList", TSResultsList );
 
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
+       status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**

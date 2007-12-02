@@ -1733,7 +1733,7 @@ throws Exception
 		TSID = props.getValue ( "TSID" );
 		TSList = props.getValue ( "TSList" );
 		HandleMissingHow = props.getValue ( "HandleMissingHow" );
-		if ( command_name.equals("add") ) {
+		if ( command_name.equalsIgnoreCase("add") ) {
 			AddTSID = props.getValue ( "AddTSID" );
 		}
 		else {	AddTSID = props.getValue ( "SubtractTSID" );
@@ -1765,13 +1765,13 @@ throws Exception
 		throw new Exception ( message );
 	}
 	if ( TSList.equalsIgnoreCase("SpecifiedTS") && (AddTSID == null) ) {
-		if ( command_name.equals("add") ) {
+		if ( command_name.equalsIgnoreCase("add") ) {
 			String message =
 			"AddTSID must be defined for: " + command_name;
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
-		else if ( command_name.equals("subtract") ) {
+		else if ( command_name.equalsIgnoreCase("subtract") ) {
 			String message =
 			"SubtractTSID must be defined for: " + command_name;
 			Message.printWarning ( 2, routine, message );
@@ -2052,8 +2052,7 @@ throws Exception
 }
 
 /**
-Execute the new createFromList() (old -slist, -data_interval, -data_type)
-command.
+Execute the CreateFromList() command.
 @param wl Warning level for important warnings (1=popup, 2=to log only).
 @param command_tag Command number used for messaging.
 @param command Command to parse.
@@ -2102,8 +2101,7 @@ throws Exception
 			"Bad command: \"" + command + "\"" );
 		}
 		// Get the input needed to process the file...
-		PropList props = PropList.parse (
-			(String)tokens.elementAt(1), routine, "," );
+		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
 		ListFile = props.getValue ( "ListFile" );
 		IDCol = props.getValue ( "IDCol" );
 		Delim = props.getValue ( "Delim" );
@@ -2190,10 +2188,9 @@ throws Exception
 	props.set ( "Delimiter=" + Delim );	// see existing prototype
 	props.set ( "CommentLineIndicator=#" );	// New - skip lines that start
 						// with this
-	props.set ( "TrimStrings=True" );	// If true, trim strings after
-						// reading.
-	DataTable table = DataTable.parseFile (
-		IOUtil.getPathUsingWorkingDir(ListFile), props );
+	props.set ( "TrimStrings=True" );	// If true, trim strings after reading.
+    String ListFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),ListFile);
+	DataTable table = DataTable.parseFile (	IOUtil.getPathUsingWorkingDir(ListFile_full), props );
 	
 	int tsize = 0;
 	if ( table != null ) {
@@ -2234,7 +2231,8 @@ throws Exception
 		// readTimeSeries method.
 		// TODO SAM 2007-03-12 Need to avoid global flag.
 		include_missing_ts_old = getIncludeMissingTS();
-		try {	setIncludeMissingTS ( include_missing_ts );
+		try {
+            setIncludeMissingTS ( include_missing_ts );
 			ts = readTimeSeries ( wl, command_tag, tsident_string.toString() );
 			setIncludeMissingTS ( include_missing_ts_old );
 			if ( ts != null ) {
@@ -3350,8 +3348,7 @@ throws Exception
 	PropList changeprops = new PropList ( "newEndOfMonthTSFromDayTS" );
 	changeprops.set ( "UseNearestToEnd", ndays );
 	Message.printStatus ( 1, routine, "Changing interval..." );
-	MonthTS monthts = (MonthTS)TSUtil.changeInterval (
-			dayts, TimeInterval.MONTH, 1, changeprops );
+	MonthTS monthts = (MonthTS)TSUtil.changeInterval ( dayts, TimeInterval.MONTH, 1, changeprops );
 	// Save the original data limits...
 	if ( needHistoricalAverages(monthts) ) {
 		try {	monthts.setDataLimitsOriginal (
@@ -7195,20 +7192,19 @@ throws Exception
 			ts_action = EXIT;
 			break;
 		}
-		else if ( command_String.regionMatches(	true,0,"fillCarryForward",0,16) ) {
-			// Just warn, but the old code still works.  At some
-			// point it will be disabled...
-			Message.printWarning ( 1, routine,
-			"fillCarryForward() is obsolete.\n" +
-			"Use fillRepeat()." );
+		else if ( command_String.regionMatches(	true,0,"FillCarryForward",0,16) ) {
+			// Just warn, but the old code still works.  At some point it will be totally disabled...
+            message = "FillCarryForward() is obsolete.";
+			Message.printWarning ( 2, routine, message );
+            command_status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Use FillRepeat()." ) );
 			++update_count;
 			// Fill missing data in the time series by carrying
 			// forward the last known value...
-			tokens = StringUtil.breakStringList ( command_String,
-				"(,)", StringUtil.DELIM_SKIP_BLANKS );
+			tokens = StringUtil.breakStringList ( command_String, "(,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 2 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + command_String + "\"" );
+				Message.printStatus ( 1, routine, "Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			// Parse the identifier...
@@ -7220,9 +7216,7 @@ throws Exception
 				ts_action = NONE;
 				for ( int its = 0; its < nts; its++ ) {
 					ts = getTimeSeries(its);
-					TSUtil.fillCarryForward ( ts,
-					(DateTime)null,
-					(DateTime)null );
+					TSUtil.fillCarryForward ( ts, (DateTime)null, (DateTime)null );
 					// Update...
 					setTimeSeries ( ts, its );
 				}
@@ -7233,10 +7227,8 @@ throws Exception
 					ts = getTimeSeries ( ts_pos );
 					TSUtil.fillCarryForward ( ts );
 				}
-				else {	message =
-						"Unable to find time series \""+
-						alias + "\" for " +
-						"fillCarryForward() command.";
+				else {
+                    message = "Unable to find time series \"" +	alias + "\" for " +	"FillCarryForward() command.";
 					Message.printWarning(2,routine,message);
 					throw new Exception ( message );
 				}
@@ -7244,10 +7236,8 @@ throws Exception
 			}
 			tokens = null;
 		}
-		else if ( command_String.regionMatches(
-			true,0,"fillDayTSFrom2MonthTSAnd1DayTS",0,30) ) {
-			// Fill missing data in the time series using
-			// D1 = D2*M1/M2
+		else if ( command_String.regionMatches(	true,0,"fillDayTSFrom2MonthTSAnd1DayTS",0,30) ) {
+			// Fill missing data in the time series using D1 = D2*M1/M2
 			tokens = StringUtil.breakStringList ( command_String,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 5 ) {
@@ -7415,17 +7405,15 @@ throws Exception
 				continue;
 			}
 			String infile = ((String)tokens.elementAt(1)).trim();
+            String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
 			Vector tslist = null;
-			Message.printStatus ( 1, routine,
-			"Reading DateValue file \"" + infile + "\"" );
+			Message.printStatus ( 1, routine, "Reading DateValue file \"" + infile_full + "\"" );
 			try {	tslist = DateValueTS.readTimeSeriesList (
-					infile, __InputStart_DateTime, __InputEnd_DateTime,
+					infile_full, __InputStart_DateTime, __InputEnd_DateTime,
 					null, true );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Error reading DateValue file \"" + infile +
-				"\"." );
+				Message.printWarning ( 1, routine, "Error reading DateValue file \"" + infile_full + "\"." );
 				Message.printWarning ( 2, routine, e );
 			}
 			// Add the time series to the end of the normal list...
@@ -7434,14 +7422,11 @@ throws Exception
 				// This makes sure the period is at least that
 				// of the output period...
 				int vsize = tslist.size();
-				Message.printStatus ( 1, routine,
-				"Read " + vsize + " DateValue time series" );
+				Message.printStatus ( 2, routine, "Read " + vsize + " DateValue time series" );
 				readTimeSeries2 ( tslist, true );
 				ts_pos = getTimeSeriesSize();
 				for ( int iv = 0; iv < vsize; iv++ ) {
-					setTimeSeries (
-						(TS)tslist.elementAt(iv),
-						(ts_pos + iv) );
+					setTimeSeries (	(TS)tslist.elementAt(iv), (ts_pos + iv) );
 				}
 			}
 			// Free resources from StateMod list...
@@ -8687,8 +8672,7 @@ throws Exception
 		do_setOutputYearType ( command_String );
 	}
 	else if(command_String.regionMatches(true,0,"-data_interval",0,14)){
-		Message.printWarning ( 1, routine,
-		"-data_interval is obsolete.\nUse createFromList()." );
+		Message.printWarning ( 1, routine,"-data_interval is obsolete.  Use CreateFromList()." );
 		is_obsolete = true;
 	}
 	else if ( command_String.regionMatches(true,0,"-datasource",0,11)) {
@@ -8696,8 +8680,7 @@ throws Exception
 		// name is in the same arg so don't need to increment.
 	}
 	else if(command_String.regionMatches(true,0,"-data_type",0,10)){
-		Message.printWarning ( 1, routine,
-		"-data_type is obsolete.\nUse createFromList()." );
+		Message.printWarning ( 1, routine,"-data_type is obsolete.  Use CreateFromList()." );
 		is_obsolete = true;
 	}
 	else if ( command_String.regionMatches(
@@ -8892,21 +8875,16 @@ throws Exception
 		is_obsolete = true;
 	}
 	else if ( command_String.regionMatches(true,0,"-slist",0,6) ) {
-		Message.printWarning ( 1, routine,
-		"-slist is obsolete.\nUse createFromList()." );
+		Message.printWarning ( 1, routine,"-slist is obsolete.  Use CreateFromList()." );
 		is_obsolete = true;
 	}
 	else if ( command_String.regionMatches(true,0,"-units",0,6) ) {
-		Message.printWarning ( 1, routine,
-				"-units is obsolete.\n" +
-				"Other commands now handle units." );
+		Message.printWarning ( 1, routine, "-units is obsolete.  Other commands now handle units." );
 		is_obsolete = true;
 	}
 	else if ( command_String.equalsIgnoreCase("-wy") ) {
 		Message.printWarning ( 1, routine,
-		"-wy is obsolete.\n" +
-		"Use setOutputYearType().\n" +
-		"Automatically using setOutputYearType()." );
+		"-wy is obsolete.  Use setOutputYearType().  Automatically using setOutputYearType()." );
 		is_obsolete = true;
 		do_setOutputYearType ( command_String );
 	}

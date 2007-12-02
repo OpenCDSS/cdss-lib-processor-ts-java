@@ -128,6 +128,15 @@ throws InvalidCommandParameterException
 		}
 	}
     */
+    
+    if ( (PatternValues == null) || PatternValues.equals("") ) {
+        message = "The pattern values must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a list of values to define the pattern."));
+    }
 
 	if ( (PatternValues != null) && !PatternValues.equals("") ) {
 		// If pattern values are specified, make sure they are a sequence of numbers...

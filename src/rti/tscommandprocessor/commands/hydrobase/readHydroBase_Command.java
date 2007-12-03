@@ -304,6 +304,7 @@ throws InvalidCommandParameterException
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
     if ( _use_alias ) {
+        valid_Vector.add ( "Alias" );
         valid_Vector.add ( "TSID" );
     }
     else {

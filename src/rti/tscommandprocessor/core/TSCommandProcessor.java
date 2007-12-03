@@ -505,6 +505,12 @@ public Object getPropContents ( String prop ) throws Exception
 {	if ( prop.equalsIgnoreCase("AutoExtendPeriod") ) {
 		return getPropContents_AutoExtendPeriod();
 	}
+    else if ( prop.equalsIgnoreCase("AverageEnd") ) {
+        return getPropContents_AverageEnd();
+    }
+    else if ( prop.equalsIgnoreCase("AverageStart") ) {
+        return getPropContents_AverageStart();
+    }
 	else if ( prop.equalsIgnoreCase("CreateOutput") ) {
 		return getPropContents_CreateOutput();
 	}
@@ -519,6 +525,9 @@ public Object getPropContents ( String prop ) throws Exception
     }
     else if ( prop.equalsIgnoreCase("HydroBaseDMIListSize") ) {
         return getPropContents_HydroBaseDMIListSize();
+    }
+    else if ( prop.equalsIgnoreCase("IgnoreLEZero") ) {
+        return getPropContents_IgnoreLEZero();
     }
 	else if ( prop.equalsIgnoreCase("IncludeMissingTS") ) {
 		return getPropContents_IncludeMissingTS();
@@ -581,6 +590,24 @@ private Boolean getPropContents_AutoExtendPeriod()
 }
 
 /**
+Handle the AverageEnd property request.
+@return DateTime for AverageEnd, or null if not set.
+ */
+private DateTime getPropContents_AverageEnd()
+{
+    return __tsengine.getAverageEnd();
+}
+
+/**
+Handle the AverageStart property request.
+@return DateTime for AverageStart, or null if not set.
+ */
+private DateTime getPropContents_AverageStart()
+{
+    return __tsengine.getAverageStart();
+}
+
+/**
 Handle the CreateOutput property request.
 @return Boolean indicating whether output should be created.
  */
@@ -630,6 +657,16 @@ private Integer getPropContents_HydroBaseDMIListSize()
     else {
         return new Integer(v.size());
     }
+}
+
+/**
+Handle the IgnoreLEZero property request.
+@return Boolean indicating whether values <= 0 should be included in historical averages.
+*/
+private Boolean getPropContents_IgnoreLEZero()
+{
+    boolean b = __tsengine.getIgnoreLEZero();
+    return new Boolean ( b );
 }
 
 /**
@@ -773,11 +810,18 @@ These properties can be requested using getPropContents().
 public Vector getPropertyNameList()
 {
 	Vector v = new Vector();
+    v.addElement ( "AutoExtendPeriod" );
+    v.addElement ( "AverageStart" );
+    v.addElement ( "AverageEnd" );
     v.addElement ( "HydroBaseDMIListSize" );
+    v.addElement ( "IgnoreLEZero" );
+    v.addElement ( "IncludeMissingTS" );
 	v.addElement ( "InputStart" );
 	v.addElement ( "InputEnd" );
 	v.addElement ( "OutputStart" );
 	v.addElement ( "OutputEnd" );
+    v.addElement ( "OutputYearType" );
+    v.addElement ( "WorkingDir" );
 	return v;
 }
 

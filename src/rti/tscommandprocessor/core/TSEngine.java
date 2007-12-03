@@ -3376,36 +3376,51 @@ TS Alias = readMODSIM(file,TSID,units,start,end)
 @param command Command to parse.
 @exception Exception if there is an error.
 */
-private TS do_readMODSIM ( String command )
+private TS do_readMODSIM ( String command_tag, String command_string, GenericCommand command )
 throws Exception
 {	String routine = "TSEngine.do_readMODSIM";
+    String message;
+    int warning_level = 2;
+    int warning_count = 0;
+
+    CommandStatus status = command.getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command, "=(,)",
+	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)",
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
+    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
 	String tsid = ((String)tokens.elementAt(3)).trim();
 	//String units = ((String)tokens.elementAt(4)).trim();
 	String date1_string = ((String)tokens.elementAt(5)).trim();
 	String date2_string = ((String)tokens.elementAt(6)).trim();
 	DateTime query_date1 = getDateTime ( date1_string );
 	DateTime query_date2 = getDateTime ( date2_string );
-	Message.printStatus ( 1, routine,
-		"Reading MODSIM file \"" + infile + "\"" );
+	Message.printStatus ( 1, routine, "Reading MODSIM file \"" + infile_full + "\"" );
 	TS ts = null;
-	try {	ts = ModsimTS.readTimeSeries (
-			tsid, infile, query_date1, query_date2, null, true );
+	try {
+        ts = ModsimTS.readTimeSeries ( tsid, infile_full, query_date1, query_date2, null, true );
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Error reading MODSIM file \"" + infile + "\"." );
-		Message.printWarning ( 2, routine, e );
+		message = "Error reading MODSIM file \"" + infile_full + "\".";
+		Message.printWarning ( 3, routine, e );
+           Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+            Message.printWarning(3, routine, e);
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the file is a valid MODSIM time series file." ) );
+            throw new CommandException ( message );
 	}
 	if ( ts != null ) {
 		// Set the alias...
 		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 	return ts;
 }
 
@@ -3425,7 +3440,7 @@ throws Exception
 		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
-	if (	!IOUtil.classCanBeLoaded("RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble") ) {
+	if ( !IOUtil.classCanBeLoaded("RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble") ) {
 		Message.printWarning ( 2, routine,
 		"Features for command are unavailable:  \"" + command + "\"" );
 		throw new Exception ( "Command unavailable: \"" + command +	"\"" );
@@ -3484,7 +3499,7 @@ throws Exception
 	//String QueryEnd = props.getValue ( "QueryEnd" );
 	//String Units = props.getValue ( "Units" );
 
-	/* REVISIT SAM 2004-09-11 need to enable
+	/* TODO SAM 2004-09-11 need to enable
 	DateTime QueryStart_DateTime = getDateTime ( QueryStart );
 	if ( QueryStart_DateTime == null ) {
 		QueryStart_DateTime = __query_date1;
@@ -3563,12 +3578,17 @@ TS Alias = readDateValue(file,TSID,units,start,end)
 @param command Command to parse.
 @exception Exception if there is an error.
 */
-private TS do_TS_readDateValue ( String command )
+private TS do_TS_readDateValue ( String command_tag, String command_string, GenericCommand command )
 throws Exception
 {	String routine = "TSEngine.do_TS_readDateValue";
+    int warning_level = 2;
+    int warning_count = 0;
+    String message;
+
+    CommandStatus status = command.getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command, "=(,)",
-			StringUtil.DELIM_ALLOW_STRINGS);
+	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	String tsid = ((String)tokens.elementAt(3)).trim();
 	//String units = ((String)tokens.elementAt(4)).trim();
@@ -3582,28 +3602,36 @@ throws Exception
 	if ( query_date2 == null ) {
 		query_date2 = __InputEnd_DateTime;
 	}
-	Message.printStatus ( 1, routine,
-	"Reading DateValue file \"" + infile + "\"" );
+    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+	Message.printStatus ( 2, routine, "Reading DateValue file \"" + infile_full + "\"" );
 	TS ts = null;
 	try {	if ( tsid.equals("") || tsid.equals("*") ) {
 			ts = DateValueTS.readTimeSeries (
-			infile, query_date1, query_date2, null, true );
+			infile_full, query_date1, query_date2, null, true );
 		}
-		else {	ts = DateValueTS.readTimeSeries (
-			tsid, infile, query_date1, query_date2, null, true );
+		else {
+            ts = DateValueTS.readTimeSeries (
+			tsid, infile_full, query_date1, query_date2, null, true );
 		}
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Error reading DateValue file \"" + infile + "\"." );
-		Message.printWarning ( 2, routine, e );
+		message = "Unexpected error reading DateValue file \"" + infile_full + "\".";
+		Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+        Message.printWarning ( 3, routine, e );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the file is a DateValue time series file." ) );
+        throw new CommandException ( message );
 	}
 	if ( ts != null ) {
 		// Set the alias...
 		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 	return ts;
 }
 
@@ -3649,8 +3677,7 @@ throws Exception
 	}
 	else {	query_date2 = __InputEnd_DateTime;
 	}
-	Message.printStatus ( 2, routine,
-	"Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
+	Message.printStatus ( 2, routine, "Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
 	// Get the TSIdent for the TSID string.  The input name is checked to
 	// see if it is a directory.
 	// Default to the DMI instance from the calling code, which will
@@ -3660,9 +3687,8 @@ throws Exception
 
 	TSIdent tsident = new TSIdent ( TSID );
 	String input_name = tsident.getInputName();
-	// Convert to a full path because this what will be stored in
-	// the __nwsrfs_dmi.
-	String input_name_full = IOUtil.getPathUsingWorkingDir( input_name );
+	// Convert to a full path because this what will be stored in the __nwsrfs_dmi.
+	String input_name_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name);
 	NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI( input_name_full, true );
 	if ( nwsrfs_dmi == null ) {
 		Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
@@ -3670,14 +3696,13 @@ throws Exception
 		nwsrfs_dmi = new NWSRFS_DMI( input_name_full );
 	}
 	TS ts = null;
-	try {	ts = nwsrfs_dmi.readTimeSeries (
-			TSID, query_date1, query_date2, Units, true );
+	try {
+        ts = nwsrfs_dmi.readTimeSeries ( TSID, query_date1, query_date2, Units, true );
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
 	}
 	catch ( Exception e ) {
-		message = "Error reading NWSRFS FS5Files time series \"" +
-			TSID + "\".";
+		message = "Error reading NWSRFS FS5Files time series \"" + TSID + "\".";
 		Message.printWarning ( 2, routine, message );
 		Message.printWarning ( 2, routine, e );
 		throw new Exception ( message );
@@ -3697,11 +3722,18 @@ TS Alias = readUsgsNwis(file,start,end)
 @param command Command to parse.
 @exception Exception if there is an error.
 */
-private TS do_readUsgsNwis ( String command )
+private TS do_readUsgsNwis ( String command_tag, String command_string, GenericCommand command )
 throws Exception
 {	String routine = "TSEngine.do_readUsgsNwis";
+    int warning_level = 2;
+    int warning_count = 0;
+    String message;
+    
+    CommandStatus status = command.getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+    
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command, "=(,)",
+	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)",
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	String date1_string = ((String)tokens.elementAt(3)).trim();
@@ -3732,23 +3764,37 @@ throws Exception
 			query_date2 = null;
 		}
 	}
-	Message.printStatus ( 1, routine,
-	"Reading USGS NWIS file \"" + infile + "\"" );
+    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+	Message.printStatus ( 2, routine, "Reading USGS NWIS file \"" + infile_full + "\"" );
 	TS ts = null;
-	try {	ts = UsgsNwisTS.readTimeSeries (
-			infile, query_date1, query_date2, null, true );
+	try {
+        ts = UsgsNwisTS.readTimeSeries ( infile_full, query_date1, query_date2, null, true );
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Error reading USGS NWIS file \"" + infile + "\"." );
-		Message.printWarning ( 2, routine, e );
+        message = "Unexpected error reading USGS NWIS file \"" + infile_full + "\".";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+        Message.printWarning ( 3, routine, e );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the file format is daily USGS NWIS flow from the web site." ) );
 	}
 	if ( ts != null ) {
 		// Set the alias...
 		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
 	}
+    if ( warning_count > 0 ) {
+        message = "There were " + warning_count + " warnings processing the command.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag, ++warning_count),
+            routine,message);
+        throw new CommandWarningException ( message );
+    }
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 	return ts;
 }
 
@@ -3767,8 +3813,7 @@ throws Exception
 		" (,)", StringUtil.DELIM_SKIP_BLANKS|
 		StringUtil.DELIM_ALLOW_STRINGS );
 	if ( tokens.size() != 3 ) {
-		throw new Exception (
-		"Bad command \"" + command + "\"" );
+		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	// Parse the program and timeout...
 	String program = (String)tokens.elementAt(1);
@@ -3791,7 +3836,7 @@ throws Exception
 		"Full output may not be available." );
 	}
 	else if ( pm.getExitStatus() > 0 ) {
-		Message.printWarning ( 1, routine, "runProgram(" +
+		Message.printWarning ( 1, routine, "RunProgram(" +
 		program.substring(0,35) + "...) exited with status " +
 		pm.getExitStatus() + "\n" +
 		"Full output may not be available." );
@@ -4168,8 +4213,7 @@ throws Exception
 			throw new Exception("Bad command: \"" + command + "\"");
 		}
 		// Get the input needed to process the file...
-		PropList props = PropList.parse (
-			(String)tokens.elementAt(1), routine, "," );
+		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
 		TSID = props.getValue ( "TSID" );
 		ConstantValue = props.getValue ( "ConstantValue" );
 		MonthValues = props.getValue ( "MonthValues" );
@@ -4184,20 +4228,20 @@ throws Exception
 	}
 	if (	((ConstantValue.length() == 0) && (MonthValues.length() == 0))||
 		((ConstantValue.length() > 0) && (MonthValues.length() > 0)) ) {
-		message =
-		"Choose a single value or monthly values, but not both.";
+		message = "Choose a single value or monthly values, but not both.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 	double constant = 0.0;
 	if ( ConstantValue.length() > 0 ) {
 		if ( !StringUtil.isDouble(ConstantValue) ) {
-			message = "Constant \"" + ConstantValue +
-				"\" is not a number.\n";
+			message = "Constant \"" + ConstantValue + "\" is not a number.\n";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
-		else {	constant = StringUtil.atoi ( ConstantValue );
+		else {
+            constant = StringUtil.atod ( ConstantValue );
+            Message.printStatus( 2, routine, "Setting time series to constant " + constant );
 		}
 	}
 	double [] mconstant = null;
@@ -4209,12 +4253,12 @@ throws Exception
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
-		else {	String val;
+		else {
+            String val;
 			for ( int i = 0; i < 12; i++ ) {
 				val = ((String)v.elementAt(i)).trim();
 				if ( !StringUtil.isDouble(val) ) {
-					message = "\nMonthly value \"" + val +
-						" is not a number.";
+					message = "\nMonthly value \"" + val + " is not a number.";
 					throw new Exception ( message );
 				}
 				mconstant[i] = StringUtil.atod ( val );
@@ -4263,13 +4307,11 @@ throws Exception
 			if ( mconstant == null ) {
 				TSUtil.setConstant ( ts, start, end, constant );
 			}
-			else {	TSUtil.setConstantByMonth ( ts, start, end,
-					mconstant );
+			else {	TSUtil.setConstantByMonth ( ts, start, end,	mconstant );
 			}
 			processTimeSeriesAction (UPDATE_TS, ts, ts_pos);
 		}
-		else {	message = "Unable to find time series \"" +
-				TSID + "\" for setConstant() command.";
+		else {	message = "Unable to find time series \"" + TSID + "\" for setConstant() command.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -4717,17 +4759,17 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	String fillpatternfile = ((String)tokens.elementAt(1)).trim();
-	Message.printStatus ( 1, routine, "Using \"" + fillpatternfile +
-	"\" for fill pattern file." );
+    String fillpatternfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),fillpatternfile);
+	Message.printStatus ( 1, routine, "Using \"" + fillpatternfile_full + "\" for fill pattern file." );
 	// Read the fill pattern file.  Since multiple options are allowed,
 	// create a temporary Vector and then append to the main vector...
-	Vector fill_pattern_ts = StateMod_TS.readPatternTimeSeriesList(	fillpatternfile, true );
+	Vector fill_pattern_ts = StateMod_TS.readPatternTimeSeriesList(	fillpatternfile_full, true );
 	if ( fill_pattern_ts == null ) {
-		throw new Exception ("No pattern time series read from \"" + fillpatternfile + "\"");
+		throw new Exception ("No pattern time series read from \"" + fillpatternfile_full + "\"");
 	}
 	else {	int listsize = fill_pattern_ts.size();
 		Message.printStatus ( 2, routine,
-		"Read "+listsize+" pattern time series from \""+ fillpatternfile + "\"" );
+		"Read "+listsize+" pattern time series from \""+ fillpatternfile_full + "\"" );
 		for ( int j = 0; j < listsize; j++ ) {
 			__fill_pattern_ts.addElement (fill_pattern_ts.elementAt(j) );
 		}
@@ -4799,8 +4841,7 @@ throws Exception
 	independentTS = null;
 	processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
@@ -4850,6 +4891,7 @@ throws Exception
 			// TODO SAM 2007-08-22 Evaluate the ramifications of this
 			// being application-wide vs. just the processor instance.
 			IOUtil.setProgramWorkingDir(dir);
+            __ts_processor.setWorkingDir(dir);
 			if ( app_PropList != null ) {
 				app_PropList.set ( "WorkingDir", dir );
 			}
@@ -4925,38 +4967,69 @@ Execute the stateModMax() command.
 @param command Command to parse.
 @exception Exception if there is an error.
 */
-private void do_stateModMax ( String command )
+private void do_stateModMax ( String command_tag, String command_string, GenericCommand command )
 throws Exception
 {	String routine = "TSEngine.do_StateModMax";
-	Vector tokens = StringUtil.breakStringList ( command,
+    int warning_count = 0;
+    int warning_level = 2;
+    String message;
+    
+    CommandStatus status = command.getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+    
+	Vector tokens = StringUtil.breakStringList ( command_string,
 		" (,)", StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
 	if ( tokens.size() != 3 ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
+		throw new Exception ( "Bad command \"" + command_string + "\"" );
 	}
 	String infile1 = ((String)tokens.elementAt(1)).trim();
-	int interval1 = StateMod_TS.getFileDataInterval ( infile1 );
+    String infile1_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile1);
+	int interval1 = StateMod_TS.getFileDataInterval ( infile1_full );
 	Vector tslist1 = null;
 	String infile2 = ((String)tokens.elementAt(2)).trim();
-	int interval2 = StateMod_TS.getFileDataInterval ( infile2 );
+    String infile2_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile2);
+	int interval2 = StateMod_TS.getFileDataInterval ( infile2_full );
 	Vector tslist2 = null;
 	// Intervals must be the same...
 	if ( interval1 != interval2 ) {
-		Message.printStatus ( 1, routine, "Data intervals for files are not the same:\n" + "\"" + command + "\"" );
-		return;
+        message = "Data intervals for files are not the same:\n" + "\"" + command_string + "\"";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the StateMod data files have the same interval for data." ) );
+        throw new CommandException ( message );
 	}
-	Message.printStatus ( 1, routine, "Reading StateMod file \"" + infile1 + "\"" );
-	try {	tslist1 = StateMod_TS.readTimeSeriesList ( infile1,
+	Message.printStatus ( 1, routine, "Reading StateMod file \"" + infile1_full + "\"" );
+	try {	tslist1 = StateMod_TS.readTimeSeriesList ( infile1_full,
 			__InputStart_DateTime, __InputEnd_DateTime, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine, "Error reading StateMod file \"" + infile1 + "\"." );
+		message = "Error reading StateMod file \"" + infile1_full + "\".";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+        Message.printWarning(3, routine, e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the file is a valid StateMod time series file." ) );
+        throw new CommandException ( message );
 	}
-	Message.printStatus ( 1, routine, "Reading StateMod file \"" + infile2 + "\"" );
-	try {	tslist2 = StateMod_TS.readTimeSeriesList ( infile2,
+	Message.printStatus ( 2, routine, "Reading StateMod file \"" + infile2_full + "\"" );
+	try {	tslist2 = StateMod_TS.readTimeSeriesList ( infile2_full,
 			__InputStart_DateTime, __InputEnd_DateTime, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine, "Error reading StateMod file \"" + infile2 + "\"." );
+		message = "Error reading StateMod file \"" + infile2_full + "\".";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+        Message.printWarning(3, routine, e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the file is a valid StateMod time series file." ) );
+        throw new CommandException ( message );
 	}
 	// Process the time series to clean up.  This extends the periods to the
 	// output period if necessary...
@@ -4979,19 +5052,21 @@ throws Exception
 		// Find the same time series in the second list...
 		pos = TSUtil.indexOf (	tslist2, ts1.getLocation(),	"Location", 1 );
 		if ( pos < 0 ) {
-			Message.printWarning ( 1, routine,
-			"Cannot find matching 2nd time series "+ "for \"" +
-			ts1.getLocation() + "\" in \"" + infile2 + "\"" );
-			// SAMX - need to accumulate for
-			// processTimeSeriesCommands?
-			//++error_count;
+			message = "Cannot find matching 2nd time series for \"" +
+			ts1.getLocation() + "\" in \"" + infile2 + "\"";
+            Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the files contain matching time series identifiers." ) );
 		}
 		else {	// The "ts1" instance will be modified..
 			TSUtil.max ( ts1, (TS)tslist2.elementAt(pos) );
 		}
 	}
 	// Now add the time series to the end of the normal list...
-	Message.printStatus ( 1, routine, "Created " + vsize + " StateMod max() time series" );
+	Message.printStatus ( 2, routine, "Created " + vsize + " StateModMax() time series" );
 	readTimeSeries2 ( tslist1, true );
 	int ts_pos = getTimeSeriesSize();
 	for ( int iv = 0; iv < vsize; iv++ ) {
@@ -5006,6 +5081,15 @@ throws Exception
 	tslist2 = null;
 	// Force a garbage collect because this is an intensive task...
 	System.gc();
+    if ( warning_count > 0 ) {
+        message = "There were " + warning_count + " warnings processing the command.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag, ++warning_count),
+            routine,message);
+        throw new CommandWarningException ( message );
+    }
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -5023,12 +5107,11 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	String outfile = ((String)tokens.elementAt(1)).trim();
-	Message.printStatus ( 1, routine,
-	"Writing NWS Card file \"" + outfile + "\"" );
+    String outfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile);
+	Message.printStatus ( 1, routine, "Writing NWS Card file \"" + outfile_full + "\"" );
 	// Only write the first time series...
 	TS tsout = (TS)__tslist.elementAt(0);
-	NWSCardTS.writeTimeSeries ( tsout, outfile,
-		__OutputStart_DateTime, __OutputEnd_DateTime, "", true );
+	NWSCardTS.writeTimeSeries ( tsout, outfile_full, __OutputStart_DateTime, __OutputEnd_DateTime, "", true );
 	tokens = null;
 }
 
@@ -5049,13 +5132,14 @@ throws Exception
 	}
 	String out = ((String)tokens.elementAt(1)).trim();
     String outfile = IOUtil.getPathUsingWorkingDir( out );
+    String outfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile);
 	
-	try {	StateCU_TS.writeFrostDatesFile ( __tslist, outfile,
+	try {	StateCU_TS.writeFrostDatesFile ( __tslist, outfile_full,
 			comments, __OutputStart_DateTime, __OutputEnd_DateTime);
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 1, routine,
-		"Unable to write StateCU file \"" + outfile + "\"" );
+		"Unable to write StateCU file \"" + outfile_full + "\"" );
 	}
 }
 
@@ -6866,6 +6950,10 @@ throws Exception
 		Message.setPropValue ( "WarningDialogCancelButton=true" );
 		Message.setPropValue ( "WarningDialogViewLogButton=true" );
 	}
+    else {
+        // Turn off interactive warnings to pretent overload on user in loops.
+        Message.setPropValue ( "ShowWarningDialog=false" );
+    }
     
     // Clear any settings that may have been left over from the previous run and which
     // can impact the current run.
@@ -6933,6 +7021,10 @@ throws Exception
 				Message.setPropValue ( "WarningDialogCancelButton=false" );
 				Message.setPropValue ( "ShowWarningDialog=true" );
 			}
+            else {
+                // Turn on interactive warnings again.
+                Message.setPropValue ( "ShowWarningDialog=true" );
+            }
 			// Set flag so code interested in processor knows it is not running...
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that
@@ -7438,8 +7530,11 @@ throws Exception
 			continue;
 		}
 		else if (command_String.regionMatches(true,0,"readMODSIM",0,10)){
-			// Read the MODSIM file, putting all the time
-			// series into memory...
+			// Read the MODSIM file, putting all the time series into memory...
+            CommandStatus status = ((GenericCommand)command).getCommandStatus();
+            int warning_level = 2;
+            int warning_count = 0;
+            status.clearLog(CommandPhaseType.RUN);
 			tokens = StringUtil.breakStringList ( command_String,
 				" (,)", StringUtil.DELIM_SKIP_BLANKS|
 				StringUtil.DELIM_ALLOW_STRINGS );
@@ -7449,39 +7544,41 @@ throws Exception
 				continue;
 			}
 			String infile = ((String)tokens.elementAt(1)).trim();
+            String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
 			Vector tslist = null;
-			Message.printStatus ( 1, routine,
-			"Reading MODSIM file \"" + infile + "\"" );
+			Message.printStatus ( 1, routine, "Reading MODSIM file \"" + infile_full + "\"" );
 			try {	tslist = ModsimTS.readTimeSeriesList (
-					infile, __InputStart_DateTime, __InputEnd_DateTime,
+					infile_full, __InputStart_DateTime, __InputEnd_DateTime,
 					null, true );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Error reading MODSIM file \"" + infile +
-				"\"." );
-				Message.printWarning ( 2, routine, e );
+				message = "Unexpected error reading MODSIM file \"" + infile_full + "\".";
+
+                   Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag(command_tag,
+                            ++warning_count), routine, message );
+                    Message.printWarning(3, routine, e);
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the file is a valid MODSIM time series file." ) );
+                    Message.printWarning ( 3, routine, e );
+                    throw new CommandException ( message );
 			}
 			// Add the time series to the end of the normal list...
 			if ( tslist != null ) {
-				// Further process the time series...
-				// This makes sure the period is at least that
+				// Further process the time series.  This makes sure the period is at least that
 				// of the output period...
 				int vsize = tslist.size();
-				Message.printStatus ( 1, routine,
-				"Read " + vsize + " MODSIM time series" );
+				Message.printStatus ( 1, routine, "Read " + vsize + " MODSIM time series" );
 				readTimeSeries2 ( tslist, true );
 				ts_pos = getTimeSeriesSize();
 				for ( int iv = 0; iv < vsize; iv++ ) {
-					setTimeSeries (
-						(TS)tslist.elementAt(iv),
-						(ts_pos + iv) );
+					setTimeSeries (	(TS)tslist.elementAt(iv), (ts_pos + iv) );
 				}
 			}
 			// Free resources from StateMod list...
 			tslist = null;
-			// Force a garbage collect because this is an
-			// intensive task...
+			// Force a garbage collect because this is an intensive task...
 			System.gc();
 			// No action needed at end...
 			continue;
@@ -7693,8 +7790,11 @@ throws Exception
 		}
 		else if ( command_String.regionMatches(true,0,"setConstantBefore",0,17) ) {
 			// PUT THIS BEFORE setConstant!!!
-			Message.printWarning ( 1, routine,
-			"setConstantBefore() is obsolete.  Use setConstant().");
+            message = "SetConstantBefore() is obsolete.";
+            Message.printWarning ( 2, routine, message );
+            command_status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Use SetConstant()." ) );
 			++update_count;
 			++error_count;
 			// Set all data in the time series to a constant
@@ -7815,10 +7915,10 @@ throws Exception
 			do_shift ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"statemodMax",0,11) ){
+		else if ( command_String.regionMatches(true,0,"StateModMax",0,11) ){
 			// Read two StateMod files and create a new list of
 			// time series that has the maximum of each time series
-			do_stateModMax ( command_String );
+			do_stateModMax ( command_tag, command_String, (GenericCommand)command );
 			// No action needed at end...
 			continue;
 		}
@@ -7862,15 +7962,13 @@ throws Exception
 			tsalias = ((String)tokens.elementAt(1)).trim();
 			// The command used to create the new time series...
 			method = ((String)tokens.elementAt(2)).trim();
-			// All TS methods result in a new time series being
-			// inserted...
+			// All TS methods result in a new time series being inserted...
 			ts_action = INSERT_TS;
 			if ( method.equalsIgnoreCase("newEndOfMonthTSFromDayTS") ) {
 				// TS Alias =
 				// newEndOfMonthTSFromDayTS(TSID,Days)
 				// Reparse to allow spaces in the dates...
-				tokens = StringUtil.breakStringList (
-						command_String, "=(,)",
+				tokens = StringUtil.breakStringList ( command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 4 ) {
 					Message.printWarning ( 1, routine,
@@ -8006,7 +8104,7 @@ throws Exception
 					++error_count;
 					continue;
 				}
-				ts = do_TS_readDateValue ( command_String );
+				ts = do_TS_readDateValue ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if ( method.equalsIgnoreCase("readMODSIM") ) {
 				// TS Alias =
@@ -8021,7 +8119,7 @@ throws Exception
 					++error_count;
 					continue;
 				}
-				ts = do_readMODSIM ( command_String );
+				ts = do_readMODSIM ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if (method.equalsIgnoreCase("readNWSRFSFS5Files")){
 				ts = do_TS_readNWSRFSFS5Files ( command_String );
@@ -8067,13 +8165,12 @@ throws Exception
 					++error_count;
 					continue;
 				}
-				ts = do_readUsgsNwis ( command_String );
+				ts = do_readUsgsNwis ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if ( method.equalsIgnoreCase("relativeDiff") ) {
 				// Relative diff of time series...
 				if ( tokens.size() != 6 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
+					Message.printWarning ( 1, routine, "Bad command \"" + command_String + "\"");
 					++error_count;
 					continue;
 				}

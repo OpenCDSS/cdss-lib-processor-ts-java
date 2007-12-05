@@ -3531,11 +3531,18 @@ TS Alias = readRiverWare(file,units,start,end)
 @param command Command to parse.
 @exception Exception if there is an error.
 */
-private TS do_readRiverWare ( String command )
+private TS do_readRiverWare ( String command_tag, String command_string, GenericCommand command )
 throws Exception
 {	String routine = "TSEngine.do_readRiverWare";
+    int warning_count = 0;
+    int warning_level = 2;
+    String message;
+
+    CommandStatus status = command.getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command, "=(,)",
+	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)",
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	//String tsid = ((String)tokens.elementAt(3)).trim();
@@ -3550,23 +3557,30 @@ throws Exception
 	if ( query_date2 == null ) {
 		query_date2 = __InputEnd_DateTime;
 	}
-	Message.printStatus ( 1, routine,
-	"Reading RiverWare file \"" + infile + "\"" );
+    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+	Message.printStatus ( 1, routine, "Reading RiverWare file \"" + infile_full + "\"" );
 	TS ts = null;
-	try {	ts = RiverWareTS.readTimeSeries (
-			infile, query_date1, query_date2, null, true );
+	try {
+        ts = RiverWareTS.readTimeSeries ( infile_full, query_date1, query_date2, null, true );
 		// Now post-process...
 		readTimeSeries2 ( ts, null, true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Error reading RiverWare file \"" + infile + "\"." );
-		Message.printWarning ( 2, routine, e );
+		message = "Unexpected error reading RiverWare file \"" + infile_full + "\".";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+        Message.printWarning(3, routine, e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the file is a valid RiverWare time series file." ) );
+        throw new CommandException ( message );
 	}
 	if ( ts != null ) {
 		// Set the alias...
 		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 	return ts;
 }
 
@@ -5121,26 +5135,41 @@ Execute the writeStateCU() command.
 @param comments Comments for output header.
 @exception Exception if there is an error.
 */
-private void do_writeStateCU ( String command, String[] comments )
+private void do_writeStateCU ( String command_tag, String command_string, String[] comments, GenericCommand command )
 throws Exception
 {	String routine = "TSEngine.do_writeStateCU";
-	Vector tokens = StringUtil.breakStringList ( command,
+    int warning_count = 0;
+    int warning_level = 2;
+    String message;
+
+    CommandStatus status = command.getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+
+	Vector tokens = StringUtil.breakStringList ( command_string,
 		" (,)", StringUtil.DELIM_SKIP_BLANKS|
 		StringUtil.DELIM_ALLOW_STRINGS );
 	if ( (tokens.size() != 2) && (tokens.size() != 3) ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
-	String out = ((String)tokens.elementAt(1)).trim();
-    String outfile = IOUtil.getPathUsingWorkingDir( out );
+	String outfile = ((String)tokens.elementAt(1)).trim();
     String outfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile);
 	
-	try {	StateCU_TS.writeFrostDatesFile ( __tslist, outfile_full,
+	try {
+        StateCU_TS.writeFrostDatesFile ( __tslist, outfile_full,
 			comments, __OutputStart_DateTime, __OutputEnd_DateTime);
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Unable to write StateCU file \"" + outfile_full + "\"" );
+        message = "Unexpected error writing StateCU file \"" + outfile_full + "\".";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,
+                ++warning_count), routine, message );
+        Message.printWarning(3, routine, e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check the log file." ) );
+        throw new CommandException ( message );
 	}
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -8131,12 +8160,11 @@ throws Exception
 					command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 6 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
+					Message.printWarning ( 1, routine, "Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
-				ts = do_readRiverWare ( command_String );
+				ts = do_readRiverWare ( command_tag, command_String, (GenericCommand)command );
 			}
 			// SAMX - in the GUI as general case...
 			else if ( method.equalsIgnoreCase("readTimeSeries") ) {
@@ -8334,8 +8362,8 @@ throws Exception
 				"\" because output is to be ignored." );
 				continue;
 			}
-			do_writeStateCU ( command_String,
-					formatOutputHeaderComments(command_Vector) );
+			do_writeStateCU ( command_tag, command_String,
+					formatOutputHeaderComments(command_Vector), (GenericCommand)command );
 			// No action needed at end...
 			continue;
 		}

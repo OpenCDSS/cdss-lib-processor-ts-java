@@ -110,8 +110,7 @@ throws InvalidCommandParameterException
                                 message, "Report the problem to software support." ) );
 			}
             try {
-                String adjusted_path = 
-                    IOUtil.adjustPath (working_dir, InputFile);
+                String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile) );
                     File f = new File ( adjusted_path );
                     if ( !f.exists() ) {
                         message = "The input file does not exist:  \"" + adjusted_path + "\".";
@@ -390,7 +389,8 @@ CommandWarningException, CommandException
 
     String InputFile_full = InputFile;
 	try {
-        InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile);
+        InputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine,
 		"Reading StateMod binary file \"" + InputFile_full + "\"" );
 

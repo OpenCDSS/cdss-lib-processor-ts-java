@@ -179,7 +179,8 @@ CommandWarningException, CommandException
 		WarnIfMissing_boolean = true;
 	}
 
-	String InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile );
+	String InputFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
     File file = new File ( InputFile_full );
 	if ( !file.exists() ) {
         message = "File to remove \"" + InputFile_full + "\" does not exist.";

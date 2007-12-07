@@ -259,8 +259,10 @@ CommandWarningException, CommandException
 		Append_boolean = false;
 	}
 
-	String SearchFolder_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor), SearchFolder );
-	String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor), OutputFile );
+	String SearchFolder_full = IOUtil.verifyPathForOS ( IOUtil.toAbsolutePath(
+            TSCommandProcessorUtil.getWorkingDir(processor), SearchFolder ) );
+	String OutputFile_full = IOUtil.verifyPathForOS (IOUtil.toAbsolutePath(
+            TSCommandProcessorUtil.getWorkingDir(processor), OutputFile ) );
 	if ( !IOUtil.fileExists(SearchFolder_full) ) {
 		message = "The folder to search \"" + SearchFolder_full + "\" does not exist.";
 		Message.printWarning ( warning_level,
@@ -284,8 +286,7 @@ CommandWarningException, CommandException
 	}
 	*/
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings about command parameters.";
+		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

@@ -114,7 +114,7 @@ throws InvalidCommandParameterException
 	}
 	else {
         try {
-            String adjusted_path = IOUtil.adjustPath ( working_dir, ListFile);
+            String adjusted_path = IOUtil.verifyPathForOS (IOUtil.adjustPath ( working_dir, ListFile) );
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The input (list) file does not exist:  \"" + adjusted_path + "\".";
@@ -299,7 +299,8 @@ CommandWarningException, CommandException
 	String NewColumnName = parameters.getValue ( "NewColumnName" );
 	String SimpleMergeFormat = parameters.getValue ( "SimpleMergeFormat" );
 
-	String ListFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),ListFile);
+	String ListFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),ListFile) );
 	if ( !IOUtil.fileExists(ListFile_full) ) {
 		message += "\nThe list file \"" + ListFile_full + "\" does not exist.";
 		++warning_count;
@@ -308,7 +309,8 @@ CommandWarningException, CommandException
                         message, "Verify that the list file exists." ) );
 	}
 
-    String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+    String OutputFile_full = IOUtil.verifyPathForOS (
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 	File f = new File(OutputFile_full);
 	if ( !IOUtil.fileExists(f.getParent()) ) {
 		message += "\nThe output file folder \"" + f.getParent() + "\" does not exist.";

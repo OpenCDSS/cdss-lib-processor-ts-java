@@ -124,7 +124,8 @@ throws InvalidCommandParameterException
                             message, "Software error - report problem to support." ) );
         }
 
-        try {   String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+        try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
             File f = new File ( adjusted_path );
             File f2 = new File ( f.getParent() );
             if ( !f2.exists() ) {
@@ -379,7 +380,8 @@ throws InvalidCommandParameterException,
 	String OutputFile_full = OutputFile;
 	try {
 		NWSRFS_ESPTraceEnsemble esp = new NWSRFS_ESPTraceEnsemble( tslist, props );
-        OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+        OutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		esp.writeESPTraceEnsembleFile ( OutputFile_full );
         // Save the output file name...
         setOutputFile ( new File(OutputFile_full));

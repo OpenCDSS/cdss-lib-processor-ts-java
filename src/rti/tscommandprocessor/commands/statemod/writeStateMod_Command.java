@@ -143,7 +143,7 @@ throws InvalidCommandParameterException
 			}
 	
 		try {
-			String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+			String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -574,7 +574,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Now try to write...
 
 	try {
-		String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		String OutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
 		Message.printStatus ( 2, routine,"Writing StateMod file \"" + OutputFile_full + "\"" );
 		// Format the StateMod year type...
 		String sm_calendar = "CalendarYear";

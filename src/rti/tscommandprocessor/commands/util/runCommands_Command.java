@@ -84,7 +84,7 @@ throws InvalidCommandParameterException
 			}
 	
 		try {
-            String adjusted_path = IOUtil.adjustPath ( working_dir, InputFile);
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, InputFile));
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The input file does not exist: \"" + adjusted_path + "\".";
@@ -168,7 +168,7 @@ CommandWarningException, CommandException
 	String WorkingDir = TSCommandProcessorUtil.getWorkingDir(processor);
 	String InputFile_full = null;
 	try {
-        InputFile_full = IOUtil.adjustPath ( WorkingDir, InputFile);
+        InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath ( WorkingDir, InputFile) );
 		Message.printStatus ( 2, routine,
 		"Processing commands from file \"" + InputFile_full + "\" using command file runner.");
 		

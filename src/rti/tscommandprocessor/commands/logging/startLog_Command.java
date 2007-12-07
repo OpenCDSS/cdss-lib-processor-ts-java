@@ -117,8 +117,7 @@ throws InvalidCommandParameterException
 		// A null logfile means that the current log file should
 		// be re-opened.
 		if ( (LogFile != null) && (working_dir != null) ) {
-			String adjusted_path = IOUtil.adjustPath(working_dir, 
-				LogFile);
+			String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath(working_dir, LogFile));
 			File f = new File(adjusted_path);
 			File f2 = new File(f.getParent());
 			if (!f2.exists()) {
@@ -269,7 +268,8 @@ throws CommandWarningException, CommandException
 					LogFile = LogFile.substring(0,LogFile.length()-ext.length()-1)+ Suffix + "." + ext;
 				}
 			}
-			LogFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile);
+			LogFile_full = IOUtil.verifyPathForOS(
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile) );
 			Message.openNewLogFile ( LogFile_full );
 			setOutputFile ( new File(LogFile_full));
 		}

@@ -117,7 +117,8 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {	String working_dir = null;
+	else {
+        String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
@@ -131,7 +132,8 @@ throws InvalidCommandParameterException
 							message, "Software error - report problem to support." ) );
 		}
 
-		try {	String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -531,7 +533,8 @@ CommandWarningException, CommandException
 
 	try {
 		// Convert to an absolute path...
-		String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		String OutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing RiverWare file \"" + OutputFile_full + "\"" );
 		// Only write the first time series...
 		TS tsout = (TS)tslist.elementAt(0);

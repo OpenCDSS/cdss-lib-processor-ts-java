@@ -104,7 +104,8 @@ throws InvalidCommandParameterException
 							message, "Software error - report the problem to support." ) );
 		}
 
-		try {	String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -332,7 +333,7 @@ CommandWarningException, CommandException
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + "\" from processor.";
+			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -378,7 +379,7 @@ CommandWarningException, CommandException
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + "\" from processor.";
+			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -419,9 +420,11 @@ CommandWarningException, CommandException
     // resulting in just a header in the output.  This might be useful during testing
 
     if ( (tslist != null) && (tslist.size() > 0) ) {
+        String OutputFile_full = OutputFile;
         try {
             // Convert to an absolute path...
-            String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+            OutputFile_full = IOUtil.verifyPathForOS(
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
             Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
             DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
 				OutputStart_DateTime, OutputEnd_DateTime, "", true );
@@ -429,7 +432,7 @@ CommandWarningException, CommandException
             setOutputFile ( new File(OutputFile_full));
         }
         catch ( Exception e ) {
-            message = "Error writing time series to DateValue file.";
+            message = "Unexpected error writing time series to DateValue file \"" + OutputFile_full + "\".";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );

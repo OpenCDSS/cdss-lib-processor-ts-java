@@ -130,7 +130,9 @@ throws InvalidCommandParameterException
                                 message, "Software error - report problem to support." ) );
 
 			}
-		try {	String adjusted_path = IOUtil.adjustPath ( working_dir, TSProductFile);
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS (
+                IOUtil.adjustPath ( working_dir, TSProductFile) );
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The TSProduct file does not exist for: \"" + adjusted_path + "\".";
@@ -199,8 +201,8 @@ throws InvalidCommandParameterException
                             message, "Software error - report problem to support." ) );
 		}
 				
-		try {	String adjusted_path = IOUtil.adjustPath (
-				working_dir, OutputFile);
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS( IOUtil.adjustPath (working_dir, OutputFile) );
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -403,7 +405,8 @@ CommandWarningException, CommandException
 	try {	PropList override_props = new PropList ("TSTool");
 		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		if ( (OutputFile != null) && !OutputFile.equals("") ) {
-            OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+            OutputFile_full = IOUtil.verifyPathForOS(
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 			override_props.set ( "OutputFile", OutputFile_full );
 		}
 		override_props.set ( "CurrentDateTime=", now.toString() );

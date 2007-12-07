@@ -97,9 +97,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters ( PropList parameters,
-				     String command_tag,
-				     int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String warning = "";
     String message;
@@ -144,8 +142,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	// Make sure one or more time series are selected when
-	// AllMatchingTSID is selected.
+	// Make sure one or more time series are selected when AllMatchingTSID is selected.
 	if ( TSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
 		if ( TSID != null ) {
 			Vector selectedV = StringUtil.breakStringList (TSID, ",",StringUtil.DELIM_SKIP_BLANKS );
@@ -286,7 +283,7 @@ throws InvalidCommandParameterException
 	}
     else {	
 		try {
-			String adjusted_path = IOUtil.adjustPath ( working_dir, OutputFile);
+			String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, OutputFile));
 			File f  = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -415,7 +412,7 @@ throws InvalidCommandParameterException,
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\" from processor.";
+		"\", TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -764,7 +761,8 @@ throws InvalidCommandParameterException,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Report the problem to software support." ) );
     	}
-        OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+        OutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
 		StateMod_TS.writePatternTimeSeriesList(OutputFile_full, 
 							StringMonthTS_List,
 							OutputStart_DateTime,

@@ -103,7 +103,8 @@ throws InvalidCommandParameterException
 							message, "Software error - report problem to support." ) );
 		}
 
-		try {	String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -418,7 +419,8 @@ CommandWarningException, CommandException
     String OutputFile_full = OutputFile;
 	try {
 		// Convert to an absolute path...
-		OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		OutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing Summary file \"" + OutputFile_full + "\"" );
 		warning_count = writeSummary ( tslist, OutputFile_full,	OutputStart_DateTime, OutputEnd_DateTime,
 				warning_level, command_tag, warning_count );

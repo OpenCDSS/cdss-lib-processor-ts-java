@@ -2189,7 +2189,8 @@ throws Exception
 	props.set ( "CommentLineIndicator=#" );	// New - skip lines that start
 						// with this
 	props.set ( "TrimStrings=True" );	// If true, trim strings after reading.
-    String ListFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),ListFile);
+    String ListFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),ListFile));
 	DataTable table = DataTable.parseFile (	IOUtil.getPathUsingWorkingDir(ListFile_full), props );
 	
 	int tsize = 0;
@@ -3390,7 +3391,8 @@ throws Exception
 	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)",
 			StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
-    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+    String infile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
 	String tsid = ((String)tokens.elementAt(3)).trim();
 	//String units = ((String)tokens.elementAt(4)).trim();
 	String date1_string = ((String)tokens.elementAt(5)).trim();
@@ -3451,8 +3453,9 @@ throws Exception
 
 	Vector tslist = null;
 	Message.printStatus ( 1, routine, "Reading NWSRFS ESPTraceEnsemble file \"" + InputFile + "\"" );
-	// REVISIT - need to pass requested date, units, etc. to the constructor??
-    String InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),InputFile);
+	// TODO - need to pass requested date, units, etc. to the constructor??
+    String InputFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),InputFile));
 	NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, true );
 	tslist = ensemble.getTimeSeriesVector ();
 	// Add the time series to the end of the normal list...
@@ -3557,7 +3560,8 @@ throws Exception
 	if ( query_date2 == null ) {
 		query_date2 = __InputEnd_DateTime;
 	}
-    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+    String infile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
 	Message.printStatus ( 1, routine, "Reading RiverWare file \"" + infile_full + "\"" );
 	TS ts = null;
 	try {
@@ -3616,7 +3620,8 @@ throws Exception
 	if ( query_date2 == null ) {
 		query_date2 = __InputEnd_DateTime;
 	}
-    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+    String infile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
 	Message.printStatus ( 2, routine, "Reading DateValue file \"" + infile_full + "\"" );
 	TS ts = null;
 	try {	if ( tsid.equals("") || tsid.equals("*") ) {
@@ -3702,7 +3707,8 @@ throws Exception
 	TSIdent tsident = new TSIdent ( TSID );
 	String input_name = tsident.getInputName();
 	// Convert to a full path because this what will be stored in the __nwsrfs_dmi.
-	String input_name_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name);
+	String input_name_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name) );
 	NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI( input_name_full, true );
 	if ( nwsrfs_dmi == null ) {
 		Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
@@ -3778,7 +3784,8 @@ throws Exception
 			query_date2 = null;
 		}
 	}
-    String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+    String infile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
 	Message.printStatus ( 2, routine, "Reading USGS NWIS file \"" + infile_full + "\"" );
 	TS ts = null;
 	try {
@@ -4773,7 +4780,8 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	String fillpatternfile = ((String)tokens.elementAt(1)).trim();
-    String fillpatternfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),fillpatternfile);
+    String fillpatternfile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),fillpatternfile) );
 	Message.printStatus ( 1, routine, "Using \"" + fillpatternfile_full + "\" for fill pattern file." );
 	// Read the fill pattern file.  Since multiple options are allowed,
 	// create a temporary Vector and then append to the main vector...
@@ -4997,11 +5005,13 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command_string + "\"" );
 	}
 	String infile1 = ((String)tokens.elementAt(1)).trim();
-    String infile1_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile1);
+    String infile1_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile1));
 	int interval1 = StateMod_TS.getFileDataInterval ( infile1_full );
 	Vector tslist1 = null;
 	String infile2 = ((String)tokens.elementAt(2)).trim();
-    String infile2_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile2);
+    String infile2_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile2));
 	int interval2 = StateMod_TS.getFileDataInterval ( infile2_full );
 	Vector tslist2 = null;
 	// Intervals must be the same...
@@ -5121,7 +5131,8 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	String outfile = ((String)tokens.elementAt(1)).trim();
-    String outfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile);
+    String outfile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile));
 	Message.printStatus ( 1, routine, "Writing NWS Card file \"" + outfile_full + "\"" );
 	// Only write the first time series...
 	TS tsout = (TS)__tslist.elementAt(0);
@@ -5152,7 +5163,8 @@ throws Exception
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	String outfile = ((String)tokens.elementAt(1)).trim();
-    String outfile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile);
+    String outfile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile) );
 	
 	try {
         StateCU_TS.writeFrostDatesFile ( __tslist, outfile_full,
@@ -7521,12 +7533,12 @@ throws Exception
 				" (,)", StringUtil.DELIM_SKIP_BLANKS|
 				StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 2 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + command_String + "\"" );
+				Message.printStatus ( 1, routine, "Bad command \"" + command_String + "\"" );
 				continue;
 			}
 			String infile = ((String)tokens.elementAt(1)).trim();
-            String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+            String infile_full = IOUtil.verifyPathForOS(
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile));
 			Vector tslist = null;
 			Message.printStatus ( 1, routine, "Reading DateValue file \"" + infile_full + "\"" );
 			try {	tslist = DateValueTS.readTimeSeriesList (
@@ -7573,7 +7585,8 @@ throws Exception
 				continue;
 			}
 			String infile = ((String)tokens.elementAt(1)).trim();
-            String infile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile);
+            String infile_full = IOUtil.verifyPathForOS(
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile));
 			Vector tslist = null;
 			Message.printStatus ( 1, routine, "Reading MODSIM file \"" + infile_full + "\"" );
 			try {	tslist = ModsimTS.readTimeSeriesList (
@@ -8143,8 +8156,7 @@ throws Exception
 						command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
 				if ( tokens.size() != 7 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
+					Message.printWarning ( 1, routine,"Bad command \"" + command_String +"\"");
 					++error_count;
 					continue;
 				}
@@ -10231,7 +10243,8 @@ throws Exception
 	else if ( v.size() == 3 ) {
 		input_type = (String)v.elementAt(1);
 		input_name = (String)v.elementAt(2);
-        input_name_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name);
+        input_name_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name) );
 	}
 
 	// TSIdent uses only the first part of the identifier...

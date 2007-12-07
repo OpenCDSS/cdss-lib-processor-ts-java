@@ -158,7 +158,7 @@ throws InvalidCommandParameterException
     
         try {
             //String adjusted_path = 
-                IOUtil.adjustPath (working_dir, InputFile);
+            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
         }
         catch ( Exception e ) {
             message = "The output file:\n" +
@@ -470,7 +470,8 @@ throws InvalidCommandParameterException,
 	int TSCount = 0;
     String InputFile_full = InputFile;
 	try {
-        InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile);
+        InputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
 		TSList = NWSCardTS.readTimeSeriesList (
 			// REVISIT [LT 2005-05-17] May add the TSID parameter 
 			//	(1st parameter here) in the future.

@@ -251,8 +251,10 @@ CommandWarningException, CommandException
 		WarnIfSame_boolean = true;
 	}
 
-	String InputFile1_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile1);
-	String InputFile2_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile2 );
+	String InputFile1_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile1) );
+	String InputFile2_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile2) );
 	if ( !IOUtil.fileExists(InputFile1_full) ) {
 		message = "First input file \"" + InputFile1_full + "\" does not exist.";
 		Message.printWarning ( warning_level,

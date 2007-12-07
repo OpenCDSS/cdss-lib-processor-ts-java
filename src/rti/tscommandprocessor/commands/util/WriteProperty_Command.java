@@ -96,7 +96,8 @@ throws InvalidCommandParameterException
 							message, "Software error - report problem to support." ) );
 		}
 
-		try {	String adjusted_path = IOUtil.adjustPath (working_dir, OutputFile);
+		try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -268,7 +269,8 @@ CommandWarningException, CommandException
 			Append_boolean = false;
 		}
 		// Convert to an absolute path...
-		String OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile);
+		String OutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		// Open the file...
 		PrintWriter fout = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
 		// Write the output (no output for now since it is mainly for testing)...

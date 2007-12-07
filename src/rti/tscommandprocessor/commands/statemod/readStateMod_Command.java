@@ -135,7 +135,7 @@ throws InvalidCommandParameterException
 			}
 	
 		try {
-            String adjusted_path = IOUtil.adjustPath (working_dir, InputFile);
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
                 File f = new File ( adjusted_path );
                 if ( !f.exists() ) {
                     message = "The input file does not exist:  \"" + adjusted_path + "\".";
@@ -488,7 +488,8 @@ CommandWarningException, CommandException
 	// Now try to read...
 
 	try {
-        String InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile);
+        String InputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile_full + "\"" );
 	
 		Vector tslist = null;

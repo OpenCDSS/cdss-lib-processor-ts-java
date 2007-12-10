@@ -205,7 +205,7 @@ private void initialize ( JFrame parent, Command command )
 	try {
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );

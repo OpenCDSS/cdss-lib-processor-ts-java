@@ -24,13 +24,12 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
-import java.io.File;
 
 import RTi.TS.TS;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandStatus;
@@ -42,8 +41,11 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -55,9 +57,8 @@ This class initializes, checks, and runs the TS Alias and non-TS Alias
 readNwsCard() commands.
 </p>
 */
-public class readNwsCard_Command 
-extends AbstractCommand
-implements Command {
+public class readNwsCard_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+{
 
 protected static final String
 	_FALSE = "False",
@@ -69,6 +70,12 @@ runCommand() methods (prevent code duplication parsing dateTime strings).
 */
 private DateTime __InputStart = null;
 private DateTime __InputEnd   = null;
+
+/**
+List of time series read during discovery.  These are TS objects but with maintly the
+metadata (TSIdent) filled in.
+*/
+private Vector __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -93,9 +100,7 @@ cross-reference to the original commands.
 (recommended is 2 for initialization, and 1 for interactive command editor
 dialogs).
 */
-public void checkCommandParameters ( PropList parameters,
-				     String command_tag,
-				     int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {
     String routine = getClass().getName() + ".checkCommandParameters";
@@ -361,6 +366,34 @@ throws Throwable
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private Vector getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    Vector discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    // Use the most generic for the base class...
+    TS ts = new TS();
+    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @param command_tag an indicator to be used when printing messages, to allow a
@@ -428,6 +461,34 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Run the command.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -436,7 +497,7 @@ not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( int command_number )
+private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
@@ -444,12 +505,11 @@ throws InvalidCommandParameterException,
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-	Vector TSList = null;	// Keep the list of time series
-    
+	    
     // Get and clear the status and clear the run log...
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(command_phase);
     CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.
@@ -467,30 +527,43 @@ throws InvalidCommandParameterException,
 	props.set("Read24HourAsDay=" + Read24HourAsDay);
 
 	// Read the NWS Card file.
-	int TSCount = 0;
+    Vector tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
+        boolean read_data = true;
+        if ( command_phase == CommandPhaseType.DISCOVERY ){
+            read_data = false;
+        }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
-		TSList = NWSCardTS.readTimeSeriesList (
-			// REVISIT [LT 2005-05-17] May add the TSID parameter 
+		tslist = NWSCardTS.readTimeSeriesList (
+			// TODO [LT 2005-05-17] May add the TSID parameter 
 			//	(1st parameter here) in the future.
 			(TS) null,    		// Currently not used.
 			InputFile_full, 		// String 	fname
 			__InputStart,		// DateTime 	date1
 			__InputEnd, 		// DateTime 	date2
 			NewUnits,		// String 	units
-			true,			// boolean 	read_data
-			props);			// whether to read 24 hour 
-						// as day.
+			read_data,			// boolean 	read_data
+			props);			// whether to read 24 hour as day.
 			
-		if ( TSList != null ) {
-			TSCount = TSList.size();
-			message = "Read \"" + TSCount + "\" time series from \"" + InputFile_full + "\"";
+		if ( tslist != null ) {
+			int tscount = tslist.size();
+			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
 			Message.printStatus ( 2, routine, message );
 			TS ts = null;
-			for (int i = 0; i < TSCount; i++) {
-				ts = (TS)TSList.elementAt(i);
+            // There should only be one time series for this type of command.  Otherwise every
+            // time series will get the same alias.
+            if ( tscount > 1 ) {
+                message = "The NwsCard file \"" + InputFile_full + "\" has multiple time series traces." +
+                " All are being assigned the same alias.";
+                status.addToLog(command_phase,
+                        new CommandLogRecord(
+                        CommandStatusType.WARNING, message,
+                        "Use the ReadNwsCard() command without the alias."));
+            }
+			for (int i = 0; i < tscount; i++) {
+				ts = (TS)tslist.elementAt(i);
 				ts.setAlias(Alias);
 			}
 		}
@@ -502,77 +575,71 @@ throws InvalidCommandParameterException,
 				command_tag, ++warning_count ),
 			routine, message );
 		Message.printWarning ( 3, routine, e );
-        status.addToLog(CommandPhaseType.RUN,
+        status.addToLog(command_phase,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,
                 "Check the log file for details."));
 		throw new CommandException ( message );
 	}
+    
+    int size = 0;
+    if ( tslist != null ) {
+        size = tslist.size();
+    }
+    Message.printStatus ( 2, routine, "Read " + size + " NWS Card time series." );
 
-	// Add the new time series to the TSResultsList.
-	if ( TSList != null && TSCount > 0 ) {
-		// Get the list of time series currently in the command processor.
-		Vector TSResultsList_Vector = null;
-		try { Object o = processor.getPropContents( "TSResultsList" );
-				TSResultsList_Vector = (Vector)o;
-		}
-		catch ( Exception e ){
-			message = "Cannot get time series list to add new time series.  Creating new list.";
-            Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                        command_tag, ++warning_count ),
-                    routine, message );
-            status.addToLog(CommandPhaseType.RUN,
-                    new CommandLogRecord(
-                    CommandStatusType.FAILURE, message,
-                    "Report the problem to software support."));
-		}
-		if ( TSResultsList_Vector == null ) {
-			// Not a warning because this can be the first command.
-			TSResultsList_Vector = new Vector();
-		}
-		// Add to the time series...
-		for ( int i=0; i<TSCount; i++ ) {
-			TSResultsList_Vector.addElement ( TSList.elementAt(i) );
-		}
-		// Now set back in the processor...
-		try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
-		}
-		catch ( Exception e ){
-			message = "Cannot set updated time series list.  Skipping.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag, ++warning_count),
-				routine,message);
-             status.addToLog(CommandPhaseType.RUN,
-                        new CommandLogRecord(
-                        CommandStatusType.FAILURE, message,
-                        "Report the problem to software support."));
-		}
-	} 
-	else {
-		message = "Read zero time series from the NWS Card file \"" + InputFile_full + "\"";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
-         status.addToLog(CommandPhaseType.RUN,
-                 new CommandLogRecord(
-                 CommandStatusType.FAILURE, message,
-                 "Verify the format of the input file."));
-	}
+    if ( command_phase == CommandPhaseType.RUN ) {
+        if ( tslist != null ) {
+            // Further process the time series...
+            // This makes sure the period is at least as long as the output period...
+            int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+            if ( wc > 0 ) {
+                message = "Error post-processing NWS Card time series after read.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+                    status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report the problem to software support." ) );
+                throw new CommandException ( message );
+            }
+    
+            // Now add the list in the processor...
+            
+            int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
+            if ( wc2 > 0 ) {
+                message = "Error adding NWS Card time series after read.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+                    status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Report the problem to software support." ) );
+                throw new CommandException ( message );
+            }
+        }
+    }
+    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( tslist );
+    }
 
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+			MessageUtil.formatMessageTag(command_tag, ++warning_count ), routine, message );
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

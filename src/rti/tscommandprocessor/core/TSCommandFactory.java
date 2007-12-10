@@ -106,12 +106,16 @@ import rti.tscommandprocessor.commands.statemod.readStateModB_Command;
 
 import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
+// Table commands.
+
+import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+
 // Time-related commands.
 
 import rti.tscommandprocessor.commands.time.SetInputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
 
-// General time series commands.
+// Time series general commands.
  
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
@@ -129,6 +133,7 @@ import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
@@ -347,8 +352,14 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadStateMod") ) {
 		return new readStateMod_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadTableFromDelimitedFile") ) {
+        return new ReadTableFromDelimitedFile_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"RemoveFile") ) {
         return new RemoveFile_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ResequenceTimeSeriesData") ) {
+        return new ResequenceTimeSeriesData_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"RunCommands") ) {
 		return new runCommands_Command ();

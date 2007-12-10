@@ -247,7 +247,7 @@ CommandWarningException, CommandException
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputEnd_DateTime = null;
-	if ( InputStart != null ) {
+	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		try {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputStart );
@@ -312,7 +312,7 @@ CommandWarningException, CommandException
 		}
 	}
 	
-		if ( InputEnd != null ) {
+	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
 			try {
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", InputEnd );

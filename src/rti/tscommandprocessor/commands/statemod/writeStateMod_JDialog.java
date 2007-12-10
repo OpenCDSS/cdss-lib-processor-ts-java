@@ -188,6 +188,20 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSList.equalsIgnoreCase(__command._AllMatchingTSID)) {
+        __TSID_JComboBox.setEnabled(true);
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+    }
+}
+
+/**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
@@ -229,22 +243,6 @@ private void checkInput ()
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
 		__error_wait = true;
-	}
-}
-
-/**
-Check the state of the dialog, disabling/enabling components as appropriate.
-*/
-private void checkGUIState()
-{	// If "AllMatchingTSID", enable the list.
-	// Otherwise, clear and disable...
-	String selected = __TSList_JComboBox.getSelected();
-	if ( selected.equalsIgnoreCase(__command._AllMatchingTSID) ) {
-		__TSID_JComboBox.setEnabled(true);
-	}
-	else {	__TSID_JComboBox.setEnabled(false);
-		// Set the the first choice, which is blank...
-		__TSID_JComboBox.select ( 0 );
 	}
 }
 
@@ -462,17 +460,16 @@ private void initialize ( JFrame parent, Command command )
 			"Remove Working Directory", this);
 		button_JPanel.add ( __path_JButton );
 	}
-	button_JPanel.add (
-		__cancel_JButton = new SimpleJButton( "Cancel", this) );
-	button_JPanel.add (
-		__ok_JButton = new SimpleJButton( "OK", this) );
+	button_JPanel.add ( __cancel_JButton = new SimpleJButton( "Cancel", this) );
+	button_JPanel.add ( __ok_JButton = new SimpleJButton( "OK", this) );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
+    checkGUIState();
 	refresh();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
@@ -562,10 +559,6 @@ private void refresh ()
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
-		// Check the GUI state to make sure that components are
-		// enabled as expected (mainly enable/disable the TSID).  If
-		// disabled, the TSID will not be added as a parameter below.
-		checkGUIState();
 		if ( !__TSID_JComboBox.isEnabled() ) {
 			// Not needed because some other method of specifying
 			// the time series is being used...

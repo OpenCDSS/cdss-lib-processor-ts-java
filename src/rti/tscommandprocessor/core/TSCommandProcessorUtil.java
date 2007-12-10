@@ -3,10 +3,12 @@ package rti.tscommandprocessor.core;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
@@ -15,9 +17,12 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 
 /**
 This class contains static utility methods to support TSCommandProcessor.  These methods
@@ -46,26 +51,64 @@ public static void appendToRegressionTestReport(CommandProcessor processor, Comm
         __regression_test_fp.println ( StringUtil.formatString(max_severity,"%-10.10s") + "  " + InputFile_full);
     }
 }
+
+/**
+Append a time series list to the processor time series results list.
+Errors should not result and are logged in the log file and command status, indicating a software problem.
+@param processor the CommandProcessor to use to get data.
+@param command Command for which to get the working directory.
+@param tslist List of time series to append.
+@param return the number of warnings generated.
+*/
+public static int appendTimeSeriesListToResultsList ( CommandProcessor processor, Command command, List tslist )
+{
+    int wc = 0;
+    int size = 0;
+    if ( tslist != null ) {
+        size = tslist.size();
+    }
+    for ( int i = 0; i < size; i++ ) {
+        wc += appendTimeSeriesToResultsList ( processor, command, (TS)tslist.get(i) );
+    }
+    return wc;
+}
 	
 /**
 Append a time series to the processor time series results list.
 @param processor the CommandProcessor to use to get data.
 @param command Command for which to get the working directory.
 @param ts Time series to append.
+@param return the number of warnings generated.
 */
-public static void appendTimeSeriesToResultsList ( CommandProcessor processor, Command command, TS ts )
+public static int appendTimeSeriesToResultsList ( CommandProcessor processor, Command command, TS ts )
 {	String routine = "TSCommandProcessorUtil.appendTimeSeriesToResultsList";
 	PropList request_params = new PropList ( "" );
 	request_params.setUsingObject ( "TS", ts );
+    int warning_level = 3;
+    int warning_count = 0;
+    CommandStatus status = null;
+    if ( command instanceof CommandStatusProvider ) {
+        status = ((CommandStatusProvider)command).getCommandStatus();
+    }
 	//CommandProcessorRequestResultsBean bean = null;
 	try { //bean =
 		processor.processRequest( "AppendTimeSeries", request_params );
 	}
 	catch ( Exception e ) {
-		String message = "Error requesting AppendTimeSeries(TS=\"...\" from processor).";
-		Message.printWarning(3, routine, e);
-		Message.printWarning(3, routine, message );
+		String message = "Error requesting AppendTimeSeries(TS=\"...\") from processor).";
+        // This is a low-level warning that the user should not see.
+        // A problem would indicate a software defect so return the warning count as a trigger.
+		Message.printWarning(warning_level, routine, e);
+		Message.printWarning(warning_level, routine, message );
+        if ( status != null ) {
+            status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message,
+                    "Check the log file for details - report the problem to software support."));
+        }
+        ++warning_count;
 	}
+    return warning_count;
 }
 
 /**
@@ -218,6 +261,95 @@ public static Vector getPropertyNameList( CommandProcessor processor )
 }
 
 /**
+Get a list of table identifiers from a list of commands.  See documentation for
+fully loaded method.  The output list is not sorted and does NOT contain the
+input type or name.
+@param commands Time series commands to search.
+@return list of table identifiers or an empty non-null Vector if nothing
+found.
+*/
+private static Vector getTableIdentifiersFromCommands ( List commands )
+{   // Default behavior...
+    return getTableIdentifiersFromCommands ( commands, false );
+}
+
+/**
+Get a list of table identifiers from a list of commands.  The returned strings are suitable for
+drop-down lists, etc.  Table identifiers are determined as follows:
+Commands that implement ObjectListProvider have their getObjectList(DataTable) method called.
+The getID() method on the DataTable is then returned.
+@param commands Commands to search.
+@param sort Should output be sorted by identifier.
+@return list of table identifiers or an empty non-null Vector if nothing found.
+*/
+protected static Vector getTableIdentifiersFromCommands ( List commands, boolean sort )
+{   if ( commands == null ) {
+        return new Vector();
+    }
+    Vector v = new Vector ( 10, 10 );
+    int size = commands.size();
+    boolean in_comment = false;
+    Command command = null;
+    String command_string = null;
+    for ( int i = 0; i < size; i++ ) {
+        command = (Command)commands.get(i);
+        command_string = command.toString();
+        if ( command_string.startsWith("/*") ) {
+            in_comment = true;
+            continue;
+        }
+        else if ( command_string.startsWith("*/") ) {
+            in_comment = false;
+            continue;
+        }
+        if ( in_comment ) {
+            continue;
+        }
+        if ( command instanceof ObjectListProvider ) {
+            // Try to get the list of identifiers using the interface method.
+            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
+            List list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
+            String id;
+            if ( list != null ) {
+                int tablesize = list.size();
+                DataTable table;
+                for ( int its = 0; its < tablesize; its++ ) {
+                    table = (DataTable)list.get(its);
+                    id = table.getTableID();
+                    if ( !id.equals("") ) {
+                        v.addElement( id );
+                    }
+                }
+            }
+        }
+    }
+    return v;
+}
+
+/**
+Return the table identifiers for commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of
+identifiers to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@return a Vector of String containing the table identifiers, or an empty Vector.
+*/
+public static Vector getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+{   String routine = "TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand";
+    // Get the position of the command in the list...
+    int pos = processor.indexOf(command);
+    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( pos < 0 ) {
+        // Just return a blank list...
+        return new Vector();
+    }
+    // Find the commands above the position...
+    Vector commands = getCommandsBeforeIndex ( processor, pos );
+    // Get the time series identifiers from the commands...
+    return getTableIdentifiersFromCommands ( commands );
+}
+
+/**
 Get a list of identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted and does NOT contain the
 input type or name.
@@ -238,29 +370,30 @@ fully loaded method.  The output list does NOT contain the input type or name.
 @return list of time series identifiers or an empty non-null Vector if nothing
 found.
 */
-protected static Vector getTSIdentifiersFromCommands (	Vector commands,
-							boolean sort )
+protected static Vector getTSIdentifiersFromCommands (	Vector commands, boolean sort )
 {	// Return the identifiers without the input type and name.
 	return getTSIdentifiersFromCommands ( commands, false, sort );
 }
 
 /**
 Get a list of identifiers from a list of commands (as String or Command to allow
-for migration to full Command instance processing).  Commands that start
-with "TS ? = " or lines that are time series identifiers are returned.
-These strings are suitable for drop-down lists, etc.
-If a non-empty alias is available, it is used for the identifer.  Otherwise the
-full identifier is used.
+for migration to full Command instance processing).  These strings are suitable for drop-down lists, etc.
+Time series identifiers are determined as follows:
+<ol>
+<li>    Commands that implement ObjectListProvider have their getObjectList(TS) method called.
+        The time series identifiers from the time series list are examined and those with alias
+        will have the alias returned.  Otherwise, the full time series identifier is returned with or
+        with input path as requested.</li>
+<li>    Command strings that start with "TS ? = " have the alias returned.</li>
+<li>    Lines that are time series identifiers are returned, including the full path as requested.</li>
+</ol>
 @param commands Time series commands to search.
 @param include_input If true, include the input type and name in the returned
 values.  If false, only include the 5-part information.
 @param sort Should output be sorted by identifier.
-@return list of time series identifiers or an empty non-null Vector if nothing
-found.
+@return list of time series identifiers or an empty non-null Vector if nothing found.
 */
-protected static Vector getTSIdentifiersFromCommands (	Vector commands,
-							boolean include_input,
-							boolean sort )
+protected static Vector getTSIdentifiersFromCommands ( Vector commands, boolean include_input, boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
 	}
@@ -278,9 +411,7 @@ protected static Vector getTSIdentifiersFromCommands (	Vector commands,
 		else if ( command_o instanceof String ) {
 			command = ((String)command_o).trim();
 		}
-		if (	(command == null) ||
-			command.startsWith("#") ||
-			(command.length() == 0) ) {
+		if ( (command == null) || command.startsWith("#") || (command.length() == 0) ) {
 			// Make sure comments are ignored...
 			continue;
 		}
@@ -295,16 +426,34 @@ protected static Vector getTSIdentifiersFromCommands (	Vector commands,
 		if ( in_comment ) {
 			continue;
 		}
+        if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
+            // Try to get the list of identifiers using the interface method.
+            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
+            List list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+            if ( list != null ) {
+                int tssize = list.size();
+                TS ts;
+                for ( int its = 0; its < tssize; its++ ) {
+                    ts = (TS)list.get(its);
+                    if ( !ts.getAlias().equals("") ) {
+                        // Use the alias if it is avaialble.
+                        v.addElement( ts.getAlias() );
+                    }
+                    else {
+                        // Use the identifier.
+                        v.addElement ( ts.getIdentifier().toString(include_input) );
+                    }
+                }
+            }
+        }
 		else if ( StringUtil.startsWithIgnoreCase(command,"TS ") ) {
 			// Use the alias...
-			tokens = StringUtil.breakStringList(
-				command.substring(3)," =",
-				StringUtil.DELIM_SKIP_BLANKS);
+			tokens = StringUtil.breakStringList( command.substring(3)," =",	StringUtil.DELIM_SKIP_BLANKS);
 			if ( (tokens != null) && (tokens.size() > 0) ) {
 				v.addElement ( (String)tokens.elementAt(0) );
 				//+ " (alias)" );
 			}
-			tokens = null;	// GC
+			tokens = null;
 		}
 		else if ( isTSID(command) ) {
 			// Reasonably sure it is an identifier.  Only add the
@@ -336,8 +485,7 @@ public static Vector getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommand
 {	String routine = "TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand";
 	// Get the position of the command in the list...
 	int pos = processor.indexOf(command);
-	Message.printStatus ( 2, routine,
-			"Position in list is " + pos + " for command:" + command );
+	Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
 	if ( pos < 0 ) {
 		// Just return a blank list...
 		return new Vector();
@@ -429,6 +577,34 @@ public static void openNewRegressionTestReportFile ( String OutputFile_full, boo
 throws FileNotFoundException
 {
     __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
+}
+
+/**
+Process a list of time series after reading.  This calls the command processor readTimeSeries2() method.
+Command status messages will be added if problems arise but exceptions are not thrown.
+*/
+public static int processTimeSeriesListAfterRead( CommandProcessor processor, Command command, List tslist )
+{   int log_level = 3;
+    int warning_count = 0;
+    String routine = "TSCommandProcessorUtil.processTimeSeriesListAfterRead";
+    PropList request_params = new PropList ( "" );
+    request_params.setUsingObject ( "TSList", tslist );
+    CommandStatus status = null;
+    if ( command instanceof CommandStatusProvider ) {
+        status = ((CommandStatusProvider)command).getCommandStatus();
+    }
+    try {
+        processor.processRequest( "ReadTimeSeries2", request_params);
+    }
+    catch ( Exception e ) {
+        String message = "Error post-processing time series after read using ReadTimeSeries2 processor request.";
+        Message.printWarning(log_level, routine, e);
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+        ++warning_count;
+    }
+    return warning_count;
 }
 
 /**

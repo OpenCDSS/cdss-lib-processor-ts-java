@@ -465,11 +465,8 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String TSList = parameters.getValue ( "TSList" );
+    String TSList = parameters.getValue ( "TSList" );
 	StringBuffer b = new StringBuffer ();
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		b.append ( "TSList=" + TSList );
-	}
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -488,12 +485,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSList=\"" + TSList + "\"" );
-	}
+    if ( (TSList != null) && (TSList.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSList=" + TSList );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

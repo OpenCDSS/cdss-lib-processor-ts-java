@@ -280,22 +280,24 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read all the time series from a StateMod binary output file, "+
 		"using information in the file to assign the identifier."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full or relative path (relative to working " +
-		"directory)." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Due to the large number of time series in StateMod binary files, the list of time series " +
+        "identifiers in the file will NOT be available in other command editors." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time series identifier pattern, if specified, will" +
-		" filter the read." ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The time series identifier pattern, if specified, will filter the read." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"  Use blank or * to read all time series." ),
@@ -305,15 +307,13 @@ private void initialize ( JFrame parent, Command command )
 		" starting with A." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  Use *.*.XXXXX.*.* to read all time series with data type " +
-		"XXXXX." ),
+		"  Use *.*.XXXXX.*.* to read all time series with data type XXXXX." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  Currently, data source, interval, and scenario are " +
-		"internally defaulted to *." ),
+		"  Currently, data source, interval, and scenario are internally defaulted to *." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"StateMod binary file to read:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );

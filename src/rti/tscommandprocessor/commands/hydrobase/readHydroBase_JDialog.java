@@ -429,14 +429,10 @@ private void commitEdits ()
 	String FillDailyDivFlag =__FillDailyDivFlag_JTextField.getText().trim();
 	__command.setCommandParameter ( "FillDailyDivFlag", FillDailyDivFlag );
 	*/
-	String FillUsingDivComments =
-		__FillUsingDivComments_JComboBox.getSelected();
-	__command.setCommandParameter (
-		"FillUsingDivComments", FillUsingDivComments );
-	String FillUsingDivCommentsFlag =
-		__FillUsingDivCommentsFlag_JTextField.getText().trim();
-	__command.setCommandParameter (
-		"FillUsingDivCommentsFlag", FillUsingDivCommentsFlag );
+	String FillUsingDivComments = __FillUsingDivComments_JComboBox.getSelected();
+	__command.setCommandParameter (	"FillUsingDivComments", FillUsingDivComments );
+	String FillUsingDivCommentsFlag = __FillUsingDivCommentsFlag_JTextField.getText().trim();
+	__command.setCommandParameter (	"FillUsingDivCommentsFlag", FillUsingDivCommentsFlag );
 }
 
 /**
@@ -498,20 +494,21 @@ private void initialize ( JFrame parent, Command command )
 	String Alias = props.getValue("Alias");
 	__use_alias = false;
 	if (Alias == null || Alias.trim().equalsIgnoreCase("")) {
-		if (((readHydroBase_Command)command).getCommandString().trim()
-		    .toUpperCase().startsWith("TS ")) {
+		if (((readHydroBase_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
 			// This indicates that a new command is being edited
 			// and the properties have not been defined yet.  The
 			// command string will have been set at initialization
 			// but not parsed (because this dialog interactively
 			// parses and checks input).
-		    	__use_alias = true;
+		   	__use_alias = true;
 		}
-		else {	// A new command with no alias...
+		else {
+            // A new command with no alias...
 			__use_alias = false;
 		}
 	}
-	else {	// An existing command that uses the alias.
+	else {
+        // An existing command that uses the alias.
 		__use_alias = true;
 	}
 	// Tell the new command what version it is because it was not parsed at
@@ -544,7 +541,7 @@ private void initialize ( JFrame parent, Command command )
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -563,7 +560,7 @@ private void initialize ( JFrame parent, Command command )
 		"The data type and interval must be selected.  Constrain the " +
 		"query using the \"where\" clauses, if necessary." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       		JGUIUtil.addComponent(main_JPanel, new JLabel (
+       	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is fully enabled ONLY FOR STRUCTURE TIME SERIES "+
 		"(e.g., DivTotal, DivClass, RelTotal, RelClass)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

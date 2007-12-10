@@ -8676,9 +8676,10 @@ throws Exception
 		// warnings...
 		Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
 		Message.setPropValue ( "WarningDialogCancelButton=false" );
-		Message.setPropValue ( "ShowWarningDialog=true" );
 		Message.setPropValue ( "WarningDialogViewLogButton=false" );
 	}
+    // Make sure that important warnings are shown to the user...
+    Message.setPropValue ( "ShowWarningDialog=true" );
 
 	if ( getBinaryTSUsed() ) {
 		if ( __tslist != null ) {

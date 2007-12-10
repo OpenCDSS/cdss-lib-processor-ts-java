@@ -42,13 +42,12 @@ import java.awt.event.WindowListener;	// To know when graph closes to close app
 // RTi utility code.
 
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandListListener;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorListener;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.GenericCommand;
-import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.Message.Message;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
@@ -56,6 +55,7 @@ import RTi.Util.IO.RequestParameterInvalidException;
 import RTi.Util.IO.RequestParameterNotFoundException;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
+import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 
 import RTi.TS.TS;
@@ -153,6 +153,12 @@ processing.  It is envisioned that cancel can always occur between commands and
 as time allows it will also be enabled within a command.
 */
 private volatile boolean __cancel_processing_requested = false;
+
+// TODO SAM 2007-12-06 Evaluate how to make the table object more generic.
+/**
+List of DataTable objects maintained by the processor.
+*/
+Vector __Table_Vector = new Vector();
 
 /**
 Construct a command processor with no commands.
@@ -1273,6 +1279,20 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>SetTable</b></td>
+<td>Set a DataTable instance.  Parameters to this request are:
+<ol>
+<li>    <b>Table</b> A DataTable, where getTableID() is used to get a unique
+        identifier for matching in the list of tables.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>TSIDListNoInputAboveCommand</b></td>
 <td>The Vector of time series identifiers that are available (as String), without the
 input type and name.  The time series identifiers from commands above the
@@ -1354,6 +1374,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
 		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetTable") ) {
+        return processRequest_SetTable ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("SetTimeSeries") ) {
 		return processRequest_SetTimeSeries ( request, request_params );
 	}
@@ -1964,13 +1987,47 @@ throws Exception
 }
 
 /**
+Process the SetTable request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetTable (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "Table" );
+    if ( o == null ) {
+            String warning = "Request SetTable() does not provide a Table parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ("This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    DataTable o_DataTable = (DataTable)o;
+    // Loop through the tables.  If a matching table ID is found, reset.  Otherwise,
+    // add at the end.
+    int size = __Table_Vector.size();
+    DataTable table;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        table = (DataTable)__Table_Vector.elementAt(i);
+        if ( table.getTableID().equalsIgnoreCase(o_DataTable.getTableID())) {
+            __Table_Vector.setElementAt(o_DataTable, i);
+            found = true;
+        }
+    }
+    if ( !found ) {
+        __Table_Vector.addElement ( o_DataTable );
+    }
+    // No data are returned in the bean.
+    return bean;
+}
+
+/**
 Process the SetTimeSeries request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetTimeSeries (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TS" );
 	if ( o == null ) {
@@ -2082,6 +2139,11 @@ throws IOException, FileNotFoundException
             // Add the command, without notifying listeners of changes...
             addCommand ( command, notify_listeners_for_each_add );
             ++num_added;
+            // Run discovery on the command so that the identifiers are available to other commands.
+            // Do up front and then only when commands are edited.
+            if ( command instanceof CommandDiscoverable ) {
+                readCommandFile_RunDiscoveryOnCommand ( command );
+            }
 		}
         /*
 		catch ( InvalidCommandSyntaxException e ) {
@@ -2103,6 +2165,25 @@ throws IOException, FileNotFoundException
 	if ( !notify_listeners_for_each_add ) {
 		notifyCommandListListenersOfAdd ( 0, (num_added - 1) );
 	}
+}
+
+/**
+Run discovery on the command. This will, for example, make available a list of time series
+to be requested with the ObjectListProvider.getObjectList() method.
+*/
+private void readCommandFile_RunDiscoveryOnCommand ( Command command_read )
+{   String routine = getClass().getName() + ".commandList_EditCommand_RunDiscovery";
+    // Run the discovery...
+    Message.printStatus(2, routine, "Running discovery mode on command:  \"" + command_read + "\"" );
+    try {
+        ((CommandDiscoverable)command_read).runCommandDiscovery(indexOf(command_read));
+    }
+    catch ( Exception e )
+    {
+        // For now ignore because edit-time input may not be complete...
+        String message = "Unable to make discover run - may be OK if partial data.";
+        Message.printStatus(2, routine, message);
+    }
 }
 
 /**

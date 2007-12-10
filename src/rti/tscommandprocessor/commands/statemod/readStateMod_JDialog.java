@@ -287,7 +287,7 @@ private void initialize ( JFrame parent, Command command )
 	
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -296,7 +296,7 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read all the time series from a StateMod time series or well rights file, using " +
 		"information in the file to assign the identifier."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -317,7 +317,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"StateMod file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );

@@ -14,6 +14,7 @@ package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -24,9 +25,8 @@ import RTi.TS.TS;
 import RTi.TS.YearTS;
 
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -38,7 +38,10 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
@@ -51,15 +54,24 @@ import DWR.StateCU.StateCU_TS;
 This class initializes, checks, and runs the ReadStateCU() command.
 </p>
 */
-public class readStateCU_Command extends AbstractCommand implements Command
+public class readStateCU_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-// Values for AutoAdjust
+/**
+Values for AutoAdjust
+*/
 protected final String _False = "False";
 protected final String _True = "True";
 
-// Indicates whether the TS Alias version of the command is being used...
+/**
+List of time series read during discovery.  These are TS objects but with maintly the
+metadata (TSIdent) filled in.
+*/
+private Vector __discovery_TS_Vector = null;
 
+/**
+Indicates whether the TS Alias version of the command is being used...
+*/
 protected boolean _use_alias = false;
 
 private String __working_dir = null;	// Application working directory
@@ -322,13 +334,37 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 }
-	
+
 /**
-Run the commands:
-<pre>
-readStateCU(InputFile="X",InputStart="X",InputEnd="X",TSID="X",NewScenario="X",
-AutoAdust=X)
-</pre>
+Return the list of time series read in discovery phase.
+*/
+private Vector getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    Vector discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    // Use the most generic for the base class...
+    TS ts = new TS();
+    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
+Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
@@ -336,6 +372,34 @@ command could produce some results).
 not produce output).
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+	
+/**
+Run the command.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "readStateCU_Command.runCommand", message;
@@ -346,7 +410,7 @@ CommandWarningException, CommandException
 
 	PropList parameters = getCommandParameters();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(command_phase);
     
 	String InputFile = parameters.getValue ( "InputFile" );
 	String InputStart = parameters.getValue ( "InputStart" );
@@ -364,7 +428,7 @@ CommandWarningException, CommandException
     
     CommandProcessor processor = getCommandProcessor();
     
-	if ( InputStart != null ) {
+	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		try {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputStart );
@@ -378,7 +442,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -392,7 +456,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the specified date/time is valid." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -405,7 +469,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid date/time for the input start, " +
                         "or InputStart for the global input start." ) );
@@ -423,13 +487,13 @@ CommandWarningException, CommandException
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
 	}
 	
-		if ( InputEnd != null ) {
+	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
 			try {
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", InputEnd );
@@ -443,7 +507,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -457,7 +521,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the end date/time is valid." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -470,7 +534,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time for the input end, " +
                             "or InputEnd for the global input start." ) );
@@ -488,7 +552,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
 			}
@@ -515,6 +579,12 @@ CommandWarningException, CommandException
 
     String InputFile_full = InputFile;
 	try {
+        // FIXME SAM 2007-12-08 Need to make sure each read is optimized to NOT read all data
+        // if in discovery mode.
+        boolean read_data = true;
+        if ( command_phase == CommandPhaseType.DISCOVERY ){
+            read_data = false;
+        }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine, "Reading StateCU file \"" + InputFile_full + "\"" );
@@ -539,7 +609,7 @@ CommandWarningException, CommandException
 		else if(StateCU_IrrigationPracticeTS.isIrrigationPracticeTSFile(InputFile_full ) ) {
 			file_type = "irrigation practice";
 			// Clear the status...
-			status.clearLog(CommandPhaseType.RUN);
+			status.clearLog(command_phase);
 			try {	Vector ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
 					InputFile_full, InputStart_DateTime, InputEnd_DateTime );
 					// Get the individual time series for use by TSTool.
@@ -551,13 +621,13 @@ CommandWarningException, CommandException
 					}
 			}
 			catch ( IOException e ) {
-				status.addToLog ( CommandPhaseType.RUN,
+				status.addToLog ( command_phase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 						"Unexpected error reading irrigation practice file \"" +
 						InputFile_full + "\"", "Check location and contents." ) );
 			}
 			catch ( Exception e ) {
-				status.addToLog ( CommandPhaseType.RUN,
+				status.addToLog ( command_phase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 						"Unexpected error reading irrigation practice file \"" +
 						InputFile_full + "\"", "Check the log file to troubleshoot." ) );
@@ -567,15 +637,14 @@ CommandWarningException, CommandException
 			file_type = "model results";
 			tslist = StateCU_TS.readTimeSeriesList (
 				TSID, InputFile, InputStart_DateTime, InputEnd_DateTime,
-				(String)null, true );
+				(String)null, read_data );
 		}
 		else {
-            message = "File \"" + InputFile +
-			"\" is not a recognized StateCU file type.  Not reading.";
+            message = "File \"" + InputFile + "\" is not a recognized StateCU file type.  Not reading.";
 			Message.printWarning ( warning_level, 
 					MessageUtil.formatMessageTag(command_tag,
 					++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                     "Unexpected error reading irrigation practice file \"" +
                     InputFile_full + "\"", "Verify the that the file is a StateCU file as specified." ) );
@@ -602,64 +671,41 @@ CommandWarningException, CommandException
 
 		// Now add the time series to the end of the normal list...
 
-		if ( tslist != null ) {
-			Vector TSResultsList_Vector = null;
-			try { Object o = processor.getPropContents( "TSResultsList" );
-					TSResultsList_Vector = (Vector)o;
-			}
-			catch ( Exception e ){
-				message = "Cannot get time series list to add read time series.  Starting new list.";
-				Message.printWarning ( warning_level,
-						MessageUtil.formatMessageTag(
-						command_tag, ++warning_count),
-						routine,message);
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-				TSResultsList_Vector = new Vector();
-			}
+        if ( command_phase == CommandPhaseType.RUN ) {
+            if ( tslist != null ) {
+                // Further process the time series...
+                // This makes sure the period is at least as long as the output period...
 
-			// Further process the time series...
-			// This makes sure the period is at least as long as the
-			// output period...
-			PropList request_params = new PropList ( "" );
-			request_params.setUsingObject ( "TSList", tslist );
-			try {
-				processor.processRequest( "ReadTimeSeries2", request_params);
-			}
-			catch ( Exception e ) {
-				message =
-					"Error post-processing StateCU time series after read.";
-					Message.printWarning ( warning_level, 
-					MessageUtil.formatMessageTag(command_tag,
-					++warning_count), routine, message );
-					Message.printWarning(log_level, routine, e);
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report the problem to software support." ) );
-					throw new CommandException ( message );
-			}
-
-			for ( int i = 0; i < size; i++ ) {
-				TSResultsList_Vector.addElement ( tslist.elementAt(i) );
-			}
-			
-			// Now reset the list in the processor...
-			if ( TSResultsList_Vector != null ) {
-				try {	processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
-				}
-				catch ( Exception e ){
-					message = "Cannot set updated time series list.  Results may not be visible.";
-					Message.printWarning ( warning_level,
-						MessageUtil.formatMessageTag(
-						command_tag, ++warning_count),
-						routine,message);
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report problem to software support." ) );
-				}
-			}
-		}
+                int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+                if ( wc > 0 ) {
+                    message = "Error post-processing StateCU time series after read.";
+                    Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++warning_count), routine, message );
+                        status.addToLog ( command_phase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                    throw new CommandException ( message );
+                }
+    
+                // Now add the list in the processor...
+                
+                int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
+                if ( wc2 > 0 ) {
+                    message = "Error adding StateCU time series after read.";
+                    Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++warning_count), routine, message );
+                        status.addToLog ( command_phase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                    throw new CommandException ( message );
+                }
+            }
+        }
+        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            setDiscoveryTSList ( tslist );
+        }
 
 		// Free resources from StateMod list...
 		tslist = null;
@@ -670,13 +716,21 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "See log file for details." ) );
 		throw new CommandException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

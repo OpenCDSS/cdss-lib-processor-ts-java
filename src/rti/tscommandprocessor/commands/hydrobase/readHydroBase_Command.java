@@ -28,6 +28,7 @@
 
 package rti.tscommandprocessor.commands.hydrobase;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -38,9 +39,8 @@ import RTi.TS.TS;
 import RTi.TS.TSIdent;
 
 import RTi.Util.GUI.InputFilter_JPanel;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -51,9 +51,12 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
@@ -80,16 +83,24 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
 This class initializes, checks, and runs the ReadHydroBase() command.
 </p>
 */
-public class readHydroBase_Command extends AbstractCommand implements Command
+public class readHydroBase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-// Data used here and in the dialog.
-
+/**
+Data values for boolean parameters.
+*/
 protected String _False = "False";
 protected String _True = "True";
 
-// Indicates whether the TS Alias version of the command is being used...
+/**
+List of time series read during discovery.  These are TS objects but with maintly the
+metadata (TSIdent) filled in.
+*/
+private Vector __discovery_TS_Vector = null;
 
+/**
+Indicates whether the TS Alias version of the command is being used.
+*/
 protected boolean _use_alias = false;
 
 /**
@@ -335,6 +346,34 @@ throws InvalidCommandParameterException
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private Vector getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    Vector discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    // Use the most generic for the base class...
+    TS ts = new TS();
+    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
@@ -362,11 +401,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     
     CommandStatus status = getCommandStatus();
 	
-	Vector tokens = StringUtil.breakStringList ( command_string,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command_string, "()", 0 );
 	if ( tokens == null ) {
-		// Must have at least the command name and something to indicate
-		// the read...
+		// Must have at least the command name and something to indicate the read...
 		message = "Syntax error in \"" + command_string + "\".";
 		Message.printWarning ( warning_level, routine, message);
 		++warning_count;
@@ -378,7 +415,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	// Parse everything after the (, which should be command parameters...
 	
-	try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+	try {
+        setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
 			(String)tokens.elementAt(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
@@ -441,7 +479,35 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 	}
 }
-	
+
+/**
+Run the command.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
 /**
 Run the command.
 @param command_number Number of command in sequence.
@@ -450,7 +516,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-public void runCommand ( int command_number )
+private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "ReadHydroBase_Command.runCommand", message;
@@ -461,23 +527,29 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(command_phase);
+    
+    boolean read_data = true;
+    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+        read_data = false;
+    }
     
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
-	if ( InputStart != null ) {
+	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputStart );
 		CommandProcessorRequestResultsBean bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+            bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputStart + "\" from processor.";
+            message = "Error requesting DateTime(DateTime=" + InputStart + ") from processor.";
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
 		}
@@ -488,7 +560,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
 		}
@@ -496,51 +568,51 @@ CommandWarningException, CommandException
 		}
 	}
 	else {	// Get from the processor...
-		try { Object o = processor.getPropContents ( "InputStart" );
+		try {
+            Object o = processor.getPropContents ( "InputStart" );
 			if ( o != null ) {
 				InputStart_DateTime = (DateTime)o;
 			}
 		}
 		catch ( Exception e ) {
-			// Not fatal, but of use to developers.
 			message = "Error requesting InputStart from processor.";
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
 		}
 	}
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	DateTime InputEnd_DateTime = null;
-	if ( InputEnd != null ) {
+	if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputEnd );
 		CommandProcessorRequestResultsBean bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+            bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-            message = "Error requesting DateTime(DateTime=" + InputEnd + "\" from processor.";
+            message = "Error requesting DateTime(DateTime=" + InputEnd + ") from processor.";
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
 		}
 		PropList bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-            message = "Null value for DateTime(DateTime=" + InputEnd + "\") returned from processor.";
+            message = "Null value for DateTime(DateTime=" + InputEnd + ") returned from processor.";
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
 		}
@@ -559,7 +631,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
 		}
@@ -607,7 +679,8 @@ CommandWarningException, CommandException
 	Vector tslist = new Vector();	// Vector for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
-	try {	if ( _use_alias ) {
+	try {
+        if ( _use_alias ) {
 			// TS Alias = version....
 			String Alias = parameters.getValue ( "Alias" );
 			String TSID = parameters.getValue ( "TSID" );
@@ -620,31 +693,30 @@ CommandWarningException, CommandException
 			if ( o == null ) {
 				message = "Could not get list of HydroBase connections to query data.";
 				Message.printWarning ( 2, routine, message );
-                   status.addToLog ( CommandPhaseType.RUN,
+                   status.addToLog ( command_phase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
 			Vector hbdmi_Vector = (Vector)o;
-			HydroBaseDMI hbdmi =
-				HydroBase_Util.lookupHydroBaseDMI (
-					hbdmi_Vector, tsident.getInputName() );
+			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, tsident.getInputName() );
 			if ( hbdmi == null ) {
 				message ="Could not find HydroBase connection with input name \"" +
                 tsident.getInputName() + "\" to query data.";
 				Message.printWarning ( 2, routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                message, "Verify that a HydroBase connection with the given name has been opened." ) );
 				throw new Exception ( message );
 			}
-			try {	ts = hbdmi.readTimeSeries (	TSID, InputStart_DateTime,InputEnd_DateTime, null,true, HydroBase_props );
+			try {
+                ts = hbdmi.readTimeSeries (	TSID, InputStart_DateTime,InputEnd_DateTime, null,read_data, HydroBase_props );
 			}
 			catch ( Exception e ) {
 				message = "Unexpected error reading HydroBase time series \"" + TSID + "\".";
 				Message.printWarning ( 2, routine, message );
 				Message.printWarning ( 2, routine, e );
-                   status.addToLog ( CommandPhaseType.RUN,
+                   status.addToLog ( command_phase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                message, "Report problem to software support." ) );
 				throw new Exception ( message );
@@ -681,19 +753,17 @@ CommandWarningException, CommandException
 			if ( o == null ) {
 				message = "Could not get list of HydroBase connections to query data.";
 				Message.printWarning ( 2, routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                          new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
 			Vector hbdmi_Vector = (Vector)o;
-			HydroBaseDMI hbdmi =
-				HydroBase_Util.lookupHydroBaseDMI (
-					hbdmi_Vector, InputName );
+			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, InputName );
 			if ( hbdmi == null ) {
 				message ="Could not find HydroBase connection with input name \"" + InputName + "\" to query data.";
 				Message.printWarning ( 2, routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( command_phase,
                           new CommandLogRecord(CommandStatusType.FAILURE,
                              message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
@@ -768,7 +838,7 @@ CommandWarningException, CommandException
 			else {
                 message = "Data type \"" + DataType + "\" is not recognized as a HydroBase data type.";
 				Message.printWarning ( 2, routine, message );
-                  status.addToLog ( CommandPhaseType.RUN,
+                  status.addToLog ( command_phase,
                           new CommandLogRecord(CommandStatusType.FAILURE,
                              message, "Verify that the datatype can be used with HydroBase (see documentation)." ) );
 				throw new Exception ( message );
@@ -778,17 +848,20 @@ CommandWarningException, CommandException
 
 			String filter_delim = ";";
 			for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-				WhereN = (String)WhereN_Vector.elementAt(ifg); 
+				WhereN = (String)WhereN_Vector.elementAt(ifg);
+                if ( WhereN.length() == 0 ) {
+                    continue;
+                }
 				// Set the filter...
-				try {	filter_panel.setInputFilter( ifg,
-					WhereN, filter_delim);
+				try {
+                    filter_panel.setInputFilter( ifg, WhereN, filter_delim );
 				}
 				catch ( Exception e ) {
                     message = "Error setting where information using \""+WhereN+"\"";
 					Message.printWarning ( 2, routine,message);
-					Message.printWarning ( 2, routine, e );
+					Message.printWarning ( 3, routine, e );
 					++warning_count;
-                      status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( command_phase,
                                 new CommandLogRecord(CommandStatusType.FAILURE,
                                    message, "Report the problem to software support - also see the log file." ) );
 				}
@@ -810,7 +883,7 @@ CommandWarningException, CommandException
 		
        		if ( (tslist0 == null) || (size == 0) ) {
 				Message.printStatus ( 2, routine,"No HydroBase time series were found." );
-                status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+                status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
 				return;
        		}
 		
@@ -840,8 +913,7 @@ CommandWarningException, CommandException
 				// List in order of likelihood...
 				if ( is_Station ) {
 					// Station TS...
-					sta = (HydroBase_StationGeolocMeasType)
-						tslist0.elementAt(i);
+					sta = (HydroBase_StationGeolocMeasType)tslist0.elementAt(i);
 					tsident_string = 
 						sta.getStation_id()
 						+ "." + sta.getData_source()
@@ -911,15 +983,13 @@ CommandWarningException, CommandException
 						+ "~HydroBase" + input_name;
 				}
 	
-				Message.printStatus ( 2, "","Reading time series for \"" +tsident_string + "\"..." );
+				Message.printStatus ( 2, routine, "Reading time series for \"" +tsident_string + "\"..." );
 				try {	ts = hbdmi.readTimeSeries (
 						tsident_string,
 						InputStart_DateTime,
-						InputEnd_DateTime, null, true,
+						InputEnd_DateTime, null, read_data,
 						HydroBase_props );
-					// Add the time series to the temporary
-					// list.  It will be further processed
-					// below...
+					// Add the time series to the temporary list.  It will be further processed below...
 					tslist.addElement ( ts );
 				}
 				catch ( Exception e ) {
@@ -927,76 +997,54 @@ CommandWarningException, CommandException
 					Message.printWarning ( 2, routine, message );
 					Message.printWarning ( 2, routine, e );
 					++warning_count;
-                    status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( command_phase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                message, "Report the problem to software support - also see the log file." ) );
 				}
 			}
 		}
+    
+        int size = 0;
+        if ( tslist != null ) {
+            size = tslist.size();
+        }
+        Message.printStatus ( 2, routine, "Read " + size + " HydroBase time series." );
 
-		// Further process the time seies and add the time series to the
-		// list being managed in the command processor...
+        if ( command_phase == CommandPhaseType.RUN ) {
+            if ( tslist != null ) {
+                // Further process the time series...
+                // This makes sure the period is at least as long as the output period...
 
-		Object o = null;
-		o = processor.getPropContents ( "TSResultsList");
-		if ( o == null ) {
-			message = "Unable to get list of time series.  Can't add to list.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report the problem to software support - also see the log file." ) );
-			throw new CommandException ( message );
-		}
-		Vector v = (Vector)o;
-		int vsize = 0;	// Existing list size.
-		if ( v != null ) {
-			vsize = v.size();
-		}
-
-		// Further process the time series...
-		// This makes sure the period is at least as long as the
-		// output period...
-		int size = 0;
-		if ( tslist != null ) {
-			size = tslist.size();
-		}
-		Message.printStatus ( 2, routine,"Read " + size + " HydroBase time series." );
-		try {	
-			PropList request_params = new PropList ( "" );
-			request_params.setUsingObject ( "TSList", tslist );
-			processor.processRequest( "ReadTimeSeries2", request_params);
-		}
-		catch ( Exception e ) {
-			message = "Error processing time series after read.";
-			Message.printWarning ( warning_level, 
-			MessageUtil.formatMessageTag(command_tag,
-			++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report the problem to software support - also see the log file." ) );
-			throw new CommandException ( message );
-		}
-		for ( int i = 0; i < size; i++ ) {
-			PropList request_params = new PropList ( "" );
-			request_params.setUsingObject ( "TS", tslist.elementAt(i) );
-			// Index is zero based...
-			request_params.setUsingObject ( "Index", new Integer(vsize + i) );
-			try {
-				processor.processRequest( "SetTimeSeries", request_params);
-			}
-			catch ( Exception e ) {
-                message = "Error requesting SetTimeSeries(Index=" + (vsize + 1) + "\") from processor.";
-				Message.printWarning(warning_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-				Message.printWarning ( 3, routine, e );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report the problem to software support - also see the log file." ) );
-			}
-		}
+                int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+                if ( wc > 0 ) {
+                    message = "Error post-processing HydroBase time series after read.";
+                    Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++warning_count), routine, message );
+                        status.addToLog ( command_phase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                    throw new CommandException ( message );
+                }
+    
+                // Now add the list in the processor...
+                
+                int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
+                if ( wc2 > 0 ) {
+                    message = "Error adding HydroBase time series after read.";
+                    Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++warning_count), routine, message );
+                        status.addToLog ( command_phase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Report the problem to software support." ) );
+                    throw new CommandException ( message );
+                }
+            }
+        }
+        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+            setDiscoveryTSList ( tslist );
+        }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -1004,7 +1052,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                    message, "Report the problem to software support - also see the log file." ) );
 		throw new CommandException ( message );
@@ -1020,7 +1068,15 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

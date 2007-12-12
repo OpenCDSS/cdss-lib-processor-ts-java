@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.Vector;
 
 import java.awt.event.WindowListener;	// To know when graph closes to close app
@@ -473,6 +474,11 @@ THIS HAS NOT BEEN IMPLEMENTED.
 </tr>
 
 <tr>
+<td><b>TableResultsList</b></td>
+<td>The table results list as a List.</td>
+</tr>
+
+<tr>
 <td><b>TSProductAnnotationProviderList</b></td>
 <td>A Vector of TSProductAnnotationProvider (for example, this is requested
 by the processTSProduct() command).
@@ -562,6 +568,9 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
 		return getPropContents_HydroBaseDMIList();
 	}
+    else if ( prop.equalsIgnoreCase("TableResultsList") ) {
+        return getPropContents_TableResultsList();
+    }
 	else if ( prop.equalsIgnoreCase("TSProductAnnotationProviderList") ) {
 		return getPropContents_TSProductAnnotationProviderList();
 	}
@@ -759,6 +768,15 @@ Handle the OutputYearType property request.
 private String getPropContents_OutputYearType()
 {
 	return __tsengine.getOutputYearType();
+}
+
+/**
+Handle the TableResultsList property request.
+@return The time series results list, as a List of DataTable.
+ */
+private List getPropContents_TableResultsList()
+{
+    return __Table_Vector;
 }
 
 /**
@@ -1074,6 +1092,19 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>GetTable</b></td>
+<td>Get a DataTable instance managed by the processor.  Parameters to this request are:
+<ol>
+<li>    <b>TableID</b> A table identier.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    <b>Table</b> A DataTable object.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>GetTimeSeries</b></td>
 <td>Return a time series from either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is returned, it is a new instance from the file
@@ -1329,6 +1360,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("GetHydroBaseDMI") ) {
 		return processRequest_GetHydroBaseDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("GetTable") ) {
+        return processRequest_GetTable ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("GetTimeSeries") ) {
 		return processRequest_GetTimeSeries ( request, request_params );
 	}
@@ -1493,6 +1527,44 @@ throws Exception
 	// This will be set in the bean because the PropList is a reference...
 	results.setUsingObject("HydroBaseDMI", dmi );
 	return bean;
+}
+
+/**
+Process the GetTable request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetTable (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "TableID" );
+    if ( o == null ) {
+            String warning = "Request GetTable() does not provide a TableID parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String TableID = (String)o;
+    int size = 0;
+    if ( __Table_Vector != null ) {
+        size = __Table_Vector.size();
+    }
+    DataTable table = null;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        table = (DataTable)__Table_Vector.get(i);
+        if ( table.getTableID().equalsIgnoreCase(TableID) ) {
+            found = true;
+            break;
+        }
+    }
+    if ( !found ) {
+        table = null;
+    }
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference...
+    results.setUsingObject("Table", table );
+    return bean;
 }
 
 /**

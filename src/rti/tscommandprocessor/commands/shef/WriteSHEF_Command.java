@@ -15,7 +15,7 @@
 //------------------------------------------------------------------------------
 // EndHeader
 
-package rti.tscommandprocessor.commands.statemod;
+package rti.tscommandprocessor.commands.shef;
 
 import java.io.File;
 import java.util.List;
@@ -25,6 +25,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.ShefATS;
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
@@ -54,10 +55,10 @@ import DWR.StateMod.StateMod_TS;
 
 /**
 <p>
-This class initializes, checks, and runs the writeStateMod() command.
+This class initializes, checks, and runs the WriteSHEF() command.
 </p>
 */
-public class writeStateMod_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteSHEF_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -75,9 +76,9 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public writeStateMod_Command ()
+public WriteSHEF_Command ()
 {	super();
-	setCommandName ( "WriteStateMod" );
+	setCommandName ( "WriteSHEF" );
 }
 
 /**
@@ -97,8 +98,9 @@ throws InvalidCommandParameterException
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String MissingValue = parameters.getValue ( "MissingValue" );
-	String Precision = parameters.getValue ( "Precision" );
+    // TODO SAM Evaluate whether other parameters are needed
+	//String MissingValue = parameters.getValue ( "MissingValue" );
+	//String Precision = parameters.getValue ( "Precision" );
 	String warning = "";
 	String message;
 	
@@ -193,6 +195,7 @@ throws InvalidCommandParameterException
 		}
 	}
 
+    /*
 	if ( (MissingValue != null) && !MissingValue.equals("") ) {
 		if ( !StringUtil.isDouble(MissingValue) ) {
 			message = "The missing value \"" + MissingValue + "\" is not a number.";
@@ -212,6 +215,7 @@ throws InvalidCommandParameterException
 							message, "Specify the precision as an integer." ) );
 		}
 	}
+    */
 	
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
@@ -220,8 +224,8 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "MissingValue" );
-	valid_Vector.add ( "Precision" );
+	//valid_Vector.add ( "MissingValue" );
+	//valid_Vector.add ( "Precision" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -261,59 +265,10 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new writeStateMod_JDialog ( parent, this )).ok();
+	return (new WriteSHEF_JDialog ( parent, this )).ok();
 }
 
-/**
-Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "writeStateMod_Command.parseCommand", message;
-	int warning_level = 2;
-	if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
-		// New syntax, can be blank parameter list...
-		super.parseCommand ( command_string );
-	}
-	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,
-			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
-		if ( tokens.size() != 3 ) {
-			message =
-			"Invalid syntax for command \"" + command_string + "\".  Expecting 2 parameters.";
-			Message.printWarning ( warning_level, routine, message);
-			CommandStatus status = getCommandStatus();
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify command syntax or edit with command editor." ) );
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		String OutputFile = ((String)tokens.elementAt(1)).trim();
-		String Precision = ((String)tokens.elementAt(2)).trim();
-		if ( Precision.equals("*") ) {
-			Precision = "";
-		}
-		// Defaults because not in the old command...
-		String TSList = "AllTS";
-		PropList parameters = new PropList ( getCommandName() );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "TSList", TSList );
-		if ( OutputFile.length() > 0 ) {
-			parameters.set ( "OutputFile", OutputFile );
-		}
-		if ( Precision.length() > 0 ) {
-			parameters.set ( "Precision", Precision );
-		}
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
-	}
-}
+// Use base class parseCommand()
 
 /**
 Run the command.
@@ -325,7 +280,7 @@ not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
-{	String routine = "writeStateMod_Command.runCommand", message;
+{	String routine = "WriteSHEF_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -415,8 +370,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputStart );
 		bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+            bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting OutputStart DateTime(DateTime=" + OutputStart + ") from processor.";
@@ -477,7 +432,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
-				message = "Error requesting OutputEnd DateTime(DateTime=" + OutputEnd + ") from processor.";
+				message = "Error requesting OutputEnd DateTime(DateTime=" +	OutputEnd + ") from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
@@ -490,8 +445,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for OutputEnd DateTime(DateTime=" +
-				OutputEnd +	"\") returned from processor.";
+				message = "Null value for OutputEnd DateTime(DateTime=" + OutputEnd +") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -527,37 +481,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			}
 	}
 
-	String Precision = parameters.getValue ( "Precision" );
-	String MissingValue = parameters.getValue ( "MissingValue" );
-
-	String OutputYearType = "Calendar";	// Default
-	try { Object o = processor.getPropContents ( "OutputYearType" );
-		// Output year type is available so use it...
-		if ( o != null ) {
-			OutputYearType = (String)o;
-		}
-	}
-	catch ( Exception e ) {
-		message = "Error requesting OutputYearType from processor - not using.";
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
-		Message.printDebug(10, routine, message );
-	}
-	// Check OutputYearType at runtime because it is specified in earlier commands.
-	
-    if (    !OutputYearType.equalsIgnoreCase("Calendar") &&
-            !OutputYearType.equalsIgnoreCase("Water") ) {
-            message = "\nThe output year type (" + OutputYearType +
-                    ") must be \"Calendar\" or \"Water\".  Defaulting to Calendar.";
-            OutputYearType = "Calendar";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-    		status.addToLog ( CommandPhaseType.RUN,
-    				new CommandLogRecord(CommandStatusType.WARNING,
-    						message, "Check the SetOutputYearType() command." ) );
-    }
+	//String Precision = parameters.getValue ( "Precision" );
+	//String MissingValue = parameters.getValue ( "MissingValue" );
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -572,15 +497,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 		OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
-		Message.printStatus ( 2, routine,"Writing StateMod file \"" + OutputFile_full + "\"" );
-		// Format the StateMod year type...
-		String sm_calendar = "CalendarYear";
-		if ( OutputYearType.equalsIgnoreCase("Water") ) {
-			sm_calendar = "WaterYear";
-		}
-
+		Message.printStatus ( 2, routine,"Writing SHEF file \"" + OutputFile_full + "\"" );
+		
 		// Get the comments to add to the top of the file.
 
+        /*
 		Vector OutputComments_Vector = null;
 		try { Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
@@ -593,104 +514,35 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			message = "Error requesting OutputComments from processor - not using.";
 			Message.printDebug(10, routine, message );
 		}
+        */
 
-		TS ts = null;	// Time series being checked.
-		if ( TSUtil.intervalsMatch ( tslist ) ) {
-			// The time series to write have the same interval so
-			// write using the first interval....
-			int interval = TimeInterval.UNKNOWN;
-			int size = 0;
-			if ( tslist != null ) {
-				size = tslist.size();
-			}
-			for ( int i = 0; i < size; i++ ) {
-				ts = (TS)tslist.elementAt(i);
-				if ( ts == null ) {
-					continue;
-				}
-				interval = ts.getDataIntervalBase();
-				break;
-			}
-			if ( interval == TimeInterval.UNKNOWN ) {
-				message = "Unable to determine time interval from time series.  Can't write output.";
-				Message.printWarning ( warning_level, 
-				MessageUtil.formatMessageTag(command_tag,
-				++warning_count), routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify that all time series being written have interval of either Day or Month." ) );
-				throw new CommandException ( message );
-			}
-			else if ((interval == TimeInterval.DAY) || (interval == TimeInterval.MONTH) ) {
-				PropList smprops = new PropList ( "StateMod" );
-				// Don't set input file since it is null...
-				smprops.set ( "OutputFile", OutputFile_full );
-				if ( OutputComments_Vector != null ) {
-					smprops.setUsingObject ( "NewComments",	StringUtil.toArray(	OutputComments_Vector) );
-				}
-				if ( OutputStart_DateTime != null ) {
-					smprops.set("OutputStart=" + OutputStart_DateTime.toString());
-				}
-				if ( OutputEnd_DateTime != null ) {
-					smprops.set ( "OutputEnd=" + OutputEnd_DateTime.toString());
-				}
-				if ( OutputYearType != null ) {
-					smprops.set ( "CalendarType",sm_calendar );
-				}
-				if ( MissingValue != null ) {
-					smprops.set ( "MissingDataValue",MissingValue );
-				}
-				if ( Precision != null ) {
-					smprops.set ( "OutputPrecision",Precision );
-				}
-				/* TODO SAM 2005-09-01 Need to handle from processor...
-				if ( _detailedheader ) {
-					smprops.set ( "PrintGenesis", "true" );
-				}
-				else {	smprops.set ( "PrintGenesis", "false" );
-				}
-				*/
-				try {	
-					StateMod_TS.writeTimeSeriesList ( tslist, smprops );
-					// Save the output file name...
-					setOutputFile ( new File(OutputFile_full));
-				}
-				catch ( Exception e ) {
-					Message.printWarning ( 3, routine, e );
-					message = "Unable to write StateMod file \"" + OutputFile_full + "\"";
-					Message.printWarning ( warning_level, 
-					MessageUtil.formatMessageTag(
-					command_tag, ++warning_count), routine, message );
-					status.addToLog ( CommandPhaseType.RUN,
-							new CommandLogRecord(CommandStatusType.FAILURE,
-									message, "Check log file for details." ) );
-				}
-			}
-			else {	message =
-				"Don't know how to write StateMod output for interval \"" +
-				ts.getIdentifier().getInterval() + "\".";
-				Message.printWarning ( warning_level, 
-				MessageUtil.formatMessageTag(command_tag,
-					++warning_count), routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify that all time series being written have interval of either Day or Month." ) );
-				throw new CommandException ( message );
-			}
+		try {	
+            Vector units_Vector = null;
+            Vector PE_Vector = ShefATS.getPEForTimeSeries ( tslist );
+            Vector Duration_Vector = null;
+            Vector AltID_Vector = null;
+            PropList shef_props = new PropList ( "SHEF" );
+            shef_props.set ( "HourMax=24" );
+            ShefATS.writeTimeSeriesList ( tslist,
+                OutputFile_full, OutputStart_DateTime, OutputEnd_DateTime,
+                units_Vector, PE_Vector, Duration_Vector, AltID_Vector, shef_props );
+			// Save the output file name...
+			setOutputFile ( new File(OutputFile_full));
 		}
-		else {	message = "Unable to write StateMod time series of different intervals.";
+		catch ( Exception e ) {
+			Message.printWarning ( 3, routine, e );
+			message = "Error writing SHEF file \"" + OutputFile_full + "\"";
 			Message.printWarning ( warning_level, 
-			MessageUtil.formatMessageTag(command_tag,
-				++warning_count), routine, message );
+			MessageUtil.formatMessageTag(
+			command_tag, ++warning_count), routine, message );
 			status.addToLog ( CommandPhaseType.RUN,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify that all time series being written have interval of either Day or Month." ) );
-			throw new CommandException ( message );
+							message, "Check log file for details." ) );
 		}
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Error writing time series to StateMod file \"" + OutputFile_full + "\".";
+		message = "Unexpected error writing time series to SHEF file \"" + OutputFile_full + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -722,8 +574,8 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue("OutputFile");
 	String OutputStart = parameters.getValue("OutputStart");
 	String OutputEnd = parameters.getValue("OutputEnd");
-	String MissingValue = parameters.getValue("MissingValue");
-	String Precision = parameters.getValue("Precision");
+	//String MissingValue = parameters.getValue("MissingValue");
+	//String Precision = parameters.getValue("Precision");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -752,6 +604,7 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
+    /*
 	if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -764,6 +617,7 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "Precision=" + Precision );
 	}
+    */
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

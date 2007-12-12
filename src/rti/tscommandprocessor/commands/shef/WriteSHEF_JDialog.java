@@ -1,31 +1,4 @@
-// ----------------------------------------------------------------------------
-// writeStateMod_JDialog - editor for writeStateMod()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 18 Jan 2001	Steven A. Malers, RTi	Initial version (copy and modify scale).
-// 04 Apr 2001	SAM, RTi		Update to have precision argument.
-// 2002-04-05	SAM, RTi		Clean up interface.  Add ability to
-//					browse for file and add/remove working
-//					directory.
-// 2003-12-03	SAM, RTi		Update to Swing.
-// 2004-02-17	SAM, RTi		Fix bug where directory from file
-//					selection was not getting set as the
-//					last dialog directory in JGUIUtil.
-// 2005-09-02	J. Thomas Sapienza, RTi	Changed the key listener on the combo
-//					box to work with the text field 
-//					embedded in the combo box.
-// 2005-11-22	SAM, RTi		Command was not allowing a negative
-//					number.  Also add more to the notes
-//					about special values like -2001.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-03-01	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
-package rti.tscommandprocessor.commands.statemod;
+package rti.tscommandprocessor.commands.shef;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -64,48 +37,38 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class writeStateMod_JDialog extends JDialog
+public class WriteSHEF_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
+    
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
-    
+
 private SimpleJButton	__browse_JButton = null,// Button to browse for file
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and
-						// absolute paths
-private writeStateMod_Command __command = null;	// Command to edit
-private SimpleJComboBox	__TSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
+			__path_JButton = null;	// Convert between relative and absolute paths
+private WriteSHEF_Command __command = null;	// Command to edit
+private SimpleJComboBox	__TSList_JComboBox = null; // Indicate how to get time series list.
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private JTextField	__OutputFile_JTextField = null;// Field for time series
-						// identifier
-private JTextField	__OutputStart_JTextField = null;
-						// Start of period for output
-private JTextField	__OutputEnd_JTextField = null;
-						// End of period for output
-private JTextField	__MissingValue_JTextField = null;
-						// Missing value for output
-private JTextField	__Precision_JTextField = null;
-						// Precision for output
+private JTextField	__OutputFile_JTextField = null;// Field for time series identifier
+private JTextField	__OutputStart_JTextField = null; // Start of period for output
+private JTextField	__OutputEnd_JTextField = null; // End of period for output
+// TODO SAM 2007-12-10 Evaluate if other paramters are needed like the following
+//private JTextField	__MissingValue_JTextField = null; // Missing value for output
+//private JTextField	__Precision_JTextField = null; // Precision for output
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error that needs to be cleared up or Cancel?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private boolean		__ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
-WriteStateMod_JDialog constructor.
+Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public writeStateMod_JDialog ( JFrame parent, Command command )
+public WriteSHEF_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -118,19 +81,16 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
-		fc.setDialogTitle("Select StateMod Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("stm",
-			"StateMod Time Series File");
+		fc.setDialogTitle("Select SHEF File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("shef",	"SHEF File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -160,20 +120,17 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
-			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
+		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
 			__OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
-			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
+			try {
+                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
 				__OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"writeStateMod_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1, "WriteSHEF_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -182,7 +139,8 @@ public void actionPerformed( ActionEvent event )
 		checkGUIState();
 		refresh ();
 	}
-	else {	// Other combo boxes, etc...
+	else {
+        // Other combo boxes, etc...
 		refresh();
 	}
 }
@@ -213,8 +171,8 @@ private void checkInput ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String MissingValue = __MissingValue_JTextField.getText().trim();
-	String Precision = __Precision_JTextField.getText().trim();
+	//String MissingValue = __MissingValue_JTextField.getText().trim();
+	//String Precision = __Precision_JTextField.getText().trim();
 	__error_wait = false;
 	if ( TSList.length() > 0 ) {
 		props.set ( "TSList", TSList );
@@ -231,12 +189,14 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		props.set ( "OutputEnd", OutputEnd );
 	}
+    /*
 	if ( MissingValue.length() > 0 ) {
 		props.set ( "MissingValue", MissingValue );
 	}
 	if ( Precision.length() > 0 ) {
 		props.set ( "Precision", Precision );
 	}
+    */
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -256,15 +216,15 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	String MissingValue = __MissingValue_JTextField.getText().trim();
-	String Precision = __Precision_JTextField.getText().trim();
+	//String MissingValue = __MissingValue_JTextField.getText().trim();
+	//String Precision = __Precision_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
-	__command.setCommandParameter ( "MissingValue", MissingValue );
-	__command.setCommandParameter ( "Precision", Precision );
+	//__command.setCommandParameter ( "MissingValue", MissingValue );
+	//__command.setCommandParameter ( "Precision", Precision );
 }
 
 /**
@@ -275,7 +235,7 @@ throws Throwable
 {	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__OutputFile_JTextField = null;
-	__Precision_JTextField = null;
+	//__Precision_JTextField = null;
 	__command = null;
 	__browse_JButton = null;
 	__ok_JButton = null;
@@ -290,7 +250,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (writeStateMod_Command)command;
+{	__command = (WriteSHEF_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -305,10 +265,10 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a StateMod format file."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Write time series to a Standard Hydrologic Exchange Format (SHEF) file."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the file name be relative to the working directory."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
@@ -316,30 +276,20 @@ private void initialize ( JFrame parent, Command command )
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The Browse button can be used to select an existing file " +
 		"to overwrite (or edit the file name after selection)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For the precision, a negative integer allows auto-adjustment "+
-		"to prevent overflow." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A precision of -2001 will default to 2 digits, adjusted for "+
-		"overflow, and also use no decimal (special precision " +
-		"option)."), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If TS list is \"" + __command._AllMatchingTSID + "\", "+
-		"pick a single time series, " +
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If TS list is \"" + __command._AllMatchingTSID + "\", pick a single time series, " +
 		"or enter a wildcard time series identifier pattern."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	Vector tslist_Vector = new Vector();
 	tslist_Vector.addElement ( __command._AllMatchingTSID );
@@ -355,7 +305,7 @@ private void initialize ( JFrame parent, Command command )
 		"How to get the time series to write."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Identifier (TSID) to match:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
@@ -382,8 +332,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"StateMod file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"SHEF file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST );
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -413,6 +362,7 @@ private void initialize ( JFrame parent, Command command )
 		"Overrides the global output end."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+        /*
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MissingValue_JTextField = new JTextField ( "", 20 );
@@ -433,6 +383,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Digits after decimal (default=-2)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        */
 
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -453,8 +404,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
+		// Add the button to allow conversion to/from relative path...
 		__path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
 	}
@@ -506,14 +456,14 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "writeStateMod_JDialog.refresh";
+{	String routine = "WriteSHEF_JDialog.refresh";
 	String TSList = "";
 	String TSID = "";
 	String OutputFile = "";
 	String OutputStart = "";
 	String OutputEnd = "";
-	String MissingValue = "";
-	String Precision = "";
+	//String MissingValue = "";
+	//String Precision = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -524,13 +474,14 @@ private void refresh ()
 		OutputFile = props.getValue("OutputFile");
 		OutputStart = props.getValue("OutputStart");
 		OutputEnd = props.getValue("OutputEnd");
-		MissingValue = props.getValue("MissingValue");
-		Precision = props.getValue("Precision");
+		//MissingValue = props.getValue("MissingValue");
+		//Precision = props.getValue("Precision");
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( __command._AllTS );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
+		else {
+            if (	JGUIUtil.isSimpleJComboBoxItem(
 				__TSList_JComboBox,
 				TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
@@ -571,12 +522,14 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText ( OutputEnd );
 		}
+        /*
 		if ( MissingValue != null ) {
 			__MissingValue_JTextField.setText ( MissingValue );
 		}
 		if ( Precision != null ) {
 			__Precision_JTextField.setText ( Precision );
 		}
+        */
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -588,19 +541,18 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
-	MissingValue = __MissingValue_JTextField.getText().trim();
-	Precision = __Precision_JTextField.getText().trim();
+	//MissingValue = __MissingValue_JTextField.getText().trim();
+	//Precision = __Precision_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "OutputStart=" + OutputStart );
 	props.add ( "OutputEnd=" + OutputEnd );
-	props.add ( "MissingValue=" + MissingValue );
-	props.add ( "Precision=" + Precision );
+	//props.add ( "MissingValue=" + MissingValue );
+	//props.add ( "Precision=" + Precision );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( OutputFile );
@@ -648,4 +600,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end writeStateMod_JDialog
+} // end WriteSHEF_JDialog

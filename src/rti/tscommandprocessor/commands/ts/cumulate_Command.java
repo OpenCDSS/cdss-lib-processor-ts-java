@@ -175,7 +175,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}
-
 }
 
 /**

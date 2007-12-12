@@ -562,7 +562,7 @@ CommandWarningException, CommandException
 				routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report problem to software support." ) );
+                       message, "Verify that a valid InputStart string has been specified." ) );
 		}
 		else {	InputStart_DateTime = (DateTime)prop_contents;
 		}
@@ -614,7 +614,7 @@ CommandWarningException, CommandException
 				routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report problem to software support." ) );
+                       message, "Verify that a valid InputEnd has been specified." ) );
 		}
 		else {	InputEnd_DateTime = (DateTime)prop_contents;
 		}

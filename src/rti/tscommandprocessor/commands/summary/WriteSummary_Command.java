@@ -325,14 +325,14 @@ CommandWarningException, CommandException
 
 	String OutputStart = null;
 	DateTime OutputStart_DateTime = null;
-	if ( OutputStart != null ) {
+	if ( (OutputStart != null) && !OutputStart.equals("") ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputStart );
 		try { bean =
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputStart + "\" from processor.";
+			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -371,14 +371,14 @@ CommandWarningException, CommandException
 	}
 	String OutputEnd = null;
 	DateTime OutputEnd_DateTime = null;
-	if ( OutputEnd != null ) {
+	if ( (OutputEnd != null) && !OutputEnd.equals("") ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputEnd );
 		try { bean =
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting DateTime(DateTime=" + OutputEnd + "\" from processor.";
+			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );

@@ -1747,27 +1747,23 @@ throws Exception
 		throw new Exception ( message );
 	}
 	if ( StringUtil.indexOfIgnoreCase(TSID, "FrostDate", 0) >= 0 ) {
-		// REVISIT - SAM 2005-05-20
+		// TODO - SAM 2005-05-20
 		// This is a special check because the add() command used to
 		// be used in TSTool to add frost date time series.  Now the
 		// add() command is not suitable.
-		String message =
-		"The " + command_name +
-		"() command is not suitable for frost dates." +
-		"Use blend(), setFromTS(), or similar commands.";
+		String message = "The " + command_name + "() command is not suitable for frost dates." +
+		"Use Blend(), SetFromTS(), or similar commands.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 	if ( TSList == null ) {
-		String message =
-		"TSList must be defined for: " + command_name;
+		String message = "TSList must be defined for: " + command_name;
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 	if ( TSList.equalsIgnoreCase("SpecifiedTS") && (AddTSID == null) ) {
 		if ( command_name.equalsIgnoreCase("add") ) {
-			String message =
-			"AddTSID must be defined for: " + command_name;
+			String message = "AddTSID must be defined for: " + command_name;
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -2254,95 +2250,7 @@ throws Exception
 	}
 }
 
-/**
-Execute the createTraces() command.
-@param command_tag Command number used for messaging.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_createTraces ( String command_tag, String expression )
-throws Exception
-{	// Might contain spaces so don't break with spaces...
-	Vector tokens = StringUtil.breakStringList ( expression, "(,)", 0 );
-	if ( tokens.size() != 5 ) {
-		throw new Exception ( "Bad command \"" + expression + "\"" );
-	}
-	// Handle the arguments...
-	String independent = ((String)tokens.elementAt(1)).trim();
-	String interval_string = ((String)tokens.elementAt(2)).trim();
-	String reference = ((String)tokens.elementAt(3)).trim();
-	String shift_type = ((String)tokens.elementAt(4)).trim();
-	// Find the time series to process.  The following may or may not have
-	// TEMPTS at the front but is handled transparently by getTimeSeries.
-	TS ts = getTimeSeries ( command_tag, independent );
-	if ( ts == null ) {
-		throw new Exception ( "Unable to retrieve time series \"" +
-			independent + "\"" );
-	}
-	DateTime reference_date = null;
-	if ( !reference.equals("") ) {
-		try {	reference_date = DateTime.parse(reference);
-		}
-		catch ( Exception e ) {
-			throw new Exception ( "Error in reference date for \"" +
-			expression + "\"" );
-		}
-	}
-	if (	!shift_type.equalsIgnoreCase("NoShift") &&
-		!shift_type.equalsIgnoreCase("ShiftToReference") ) {
-		throw new Exception ( "Bad shift type for \"" +expression+"\"");
-	}
-
-	// SAMX - need to default to available time series if output dates are
-	// not found.
-	// Now create a list of time series given the input from the command...
-	Vector tslist = TSUtil.getTracesFromTS ( ts, interval_string,
-				reference_date, shift_type,
-				__OutputStart_DateTime,
-				__OutputEnd_DateTime );
-	if ( tslist == null ) {
-		throw new Exception ( "Error generating traces for \"" +
-		expression + "\"" );
-	}
-	// Loop through and append the sequence number to the scenario.  This
-	// is needed with the new TSProduct because the TSID is used to uniquely
-	// identify the time series...
-	int vsize = tslist.size();
-/* SAMX think we have it figured out without having to do this...
-	TSIdent tsident;
-	String scenario;
-	for ( int iv = 0; iv < vsize; iv++ ) {
-		ts = (TS)tslist.elementAt(iv);
-		if ( ts == null ) {
-			continue;
-		}
-		if ( ts.getSequenceNumber() >= 0 ) {
-			tsident = ts.getIdentifier();
-			if ( tsident.getScenario().length() == 0 ) {
-				tsident.setScenario ( "" +
-				ts.getSequenceNumber() );
-			}
-			else {	tsident.setScenario ( tsident.getScenario() +
-				"_" + ts.getSequenceNumber() );
-			}
-		}
-	}
-*/
-	// Add the time series to the end of the normal list...
-	Message.printStatus ( 1, "TSEngine.do_createTraces",
-	"Created " + vsize + " traces for time series" );
-	readTimeSeries2 ( tslist, true );
-	int ts_pos = getTimeSeriesSize();
-	for ( int iv = 0; iv < vsize; iv++ ) {
-		setTimeSeries ( (TS)tslist.elementAt(iv), (ts_pos + iv) );
-	}
-	// Free resources for the list...
-	ts = null;
-	tslist = null;
-}
-
-// REVISIT SAM 2005-09-14
-// Evaluate how this works with other TSAnalyst capabilities
+// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
 /**
 Execute the following command:
 <pre>
@@ -2581,7 +2489,7 @@ Helper method to execute the fillMixedStation() command.
 @param command Command to process.
 @exception Exception if there is an error processing the command.
 */
-/* REVISIT SAM 2005-05-27 Delete when in the command class
+/* TODO SAM 2005-05-27 Delete when in the command class
 private void do_fillMixedStation ( String command_tag, String command )
 throws Exception
 {	String message, routine = "TSEngine.do_fillMixedStation";
@@ -2631,7 +2539,7 @@ throws Exception
 				StringUtil.breakStringList(DependentTSID,
 				",",StringUtil.DELIM_ALLOW_STRINGS),
 				routine, command );
-			// REVISIT SAM 2005-04-12 how should errors be handled?
+			// TODO SAM 2005-04-12 how should errors be handled?
 		}
 		// Get the list of independent time series to process...
 		if (	IndependentTSList.equalsIgnoreCase("AllTS") ||
@@ -2651,12 +2559,12 @@ throws Exception
 				StringUtil.breakStringList(IndependentTSID,
 				",",StringUtil.DELIM_ALLOW_STRINGS),
 				routine, command );
-			// REVISIT SAM 2005-04-12 how should errors be handled?
+			// TODO SAM 2005-04-12 how should errors be handled?
 		}
 		// Create the analysis object and analyze...
 		MixedStationAnalysis msa = new MixedStationAnalysis (
 			dependent_tslist, independent_tslist, props );
-		// REVISIT SAM 2005-04-12
+		// TODO SAM 2005-04-12
 		// Separate method to fill??
 	}
 	catch ( Exception e ) {
@@ -2931,7 +2839,7 @@ throws Exception
 	tokens = null;
 }
 
-// REVISIT SAM 2005-05-19 Remove when MOVE2 code is transferred to a command.
+// TODO SAM 2005-05-19 Remove when MOVE2 code is transferred to a command.
 // Currently fillRegression is run in a separate command class but the MOVE2
 // code is used below.
 /**
@@ -3356,7 +3264,7 @@ throws Exception
 				calculateTSAverageLimits(monthts) );
 		}
 		catch ( Exception e ) {
-			// REVISIT SAM 2006-03-27
+			// TODO SAM 2006-03-27
 			// Make the messages more friendly by checking for
 			// nulls.
 			Message.printWarning ( 2, routine,
@@ -5621,7 +5529,7 @@ protected Vector getMissingTS()
 {   return __missing_ts;
 }
 
-// REVISIT SAM 2006-07-13
+// TODO SAM 2006-07-13
 // May need to fully qualify Adapter but for now there is no conflict with
 // other packages.
 /**
@@ -5630,7 +5538,7 @@ Return the NDFD Adapter that is being used.
 @return the NDFD Adapter that is being used (may return null).
 */
 
-// REVISIT KAT 2006-10-30
+// TODO KAT 2006-10-30
 // Commenting this out for now to get it to compile
 // Danny will be adding service stuff in the future
 // which should replace this ...
@@ -5643,7 +5551,7 @@ public Adapter getNDFDAdapter (String input_name )
 	Adapter adapter = null;
 	for ( int i = 0; i < size; i++ ) {
 		adapter = (Adapter)__NDFDAdapter_Vector.elementAt(i);
-		/* REVISIT SAM 2006-07-15
+		/* TODO SAM 2006-07-15
 		Currently the adapters don't have and ID or name so for
 		now return the first instance.
 		if ( adapter.getInputName().equalsIgnoreCase(input_name) ) {
@@ -5810,7 +5718,7 @@ is guaranteed to be non-null but may be empty.
 @param routine The routine that is calling this helper method (for messaging).
 @param command Command that is being processed (for messaging).
 */
-/* REVISIT SAM 2007-02-08
+/* TODO SAM 2007-02-08
 Is this needed?
 private Vector getSpecifiedTimeSeries ( String command_tag, Vector tsids,
 					String routine, String command )
@@ -6120,8 +6028,7 @@ These strings are suitable for drop-down lists, etc.
 @return list of time series identifiers or an empty non-null Vector if nothing
 found.
 */
-protected static Vector getTraceIdentifiersFromCommands ( Vector commands,
-						boolean sort )
+protected static Vector getTraceIdentifiersFromCommands ( Vector commands, boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
 	}
@@ -6780,7 +6687,7 @@ throws Exception
 }
 */
 
-//REVISIT SAM 2006-05-02
+//TODO SAM 2006-05-02
 //Need to phase out app_PropList or make the exchange of control information
 //more robust
 /**
@@ -7244,10 +7151,6 @@ throws Exception
 		}
 		else if(command_String.regionMatches(true,0,"createFromList",0,14)){
 			do_createFromList ( popup_warning_level, command_tag, command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"createTraces",0,12)){
-			do_createTraces ( command_tag, command_String );
 			continue;
 		}
 		// TODO SAM 2005-09-14
@@ -9636,7 +9539,7 @@ throws IOException
 		}
 		// Check the first time series.  If NWSCARD or DateValue, don't
 		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
+		/* TODO SAM 2004-07-20 - try default header always -
 			transition to HydroBase comments being only additional
 			information
 		else {	// HydroBase, so use the comments for the header...
@@ -9755,7 +9658,7 @@ throws IOException
 		}
 		// Check the first time series.  If NWSCARD or DateValue, don't
 		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
+		/* TODO SAM 2004-07-20 - try default header always -
 			transition to HydroBase comments being only additional
 			information
 		if ( _non_co_detected ) {
@@ -9865,7 +9768,7 @@ throws IOException
 		}
 		// Check the first time series.  If NWSCARD or DateValue, don't
 		// use comments for header...
-		/* REVISIT SAM 2004-07-20 - try default header always -
+		/* TODO SAM 2004-07-20 - try default header always -
 			transition to HydroBase comments being only additional
 			information
 		if ( _non_co_detected ) {
@@ -9958,7 +9861,7 @@ throws IOException
 		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
 			graphprops.set("YAxisType=Log");
 			// Handle flags...
-			/* REVISIT SAM 2006-05-22
+			/* TODO SAM 2006-05-22
 			Can be very slow because blank labels are not ignored
 			in low-level code.
 			GRTS_Util.addDefaultPropertiesForDataFlags (
@@ -9974,7 +9877,7 @@ throws IOException
 		else if ( output_format == OUTPUT_POINT_GRAPH ) {
 			graphprops.set("GraphType=Point");
 			// Handle flags...
-			/* REVISIT SAM 2006-05-22
+			/* TODO SAM 2006-05-22
 			Can be very slow because blank labels are not ignored
 			in low-level code.
 			GRTS_Util.addDefaultPropertiesForDataFlags (
@@ -9999,7 +9902,7 @@ throws IOException
 		else {	// Default properties...
 			graphprops.set("GraphType=Line");
 			// Handle flags...
-			/* REVISIT SAM 2006-05-22
+			/* TODO SAM 2006-05-22
 			Can be very slow because blank labels are not ignored
 			in low-level code.
 			GRTS_Util.addDefaultPropertiesForDataFlags (
@@ -10249,7 +10152,7 @@ throws Exception
 	}
 
 	// TSIdent uses only the first part of the identifier...
-	// REVISIT SAM 2005-05-22 (why? to avoid confusing the following code?)
+	// TODO SAM 2005-05-22 (why? to avoid confusing the following code?)
 
 	TSIdent tsident = new TSIdent ( tsident_string2 );
 	String source = tsident.getSource();
@@ -10665,7 +10568,7 @@ throws Exception
 					// both are zero initial value...
 					if (	(array_index < 0) ||
 						(match_count == array_index) ) {
-						// REVISIT - need way to track
+						// TODO - need way to track
 						// * matches to not return the
 						// same TS each match
 						return ts;
@@ -10861,7 +10764,7 @@ throws Exception
 
 	// If a missing data range has been set, indicate this to the time
 	// series now so that it can be used for filling, etc...
-	// REVISIT SAM 2005-09-02
+	// TODO SAM 2005-09-02
 	// This is really a hold-over and might need to be phased out...
 
 	if ( __missing_range != null ) {
@@ -10994,7 +10897,7 @@ more flexibility but is currently somewhat specific.  Phase in all the old
 functionality as time allows.
 THIS CODE IS NOT CURRENTLY FUNCTIONAL.
 */
-/* REVISIT SAM 2007-02-08
+/* TODO SAM 2007-02-08
 Need to decide whether this should be supported.
 private void runInterpreter ( Vector commands )
 {	if ( commands == null ) {
@@ -11191,7 +11094,7 @@ This is mainly for memory management since NDFD Adapters do not currently keep
 a connection open.
 */
 
-//REVISIT KAT 2006-10-30
+//TODO KAT 2006-10-30
 //Commenting this out for now to get it to compile
 //Danny will be adding service stuff in the future
 //which should replace this ...
@@ -11202,7 +11105,7 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 	}
 	int size = __NDFDAdapter_Vector.size();
 	Adapter adapter2 = null;
-	//REVISIT SAM 2006-07-15
+	//TODO SAM 2006-07-15
 	NDFD Adapters do not have names/identfiers so put in the first slot
 	String input_name = adapter.getIdentifier();
 	for ( int i = 0; i < size; i++ ) {
@@ -11213,7 +11116,7 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 			// Replace the instance in the Vector by the
 			// new instance...
 			if ( close_old ) {
-				/ * REVISIT SAM 2006-07-13
+				/ * TODO SAM 2006-07-13
 				Probably not needed - evaluate for later
 				try {	hbdmi2.close();
 				}
@@ -11765,7 +11668,7 @@ public void windowActivated ( WindowEvent e )
 }
 
 /**
-REVISIT SAM 2004-07-22 - not needed since _graph_list was removed?
+TODO SAM 2004-07-22 - not needed since _graph_list was removed?
 */
 public void windowClosed ( WindowEvent e )
 {	

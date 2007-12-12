@@ -78,18 +78,14 @@ implements ActionListener, KeyListener, ListSelectionListener, WindowListener
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private JTextArea	__command_JTextArea=null;
-						// Command as JTextArea
-private JTextField	__Intercept_JTextField = null;
-						// Intercept value as JTextField
+private JTextArea	__command_JTextArea=null; // Command as JTextArea
+private JTextField	__Intercept_JTextField = null; // Intercept value as JTextField
 private JTextField	__AnalysisStart_JTextField,
-			__AnalysisEnd_JTextField,
-						// Text fields for dependent
-						// time series analysis period.
+			__AnalysisEnd_JTextField, // Text fields for dependent time series analysis period.
 			__FillStart_JTextField, // Text fields for fill period.
 			__FillEnd_JTextField,
 			__FillFlag_JTextField;	// Flag to set for filled data.
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series alias
+private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
 private SimpleJComboBox	__IndependentTSID_JComboBox= null;
 						// List for independent time
 						// series identifier(s)
@@ -134,21 +130,6 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
-	/* REVISIT SAM 2005-04-27 enable button for TEMPTS
-	else if ( s.equals(__CHANGE_TO_TEMPTS) ) {
-		// Make sure that all selected time series start with the
-		// string "TEMPTS" but don't duplicate it...
-		JGUIUtil.addStringToSelected(__IndependentTSID_JList,"TEMPTS ");
-		refresh();
-	}
-	else if ( s.equals(__REMOVE_TEMPTS_FLAG) ) {
-		// If selected time series start with the string "TEMPTS" and
-		// there is more than one token, remove the leading TEMPTS...
-		JGUIUtil.removeStringFromSelected(
-		__IndependentTSID_JList,"TEMPTS ");
-		refresh();
-	}
-	*/
 	else {	// A combo box.  Refresh the command...
 		checkGUIState();
 		refresh ();
@@ -163,15 +144,16 @@ private void checkGUIState()
 	if ( NumberOfEquations.equalsIgnoreCase(__command._MonthlyEquations) ) {
 		JGUIUtil.setEnabled(__AnalysisMonth_JComboBox,true);
 	}
-	else {	JGUIUtil.setEnabled(__AnalysisMonth_JComboBox,false);
+	else {
+        JGUIUtil.setEnabled(__AnalysisMonth_JComboBox,false);
 	}
 
 	String Transformation = __Transformation_JComboBox.getSelected();
-	if (	Transformation.equalsIgnoreCase(__command._None) ||
-		Transformation.equals("") ) {
+	if ( Transformation.equalsIgnoreCase(__command._None) || Transformation.equals("") ) {
 		JGUIUtil.setEnabled(__Intercept_JTextField,true);
 	}
-	else {	JGUIUtil.setEnabled(__Intercept_JTextField,false);
+	else {
+        JGUIUtil.setEnabled(__Intercept_JTextField,false);
 	}
 }
 
@@ -284,7 +266,7 @@ private void initialize ( JFrame parent, Command command )
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -293,38 +275,26 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Fill missing data using ordinary least squares (OLS) " +
-		"regression."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Fill missing data using ordinary least squares (OLS) regression."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The analysis period will be used to determine relationships"  +
-		" used for filling." ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The analysis period will be used to determine relationships used for filling." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Use a setOutputPeriod() command before reading to extend " +
 		"the dependent time series, if necessary." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data, " +
 		"use blank for all available data, OutputStart, or OutputEnd."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Time series to fill (dependent):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );
-	/* REVISIT SAM 2005-04-27 see if a blank is needed for zero size...
-	int size = 0;
-	if ( tsids != null ) {
-		size = tsids.size();
-	}
-	Vector ind_tsids = new Vector ();
-	for ( int i = 0; i < size; i++ ) {
-		ind_tsids.addElement ( (String)tsids.elementAt(i) );
-	}
-	__TSID_JComboBox.setData ( ind_tsids );
-	*/
+
 	// Get the time series identifiers from the processor...
 	
 	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -437,7 +407,7 @@ private void initialize ( JFrame parent, Command command )
 		"1-character flag to indicate fill."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 5, 65 );
 	__command_JTextArea.setLineWrap ( true );
@@ -463,9 +433,9 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
@@ -557,12 +527,11 @@ private void refresh ()
 		FillEnd = props.getValue("FillEnd");
 		FillFlag = props.getValue("FillFlag");
 		// Now check the information and set in the GUI...
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__TSID_JComboBox, TSID,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
 			__TSID_JComboBox.select ( TSID );
 		}
-		else {	/* REVISIT SAM 2005-04-27 disable since this may
+		else {
+            /* TODO SAM 2005-04-27 disable since this may
 			prohibit advanced users.
 			Message.printWarning ( 1,
 				"fillRegression_JDialog.refresh", "Existing " +
@@ -589,7 +558,7 @@ private void refresh ()
 			JGUIUtil.NONE, null, null ) ) {
 			__IndependentTSID_JComboBox.select ( IndependentTSID );
 		}
-	/* REVISIT SAM 2005-04-27 Figure out how to do with combo box
+	/* TODO SAM 2005-04-27 Figure out how to do with combo box
 		else if ( IndependentTSID.regionMatches(
 			true,0,"TEMPTS",0,6) ) {
 			// The time series is a TEMPTS so look
@@ -629,7 +598,8 @@ private void refresh ()
 			}
 		}
 	*/
-		else {	/* REVISIT SAM 2005-04-27  disable and add
+		else {
+            /* TODO SAM 2005-04-27  disable and add
 			Message.printWarning ( 1,
 				"fillRegression_JDialog.refresh", "Existing " +
 				"fillRegression() references a non-existent\n"+
@@ -637,41 +607,32 @@ private void refresh ()
 				"\".  Select a\n" +
 				"different time series or Cancel." );
 			*/
-			if (	(IndependentTSID == null) ||
-				IndependentTSID.equals("") ) {
-				// For new command... Select the second item
-				// in the list...
-				if (	__IndependentTSID_JComboBox.
-					getItemCount() > 1 ) {
+			if ( (IndependentTSID == null) || IndependentTSID.equals("") ) {
+				// For new command... Select the second item in the list...
+				if ( __IndependentTSID_JComboBox.getItemCount() > 1 ) {
 					__IndependentTSID_JComboBox.select (1);
 				}
-				// Else select the first.  This will generate a
-				// warning when input is checked...
-				else if(__IndependentTSID_JComboBox.
-					getItemCount() > 0 ) {
+				// Else select the first.  This will generate a warning when input is checked...
+				else if(__IndependentTSID_JComboBox.getItemCount() > 0 ) {
 					__IndependentTSID_JComboBox.select (0);
 				}
 			}
 			else {	// Automatically add to the list at the top... 
-				__IndependentTSID_JComboBox.insertItemAt (
-					IndependentTSID, 0 );
+				__IndependentTSID_JComboBox.insertItemAt ( IndependentTSID, 0 );
 				// Select...
-				__IndependentTSID_JComboBox.select (
-					IndependentTSID );
+				__IndependentTSID_JComboBox.select ( IndependentTSID );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__NumberOfEquations_JComboBox, NumberOfEquations,
-			JGUIUtil.NONE, null, null ) ) {
-			__NumberOfEquations_JComboBox.select (
-			NumberOfEquations );
+		if ( JGUIUtil.isSimpleJComboBoxItem( __NumberOfEquations_JComboBox, NumberOfEquations, JGUIUtil.NONE, null, null ) ) {
+			__NumberOfEquations_JComboBox.select ( NumberOfEquations );
 		}
-		else {	if (	(NumberOfEquations == null) ||
-				NumberOfEquations.equals("") ) {
+		else {
+            if ( (NumberOfEquations == null) ||	NumberOfEquations.equals("") ) {
 				// New command...select the default...
 				__NumberOfEquations_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+                // Bad user command...
 				Message.printWarning ( 1,
 				"fillRegression_JDialog.refresh", "Existing " +
 				"fillRegression() references an invalid\n"+
@@ -679,13 +640,11 @@ private void refresh ()
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__AnalysisMonth_JComboBox, AnalysisMonth,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem( __AnalysisMonth_JComboBox, AnalysisMonth, JGUIUtil.NONE, null, null ) ) {
 			__AnalysisMonth_JComboBox.select ( AnalysisMonth );
 		}
-		else {	if (	(AnalysisMonth == null) ||
-				AnalysisMonth.equals("") ) {
+		else {
+            if ( (AnalysisMonth == null) ||	AnalysisMonth.equals("") ) {
 				// New command...select the default...
 				__AnalysisMonth_JComboBox.select ( 0 );
 			}
@@ -697,13 +656,11 @@ private void refresh ()
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__Transformation_JComboBox, Transformation,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem( __Transformation_JComboBox, Transformation, JGUIUtil.NONE, null, null ) ) {
 			__Transformation_JComboBox.select ( Transformation );
 		}
-		else {	if (	(Transformation == null) ||
-				Transformation.equals("") ) {
+		else {
+            if ( (Transformation == null) || Transformation.equals("") ) {
 				// Set default...
 				__Transformation_JComboBox.select ( 0 );
 			}

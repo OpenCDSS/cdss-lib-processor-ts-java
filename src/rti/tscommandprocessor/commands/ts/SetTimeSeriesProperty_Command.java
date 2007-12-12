@@ -25,10 +25,10 @@ import RTi.Util.IO.PropList;
 
 /**
 <p>
-This class initializes, checks, and runs the ResequenceTimeSeriesData() command.
+This class initializes, checks, and runs the SetTimeSeriesProperty() command.
 </p>
 */
-public class ResequenceTimeSeriesData_Command extends AbstractCommand implements Command
+public class SetTimeSeriesProperty_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -38,12 +38,15 @@ protected final String _AllTS = "AllTS";
 protected final String _SelectedTS = "SelectedTS";
 protected final String _AllMatchingTSID = "AllMatchingTSID";
 
+protected final String _False = "False";
+protected final String _True = "True";
+
 /**
 Constructor.
 */
-public ResequenceTimeSeriesData_Command ()
+public SetTimeSeriesProperty_Command ()
 {	super();
-	setCommandName ( "ResequenceTimeSeriesData" );
+	setCommandName ( "SetTimeSeriesProperty" );
 }
 
 /**
@@ -57,37 +60,30 @@ dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TableID = parameters.getValue ( "TableID" );
-    String NewScenario = parameters.getValue ( "NewScenario" );
+{	String Editable = parameters.getValue ( "Editable" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
 
-	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TableID == null) || (TableID.length() == 0) ) {
-		message = "The table identifier must be specified.";
+	if ( (Editable != null) && (Editable.length() != 0) &&
+            !Editable.equalsIgnoreCase(_False) &&
+            !Editable.equalsIgnoreCase(_True)) {
+		message = "The value for Editable is invalid.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify a table identifier." ) );
+						message, "Specify blank, " + _False + " (default), or " + _True + "." ) );
 	}
-    if ( (NewScenario == null) || (NewScenario.length() == 0) ) {
-        message = "The new scenario must be specified to differentiate output from input time series.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a new scenario." ) );
-    }
 
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
-	valid_Vector.add ( "TableID" );
-	valid_Vector.add ( "NewScenario" );
+	valid_Vector.add ( "Description" );
+	valid_Vector.add ( "Editable" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -106,7 +102,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new ResequenceTimeSeriesData_JDialog ( parent, this )).ok();
+	return (new SetTimeSeriesProperty_JDialog ( parent, this )).ok();
 }
 
 // parseCommand from base class
@@ -122,7 +118,7 @@ not produce output).
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ResequenceTimeSeriesData_Command.runCommand", message;
+{	String routine = "SetTimeSeriesProperty_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -137,6 +133,12 @@ CommandWarningException, CommandException
 		TSList = _AllTS;
 	}
 	String TSID = parameters.getValue ( "TSID" );
+    String Description = parameters.getValue ( "Description" );
+    boolean Editable_boolean = false;   // Default
+    String Editable = parameters.getValue ( "Editable" );
+    if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
+        Editable_boolean = true;
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -159,14 +161,13 @@ CommandWarningException, CommandException
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to process using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+		message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
+						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
 	Vector tslist = (Vector)o_TSList;
 	if ( tslist.size() == 0 ) {
@@ -188,11 +189,15 @@ CommandWarningException, CommandException
     for ( int i = 0; i < size; i++ ) {
         // Create a copy of the original, but with the new scenario.
         ts = (TS)tslist.elementAt(i);
-        // Now resequence the data...
+        // Now set the data...
         try {
+            if ( (Description != null) && (Description.length() > 0) ) {
+                ts.setDescription ( Description );
+            }
+            ts.setEditable ( Editable_boolean );
         }
         catch ( Exception e ) {
-            message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\"";
+            message = "Unexpected error setting properties for time series \"" + ts.getIdentifier() + "\"";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
@@ -225,7 +230,8 @@ public String toString ( PropList parameters )
 	}
 	String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue ( "TSID" );
-    String TableID = parameters.getValue ( "TableID" );
+    String Description = parameters.getValue ( "Description" );
+    String Editable = parameters.getValue ( "Editable" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -236,12 +242,18 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
-	if ( (TableID != null) && (TableID.length() > 0) ) {
+	if ( (Description != null) && (Description.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "TableID=\"" + TableID + "\"" );
+		b.append ( "Description=\"" + Description + "\"" );
 	}
+    if ( (Editable != null) && (Editable.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Editable=" + Editable );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

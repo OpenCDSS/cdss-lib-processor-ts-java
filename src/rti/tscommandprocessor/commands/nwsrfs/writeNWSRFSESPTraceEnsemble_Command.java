@@ -271,8 +271,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String routine = "writeNWSRFSESPTraceEnsemble_Command.runCommand",
-	       message = null;
+{	String routine = "writeNWSRFSESPTraceEnsemble_Command.runCommand", message = null;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -280,6 +279,10 @@ throws InvalidCommandParameterException,
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
+    
+    // Clear the output file
+    
+    setOutputFile ( null );
 
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters ();

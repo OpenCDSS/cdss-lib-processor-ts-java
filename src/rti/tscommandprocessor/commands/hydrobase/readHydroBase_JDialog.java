@@ -89,22 +89,15 @@ implements ActionListener, KeyListener, WindowListener
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private readHydroBase_Command __command = null; // Command to edit
-private JTextField	__Alias_JTextField=null,// Alias for time series,
-						// alias version
-			__Location_JTextField,	// Location part of TSID,
-						// non-alias version
-			__DataSource_JTextField,// Data source part of TSID,
-						// non-alias version
-			__DataType_JTextField,	// Data type part of TSID,
-						// non-alias version
-			__Interval_JTextField,	// Interval part of TSID,
-						// non-alias version
-			__InputName_JTextField,	// Input name part of TSID,
-						// non-alias version
-			__TSID_JTextField,	// Full TSID,
-						// non-alias version
-			__InputStart_JTextField,// Text fields for query
-			__InputEnd_JTextField,	// period, both versions.
+private JTextField	__Alias_JTextField=null,// Alias for time series, alias version
+			__Location_JTextField,	// Location part of TSID, non-alias version
+			__DataSource_JTextField,// Data source part of TSID, non-alias version
+			__DataType_JTextField,	// Data type part of TSID, non-alias version
+			__Interval_JTextField,	// Interval part of TSID, non-alias version
+			__InputName_JTextField,	// Input name part of TSID, non-alias version
+			__TSID_JTextField,	// Full TSID, non-alias version
+			__InputStart_JTextField,// Text fields for query period, both versions.
+			__InputEnd_JTextField,	
 			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			__FillDailyDivFlag_JTextField,
@@ -181,7 +174,7 @@ private boolean		__ok = false;		// Indicates whether OK was
 						// dialog.
 
 /**
-readHydroBase_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -253,10 +246,8 @@ private void checkGUIState()
 					__FillDailyDivFlag_JTextField, false );
 			}
 			*/
-			JGUIUtil.setEnabled (
-				__FillUsingDivComments_JComboBox, true );
-			JGUIUtil.setEnabled (
-				__FillUsingDivCommentsFlag_JTextField, true );
+			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, true );
+			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, true );
 		}
 		else {	/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
@@ -264,10 +255,8 @@ private void checkGUIState()
 			JGUIUtil.setEnabled (
 				__FillDailyDivFlag_JTextField, false );
 			*/
-			JGUIUtil.setEnabled (
-				__FillUsingDivComments_JComboBox, false );
-			JGUIUtil.setEnabled (
-				__FillUsingDivCommentsFlag_JTextField, false );
+			JGUIUtil.setEnabled ( __FillUsingDivComments_JComboBox, false );
+			JGUIUtil.setEnabled ( __FillUsingDivCommentsFlag_JTextField, false );
 		}
 	}
 }
@@ -969,15 +958,7 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents:
-<pre>
-readHydroBase(DataType="X",Interval="X",InputName="X",WhereN="X",...,
-InputStart="X",InputEnd="X",
-FillUsingDivComments=X,FillUsingDivCommentsFlag="X")
-
-TS Alias = readHydroBase(TSID="X",InputStart="X",InputEnd="X",
-FillUsingDivComments=X,FillUsingDivCommentsFlag="X")
-</pre>
+Refresh the command string from the dialog contents.
 */
 private void refresh ()
 {	String routine = "readHydroBase_JDialog.refresh";
@@ -1184,13 +1165,11 @@ private void refresh ()
 	*/
 	FillUsingDivComments = __FillUsingDivComments_JComboBox.getSelected();
 	props.add ( "FillUsingDivComments=" + FillUsingDivComments );
-	FillUsingDivCommentsFlag =
-		__FillUsingDivCommentsFlag_JTextField.getText().trim();
+	FillUsingDivCommentsFlag =__FillUsingDivCommentsFlag_JTextField.getText().trim();
 	props.add ( "FillUsingDivCommentsFlag=" + FillUsingDivCommentsFlag );
 	__command_JTextArea.setText( __command.toString ( props ) );
 
-	// Check the GUI state to determine whether some controls should be
-	// disabled.
+	// Check the GUI state to determine whether some controls should be disabled.
 
 	checkGUIState();
 }

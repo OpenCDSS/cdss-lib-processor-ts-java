@@ -418,8 +418,7 @@ CommandWarningException, CommandException
 		}
 	}*/
 
-	// Get the time series to process.  The time series list is searched
-	// backwards until the first match...
+	// Get the time series to process.  The time series list is searched backwards until the first match...
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "CommandTag", command_tag );
@@ -429,8 +428,7 @@ CommandWarningException, CommandException
 		processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\") from processor.";
+		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -442,8 +440,7 @@ CommandWarningException, CommandException
 	Object o_TS = bean_PropList.getContents ( "TS");
 	TS ts = null;
 	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\" from processor.";
+		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\" from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -456,8 +453,7 @@ CommandWarningException, CommandException
 	}
 	
 	if ( ts == null ) {
-		message = "Unable to find time series to analyze using TSID \""+
-		TSID + "\".";
+		message = "Unable to find time series to analyze using TSID \"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -470,7 +466,8 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
 	TS stats_ts = null;
-	try {	TSAnalyst tsa = new TSAnalyst ();
+	try {
+        TSAnalyst tsa = new TSAnalyst ();
 		PropList tsa_props = new PropList ( "TSAnalyst" );
 		if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 			tsa_props.set ( "NewTSID", NewTSID );	// Optional
@@ -511,11 +508,13 @@ CommandWarningException, CommandException
 		new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "See the log file for details." ) );
 	}
+    
+    // Update the data to the processor so that appropriate actions are taken...
 
-	// Update the data to the processor so that appropriate actions are taken...
+    if ( stats_ts != null ) {
+        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
+    }
 
-	TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
-	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,

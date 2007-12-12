@@ -92,6 +92,10 @@ import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Comman
 
 import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
 
+// SHEF commands.
+
+import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
+
 // StateCU commands.
 
 import rti.tscommandprocessor.commands.statecu.readStateCU_Command;
@@ -122,6 +126,7 @@ import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
+import rti.tscommandprocessor.commands.ts.CreateTraces_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
@@ -135,6 +140,7 @@ import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
+import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 // Utility commands.
@@ -237,6 +243,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateRegressionTestCommandFile") ) {
 		return new CreateRegressionTestCommandFile_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateTraces") ) {
+        return new CreateTraces_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Cumulate") ) {
 		return new cumulate_Command ();
 	}
@@ -383,9 +392,12 @@ throws UnknownCommandException
 		// Phasing into new syntax...
 		return new SetInputPeriod_Command ();
 	}
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"SortTimeSeries") ) {
-		return new sortTimeSeries_Command ();
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetTimeSeriesProperty") ) {
+		return new SetTimeSeriesProperty_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SortTimeSeries") ) {
+        return new sortTimeSeries_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase( command_string,"StartLog") ){
 		return new startLog_Command ();
 	}
@@ -413,6 +425,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteRiverWare") ) {
 		return new writeRiverWare_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteSHEF") ) {
+        return new WriteSHEF_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteStateMod") ) {
 		return new writeStateMod_Command ();
 	}

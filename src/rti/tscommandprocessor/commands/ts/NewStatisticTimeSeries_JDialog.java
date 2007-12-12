@@ -303,22 +303,19 @@ private void initialize ( JFrame parent, Command command )
 		"Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
-	
 	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	
 	if ( tsids == null ) {
 		// User will not be able to select anything.
 		tsids = new Vector();
 	}
-	
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
 	__NewTSID_JTextArea.setLineWrap ( true );
@@ -342,8 +339,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
-	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoicesForSimpleSample (
-				TimeInterval.YEAR, null ) );
+	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoicesForSimpleSample ( TimeInterval.YEAR, null ) );
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
 	JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,
@@ -498,8 +494,7 @@ private void refresh ()
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
-		// Now select the item in the list.  If not a match, print a
-		// warning.
+		// Now select the item in the list.  If not a match, print a warning.
 		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
 				JGUIUtil.NONE, null, null ) ) {
 				__TSID_JComboBox.select ( TSID );
@@ -539,8 +534,7 @@ private void refresh ()
 		}
 		*/
 		if ( AllowMissingCount != null ) {
-			__AllowMissingCount_JTextField.setText (
-			AllowMissingCount );
+			__AllowMissingCount_JTextField.setText ( AllowMissingCount );
 		}
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText( AnalysisStart );

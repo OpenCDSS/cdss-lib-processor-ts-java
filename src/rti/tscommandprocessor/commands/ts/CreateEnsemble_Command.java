@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -7,15 +8,16 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSUtil_CreateTracesFromTimeSeries;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -25,16 +27,15 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.Prop;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 
 /**
 <p>
-This class initializes, checks, and runs the CreateTraces() command.
+This class initializes, checks, and runs the CreateEnsemble() command.
 </p>
 */
-public class CreateTraces_Command extends AbstractCommand implements Command
+public class CreateEnsemble_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -44,11 +45,16 @@ protected final String _NoShift = "NoShift";
 protected final String _ShiftToReference = "ShiftToReference";
 
 /**
+TSEnsemble created in discovery mode (basically to get the identifier for other commands).
+*/
+private TSEnsemble __tsensemble = null;
+
+/**
 Constructor.
 */
-public CreateTraces_Command ()
+public CreateEnsemble_Command ()
 {	super();
-	setCommandName ( "CreateTraces" );
+	setCommandName ( "CreateEnsemble" );
 }
 
 /**
@@ -70,9 +76,13 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     
     String TSID = parameters.getValue ( "TSID" );
+    String TraceLength = parameters.getValue ( "TraceLength" );
+    String InputStart = parameters.getValue ( "InputStart" );
+    String InputEnd = parameters.getValue ( "InputEnd" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
-    String TraceLength = parameters.getValue ( "TraceLength" );
+
     
     if ( (TSID == null) || (TSID.length() == 0) ) {
         message = "A time series identifier must be specified.";
@@ -80,6 +90,52 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a time series identifier." ) );
+    }
+    // Check the trace length...
+    try {
+        TimeInterval.parseInterval ( TraceLength );
+    }
+    catch ( Exception e ) {
+        message = "Trace length \"" + TraceLength +"\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid interval (e.g., 1Year)." ) );
+    }
+   
+    if (    (InputStart != null) && !InputStart.equals("") &&
+            !InputStart.equalsIgnoreCase("InputStart") &&
+            !InputStart.equalsIgnoreCase("InputEnd") ) {
+        try {   DateTime.parse(InputStart);
+        }
+        catch ( Exception e ) {
+            message = "The input start date/time \"" +InputStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
+        }
+    }
+    if (    (InputEnd != null) && !InputEnd.equals("") &&
+        !InputEnd.equalsIgnoreCase("InputStart") &&
+        !InputEnd.equalsIgnoreCase("InputEnd") ) {
+        try {   DateTime.parse( InputEnd );
+        }
+        catch ( Exception e ) {
+            message = "The input end date/time \"" +InputStart + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
+        }
+    }
+    
+    if ( (EnsembleID == null) || (EnsembleID.length() == 0) ) {
+        message = "An ensemble identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an ensemble identifier." ) );
     }
     if ( (ReferenceDate != null) && !ReferenceDate.equals("") ) {
         try {
@@ -93,19 +149,6 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date (or blank) for the reference date." ) );
         }
     }
-    
-    // Check the trace length...
-    try {
-        TimeInterval.parseInterval ( TraceLength );
-    }
-    catch ( Exception e ) {
-        message = "Trace length \"" + TraceLength +"\" is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid interval (e.g., 1Year)." ) );
-    }
-    
 
     if ( (ShiftDataHow != null) && (ShiftDataHow.length() != 0) &&
             !ShiftDataHow.equalsIgnoreCase(_ShiftToReference) &&
@@ -121,6 +164,10 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "InputStart" );
+    valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "EnsembleName" );
 	valid_Vector.add ( "TraceLength" );
 	valid_Vector.add ( "ReferenceDate" );
     valid_Vector.add ( "ShiftDataHow" );
@@ -142,70 +189,32 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new CreateTraces_JDialog ( parent, this )).ok();
+	return (new CreateEnsemble_JDialog ( parent, this )).ok();
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+Return the table that is read by this class when run in discovery mode.
 */
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{   if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
-        super.parseCommand( command_string);
-    }
-    else {
-        //TODO SAM 2007-12-12 This whole block of code needs to be
-        // removed as soon as commands have been migrated to the new syntax.
-        //
-        // Old syntax without named parameters.
-        Vector v = StringUtil.breakStringList ( command_string,"(),",0 );
-        String TSID = "";
-        String TraceLength = "";
-        String ReferenceDate = "";
-        String ShiftDataHow = "";
-        if ( v != null ) {
-            if ( v.size() >= 2 ) {
-                TSID = ((String)v.elementAt(1)).trim();
-            }
-            if ( v.size() >= 3 ) {
-                TraceLength = ((String)v.elementAt(2)).trim();
-            }
-            if ( v.size() >= 4 ) {
-                ReferenceDate = ((String)v.elementAt(3)).trim();
-            }
-            if ( v.size() >= 5 ) {
-                ShiftDataHow = ((String)v.elementAt(4)).trim();
-            }
-        }
-
-        // Set parameters and new defaults...
-
-        PropList parameters = new PropList ( getCommandName() );
-        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-        if ( TSID.length() > 0 ) {
-            parameters.set ( "TSID", TSID );
-        }
-        if ( TraceLength.length() > 0 ) {
-            parameters.set ( "TraceLength", TraceLength );
-        }
-        if ( ReferenceDate.length() > 0 ) {
-            parameters.set ( "ReferenceDate", ReferenceDate );
-        }
-        if ( ShiftDataHow.length() > 0 ) {
-            parameters.set ( "ShiftDataHow", ShiftDataHow );
-        }
-        parameters.setHowSet ( Prop.SET_UNKNOWN );
-        setCommandParameters ( parameters );
-    }
+private TSEnsemble getDiscoveryEnsemble()
+{
+    return __tsensemble;
 }
+
+/**
+Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+*/
+public List getObjectList ( Class c )
+{   TSEnsemble tsensemble = getDiscoveryEnsemble();
+    Vector v = null;
+    if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
+        v = new Vector();
+        v.addElement ( tsensemble );
+        Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
+    }
+    return v;
+}
+
+// Use base class parseCommand()
 
 /**
 Run the command.
@@ -216,9 +225,37 @@ command could produce some results).
 not produce output).
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "CreateTraces_Command.runCommand", message;
+{	String routine = "CreateEnsemble_Command.runCommandInternal", message;
 	int warning_level = 2;
     int log_level = 3;  // Non-user warning level
 	String command_tag = "" + command_number;
@@ -226,15 +263,21 @@ CommandWarningException, CommandException
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
-    CommandPhaseType command_phase = CommandPhaseType.RUN;
+	status.clearLog(command_phase);
+    
+    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryEnsemble ( null );
+    }
 
 	PropList parameters = getCommandParameters();
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String EnsembleName = parameters.getValue ( "EnsembleName" );
     String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
 
+    if ( command_phase == CommandPhaseType.RUN ) {
     // Get the time series to process.  The time series list is searched backwards until the first match...
 
     PropList request_params = new PropList ( "" );
@@ -249,7 +292,7 @@ CommandWarningException, CommandException
         Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
     }
@@ -261,7 +304,7 @@ CommandWarningException, CommandException
         Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
     }
@@ -274,7 +317,7 @@ CommandWarningException, CommandException
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
         new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
         throw new CommandWarningException ( message );
@@ -290,7 +333,7 @@ CommandWarningException, CommandException
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the reference date is valid." ) );
         }
@@ -400,18 +443,18 @@ CommandWarningException, CommandException
     
     Vector tslist = null;
     try {
-        TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
-        tslist = util.getTracesFromTS ( ts, TraceLength,
-                ReferenceDate_DateTime, ShiftDataHow,
-                InputStart_DateTime,
-                InputEnd_DateTime );
+            TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
+            tslist = util.getTracesFromTS ( ts, TraceLength,
+                    ReferenceDate_DateTime, ShiftDataHow,
+                    InputStart_DateTime,
+                    InputEnd_DateTime );
     }
     catch ( Exception e ) {
         message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\"";
         Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( command_phase,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "Check log file for details." ) );
         throw new CommandException ( message );
@@ -428,8 +471,19 @@ CommandWarningException, CommandException
     if ( tslist != null ) {
         TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
         TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, tslist);
+        
+        // Create an ensemble and add to the processor...
+        
+        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+        TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
     }
-    
+    }
+    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        // Just want the identifier...
+        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, null );
+        setDiscoveryEnsemble ( ensemble );
+    }
+
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
@@ -439,7 +493,15 @@ CommandWarningException, CommandException
         throw new CommandWarningException ( message );
     }
 	
-	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+	status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the ensemble that is processed by this class in discovery mode.
+*/
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
+{
+    __tsensemble = tsensemble;
 }
 
 /**
@@ -452,6 +514,10 @@ public String toString ( PropList parameters )
 	}
     String TSID = parameters.getValue ( "TSID" );
     String TraceLength = parameters.getValue ( "TraceLength" );
+    String InputStart = parameters.getValue ( "InputStart" );
+    String InputEnd = parameters.getValue ( "InputEnd" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String EnsembleName = parameters.getValue ( "EnsembleName" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
 	StringBuffer b = new StringBuffer ();
@@ -467,6 +533,30 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "TraceLength=" + TraceLength );
 	}
+    if ( (InputStart != null) && (InputStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InputStart=" + InputStart );
+    }
+    if ( (InputEnd != null) && (InputEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InputEnd=" + InputEnd );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (EnsembleName != null) && (EnsembleName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
+    }
     if ( (ReferenceDate != null) && (ReferenceDate.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

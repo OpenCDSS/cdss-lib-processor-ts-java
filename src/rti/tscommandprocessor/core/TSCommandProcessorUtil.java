@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -36,6 +37,44 @@ public abstract class TSCommandProcessorUtil
 Used to handle regression test results during testing.
 */
 private static PrintWriter __regression_test_fp = null;
+
+/**
+Append a time series to the processor time series results list.
+@param processor the CommandProcessor to use to get data.
+@param command Command for which to get the working directory.
+@param ts Time series to append.
+@param return the number of warnings generated.
+*/
+public static int appendEnsembleToResultsEnsembleList ( CommandProcessor processor, Command command, TSEnsemble tsensemble )
+{   String routine = "TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList";
+    PropList request_params = new PropList ( "" );
+    request_params.setUsingObject ( "TSEnsemble", tsensemble );
+    int warning_level = 3;
+    int warning_count = 0;
+    CommandStatus status = null;
+    if ( command instanceof CommandStatusProvider ) {
+        status = ((CommandStatusProvider)command).getCommandStatus();
+    }
+    //CommandProcessorRequestResultsBean bean = null;
+    try { //bean =
+        processor.processRequest( "AppendEnsemble", request_params );
+    }
+    catch ( Exception e ) {
+        String message = "Error requesting AppendEnsemble(TSEnsemble=\"...\") from processor).";
+        // This is a low-level warning that the user should not see.
+        // A problem would indicate a software defect so return the warning count as a trigger.
+        Message.printWarning(warning_level, routine, e);
+        Message.printWarning(warning_level, routine, message );
+        if ( status != null ) {
+            status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message,
+                    "Check the log file for details - report the problem to software support."));
+        }
+        ++warning_count;
+    }
+    return warning_count;
+}
    
 /**
 Add a record to the regression test results report.  The report is a simple text file
@@ -247,6 +286,92 @@ public static boolean getCreateOutput ( CommandProcessor processor )
 }
 
 /**
+Get a list of ensemble identifiers from a list of commands.  See documentation for
+fully loaded method.  The output list is not sorted..
+@param commands Commands to search.
+@return list of table identifiers or an empty non-null Vector if nothing
+found.
+*/
+private static Vector getEnsembleIdentifiersFromCommands ( List commands )
+{   // Default behavior...
+    return getEnsembleIdentifiersFromCommands ( commands, false );
+}
+
+/**
+Get a list of ensemble identifiers from a list of commands.  The returned strings are suitable for
+drop-down lists, etc.  Ensemble identifiers are determined as follows:
+Commands that implement ObjectListProvider have their getObjectList(TSEnsemble) method called.
+The getEnsembleID() method on the TSEnsemble is then returned.
+@param commands Commands to search.
+@param sort Should output be sorted by identifier.
+@return list of ensemble identifiers or an empty non-null Vector if nothing found.
+*/
+protected static Vector getEnsembleIdentifiersFromCommands ( List commands, boolean sort )
+{   if ( commands == null ) {
+        return new Vector();
+    }
+    Vector v = new Vector ( 10, 10 );
+    int size = commands.size();
+    boolean in_comment = false;
+    Command command = null;
+    String command_string = null;
+    for ( int i = 0; i < size; i++ ) {
+        command = (Command)commands.get(i);
+        command_string = command.toString();
+        if ( command_string.startsWith("/*") ) {
+            in_comment = true;
+            continue;
+        }
+        else if ( command_string.startsWith("*/") ) {
+            in_comment = false;
+            continue;
+        }
+        if ( in_comment ) {
+            continue;
+        }
+        if ( command instanceof ObjectListProvider ) {
+            List list = ((ObjectListProvider)command).getObjectList ( new TSEnsemble().getClass() );
+            String id;
+            if ( list != null ) {
+                int listsize = list.size();
+                TSEnsemble tsensemble;
+                for ( int its = 0; its < listsize; its++ ) {
+                    tsensemble = (TSEnsemble)list.get(its);
+                    id = tsensemble.getEnsembleID();
+                    if ( !id.equals("") ) {
+                        v.addElement( id );
+                    }
+                }
+            }
+        }
+    }
+    return v;
+}
+
+/**
+Return the ensemble identifiers for commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of
+identifiers to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@return a Vector of String containing the ensemble identifiers, or an empty Vector.
+*/
+public static Vector getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+{   String routine = "TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand";
+    // Get the position of the command in the list...
+    int pos = processor.indexOf(command);
+    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( pos < 0 ) {
+        // Just return a blank list...
+        return new Vector();
+    }
+    // Find the commands above the position...
+    Vector commands = getCommandsBeforeIndex ( processor, pos );
+    // Get the time series identifiers from the commands...
+    return getEnsembleIdentifiersFromCommands ( commands );
+}
+
+/**
 Return the list of property names available from the processor.
 These properties can be requested using getPropContents().
 @return the list of property names available from the processor.
@@ -262,8 +387,7 @@ public static Vector getPropertyNameList( CommandProcessor processor )
 
 /**
 Get a list of table identifiers from a list of commands.  See documentation for
-fully loaded method.  The output list is not sorted and does NOT contain the
-input type or name.
+fully loaded method.
 @param commands Time series commands to search.
 @return list of table identifiers or an empty non-null Vector if nothing
 found.
@@ -277,7 +401,7 @@ private static Vector getTableIdentifiersFromCommands ( List commands )
 Get a list of table identifiers from a list of commands.  The returned strings are suitable for
 drop-down lists, etc.  Table identifiers are determined as follows:
 Commands that implement ObjectListProvider have their getObjectList(DataTable) method called.
-The getID() method on the DataTable is then returned.
+The getTableID() method on the DataTable is then returned.
 @param commands Commands to search.
 @param sort Should output be sorted by identifier.
 @return list of table identifiers or an empty non-null Vector if nothing found.
@@ -306,8 +430,6 @@ protected static Vector getTableIdentifiersFromCommands ( List commands, boolean
             continue;
         }
         if ( command instanceof ObjectListProvider ) {
-            // Try to get the list of identifiers using the interface method.
-            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
             List list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
             String id;
             if ( list != null ) {

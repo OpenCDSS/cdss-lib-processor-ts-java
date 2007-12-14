@@ -125,8 +125,8 @@ import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
+import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
-import rti.tscommandprocessor.commands.ts.CreateTraces_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
@@ -135,6 +135,7 @@ import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
@@ -240,12 +241,12 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("Copy") ) {
 		return new copy_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateEnsemble") ) {
+        return new CreateEnsemble_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateRegressionTestCommandFile") ) {
 		return new CreateRegressionTestCommandFile_Command ();
 	}
-    else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateTraces") ) {
-        return new CreateTraces_Command ();
-    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Cumulate") ) {
 		return new cumulate_Command ();
 	}
@@ -303,6 +304,10 @@ throws UnknownCommandException
 	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("NewDataTest") ) {
 		return new newDataTest_Command();
 	}
+    // Put the following before the shorter NewStatisticTimeSeries() command.
+    else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticTimeSeriesFromEnsemble") ) {
+        return new NewStatisticTimeSeriesFromEnsemble_Command ();
+    }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticTimeSeries") ) {
 		return new NewStatisticTimeSeries_Command ();
 	}

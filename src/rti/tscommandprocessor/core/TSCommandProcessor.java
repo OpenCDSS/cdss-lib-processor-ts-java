@@ -40,8 +40,7 @@ import java.util.Vector;
 
 import java.awt.event.WindowListener;	// To know when graph closes to close app
 
-// RTi utility code.
-
+import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandListListener;
@@ -60,6 +59,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
@@ -127,6 +127,12 @@ If false, commands will run but output files will not be created.  The latter ma
 during troubleshooting to increase performance.
 */
 private Boolean __CreateOutput_Boolean = new Boolean(true);
+
+/**
+The list of TSEnsemble managed by this command processor,
+guaranteed to be non-null.
+*/
+private Vector __TSEnsemble_Vector = new Vector();
 
 /**
 The initial working directory for processing, typically the location of the commands
@@ -529,6 +535,9 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("DataTestList") ) {
 		return getPropContents_DataTestList();
 	}
+    else if ( prop.equalsIgnoreCase("EnsembleResultsList") ) {
+        return getPropContents_EnsembleResultsList();
+    }
 	else if ( prop.equalsIgnoreCase("HaveOutputPeriod") ) {
 		return getPropContents_HaveOutputPeriod();
 	}
@@ -638,6 +647,15 @@ Handle the DataTestList property request.
 private Vector getPropContents_DataTestList()
 {
 	return __tsengine.getDataTestList();
+}
+
+/**
+Handle the EnsembleResultsList property request.
+@return The ensemble results list, as a List of DataTable.
+ */
+private List getPropContents_EnsembleResultsList()
+{
+    return __TSEnsemble_Vector;
 }
 
 /**
@@ -1351,12 +1369,21 @@ throws Exception
 	if ( request.equalsIgnoreCase("AppendTimeSeries") ) {
 		return processRequest_AppendTimeSeries ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("AppendEnsemble") ) {
+        return processRequest_AppendEnsemble( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("CalculateTSAverageLimits") ) {
 		return processRequest_CalculateTSAverageLimits ( request, request_params );
 	}
 	else if ( request.equalsIgnoreCase("DateTime") ) {
 		return processRequest_DateTime ( request, request_params );
 	}
+	else if ( request.equalsIgnoreCase("GetEnsemble") ) {
+        return processRequest_GetEnsemble ( request, request_params );
+    }
+    else if ( request.equalsIgnoreCase("GetEnsembleAt") ) {
+        return processRequest_GetEnsembleAt ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("GetHydroBaseDMI") ) {
 		return processRequest_GetHydroBaseDMI ( request, request_params );
 	}
@@ -1408,6 +1435,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
 		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetRiversideDB_DMI") ) {
+        return processRequest_SetRiversideDB_DMI ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("SetTable") ) {
         return processRequest_SetTable ( request, request_params );
     }
@@ -1425,6 +1455,27 @@ throws Exception
 		// an error and pass back useful information.
 		throw new UnrecognizedRequestException ( warning );
 	}
+}
+
+/**
+Process the AppendEnsemble request.
+*/
+private CommandProcessorRequestResultsBean processRequest_AppendEnsemble (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "TSEnsemble" );
+    if ( o == null ) {
+            String warning = "Request AppendEnsemble() does not provide a TSEnsemble parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    TSEnsemble tsensemble = (TSEnsemble)o;
+    __TSEnsemble_Vector.add ( tsensemble );
+    // No data are returned in the bean.
+    return bean;
 }
 
 /**
@@ -1501,6 +1552,71 @@ throws Exception
 	// This will be set in the bean because the PropList is a reference...
 	results.setUsingObject("DateTime", dt );
 	return bean;
+}
+
+/**
+Process the GetEnsemble request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetEnsemble (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "EnsembleID" );
+    if ( o == null ) {
+            String warning = "Request GetEnsemble() does not provide an EnsembleID parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String EnsembleID = (String)o;
+    int size = __TSEnsemble_Vector.size();
+    TSEnsemble tsensemble = null, tsensemble2;
+    for ( int i = 0; i < size; i++ ) {
+        tsensemble2 = (TSEnsemble)__TSEnsemble_Vector.get(i);
+        if ( tsensemble2 == null ) {
+            continue;
+        }
+        if ( tsensemble2.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
+            tsensemble = tsensemble2;
+            break;
+        }
+    }
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference...
+    results.setUsingObject("TSEnsemble", tsensemble );
+    return bean;
+}
+
+/**
+Process the GetEnsembleAt request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetEnsembleAt (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "Index" );
+    if ( o == null ) {
+            String warning = "Request GetEnsembleAt() does not provide an Index parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    Integer Index = (Integer)o;
+    int size = __TSEnsemble_Vector.size();
+    int i = Index.intValue();
+    TSEnsemble tsensemble = null;
+    if ( i > (size - 1) ) {
+        tsensemble = null;
+    }
+    else {
+        tsensemble = (TSEnsemble)__TSEnsemble_Vector.elementAt ( i );
+    }
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference...
+    results.setUsingObject("TSEnsemble", tsensemble );
+    return bean;
 }
 
 /**
@@ -2056,6 +2172,28 @@ throws Exception
 	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
+}
+
+/**
+Process the SetHydroBaseDMI request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetRiversideDB_DMI (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "RiversideDB_DMI" );
+    if ( o == null ) {
+            String warning = "Request SetRiversideDB_DMI() does not provide a RiversideDB_DMI parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    RiversideDB_DMI dmi = (RiversideDB_DMI)o;
+    // Add an open RiversideDB_DMI instance, closing a previous connection of the same name if it exists.
+    __tsengine.setRiversideDB_DMI( dmi, true );
+    // No results need to be returned.
+    return bean;
 }
 
 /**

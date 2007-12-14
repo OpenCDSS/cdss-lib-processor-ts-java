@@ -8,6 +8,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
 import RTi.TS.TSAnalyst;
+import RTi.TS.TSEnsemble;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -31,18 +32,18 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the NewStatisticTimeSeries() command.
+This class initializes, checks, and runs the NewStatisticTimeSeriesFromEnsemble() command.
 */
-public class NewStatisticTimeSeries_Command extends AbstractCommand
+public class NewStatisticTimeSeriesFromEnsemble_Command extends AbstractCommand
 implements Command
 {
 
 /**
 Constructor.
 */
-public NewStatisticTimeSeries_Command ()
+public NewStatisticTimeSeriesFromEnsemble_Command ()
 {	super();
-	setCommandName ( "NewStatisticTimeSeries" );
+	setCommandName ( "NewStatisticTimeSeriesFromEnsemble" );
 }
 
 /**
@@ -57,7 +58,7 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
-	String TSID = parameters.getValue ( "TSID" );
+	String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String Statistic = parameters.getValue ( "Statistic" );
 	String TestValue = parameters.getValue ( "TestValue" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
@@ -77,12 +78,12 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an alias." ) );
 	}
-	if ( (TSID == null) || TSID.equals("") ) {
-		message = "The time series identifier must be specified.";
+	if ( (EnsembleID == null) || EnsembleID.equals("") ) {
+		message = "The time series ensemble identifier must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify a time series identifier." ) );
+						message, "Specify an ensemble identifier." ) );
 	}
 	// TODO SAM 2005-08-29
 	// Need to decide whether to check NewTSID - it might need to support
@@ -170,7 +171,7 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "Alias" );
-	valid_Vector.add ( "TSID" );
+	valid_Vector.add ( "EnsembleID" );
 	valid_Vector.add ( "NewTSID" );
 	valid_Vector.add ( "Statistic" );
 	//valid_Vector.add ( "TestValue" );
@@ -197,7 +198,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new NewStatisticTimeSeries_JDialog ( parent, this )).ok();
+	return (new NewStatisticTimeSeriesFromEnsemble_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -212,13 +213,13 @@ parameters are determined to be invalid.
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "NewStatisticTimeSeries.parseCommand", message;
+	String routine = "NewStatisticTimeSeriesFromEnsemble.parseCommand", message;
 
 	// Get the part of the command after the TS Alias =...
 	int pos = command.indexOf ( "=" );
 	if ( pos < 0 ) {
 		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewStatisticTimeSeries(...)";
+			"\".  Expecting:  TS Alias = NewStatisticTimeSeriesFromEnsemble(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -226,7 +227,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	String token1 = command.substring ( pos + 1 ).trim();
 	if ( (token0 == null) || (token1 == null) ) {
 		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewStatisticTimeSeries(...)";
+			"\".  Expecting:  TS Alias = NewStatisticTimeSeriesFromEnsemble(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -234,7 +235,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	Vector v = StringUtil.breakStringList ( token0, " ",StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewStatisticTimeSeries(...)";
+			"\".  Expecting:  TS Alias = NewStatisticTimeSeriesFromEnsemble(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -242,7 +243,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	Vector tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and its parameters...
-		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewStatisticTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewStatisticTimeSeriesFromEnsemble(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -255,8 +256,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		setCommandParameters ( parameters );
 	}
 	catch ( Exception e ) {
-		message = "Syntax error in \"" + command +
-			"\".  Not enough tokens.";
+		message = "Syntax error in \"" + command + "\".  Not enough tokens.";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -275,7 +275,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "NewStatisticTimeSeries.runCommand", message;
+{	String routine = "NewStatisticTimeSeriesFromEnsemble.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -289,7 +289,7 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 
 	String Alias = parameters.getValue ( "Alias" );
-	String TSID = parameters.getValue ( "TSID" );
+	String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String Statistic = parameters.getValue ( "Statistic" );
 	//TODO SAM 2007-11-05 Enable later with counts
@@ -422,13 +422,13 @@ CommandWarningException, CommandException
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "CommandTag", command_tag );
-	request_params.set ( "TSID", TSID );
+	request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
-		processor.processRequest( "GetTimeSeriesForTSID", request_params);
+		processor.processRequest( "GetEnsemble", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+		message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -437,29 +437,29 @@ CommandWarningException, CommandException
 						message, "Report the problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TS = bean_PropList.getContents ( "TS");
-	TS ts = null;
-	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\" from processor.";
+	Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+	TSEnsemble tsensemble = null;
+	if ( o_TSEnsemble == null ) {
+		message = "Null TS requesting GetEnsembleD(EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
         status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+                        message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
 	}
 	else {
-		ts = (TS)o_TS;
+		tsensemble = (TSEnsemble)o_TSEnsemble;
 	}
 	
-	if ( ts == null ) {
-		message = "Unable to find time series to analyze using TSID \"" + TSID + "\".";
+	if ( tsensemble == null ) {
+		message = "Unable to find ensemble to analyze using TSEnsemble \"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 		new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+				message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
 
@@ -478,10 +478,8 @@ CommandWarningException, CommandException
 			tsa_props.set ( "TestValue", TestValue);// Optional
 		}
 		*/
-		if (	(AllowMissingCount != null) &&
-			(AllowMissingCount.length() > 0) ) {
-			tsa_props.set ( "AllowMissingCount",
-				AllowMissingCount);	// Optional
+		if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
+			tsa_props.set ( "AllowMissingCount",AllowMissingCount);	// Optional
 		}
 		/*
 		if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
@@ -489,7 +487,7 @@ CommandWarningException, CommandException
 								// Optional
 		}
 		*/
-		stats_ts = tsa.createStatisticTimeSeries ( ts,
+		stats_ts = tsa.createStatisticTimeSeries ( tsensemble,
 				AnalysisStart_DateTime, AnalysisEnd_DateTime,
 				null, null,
 				tsa_props );
@@ -498,8 +496,7 @@ CommandWarningException, CommandException
 						// alias set to fail below.
 	}
 	catch ( Exception e ) {
-		message ="Unexpected error generating the statistic time series from \""+
-			ts.getIdentifier() + "\".";
+		message ="Unexpected error generating the statistic time series from ensemble \""+ EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
@@ -535,7 +532,7 @@ public String toString ( PropList props )
 		return "TS Alias = " + getCommandName() + "()";
 	}
 	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
+	String EnsembleID = props.getValue( "EnsembleID" );
 	String NewTSID = props.getValue( "NewTSID" );
 	String Statistic = props.getValue( "Statistic" );
 	//String TestValue = props.getValue( "TestValue" );
@@ -544,11 +541,11 @@ public String toString ( PropList props )
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
 	//String SearchStart = props.getValue( "SearchStart" );
 	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
+	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "TSID=\"" + TSID + "\"" );
+		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
 	}
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {

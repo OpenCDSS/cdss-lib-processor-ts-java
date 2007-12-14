@@ -770,19 +770,21 @@ public final String __AllTS = "AllTS";
 public final String __AllMatchingTSID = "AllMatchingTSID";
 public final String __LastMatchingTSID = "LastMatchingTSID";
 public final String __SelectedTS = "SelectedTS";
-						
 
-public final int BINARY_MONTH_CUTOFF = 100000;	// Number of time series to
-						// trigger use of a binary file
-						// to process monthly files.
-						// LARGE SINCE NOT IMPLEMENTED.
-public final int BINARY_DAY_CUTOFF = 10000;	// Number of time series to
-						// trigger use of a binary file
-						// to process dialy files.
-						// TEMPORARILY MAKE LARGE UNTIL
-						// THERE IS TIME TO REVISIT THE
-						// USE OF THE BINARY FILE WITH
-						// TSTool 05.0x FEATURES.
+// FIXME SAM 2007-12-13 Need to remove this code since computers generally
+// now have enough memory to handle.
+/**
+Number of time series to trigger use of a binary file to process monthly files.
+LARGE SINCE NOT IMPLEMENTED.
+*/
+public final int BINARY_MONTH_CUTOFF = 10000000;
+
+/**
+Number of time series to trigger use of a binary file to process dialy files.
+TEMPORARILY MAKE LARGE UNTIL THERE IS TIME TO REVISIT THE
+USE OF THE BINARY FILE WITH TSTool 05.0x FEATURES.
+*/
+public final int BINARY_DAY_CUTOFF = 10000000;
 
 public final int OUTPUT_NONE = 0;		// Initial value for
 						// _output_format.
@@ -932,7 +934,7 @@ private Vector	__fill_pattern_ts = new Vector (20,10);
 
 /**
 HydroBase DMI instance Vector, to allow more than one database instance to
-be open at a time, only used with openHydroBase().
+be open at a time.
 */
 private Vector __hbdmi_Vector = new Vector();
 
@@ -1039,9 +1041,10 @@ which requires the working directory at that point of the workflow.
 private PropList __processor_PropList = null;
 
 /**
-DMI for RiversideDB.
+RiversideDB DMI instance Vector, to allow more than one database instance to
+be open at a time.
 */
-private RiversideDB_DMI __rdmi = null;
+private Vector __rdmi_Vector = new Vector();
 
 /**
 Reference date for year to date report (only use month and day).
@@ -1119,9 +1122,14 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 		}
 	}
 	// Check the RiversideDB_DMI instances...
-	if ( (__rdmi != null) && (__rdmi instanceof TSProductDMI) ) {
-		view.addTSProductDMI(__rdmi);
-	}
+    int rsize = __rdmi_Vector.size();
+    RiversideDB_DMI rdmi = null;
+    for ( int ir = 0; ir < rsize; ir++ ) {
+        rdmi = (RiversideDB_DMI)__rdmi_Vector.elementAt(ir);
+        if ((rdmi != null) && (rdmi instanceof TSProductDMI)){
+            view.addTSProductDMI(rdmi);
+        }
+    }
 }
 
 /**
@@ -5470,8 +5478,7 @@ protected HydroBaseDMI getHydroBaseDMI ( String input_name )
 		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(i);
 		if ( hbdmi.getInputName().equalsIgnoreCase(input_name) ) {
 			if ( Message.isDebugOn ) {
-				Message.printDebug ( 1, "",
-				"Returning HydroBaseDMI[" + i +"] InputName=\""+
+				Message.printDebug ( 1, "", "Returning HydroBaseDMI[" + i +"] InputName=\""+
 				hbdmi.getInputName() + "\"" );
 			}
 			return hbdmi;
@@ -5675,6 +5682,32 @@ Indicate whether output that is exported should be previewed first.
 */
 protected boolean getPreviewExportedOutput()
 {   return __PreviewExportedOutput_boolean;
+}
+
+/**
+Return the RiversideDB_DMI that is being used.  Use a blank input name to get the default.
+@param input_name Input name for the DMI, can be blank.
+@return the RiversideDB_DMI that is being used (may return null).
+*/
+protected RiversideDB_DMI getRiversideDB_DMI ( String input_name )
+{   String routine = "TSEngine.getRiversideDB_DMI";
+    Message.printStatus(2, routine, "Getting RiversideDB_DMI connection \"" + input_name + "\"" );
+    int size = __rdmi_Vector.size();
+    if ( input_name == null ) {
+        input_name = "";
+    }
+    RiversideDB_DMI rdmi = null;
+    for ( int i = 0; i < size; i++ ) {
+        rdmi = (RiversideDB_DMI)__rdmi_Vector.elementAt(i);
+        if ( rdmi.getInputName().equalsIgnoreCase(input_name) ) {
+            if ( Message.isDebugOn ) {
+                Message.printDebug ( 1, "", "Returning RiversideDB_DMI[" + i +"] InputName=\""+
+                rdmi.getInputName() + "\"" );
+            }
+            return rdmi;
+        }
+    }
+    return null;
 }
 
 /**
@@ -6077,21 +6110,24 @@ protected Vector getTSProductAnnotationProviders ()
 	HydroBaseDMI hbdmi = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
 		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
-		if (	(hbdmi != null) &&
-			(hbdmi instanceof TSProductAnnotationProvider)){
+		if ( (hbdmi != null) &&	(hbdmi instanceof TSProductAnnotationProvider)) {
 			ap_Vector.addElement ( hbdmi );
 		}
 	}
 	// Check the ColoradoSMS instances...
-	if (	(__smsdmi != null) &&
-		(__smsdmi instanceof TSProductAnnotationProvider) ) {
+	if ( (__smsdmi != null) && (__smsdmi instanceof TSProductAnnotationProvider) ) {
 		ap_Vector.addElement ( __smsdmi );
 	}
 	// Check the RiversideDB_DMI instances...
-	if (	(__rdmi != null) &&
-		(__rdmi instanceof TSProductAnnotationProvider) ) {
-		ap_Vector.addElement ( __rdmi );
-	}
+    int rsize = __rdmi_Vector.size();
+    RiversideDB_DMI rdmi = null;
+    for ( int ir = 0; ir < rsize; ir++ ) {
+        rdmi = (RiversideDB_DMI)__rdmi_Vector.elementAt(ir);
+        if ( (rdmi != null) && (rdmi instanceof TSProductAnnotationProvider)) {
+            ap_Vector.addElement ( rdmi );
+        }
+    }
+
 	return ap_Vector;
 }
 
@@ -7882,7 +7918,9 @@ throws Exception
 			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
 			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
+                    StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
+            !StringUtil.getToken(command_String," =(",
+                    StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
 			!StringUtil.getToken(command_String," =(",
 				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newStatisticYearTS") &&
 			!StringUtil.getToken(command_String," =(",
@@ -8504,13 +8542,13 @@ throws Exception
 			// Don't do anything...
 			continue;
 		}
-		else {	// Need to insert or update a time series...
+		else {
+            // Need to insert or update a time series...
 			processTimeSeriesAction ( ts_action, ts, ts_pos );
 		}
 
 		Message.printStatus ( 1, routine,
-		"Retrieved time series for \"" + command_String + "\" (" +  (i + 1)
-		+ " of " + size + " commands)" );
+		"Retrieved time series for \"" + command_String + "\" (" +  (i + 1) + " of " + size + " commands)" );
 
 		} // Main catch
 		catch ( Exception e ) {
@@ -8704,6 +8742,12 @@ throws Exception
 		is_obsolete = true;
 		do_setBinaryTSFile ( command_String );
 	}
+    else if ( command_String.regionMatches(true,0,"createTraces",0,12)) {
+        Message.printWarning ( 1, routine,
+        "CreateTraces() is obsolete.\nUse CreateEnsemble()." );
+        is_obsolete = true;
+        do_setBinaryTSFile ( command_String );
+    }
 	else if ( command_String.equalsIgnoreCase("-cy") ) {
 		Message.printWarning ( 1, routine,
 		"-cy is obsolete.\n" +
@@ -10230,13 +10274,15 @@ throws Exception
 			Message.printDebug ( 10, routine, "Reading time series..." +
 			tsident_string + "," + query_date1 + "," + query_date2);
 		}
-		try {	HydroBaseDMI hbdmi = getHydroBaseDMI ( input_name );
+		try {
+            HydroBaseDMI hbdmi = getHydroBaseDMI ( input_name );
 			if ( hbdmi == null ) {
 				Message.printWarning ( 2, routine, "Unable to get HydroBase connection for " +
 				"input name \"" + input_name +	"\".  Unable to read time series." );
 				ts = null;
 			}
-			else {	ts = hbdmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true,
+			else {
+                ts = hbdmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true,
                     null );	// HydroBaseDMI read props Use defaults here
 			}
 			if ( Message.isDebugOn ) {
@@ -10253,7 +10299,8 @@ throws Exception
 		// New style TSID~input_type~input_name for MexicoCSMN...
 		// Pass the front TSID as the first argument and the
 		// input_name file as the second...
-		try {	ts = MexicoCsmnTS.readTimeSeries ( tsident_string2,
+		try {
+            ts = MexicoCsmnTS.readTimeSeries ( tsident_string2,
 				input_name_full, query_date1, query_date2, units,
 				true );
 		}
@@ -10263,9 +10310,9 @@ throws Exception
 	}
 	else if ((input_type != null) && input_type.equalsIgnoreCase("MODSIM") ) {
 		// New style TSID~input_type~input_name
-		try {	ts = ModsimTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units,
-				true );
+		try {
+            ts = ModsimTS.readTimeSeries ( tsident_string2,
+				input_name_full, query_date1, query_date2, units, true );
 		}
 		catch ( Exception te ) {
 			ts = null;
@@ -10318,19 +10365,22 @@ throws Exception
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("NWSRFS_FS5Files") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("NWSRFS_FS5Files") ) {
 		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name_full, true );
 		ts = nwsrfs_dmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
 	}
 	else if ((input_type != null) && input_type.equalsIgnoreCase("RiversideDB") ) {
 		// New style TSID~input_type~input_name for RiversideDB...
-		if ( __rdmi == null ) {
-			Message.printWarning ( 2, routine, "RiversideDB connection has not been opened." );
-			ts = null;
-		}
-		else {	try {	ts = __rdmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, true );
-			}
+        RiversideDB_DMI rdmi = getRiversideDB_DMI ( input_name );
+        if ( rdmi == null ) {
+            Message.printWarning ( 2, routine, "Unable to get RiversideDB connection for " +
+            "input name \"" + input_name +  "\".  Unable to read time series." );
+            ts = null;
+        }
+        else {
+            try {
+                ts = rdmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, true );
+            }
 			catch ( Exception te ) {
 				Message.printWarning ( 2, routine,
 				"Error reading time series \""+tsident_string2 + "\" from RiversideDB" );
@@ -11226,6 +11276,47 @@ private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean )
 }
 
 /**
+Set a RiversideDB_DMI instance in the Vector that is being maintained for use.
+The input name in the DMI is used to lookup the instance.  If a match is found,
+the old instance is optionally closed and the new instance is set in the same
+location.  If a match is not found, the new instance is added at the end.
+@param hbdmi RiversideDB_DMI to add to the list.  Null will be ignored.
+@param close_old If an old DMI instance is matched, close the DMI instance if
+true.  The main issue is that if something else is using the DMI instance (e.g.,
+the TSTool GUI) it may be necessary to leave the old instance open.
+*/
+protected void setRiversideDB_DMI ( RiversideDB_DMI rdmi, boolean close_old )
+{   String routine = "TSEngine.setRiversideDB_DMI";
+    if ( rdmi == null ) {
+        return;
+    }
+    int size = __rdmi_Vector.size();
+    RiversideDB_DMI rdmi2 = null;
+    String input_name = rdmi.getInputName();
+    Message.printStatus(2, routine, "Saving RiversideDB_DMI connection \"" + input_name + "\"" );
+    for ( int i = 0; i < size; i++ ) {
+        rdmi2 = (RiversideDB_DMI)__rdmi_Vector.elementAt(i);
+        if ( rdmi2.getInputName().equalsIgnoreCase(input_name)){
+            // The input name of the current instance matches that of the instance in the Vector.
+            // Replace the instance in the Vector by the new instance...
+            if ( close_old ) {
+                try {
+                    rdmi2.close();
+                }
+                catch ( Exception e ) {
+                    // Probably can ignore.
+                }
+            }
+            __rdmi_Vector.setElementAt ( rdmi, i );
+            return;
+        }
+    }
+
+    // Add a new instance to the Vector...
+    __rdmi_Vector.addElement ( rdmi );
+}
+
+/**
 Set the time series in either the __tslist vector or the BinaryTS file,
 as appropriate.  If a BinaryTS is set, it updates the time series that is in
 the file, within the constraints of the BinaryTS file (e.g., the period cannot
@@ -11257,12 +11348,11 @@ throws Exception
 {	String routine = "TSEngine.setTimeSeries";
 
 	if ( ts == null ) {
-		Message.printStatus ( 1, routine,
-		"Setting null time series at position " + (position + 1) );
+		Message.printStatus ( 1, routine, "Setting null time series at position " + (position + 1) );
 	}
-	else {	Message.printStatus ( 1, routine,
-		"Setting time series \"" + ts.getIdentifierString() +
-		"\" at position " + (position + 1) );
+	else {
+        Message.printStatus ( 1, routine,
+		"Setting time series \"" + ts.getIdentifierString() + "\" at position " + (position + 1) );
 	}
 	if ( position < 0 ) {
 		return;
@@ -11271,7 +11361,8 @@ throws Exception
 	// Check to see if the time series should be saved to a BinaryTS file
 	// and open the BinaryTS file if necessary...
 
-	if (	(((ts.getDataIntervalBase() == TimeInterval.MONTH) &&
+	if ( (ts != null) &&
+        (((ts.getDataIntervalBase() == TimeInterval.MONTH) &&
 		(__num_TS_expressions > __binary_month_cutoff)) || 
 		((ts.getDataIntervalBase() == TimeInterval.DAY) &&
 		(__num_TS_expressions > __binary_day_cutoff))) &&
@@ -11281,7 +11372,8 @@ throws Exception
 		//
 		setBinaryTSUsed ( true );
 		// First time series so open the file...
-		try {	// Remove it first...
+		try {
+            // Remove it first...
 			if ( IOUtil.fileReadable(__binary_ts_file) ) {
 				File bts = new File( __binary_ts_file );
 				bts.delete();
@@ -11324,8 +11416,7 @@ throws Exception
 	}
 	else if ( getTimeSeriesSize() == 0 ) {
 		Message.printStatus ( 1, routine, "Time series will be held " +
-		"in memory for output (estimating " + __num_TS_expressions +
-		" time series)." );
+		"in memory for output (estimating " + __num_TS_expressions + " time series)." );
 	}
 
 	if ( getBinaryTSUsed() ) {
@@ -11333,7 +11424,8 @@ throws Exception
 			__binary_ts.writeTimeSeries ( ts, position );
 		}
 	}
-	else {	if ( __tslist == null ) {
+	else {
+        if ( __tslist == null ) {
 			// Create a new Vector.
 			__tslist = new Vector ( 50, 50 );
 		}

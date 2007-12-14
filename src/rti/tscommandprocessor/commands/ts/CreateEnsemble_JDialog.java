@@ -36,19 +36,21 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Command editor dialog for the CreateTraces() command.
+Command editor dialog for the CreateEnsemble() command.
 */
-public class CreateTraces_JDialog extends JDialog
+public class CreateEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private CreateTraces_Command __command = null;// Command to edit
+private CreateEnsemble_Command __command = null;// Command to edit
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private SimpleJComboBox __TSID_JComboBox = null;// Field for time series IDs
 private JTextField  __InputStart_JTextField;// Text fields for query period, both versions.
 private JTextField  __InputEnd_JTextField;
+private JTextField  __EnsembleID_JTextField;
+private JTextField  __EnsembleName_JTextField;
 private SimpleJComboBox	__ShiftDataHow_JComboBox = null;// Indicates how to handle shift.
 private JTextField	__ReferenceDate_JTextField = null; // Reference date.
 private JTextField	__TraceLength_JTextField=null; // Total period length.
@@ -58,11 +60,11 @@ private boolean		__first_time = true;
 private boolean     __ok = false;  // Has the users pressed OK to close the dialog.
 
 /**
-CreateTraces_JDialog constructor.
+Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public CreateTraces_JDialog ( JFrame parent, Command command )
+public CreateEnsemble_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -96,6 +98,8 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
+    String EnsembleID = __EnsembleID_JTextField.getText().trim();
+    String EnsembleName = __EnsembleName_JTextField.getText().trim();
     String TraceLength = __TraceLength_JTextField.getText().trim();
     String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
     String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
@@ -110,6 +114,12 @@ private void checkInput ()
     }
     if ( InputEnd.length() > 0 ) {
         parameters.set ( "InputEnd", InputEnd );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        parameters.set ( "EnsembleID", EnsembleID );
+    }
+    if ( EnsembleName.length() > 0 ) {
+        parameters.set ( "EnsembleName", EnsembleName );
     }
     if ( TraceLength.length() > 0 ) {
         parameters.set ( "TraceLength", TraceLength );
@@ -137,14 +147,18 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TSID = __TSID_JComboBox.getSelected();
     String TraceLength = __TraceLength_JTextField.getText().trim();
-    String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
-    String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
+    String EnsembleID = __EnsembleID_JTextField.getText().trim();
+    String EnsembleName = __EnsembleName_JTextField.getText().trim();
+    String ReferenceDate = __ReferenceDate_JTextField.getText().trim();
+    String ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
     
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "InputStart", InputStart );
     __command.setCommandParameter ( "InputEnd", InputEnd );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
+    __command.setCommandParameter ( "EnsembleName", EnsembleName );
     __command.setCommandParameter ( "TraceLength", TraceLength );
     __command.setCommandParameter ( "ReferenceDate", ReferenceDate );
     __command.setCommandParameter ( "ShiftDataHow", ShiftDataHow );
@@ -172,7 +186,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (CreateTraces_Command)command;
+{	__command = (CreateEnsemble_Command)command;
 
 	addWindowListener( this );
 
@@ -184,7 +198,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Convert a time series to a sequence of traces."),
+		"Convert a time series to an ensemble of traces."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Each trace will start on the reference date and will be as long as specified."),
@@ -201,6 +215,9 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If shifted, each trace will start on the reference date (use to align time series for display and analysis)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "If NOT shifted, each trace will start on the reference date, but year will vary with the data."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Time series from which to create traces:"),
@@ -230,6 +247,28 @@ private void initialize ( JFrame parent, Command command )
     __InputEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Ensemble ID:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleID_JTextField = new JTextField ( "", 10 );
+    __EnsembleID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+            "Required identifier for ensemble."), 
+            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Ensemble name:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleName_JTextField = new JTextField ( "", 10 );
+    __EnsembleName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+            "Optional name for output."), 
+            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Trace length:" ), 
@@ -343,6 +382,8 @@ private void refresh ()
 {	String TSID = "";
     String InputStart = "";
     String InputEnd = "";
+    String EnsembleID = "";
+    String EnsembleName = "";
 	String TraceLength = "";
 	String ReferenceDate = "";
 	String ShiftDataHow = "";
@@ -354,6 +395,8 @@ private void refresh ()
 		TSID = parameters.getValue("TSID");
         InputStart = parameters.getValue ( "InputStart" );
         InputEnd = parameters.getValue ( "InputEnd" );
+        EnsembleID = parameters.getValue ( "EnsembleID" );
+        EnsembleName = parameters.getValue ( "EnsembleName" );
         TraceLength = parameters.getValue("TraceLength");
         ReferenceDate = parameters.getValue("ReferenceDate");
         ShiftDataHow = parameters.getValue("ShiftDataHow");
@@ -377,6 +420,12 @@ private void refresh ()
         if ( InputEnd != null ) {
             __InputEnd_JTextField.setText ( InputEnd );
         }
+        if ( EnsembleID != null ) {
+            __EnsembleID_JTextField.setText ( EnsembleID );
+        }
+        if ( EnsembleName != null ) {
+            __EnsembleName_JTextField.setText ( EnsembleName );
+        }
         if ( TraceLength != null ) {
             __TraceLength_JTextField.setText ( TraceLength );
         }
@@ -391,8 +440,9 @@ private void refresh ()
                 // Set default...
                 __ShiftDataHow_JComboBox.select ( 0 );
             }
-            else {  Message.printWarning ( 1,
-                "CreateTraces_JDialog.refresh", "Existing command references an invalid\n"+
+            else {
+                Message.printWarning ( 1,
+                "CreateEnsemble_JDialog.refresh", "Existing command references an invalid\n"+
                 "ShiftDataHow \"" + ShiftDataHow + "\".  Select a\ndifferent value or Cancel." );
             }
         }
@@ -404,10 +454,14 @@ private void refresh ()
     ShiftDataHow = __ShiftDataHow_JComboBox.getSelected();
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
+    EnsembleID = __EnsembleID_JTextField.getText().trim();
+    EnsembleName = __EnsembleName_JTextField.getText().trim();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "InputStart=" + InputStart );
     parameters.add ( "InputEnd=" + InputEnd );
+    parameters.add ( "EnsembleID=" + EnsembleID );
+    parameters.add ( "EnsembleName=" + EnsembleName );
     parameters.add ( "TraceLength=" + TraceLength );
     parameters.add ( "ReferenceDate=" + ReferenceDate );
     parameters.add ( "ShiftDataHow=" + ShiftDataHow );
@@ -456,4 +510,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end CreateTraces_JDialog
+}

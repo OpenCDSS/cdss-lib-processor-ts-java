@@ -1281,14 +1281,13 @@ throws Exception
 }
 
 /**
-Clear the time series results.  The commands will need to be rerun to regenerate
-the results.
+Clear the time series results.  The commands will need to be rerun to regenerate the results.
 */
-protected void clearResults ( )
+protected void clearTimeSeriesResults ( )
 {
 	if ( __tslist != null ) {
 		__tslist.removeAllElements();
-	}
+	} 
 }
 
 /**
@@ -9029,7 +9028,7 @@ throws Exception
     __reference_date = null;
     // Free all data from the previous run...
     if ( !AppendResults_boolean ) {
-        clearResults ();
+        __ts_processor.clearResults ();
     }
     setBinaryTS ( null );
 }
@@ -10793,16 +10792,14 @@ time series.
 If false, the output period will be queried.
 @exception Exception if there is an error processing the time series.
 */
-private void readTimeSeries2 (	TS ts, String tsident_string,
-				boolean full_period )
+private void readTimeSeries2 ( TS ts, String tsident_string, boolean full_period )
 throws Exception
 {	String routine = "TSEngine.readTimeSeries2";
 	if ( ts == null ) {
 		return;
 	}
 
-	// Do not want to use the abbreviated legend that was required
-	// with the old graph package...
+	// Do not want to use the abbreviated legend that was required with the old graph package...
 
 	ts.setLegend ( "" );
 
@@ -10831,12 +10828,12 @@ throws Exception
 	// needHistoricalAverages() always returns true...
 
 	if ( needHistoricalAverages(ts) ) {
-		try {	ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
+		try {
+            ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine,
-			"Error getting original data limits for \"" +
-			ts.getIdentifierString() + "\""  );
+			"Error getting original data limits for \"" + ts.getIdentifierString() + "\""  );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -10848,8 +10845,6 @@ throws Exception
 	if ( tsident_string != null ) {
 		ts.setIdentifier ( tsident_string );
 	}
-	//Message.printStatus ( 1,"","SAMX TSEngine.readTimeSeries2 TS id = \""+
-		//ts.getIdentifier().toString(true) + "\"" );
 
 	// If the output period has been specified, make sure that the time
 	// series has a period at least that long.  This will allow for data	
@@ -10872,11 +10867,10 @@ throws Exception
 		limits.setDate1 ( __OutputStart_DateTime );
 		limits.setDate2 ( __OutputEnd_DateTime );
 		v.addElement ( limits );
-		try {	limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
-			if (	limits.getDate1().lessThan(ts.getDate1()) ||
-				limits.getDate2().greaterThan(ts.getDate2()) ) {
-				ts.changePeriodOfRecord ( limits.getDate1(),
-					limits.getDate2() );
+		try {
+            limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
+			if ( limits.getDate1().lessThan(ts.getDate1()) || limits.getDate2().greaterThan(ts.getDate2()) ) {
+				ts.changePeriodOfRecord ( limits.getDate1(), limits.getDate2() );
 			}
 		}
 		catch ( Exception e ) {

@@ -269,6 +269,9 @@ CommandWarningException, CommandException
     
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
+    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTable ( null );
+    }
 
 	// Make sure there are time series available to operate on...
 	

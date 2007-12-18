@@ -303,12 +303,17 @@ public void addCommandProcessorListener ( CommandProcessorListener listener )
 }
 
 /**
-Clear the results of processing.  This resets the list of time series to
-empty.
+Clear the results of processing.  This resets the list of time series, tables, and ensembles to empty.
 */
 public void clearResults()
 {
-	__tsengine.clearResults();
+	__tsengine.clearTimeSeriesResults();
+    if ( __Table_Vector != null ) {
+        __Table_Vector.removeAllElements();
+    }
+    if ( __TSEnsemble_Vector != null ) {
+        __TSEnsemble_Vector.removeAllElements();
+    }
 }
 
 /**

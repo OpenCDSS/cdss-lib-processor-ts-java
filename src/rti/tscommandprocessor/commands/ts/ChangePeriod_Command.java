@@ -1,17 +1,3 @@
-//------------------------------------------------------------------------------
-// fillConstant_Command - handle the fillConstant() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-09-08	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					fillHistMonthAverage_Command().
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -44,10 +30,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the FillConstant() command.
+This class initializes, checks, and runs the ChangePeriod() command.
 </p>
 */
-public class fillConstant_Command extends AbstractCommand implements Command
+public class ChangePeriod_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -60,9 +46,9 @@ protected final String _AllMatchingTSID = "AllMatchingTSID";
 /**
 Constructor.
 */
-public fillConstant_Command ()
+public ChangePeriod_Command ()
 {	super();
-	setCommandName ( "FillConstant" );
+	setCommandName ( "ChangePeriod" );
 }
 
 /**
@@ -78,10 +64,8 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	String ConstantValue = parameters.getValue ( "ConstantValue" );
-	String FillStart = parameters.getValue ( "FillStart" );
-	String FillEnd = parameters.getValue ( "FillEnd" );
-	String FillFlag = parameters.getValue ( "FillFlag" );
+	String NewStart = parameters.getValue ( "NewStart" );
+	String NewEnd = parameters.getValue ( "NewEnd" );
 	String warning = "";
     String message;
     
@@ -110,58 +94,42 @@ throws InvalidCommandParameterException
                             message, "Specify a TSList parameter value." ) );
 		}
 	}
-	if ( (ConstantValue == null) || ConstantValue.equals("") ) {
-        message = "The constant value must be specified.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the constant value." ) );
-	}
-	else if ( !StringUtil.isDouble(ConstantValue) ) {
-        message = "The constant value " + ConstantValue + " is not a number.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the constant value as a number." ) );
-	}
-	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
-		try {	DateTime.parse(FillStart);
+	if ( (NewStart != null) && !NewStart.equals("") && !NewStart.equalsIgnoreCase("OutputStart")){
+		try {	DateTime.parse(NewStart);
 		}
 		catch ( Exception e ) {
-            message = "The fill start date/time \"" + FillStart + "\" is not a valid date/time.";
+            message = "The new start date/time \"" + NewStart + "\" is not a valid date/time.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( FillEnd);
+	if ( (NewEnd != null) && !NewEnd.equals("") && !NewEnd.equalsIgnoreCase("OutputEnd") ) {
+		try {	DateTime.parse( NewEnd);
 		}
 		catch ( Exception e ) {
-            message = "The fill end date/time \"" + FillStart + "\" is not a valid date/time.";
+            message = "The fill end date/time \"" + NewStart + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-		warning += "\n" + message;
+    if ( ((NewStart == null) || NewStart.equals("")) && ((NewEnd == null) || NewEnd.equals("")) ) {
+        message = "At least one of NewStart or NewEnd must be specified.";
+        warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
-	}
+                        message, "Specify NewStart and/or NewEnd." ) );
+    }
     
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "ConstantValue" );
-    valid_Vector.add ( "FillStart" );
-    valid_Vector.add ( "FillEnd" );
-    valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "NewStart" );
+    valid_Vector.add ( "NewEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -182,68 +150,10 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillConstant_JDialog ( parent, this )).ok();
+	return (new ChangePeriod_JDialog ( parent, this )).ok();
 }
 
-/**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
-@param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command_string )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "fillConstant_Command.parseCommand", message;
-
-	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
-        super.parseCommand( command_string);
-    }
-    else {
-		// TODO SAM 2005-09-08 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
-		//
-		// Old syntax where the only parameter is a single TSID or *
-		// to fill all.
-		Vector v = StringUtil.breakStringList(command_string,
-			"(),\t", StringUtil.DELIM_SKIP_BLANKS |
-			StringUtil.DELIM_ALLOW_STRINGS );
-		int ntokens = 0;
-		if ( v != null ) {
-			ntokens = v.size();
-		}
-		if ( ntokens != 3 ) {
-			// Command name, TSID, and constant...
-			message = "Syntax error in \"" + command_string + "\".  Two tokens expected.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-
-		// Get the individual tokens of the expression...
-
-		String TSID = ((String)v.elementAt(1)).trim();
-		String ConstantValue = ((String)v.elementAt(2)).trim();
-
-		// Set parameters and new defaults...
-
-		PropList parameters = new PropList ( getCommandName() );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		if ( TSID.length() > 0 ) {
-			parameters.set ( "TSID", TSID );
-			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", _AllMatchingTSID );
-		}
-		parameters.set ( "ConstantValue", ConstantValue );
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
-	}
-}
+// Use parseCommand() from base class
 
 /**
 Run the command.
@@ -258,7 +168,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "fillConstant_Command.runCommand", message;
+{	String routine = "ChangePeriod_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -362,31 +272,25 @@ CommandWarningException, CommandException
                         "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
-	// Constant value...
+	// New date/times...
 
-	String ConstantValue = parameters.getValue("ConstantValue");
-	double ConstantValue_double = StringUtil.atod ( ConstantValue );
-
-	// Fill period...
-
-	String FillStart = parameters.getValue("FillStart");
-	String FillEnd = parameters.getValue("FillEnd");
-	String FillFlag = parameters.getValue("FillFlag");
+	String NewStart = parameters.getValue("NewStart");
+	String NewEnd = parameters.getValue("NewEnd");
 
 	// Figure out the dates to use for the analysis...
-	DateTime FillStart_DateTime = null;
-	DateTime FillEnd_DateTime = null;
+	DateTime NewStart_DateTime = null;
+	DateTime NewEnd_DateTime = null;
 
 	try {
-	if ( FillStart != null ) {
+	if ( NewStart != null ) {
 		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", FillStart );
+		request_params.set ( "DateTime", NewStart );
 		bean = null;
 		try { bean =
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + "\") from processor.";
+			message = "Error requesting NewStart DateTime(DateTime=" +	NewStart + "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -400,21 +304,21 @@ CommandWarningException, CommandException
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
 			message = "Null value for FillStart DateTime(DateTime=" +
-			FillStart +	"\") returned from processor.";
+            NewStart +	"\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                            message, "Specify a valid date/time or OutputStart." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	FillStart_DateTime = (DateTime)prop_contents;
+		else {	NewStart_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
 	catch ( Exception e ) {
-		message = "FillStart \"" + FillStart + "\" is invalid.";
+		message = "NewStart \"" + NewStart + "\" is invalid.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -425,15 +329,15 @@ CommandWarningException, CommandException
 	}
 	
 	try {
-	if ( FillEnd != null ) {
+	if ( NewEnd != null ) {
 		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", FillEnd );
+		request_params.set ( "DateTime", NewEnd );
 		bean = null;
 		try { bean =
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting FillEnd DateTime(DateTime=" + FillEnd + "\") from processor.";
+			message = "Error requesting NewEnd DateTime(DateTime=" + NewEnd + "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -446,7 +350,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for FillEnd DateTime(DateTime=" + FillEnd +	"\") returned from processor.";
+			message = "Null value for NewEnd DateTime(DateTime=" + NewEnd +	"\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -455,12 +359,12 @@ CommandWarningException, CommandException
                             message, "Specify a valid date/time or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	FillEnd_DateTime = (DateTime)prop_contents;
+		else {	NewEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
 	catch ( Exception e ) {
-		message = "FillEnd \"" + FillEnd + "\" is invalid.";
+		message = "NewEnd \"" + NewEnd + "\" is invalid.";
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
@@ -479,12 +383,6 @@ CommandWarningException, CommandException
 	}
 
 	// Now process the time series...
-
-	PropList props = new PropList ( "fillConstant" );
-	if ( FillFlag != null ) {
-		props.set ( "FillFlag", FillFlag );
-	}
-
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		ts = null;
@@ -529,23 +427,21 @@ CommandWarningException, CommandException
 			continue;
 		}
 		
-		// Do the filling...
-		Message.printStatus ( 2, routine, "Filling \"" +
-		ts.getIdentifier()+"\" with constant " + ConstantValue + "." );
-		try {	TSUtil.fillConstant ( ts,
-				FillStart_DateTime, FillEnd_DateTime,
-				ConstantValue_double, props );
-			/* TODO SAM 2005-09-08 Might enable this if a
-			MonthlyValues parameter is enabled...
-			TSUtil.fillConstantByMonth ( ts,
-					FillStart_DateTime,
-					FillEnd_DateTime,
-					average_limits.getMeanArray(),
-					props );
-			*/
+		// Change the period...
+        if ( NewStart_DateTime == null ) {
+            NewStart_DateTime = new DateTime(ts.getDate1());
+        }
+        if ( NewEnd_DateTime == null ) {
+            NewEnd_DateTime = new DateTime(ts.getDate2());
+        }
+		Message.printStatus ( 2, routine, "Changing \"" +
+		ts.getIdentifier()+ "\" period to " + NewStart_DateTime + " to " + NewEnd_DateTime + "." );
+		try {
+            ts.changePeriodOfRecord ( NewStart_DateTime, NewEnd_DateTime );
+            // No need to re-add to results list since the original reference is maintained.
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error filling time series \"" + ts.getIdentifier() + "\" with constant.";
+			message = "Unexpected error changing period for \"" + ts.getIdentifier() + "\".";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                     command_tag, ++warning_count),
@@ -578,10 +474,8 @@ public String toString ( PropList props )
 	}
 	String TSList = props.getValue( "TSList" );
 	String TSID = props.getValue( "TSID" );
-	String ConstantValue = props.getValue( "ConstantValue" );
-	String FillStart = props.getValue("FillStart");
-	String FillEnd = props.getValue("FillEnd");
-	String FillFlag = props.getValue("FillFlag");
+	String NewStart = props.getValue("NewStart");
+	String NewEnd = props.getValue("NewEnd");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -592,29 +486,17 @@ public String toString ( PropList props )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
-	if ( (ConstantValue != null) && (ConstantValue.length() > 0) ) {
+	if ( (NewStart != null) && (NewStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "ConstantValue=" + ConstantValue );
+		b.append ( "NewStart=\"" + NewStart + "\"" );
 	}
-	if ( (FillStart != null) && (FillStart.length() > 0) ) {
+	if ( (NewEnd != null) && (NewEnd.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "FillStart=\"" + FillStart + "\"" );
-	}
-	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillEnd=\"" + FillEnd + "\"" );
-	}
-	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillFlag=\"" + FillFlag + "\"" );
+		b.append ( "NewEnd=\"" + NewEnd + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

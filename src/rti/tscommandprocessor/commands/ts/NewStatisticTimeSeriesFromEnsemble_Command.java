@@ -309,15 +309,13 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", AnalysisStart );
 			CommandProcessorRequestResultsBean bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
+			try {
+                bean = processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
-				message = "Error requesting AnalysisStart DateTime(DateTime=" +
-				AnalysisStart + ") from processor.";
+				message = "Error requesting AnalysisStart DateTime(DateTime=" + AnalysisStart + ") from processor.";
 				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
+						MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
 				status.addToLog ( CommandPhaseType.RUN,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								message, "Report the problem to software support." ) );
@@ -327,8 +325,7 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for AnalysisStart DateTime(DateTime=" +
-				AnalysisStart +	") returned from processor.";
+				message = "Null value for AnalysisStart DateTime(DateTime=" + AnalysisStart + ") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -361,8 +358,7 @@ CommandWarningException, CommandException
 				processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
-				message = "Error requesting AnalysisEnd DateTime(DateTime=" +
-				AnalysisEnd + "\" from processor.";
+				message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + ") from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
@@ -375,8 +371,7 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for AnalysisEnd DateTime(DateTime=" +
-				AnalysisStart +	") returned from processor.";
+				message = "Null value for AnalysisEnd DateTime(DateTime=" +	AnalysisStart +	") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -424,8 +419,8 @@ CommandWarningException, CommandException
 	request_params.set ( "CommandTag", command_tag );
 	request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetEnsemble", request_params);
+	try {
+        bean = processor.processRequest( "GetEnsemble", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
@@ -440,7 +435,7 @@ CommandWarningException, CommandException
 	Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
 	TSEnsemble tsensemble = null;
 	if ( o_TSEnsemble == null ) {
-		message = "Null TS requesting GetEnsembleD(EnsembleID=\"" + EnsembleID + "\") from processor.";
+		message = "Null TS requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -453,7 +448,7 @@ CommandWarningException, CommandException
 	}
 	
 	if ( tsensemble == null ) {
-		message = "Unable to find ensemble to analyze using TSEnsemble \"" + EnsembleID + "\".";
+		message = "Unable to find ensemble to analyze using EnsembleID \"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );

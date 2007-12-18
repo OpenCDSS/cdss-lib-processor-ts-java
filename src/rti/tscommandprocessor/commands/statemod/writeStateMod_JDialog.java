@@ -80,25 +80,16 @@ private SimpleJComboBox	__TSList_JComboBox = null;
 						// Indicate how to get time
 						// series list.
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private JTextField	__OutputFile_JTextField = null;// Field for time series
-						// identifier
-private JTextField	__OutputStart_JTextField = null;
-						// Start of period for output
-private JTextField	__OutputEnd_JTextField = null;
-						// End of period for output
-private JTextField	__MissingValue_JTextField = null;
-						// Missing value for output
-private JTextField	__Precision_JTextField = null;
-						// Precision for output
+private JTextField	__OutputFile_JTextField = null;// Field for time series identifier
+private JTextField	__OutputStart_JTextField = null;// Start of period for output
+private JTextField	__OutputEnd_JTextField = null;// End of period for output
+private JTextField	__MissingValue_JTextField = null;// Missing value for output
+private JTextField	__Precision_JTextField = null;// Precision for output
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private boolean		__ok = false; // Has the user pressed OK to close the dialog?
 
 /**
 WriteStateMod_JDialog constructor.
@@ -129,8 +120,7 @@ public void actionPerformed( ActionEvent event )
 				__working_dir );
 		}
 		fc.setDialogTitle("Select StateMod Time Series File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("stm",
-			"StateMod Time Series File");
+		SimpleFileFilter sff = new SimpleFileFilter("stm", "StateMod Time Series File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -160,20 +150,16 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
-			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__OutputFile_JTextField.getText() ) );
+		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
-			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
+			try {
+                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
 				__OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"writeStateMod_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1, "writeStateMod_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -305,8 +291,7 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a StateMod format file."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Write time series to a StateMod format file."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the file name be relative to the working directory."),
@@ -393,7 +378,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
 	__OutputStart_JTextField.addKeyListener (this);
@@ -403,7 +388,7 @@ private void initialize ( JFrame parent, Command command )
 		"Overrides the global output start."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
 	__OutputEnd_JTextField.addKeyListener (this);

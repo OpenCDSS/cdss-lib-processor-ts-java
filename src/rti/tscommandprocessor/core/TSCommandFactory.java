@@ -123,6 +123,7 @@ import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
  
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
+import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
 import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
@@ -229,6 +230,9 @@ throws UnknownCommandException
 
 	// "c" commands...
 
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ChangePeriod") ) {
+        return new ChangePeriod_Command ();
+    }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ChangeInterval") ) {
 		return new changeInterval_Command ();
 	}

@@ -56,6 +56,11 @@ private JTextArea	__command_JTextArea=null;// Command as TextField
 private SimpleJComboBox	__TSList_JComboBox = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private SimpleJComboBox __TableID_JComboBox = null;
+private SimpleJComboBox __TableRow_JComboBox = null;
+private SimpleJComboBox __TableColumnStart_JComboBox = null;
+private SimpleJComboBox __TableColumnEnd_JComboBox = null;
+private JTextField  __OutputStart_JTextField = null;// Start of period for output
+private JTextField  __OutputEnd_JTextField = null;// End of period for output
 private JTextField __NewScenario_JTextField = null;
 private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
@@ -118,6 +123,11 @@ private void checkInput ()
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
+    String TableRow = __TableRow_JComboBox.getSelected();
+    String TableColumnStart = __TableColumnStart_JComboBox.getSelected();
+    String TableColumnEnd = __TableColumnEnd_JComboBox.getSelected();
+    String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String NewScenario = __NewScenario_JTextField.getText().trim();
 
 	__error_wait = false;
@@ -131,6 +141,21 @@ private void checkInput ()
 	if ( TableID.length() > 0 ) {
 		parameters.set ( "TableID", TableID );
 	}
+    if ( TableRow.length() > 0 ) {
+        parameters.set ( "TableRow", TableRow );
+    }
+    if ( TableColumnStart.length() > 0 ) {
+        parameters.set ( "TableColumnStart", TableColumnStart );
+    }
+    if ( TableColumnEnd.length() > 0 ) {
+        parameters.set ( "TableColumnEnd", TableColumnEnd );
+    }
+    if ( OutputStart.length() > 0 ) {
+        parameters.set ( "OutputStart", OutputStart );
+    }
+    if ( OutputEnd.length() > 0 ) {
+        parameters.set ( "OutputEnd", OutputEnd );
+    }
     if ( NewScenario.length() > 0 ) {
         parameters.set ( "NewScenario", NewScenario );
     }
@@ -152,10 +177,20 @@ private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
+    String TableRow = __TableRow_JComboBox.getSelected();
+    String TableColumnStart = __TableColumnStart_JComboBox.getSelected();
+    String TableColumnEnd = __TableColumnEnd_JComboBox.getSelected();
+    String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String NewScenario = __NewScenario_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "TableRow", TableRow );
+    __command.setCommandParameter ( "TableColumnStart", TableColumnStart );
+    __command.setCommandParameter ( "TableColumnEnd", TableColumnEnd );
+    __command.setCommandParameter ( "OutputStart", OutputStart );
+    __command.setCommandParameter ( "OutputEnd", OutputEnd );
     __command.setCommandParameter ( "NewScenario", NewScenario );
 }
 
@@ -170,6 +205,19 @@ throws Throwable
 	__command = null;
 	__ok_JButton = null;
 	super.finalize ();
+}
+
+/**
+Put together a list of row/column numbers (a list of numbers) for use in choices.
+*/
+private Vector getRowColumnList ()
+{
+    Vector v = new Vector();
+    v.add( "");
+    for ( int i = 1; i <= 200; i++ ) {
+        v.add("" + i);
+    }
+    return v;
 }
 
 /**
@@ -193,6 +241,9 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Resequence time series data by \"shuffling\" the original years of data, creating new time series." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Currently, only resequencing of monthly time series using calendar years is supported." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"An identifier for the table with the new year sequence must be specified."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -259,6 +310,59 @@ private void initialize ( JFrame parent, Command command )
     __TableID_JComboBox.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Row in table for year sequence:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Allow edits...
+    __TableRow_JComboBox = new SimpleJComboBox ( true );
+    __TableRow_JComboBox.setData ( getRowColumnList() );
+    __TableRow_JComboBox.select( 0 ); // Default
+    __TableRow_JComboBox.addItemListener ( this );
+    __TableRow_JComboBox.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __TableRow_JComboBox,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("First column in table for year sequence:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Allow edits...
+    __TableColumnStart_JComboBox = new SimpleJComboBox ( true );
+    __TableColumnStart_JComboBox.setData ( getRowColumnList() );
+    __TableColumnStart_JComboBox.select( 0 ); // Default
+    __TableColumnStart_JComboBox.addItemListener ( this );
+    __TableColumnStart_JComboBox.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __TableColumnStart_JComboBox,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Last column in table for year sequence:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    // Allow edits...
+    __TableColumnEnd_JComboBox = new SimpleJComboBox ( true );
+    __TableColumnEnd_JComboBox.setData ( getRowColumnList() );
+    __TableColumnEnd_JComboBox.select( 0 ); // Default
+    __TableColumnEnd_JComboBox.addItemListener ( this );
+    __TableColumnEnd_JComboBox.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __TableColumnEnd_JComboBox,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Overrides the global output start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Overrides the global output end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New scenario:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -350,6 +454,11 @@ private void refresh ()
 	String TSList = "";
     String TSID = "";
     String TableID = "";
+    String TableRow = "";
+    String TableColumnStart = "";
+    String TableColumnEnd = "";
+    String OutputStart = "";
+    String OutputEnd = "";
     String NewScenario = "";
 	__error_wait = false;
 	PropList parameters = null;
@@ -360,6 +469,11 @@ private void refresh ()
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         TableID = parameters.getValue ( "TableID" );
+        TableRow = parameters.getValue ( "TableRow" );
+        TableColumnStart = parameters.getValue ( "TableColumnStart" );
+        TableColumnEnd = parameters.getValue ( "TableColumnEnd" );
+        OutputStart = parameters.getValue("OutputStart");
+        OutputEnd = parameters.getValue("OutputEnd");
         NewScenario = parameters.getValue ( "NewScenario" );
 		if ( TSList == null ) {
 			// Select default...
@@ -371,9 +485,7 @@ private void refresh ()
 			}
 			else {
                 Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
+				"Existing command references an invalid\nTSList value \"" +	TSList +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
@@ -407,12 +519,70 @@ private void refresh ()
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command " +
-                "references an invalid\nTableID value \"" +
+                "Existing command references an invalid\nTableID value \"" +
                 TableID +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
+        }
+        if ( TableRow == null ) {
+            // Select default...
+            if ( __TableRow_JComboBox.getItemCount() > 0 ) {
+                __TableRow_JComboBox.select ( 0 );
+            }
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableRow_JComboBox,TableRow, JGUIUtil.NONE, null, null ) ) {
+                __TableRow_JComboBox.select ( TableRow );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTableRow value \"" + TableRow +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TableColumnStart == null ) {
+            // Select default...
+            if ( __TableColumnStart_JComboBox.getItemCount() > 0 ) {
+                __TableColumnStart_JComboBox.select ( 0 );
+            }
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableColumnStart_JComboBox,TableColumnStart, JGUIUtil.NONE, null, null ) ) {
+                __TableColumnStart_JComboBox.select ( TableColumnStart );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTableColumnStart value \"" +
+                TableColumnStart +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TableColumnEnd == null ) {
+            // Select default...
+            if ( __TableColumnEnd_JComboBox.getItemCount() > 0 ) {
+                __TableColumnEnd_JComboBox.select ( 0 );
+            }
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableColumnEnd_JComboBox,TableColumnEnd, JGUIUtil.NONE, null, null ) ) {
+                __TableColumnEnd_JComboBox.select ( TableColumnEnd );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTableColumnEnd value \"" +
+                TableColumnEnd +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( OutputStart != null ) {
+            __OutputStart_JTextField.setText ( OutputStart );
+        }
+        if ( OutputEnd != null ) {
+            __OutputEnd_JTextField.setText ( OutputEnd );
         }
         if ( NewScenario != null ) {
             __NewScenario_JTextField.setText(NewScenario);
@@ -422,11 +592,21 @@ private void refresh ()
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     TableID = __TableID_JComboBox.getSelected();
+    TableRow = __TableRow_JComboBox.getSelected();
+    TableColumnStart = __TableColumnStart_JComboBox.getSelected();
+    TableColumnEnd = __TableColumnEnd_JComboBox.getSelected();
+    OutputStart = __OutputStart_JTextField.getText().trim();
+    OutputEnd = __OutputEnd_JTextField.getText().trim();
     NewScenario = __NewScenario_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "TSID=" + TSID );
 	parameters.add ( "TableID=" + TableID );
+    parameters.add ( "TableRow=" + TableRow );
+    parameters.add ( "TableColumnStart=" + TableColumnStart );
+    parameters.add ( "TableColumnEnd=" + TableColumnEnd );
+    parameters.add ( "OutputStart=" + OutputStart );
+    parameters.add ( "OutputEnd=" + OutputEnd );
     parameters.add ( "NewScenario=" + NewScenario );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }

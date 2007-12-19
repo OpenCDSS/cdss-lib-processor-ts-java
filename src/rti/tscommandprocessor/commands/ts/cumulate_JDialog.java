@@ -58,8 +58,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 private cumulate_Command __command = null;	// Command to edit
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series alias
-private SimpleJComboBox	__HandleMissingHow_JComboBox=null;
-						// Field for handling missing
+private SimpleJComboBox	__HandleMissingHow_JComboBox=null; // Field for handling missing
 private SimpleJComboBox	__Reset_JComboBox=null; // Field for reset date.
 private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
@@ -169,7 +168,7 @@ private void initialize ( JFrame parent, Command command )
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(0,2,0,2);
+    Insets insetsTLBR = new Insets(0,2,0,2);
 
 	// Main panel...
 
@@ -178,16 +177,16 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The selected time series will be converted to cumulative" +
-		" values over the period." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The selected time series will be converted to cumulative values over the period." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The units remain the original." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "The units remain the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+            "Specify a Reset value of 0000-MM-DD to reset the total to zero on MM-DD of each year." ), 
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series to cumulate:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to cumulate:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -201,47 +200,45 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Handle missing data how?:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingHow_JComboBox = new SimpleJComboBox ();
 	__HandleMissingHow_JComboBox.addItem ( "" );
-	__HandleMissingHow_JComboBox.addItem (
-		__command._CarryForwardIfMissing );
-	__HandleMissingHow_JComboBox.addItem (
-		__command._SetMissingIfMissing );
+	__HandleMissingHow_JComboBox.addItem ( __command._CarryForwardIfMissing );
+	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfMissing );
 	__HandleMissingHow_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Default (blank) is to set missing."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Reset date/time:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Reset date/time:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Reset_JComboBox = new SimpleJComboBox ();
-	__Reset_JComboBox.addItem ( "" );
+	__Reset_JComboBox = new SimpleJComboBox (true);    // Editable
+	__Reset_JComboBox.addItem ( "" );  // No reset
+    /*
+    for ( int i = 1; i <= 12; i++ ) {
+        __Reset_JComboBox.addItem ( "Date " + i + "-1 (reset matching MM-DD for day interval)" );
+    }
+    for ( int i = 1; i <= 12; i++ ) {
+        __Reset_JComboBox.addItem ( "Date " + i + "-1 (reset matching MM-DD for month interval)" );
+    }
 	for ( int i = 1; i <= 31; i++ ) {
-		__Reset_JComboBox.addItem ( "Day " + i +
-			" (for <= day interval)" );
+		__Reset_JComboBox.addItem ( "Day " + i + " (reset every specified day for day interval)" );
 	}
 	for ( int i = 1; i <= 12; i++ ) {
-		__Reset_JComboBox.addItem ( "Date " + i +
-			"-1 (MM-DD for month interval)" );
+		__Reset_JComboBox.addItem ( "Month " + i + " (reset every specified month for month interval)" );
 	}
-	for ( int i = 1; i <= 12; i++ ) {
-		__Reset_JComboBox.addItem ( "Month " + i +
-			" (for month interval)" );
-	}
+    */
 	__Reset_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Reset_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Date/day/time on which to reset to zero."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Date/day/time on which to reset to zero (specify zeros for year)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 40 );
 	__command_JTextArea.setLineWrap ( true );

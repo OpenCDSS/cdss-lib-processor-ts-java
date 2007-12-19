@@ -3342,56 +3342,6 @@ throws Exception
 }
 
 /**
-Execute the readNWSRFSESPTraceEnsemble() command:
-<pre>
-readNWSRFSESPTraceEnsemble(InputFile="X")
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_readNWSRFSESPTraceEnsemble ( String command )
-throws Exception
-{	String routine = "TSEngine.do_readNWSRFSESPTraceEnsemble";
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || (tokens.size() < 1) ) {
-		// Should never happen because the command name was parsed before...
-		throw new Exception ( "Bad command: \"" + command + "\"" );
-	}
-	if ( !IOUtil.classCanBeLoaded("RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble") ) {
-		Message.printWarning ( 2, routine,
-		"Features for command are unavailable:  \"" + command + "\"" );
-		throw new Exception ( "Command unavailable: \"" + command +	"\"" );
-	}
-	// Get the input needed to process the file...
-	PropList props = PropList.parse ((String)tokens.elementAt(1), routine, "," );
-	String InputFile = props.getValue ( "InputFile" );
-
-	Vector tslist = null;
-	Message.printStatus ( 1, routine, "Reading NWSRFS ESPTraceEnsemble file \"" + InputFile + "\"" );
-	// TODO - need to pass requested date, units, etc. to the constructor??
-    String InputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),InputFile));
-	NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, true );
-	tslist = ensemble.getTimeSeriesVector ();
-	// Add the time series to the end of the normal list...
-	if ( tslist != null ) {
-		// Further process the time series...
-		// This makes sure the period is at least that of the output period...
-		int vsize = tslist.size();
-		Message.printStatus ( 1, routine, "Read " + vsize + " NWSRFS ESPTraceEnsemble time series" );
-		readTimeSeries2 ( tslist, true );
-		int ts_pos = getTimeSeriesSize();
-		for ( int iv = 0; iv < vsize; iv++ ) {
-			setTimeSeries ((TS)tslist.elementAt(iv), (ts_pos + iv));
-		}
-	}
-	// Free resources from ESP list...
-	tslist = null;
-	// Force a garbage collect because this is an intensive task...
-	System.gc();
-}
-
-/**
 Execute the readNWSRFSFS5Files() commands:
 <pre>
 readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
@@ -4131,8 +4081,7 @@ throws Exception
 	DateTime start = null, end = null;
 	if ( command.indexOf('=') < 0 ) {
 		// Old syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"(,)", StringUtil.DELIM_SKIP_BLANKS );
+		Vector tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( tokens.size() != 3 ) {
 			throw new Exception("Bad command \"" + command + "\"" );
 		}
@@ -4140,12 +4089,11 @@ throws Exception
 		TSID = (String)tokens.elementAt(1);
 		ConstantValue = (String)tokens.elementAt(2);
 	}
-	else {	// New syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	else {
+        // New syntax...
+		Vector tokens = StringUtil.breakStringList ( command,"()", 0 );
 		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was
-			// parsed before...
+			// Should never happen because the command name was parsed before...
 			throw new Exception("Bad command: \"" + command + "\"");
 		}
 		// Get the input needed to process the file...
@@ -4210,7 +4158,8 @@ throws Exception
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
-	try {	if ( SetEnd != null ) {
+	try {
+        if ( SetEnd != null ) {
 			end = DateTime.parse(SetEnd);
 		}
 	}
@@ -4229,8 +4178,8 @@ throws Exception
 			if ( mconstant == null ) {
 				TSUtil.setConstant ( ts, start, end, constant );
 			}
-			else {	TSUtil.setConstantByMonth ( ts,
-					start, end, mconstant );
+			else {
+                TSUtil.setConstantByMonth ( ts, start, end, mconstant );
 			}
 			// Update...
 			processTimeSeriesAction ( UPDATE_TS, ts, its );
@@ -4243,7 +4192,8 @@ throws Exception
 			if ( mconstant == null ) {
 				TSUtil.setConstant ( ts, start, end, constant );
 			}
-			else {	TSUtil.setConstantByMonth ( ts, start, end,	mconstant );
+			else {
+                TSUtil.setConstantByMonth ( ts, start, end,	mconstant );
 			}
 			processTimeSeriesAction (UPDATE_TS, ts, ts_pos);
 		}
@@ -6772,8 +6722,7 @@ processing.
 protected void processCommands ( Vector command_Vector,	PropList app_PropList )
 throws Exception
 {	String	message, routine = "TSEngine.processTimeSeriesCommands";
-	String message_tag = "ProcessCommands";
-		// Tag used with messages generated in this method.
+	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
 	if ( command_Vector == null ) {
@@ -6833,8 +6782,7 @@ throws Exception
 		String Recursive = app_PropList.getValue ( "Recursive" );
 		if ( (Recursive != null) && Recursive.equalsIgnoreCase("True")){
 			Recursive_boolean = true;
-			// Default for recursive runs is to NOT append
-			// results...
+			// Default for recursive runs is to NOT append results...
 			AppendResults_boolean = false;
 		}
 	}
@@ -7464,51 +7412,7 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-		else if (command_String.regionMatches(true,0,"readDateValue",0,13)){
-			// Read the DateValue file, putting all the time
-			// series into memory...
-			tokens = StringUtil.breakStringList ( command_String,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS|
-				StringUtil.DELIM_ALLOW_STRINGS );
-			if ( tokens.size() != 2 ) {
-				Message.printStatus ( 1, routine, "Bad command \"" + command_String + "\"" );
-				continue;
-			}
-			String infile = ((String)tokens.elementAt(1)).trim();
-            String infile_full = IOUtil.verifyPathForOS(
-                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile));
-			Vector tslist = null;
-			Message.printStatus ( 1, routine, "Reading DateValue file \"" + infile_full + "\"" );
-			try {	tslist = DateValueTS.readTimeSeriesList (
-					infile_full, __InputStart_DateTime, __InputEnd_DateTime,
-					null, true );
-			}
-			catch ( Exception e ) {
-				Message.printWarning ( 1, routine, "Error reading DateValue file \"" + infile_full + "\"." );
-				Message.printWarning ( 2, routine, e );
-			}
-			// Add the time series to the end of the normal list...
-			if ( tslist != null ) {
-				// Further process the time series...
-				// This makes sure the period is at least that
-				// of the output period...
-				int vsize = tslist.size();
-				Message.printStatus ( 2, routine, "Read " + vsize + " DateValue time series" );
-				readTimeSeries2 ( tslist, true );
-				ts_pos = getTimeSeriesSize();
-				for ( int iv = 0; iv < vsize; iv++ ) {
-					setTimeSeries (	(TS)tslist.elementAt(iv), (ts_pos + iv) );
-				}
-			}
-			// Free resources from StateMod list...
-			tslist = null;
-			// Force a garbage collect because this is an
-			// intensive task...
-			System.gc();
-			// No action needed at end...
-			continue;
-		}
-		else if (command_String.regionMatches(true,0,"readMODSIM",0,10)){
+     	else if (command_String.regionMatches(true,0,"readMODSIM",0,10)){
 			// Read the MODSIM file, putting all the time series into memory...
             CommandStatus status = ((GenericCommand)command).getCommandStatus();
             int warning_level = 2;
@@ -7563,13 +7467,6 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
-		else if (command_String.regionMatches(true,0,"readNWSRFSESPTraceEnsemble",0,26) ) {
-			// Read an ESPTraceEnsemble file, putting all the time
-			// series traces into memory...
-			do_readNWSRFSESPTraceEnsemble ( command_String );
-			// No action needed at end...
-			continue;
-		}
 		else if (command_String.regionMatches(true,0,"readNWSRFSFS5Files",0,13)){
 			// Read 1+ time series from NWSRFS FS5Files, putting all
 			// the time series traces into memory...
@@ -7578,13 +7475,10 @@ throws Exception
 			continue;
 		}
 		else if ( command_String.regionMatches(true,0,"replaceValue",0,12)){
-			// Replace values in the time series with a constant
-			// value.
-			tokens = StringUtil.breakStringList ( command_String,
-				"(,)", StringUtil.DELIM_SKIP_BLANKS );
+			// Replace values in the time series with a constant value.
+			tokens = StringUtil.breakStringList ( command_String,"(,)", StringUtil.DELIM_SKIP_BLANKS );
 			if ( tokens.size() != 7 ) {
-				Message.printWarning ( 2, routine,
-				"Bad command \"" + command_String + "\"" );
+				Message.printWarning ( 2, routine,"Bad command \"" + command_String + "\"" );
 				++error_count;
 				continue;
 			}
@@ -7597,18 +7491,15 @@ throws Exception
 			String date2_string = ((String)tokens.elementAt(6)).trim();
 			DateTime date1 = null;
 			DateTime date2 = null;
-			// Convert the string arguments to values that can be
-			// used in the replaceValue() method...
+			// Convert the string arguments to values that can be used in the replaceValue() method...
 			if ( !StringUtil.isDouble(constant_string) ) {
-				Message.printWarning ( 2, routine,
-				"Bad constant value in \"" + command_String + "\"");
+				Message.printWarning ( 2, routine, "Bad constant value in \"" + command_String + "\"");
 				++error_count;
 				continue;
 			}
 			double constant = StringUtil.atod(constant_string);
 			if ( !StringUtil.isDouble(minvalue_string) ) {
-				Message.printWarning ( 2, routine,
-				"Bad minimum value in \"" + command_String + "\"");
+				Message.printWarning ( 2, routine, "Bad minimum value in \"" + command_String + "\"");
 				++error_count;
 				continue;
 			}
@@ -7789,14 +7680,11 @@ throws Exception
 			}
 			// Parse the identifier...
 			alias = (String)tokens.elementAt(1);
-			double constant = StringUtil.atod(
-				(String)tokens.elementAt(2) );
+			double constant = StringUtil.atod((String)tokens.elementAt(2) );
 			String datestring = (String)tokens.elementAt(3);
 			DateTime beforedate = DateTime.parse ( datestring );
-			if (	(beforedate == null) ||
-				(beforedate.getYear() == 0) ) {
-				message = "Date \"" + datestring +
-					"\" is not a valid date";
+			if ( (beforedate == null) ||(beforedate.getYear() == 0) ) {
+				message = "Date \"" + datestring + "\" is not a valid date";
 				Message.printWarning ( 1, routine, message );
 				throw new Exception ( message );
 			}

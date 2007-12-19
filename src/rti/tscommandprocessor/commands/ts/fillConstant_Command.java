@@ -298,8 +298,7 @@ CommandWarningException, CommandException
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	Vector tslist = null;
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to fill using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+		message = "Unable to find time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -324,8 +323,7 @@ CommandWarningException, CommandException
 	Object o_Indices = bean_PropList.getContents ( "Indices" );
 	int [] tspos = null;
 	if ( o_Indices == null ) {
-		message = "Unable to find indices for time series to fill using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+		message = "Unable to find indices for time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -382,11 +380,11 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", FillStart );
 		bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+            bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + "\") from processor.";
+			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -399,8 +397,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for FillStart DateTime(DateTime=" +
-			FillStart +	"\") returned from processor.";
+			message = "Null value for FillStart DateTime(DateTime=" + FillStart + "\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -429,8 +426,8 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", FillEnd );
 		bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+            bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting FillEnd DateTime(DateTime=" + FillEnd + "\") from processor.";

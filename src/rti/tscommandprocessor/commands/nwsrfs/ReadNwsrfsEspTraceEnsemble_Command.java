@@ -1,23 +1,3 @@
-//------------------------------------------------------------------------------
-// readNwsCard_Command - handle the readNwsCard() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-11	Luiz Teixeira, RTi	Initial version.
-// 2005-05-16	Luiz Teixeira, RTi	Clean up and documentation.
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2005-12-06	J. Thomas Sapienza, RTi	Added Read24HourAsDay parameter.
-// 2005-12-12	JTS, RTi		readTimeSeries() call now passes in
-//					a control PropList.
-// 2006-01-04	JTS, RTi		Corrected many problems after review by
-//					SAM.
-// 2006-01-18	JTS, RTi		Moved from RTi.TS package.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.nwsrfs;
 
 import javax.swing.JFrame;
@@ -28,6 +8,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
@@ -47,17 +28,17 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
+//import RTi.Util.Time.DateTime;
 
-import RTi.DMI.NWSRFS_DMI.NWSCardTS;
+import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 
 /**
 <p>
 This class initializes, checks, and runs the TS Alias and non-TS Alias 
-readNwsCard() commands.
+ReadNwsrfsEspTraceEnsemble() commands.  Only the non-alias version is enabled.
 </p>
 */
-public class readNwsCard_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadNwsrfsEspTraceEnsemble_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 protected static final String
@@ -65,11 +46,16 @@ protected static final String
 	_TRUE = "True";
 
 /**
-Private data members shared between the checkCommandParameter() and the 
-runCommand() methods (prevent code duplication parsing dateTime strings).  
+Private data members shared between the checkCommandParameters() and the 
+runCommand() methods (prevent code duplication parsing DateTime strings).  
 */
-private DateTime __InputStart = null;
-private DateTime __InputEnd   = null;
+//private DateTime __InputStart = null;
+//private DateTime __InputEnd   = null;
+
+/**
+TSEnsemble created in discovery mode (basically to get the identifier for other commands).
+*/
+private TSEnsemble __tsensemble = null;
 
 /**
 List of time series read during discovery.  These are TS objects but with maintly the
@@ -85,10 +71,10 @@ protected boolean _use_alias = false;
 /**
 Constructor.
 */
-public readNwsCard_Command ()
+public ReadNwsrfsEspTraceEnsemble_Command ()
 {
 	super();
-	setCommandName ( "ReadNwsCard" );
+	setCommandName ( "ReadNwsrfsEspTraceEnsemble" );
 }
 
 /**
@@ -113,10 +99,13 @@ throws InvalidCommandParameterException
 	
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
+    String EnsembleID = parameters.getValue("EnsembleID");
+    /*
 	String NewUnits  = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd   = parameters.getValue("InputEnd");
 	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+    */
 	String Alias = parameters.getValue("Alias");
     
 	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
@@ -146,27 +135,28 @@ throws InvalidCommandParameterException
                         message, "Specify an existing input file." ) );
     }
     else {  String working_dir = null;
-        try { Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
-                if ( o != null ) {
-                    working_dir = (String)o;
-                }
+        try {
+        Object o = processor.getPropContents ( "WorkingDir" );
+            // Working directory is available so use it...
+            if ( o != null ) {
+                working_dir = (String)o;
             }
-            catch ( Exception e ) {
-                message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                Message.printWarning(3, routine, message );
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify an existing input file." ) );
-            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            Message.printWarning(3, routine, message );
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an existing input file." ) );
+        }
     
         try {
             //String adjusted_path = 
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
         }
         catch ( Exception e ) {
-            message = "The input file:\n" +
+            message = "The output file:\n" +
             "    \"" + InputFile +
             "\"\ncannot be adjusted using the working directory:\n" +
             "    \"" + working_dir + "\".";
@@ -176,7 +166,16 @@ throws InvalidCommandParameterException
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
     }
+    
+    if ( (EnsembleID == null) || (EnsembleID.length() == 0) ) {
+        message = "An ensemble identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an ensemble identifier." ) );
+    }
 
+    /*
 	if ( NewUnits != null ) {
 		// Will check at run time
 	}
@@ -240,7 +239,7 @@ throws InvalidCommandParameterException
 					__InputStart.addDay(-1);
 				}
 			}
-			/*
+			/ *
 			if (!read24HourAsDay && __InputStart.getPrecision() 
 			    != DateTime.PRECISION_HOUR) {
 				warning += "\nThe input start date/time \""
@@ -253,7 +252,7 @@ throws InvalidCommandParameterException
 					+ InputStart
 					+ "\" precision is not day.";
 			}
-			*/
+			* /
 		}
 	}
 
@@ -290,7 +289,7 @@ throws InvalidCommandParameterException
 					__InputEnd.addDay(-1);
 				}
 			}			
-/*		
+/ *		
 			if (!read24HourAsDay && __InputEnd.getPrecision() 
 			    != DateTime.PRECISION_HOUR) {
 				warning += "\nThe input end date/time \""
@@ -303,9 +302,10 @@ throws InvalidCommandParameterException
 					+ InputEnd
 					+ "\" precision is not day.";
 			}			
-*/			
+* /			
 		}
 	}
+
 
 	// Make sure __InputStart precedes __InputEnd
 	if ( __InputStart != null && __InputEnd != null ) {
@@ -317,6 +317,7 @@ throws InvalidCommandParameterException
                             message, "Specify an input start less than the input end." ) );
 		}
 	}
+        */
     
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -324,10 +325,11 @@ throws InvalidCommandParameterException
         valid_Vector.add ( "Alias" );
     }
     valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "InputStart" );
-    valid_Vector.add ( "InputEnd" );
-    valid_Vector.add ( "NewUnits" );
-    valid_Vector.add ( "Read24HourAsDay" );
+    valid_Vector.add ( "EnsembleID" );
+    //valid_Vector.add ( "InputStart" );
+    //valid_Vector.add ( "InputEnd" );
+    //valid_Vector.add ( "NewUnits" );
+    //valid_Vector.add ( "Read24HourAsDay" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -351,7 +353,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new readNwsCard_JDialog ( parent, this ) ).ok();
+	return ( new ReadNwsrfsEspTraceEnsemble_JDialog ( parent, this ) ).ok();
 }
 
 /**
@@ -360,9 +362,17 @@ Free memory for garbage collection.
 protected void finalize ()
 throws Throwable
 {
-	__InputStart = null;
-	__InputEnd   = null;
+	//__InputStart = null;
+	//__InputEnd   = null;
 	super.finalize();
+}
+
+/**
+Return the table that is read by this class when run in discovery mode.
+*/
+private TSEnsemble getDiscoveryEnsemble()
+{
+    return __tsensemble;
 }
 
 /**
@@ -377,16 +387,33 @@ private Vector getDiscoveryTSList ()
 Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
-{
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
-        return null;
+{   Vector discovery_TS_Vector = getDiscoveryTSList ();
+    TS datats = null;
+    if ( (discovery_TS_Vector != null) && (discovery_TS_Vector.size() > 0) ) {
+        datats = (TS)discovery_TS_Vector.elementAt(0);
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
     // Use the most generic for the base class...
     TS ts = new TS();
-    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+    TSEnsemble tsensemble = new TSEnsemble();
+    if ( (c == ts.getClass()) || ((datats != null) && (c == datats.getClass())) ) {
+        // Get the list of time series...
+        if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+            return null;
+        }
+        else {
+            return discovery_TS_Vector;
+        }
+    }
+    else if ( c == tsensemble.getClass() ) {
+        TSEnsemble ensemble = getDiscoveryEnsemble();
+        if ( ensemble == null ) {
+            return null;
+        }
+        else {
+            Vector v = new Vector();
+            v.addElement ( ensemble );
+            return v;
+        }
     }
     else {
         return null;
@@ -414,8 +441,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	String str = command_string.substring(index);
 	index = str.indexOf("=");
 
-    // This is the new format of parsing, where parameters are
-	// specified as "InputFilter=", etc.
+    // This is the new format of parsing, where parameters are specified as "InputFilter=", etc.
 	String routine = "ReadNwsCard_Command.parseCommand", message;
 	
     String Alias = null;
@@ -448,15 +474,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         _use_alias = false;
         super.parseCommand ( command_string );
     }
- 
- 	// The following is for backwards compatability with old commands files.
-    PropList parameters = getCommandParameters ();
-	if (parameters.getValue("InputStart") == null) {
-		parameters.set("InputStart", parameters.getValue("ReadStart"));
-	}
-	if ( parameters.getValue("InputEnd") == null) {
-		parameters.set("InputEnd", parameters.getValue(	"ReadEnd"));
-	}
 }
 
 /**
@@ -501,7 +518,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType command_p
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String routine = "ReadNwsCard_Command.runCommand", message;
+{	String routine = "ReadNwsrfsEspTraceEnsemble_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -515,18 +532,18 @@ throws InvalidCommandParameterException,
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
-	String NewUnits = parameters.getValue("NewUnits");
+    String EnsembleID = parameters.getValue("EnsembleID");  // Get from file?
+    String EnsembleName = "";   // FIXME SAM 2007-12-18 Need to get from file?
+	//String NewUnits = parameters.getValue("NewUnits");
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
 	//String InputStart = _parameters.getValue("InputStart");
 	//String InputEnd = _parameters.getValue("InputEnd");
-	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
-	String Alias = parameters.getValue("Alias");
+	//String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+	//String Alias = parameters.getValue("Alias");
 
-	// Set the properties for NWSCardTS.readTimeSeries().
-	PropList props = new PropList("NWSCardTS.readTimeSeries");
-	props.set("Read24HourAsDay=" + Read24HourAsDay);
+	//props.set("Read24HourAsDay=" + Read24HourAsDay);
 
-	// Read the NWS Card file.
+	// Read the ensemble file.
     Vector tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
@@ -536,42 +553,17 @@ throws InvalidCommandParameterException,
         }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
-		tslist = NWSCardTS.readTimeSeriesList (
-			// TODO [LT 2005-05-17] May add the TSID parameter 
-			//	(1st parameter here) in the future.
-			(TS) null,    		// Currently not used.
-			InputFile_full, 		// String 	fname
-			__InputStart,		// DateTime 	date1
-			__InputEnd, 		// DateTime 	date2
-			NewUnits,		// String 	units
-			read_data,			// boolean 	read_data
-			props);			// whether to read 24 hour as day.
-			
+        NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, read_data );
+        tslist = ensemble.getTimeSeriesVector ();
+		int tscount = 0;
 		if ( tslist != null ) {
-			int tscount = tslist.size();
+			tscount = tslist.size();
 			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
 			Message.printStatus ( 2, routine, message );
-			TS ts = null;
-            if ( _use_alias ) {
-                // There should only be one time series for this type of command.  Otherwise every
-                // time series will get the same alias.
-                if ( tscount > 1 ) {
-                    message = "The NwsCard file \"" + InputFile_full + "\" has multiple time series traces." +
-                    " All are being assigned the same alias.";
-                    status.addToLog(command_phase,
-                        new CommandLogRecord(
-                        CommandStatusType.WARNING, message,
-                        "Use the ReadNwsCard() command without the alias."));
-                }
-                for (int i = 0; i < tscount; i++) {
-                    ts = (TS)tslist.elementAt(i);
-                    ts.setAlias(Alias);
-                }
-            }
-		}
+        }
 	} 
 	catch ( Exception e ) {
-		message = "Unexpected error reading NWS Card File. \"" + InputFile_full + "\"";
+		message = "Unexpected error reading NWSRFS ensemble file. \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
@@ -584,19 +576,13 @@ throws InvalidCommandParameterException,
 		throw new CommandException ( message );
 	}
     
-    int size = 0;
-    if ( tslist != null ) {
-        size = tslist.size();
-    }
-    Message.printStatus ( 2, routine, "Read " + size + " NWS Card time series." );
-
     if ( command_phase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
             // Further process the time series...
             // This makes sure the period is at least as long as the output period...
             int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
             if ( wc > 0 ) {
-                message = "Error post-processing NWS Card time series after read.";
+                message = "Error post-processing NWS ensemble time series after read.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
@@ -610,7 +596,7 @@ throws InvalidCommandParameterException,
             
             int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
             if ( wc2 > 0 ) {
-                message = "Error adding NWS Card time series after read.";
+                message = "Error adding ensemble time series after read.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
@@ -620,9 +606,16 @@ throws InvalidCommandParameterException,
                 throw new CommandException ( message );
             }
         }
+        // Create an ensemble and add to the processor...
+        
+        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+        TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( tslist );
+        // Just want the identifier...
+        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, null );
+        setDiscoveryEnsemble ( ensemble );
     }
 
 	// Throw CommandWarningException in case of problems.
@@ -634,6 +627,14 @@ throws InvalidCommandParameterException,
 	}
     
     status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the ensemble that is processed by this class in discovery mode.
+*/
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
+{
+    __tsensemble = tsensemble;
 }
 
 /**
@@ -655,10 +656,13 @@ public String toString ( PropList props )
 
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
+    String EnsembleID = props.getValue("EnsembleID" );
+    /*
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
 	String Read24HourAsDay = props.getValue("Read24HourAsDay");
+    */
 
 	StringBuffer b = new StringBuffer ();
 
@@ -666,7 +670,14 @@ public String toString ( PropList props )
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
+    if ((EnsembleID != null) && (EnsembleID.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("EnsembleID=\"" + EnsembleID + "\"");
+    }
 
+    /*
 	// New Units
 	if ((NewUnits != null) && (NewUnits.length() > 0)) {
 		if (b.length() > 0) {
@@ -697,6 +708,7 @@ public String toString ( PropList props )
 		}
 		b.append("Read24HourAsDay=" + Read24HourAsDay + "");
 	}
+    */
 
     String lead = "";
 	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
@@ -706,4 +718,4 @@ public String toString ( PropList props )
 	return lead + getCommandName() + "(" + b.toString() + ")";
 }
 
-} // end readNwsCard_Command
+}

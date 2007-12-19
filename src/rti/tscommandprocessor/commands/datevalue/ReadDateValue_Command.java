@@ -1,24 +1,4 @@
-//------------------------------------------------------------------------------
-// readNwsCard_Command - handle the readNwsCard() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-11	Luiz Teixeira, RTi	Initial version.
-// 2005-05-16	Luiz Teixeira, RTi	Clean up and documentation.
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2005-12-06	J. Thomas Sapienza, RTi	Added Read24HourAsDay parameter.
-// 2005-12-12	JTS, RTi		readTimeSeries() call now passes in
-//					a control PropList.
-// 2006-01-04	JTS, RTi		Corrected many problems after review by
-//					SAM.
-// 2006-01-18	JTS, RTi		Moved from RTi.TS package.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-
-package rti.tscommandprocessor.commands.nwsrfs;
+package rti.tscommandprocessor.commands.datevalue;
 
 import javax.swing.JFrame;
 
@@ -32,6 +12,7 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -49,21 +30,24 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
-import RTi.DMI.NWSRFS_DMI.NWSCardTS;
+import RTi.TS.DateValueTS;
 
+//FIXME SAM 2007-12-19 NOTE ONLY THE NON-ALIAS VERSION IS ENABLED, but hooks are in place for the other version.
 /**
 <p>
-This class initializes, checks, and runs the TS Alias and non-TS Alias 
-readNwsCard() commands.
+This class initializes, checks, and runs the TS Alias and non-TS Alias ReadDateValue() commands.
 </p>
 */
-public class readNwsCard_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadDateValue_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
+    /*
 protected static final String
 	_FALSE = "False",
 	_TRUE = "True";
+    */
 
+// FIXME SAM 2007-12-19 Need to evaluate this - runtime versions may be different.
 /**
 Private data members shared between the checkCommandParameter() and the 
 runCommand() methods (prevent code duplication parsing dateTime strings).  
@@ -85,10 +69,10 @@ protected boolean _use_alias = false;
 /**
 Constructor.
 */
-public readNwsCard_Command ()
+public ReadDateValue_Command ()
 {
 	super();
-	setCommandName ( "ReadNwsCard" );
+	setCommandName ( "ReadDateValue" );
 }
 
 /**
@@ -116,7 +100,6 @@ throws InvalidCommandParameterException
 	String NewUnits  = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd   = parameters.getValue("InputEnd");
-	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
 	String Alias = parameters.getValue("Alias");
     
 	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
@@ -181,32 +164,6 @@ throws InvalidCommandParameterException
 		// Will check at run time
 	}
 
-	boolean read24HourAsDay = false;
-
-	// Read24HourAsDay
-	if ((Read24HourAsDay != null) && !Read24HourAsDay.equals("")) {
-		if (Read24HourAsDay.equalsIgnoreCase("true")) {
-			// valid entry
-			read24HourAsDay = true;
-		}
-		else if (Read24HourAsDay.equalsIgnoreCase("false") || Read24HourAsDay.trim().equals("")) {
-		    	// valid entry
-		    	read24HourAsDay = false;
-		}
-		else {
-			// invalid value -- will default to false, but report a warning.
-            message = "The value to specify whether to convert "
-                + "24 Hour data to Daily should be blank, or "
-                + "one of \"True\" or \"False\", not \""
-                + Read24HourAsDay + "\"";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify True, False, or blank." ) );
-
-		}
-	}
-
 	// InputStart
 	if ((InputStart != null) && !InputStart.equals("")) {
 		try {
@@ -228,32 +185,6 @@ throws InvalidCommandParameterException
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Specify the input start to hour precision." ) );
 			}		
-
-			// When reading 24 hour as day, 24 is a valid hour
-			// for the current day (because of how the NWS does
-			// things), but RTi's DateTime class automatically 
-			// parses hour 24 as being hour 0 of the next day, so
-			// decrement the __InputStart day by 1 to account for
-			// this.			
-			if (read24HourAsDay) {
-				if (InputStart.endsWith(" 24")) {
-					__InputStart.addDay(-1);
-				}
-			}
-			/*
-			if (!read24HourAsDay && __InputStart.getPrecision() 
-			    != DateTime.PRECISION_HOUR) {
-				warning += "\nThe input start date/time \""
-					+ InputStart
-					+ "\" precision is not hour.";
-			}
-			else if (read24HourAsDay && __InputStart.getPrecision() 
-			    != DateTime.PRECISION_DAY) {
-				warning += "\nThe input start date/time \""
-					+ InputStart
-					+ "\" precision is not day.";
-			}
-			*/
 		}
 	}
 
@@ -277,33 +208,7 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Specify the input end to hour precision." ) );
-			}		
-
-			// When reading 24 hour as day, 24 is a valid hour
-			// for the current day (because of how the NWS does
-			// things), but RTi's DateTime class automatically 
-			// parses hour 24 as being hour 0 of the next day, so
-			// decrement the __InputEnd day by 1 to account for
-			// this.
-			if (read24HourAsDay) {
-				if (InputEnd.endsWith(" 24")) {
-					__InputEnd.addDay(-1);
-				}
-			}			
-/*		
-			if (!read24HourAsDay && __InputEnd.getPrecision() 
-			    != DateTime.PRECISION_HOUR) {
-				warning += "\nThe input end date/time \""
-					+ InputEnd
-					+ "\" precision is not hour.";
 			}
-			else if (read24HourAsDay && __InputEnd.getPrecision() 
-			    != DateTime.PRECISION_DAY) {
-				warning += "\nThe input end date/time \""
-					+ InputEnd
-					+ "\" precision is not day.";
-			}			
-*/			
 		}
 	}
 
@@ -327,7 +232,6 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "NewUnits" );
-    valid_Vector.add ( "Read24HourAsDay" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -351,7 +255,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new readNwsCard_JDialog ( parent, this ) ).ok();
+	return ( new ReadDateValue_JDialog ( parent, this ) ).ok();
 }
 
 /**
@@ -446,17 +350,16 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
         _use_alias = false;
-        super.parseCommand ( command_string );
+        if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
+            // Named parameters so parse the new way...
+            super.parseCommand ( command_string );
+        }
+        else {
+            // Grab the filename from the only parameter...
+            PropList parameters = getCommandParameters();
+            parameters.set("InputFile", StringUtil.getToken(command_string, "()", StringUtil.DELIM_ALLOW_STRINGS, 1));
+        }
     }
- 
- 	// The following is for backwards compatability with old commands files.
-    PropList parameters = getCommandParameters ();
-	if (parameters.getValue("InputStart") == null) {
-		parameters.set("InputStart", parameters.getValue("ReadStart"));
-	}
-	if ( parameters.getValue("InputEnd") == null) {
-		parameters.set("InputEnd", parameters.getValue(	"ReadEnd"));
-	}
 }
 
 /**
@@ -501,8 +404,9 @@ private void runCommandInternal ( int command_number, CommandPhaseType command_p
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String routine = "ReadNwsCard_Command.runCommand", message;
+{	String routine = "ReadDateValue_Command.runCommand", message;
 	int warning_level = 2;
+    int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
@@ -517,16 +421,142 @@ throws InvalidCommandParameterException,
 	String InputFile = parameters.getValue("InputFile");
 	String NewUnits = parameters.getValue("NewUnits");
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
-	//String InputStart = _parameters.getValue("InputStart");
-	//String InputEnd = _parameters.getValue("InputEnd");
-	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
+	String InputStart = parameters.getValue("InputStart");
+	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
+    
+    DateTime InputStart_DateTime = null;
+    DateTime InputEnd_DateTime = null;
+    if ( (InputStart != null) && (InputStart.length() != 0) ) {
+        try {
+        PropList request_params = new PropList ( "" );
+        request_params.set ( "DateTime", InputStart );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
 
-	// Set the properties for NWSCardTS.readTimeSeries().
-	PropList props = new PropList("NWSCardTS.readTimeSeries");
-	props.set("Read24HourAsDay=" + Read24HourAsDay);
+        PropList bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the specified date/time is valid." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+        else {  InputStart_DateTime = (DateTime)prop_contents;
+        }
+    }
+    catch ( Exception e ) {
+        message = "InputStart \"" + InputStart + "\" is invalid.";
+        Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( command_phase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid date/time for the input start, " +
+                        "or InputStart for the global input start." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
+    }
+    else {  // Get the global input start from the processor...
+        try {   Object o = processor.getPropContents ( "InputStart" );
+                if ( o != null ) {
+                    InputStart_DateTime = (DateTime)o;
+                }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting the global InputStart from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    
+    if ( (InputEnd != null) && (InputEnd.length() != 0) ) {
+        try {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", InputEnd );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting InputEnd DateTime(DateTime=" +
+                InputEnd + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
 
-	// Read the NWS Card file.
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for InputEnd DateTime(DateTime=" +
+                InputEnd +  ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the end date/time is valid." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {  InputEnd_DateTime = (DateTime)prop_contents;
+            }
+        }
+        catch ( Exception e ) {
+            message = "InputEnd \"" + InputEnd + "\" is invalid.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time for the input end, " +
+                            "or InputEnd for the global input start." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+        }
+        else {  // Get from the processor...
+            try {   Object o = processor.getPropContents ( "InputEnd" );
+                    if ( o != null ) {
+                        InputEnd_DateTime = (DateTime)o;
+                    }
+            }
+            catch ( Exception e ) {
+                message = "Error requesting the global InputEnd from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report problem to software support." ) );
+            }
+    }
+
+	// Read the file.
     Vector tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
@@ -536,16 +566,9 @@ throws InvalidCommandParameterException,
         }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
-		tslist = NWSCardTS.readTimeSeriesList (
-			// TODO [LT 2005-05-17] May add the TSID parameter 
-			//	(1st parameter here) in the future.
-			(TS) null,    		// Currently not used.
-			InputFile_full, 		// String 	fname
-			__InputStart,		// DateTime 	date1
-			__InputEnd, 		// DateTime 	date2
-			NewUnits,		// String 	units
-			read_data,			// boolean 	read_data
-			props);			// whether to read 24 hour as day.
+        tslist = DateValueTS.readTimeSeriesList (
+                InputFile_full, InputStart_DateTime, InputEnd_DateTime,
+                NewUnits, read_data );
 			
 		if ( tslist != null ) {
 			int tscount = tslist.size();
@@ -553,16 +576,6 @@ throws InvalidCommandParameterException,
 			Message.printStatus ( 2, routine, message );
 			TS ts = null;
             if ( _use_alias ) {
-                // There should only be one time series for this type of command.  Otherwise every
-                // time series will get the same alias.
-                if ( tscount > 1 ) {
-                    message = "The NwsCard file \"" + InputFile_full + "\" has multiple time series traces." +
-                    " All are being assigned the same alias.";
-                    status.addToLog(command_phase,
-                        new CommandLogRecord(
-                        CommandStatusType.WARNING, message,
-                        "Use the ReadNwsCard() command without the alias."));
-                }
                 for (int i = 0; i < tscount; i++) {
                     ts = (TS)tslist.elementAt(i);
                     ts.setAlias(Alias);
@@ -571,7 +584,7 @@ throws InvalidCommandParameterException,
 		}
 	} 
 	catch ( Exception e ) {
-		message = "Unexpected error reading NWS Card File. \"" + InputFile_full + "\"";
+		message = "Unexpected error reading DateValue File. \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
@@ -588,7 +601,7 @@ throws InvalidCommandParameterException,
     if ( tslist != null ) {
         size = tslist.size();
     }
-    Message.printStatus ( 2, routine, "Read " + size + " NWS Card time series." );
+    Message.printStatus ( 2, routine, "Read " + size + " time series." );
 
     if ( command_phase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
@@ -596,7 +609,7 @@ throws InvalidCommandParameterException,
             // This makes sure the period is at least as long as the output period...
             int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
             if ( wc > 0 ) {
-                message = "Error post-processing NWS Card time series after read.";
+                message = "Error post-processing series after read.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
@@ -610,7 +623,7 @@ throws InvalidCommandParameterException,
             
             int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
             if ( wc2 > 0 ) {
-                message = "Error adding NWS Card time series after read.";
+                message = "Error adding time series after read.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
@@ -658,7 +671,6 @@ public String toString ( PropList props )
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
-	String Read24HourAsDay = props.getValue("Read24HourAsDay");
 
 	StringBuffer b = new StringBuffer ();
 
@@ -691,13 +703,6 @@ public String toString ( PropList props )
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
 
-	if (Read24HourAsDay != null && Read24HourAsDay.length() > 0) {
-		if (b.length() > 0) {
-			b.append(",");
-		}
-		b.append("Read24HourAsDay=" + Read24HourAsDay + "");
-	}
-
     String lead = "";
 	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
 		lead = "TS " + Alias + " = ";
@@ -706,4 +711,4 @@ public String toString ( PropList props )
 	return lead + getCommandName() + "(" + b.toString() + ")";
 }
 
-} // end readNwsCard_Command
+}

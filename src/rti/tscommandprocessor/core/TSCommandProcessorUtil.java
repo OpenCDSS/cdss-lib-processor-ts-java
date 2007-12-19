@@ -338,7 +338,7 @@ protected static Vector getEnsembleIdentifiersFromCommands ( List commands, bool
                 for ( int its = 0; its < listsize; its++ ) {
                     tsensemble = (TSEnsemble)list.get(its);
                     id = tsensemble.getEnsembleID();
-                    if ( !id.equals("") ) {
+                    if ( (id != null) && !id.equals("") ) {
                         v.addElement( id );
                     }
                 }

@@ -21,7 +21,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_CumulateTimeSeries;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -40,6 +40,7 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
 
 /**
 <p>
@@ -76,6 +77,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
+    String Reset = parameters.getValue ( "Reset" );
 	String warning = "";
     String message;
     
@@ -101,6 +103,18 @@ throws InvalidCommandParameterException
                         _CarryForwardIfMissing + " or " +
                         _SetMissingIfMissing ) );
 	}
+    if ( (Reset != null) && !Reset.equals("") ){
+        try {
+            DateTime.parse(Reset);
+        }
+        catch ( Exception e ) {
+            message = "The reset date/time \"" + Reset + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time (use zeros for year)." ) );
+        }
+    }
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -207,6 +221,7 @@ CommandWarningException, CommandException
 	String TSList = "AllMatchingTSID";
 	String TSID = parameters.getValue ( "TSID" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
+    String Reset = parameters.getValue ( "Reset" );
 
 	// Get the time series to process.  Allow TSID to be a pattern or
 	// specific time series...
@@ -299,6 +314,9 @@ CommandWarningException, CommandException
 	if ( HandleMissingHow != null ) {
 		cumulate_props.add ( "HandleMissingHow=" + HandleMissingHow );
 	}
+    if ( Reset != null ) {
+        cumulate_props.add ( "Reset=" + Reset );
+    }
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		request_params = new PropList ( "" );
@@ -308,8 +326,7 @@ CommandWarningException, CommandException
 			processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
-            message = "Error requesting GetTimeSeries(Index=" + tspos[its] +
-            "\") from processor.";
+            message = "Error requesting GetTimeSeries(Index=" + tspos[its] + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -320,8 +337,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "TS" );
 		if ( prop_contents == null ) {
-            message = "Null value for GetTimeSeries(Index=" + tspos[its] +
-            ") returned from processor.";
+            message = "Null value for GetTimeSeries(Index=" + tspos[its] + ") returned from processor.";
 			Message.printWarning(log_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -337,7 +353,8 @@ CommandWarningException, CommandException
 		try {
             // Do the processing...
 			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\"." );
-			TSUtil.cumulate ( ts, null, null, cumulate_props );
+			TSUtil_CumulateTimeSeries u = new TSUtil_CumulateTimeSeries();
+            u.cumulate ( ts, null, null, cumulate_props );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error cumulating time series \""+	ts.getIdentifier() + "\".";

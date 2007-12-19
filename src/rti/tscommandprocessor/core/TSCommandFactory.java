@@ -67,6 +67,7 @@ import rti.tscommandprocessor.commands.datatest.runDataTest_Command;
 
 // DateValue commands
 
+import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 
 // GRTS commands (time series products).
@@ -86,6 +87,7 @@ import rti.tscommandprocessor.commands.logging.startLog_Command;
 // NWSRFS commands.
 
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
+import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
 import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Command;
 
 // RiverWare commands
@@ -342,6 +344,9 @@ throws UnknownCommandException
 
 	// "r" commands...
 
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadDateValue") ) {
+        return new ReadDateValue_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadHydroBase") ) {
 		return new readHydroBase_Command ();
 	}
@@ -357,6 +362,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadNwsCard") ) {
 		return new readNwsCard_Command();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsrfsEspTraceEnsemble") ) {
+        return new ReadNwsrfsEspTraceEnsemble_Command ();
+    }
 	// Put before shorter command name...
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateModB") ) {
 		return new readStateModB_Command ();

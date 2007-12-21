@@ -315,6 +315,11 @@ private int customCommand (
     // For iterator...
     DateTime date = new DateTime(ForecastStart_DateTime);
     
+    double ValueCriteria_high = 1.0 + ValueCriteria_double/100.0;
+    double ValueCriteria_low = 1.0 - ValueCriteria_double/100.0;
+    double ChangeCriteria_high = 1.0 + ChangeCriteria_double/100.0;
+    double ChangeCriteria_low = 1.0 - ChangeCriteria_double/100.0;
+    
     boolean in_thisweek = true;     // Always true to start
     boolean in_nextweek = false;
     boolean in_thismonth = true;    // Always true to start
@@ -501,11 +506,13 @@ private int customCommand (
          fout.println ( comment + " Change criteria (%):  " + StringUtil.formatString(ChangeCriteria_double,format_percent));
          fout.println ( comment + " Value criteria (%):   " + StringUtil.formatString(ValueCriteria_double,format_percent));
          fout.println ( comment );
+         /*
          fout.println ( comment + " For noise to pass:  (|R - Np|/Np < NoiseThreshold) and (|Nc - Np|/Np < NoiseThreshold.");
          fout.println ( comment + " For direction to pass R - Np sign must equal Nc - Np sign.");
          fout.println ( comment + " For magnitude to pass 100*abs(R - Np)/Np must be <= " +
                  StringUtil.formatString(ValueCriteria_double,"%.2f") + "*abs(Nc - Np)/Np.");
          fout.println ( comment + " For no change to pass - THIS IS UNDEFINED AND WILL ALWAYS PASS.");
+         */
          fout.println ( comment );
          fout.println (
                  StringUtil.formatString("Parameter",format_param) + delim +
@@ -535,6 +542,24 @@ private int customCommand (
                  StringUtil.formatString(CurrentNForecast_total_month2,format_value) + delim +
                  StringUtil.formatString(CurrentNForecast_total_month3,format_value) + delim +
                  StringUtil.formatString(CurrentNForecast_total_end,format_value));
+         fout.println (
+                 StringUtil.formatString("Value bound (high)",format_param) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_thisweek*ValueCriteria_high,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_nextweek*ValueCriteria_high,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_thismonth*ValueCriteria_high,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_month1*ValueCriteria_high,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_month2*ValueCriteria_high,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_month3*ValueCriteria_high,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_end*ValueCriteria_high,format_value));
+         fout.println (
+                 StringUtil.formatString("Value bound (low)",format_param) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_thisweek*ValueCriteria_low,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_nextweek*ValueCriteria_low,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_thismonth*ValueCriteria_low,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_month1*ValueCriteria_low,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_month2*ValueCriteria_low,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_month3*ValueCriteria_low,format_value) + delim +
+                 StringUtil.formatString(CurrentNForecast_total_end*ValueCriteria_low,format_value));
          // Difference and percent difference of N values...
          double Ndiff_thisweek = CurrentNForecast_total_thisweek - PreviousNForecast_total_thisweek;
          double Ndiff_nextweek = CurrentNForecast_total_nextweek - PreviousNForecast_total_nextweek;
@@ -614,76 +639,60 @@ private int customCommand (
                  StringUtil.formatString(RNpdiff_percent_end,format_percent) );
          // R minus N current...
          // Difference and percent difference of N values...
-         double RNdiff_thisweek = CurrentRForecast_total_thisweek - CurrentNForecast_total_thisweek;
-         double RNdiff_nextweek = CurrentRForecast_total_nextweek - CurrentNForecast_total_nextweek;
-         double RNdiff_thismonth = CurrentRForecast_total_thismonth - CurrentNForecast_total_thismonth;
-         double RNdiff_month1 = CurrentRForecast_total_month1 - CurrentNForecast_total_month1;
-         double RNdiff_month2 = CurrentRForecast_total_month2 - CurrentNForecast_total_month2;
-         double RNdiff_month3 = CurrentRForecast_total_month3 - CurrentNForecast_total_month3;
-         double RNdiff_end = CurrentRForecast_total_month3 - CurrentNForecast_total_end;
+         double RNcdiff_thisweek = CurrentRForecast_total_thisweek - CurrentNForecast_total_thisweek;
+         double RNcdiff_nextweek = CurrentRForecast_total_nextweek - CurrentNForecast_total_nextweek;
+         double RNcdiff_thismonth = CurrentRForecast_total_thismonth - CurrentNForecast_total_thismonth;
+         double RNcdiff_month1 = CurrentRForecast_total_month1 - CurrentNForecast_total_month1;
+         double RNcdiff_month2 = CurrentRForecast_total_month2 - CurrentNForecast_total_month2;
+         double RNcdiff_month3 = CurrentRForecast_total_month3 - CurrentNForecast_total_month3;
+         double RNcdiff_end = CurrentRForecast_total_end - CurrentNForecast_total_end;
          fout.println (
                  StringUtil.formatString("R - Nc Diff",format_param) + delim +
-                 StringUtil.formatString(RNdiff_thisweek,format_value) + delim +
-                 StringUtil.formatString(RNdiff_nextweek,format_value) + delim +
-                 StringUtil.formatString(RNdiff_thismonth,format_value) + delim +
-                 StringUtil.formatString(RNdiff_month1,format_value) + delim +
-                 StringUtil.formatString(RNdiff_month2,format_value) + delim +
-                 StringUtil.formatString(RNdiff_month3,format_value) + delim +
-                 StringUtil.formatString(RNdiff_end,format_value));
-         double RNdiff_percent_thisweek = 100.0*RNdiff_thisweek/CurrentNForecast_total_thisweek;
-         double RNdiff_percent_nextweek = 100.0*RNdiff_nextweek/CurrentNForecast_total_nextweek;
-         double RNdiff_percent_thismonth = 100.0*RNdiff_thismonth/CurrentNForecast_total_thismonth;
-         double RNdiff_percent_month1 = 100.0*RNdiff_month1/CurrentNForecast_total_month1;
-         double RNdiff_percent_month2 = 100.0*RNdiff_month2/CurrentNForecast_total_month2;
-         double RNdiff_percent_month3 = 100.0*RNdiff_month3/CurrentNForecast_total_month3;
-         double RNdiff_percent_end = 100.0*RNdiff_end/CurrentNForecast_total_end;
+                 StringUtil.formatString(RNcdiff_thisweek,format_value) + delim +
+                 StringUtil.formatString(RNcdiff_nextweek,format_value) + delim +
+                 StringUtil.formatString(RNcdiff_thismonth,format_value) + delim +
+                 StringUtil.formatString(RNcdiff_month1,format_value) + delim +
+                 StringUtil.formatString(RNcdiff_month2,format_value) + delim +
+                 StringUtil.formatString(RNcdiff_month3,format_value) + delim +
+                 StringUtil.formatString(RNcdiff_end,format_value));
+         double RNcdiff_percent_thisweek = 100.0*RNcdiff_thisweek/CurrentNForecast_total_thisweek;
+         double RNcdiff_percent_nextweek = 100.0*RNcdiff_nextweek/CurrentNForecast_total_nextweek;
+         double RNcdiff_percent_thismonth = 100.0*RNcdiff_thismonth/CurrentNForecast_total_thismonth;
+         double RNcdiff_percent_month1 = 100.0*RNcdiff_month1/CurrentNForecast_total_month1;
+         double RNcdiff_percent_month2 = 100.0*RNcdiff_month2/CurrentNForecast_total_month2;
+         double RNcdiff_percent_month3 = 100.0*RNcdiff_month3/CurrentNForecast_total_month3;
+         double RNcdiff_percent_end = 100.0*RNcdiff_end/CurrentNForecast_total_end;
          fout.println (
                  StringUtil.formatString("R - Nc Diff %",format_param) + delim +
-                 StringUtil.formatString(RNdiff_percent_thisweek,format_percent) + delim +
-                 StringUtil.formatString(RNdiff_percent_nextweek,format_percent) + delim +
-                 StringUtil.formatString(RNdiff_percent_thismonth,format_percent) + delim +
-                 StringUtil.formatString(RNdiff_percent_month1,format_percent) + delim +
-                 StringUtil.formatString(RNdiff_percent_month2,format_percent) + delim +
-                 StringUtil.formatString(RNdiff_percent_month3,format_percent) + delim +
-                 StringUtil.formatString(RNdiff_percent_end,format_percent) );
-         // Noise depends on current N forecast minus previous N forecast.
-         boolean is_noise_thisweek = isNoise(NoiseThreshold_double,Ndiff_percent_thisweek,RNpdiff_percent_thisweek);
-         boolean is_noise_nextweek = isNoise(NoiseThreshold_double,Ndiff_percent_nextweek,RNpdiff_percent_nextweek);
-         boolean is_noise_thismonth = isNoise(NoiseThreshold_double,Ndiff_percent_thismonth,RNpdiff_percent_thismonth);
-         boolean is_noise_month1 = isNoise(NoiseThreshold_double,Ndiff_percent_month1,RNpdiff_percent_month1);
-         boolean is_noise_month2 = isNoise(NoiseThreshold_double,Ndiff_percent_month2,RNpdiff_percent_month2);
-         boolean is_noise_month3 = isNoise(NoiseThreshold_double,Ndiff_percent_month3,RNpdiff_percent_month3);
-         boolean is_noise_end = isNoise(NoiseThreshold_double,Ndiff_percent_end,RNpdiff_percent_end);
-         fout.println (
-                 StringUtil.formatString("Is noise (Nc - Np %)?",format_param) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_thisweek),format_text) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_nextweek),format_text) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_thismonth),format_text) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_month1),format_text) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_month2),format_text) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_month3),format_text) + delim +
-                 StringUtil.formatString(booleanToYesNo(is_noise_end),format_text));
-         String [] pass_test_thisweek = test ( is_noise_thisweek,
+                 StringUtil.formatString(RNcdiff_percent_thisweek,format_percent) + delim +
+                 StringUtil.formatString(RNcdiff_percent_nextweek,format_percent) + delim +
+                 StringUtil.formatString(RNcdiff_percent_thismonth,format_percent) + delim +
+                 StringUtil.formatString(RNcdiff_percent_month1,format_percent) + delim +
+                 StringUtil.formatString(RNcdiff_percent_month2,format_percent) + delim +
+                 StringUtil.formatString(RNcdiff_percent_month3,format_percent) + delim +
+                 StringUtil.formatString(RNcdiff_percent_end,format_percent) );
+         // Do the final tests
+         String [] pass_test_thisweek = test ( 
                  PreviousNForecast_total_thisweek, CurrentNForecast_total_thisweek, CurrentRForecast_total_thisweek,
-                 Ndiff_thisweek, RNdiff_thisweek, ValueCriteria_double );
-         String [] pass_test_nextweek = test ( is_noise_nextweek,
+                 Ndiff_thisweek, RNpdiff_thisweek, RNcdiff_thisweek, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
+         String [] pass_test_nextweek = test ( 
                  PreviousNForecast_total_nextweek, CurrentNForecast_total_nextweek, CurrentRForecast_total_nextweek,
-                 Ndiff_nextweek, RNdiff_nextweek, ValueCriteria_double );
-         String [] pass_test_thismonth = test ( is_noise_thismonth,
+                 Ndiff_nextweek, RNpdiff_nextweek, RNcdiff_nextweek, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
+         String [] pass_test_thismonth = test (
                  PreviousNForecast_total_thismonth, CurrentNForecast_total_thismonth, CurrentRForecast_total_thismonth,
-                 Ndiff_thismonth, RNdiff_thismonth, ValueCriteria_double );
-         String [] pass_test_month1 = test ( is_noise_month1,
+                 Ndiff_thismonth, RNpdiff_thismonth, RNcdiff_thismonth, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
+         String [] pass_test_month1 = test (
                  PreviousNForecast_total_month1, CurrentNForecast_total_month1, CurrentRForecast_total_month1,
-                 Ndiff_month1, RNdiff_month1, ValueCriteria_double );
-         String [] pass_test_month2 = test ( is_noise_month2,
+                 Ndiff_month1, RNpdiff_month1, RNcdiff_month1, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
+         String [] pass_test_month2 = test (
                  PreviousNForecast_total_month2, CurrentNForecast_total_month2, CurrentRForecast_total_month2,
-                 Ndiff_month2, RNdiff_month2, ValueCriteria_double );
-         String [] pass_test_month3 = test ( is_noise_month3,
+                 Ndiff_month2, RNpdiff_month2, RNcdiff_month2, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
+         String [] pass_test_month3 = test (
                  PreviousNForecast_total_month3, CurrentNForecast_total_month3, CurrentRForecast_total_month3,
-                 Ndiff_month3, RNdiff_month3, ValueCriteria_double );
-         String [] pass_test_end = test ( is_noise_end,
+                 Ndiff_month3, RNpdiff_month3, RNcdiff_month3, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
+         String [] pass_test_end = test ( 
                  PreviousNForecast_total_end, CurrentNForecast_total_end, CurrentRForecast_total_end,
-                 Ndiff_end, RNdiff_end, ValueCriteria_double );
+                 Ndiff_end, RNpdiff_end, RNcdiff_end, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
          
          fout.println (
                  StringUtil.formatString("Direction Pass?",format_param) + delim +
@@ -779,22 +788,6 @@ Return the output file generated by this file.  This method is used internally.
 private File getOutputFile ()
 {
     return __OutputFile_File;
-}
-
-/**
-Indicate whether the difference between the current N forecst and previous N forecast is in the noise range.
-@param Ndiff_percent the Noise threshold, as percent (0 to 100).
-@param Ndiff_percent the difference between the N current forecast and N previous forecast, as percent.
-@param RNpdiff_percent the difference between the R current forecast and N previous forecast, as percent.
-*/
-private boolean isNoise ( double NoiseThreshold_double, double Ndiff_percent, double RNpdiff_percent )
-{
-    if ( (Math.abs(Ndiff_percent) < NoiseThreshold_double) && (Math.abs(RNpdiff_percent) < NoiseThreshold_double) ) {
-        return true;
-    }
-    else {
-        return false;
-    }
 }
 
 // Use base class parseCommand()
@@ -1132,11 +1125,13 @@ test results are for:
 <li>    [0] - 
 </ol>
 */
-private String [] test ( boolean is_noise,
+private String [] test ( 
         double PreviousNForecast_total, double CurrentNForecast_total,
         double CurrentRForecast_total,
-        double Ndiff_total, double RNdiff_total, double ValueCriteria_double )
-{
+        double Ndiff_percent, double RNpdiff_percent, double RNcdiff_percent,
+        double ValueCriteria_double, double ChangeCriteria_double, double NoiseThreshold_double )
+{   double Ndiff = Ndiff_percent/100.0;
+    double RNpdiff = RNpdiff_percent/100.0;
     String [] test_results = new String[5];
     String YES = "YES";
     String NO = "NO";
@@ -1148,7 +1143,7 @@ private String [] test ( boolean is_noise,
     test_results[__TEST_CHANGE] = "NO";
     test_results[__TEST_VALUE] = "NO";
     test_results[__TEST_FINAL] = "NO";
-    if ( is_noise ) {
+    if ( testNoise( NoiseThreshold_double, Ndiff_percent, RNpdiff_percent) ) {
         // FIXME SAM 2007-12-20 Need to define what happens when in the noise condition
         test_results[__TEST_DIRECTION] = NA;
         test_results[__TEST_CHANGE] = NA;
@@ -1156,49 +1151,75 @@ private String [] test ( boolean is_noise,
         test_results[__TEST_NO_CHANGE] = YES;
     }
     else {
-        test_results[2] = NA;   // Not noise.
+        test_results[__TEST_NO_CHANGE] = NA;   // Not noise.
         // Check the direction of RTi's forecast.
         if ( CurrentNForecast_total > PreviousNForecast_total ) {
             // Positive change
             if ( (CurrentRForecast_total - PreviousNForecast_total) >= 0.0 ) {
                 // RTi matches.
-                test_results[0] = YES;
+                test_results[__TEST_DIRECTION] = YES;
             }
             else {
                 // RTi does not match.
-                test_results[0] = NO;
+                test_results[__TEST_DIRECTION] = NO;
             }
         }
         else {
             // Negative change
             if ( (CurrentRForecast_total - PreviousNForecast_total) <= 0.0 ) {
                 // RTi matches.
-                test_results[0] = YES;
+                test_results[__TEST_DIRECTION] = YES;
             }
             else {
                 // RTi does not match.
-                test_results[0] = NO;
+                test_results[__TEST_DIRECTION] = NO;
             }
         }
-        // Check the magnitude of the change
-        if ( Math.abs(RNdiff_total) <= Math.abs(Ndiff_total*ValueCriteria_double/100.0) ) {
+        // Check the magnitude test
+        if ( Math.abs(RNcdiff_percent) < ValueCriteria_double ) {
             // RTi forecast is within the magnitude tolerance (but direction may be off - see the other test).
-            test_results[1] = YES;
+            test_results[__TEST_VALUE] = YES;
         }
         else {
-            test_results[1] = NO;
+            test_results[__TEST_VALUE] = NO;
+        }
+        // Check the change test
+        if ( Math.abs((RNpdiff - Ndiff)/Ndiff)*100.0 < ValueCriteria_double ) {
+            // RTi forecast is within the magnitude tolerance (but direction may be off - see the other test).
+            test_results[__TEST_VALUE] = YES;
+        }
+        else {
+            test_results[__TEST_VALUE] = NO;
         }
     }
-    if ( (test_results[0].equals(YES) || test_results[0].equals(NA)) &&
-            (test_results[1].equals(YES) || test_results[1].equals(NA)) &&
-            (test_results[2].equals(YES) || test_results[2].equals(NA)) ) {
+    if ( (test_results[__TEST_DIRECTION].equals(YES) || test_results[__TEST_DIRECTION].equals(NA)) &&
+            (test_results[__TEST_NO_CHANGE].equals(YES) || test_results[__TEST_NO_CHANGE].equals(NA)) &&
+            (test_results[__TEST_CHANGE].equals(YES) || test_results[__TEST_CHANGE].equals(NA)) &&
+            (test_results[__TEST_VALUE].equals(YES) || test_results[__TEST_VALUE].equals(NA)) ) {
         // Overall success
-        test_results[3] = YES;
+        test_results[__TEST_FINAL] = YES;
     }
     else {
-        test_results[3] = NO;
+        test_results[__TEST_FINAL] = NO;
     }
     return test_results;
+}
+
+/**
+Indicate whether the data pass the noise test (difference of R and N forecasts) are less than the
+noise tolerance.
+@param Ndiff_percent the Noise threshold, as percent (0 to 100).
+@param Ndiff_percent the difference between the N current forecast and N previous forecast, as percent.
+@param RNpdiff_percent the difference between the R current forecast and N previous forecast, as percent.
+*/
+private boolean testNoise ( double NoiseThreshold_double, double Ndiff_percent, double RNpdiff_percent )
+{
+    if ( (Math.abs(Ndiff_percent) < NoiseThreshold_double) && (Math.abs(RNpdiff_percent) < NoiseThreshold_double) ) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 /**

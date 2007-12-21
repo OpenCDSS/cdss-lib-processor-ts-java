@@ -45,12 +45,66 @@ public class CustomCommand_Command extends AbstractCommand implements Command, F
 /**
 Tests being performed.
 */
-private final int __TEST_NO_CHANGE = 0;
-private final int __TEST_DIRECTION = 1;
-private final int __TEST_CHANGE = 2;
-private final int __TEST_VALUE = 3;
+private final int __TEST_NO_CHANGE = 0; // Noise
+private final int __TEST_DIRECTION = 1; // Not official delivary?
+private final int __TEST_VALUE = 2;
+private final int __TEST_CHANGE = 3;
 private final int __TEST_FINAL = 4;
-    
+private final int __TEST_SIZE = 5;
+
+//Test names
+
+String [] __TEST_NAMES = {
+    "Noise pass?",
+    "Direction pass?",
+    "Value pass?",
+    "Change pass?",
+    "Overall pass?"
+};
+
+/**
+Bins to receive the results of the analysis.
+<pre>
+__BIN_THIS_WEEK = Tuesday through Friday of the first week
+__BIN_NEXT_WEEK = Monday through Friday of the next week
+__BIN_THIS_MONTH = Tuesday of this week through the last day of the month, weekends included (overlap week).
+__BIN_MONTH1 = Month + 1 (all days in month)
+__BIN_MONTH2 = Month + 2 (all days in month)
+__BIN_MONTH3 = Month + 3 (all days in month)
+__BIN_END = Remaining end of forecast (all available days)
+<pre>
+*/
+private final int __BIN_THIS_WEEK = 0;
+private final int __BIN_NEXT_WEEK = 1;
+private final int __BIN_THIS_MONTH = 2;
+private final int __BIN_MONTH1 = 3;
+private final int __BIN_MONTH2 = 4;
+private final int __BIN_MONTH3 = 5;
+private final int __BIN_END = 6;
+private final int __BIN_SIZE = 7;
+
+// Bin names, used in output and headings
+
+String [] __BIN_NAMES = {
+        "This week",
+        "Next week",
+        "This month",
+        "Month + 1",
+        "Month + 2",
+        "Month + 3",
+        "To end"
+        };
+// Used for headings
+String [] __BIN_NAMES2 = {
+        "(Tuesday-Friday)",
+        "(Monday-Friday)",
+        "(all days)",
+        "(all days)",
+        "(all days)",
+        "(all days)",
+        "(all days)"
+        };
+  
 /**
 Output file that is created by this command.
 */
@@ -62,19 +116,6 @@ Constructor.
 public CustomCommand_Command ()
 {	super();
 	setCommandName ( "CustomCommand" );
-}
-
-/**
-Convert a boolean to "YES" or "NO".
-*/
-private String booleanToYesNo ( boolean b )
-{
-    if ( b ) {
-        return "YES";
-    }
-    else {
-        return "NO";
-    }
 }
 
 /**
@@ -265,9 +306,9 @@ throws InvalidCommandParameterException
 Process the custom command.
 */
 private int customCommand (
-        DayTS CurrentRForecastTSID_TS,
-        DayTS CurrentNForecastTSID_TS,
-        DayTS PreviousNForecastTSID_TS,
+        DayTS R_TS,
+        DayTS Nc_TS,
+        DayTS Np_TS,
         DateTime ForecastStart_DateTime,
         double NoiseThreshold_double,
         double ChangeCriteria_double,
@@ -276,213 +317,294 @@ private int customCommand (
         CommandStatus status )
 {   String routine = "CustomCommand.customCommand";
     int warning_count = 0;
+    String message;
+    CommandPhaseType command_phase = CommandPhaseType.RUN;
     
     // Start on the forecast date and loop through the data to fill bins of data to fill the
     // following bins.
 
-    double CurrentRForecast_value = 0.0;
-    double CurrentNForecast_value = 0.0;
-    double PreviousNForecast_value = 0.0;
+    // Single values used during iteration...
+    
+    double R_value = 0.0;
+    double Nc_value = 0.0;
+    double Np_value = 0.0;
+    
+    // Values in the bins, used to evaluate accuracy of forecast
 
-    double CurrentRForecast_total_thisweek = 0.0;
-    double CurrentNForecast_total_thisweek = 0.0;
-    double PreviousNForecast_total_thisweek = 0.0;
+    double [] R_total = new double[__BIN_SIZE];
+    double [] Nc_total = new double[__BIN_SIZE];
+    double [] Np_total = new double[__BIN_SIZE];
+    // Count of missing values in each bin
+    int [] R_missing = new int[__BIN_SIZE];
+    int [] Nc_missing = new int[__BIN_SIZE];
+    int [] Np_missing = new int[__BIN_SIZE];
+    // Also save the start and end of each bin so that time series ends can be checked
+    DateTime [] bin_start_DateTime = new DateTime[__BIN_SIZE];
+    DateTime [] bin_end_DateTime = new DateTime[__BIN_SIZE];
     
-    double CurrentRForecast_total_nextweek = 0.0;
-    double CurrentNForecast_total_nextweek = 0.0;
-    double PreviousNForecast_total_nextweek = 0.0;
-    
-    double CurrentRForecast_total_thismonth = 0.0;
-    double CurrentNForecast_total_thismonth = 0.0;
-    double PreviousNForecast_total_thismonth = 0.0;
-    
-    double CurrentRForecast_total_month1 = 0.0;
-    double CurrentNForecast_total_month1 = 0.0;
-    double PreviousNForecast_total_month1 = 0.0;
-    
-    double CurrentRForecast_total_month2 = 0.0;
-    double CurrentNForecast_total_month2 = 0.0;
-    double PreviousNForecast_total_month2 = 0.0;
-    
-    double CurrentRForecast_total_month3 = 0.0;
-    double CurrentNForecast_total_month3 = 0.0;
-    double PreviousNForecast_total_month3 = 0.0;
-    
-    double CurrentRForecast_total_end = 0.0;
-    double CurrentNForecast_total_end = 0.0;
-    double PreviousNForecast_total_end = 0.0;
-    
-    // For iterator...
-    DateTime date = new DateTime(ForecastStart_DateTime);
+    for ( int i = 0; i < __BIN_SIZE; i++ ) {
+        R_total[i] = 0;
+        Nc_total[i] = 0;
+        Np_total[i] = 0;
+        R_missing[i] = -1;      // To allow check later when bins are not even encountered
+        Nc_missing[i] = -1;
+        Np_missing[i] = -1;
+        bin_start_DateTime[i] = null;
+        bin_end_DateTime[i] = null;
+    }
+
+    // Upper lower acceptable bounds of the R forecast (e.g., will be .95 to 1.05 of N forecast.
     
     double ValueCriteria_high = 1.0 + ValueCriteria_double/100.0;
     double ValueCriteria_low = 1.0 - ValueCriteria_double/100.0;
-    double ChangeCriteria_high = 1.0 + ChangeCriteria_double/100.0;
-    double ChangeCriteria_low = 1.0 - ChangeCriteria_double/100.0;
+    //double ChangeCriteria_high = 1.0 + ChangeCriteria_double/100.0;
+    //double ChangeCriteria_low = 1.0 - ChangeCriteria_double/100.0;
+    
+    // Indicate which band the iterator is in.
     
     boolean in_thisweek = true;     // Always true to start
+    boolean in_between_thisweek_and_nextweek = false;
     boolean in_nextweek = false;
     boolean in_thismonth = true;    // Always true to start
     boolean in_month1 = false;
     boolean in_month2 = false;
     boolean in_month3 = false;
     boolean in_end = false;
+    
+    // Day of week, used to determine some bins.
+    
     int day_of_week;
     //final int day_sunday = 0;
     final int day_monday = 1;
-    final int day_tuesday = 2;
+    //final int day_tuesday = 2;
     //final int day_wednesday = 3;
     //final int day_thursday = 4;
-    final int day_friday = 5;
+    //final int day_friday = 5;
     final int day_saturday = 6;
-    String message;
-    CommandPhaseType command_phase = CommandPhaseType.RUN;
-    DateTime end = new DateTime(CurrentRForecastTSID_TS.getDate2());
+    
+    // Loop from the forecast start to the end of available data.
+    
+    DateTime date = new DateTime(ForecastStart_DateTime);
+    DateTime end = new DateTime(Np_TS.getDate2());
+    // Initialize the bin end dates to the end of the period in case the loop ends without getting
+    // to a bin (due to a short period).
+    for ( int i = 0; i < __BIN_SIZE; i++ ) {
+        bin_end_DateTime[i] = new DateTime(end);
+    }
     Message.printStatus ( 2, routine, "Generating report starting on " + ForecastStart_DateTime + " through " + end );
     for ( int i = 0; date.lessThanOrEqualTo(end); date.addDay(1), i++ ) {
-        CurrentRForecast_value = CurrentRForecastTSID_TS.getDataValue ( date );
-        if ( CurrentRForecastTSID_TS.isDataMissing(CurrentRForecast_value) ) {
+        // Determine which bin the values should go into...
+        day_of_week = date.getWeekDay();
+        Message.printStatus ( 2, routine, "Processing date " + date + " day of week " + day_of_week );
+        // TODO SAM 2007-12-21 May need to move this below to avoid spurious messages at end of period
+        // Get the current values corresponding to the date iterator
+        R_value = R_TS.getDataValue ( date );
+        if ( R_TS.isDataMissing(R_value) ) {
             message = "CurrentRForecast(" + date + ") is missing - treat as zero.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
-            CurrentRForecast_value = 0.0;
+            R_value = 0.0;
             ++warning_count;
         }
-        else if ( CurrentRForecast_value <= 0.0 ) {
+        else if ( R_value <= 0.0 ) {
             message = "CurrentRForecast(" + date + ") is negative (" +
-            CurrentRForecast_value + ") - will decrease total.";
+            R_value + ") - will decrease total.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        CurrentNForecast_value = CurrentNForecastTSID_TS.getDataValue ( date );
-        if ( CurrentNForecastTSID_TS.isDataMissing(CurrentNForecast_value) ) {
+        Nc_value = Nc_TS.getDataValue ( date );
+        if ( Nc_TS.isDataMissing(Nc_value) ) {
             message = "CurrentNForecast(" + date + ") is missing - treat as zero.";
             Message.printWarning( 3, routine, message );
-            CurrentNForecast_value = 0.0;
+            Nc_value = 0.0;
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        else if ( CurrentNForecast_value <= 0.0 ) {
+        else if ( Nc_value <= 0.0 ) {
             message = "CurrentNForecast(" + date + ") is negative (" +
-            CurrentNForecast_value + ") - will decrease total.";
+            Nc_value + ") - will decrease total.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        PreviousNForecast_value = PreviousNForecastTSID_TS.getDataValue ( date );
-        if ( PreviousNForecastTSID_TS.isDataMissing(PreviousNForecast_value) ) {
+        Np_value = Np_TS.getDataValue ( date );
+        if ( Np_TS.isDataMissing(Np_value) ) {
             message = "PreviousNForecast(" + date + ") is missing - treat as zero.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
-            PreviousNForecast_value = 0.0;
+            Np_value = 0.0;
             ++warning_count;
         }
-        else if ( PreviousNForecast_value <= 0.0 ) {
+        else if ( Np_value <= 0.0 ) {
             message = "PreviousNForecast(" + date + ") is negative (" +
-            PreviousNForecast_value + ") - will decrease total.";
+            Np_value + ") - will decrease total.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        day_of_week = date.getWeekDay();
-        // Adjust the bin that the value should go into...
+        // Adjust the bin that the value should go into, starting with figururing out the week.
         if ( i == 0 ) {
             // Always in this week with no further adjustments necessary
-            in_thisweek = true;
+            in_between_thisweek_and_nextweek = true;
+            bin_start_DateTime[__BIN_THIS_WEEK] = new DateTime(date);
         }
         else if ( in_thisweek ) {
-            // Switch to next week if Saturday and not the first week being processed
+            // Switch to next week if Saturday and not the first day being processed
             if ( day_of_week == day_saturday ) {
                 in_thisweek = false;
+                bin_end_DateTime[__BIN_THIS_WEEK] = new DateTime(date);
+                bin_end_DateTime[__BIN_THIS_WEEK].addDay ( -1 );
+                in_between_thisweek_and_nextweek = true;
+            }
+        }
+        else if ( in_between_thisweek_and_nextweek ) {
+            if ( day_of_week == day_monday ) {
+                // Need to start "next week"...
+                in_between_thisweek_and_nextweek = false;
+                bin_start_DateTime[__BIN_NEXT_WEEK] = new DateTime(date);
                 in_nextweek = true;
             }
         }
         else if ( in_nextweek ) {
-            // Be done with week when get to saturday
+            // Done with week when get to saturday
             if ( day_of_week == day_saturday ) {
                 in_nextweek = false;
+                bin_end_DateTime[__BIN_NEXT_WEEK] = new DateTime(date);
+                bin_end_DateTime[__BIN_NEXT_WEEK].addDay ( -1 );
             }
         }
+        // Now determine the monthly bin.  The "thismonth" bin can overlap the weeks, but includes
+        // all days of the month (not just weekdays).
         if ( i == 0 ) {
             // Always in this month with no further adjustments necessary
             in_thismonth = true;
+            bin_start_DateTime[__BIN_THIS_MONTH] = new DateTime(date);
         }
         else if ( in_thismonth ) {
             // Switch to next month if not the first day being processed and the day is 1
             if ( date.getDay() == 1 ) {
                 in_thismonth = false;
+                bin_end_DateTime[__BIN_THIS_MONTH] = new DateTime(date);
+                bin_end_DateTime[__BIN_THIS_MONTH].addDay ( -1 );
                 in_month1 = true;
+                bin_start_DateTime[__BIN_MONTH1] = new DateTime(date);
             }
         }
         else if ( in_month1 ) {
             if ( date.getDay() == 1 ) {
                 in_month1 = false;
+                bin_end_DateTime[__BIN_MONTH1] = new DateTime(date);
+                bin_end_DateTime[__BIN_MONTH1].addDay ( -1 );
                 in_month2 = true;
+                bin_start_DateTime[__BIN_MONTH2] = new DateTime(date);
             }
         }
         else if ( in_month2 ) {
             if ( date.getDay() == 1 ) {
                 in_month2 = false;
+                bin_end_DateTime[__BIN_MONTH2] = new DateTime(date);
+                bin_end_DateTime[__BIN_MONTH2].addDay ( -1 );
                 in_month3 = true;
+                bin_start_DateTime[__BIN_MONTH3] = new DateTime(date);
             }
         }
         else if ( in_month3 ) {
             if ( date.getDay() == 1 ) {
                 // Done processing...
                 in_month3 = false;
+                bin_end_DateTime[__BIN_MONTH3] = new DateTime(date);
+                bin_end_DateTime[__BIN_MONTH3].addDay ( -1 );
                 in_end = true;
+                bin_start_DateTime[__BIN_END] = new DateTime(date);
             }
         }
-        // Now accually do the processing...
+        // Now accually do the processing
         // Weekly metrics...
-        if ( in_thisweek && (day_of_week >= day_tuesday) && (day_of_week <= day_friday) ) {
-            CurrentRForecast_total_thisweek += CurrentRForecast_value;
-            CurrentNForecast_total_thisweek += CurrentNForecast_value;
-            PreviousNForecast_total_thisweek += PreviousNForecast_value;
+        int bin_day = -1;
+        if ( in_thisweek ) {
+            bin_day = __BIN_THIS_WEEK;
+
         }
-        else if ( in_nextweek && (day_of_week >= day_monday) && (day_of_week <= day_friday)) {
-            CurrentRForecast_total_nextweek += CurrentRForecast_value;
-            CurrentNForecast_total_nextweek += CurrentNForecast_value;
-            PreviousNForecast_total_nextweek += PreviousNForecast_value;
+        else if ( in_nextweek ) {
+            bin_day = __BIN_NEXT_WEEK;
+        }
+        if ( bin_day >= 0 ) {
+            R_total[bin_day] += R_value;
+            Nc_total[bin_day] += Nc_value;
+            Np_total[bin_day] += Np_value;
+      
+            if ( Np_missing[bin_day] < 0) {
+                Np_missing[bin_day] = 0;
+            }
+            if ( Np_TS.isDataMissing(Np_value) ) {
+                ++Np_missing[bin_day];
+            }
+            if ( Nc_missing[bin_day] < 0) {
+                Nc_missing[bin_day] = 0;
+            }
+            if ( Nc_TS.isDataMissing(Nc_value) ) {
+                ++Nc_missing[bin_day];
+            }
+            if ( R_missing[bin_day] < 0) {
+                R_missing[bin_day] = 0;
+            }
+            if ( R_TS.isDataMissing(R_value) ) {
+                ++R_missing[bin_day];
+            }
         }
         // Monthly metrics are computed separately...
-        if ( in_thismonth ) {
-            CurrentRForecast_total_thismonth += CurrentRForecast_value;
-            CurrentNForecast_total_thismonth += CurrentNForecast_value;
-            PreviousNForecast_total_thismonth += PreviousNForecast_value;
+        int bin_month = -1;
+        if ( in_thismonth ) {   // Does not matter what day of the week
+            bin_month = __BIN_THIS_MONTH;
         }
         else if ( in_month1 ) {
-            CurrentRForecast_total_month1 += CurrentRForecast_value;
-            CurrentNForecast_total_month1 += CurrentNForecast_value;
-            PreviousNForecast_total_month1 += PreviousNForecast_value;
+            bin_month = __BIN_MONTH1;
         }
         else if ( in_month2 ) {
-            CurrentRForecast_total_month2 += CurrentRForecast_value;
-            CurrentNForecast_total_month2 += CurrentNForecast_value;
-            PreviousNForecast_total_month2 += PreviousNForecast_value;
+            bin_month = __BIN_MONTH2;
         }
         else if ( in_month3 ) {
-            CurrentRForecast_total_month3 += CurrentRForecast_value;
-            CurrentNForecast_total_month3 += CurrentNForecast_value;
-            PreviousNForecast_total_month3 += PreviousNForecast_value;
+            bin_month = __BIN_MONTH3;
         }
-        else if ( in_month3 ) {
-            CurrentRForecast_total_end += CurrentRForecast_value;
-            CurrentNForecast_total_end += CurrentNForecast_value;
-            PreviousNForecast_total_end += PreviousNForecast_value;
+        else if ( in_end ) {
+            bin_month = __BIN_END;
+        }
+        if ( bin_month >= 0 ) {
+            Np_total[bin_month] += Np_value;
+            Nc_total[bin_month] += Nc_value;
+            R_total[bin_month] += R_value;
+            
+            if ( Np_missing[bin_month] < 0) {
+                Np_missing[bin_month] = 0;
+            }
+            if ( Np_TS.isDataMissing(Np_value) ) {
+                ++Np_missing[bin_month];
+            }
+            if ( Nc_missing[bin_month] < 0) {
+                Nc_missing[bin_month] = 0;
+            }
+            if ( Nc_TS.isDataMissing(Nc_value) ) {
+                ++Nc_missing[bin_month];
+            }
+            if ( R_missing[bin_month] < 0) {
+                R_missing[bin_month] = 0;
+            }
+            if ( R_TS.isDataMissing(R_value) ) {
+                ++R_missing[bin_month];
+            }
         }
     }
     
@@ -494,13 +616,19 @@ private int customCommand (
     try {
          fout = new PrintWriter ( new FileOutputStream ( OutputFile_full ) );
          IOUtil.printCreatorHeader( fout, comment, 120, 0);
-         String format_param = "%-22.22s";
-         String format_percent = "%12.2f";
-         String format_text = "%12.12s";
-         String format_value = "%12.0f";
-         String format_heading = "%12.12s";
+         String format_param = "%-26.26s";
+         String format_percent = "%16.2f";
+         String format_text = "%16.16s";
+         String format_value = "%16.0f";
+         String format_int = "%16d";
          fout.println ( comment );
-         fout.println ( comment + " units of output are cumulative " + CurrentRForecastTSID_TS.getDataUnits());
+         fout.println ( comment + "--------------------------------------------------------------------------------------");
+         fout.println ( comment + " Forecast start: " + ForecastStart_DateTime );
+         fout.println ( comment + " Np period: " + Np_TS.getDate1() + " to " + Np_TS.getDate2());
+         fout.println ( comment + " Nc period: " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2());
+         fout.println ( comment + " R period: " + R_TS.getDate1() + " to " + R_TS.getDate2());
+         fout.println ( comment );
+         fout.println ( comment + " Units of output are cumulative " + R_TS.getDataUnits());
          fout.println ( comment );
          fout.println ( comment + " Noise threshold (%):  " + StringUtil.formatString(NoiseThreshold_double,format_percent));
          fout.println ( comment + " Change criteria (%):  " + StringUtil.formatString(ChangeCriteria_double,format_percent));
@@ -513,236 +641,84 @@ private int customCommand (
                  StringUtil.formatString(ValueCriteria_double,"%.2f") + "*abs(Nc - Np)/Np.");
          fout.println ( comment + " For no change to pass - THIS IS UNDEFINED AND WILL ALWAYS PASS.");
          */
+         fout.println ( comment + "--------------------------------------------------------------------------------------");
          fout.println ( comment );
-         fout.println (
-                 StringUtil.formatString("Parameter",format_param) + delim +
-                 StringUtil.formatString("This week",format_heading) + delim +
-                 StringUtil.formatString("Next week",format_heading) + delim +
-                 StringUtil.formatString("This month",format_heading) + delim +
-                 StringUtil.formatString("Month + 1",format_heading) + delim +
-                 StringUtil.formatString("Month + 2",format_heading) + delim +
-                 StringUtil.formatString("Month + 3",format_heading) + delim +
-                 StringUtil.formatString("End",format_heading));
-         // Raw N values....
-         fout.println (
-                 StringUtil.formatString("PreviousNForecast (Np)",format_param) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_thisweek,format_value) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_nextweek,format_value) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_thismonth,format_value) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_month1,format_value) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_month2,format_value) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_month3,format_value) + delim +
-                 StringUtil.formatString(PreviousNForecast_total_end,format_value) );
-         fout.println (
-                 StringUtil.formatString("CurrentNForecast (Nc)",format_param) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_thisweek,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_nextweek,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_thismonth,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month1,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month2,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month3,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_end,format_value));
-         fout.println (
-                 StringUtil.formatString("Value bound (high)",format_param) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_thisweek*ValueCriteria_high,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_nextweek*ValueCriteria_high,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_thismonth*ValueCriteria_high,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month1*ValueCriteria_high,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month2*ValueCriteria_high,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month3*ValueCriteria_high,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_end*ValueCriteria_high,format_value));
-         fout.println (
-                 StringUtil.formatString("Value bound (low)",format_param) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_thisweek*ValueCriteria_low,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_nextweek*ValueCriteria_low,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_thismonth*ValueCriteria_low,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month1*ValueCriteria_low,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month2*ValueCriteria_low,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_month3*ValueCriteria_low,format_value) + delim +
-                 StringUtil.formatString(CurrentNForecast_total_end*ValueCriteria_low,format_value));
-         // Difference and percent difference of N values...
-         double Ndiff_thisweek = CurrentNForecast_total_thisweek - PreviousNForecast_total_thisweek;
-         double Ndiff_nextweek = CurrentNForecast_total_nextweek - PreviousNForecast_total_nextweek;
-         double Ndiff_thismonth = CurrentNForecast_total_thismonth - PreviousNForecast_total_thismonth;
-         double Ndiff_month1 = CurrentNForecast_total_month1 - PreviousNForecast_total_month1;
-         double Ndiff_month2 = CurrentNForecast_total_month2 - PreviousNForecast_total_month2;
-         double Ndiff_month3 = CurrentNForecast_total_month3 - PreviousNForecast_total_month3;
-         double Ndiff_end = CurrentNForecast_total_end - PreviousNForecast_total_end;
-         fout.println (
-                 StringUtil.formatString("Nc - Np Diff",format_param) + delim +
-                 StringUtil.formatString(Ndiff_thisweek,format_value) + delim +
-                 StringUtil.formatString(Ndiff_nextweek,format_value) + delim +
-                 StringUtil.formatString(Ndiff_thismonth,format_value) + delim +
-                 StringUtil.formatString(Ndiff_month1,format_value) + delim +
-                 StringUtil.formatString(Ndiff_month2,format_value) + delim +
-                 StringUtil.formatString(Ndiff_month3,format_value) + delim +
-                 StringUtil.formatString(Ndiff_end,format_value));
-         double Ndiff_percent_thisweek = 100.0*Ndiff_thisweek/PreviousNForecast_total_thisweek;
-         double Ndiff_percent_nextweek = 100.0*Ndiff_nextweek/PreviousNForecast_total_nextweek;
-         double Ndiff_percent_thismonth = 100.0*Ndiff_thismonth/PreviousNForecast_total_thismonth;
-         double Ndiff_percent_month1 = 100.0*Ndiff_month1/PreviousNForecast_total_month1;
-         double Ndiff_percent_month2 = 100.0*Ndiff_month2/PreviousNForecast_total_month2;
-         double Ndiff_percent_month3 = 100.0*Ndiff_month3/PreviousNForecast_total_month3;
-         double Ndiff_percent_end = 100.0*Ndiff_end/PreviousNForecast_total_end;
-         fout.println (
-                 StringUtil.formatString("Nc - Np Diff %",format_param) + delim +
-                 StringUtil.formatString(Ndiff_percent_thisweek,format_percent) + delim +
-                 StringUtil.formatString(Ndiff_percent_nextweek,format_percent) + delim +
-                 StringUtil.formatString(Ndiff_percent_thismonth,format_percent) + delim +
-                 StringUtil.formatString(Ndiff_percent_month1,format_percent) + delim +
-                 StringUtil.formatString(Ndiff_percent_month2,format_percent) + delim +
-                 StringUtil.formatString(Ndiff_percent_month3,format_percent) + delim +
-                 StringUtil.formatString(Ndiff_percent_end,format_percent));
+         printReportResultsLine ( fout, "Parameter", format_param, delim, __BIN_NAMES, format_text );
+         printReportResultsLine ( fout, "", format_param, delim, __BIN_NAMES2, format_text );
+         printReportResultsLine ( fout, "Bin start", format_param, delim, bin_start_DateTime, format_value );
+         printReportResultsLine ( fout, "Bin end", format_param, delim, bin_end_DateTime, format_value );
+         // Previous N forecast values....
+         printReportDataLine ( fout, "Previous NWS Forecast (Np)", format_param, delim, Np_total, format_value );
+         printReportDataLine ( fout, "Np # missing", format_param, delim, Np_missing, format_int );
+         // Current N forecast values....
+         printReportDataLine ( fout, "Current NWS Forecast (Nc)", format_param, delim, Nc_total, format_value );
+         printReportDataLine ( fout, "Nc # missing", format_param, delim, Nc_missing, format_int );
+         // Value bound (high), based on Nc
+         double [] value_high = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             value_high[i] = Nc_total[i]*ValueCriteria_high;
+         }
+         printReportDataLine ( fout, "Nc Value bound (high)", format_param, delim, value_high, format_value );
+         // Value bound (low), based on Nc
+         double [] value_low = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             value_low[i] = Nc_total[i]*ValueCriteria_low;
+         }
+         printReportDataLine ( fout, "Nc Value bound (low)", format_param, delim, value_low, format_value );
+         // Difference and percent difference of Nc - Np values...
+         double [] NcNp_diff = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             NcNp_diff[i] = Nc_total[i] - Np_total[i];
+         }
+         printReportDataLine ( fout, "Nc - Np", format_param, delim, NcNp_diff, format_value );
+         double [] NcNp_diff_percent = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             NcNp_diff_percent[i] = (NcNp_diff[i]/Np_total[i])*100.0;
+         }
+         printReportDataLine ( fout, "Nc - Np (% of Np)", format_param, delim, NcNp_diff_percent, format_percent );
+ 
          // Raw R values...
-         fout.println (
-                 StringUtil.formatString("CurrentRForecast (R)",format_param) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_thisweek,format_value) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_nextweek,format_value) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_thismonth,format_value) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_month1,format_value) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_month2,format_value) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_month3,format_value) + delim +
-                 StringUtil.formatString(CurrentRForecast_total_end,format_value));
-         // R minus N previous...
-         // Difference and percent difference of N values...
-         double RNpdiff_thisweek = CurrentRForecast_total_thisweek - PreviousNForecast_total_thisweek;
-         double RNpdiff_nextweek = CurrentRForecast_total_nextweek - PreviousNForecast_total_nextweek;
-         double RNpdiff_thismonth = CurrentRForecast_total_thismonth - PreviousNForecast_total_thismonth;
-         double RNpdiff_month1 = CurrentRForecast_total_month1 - PreviousNForecast_total_month1;
-         double RNpdiff_month2 = CurrentRForecast_total_month2 - PreviousNForecast_total_month2;
-         double RNpdiff_month3 = CurrentRForecast_total_month3 - PreviousNForecast_total_month3;
-         double RNpdiff_end = CurrentRForecast_total_end - PreviousNForecast_total_end;
-         fout.println (
-                 StringUtil.formatString("R - Np Diff",format_param) + delim +
-                 StringUtil.formatString(RNpdiff_thisweek,format_value) + delim +
-                 StringUtil.formatString(RNpdiff_nextweek,format_value) + delim +
-                 StringUtil.formatString(RNpdiff_thismonth,format_value) + delim +
-                 StringUtil.formatString(RNpdiff_month1,format_value) + delim +
-                 StringUtil.formatString(RNpdiff_month2,format_value) + delim +
-                 StringUtil.formatString(RNpdiff_month3,format_value) + delim +
-                 StringUtil.formatString(RNpdiff_end,format_value));
-         double RNpdiff_percent_thisweek = 100.0*RNpdiff_thisweek/PreviousNForecast_total_thisweek;
-         double RNpdiff_percent_nextweek = 100.0*RNpdiff_nextweek/PreviousNForecast_total_nextweek;
-         double RNpdiff_percent_thismonth = 100.0*RNpdiff_thismonth/PreviousNForecast_total_thismonth;
-         double RNpdiff_percent_month1 = 100.0*RNpdiff_month1/PreviousNForecast_total_month1;
-         double RNpdiff_percent_month2 = 100.0*RNpdiff_month2/PreviousNForecast_total_month2;
-         double RNpdiff_percent_month3 = 100.0*RNpdiff_month3/PreviousNForecast_total_month3;
-         double RNpdiff_percent_end = 100.0*RNpdiff_end/PreviousNForecast_total_end;
-         fout.println (
-                 StringUtil.formatString("R - Np Diff %",format_param) + delim +
-                 StringUtil.formatString(RNpdiff_percent_thisweek,format_percent) + delim +
-                 StringUtil.formatString(RNpdiff_percent_nextweek,format_percent) + delim +
-                 StringUtil.formatString(RNpdiff_percent_thismonth,format_percent) + delim +
-                 StringUtil.formatString(RNpdiff_percent_month1,format_percent) + delim +
-                 StringUtil.formatString(RNpdiff_percent_month2,format_percent) + delim +
-                 StringUtil.formatString(RNpdiff_percent_month3,format_percent) + delim +
-                 StringUtil.formatString(RNpdiff_percent_end,format_percent) );
-         // R minus N current...
-         // Difference and percent difference of N values...
-         double RNcdiff_thisweek = CurrentRForecast_total_thisweek - CurrentNForecast_total_thisweek;
-         double RNcdiff_nextweek = CurrentRForecast_total_nextweek - CurrentNForecast_total_nextweek;
-         double RNcdiff_thismonth = CurrentRForecast_total_thismonth - CurrentNForecast_total_thismonth;
-         double RNcdiff_month1 = CurrentRForecast_total_month1 - CurrentNForecast_total_month1;
-         double RNcdiff_month2 = CurrentRForecast_total_month2 - CurrentNForecast_total_month2;
-         double RNcdiff_month3 = CurrentRForecast_total_month3 - CurrentNForecast_total_month3;
-         double RNcdiff_end = CurrentRForecast_total_end - CurrentNForecast_total_end;
-         fout.println (
-                 StringUtil.formatString("R - Nc Diff",format_param) + delim +
-                 StringUtil.formatString(RNcdiff_thisweek,format_value) + delim +
-                 StringUtil.formatString(RNcdiff_nextweek,format_value) + delim +
-                 StringUtil.formatString(RNcdiff_thismonth,format_value) + delim +
-                 StringUtil.formatString(RNcdiff_month1,format_value) + delim +
-                 StringUtil.formatString(RNcdiff_month2,format_value) + delim +
-                 StringUtil.formatString(RNcdiff_month3,format_value) + delim +
-                 StringUtil.formatString(RNcdiff_end,format_value));
-         double RNcdiff_percent_thisweek = 100.0*RNcdiff_thisweek/CurrentNForecast_total_thisweek;
-         double RNcdiff_percent_nextweek = 100.0*RNcdiff_nextweek/CurrentNForecast_total_nextweek;
-         double RNcdiff_percent_thismonth = 100.0*RNcdiff_thismonth/CurrentNForecast_total_thismonth;
-         double RNcdiff_percent_month1 = 100.0*RNcdiff_month1/CurrentNForecast_total_month1;
-         double RNcdiff_percent_month2 = 100.0*RNcdiff_month2/CurrentNForecast_total_month2;
-         double RNcdiff_percent_month3 = 100.0*RNcdiff_month3/CurrentNForecast_total_month3;
-         double RNcdiff_percent_end = 100.0*RNcdiff_end/CurrentNForecast_total_end;
-         fout.println (
-                 StringUtil.formatString("R - Nc Diff %",format_param) + delim +
-                 StringUtil.formatString(RNcdiff_percent_thisweek,format_percent) + delim +
-                 StringUtil.formatString(RNcdiff_percent_nextweek,format_percent) + delim +
-                 StringUtil.formatString(RNcdiff_percent_thismonth,format_percent) + delim +
-                 StringUtil.formatString(RNcdiff_percent_month1,format_percent) + delim +
-                 StringUtil.formatString(RNcdiff_percent_month2,format_percent) + delim +
-                 StringUtil.formatString(RNcdiff_percent_month3,format_percent) + delim +
-                 StringUtil.formatString(RNcdiff_percent_end,format_percent) );
-         // Do the final tests
-         String [] pass_test_thisweek = test ( 
-                 PreviousNForecast_total_thisweek, CurrentNForecast_total_thisweek, CurrentRForecast_total_thisweek,
-                 Ndiff_thisweek, RNpdiff_thisweek, RNcdiff_thisweek, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         String [] pass_test_nextweek = test ( 
-                 PreviousNForecast_total_nextweek, CurrentNForecast_total_nextweek, CurrentRForecast_total_nextweek,
-                 Ndiff_nextweek, RNpdiff_nextweek, RNcdiff_nextweek, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         String [] pass_test_thismonth = test (
-                 PreviousNForecast_total_thismonth, CurrentNForecast_total_thismonth, CurrentRForecast_total_thismonth,
-                 Ndiff_thismonth, RNpdiff_thismonth, RNcdiff_thismonth, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         String [] pass_test_month1 = test (
-                 PreviousNForecast_total_month1, CurrentNForecast_total_month1, CurrentRForecast_total_month1,
-                 Ndiff_month1, RNpdiff_month1, RNcdiff_month1, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         String [] pass_test_month2 = test (
-                 PreviousNForecast_total_month2, CurrentNForecast_total_month2, CurrentRForecast_total_month2,
-                 Ndiff_month2, RNpdiff_month2, RNcdiff_month2, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         String [] pass_test_month3 = test (
-                 PreviousNForecast_total_month3, CurrentNForecast_total_month3, CurrentRForecast_total_month3,
-                 Ndiff_month3, RNpdiff_month3, RNcdiff_month3, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         String [] pass_test_end = test ( 
-                 PreviousNForecast_total_end, CurrentNForecast_total_end, CurrentRForecast_total_end,
-                 Ndiff_end, RNpdiff_end, RNcdiff_end, ValueCriteria_double, ChangeCriteria_double, NoiseThreshold_double );
-         
-         fout.println (
-                 StringUtil.formatString("Direction Pass?",format_param) + delim +
-                 StringUtil.formatString(pass_test_thisweek[__TEST_DIRECTION],format_text) + delim +
-                 StringUtil.formatString(pass_test_nextweek[__TEST_DIRECTION],format_text) + delim +
-                 StringUtil.formatString(pass_test_thismonth[__TEST_DIRECTION],format_text) + delim +
-                 StringUtil.formatString(pass_test_month1[__TEST_DIRECTION],format_text) + delim +
-                 StringUtil.formatString(pass_test_month2[__TEST_DIRECTION],format_text) + delim +
-                 StringUtil.formatString(pass_test_month3[__TEST_DIRECTION],format_text) + delim +
-                 StringUtil.formatString(pass_test_end[__TEST_DIRECTION],format_text));
-         fout.println (
-                 StringUtil.formatString("Change Pass?",format_param) + delim +
-                 StringUtil.formatString(pass_test_thisweek[__TEST_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_nextweek[__TEST_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_thismonth[__TEST_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month1[__TEST_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month2[__TEST_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month3[__TEST_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_end[__TEST_CHANGE],format_text));
-         fout.println (
-                 StringUtil.formatString("Value Pass?",format_param) + delim +
-                 StringUtil.formatString(pass_test_thisweek[__TEST_VALUE],format_text) + delim +
-                 StringUtil.formatString(pass_test_nextweek[__TEST_VALUE],format_text) + delim +
-                 StringUtil.formatString(pass_test_thismonth[__TEST_VALUE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month1[__TEST_VALUE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month2[__TEST_VALUE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month3[__TEST_VALUE],format_text) + delim +
-                 StringUtil.formatString(pass_test_end[__TEST_VALUE],format_text));
-         
-         fout.println (
-                 StringUtil.formatString("No change Pass?",format_param) + delim +
-                 StringUtil.formatString(pass_test_thisweek[__TEST_NO_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_nextweek[__TEST_NO_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_thismonth[__TEST_NO_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month1[__TEST_NO_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month2[__TEST_NO_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_month3[__TEST_NO_CHANGE],format_text) + delim +
-                 StringUtil.formatString(pass_test_end[__TEST_NO_CHANGE],format_text));
-         
-         fout.println (
-                 StringUtil.formatString("Final Pass?",format_param) + delim +
-                 StringUtil.formatString(pass_test_thisweek[__TEST_FINAL],format_text) + delim +
-                 StringUtil.formatString(pass_test_nextweek[__TEST_FINAL],format_text) + delim +
-                 StringUtil.formatString(pass_test_thismonth[__TEST_FINAL],format_text) + delim +
-                 StringUtil.formatString(pass_test_month1[__TEST_FINAL],format_text) + delim +
-                 StringUtil.formatString(pass_test_month2[__TEST_FINAL],format_text) + delim +
-                 StringUtil.formatString(pass_test_month3[__TEST_FINAL],format_text) + delim +
-                 StringUtil.formatString(pass_test_end[__TEST_FINAL],format_text));
+         printReportDataLine ( fout, "Current RTi forecast (R)", format_param, delim, R_total, format_value );
+         printReportDataLine ( fout, "R # missing", format_param, delim, R_missing, format_int );
 
+         // R minus Np, difference and percent, difference and percent difference of Np values...
+         double [] RNp_diff = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             RNp_diff[i] = R_total[i] - Np_total[i];
+         }
+         printReportDataLine ( fout, "R - Np", format_param, delim, RNp_diff, format_value );
+         double [] RNp_diff_percent = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             RNp_diff_percent[i] = (RNp_diff[i]/Np_total[i])*100.0;
+         }
+         printReportDataLine ( fout, "R - Np (% of Np)", format_param, delim, RNp_diff_percent, format_percent );
+
+         // R minus Nc, difference and percent difference of Nc values...
+         double [] RNc_diff = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             RNc_diff[i] = R_total[i] - Nc_total[i];
+         }
+         printReportDataLine ( fout, "R - Nc", format_param, delim, RNp_diff, format_value );
+         double [] RNc_diff_percent = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             RNc_diff_percent[i] = (RNc_diff[i]/Nc_total[i])*100.0;
+         }
+         printReportDataLine ( fout, "R - Nc (% of Nc)", format_param, delim, RNc_diff_percent, format_percent );
+
+         // Do the final tests, looping through each bin
+         String [][] test_results = new String[__TEST_SIZE][__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             test ( test_results, i,
+                     NoiseThreshold_double, ValueCriteria_double, ChangeCriteria_double,
+                     Np_total[i], Nc_total[i], R_total[i], NcNp_diff[i], RNp_diff[i], RNc_diff[i],
+                     Np_missing[i], Nc_missing[i], R_missing[i] );
+         }
          
+         // Now print the test results, looping through each test criteria and printing a corresponding row...
+         for ( int i = 0; i < __TEST_SIZE; i++ ) {
+             printReportResultsLine ( fout, __TEST_NAMES[i], format_param, delim, test_results[i], format_text );
+         }
+        
          // Save the output file name...
          fout.close();
          setOutputFile ( new File(OutputFile_full));
@@ -791,6 +767,75 @@ private File getOutputFile ()
 }
 
 // Use base class parseCommand()
+
+/**
+Print a line in the report.
+@param fout PrintWriter to receive output.
+@param param_title parameter title for first column.
+@param format_param StringUtil.formatString() format for parameter column.
+@param delim Delimiter between columns.
+@param values Values to output.
+@parma format_values StringUtil.formtString() format for value columns.
+*/
+private void printReportDataLine ( PrintWriter fout, String param_title, String format_param,
+        String delim, double [] values, String format_value )
+{
+    fout.println (
+        StringUtil.formatString(param_title,format_param) + delim +
+        StringUtil.formatString(values[__BIN_THIS_WEEK],format_value) + delim +
+        StringUtil.formatString(values[__BIN_NEXT_WEEK],format_value) + delim +
+        StringUtil.formatString(values[__BIN_THIS_MONTH],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH1],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH2],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH3],format_value) + delim +
+        StringUtil.formatString(values[__BIN_END],format_value) );
+}
+
+/**
+Print a line in the report.
+@param fout PrintWriter to receive output.
+@param param_title parameter title for first column.
+@param format_param StringUtil.formatString() format for parameter column.
+@param delim Delimiter between columns.
+@param values Values to output.
+@parma format_values StringUtil.formtString() format for value columns.
+*/
+private void printReportDataLine ( PrintWriter fout, String param_title, String format_param,
+        String delim, int [] values, String format_value )
+{
+    fout.println (
+        StringUtil.formatString(param_title,format_param) + delim +
+        StringUtil.formatString(values[__BIN_THIS_WEEK],format_value) + delim +
+        StringUtil.formatString(values[__BIN_NEXT_WEEK],format_value) + delim +
+        StringUtil.formatString(values[__BIN_THIS_MONTH],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH1],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH2],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH3],format_value) + delim +
+        StringUtil.formatString(values[__BIN_END],format_value) );
+}
+
+/**
+Print a line in the report.
+@param fout PrintWriter to receive output.
+@param param_title parameter title for first column.
+@param format_param StringUtil.formatString() format for parameter column.
+@param delim Delimiter between columns.
+@param values Values to output (test results strings).
+@parma format_values StringUtil.formtString() format for value columns.
+*/
+private void printReportResultsLine ( PrintWriter fout, String param_title, String format_param,
+        String delim, Object [] values, String format_value )
+{
+    fout.println (
+        StringUtil.formatString(param_title,format_param) + delim +
+        StringUtil.formatString(values[__BIN_THIS_WEEK],format_value) + delim +
+        StringUtil.formatString(values[__BIN_NEXT_WEEK],format_value) + delim +
+        StringUtil.formatString(values[__BIN_THIS_MONTH],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH1],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH2],format_value) + delim +
+        StringUtil.formatString(values[__BIN_MONTH3],format_value) + delim +
+        StringUtil.formatString(values[__BIN_END],format_value) );
+}
 
 /**
 Run the command.
@@ -1125,96 +1170,120 @@ test results are for:
 <li>    [0] - 
 </ol>
 */
-private String [] test ( 
-        double PreviousNForecast_total, double CurrentNForecast_total,
-        double CurrentRForecast_total,
-        double Ndiff_percent, double RNpdiff_percent, double RNcdiff_percent,
-        double ValueCriteria_double, double ChangeCriteria_double, double NoiseThreshold_double )
-{   double Ndiff = Ndiff_percent/100.0;
-    double RNpdiff = RNpdiff_percent/100.0;
-    String [] test_results = new String[5];
+private void test ( String [][] test_results, int bin,
+        double NoiseThreshold_double, double ValueCriteria_double, double ChangeCriteria_double,
+        double Np_total, double Nc_total, double R_total, double NcNp_diff, double RNp_diff, double RNc_diff,
+        int Np_missing, int Nc_missing, int R_missing )
+{   String routine = "CustomCommand_test";
+        double NcNp_diff_percent = (NcNp_diff/Np_total)*100.0;
+    double RNp_diff_percent = (RNp_diff/Np_total)*100.0;
+    double RNc_diff_percent = (RNc_diff/Nc_total)*100.0;
+
     String YES = "YES";
     String NO = "NO";
     String NA = "-";
-    // Initialize to fail and reset to PASS or NA with logic below
+    String NO_DATA = "NO DATA";
+    // Initialize to unknown
 
-    test_results[__TEST_NO_CHANGE] = "NO";    // Noise case
-    test_results[__TEST_DIRECTION] = "NO";
-    test_results[__TEST_CHANGE] = "NO";
-    test_results[__TEST_VALUE] = "NO";
-    test_results[__TEST_FINAL] = "NO";
-    if ( testNoise( NoiseThreshold_double, Ndiff_percent, RNpdiff_percent) ) {
+    for ( int i = 0; i < __TEST_SIZE; i++ ) {
+        test_results[i][bin] = NA;
+    }
+
+    // Noise test...
+    if ( testIsNoise( NoiseThreshold_double, NcNp_diff_percent, RNp_diff_percent) ) {
         // FIXME SAM 2007-12-20 Need to define what happens when in the noise condition
-        test_results[__TEST_DIRECTION] = NA;
-        test_results[__TEST_CHANGE] = NA;
-        test_results[__TEST_VALUE] = NA;
-        test_results[__TEST_NO_CHANGE] = YES;
+        if ( (Math.abs(R_missing) > 0) || (Math.abs(Np_missing) > 0) || (Math.abs(Nc_missing) > 0) ) {
+            test_results[__TEST_NO_CHANGE][bin] = NO_DATA;
+            test_results[__TEST_FINAL][bin] = NO_DATA;
+        }
+        else {
+            test_results[__TEST_NO_CHANGE][bin] = YES;
+            test_results[__TEST_FINAL][bin] = YES;
+        }
     }
     else {
-        test_results[__TEST_NO_CHANGE] = NA;   // Not noise.
+        test_results[__TEST_NO_CHANGE][bin] = NO;
+        // Direction test...
         // Check the direction of RTi's forecast.
-        if ( CurrentNForecast_total > PreviousNForecast_total ) {
+        if ( (Math.abs(R_missing) > 0) || (Math.abs(Np_missing) > 0) || (Math.abs(Nc_missing) > 0) ) {
+            test_results[__TEST_DIRECTION][bin] = NO_DATA;
+        }
+        else if ( NcNp_diff >= 0.0 ) {
             // Positive change
-            if ( (CurrentRForecast_total - PreviousNForecast_total) >= 0.0 ) {
+            if ( (R_total - Np_total) >= 0.0 ) {
                 // RTi matches.
-                test_results[__TEST_DIRECTION] = YES;
+                test_results[__TEST_DIRECTION][bin] = YES;
             }
             else {
                 // RTi does not match.
-                test_results[__TEST_DIRECTION] = NO;
+                test_results[__TEST_DIRECTION][bin] = NO;
             }
         }
         else {
             // Negative change
-            if ( (CurrentRForecast_total - PreviousNForecast_total) <= 0.0 ) {
+            if ( (R_total - Np_total) <= 0.0 ) {
                 // RTi matches.
-                test_results[__TEST_DIRECTION] = YES;
+                test_results[__TEST_DIRECTION][bin] = YES;
             }
             else {
                 // RTi does not match.
-                test_results[__TEST_DIRECTION] = NO;
+                test_results[__TEST_DIRECTION][bin] = NO;
             }
         }
-        // Check the magnitude test
-        if ( Math.abs(RNcdiff_percent) < ValueCriteria_double ) {
+        // Value test
+        if ( (Math.abs(R_missing) > 0) || (Math.abs(Nc_missing) > 0) ) {
+            test_results[__TEST_VALUE][bin] = NO_DATA;
+            test_results[__TEST_FINAL][bin] = NO_DATA;
+        }
+        else if ( Math.abs(RNc_diff_percent) <= ValueCriteria_double ) {
             // RTi forecast is within the magnitude tolerance (but direction may be off - see the other test).
-            test_results[__TEST_VALUE] = YES;
+            Message.printStatus ( 2, routine, "Value test passed for bin " + __BIN_NAMES[bin] );
+            test_results[__TEST_VALUE][bin] = YES;
+            test_results[__TEST_FINAL][bin] = YES;
         }
         else {
-            test_results[__TEST_VALUE] = NO;
-        }
-        // Check the change test
-        if ( Math.abs((RNpdiff - Ndiff)/Ndiff)*100.0 < ValueCriteria_double ) {
-            // RTi forecast is within the magnitude tolerance (but direction may be off - see the other test).
-            test_results[__TEST_VALUE] = YES;
-        }
-        else {
-            test_results[__TEST_VALUE] = NO;
+            test_results[__TEST_VALUE][bin] = NO;
+            Message.printStatus ( 2, routine, "Value test failed for bin " + __BIN_NAMES[bin] +
+                    ".  Going to change test." );
+            // Change test
+            if ( Math.abs((RNp_diff - NcNp_diff)/NcNp_diff)*100.0 <= ValueCriteria_double ) {
+                // RTi forecast is within the magnitude tolerance (but direction may be off - see the other test).
+                Message.printStatus ( 2, routine, "Change test passed for bin " + __BIN_NAMES[bin] );
+                test_results[__TEST_CHANGE][bin] = YES;
+                test_results[__TEST_FINAL][bin] = YES;
+            }
+            else {
+                Message.printStatus ( 2, routine, "Change test failed for bin " + __BIN_NAMES[bin] );
+                test_results[__TEST_CHANGE][bin] = NO;
+                test_results[__TEST_FINAL][bin] = NO;
+            }
         }
     }
-    if ( (test_results[__TEST_DIRECTION].equals(YES) || test_results[__TEST_DIRECTION].equals(NA)) &&
-            (test_results[__TEST_NO_CHANGE].equals(YES) || test_results[__TEST_NO_CHANGE].equals(NA)) &&
-            (test_results[__TEST_CHANGE].equals(YES) || test_results[__TEST_CHANGE].equals(NA)) &&
-            (test_results[__TEST_VALUE].equals(YES) || test_results[__TEST_VALUE].equals(NA)) ) {
+    /* Final test result is as per above.  Only change below if the criteria change.
+    if ( (test_results[__TEST_DIRECTION][bin].equals(YES) || test_results[__TEST_DIRECTION][bin].equals(NA)) &&
+            (test_results[__TEST_NO_CHANGE][bin].equals(YES) || test_results[__TEST_NO_CHANGE][bin].equals(NA)) &&
+            (test_results[__TEST_CHANGE][bin].equals(YES) || test_results[__TEST_CHANGE][bin].equals(NA)) &&
+            (test_results[__TEST_VALUE][bin].equals(YES) || test_results[__TEST_VALUE][bin].equals(NA)) ) {
         // Overall success
-        test_results[__TEST_FINAL] = YES;
+        test_results[__TEST_FINAL][bin] = YES;
     }
     else {
-        test_results[__TEST_FINAL] = NO;
+        test_results[__TEST_FINAL][bin] = NO;
     }
-    return test_results;
+    */
 }
 
 /**
 Indicate whether the data pass the noise test (difference of R and N forecasts) are less than the
 noise tolerance.
-@param Ndiff_percent the Noise threshold, as percent (0 to 100).
-@param Ndiff_percent the difference between the N current forecast and N previous forecast, as percent.
-@param RNpdiff_percent the difference between the R current forecast and N previous forecast, as percent.
+@param NoiseThreshold_double the Noise threshold, as percent (0 to 100).
+@param NcNp_diff_percent the difference Nc - Np, as percent of Np.
+@param RNp_diff_percent the difference R - Np, as percent of Np.
 */
-private boolean testNoise ( double NoiseThreshold_double, double Ndiff_percent, double RNpdiff_percent )
+private boolean testIsNoise ( double NoiseThreshold_double, double NcNp_diff_percent, double RNp_diff_percent )
 {
-    if ( (Math.abs(Ndiff_percent) < NoiseThreshold_double) && (Math.abs(RNpdiff_percent) < NoiseThreshold_double) ) {
+    if ( (Math.abs(NcNp_diff_percent) <= NoiseThreshold_double) &&
+            (Math.abs(RNp_diff_percent) <= NoiseThreshold_double) ) {
         return true;
     }
     else {

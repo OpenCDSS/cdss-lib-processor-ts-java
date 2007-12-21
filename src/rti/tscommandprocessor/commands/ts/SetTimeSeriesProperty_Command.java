@@ -83,6 +83,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
 	valid_Vector.add ( "Description" );
+    valid_Vector.add ( "Units" );
 	valid_Vector.add ( "Editable" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -134,6 +135,7 @@ CommandWarningException, CommandException
 	}
 	String TSID = parameters.getValue ( "TSID" );
     String Description = parameters.getValue ( "Description" );
+    String Units = parameters.getValue ( "Units" );
     boolean Editable_boolean = false;   // Default
     String Editable = parameters.getValue ( "Editable" );
     if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
@@ -194,6 +196,9 @@ CommandWarningException, CommandException
             if ( (Description != null) && (Description.length() > 0) ) {
                 ts.setDescription ( Description );
             }
+            if ( (Units != null) && (Units.length() > 0) ) {
+                ts.setDataUnits ( Units );
+            }
             ts.setEditable ( Editable_boolean );
         }
         catch ( Exception e ) {
@@ -231,6 +236,7 @@ public String toString ( PropList parameters )
 	String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue ( "TSID" );
     String Description = parameters.getValue ( "Description" );
+    String Units = parameters.getValue ( "Units" );
     String Editable = parameters.getValue ( "Editable" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -248,6 +254,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "Description=\"" + Description + "\"" );
 	}
+    if ( (Units != null) && (Units.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Units=\"" + Units + "\"" );
+    }
     if ( (Editable != null) && (Editable.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

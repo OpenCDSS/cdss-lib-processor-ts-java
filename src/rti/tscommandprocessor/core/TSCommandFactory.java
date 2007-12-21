@@ -59,6 +59,9 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
+// Custom commands that have not been made generic
+import rti.tscommandprocessor.commands.custom.CustomCommand_Command;
+
 // DataTest commands
 // FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
 
@@ -256,6 +259,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Cumulate") ) {
 		return new cumulate_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"CustomCommand") ) {
+        return new CustomCommand_Command ();
+    }
 	
 	// "e" commands...
 	

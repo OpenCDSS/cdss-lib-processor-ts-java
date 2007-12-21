@@ -258,8 +258,7 @@ private void initialize ( JFrame parent, Command command )
 		"precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"DateValue file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "DateValue file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -323,10 +322,8 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
-		__path_JButton = new SimpleJButton( "Remove Working Directory",
-			"Remove Working Directory", this);
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
@@ -449,7 +446,8 @@ private void refresh ()
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText ( __RemoveWorkingDirectory );
 		}
-		else {	__path_JButton.setText ( __AddWorkingDirectory );
+		else {
+            __path_JButton.setText ( __AddWorkingDirectory );
 		}
 	}
 }

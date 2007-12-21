@@ -48,6 +48,7 @@ private SimpleJComboBox	__TSList_JComboBox = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private SimpleJComboBox __Editable_JComboBox = null;
 private JTextField __Description_JTextField = null;
+private JTextField __Units_JTextField = null;
 private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
 						// or Cancel?
@@ -110,6 +111,7 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
+    String Units = __Units_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -124,6 +126,9 @@ private void checkInput ()
 	}
     if ( Description.length() > 0 ) {
         parameters.set ( "Description", Description );
+    }
+    if ( Units.length() > 0 ) {
+        parameters.set ( "Units", Units );
     }
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -144,10 +149,12 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
+    String Units = __Units_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "Editable", Editable );
     __command.setCommandParameter ( "Description", Description );
+    __command.setCommandParameter ( "Units", Units );
 }
 
 /**
@@ -236,6 +243,16 @@ private void initialize ( JFrame parent, Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Often the location."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Units_JTextField = new JTextField (10);
+    __Units_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Only set equivalent to original units."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Are data editable?:"),
@@ -334,6 +351,7 @@ private void refresh ()
 	String TSList = "";
     String TSID = "";
     String Description = "";
+    String Units = "";
     String Editable = "";
 	__error_wait = false;
 	PropList parameters = null;
@@ -344,6 +362,7 @@ private void refresh ()
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         Description = parameters.getValue ( "Description" );
+        Units = parameters.getValue ( "Units" );
         Editable = parameters.getValue ( "Editable" );
 		if ( TSList == null ) {
 			// Select default...
@@ -378,6 +397,9 @@ private void refresh ()
         if ( Description != null ) {
             __Description_JTextField.setText(Description);
         }
+        if ( Units != null ) {
+            __Units_JTextField.setText(Units);
+        }
         if ( Editable == null ) {
             // Select default...
             if ( __Editable_JComboBox.getItemCount() > 0 ) {
@@ -400,11 +422,13 @@ private void refresh ()
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     Description = __Description_JTextField.getText().trim();
+    Units = __Units_JTextField.getText().trim();
     Editable = __Editable_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "TSID=" + TSID );
     parameters.add ( "Description=" + Description );
+    parameters.add ( "Units=" + Units );
     parameters.add ( "Editable=" + Editable );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }

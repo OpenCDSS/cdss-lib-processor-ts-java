@@ -1,27 +1,3 @@
-// ----------------------------------------------------------------------------
-// readNwsCard_JDialog - editor for both the "TS x = readNwsCard()" and
-//	"readNwsCard()" commands.
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2002-05-12	Steven A. Malers, RTi	Initial version (copy and modify
-//					readDateValue).
-// 2002-06-26	SAM, RTi		Add comment about date format.
-// 2003-12-07	SAM, RTi		Update to Swing.
-// 2005-12-06	J. Thomas Sapienza, RTi	* Combined code for both editors into
-//					  this single class.
-//					* Added support for Read24HourAsDay
-//					  parameter.
-// 2006-01-04	JTS, RTi		Many changes following SAM's review.
-// 2006-01-08	SAM, RTi		Change some dialog notes to be more
-//					clear.
-// 2006-01-18	JTS, RTi		Moved from RTi.TS package.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.datevalue;
 
 import java.awt.FlowLayout;
@@ -59,7 +35,6 @@ import RTi.Util.IO.PropList;
 
 import RTi.Util.Message.Message;
 
-// FIXME SAM 2007-12-19 NOTE ONLY THE NON-ALIAS VERSION IS ENABLED, but hooks are in place for the other version.
 /**
 Editor for the TS Alias = readDateValue() and non-TS Alias ReadDateValue() commands.
 */
@@ -74,6 +49,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 private Command		__command = null;
 private String		__working_dir = null;	// Working directory.
 private JTextField	__Alias_JTextField = null,// Alias for time series.
+            __TSID_JTextField = null,
 			__InputStart_JTextField,
 			__InputEnd_JTextField, // Text fields for input period.
 			__InputFile_JTextField = null, // Field for input file
@@ -195,8 +171,16 @@ private void checkInput () {
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Alias = null;
+    String TSID = null;
 	if (__isAliasVersion) { 
 		Alias = __Alias_JTextField.getText().trim();
+        TSID = __TSID_JTextField.getText().trim();
+        if (Alias != null && Alias.length() > 0) {
+            props.set("Alias", Alias);
+        }
+        if (TSID != null && TSID.length() > 0) {
+            props.set("TSID", TSID);
+        }
 	}
 	
 	__error_wait = false;
@@ -212,9 +196,6 @@ private void checkInput () {
 	}
 	if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 		props.set("NewUnits", NewUnits);
-	}
-	if (Alias != null && Alias.length() > 0) {
-		props.set("Alias", Alias);
 	}
 
 	try {	// This will warn the user...
@@ -244,6 +225,8 @@ private void commitEdits() {
 	if (__isAliasVersion) {
 		String Alias = __Alias_JTextField.getText().trim();
 		__command.setCommandParameter("Alias", Alias);
+        String TSID = __TSID_JTextField.getText().trim();
+        __command.setCommandParameter("TSID", TSID);
 	}
 }
 
@@ -296,17 +279,17 @@ private void initialize(JFrame parent, Command command) {
 	}
 	else {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-                "Read all the time series from a DateValue file, using " +
-                "information in the file to assign the"),
-                0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            "Read all the time series from a DateValue file, using " +
+            "information in the file to assign "),
+            0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-                "the identifier and alias.  Specify a full or relative " +
-                "path (relative to working directory)." ), 
-                0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            "the identifier and alias.  Specify a full or relative " +
+            "path (relative to working directory)." ), 
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
-		"directory) for a NWS Card file to read." ), 
+		"directory) for a DateValue file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -314,13 +297,13 @@ private void initialize(JFrame parent, Command command) {
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the input period will limit data that are " +
 		"available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	if (__isAliasVersion) {
-	        JGUIUtil.addComponent(main_JPanel, 
+	    JGUIUtil.addComponent(main_JPanel, 
 			new JLabel("Time series alias:"),
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Alias_JTextField = new JTextField ( 30 );
@@ -329,8 +312,7 @@ private void initialize(JFrame parent, Command command) {
 			1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"DateValue file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"DateValue file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -339,13 +321,25 @@ private void initialize(JFrame parent, Command command) {
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    if (__isAliasVersion) {
+        JGUIUtil.addComponent(main_JPanel, new JLabel("Identifier/Alias to Read:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __TSID_JTextField = new JTextField ( "*", 30 );
+        __TSID_JTextField.addKeyListener ( this );
+        __TSID_JTextField.setEnabled ( false );
+        JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
+            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern to match a time series to read (under development)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewUnits_JTextField = new JTextField ( "", 10 );
 	__NewUnits_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -444,7 +438,8 @@ private void refresh() {
 	       InputStart = "",
 	       InputEnd = "",
 	       NewUnits = "",
-	       Alias = "";
+	       Alias = "",
+           TSID = "";
 
 	PropList props = null;
 
@@ -453,16 +448,21 @@ private void refresh() {
 
 		// Get the properties from the command
 		props = __command.getCommandParameters();
+        if ( __isAliasVersion ) {
+            Alias = props.getValue("Alias");
+            TSID = props.getValue("TSID");
+        }
 		InputFile = props.getValue("InputFile");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");
-		Alias = props.getValue("Alias");
-
 		// Set the control fields
 		if (Alias != null && __isAliasVersion) {
 			__Alias_JTextField.setText(Alias.trim());
 		}
+        if (TSID != null && __isAliasVersion) {
+            __TSID_JTextField.setText(TSID.trim());
+        }
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
@@ -485,6 +485,7 @@ private void refresh() {
 	NewUnits = __NewUnits_JTextField.getText().trim();
 	if (__isAliasVersion) {
 		Alias = __Alias_JTextField.getText().trim();
+        TSID = __TSID_JTextField.getText().trim();
 	}
 
 	props = new PropList(__command.getCommandName());
@@ -496,6 +497,9 @@ private void refresh() {
 	if (Alias != null) {
 		props.add("Alias=" + Alias);
 	}
+    if (TSID != null) {
+        props.add("TSID=" + TSID);
+    }
 	
 	__Command_JTextArea.setText( __command.toString(props) );
 

@@ -91,6 +91,7 @@ import rti.tscommandprocessor.commands.logging.startLog_Command;
 
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
+import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Command;
 
 // RiverWare commands
@@ -355,6 +356,9 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadDateValue") ) {
         return new ReadDateValue_Command ();
     }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadDateValue") ) {
+        return new ReadDateValue_Command();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadHydroBase") ) {
 		return new readHydroBase_Command ();
 	}
@@ -447,6 +451,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteDateValue") ) {
 		return new WriteDateValue_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string, "WriteNwsCard")) {
+        return new WriteNwsCard_Command();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string, "WriteNWSRFSESPTraceEnsemble")) {
 		return new writeNWSRFSESPTraceEnsemble_Command();
 	}

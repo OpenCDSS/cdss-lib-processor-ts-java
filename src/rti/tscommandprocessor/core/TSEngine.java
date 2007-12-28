@@ -3366,72 +3366,6 @@ throws Exception
 }
 
 /**
-Execute the TS Alias = readDateValue() command:
-<pre>
-TS Alias = readDateValue(file,TSID,units,start,end)
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private TS do_TS_readDateValue ( String command_tag, String command_string, GenericCommand command )
-throws Exception
-{	String routine = "TSEngine.do_TS_readDateValue";
-    int warning_level = 2;
-    int warning_count = 0;
-    String message;
-
-    CommandStatus status = command.getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
-	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
-	String infile = ((String)tokens.elementAt(2)).trim();
-	String tsid = ((String)tokens.elementAt(3)).trim();
-	//String units = ((String)tokens.elementAt(4)).trim();
-	String date1_string = ((String)tokens.elementAt(5)).trim();
-	String date2_string = ((String)tokens.elementAt(6)).trim();
-	DateTime query_date1 = getDateTime ( date1_string );
-	if ( query_date1 == null ) {
-		query_date1 = __InputStart_DateTime;
-	}
-	DateTime query_date2 = getDateTime ( date2_string );
-	if ( query_date2 == null ) {
-		query_date2 = __InputEnd_DateTime;
-	}
-    String infile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
-	Message.printStatus ( 2, routine, "Reading DateValue file \"" + infile_full + "\"" );
-	TS ts = null;
-	try {	if ( tsid.equals("") || tsid.equals("*") ) {
-			ts = DateValueTS.readTimeSeries (
-			infile_full, query_date1, query_date2, null, true );
-		}
-		else {
-            ts = DateValueTS.readTimeSeries (
-			tsid, infile_full, query_date1, query_date2, null, true );
-		}
-		// Now post-process...
-		readTimeSeries2 ( ts, null, true );
-	}
-	catch ( Exception e ) {
-		message = "Unexpected error reading DateValue file \"" + infile_full + "\".";
-		Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-        Message.printWarning ( 3, routine, e );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the file is a DateValue time series file." ) );
-        throw new CommandException ( message );
-	}
-	if ( ts != null ) {
-		// Set the alias...
-		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
-	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-	return ts;
-}
-
-/**
 Execute the TS Alias = readNWSRFSFS5Files() command:
 <pre>
 TS Alias = readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
@@ -4760,30 +4694,6 @@ throws Exception
         throw new CommandWarningException ( message );
     }
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-}
-
-/**
-Execute the writeNwsCard() command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_writeNwsCard ( String command )
-throws Exception
-{	String routine = "TSEngine.do_writeNwsCard";
-	Vector tokens = StringUtil.breakStringList ( command,
-		" (,)", StringUtil.DELIM_SKIP_BLANKS|
-		StringUtil.DELIM_ALLOW_STRINGS );
-	if ( tokens.size() != 2 ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	String outfile = ((String)tokens.elementAt(1)).trim();
-    String outfile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile));
-	Message.printStatus ( 1, routine, "Writing NWS Card file \"" + outfile_full + "\"" );
-	// Only write the first time series...
-	TS tsout = (TS)__tslist.elementAt(0);
-	NWSCardTS.writeTimeSeries ( tsout, outfile_full, __OutputStart_DateTime, __OutputEnd_DateTime, "", true );
-	tokens = null;
 }
 
 /**
@@ -7318,35 +7228,23 @@ throws Exception
 		//
 		//}
 		else if ( command_String.regionMatches(true,0,"TS ",0,3) &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "changeInterval") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "copy") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "lagK") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
-			!StringUtil.getToken(command_String," =(",
-                    StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
-            !StringUtil.getToken(command_String," =(",
-                    StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newStatisticYearTS") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newTimeSeries") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readHydroBase") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNDFD") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNwsCard") &&
-			!StringUtil.getToken(command_String," =(",
-				StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readStateMod") ) {
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "changeInterval") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "copy") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "lagK") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
+            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newStatisticYearTS") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newTimeSeries") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readDateValue") &&
+            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readHydroBase") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNDFD") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNwsCard") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readStateMod") ) {
 			// All these cases are time series to be inserted.
 			// Declare a time series and set it to some function
 			// Do not handle because they are handled in the TSCommandFactory.
-			tokens = StringUtil.breakStringList ( command_String,
-				" =(,)", StringUtil.DELIM_SKIP_BLANKS );
+			tokens = StringUtil.breakStringList ( command_String," =(,)", StringUtil.DELIM_SKIP_BLANKS );
 			// Position to add is the next in the list...
 			ts_pos = getTimeSeriesSize();
 			// Parse the tokens...
@@ -7482,21 +7380,6 @@ throws Exception
 				}
 				else {	ts = null;
 				}
-			}
-			else if ( method.equalsIgnoreCase("readDateValue") ) {
-				// TS Alias =
-				// readDateValue(file,TSID,Units,start,end)
-				// Reparse to allow spaces in the dates...
-				tokens = StringUtil.breakStringList (
-					command_String, "=(,)",
-					StringUtil.DELIM_ALLOW_STRINGS);
-				if ( tokens.size() != 7 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
-					++error_count;
-					continue;
-				}
-				ts = do_TS_readDateValue ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if ( method.equalsIgnoreCase("readMODSIM") ) {
 				// TS Alias =
@@ -7701,19 +7584,6 @@ throws Exception
 				ts.setAlias ( tsalias );
 			}
 			tokens = null;
-		}
-		else if ( command_String.regionMatches(true,0,"writeNwsCard",0,12)){
-			// Write the time series in memory to an NWS Card
-			// time series file...
-			if ( !CreateOutput_boolean ) {
-				Message.printStatus ( 1, routine,
-				"Skipping \"" + command_String +
-				"\" because output is to be ignored." );
-				continue;
-			}
-			do_writeNwsCard(command_String);
-			// No action needed at end...
-			continue;
 		}
 		else if(command_String.regionMatches(true,0,"writeStateCU",0,12) ){
 			// Write the time series in memory to a StateCU time series file...

@@ -32,7 +32,6 @@ import RTi.Util.Time.DateTime;
 
 import RTi.TS.DateValueTS;
 
-//FIXME SAM 2007-12-19 NOTE ONLY THE NON-ALIAS VERSION IS ENABLED, but hooks are in place for the other version.
 /**
 <p>
 This class initializes, checks, and runs the TS Alias and non-TS Alias ReadDateValue() commands.
@@ -81,8 +80,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -227,6 +225,7 @@ throws InvalidCommandParameterException
     Vector valid_Vector = new Vector();
     if ( _use_alias ) {
         valid_Vector.add ( "Alias" );
+        valid_Vector.add ( "TSID" );
     }
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
@@ -318,16 +317,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	String str = command_string.substring(index);
 	index = str.indexOf("=");
 
-    // This is the new format of parsing, where parameters are
-	// specified as "InputFilter=", etc.
-	String routine = "ReadNwsCard_Command.parseCommand", message;
+    // This is the new format of parsing, where parameters are specified as "InputFilter=", etc.
+	String routine = "ReadDateValue_Command.parseCommand", message;
 	
     String Alias = null;
 	int warning_count = 0;
     if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
         // There is an alias specified.  Extract the alias from the full command.
         _use_alias = true;
-        str = command_string.substring(3); 
+        str = command_string.substring(3); // Alias = ReadDateValue(...)
         index = str.indexOf("=");
         int index2 = str.indexOf("(");
         if (index2 < index) {
@@ -335,18 +333,48 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             Alias = "Invalid_Alias";
             message = "No alias was specified, although the command started with \"TS ...\"";
             Message.printWarning(warning_level, routine, message);
-                ++warning_count;
+            ++warning_count;
             throw new InvalidCommandSyntaxException(message);
         }
 
         Alias = str.substring(0, index).trim();
         // Parse the command parameters...
-        super.parseCommand ( command_string.substring(index+1).trim() );
+        String command_string2 = str.substring(index+1).trim(); // ReadDateValue(...)
+        if ( (command_string2.indexOf("=") > 0) || command_string2.endsWith("()") ) {
+            // New format...
+            Message.printStatus(2, routine, "Parsing new format for " + command_string2);
+            super.parseCommand ( command_string2 );
+        }
+        else {
+            // Old format
+            Message.printStatus(2, routine, "Parsing old format for " + command_string2);
+            PropList parameters = getCommandParameters();
+            parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+            parameters.set("InputFile", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 1));
+            parameters.set("TSID", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 2));
+            parameters.set("NewUnits", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 3));
+            parameters.set("InputStart", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 4));
+            parameters.set("InputEnd", StringUtil.getToken(command_string2, "(,)", StringUtil.DELIM_ALLOW_STRINGS, 5));
+            parameters.setHowSet ( Prop.SET_UNKNOWN );
+        }
+        // Also set the alias
         PropList parameters = getCommandParameters();
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         parameters.set ( "Alias", Alias );
+        // If the dates are old-style "*", convert to blanks.
+        String InputStart = parameters.getValue("InputStart");
+        String InputEnd = parameters.getValue("InputEnd");
+        String NewUnits = parameters.getValue("NewUnits");
+        if ( (InputStart != null) && InputStart.equals("*") ) {
+            parameters.set("InputStart","");
+        }
+        if ( (InputEnd != null) && InputEnd.equals("*") ) {
+            parameters.set("InputEnd","");
+        }
+        if ( (NewUnits != null) && NewUnits.equals("*") ) {
+            parameters.set("NewUnits","");
+        }
         parameters.setHowSet ( Prop.SET_UNKNOWN );
-        setCommandParameters ( parameters );
     }
     else {
         _use_alias = false;
@@ -355,7 +383,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             super.parseCommand ( command_string );
         }
         else {
-            // Grab the filename from the only parameter...
+            // Grab the filename from the fixed list of parameters...
             PropList parameters = getCommandParameters();
             parameters.set("InputFile", StringUtil.getToken(command_string, "()", StringUtil.DELIM_ALLOW_STRINGS, 1));
         }
@@ -423,7 +451,8 @@ throws InvalidCommandParameterException,
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
-	String Alias = parameters.getValue("Alias");
+	String Alias = parameters.getValue("Alias");   // Alias version
+    String TSID = parameters.getValue("TSID");  // Alias version
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
@@ -500,8 +529,7 @@ throws InvalidCommandParameterException,
                 bean = processor.processRequest( "DateTime", request_params);
             }
             catch ( Exception e ) {
-                message = "Error requesting InputEnd DateTime(DateTime=" +
-                InputEnd + ") from processor.";
+                message = "Error requesting InputEnd DateTime(DateTime=" + InputEnd + ") from processor.";
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
@@ -514,8 +542,7 @@ throws InvalidCommandParameterException,
             PropList bean_PropList = bean.getResultsPropList();
             Object prop_contents = bean_PropList.getContents ( "DateTime" );
             if ( prop_contents == null ) {
-                message = "Null value for InputEnd DateTime(DateTime=" +
-                InputEnd +  ") returned from processor.";
+                message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +  ") returned from processor.";
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
@@ -566,13 +593,51 @@ throws InvalidCommandParameterException,
         }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
-        tslist = DateValueTS.readTimeSeriesList (
+        if ( _use_alias ) {
+            TS ts = null;
+            if ( (TSID == null) || TSID.equals("") || TSID.equals("*") ) {
+                // Just read the time series without specifying the TSID
+                ts = DateValueTS.readTimeSeries (
+                InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+            }
+            else {
+                // A specific TSID has been specified.
+                ts = DateValueTS.readTimeSeries (
+                TSID, InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+            }
+            if ( ts == null ) {
+                message = "Null time series - unable to read.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                if ( TSID != null ) {
+                    status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that file format is correct and that TSID (" + TSID +
+                                ") is found in file." ) );
+                }
+                else {
+                    status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that file format is correct." ) );
+                }
+                throw new CommandException ( message );
+            }
+            // Add the single time series to a list to use shared code below.
+            tslist = new Vector(1);
+            tslist.addElement( ts );
+        }
+        else {
+            // Read everything in the file (one time series or traces).
+            tslist = DateValueTS.readTimeSeriesList (
                 InputFile_full, InputStart_DateTime, InputEnd_DateTime,
                 NewUnits, read_data );
+            // TODO SAM 2007-12-27 - should enable EnsembleID if traces
+        }
 			
 		if ( tslist != null ) {
 			int tscount = tslist.size();
-			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
+			message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";
 			Message.printStatus ( 2, routine, message );
 			TS ts = null;
             if ( _use_alias ) {
@@ -591,9 +656,7 @@ throws InvalidCommandParameterException,
 			routine, message );
 		Message.printWarning ( 3, routine, e );
         status.addToLog(command_phase,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message,
-                "Check the log file for details."));
+                new CommandLogRecord( CommandStatusType.FAILURE, message,"Check the log file for details."));
 		throw new CommandException ( message );
 	}
     
@@ -601,7 +664,6 @@ throws InvalidCommandParameterException,
     if ( tslist != null ) {
         size = tslist.size();
     }
-    Message.printStatus ( 2, routine, "Read " + size + " time series." );
 
     if ( command_phase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
@@ -667,6 +729,7 @@ public String toString ( PropList props )
 	}
 
 	String Alias = props.getValue("Alias");
+    String TSID = props.getValue("TSID");
 	String InputFile = props.getValue("InputFile" );
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
@@ -678,6 +741,15 @@ public String toString ( PropList props )
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
+    
+    if ( _use_alias ) {
+        if ((TSID != null) && (TSID.length() > 0)) {
+            if (b.length() > 0) {
+                b.append(",");
+            }
+            b.append("TSID=\"" + TSID + "\"");
+        }
+    }
 
 	// New Units
 	if ((NewUnits != null) && (NewUnits.length() > 0)) {

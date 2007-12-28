@@ -26,7 +26,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -46,7 +45,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -64,7 +62,7 @@ private SimpleJButton
 			__ok_JButton = null;		// Ok Button
 private JTextField	__InputFile_JTextField = null;	// File to remove
 private SimpleJComboBox	__WarnIfMissing_JComboBox =null;
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
+private JTextArea	__command_JTextArea = null;
 private String		__working_dir = null;	// Working directory.
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
@@ -73,7 +71,7 @@ private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
 						// dialog.
 /**
-RemoveFile_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -230,8 +228,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"File to remove:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("File to remove:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -251,7 +248,7 @@ private void initialize ( JFrame parent, Command command )
 	__WarnIfMissing_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __WarnIfMissing_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Generate a warning if missing? (default=false)"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -286,9 +283,9 @@ private void initialize ( JFrame parent, Command command )
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
@@ -331,9 +328,7 @@ private void refresh ()
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__WarnIfMissing_JComboBox, WarnIfMissing,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem(__WarnIfMissing_JComboBox, WarnIfMissing,JGUIUtil.NONE, null, null ) ) {
 			__WarnIfMissing_JComboBox.select ( WarnIfMissing );
 		}
 		else {

@@ -109,46 +109,7 @@ public boolean editCommand ( JFrame parent )
 	return (new RemoveFile_JDialog ( parent, this )).ok();
 }
 
-/**
-Parse the command string into a PropList of parameters.
-@param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = "RemoveFile_Command.parseCommand", message;
-
-	Vector tokens = StringUtil.breakStringList ( command,"()", StringUtil.DELIM_SKIP_BLANKS );
-
-	CommandStatus status = getCommandStatus();
-	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command + "\".  Expecting RemoveFile(...).";
-		Message.printWarning ( warning_level, routine, message);
-		status.addToLog(CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Report the problem to support."));
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	// Get the input needed to process the command...
-	if ( tokens.size() > 1 ) {
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," ) );
-		}
-		catch ( Exception e ) {
-			message = "Invalid syntax for \"" + command + "\".  Expecting RemoveFile(...).";
-			Message.printWarning ( warning_level, routine, message);
-			status.addToLog(CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report the problem to support."));
-			throw new InvalidCommandSyntaxException ( message );
-		}
-	}
-}
+// Use base class parseCommand
 
 /**
 Run the command.

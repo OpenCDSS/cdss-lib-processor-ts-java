@@ -158,6 +158,8 @@ import rti.tscommandprocessor.commands.util.Free_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
+import rti.tscommandprocessor.commands.util.RunProgram_Command;
+import rti.tscommandprocessor.commands.util.RunPython_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
@@ -396,6 +398,12 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"RunCommands") ) {
 		return new runCommands_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"RunProgram") ) {
+        return new RunProgram_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"RunPython") ) {
+        return new RunPython_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"RunDataTest") ) {
 		return new runDataTest_Command ();
 	}

@@ -342,25 +342,21 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a new time series by changing the data interval of "
-		+ "an existing time series."),
+		"Create a new time series by changing the data interval of an existing time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the alias to reference the new time series."
-		+ "  Data units are not changed."),
+		"Use the alias to reference the new time series.  Data units are not changed."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The conversion process depends on whether the original and "
-		+ "new time series contain accumulated, mean, or instantaneous "
-		+ "data."),
+		+ "new time series contain accumulated, mean, or instantaneous data."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time scales must be specified (they are not"
 		+ " automatically determined from the data type)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Other time series information will be copied from the"
-		+ " original."),
+		"Other time series information will be copied from the original."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Time series alias
@@ -378,26 +374,17 @@ private void initialize ( JFrame parent, Command command )
 	
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
     			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	
+    if ( tsids == null ) {
+        tsids = new Vector();
+    }
 	__TSID_JComboBox = new SimpleJComboBox ( false );
-	int size = 0;
-	if ( tsids != null ) {
-		size = tsids.size();
-	}
-	if ( size == 0 ) {
-		Message.printWarning ( 1, routine,
-		"You must define time series before inserting a "
-		+ "changeInterval() command." );
-		response ( false );
-	}
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// New interval
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"New interval:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "New interval:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewInterval_JComboBox = new SimpleJComboBox ( false );
 	__NewInterval_JComboBox.setData (
@@ -408,8 +395,7 @@ private void initialize ( JFrame parent, Command command )
 	__NewInterval_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __NewInterval_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Data interval for result."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data interval for result."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Old time scale
@@ -426,12 +412,10 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// New time scale
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"New time scale:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("New time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTimeScale_JComboBox = new SimpleJComboBox ( false );
-	__NewTimeScale_JComboBox.setData (
-		MeasTimeScale.getTimeScaleChoices(true) );
+	__NewTimeScale_JComboBox.setData ( MeasTimeScale.getTimeScaleChoices(true) );
 	__NewTimeScale_JComboBox.select ( 0 );	// Default
 	__NewTimeScale_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __NewTimeScale_JComboBox,
@@ -444,8 +428,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __NewDataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__NewDataType_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Will be set in new time series identifier."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Will be set in new time series identifier."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
@@ -663,16 +646,16 @@ private void refresh ()
 		// Select the item in the list.  If not a match, print a warning.
 		if ( TSID == null || TSID.equals("") ) {
 			// Select a default...
-			__TSID_JComboBox.select ( 0 );
+            if ( __TSID_JComboBox.getItemCount() > 0 ) {
+                __TSID_JComboBox.select ( 0 );
+            }
 		} 
 		else { 
-			if (	JGUIUtil.isSimpleJComboBoxItem(
-					__TSID_JComboBox, TSID,
-					JGUIUtil.NONE, null, null ) ) {
+			if ( JGUIUtil.isSimpleJComboBoxItem(	__TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
 				__TSID_JComboBox.select ( TSID );
-			} else {	
-				mssg = "Existing " + __command.getCommandName()
-					+ "() references a "
+			}
+            else {	
+				mssg = "Existing command references a "
 					+ "non-existent\n" + "time series \""
 					+ TSID + "\".  Select a\n"
 					+ "different time series or Cancel.";

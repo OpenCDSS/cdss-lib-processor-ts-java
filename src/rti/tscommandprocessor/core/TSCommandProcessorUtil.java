@@ -3,13 +3,13 @@ package rti.tscommandprocessor.core;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.lang.StringBuffer;
 import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
@@ -21,7 +21,6 @@ import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
@@ -159,6 +158,76 @@ public static void closeRegressionTestReportFile ()
         __regression_test_fp.close();
         __regression_test_fp = null;
     }
+}
+
+/**
+Expand a parameter valueto recognize processor-level properties.  For example, a parameter value like
+"$WorkingDir/morepath" will be expanded to include the working directory.
+@param processor the CommandProcessor that has a list of named properties.
+@param command the command that is being processed (may be used later for context sensitive values).
+@param parameter_value the parameter value being expanded.
+*/
+public static String expandParameterValue( CommandProcessor processor, Command command, String parameter_value )
+{   String routine = "TSCommandProcessorUtil.expandParameterValue";
+    if ( (parameter_value == null) || (parameter_value.length() == 0) ) {
+        // Just return what was provided.
+        return parameter_value;
+    }
+    // Else see if the parameter value can be expanded to replace $ symbolic references with other values
+    // Search the parameter string for $ until all processor parameters have been resolved
+    int searchpos = 0;  // Position in the "parameter_val" string to search for $ references
+    int foundpos;       // Position when $ is found
+    boolean found;      // Indicates if $ was found for current "searchpos"
+    String foundprop = null;    // Whether a property is found that matches the $ symbol
+    int foundprop_length = 1;
+    while ( searchpos < parameter_value.length() ) {
+        foundpos = parameter_value.indexOf("$", searchpos);
+        if ( foundpos < 0 ) {
+            // No more $ property names, so return what we have.
+            return parameter_value;
+        }
+        Message.printStatus ( 2, routine, "Found $ at position [" + foundpos + "]");
+        found = false;
+        // FIXME SAM 2007-12-23 Need to process a list of recognized processor properties
+        if ( parameter_value.regionMatches(true,searchpos,"$WorkingDir",0,11) ) {
+            foundprop = "WorkingDir";
+            foundprop_length = 11;
+            found = true;
+        }
+        if ( found ) {
+            // Found a recognized property so replace in the string if it is found.
+            // First try to get the property.
+            // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
+            Object propval = null;
+            String propval_string = null;
+            try {
+                propval = processor.getPropContents ( foundprop );
+                propval_string = "" + propval;
+            }
+            catch ( Exception e ) {
+                propval_string = "null";
+            }
+            StringBuffer b = new StringBuffer();
+            // Append the start of the string
+            if ( searchpos > 0 ) {
+                b.append ( parameter_value.substring(0,searchpos) );
+            }
+            // Now append the value of the property...
+            b.append ( propval_string );
+            // Now append the end of the orginal string...
+            b.append ( parameter_value.substring(searchpos + foundprop_length) );
+            // Now reset the search position to finish looking expanding the string.
+            parameter_value = b.toString();
+            searchpos += propval_string.length();
+            Message.printStatus( 2, routine, "Expanded property value is \"" + parameter_value + "\" searchpos is now " +
+                    searchpos );
+        }
+        else {
+            // Did not find a property so at least skip over the $
+            ++searchpos;
+        }
+    }
+    return parameter_value;
 }
 	
 /**

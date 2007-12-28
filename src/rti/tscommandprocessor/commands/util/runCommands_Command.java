@@ -34,6 +34,19 @@ public class runCommands_Command extends AbstractCommand implements Command
 {
 
 /**
+ExpectedStatus parameter values.
+*/
+protected final String _Unknown = "Unknown";
+protected final String _Success = "Success";
+protected final String _Warning = "Warning";
+protected final String _Failure = "Failure";
+
+/**
+AppendResults parameter values.
+*/
+// FIXME SAM 2007-12-13 Need to enable AppendResults
+
+/**
 Constructor.
 */
 public runCommands_Command ()
@@ -53,6 +66,7 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
+    String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
 	String warning = "";
     String message;
 	
@@ -105,16 +119,29 @@ throws InvalidCommandParameterException
                             message, "Verify that command file to run and working directory paths are compatible." ) );
 		}
 	}
+    
+    if ( (ExpectedStatus != null) && (ExpectedStatus.length() == 0) &&
+            !ExpectedStatus.equalsIgnoreCase(_Unknown) &&
+            !ExpectedStatus.equalsIgnoreCase(_Success) &&
+            !ExpectedStatus.equalsIgnoreCase(_Warning) &&
+            !ExpectedStatus.equalsIgnoreCase(_Failure) ) {
+        message = "The expected status is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an expected status of " + _Unknown + ", " + _Success + ", " +
+                        _Warning + ", or " + _Failure) );
+    }
 
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
+    valid_Vector.add ( "ExpectedStatus" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
@@ -153,6 +180,7 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 
 	String InputFile = parameters.getValue ( "InputFile" );
+    String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
 	String AppendResults = parameters.getValue ( "AppendResults" );
 	
 	if ( warning_count > 0 ) {
@@ -185,11 +213,23 @@ CommandWarningException, CommandException
 		// Set the CommandStatus for this command to the most severe status of the
 		// commands file that was just run.
 		CommandStatusType max_severity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
-		status.addToLog(CommandPhaseType.RUN,
+		if ( (ExpectedStatus != null) && max_severity.toString().equalsIgnoreCase(ExpectedStatus) ) {
+            // User has indicated an expected status and they match so consider this a success.
+            // This should generally be used only when running a test that we expect to fail (e.g., run
+            // obsolete command).
+            status.addToLog(CommandPhaseType.RUN,
+                    new CommandLogRecord(
+                            max_severity,
+                            "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
+                            "See additional status messages and refer to log file if warning/failure."));
+        }
+        else {
+            status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(
 						max_severity,
 						"Severity is max of commands file that was run (may not be a problem).",
-						"See below for more and refer to log file if warning/failure."));
+						"See additional status messages and refer to log file if warning/failure."));
+        }
         // FIXME SAM 2007-11-24 Need to figure out how to pass on status log records from failing command files.
         // Copy status logs below...
         //CommandStatusUtil.copyLogRecords ( status, )
@@ -221,7 +261,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing commands file \"" + InputFile + "\", full path=\"" + InputFile_full + "\".";
+		message = "Unexpected error processing command file \"" + InputFile + "\", full path=\"" + InputFile_full + "\".";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -238,6 +278,7 @@ public String toString ( PropList props )
 		return getCommandName() + "()";
 	}
 	String InputFile = props.getValue("InputFile");
+    String ExpectedStatus = props.getValue("ExpectedStatus");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -245,6 +286,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
+    if ( (ExpectedStatus != null) && (ExpectedStatus.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExpectedStatus=" + ExpectedStatus );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

@@ -74,7 +74,7 @@ import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 
 // TS general commands.
 
-// REVISIT SAM 2005-05-19 When TSEngine is sufficiently clean, merge its code
+// TODO SAM 2005-05-19 When TSEngine is sufficiently clean, merge its code
 // into this class and rework the connection to the TSTool application.
 /**
 This class processes time series commands and manages the relevant data.

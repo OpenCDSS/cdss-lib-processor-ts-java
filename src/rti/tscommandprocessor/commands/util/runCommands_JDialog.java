@@ -1,17 +1,3 @@
-// ----------------------------------------------------------------------------
-// runCommands_JDialog - editor for runCommands()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2006-05-02	Steven A. Malers, RTi	Initial version (copy and modify
-//					readStateMod).
-// 2007-02-16	SAM, RTi				Update to use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.FlowLayout;
@@ -43,6 +29,7 @@ import java.io.File;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -52,23 +39,22 @@ import RTi.Util.Message.Message;
 public class runCommands_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
+    
+private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+
 private SimpleJButton	__browse_JButton = null,// File browse button
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and
-						// absolute paths.
+			__path_JButton = null;	// Convert between relative and absolute paths.
 private runCommands_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as TextField
+private JTextArea	__command_JTextArea=null;
 private String		__working_dir = null;	// Working directory.
-private JTextField	__InputFile_JTextField = null;// Field for time series
-						// identifier
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private JTextField	__InputFile_JTextField = null;
+private SimpleJComboBox __ExpectedStatus_JComboBox =null;
+private boolean		__error_wait = false;	// Is there an error waiting to be cleared up
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK was
-						// pressed when closing the
-						// dialog.
+private boolean		__ok = false; // Indicates whether OK was pressed when closing the dialog.
 
 /**
 runCommands_JDialog constructor.
@@ -88,17 +74,15 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
-		fc.setDialogTitle( "Select Commands File");
+		fc.setDialogTitle( "Select command file to run");
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
@@ -127,21 +111,15 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory") ) {
-			__InputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__InputFile_JTextField.getText() ) );
+		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
+			__InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,__InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory") ) {
-			try {	__InputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__InputFile_JTextField.getText() ) );
+		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+			try {
+                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,	__InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"runCommands_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1,"RunCommands_JDialog",	"Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -156,10 +134,14 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+    String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
+    if ( ExpectedStatus.length() > 0 ) {
+        props.set ( "ExpectedStatus", ExpectedStatus );
+    }
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -175,7 +157,9 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
+    String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
+    __command.setCommandParameter ( "ExpectedStatus", ExpectedStatus );
 }
 
 /**
@@ -207,7 +191,7 @@ private void initialize ( JFrame parent, Command command )
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -216,25 +200,25 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a commands file and run the commands." ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Read a command file and run the commands." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series results are cleared before processing each " +
-		"commands file." ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Time series results are cleared before processing each command file." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full or relative path (relative to working " +
-		"directory)." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    "The (success/warning/failure) status from each command file is used for the RunCommands() command." ),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Commands file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file to run:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -243,8 +227,24 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected status:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExpectedStatus_JComboBox = new SimpleJComboBox ( false );
+    __ExpectedStatus_JComboBox.addItem ( "" );   // Default
+    __ExpectedStatus_JComboBox.addItem ( __command._Unknown );
+    __ExpectedStatus_JComboBox.addItem ( __command._Success );
+    __ExpectedStatus_JComboBox.addItem ( __command._Warning );
+    __ExpectedStatus_JComboBox.addItem ( __command._Failure );
+    __ExpectedStatus_JComboBox.select ( 0 );
+    __ExpectedStatus_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExpectedStatus_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Use for testing (overall status=Success if matches this)."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -263,10 +263,8 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
-		__path_JButton = new SimpleJButton(
-					"Remove Working Directory",this);
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(	__RemoveWorkingDirectory,this);
 		button_JPanel.add ( __path_JButton );
 	}
 	button_JPanel.add (__cancel_JButton = new SimpleJButton("Cancel",this));
@@ -275,10 +273,10 @@ private void initialize ( JFrame parent, Command command )
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
@@ -316,31 +314,52 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String InputFile = "";
+{	String routine = "RunCommands_JDialog.refresh";
+    String InputFile = "";
+    String ExpectedStatus = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
 		InputFile = props.getValue ( "InputFile" );
+        ExpectedStatus = props.getValue ( "ExpectedStatus" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ExpectedStatus_JComboBox, ExpectedStatus,JGUIUtil.NONE, null, null ) ) {
+            __ExpectedStatus_JComboBox.select ( ExpectedStatus );
+        }
+        else {
+            if ( (ExpectedStatus == null) || ExpectedStatus.equals("") ) {
+                // New command...select the default...
+                __ExpectedStatus_JComboBox.select ( 0 );
+            }
+            else {  // Bad user command...
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\n"+
+                "ExpectedStatus parameter \"" +
+                ExpectedStatus +
+                "\".  Select a\nMissing value or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
+    ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
+    props.add ( "ExpectedStatus=" + ExpectedStatus );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( "Remove Working Directory" );
+			__path_JButton.setText ( __RemoveWorkingDirectory );
 		}
-		else {	__path_JButton.setText ( "Add Working Directory" );
+		else {
+            __path_JButton.setText ( __AddWorkingDirectory );
 		}
 	}
 }

@@ -117,21 +117,17 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+            fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select StateMod Time Series File");
-		// REVISIT - maybe need to list all recognized StateMod file
-		// extensions for data sets.
-		SimpleFileFilter sff = new SimpleFileFilter("stm",
-			"StateMod Time Series File");
+		// TODO - maybe need to list all recognized StateMod file extensions for data sets.
+		SimpleFileFilter sff = new SimpleFileFilter("stm", "StateMod Time Series File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {

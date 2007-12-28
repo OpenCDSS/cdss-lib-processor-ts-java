@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/NWSRFS_DMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/HydroBaseDMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RiversideDB_DMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/SatmonSysDMI"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
-	<classpathentry kind="lib" path="externals/abbot.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/RTi_COMMON"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry path="src" kind="src"/>
+	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"/>
+	<classpathentry path="/NWSRFS_DMI" combineaccessrules="false" kind="src"/>
+	<classpathentry path="/HydroBaseDMI" combineaccessrules="false" kind="src"/>
+	<classpathentry path="/RiversideDB_DMI" combineaccessrules="false" kind="src"/>
+	<classpathentry path="/SatmonSysDMI" combineaccessrules="false" kind="src"/>
+	<classpathentry path="/StateMod" combineaccessrules="false" kind="src"/>
+	<classpathentry path="externals/abbot.jar" kind="lib"/>
+	<classpathentry path="/RTi_COMMON" combineaccessrules="false" kind="src"/>
+	<classpathentry path="externals/Jython/jython.jar" kind="lib"/>
+	<classpathentry path="bin" kind="output"/>
 </classpath>

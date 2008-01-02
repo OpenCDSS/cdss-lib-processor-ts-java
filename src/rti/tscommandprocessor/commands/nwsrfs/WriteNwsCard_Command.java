@@ -323,7 +323,7 @@ CommandWarningException, CommandException
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
 
-	String OutputStart = null;
+	String OutputStart = parameters.getValue( "OutputStart" );
 	DateTime OutputStart_DateTime = null;
 	if ( OutputStart != null ) {
 		request_params = new PropList ( "" );
@@ -368,13 +368,13 @@ CommandWarningException, CommandException
 							message, "Report problem to software support." ) );
 		}
 	}
-	String OutputEnd = null;
+	String OutputEnd = parameters.getValue( "OutputEnd" );;
 	DateTime OutputEnd_DateTime = null;
 	if ( OutputEnd != null ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputEnd );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
@@ -388,8 +388,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
+			message = "Null value for DateTime(DateTime=" + OutputEnd +	") returned from processor.";
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -397,11 +396,13 @@ CommandWarningException, CommandException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Report problem to software support." ) );
 		}
-		else {	OutputEnd_DateTime = (DateTime)prop_contents;
+		else {
+            OutputEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
 	else {	// Get from the processor...
-		try {	Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
+		try {
+            Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
 			if ( o_OutputEnd != null ) {
 				OutputEnd_DateTime = (DateTime)o_OutputEnd;
 			}

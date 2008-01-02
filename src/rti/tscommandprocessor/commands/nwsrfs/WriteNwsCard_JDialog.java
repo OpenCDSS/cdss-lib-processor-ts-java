@@ -232,9 +232,14 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write 1, 2, 3, 4, 6, 8, 12, or 24 hour time series to an NWS Card format file," +
+		"Write 1, 2, 3, 4, 6, 8, 12, 24 hour, or 1 day time series to an NWS Card format file," +
 		" specified using a full or relative path (relative to the working directory)." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Only the first time series will be written due to the limitation of the card format."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to hour precision."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 

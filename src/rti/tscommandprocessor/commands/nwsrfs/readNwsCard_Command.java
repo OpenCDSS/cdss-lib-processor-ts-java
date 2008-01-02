@@ -32,6 +32,7 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -145,7 +146,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
     }
-    else {  String working_dir = null;
+    else {
+        String working_dir = null;
         try { Object o = processor.getPropContents ( "WorkingDir" );
                 // Working directory is available so use it...
                 if ( o != null ) {
@@ -503,6 +505,7 @@ throws InvalidCommandParameterException,
        CommandException
 {	String routine = "ReadNwsCard_Command.runCommand", message;
 	int warning_level = 2;
+    int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
@@ -516,11 +519,139 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
 	String NewUnits = parameters.getValue("NewUnits");
-	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
-	//String InputStart = _parameters.getValue("InputStart");
-	//String InputEnd = _parameters.getValue("InputEnd");
+	String InputStart = parameters.getValue("InputStart");
+	String InputEnd = parameters.getValue("InputEnd");
 	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
 	String Alias = parameters.getValue("Alias");
+    
+    DateTime InputStart_DateTime = null;
+    DateTime InputEnd_DateTime = null;
+    if ( (InputStart != null) && (InputStart.length() != 0) ) {
+        try {
+        PropList request_params = new PropList ( "" );
+        request_params.set ( "DateTime", InputStart );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+
+        PropList bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the specified date/time is valid." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+        else {  InputStart_DateTime = (DateTime)prop_contents;
+        }
+    }
+    catch ( Exception e ) {
+        message = "InputStart \"" + InputStart + "\" is invalid.";
+        Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( command_phase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid date/time for the input start, " +
+                        "or InputStart for the global input start." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
+    }
+    else {  // Get the global input start from the processor...
+        try {   Object o = processor.getPropContents ( "InputStart" );
+                if ( o != null ) {
+                    InputStart_DateTime = (DateTime)o;
+                }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting the global InputStart from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    
+    if ( (InputEnd != null) && (InputEnd.length() != 0) ) {
+        try {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", InputEnd );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting InputEnd DateTime(DateTime=" + InputEnd + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +  ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the end date/time is valid." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {  InputEnd_DateTime = (DateTime)prop_contents;
+            }
+        }
+        catch ( Exception e ) {
+            message = "InputEnd \"" + InputEnd + "\" is invalid.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify a valid date/time for the input end, " +
+                            "or InputEnd for the global input start." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+        }
+        else {  // Get from the processor...
+            try {   Object o = processor.getPropContents ( "InputEnd" );
+                    if ( o != null ) {
+                        InputEnd_DateTime = (DateTime)o;
+                    }
+            }
+            catch ( Exception e ) {
+                message = "Error requesting the global InputEnd from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report problem to software support." ) );
+            }
+    }
 
 	// Set the properties for NWSCardTS.readTimeSeries().
 	PropList props = new PropList("NWSCardTS.readTimeSeries");
@@ -536,51 +667,54 @@ throws InvalidCommandParameterException,
         }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
-		tslist = NWSCardTS.readTimeSeriesList (
-			// TODO [LT 2005-05-17] May add the TSID parameter 
-			//	(1st parameter here) in the future.
-			(TS) null,    		// Currently not used.
-			InputFile_full, 		// String 	fname
-			__InputStart,		// DateTime 	date1
-			__InputEnd, 		// DateTime 	date2
-			NewUnits,		// String 	units
-			read_data,			// boolean 	read_data
-			props);			// whether to read 24 hour as day.
-			
-		if ( tslist != null ) {
-			int tscount = tslist.size();
-			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
-			Message.printStatus ( 2, routine, message );
-			TS ts = null;
-            if ( _use_alias ) {
-                // There should only be one time series for this type of command.  Otherwise every
-                // time series will get the same alias.
-                if ( tscount > 1 ) {
-                    message = "The NwsCard file \"" + InputFile_full + "\" has multiple time series traces." +
-                    " All are being assigned the same alias.";
-                    status.addToLog(command_phase,
-                        new CommandLogRecord(
-                        CommandStatusType.WARNING, message,
-                        "Use the ReadNwsCard() command without the alias."));
+        if ( !IOUtil.fileExists(InputFile_full)) {
+            message = "The NwsCard file \"" + InputFile_full + "\" does not exist.";
+            status.addToLog(command_phase,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,"Verify that the filename is correct."));
+        }
+        else {
+    		tslist = NWSCardTS.readTimeSeriesList (
+    			// TODO [LT 2005-05-17] May add the TSID parameter (1st parameter here) in the future.
+    			(TS) null,    		// Currently not used.
+    			InputFile_full,
+    			InputStart_DateTime,
+    			InputEnd_DateTime,
+    			NewUnits,
+    			read_data,
+    			props );			// whether to read 24 hour as day.
+    			
+    		if ( tslist != null ) {
+    			int tscount = tslist.size();
+    			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
+    			Message.printStatus ( 2, routine, message );
+    			TS ts = null;
+                if ( _use_alias ) {
+                    // There should only be one time series for this type of command.  Otherwise every
+                    // time series will get the same alias.
+                    if ( tscount > 1 ) {
+                        message = "The NwsCard file \"" + InputFile_full + "\" has multiple time series traces." +
+                        " All are being assigned the same alias.";
+                        status.addToLog(command_phase,
+                            new CommandLogRecord(
+                            CommandStatusType.WARNING, message,"Use the ReadNwsCard() command without the alias."));
+                    }
+                    for (int i = 0; i < tscount; i++) {
+                        ts = (TS)tslist.elementAt(i);
+                        ts.setAlias(Alias);
+                    }
                 }
-                for (int i = 0; i < tscount; i++) {
-                    ts = (TS)tslist.elementAt(i);
-                    ts.setAlias(Alias);
-                }
-            }
-		}
+    		}
+        }
 	} 
 	catch ( Exception e ) {
 		message = "Unexpected error reading NWS Card File. \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
         status.addToLog(command_phase,
                 new CommandLogRecord(
-                CommandStatusType.FAILURE, message,
-                "Check the log file for details."));
+                CommandStatusType.FAILURE, message,"Check the log file for details."));
 		throw new CommandException ( message );
 	}
     

@@ -448,7 +448,6 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
 	String NewUnits = parameters.getValue("NewUnits");
-	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");   // Alias version

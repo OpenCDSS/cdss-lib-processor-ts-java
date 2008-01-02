@@ -46,8 +46,7 @@ public class readNwsCard_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and
-						// absolute path.
+			__path_JButton = null,	// Convert between relative and absolute path.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private Command		__command = null;
@@ -55,17 +54,11 @@ private String		__working_dir = null;	// Working directory.
 private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputStart_JTextField,
 			__InputEnd_JTextField,
-						// Text fields for analysis
-						// period.
-			__InputFile_JTextField = null, // Field for time series
-						// identifier
-			__NewUnits_JTextField = null;
-				// Units to convert to at read
+			__InputFile_JTextField = null,
+			__NewUnits_JTextField = null; // Units to convert to at read
 private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
 private JTextArea	 __Command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error to be cleared up
 private boolean		__first_time = true;
 
 private boolean 	__isAliasVersion = false;	
@@ -73,8 +66,8 @@ private boolean 	__isAliasVersion = false;
 			// of the command that returns an alias or not
 private boolean		__ok = false;			
 private final String
-	__REMOVE_WORKING_DIRECTORY = "Remove Working Directory",
-	__ADD_WORKING_DIRECTORY = "Add Working Directory";
+	__RemoveWorkingDirectory = "Remove Working Directory",
+	__AddWorkingDirectory = "Add Working Directory";
 
 /**
 readNwsCard_JDialog constructor.
@@ -89,9 +82,8 @@ public readNwsCard_JDialog ( JFrame parent, Command command )
 	String alias = props.getValue("Alias");
 	Message.printStatus(1, "", "Props: " + props.toString("\n"));
 	if (alias == null || alias.trim().equalsIgnoreCase("")) {
-		if (((readNwsCard_Command)command).getCommandString().trim()
-		    .toUpperCase().startsWith("TS ")) {
-		    	__isAliasVersion = true;
+		if (((readNwsCard_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
+		   __isAliasVersion = true;
 		}
 		else {
 			__isAliasVersion = false;
@@ -114,20 +106,17 @@ public void actionPerformed( ActionEvent event )
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
 		fc.setDialogTitle( "Select NWS Card Time Series File");
-		SimpleFileFilter sff = new SimpleFileFilter("card",
-			"NWS Card File");
+		SimpleFileFilter sff = new SimpleFileFilter("card",	"NWS Card File");
 		fc.addChoosableFileFilter(sff);
-		sff = new SimpleFileFilter("txt",
-			"NWS Card File");
+		sff = new SimpleFileFilter("txt","NWS Card File");
 		fc.addChoosableFileFilter(sff);
 		
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		if ( last_directory_selected != null ) {
-			fc.setCurrentDirectory(
-				new File(last_directory_selected));
+			fc.setCurrentDirectory(	new File(last_directory_selected));
 		}
-		else {	fc.setCurrentDirectory(new File(__working_dir));
+		else {
+            fc.setCurrentDirectory(new File(__working_dir));
 		}
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
@@ -156,22 +145,15 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory") ) {
-			__InputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__InputFile_JTextField.getText() ) );
+		if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
+			__InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory") ) {
-			try {	__InputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__InputFile_JTextField.getText() ) );
+		else if ( __path_JButton.getText().equals( "Remove Working Directory") ) {
+			try {
+                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,	__InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"TSreadNWSCard_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1, "ReadNWSCard_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -193,8 +175,7 @@ private void checkInput () {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
-	String Read24HourAsDay 
-		= __Read24HourAsDay_JComboBox.getSelected().trim();
+	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
 	String Alias = null;
 	if (__isAliasVersion) { 
 		Alias = __Alias_JTextField.getText().trim();
@@ -240,8 +221,7 @@ private void commitEdits() {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
-	String Read24HourAsDay 
-		= __Read24HourAsDay_JComboBox.getSelected().trim();
+	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
 
 	__command.setCommandParameter("InputFile", InputFile);
 	__command.setCommandParameter("InputStart", InputStart);
@@ -305,54 +285,47 @@ private void initialize(JFrame parent, Command command) {
 	else {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read all the time series from an NWS Card format file," +
-		" using information in the file to assign the" +
-		" identifier and alias."),
+		" using information in the file to assign the identifier and alias."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The file may contain one time series or be an ESP trace " +
-		"ensemble file (in NWS Card format) with multiple time " +
-		"series."),
+		"ensemble file (in NWS Card format) with multiple time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
 		"directory) for a NWS Card file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying units causes conversion during the read." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If reading 24Hour data as Day and the input period is " +
-		"specified, specify hour 24 of the day or hour 0 of the " +
-		" following day."),
+		"specified, specify hour 24 of the day or hour 0 of the following day."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the input period will limit data that are " +
 		"available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify date/times using an hour format (e.g.," +
-		" YYYY-MM-DD HH or MM/DD/YYYY HH,"),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify date/times using an hour format (e.g., YYYY-MM-DD HH or MM/DD/YYYY HH, " +
+        "where HH is evenly divisible by the interval)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"where HH is evenly divisible by the interval)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the period defaults to the global input "
-		+ "period (or all data if not specified)."),
+		+ "period (or all data if the global period is not specified)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	if (__isAliasVersion) {
-	        JGUIUtil.addComponent(main_JPanel, 
-			new JLabel("Time series alias:"),
+	    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series alias:"),
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Alias_JTextField = new JTextField ( 30 );
 		__Alias_JTextField.addKeyListener ( this );
@@ -360,8 +333,7 @@ private void initialize(JFrame parent, Command command) {
 			1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	}
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"NWS card file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "NWS card file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -371,7 +343,7 @@ private void initialize(JFrame parent, Command command) {
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewUnits_JTextField = new JTextField ( "", 10 );
 	__NewUnits_JTextField.addKeyListener ( this );
@@ -406,7 +378,7 @@ private void initialize(JFrame parent, Command command) {
 	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea(4, 55);
 	__Command_JTextArea.setLineWrap ( true );
@@ -589,10 +561,10 @@ private void refreshPathControl()
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText(
-				__REMOVE_WORKING_DIRECTORY);
+				__RemoveWorkingDirectory);
 		}
 		else {	__path_JButton.setText(
-				__ADD_WORKING_DIRECTORY);
+				__AddWorkingDirectory);
 		}
 	}
 }

@@ -1425,6 +1425,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("ReadTimeSeries2") ) {
 		return processRequest_ReadTimeSeries2 ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("RemoveAllFromEnsembleResultsList") ) {
+        return processRequest_RemoveAllFromEnsembleResultsList ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("RemoveAllFromTimeSeriesResultsList") ) {
         return processRequest_RemoveAllFromTimeSeriesResultsList ( request, request_params );
     }
@@ -2052,6 +2055,19 @@ throws Exception
 }
 
 /**
+Process the RemoveAllFromEnsembleResultsList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_RemoveAllFromEnsembleResultsList (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    removeAllEnsembles ();
+    //PropList results = bean.getResultsPropList();
+    // No data are returned in the bean.
+    return bean;
+}
+
+/**
 Process the RemoveAllFromTimeSeriesResultsList request.
 */
 private CommandProcessorRequestResultsBean processRequest_RemoveAllFromTimeSeriesResultsList (
@@ -2526,6 +2542,14 @@ public void removeAllCommands ()
 		__Command_Vector.removeAllElements ();
 		notifyCommandListListenersOfRemove ( 0, size - 1 );
 	}
+}
+
+/**
+Remove all ensembles.
+*/
+private void removeAllEnsembles ()
+{
+    __TSEnsemble_Vector.removeAllElements();
 }
 
 /**

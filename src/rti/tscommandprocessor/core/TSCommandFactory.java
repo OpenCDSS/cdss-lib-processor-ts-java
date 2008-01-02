@@ -140,6 +140,8 @@ import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
 import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
+import rti.tscommandprocessor.commands.ts.Free_Command;
+//import rti.tscommandprocessor.commands.ts.FreeEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Command;
@@ -155,7 +157,6 @@ import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
-import rti.tscommandprocessor.commands.util.Free_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
@@ -301,6 +302,12 @@ throws UnknownCommandException
             StringUtil.startsWithIgnoreCase(command_string,"Free (")) {
         return new Free_Command ();
     }
+    /*
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FreeEnsemble") ||
+            StringUtil.startsWithIgnoreCase(command_string,"FreeEnsemble")) {
+        return new FreeEnsemble_Command ();
+    }
+    */
 	
 	// "l" commands...
 

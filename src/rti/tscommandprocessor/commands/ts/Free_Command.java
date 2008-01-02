@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.util;
+package rti.tscommandprocessor.commands.ts;
 
 import java.util.Vector;
 
@@ -113,8 +113,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {  // Parse the old command...
         Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
         if ( tokens.size() != 2 ) {
-            message =
-            "Invalid syntax for command.  Expecting Free(TSID).";
+            message = "Invalid syntax for command.  Expecting Free(TSID).";
             Message.printWarning ( warning_level, routine, message);
             throw new InvalidCommandSyntaxException ( message );
         }
@@ -263,8 +262,24 @@ CommandWarningException, CommandException
             count = tslist_size;    // All will have been removed so no warning below.
         }
         catch ( Exception e ) {
-            message = "Error requesting RemoveAllFromTimeSeriesResultsList(TSID=\"" + TSID +
-            "\") from processor.";
+            message = "Error requesting RemoveAllFromTimeSeriesResultsList from processor.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                       message, "Report problem to software support." ) );
+        }
+        // Also remove all ensembles...
+        request_params = new PropList ( "" );
+        //CommandProcessorRequestResultsBean bean = null;
+        try {
+            //bean = 
+            processor.processRequest( "RemoveAllFromEnsembleResultsList", request_params);
+            count = tslist_size;    // All will have been removed so no warning below.
+        }
+        catch ( Exception e ) {
+            message = "Error requesting RemoveAllFromEnsembleResultsList from processor.";
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );

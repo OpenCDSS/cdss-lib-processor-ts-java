@@ -273,6 +273,9 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String EnsembleName = parameters.getValue ( "EnsembleName" );
+    if ( EnsembleName == null ) {
+        EnsembleName = "";
+    }
     String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );

@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.util;
+package rti.tscommandprocessor.commands.ts;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -37,15 +37,12 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton   __cancel_JButton = null,// Cancel Button
             __ok_JButton = null;    // Ok Button
-private Free_Command      __command = null; // Command as Vector of String
-private JTextArea  __command_JTextArea=null;// Command as TextField
-private SimpleJComboBox __TSID_JComboBox = null; // Field for time series
-                        // identifier or alias
+private Free_Command      __command = null;
+private JTextArea  __command_JTextArea=null;
+private SimpleJComboBox __TSID_JComboBox = null;
 private boolean     __first_time = true;
 private boolean     __error_wait = false;
-private boolean     __ok = false;       // Indicates whether the user
-// has pressed OK to close the
-// dialog.
+private boolean     __ok = false; // Indicates whether user pressed OK to close the dialog.
 
 /**
 Free_JDialog constructor.
@@ -141,8 +138,7 @@ private void initialize ( JFrame parent, Command command )
     int y = 0;
 
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Free time series.  This is useful because some commands "+
-        "operate on all available time series,"),
+        "Free time series.  This is useful because some commands operate on all available time series,"),
         0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
         "and therefore unneeded time series may need to be removed."),
@@ -171,9 +167,11 @@ private void initialize ( JFrame parent, Command command )
         " data type TYPE and interval MONTH."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the selectTimeSeries() and deselectTimeSeries() " +
-        "commands."),
+        "See also the selectTimeSeries() and deselectTimeSeries() commands."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "Time series that are in an ensemble will be removed from the ensemble."),
+         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to free:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

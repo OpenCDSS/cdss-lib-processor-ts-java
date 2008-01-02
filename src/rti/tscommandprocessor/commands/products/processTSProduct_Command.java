@@ -427,7 +427,8 @@ CommandWarningException, CommandException
 			TSProduct tsp = new TSProduct ( TSProductFile_full, override_props );
 			// Specify annotation providers if available...
 			Vector ap_Vector = null;			
-			try { Object o = processor.getPropContents ("TSProductAnnotationProviderList" );
+			try {
+                Object o = processor.getPropContents ("TSProductAnnotationProviderList" );
 					if ( o != null ) {
 							ap_Vector = (Vector)o;
 					}

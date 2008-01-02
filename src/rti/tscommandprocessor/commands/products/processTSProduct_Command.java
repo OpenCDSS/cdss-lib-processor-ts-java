@@ -402,7 +402,8 @@ CommandWarningException, CommandException
 
     String TSProductFile_full = TSProductFile;
     String OutputFile_full = OutputFile;
-	try {	PropList override_props = new PropList ("TSTool");
+	try {
+        PropList override_props = new PropList ("TSTool");
 		DateTime now = new DateTime ( DateTime.DATE_CURRENT );
 		if ( (OutputFile != null) && !OutputFile.equals("") ) {
             OutputFile_full = IOUtil.verifyPathForOS(
@@ -414,12 +415,8 @@ CommandWarningException, CommandException
 			override_props.set ( "InitialView", "Graph" );
 			override_props.set ( "PreviewOutput", "True" );
 		}
-		if (	(IOUtil.isBatch() &&
-			(RunMode.equalsIgnoreCase("GUIAndBatch") ||
-			(RunMode.equalsIgnoreCase("Batch")))) ||
-			(!IOUtil.isBatch() &&
-			(RunMode.equalsIgnoreCase("GUIAndBatch") ||
-			(RunMode.equalsIgnoreCase("GUIOnly")))) ) {
+		if ( (IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("Batch")))) ||
+			(!IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("GUIOnly")))) ) {
 			// Only run the command for the requested run mode...
 			TSProcessor p = new TSProcessor();
 			if ( tsview_window_listener != null ) {
@@ -427,9 +424,7 @@ CommandWarningException, CommandException
 			}
 			p.addTSSupplier ( (TSSupplier)processor );
             TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
-			TSProduct tsp = new TSProduct (
-                    TSProductFile_full,
-						override_props );
+			TSProduct tsp = new TSProduct ( TSProductFile_full, override_props );
 			// Specify annotation providers if available...
 			Vector ap_Vector = null;			
 			try { Object o = processor.getPropContents ("TSProductAnnotationProviderList" );
@@ -463,10 +458,12 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing TSProduct file \"" + TSProductFile_full + "\".";
+		message = "Unexpected error processing TSProduct file \"" + TSProductFile_full + "\".";
 		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
+		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Check the log file." ) );
 		throw new CommandException ( message );
 	}
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);

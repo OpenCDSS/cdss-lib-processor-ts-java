@@ -360,6 +360,31 @@ public Boolean getCreateOutput ()
 }
 
 /**
+Return an Ensemble matching the requested identifier, or null if not found.
+This method is meant to be used internally without going through the request mechanism.
+@param EnsembleID Ensemble ID to match.
+*/
+protected TSEnsemble getEnsemble ( String EnsembleID )
+{
+    if ( (EnsembleID == null) || EnsembleID.equals("") ) {
+        return null;
+    }
+    int size = __TSEnsemble_Vector.size();
+    TSEnsemble tsensemble = null, tsensemble2;
+    for ( int i = 0; i < size; i++ ) {
+        tsensemble2 = (TSEnsemble)__TSEnsemble_Vector.get(i);
+        if ( tsensemble2 == null ) {
+            continue;
+        }
+        if ( tsensemble2.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
+            tsensemble = tsensemble2;
+            break;
+        }
+    }
+    return tsensemble;
+}
+
+/**
 Return the initial working directory for the processor.
 @return the initial working directory for the processor.
 */
@@ -713,7 +738,7 @@ Handle the IncludeMissingTS property request.
  */
 private Boolean getPropContents_IncludeMissingTS()
 {
-	boolean b = __tsengine.includeMissingTS();
+	boolean b = __tsengine.getIncludeMissingTS();
 	return new Boolean ( b );
 }
 
@@ -1578,18 +1603,7 @@ throws Exception
             throw new RequestParameterNotFoundException ( warning );
     }
     String EnsembleID = (String)o;
-    int size = __TSEnsemble_Vector.size();
-    TSEnsemble tsensemble = null, tsensemble2;
-    for ( int i = 0; i < size; i++ ) {
-        tsensemble2 = (TSEnsemble)__TSEnsemble_Vector.get(i);
-        if ( tsensemble2 == null ) {
-            continue;
-        }
-        if ( tsensemble2.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
-            tsensemble = tsensemble2;
-            break;
-        }
-    }
+    TSEnsemble tsensemble = getEnsemble ( EnsembleID );
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference...
     results.setUsingObject("TSEnsemble", tsensemble );
@@ -1752,8 +1766,7 @@ Process the GetTimeSeriesToProcess request.
 private CommandProcessorRequestResultsBean processRequest_GetTimeSeriesToProcess (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TSList" );
 	if ( o == null ) {
@@ -1770,10 +1783,16 @@ throws Exception
 	if ( o_TSID != null ) {
 		TSID = (String)o_TSID;
 	}
+    // The following can be null.  Let the called code handle it.
+    Object o_EnsembleID = request_params.getContents ( "EnsembleID" );
+    String EnsembleID = null;
+    if ( o_EnsembleID != null ) {
+        EnsembleID = (String)o_EnsembleID;
+    }
 	// Get the information from TSEngine, which is returned as a Vector
 	// with the first element being the matching time series list and the second
 	// being the indices of those time series in the time series results list.
-	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID );
+	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
 	Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );

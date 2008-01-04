@@ -5,6 +5,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
 
@@ -34,10 +35,6 @@ public class SetTimeSeriesProperty_Command extends AbstractCommand implements Co
 /**
 Protected data members shared with the dialog and other related classes.
 */
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-
 protected final String _False = "False";
 protected final String _True = "True";
 
@@ -82,6 +79,7 @@ throws InvalidCommandParameterException
 	Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "EnsembleID" );
 	valid_Vector.add ( "Description" );
     valid_Vector.add ( "Units" );
 	valid_Vector.add ( "Editable" );
@@ -131,9 +129,10 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	if ( TSList == null ) {
-		TSList = _AllTS;
+		TSList = TSListType.ALL_TS.toString();
 	}
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
     String Description = parameters.getValue ( "Description" );
     String Units = parameters.getValue ( "Units" );
     boolean Editable_boolean = false;   // Default
@@ -146,13 +145,14 @@ CommandWarningException, CommandException
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\") from processor.";
+		"\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -163,7 +163,8 @@ CommandWarningException, CommandException
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+		message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" +
+        TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -173,7 +174,8 @@ CommandWarningException, CommandException
 	}
 	Vector tslist = (Vector)o_TSList;
 	if ( tslist.size() == 0 ) {
-		message = "Zero time series in list to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+		message = "Zero time series in list to process using TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
@@ -235,6 +237,7 @@ public String toString ( PropList parameters )
 	}
 	String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
     String Description = parameters.getValue ( "Description" );
     String Units = parameters.getValue ( "Units" );
     String Editable = parameters.getValue ( "Editable" );
@@ -248,6 +251,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
 	if ( (Description != null) && (Description.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

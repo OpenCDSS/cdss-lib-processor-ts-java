@@ -20,6 +20,7 @@ package rti.tscommandprocessor.commands.ts;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.Vector;
 
@@ -88,13 +89,15 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-	if (	(TSID == null) || TSID.equals("") ) {
+    /* TODO SAM 2008-01-03 Evaluate whether need to check combinations
+	if ( (TSID == null) || TSID.equals("") ) {
         message = "The time series identifier must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Provide a time series identifier." ) );
 	}
+    */
 	if ( (ScaleValue == null) || ScaleValue.equals("") ) {
         message = "The scale value must be specified.";
         warning += "\n" + message;
@@ -145,7 +148,9 @@ throws InvalidCommandParameterException
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
+    valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "ScaleValue" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
@@ -185,12 +190,19 @@ parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "scale_Command.parseCommand", message;
-	int warning_level = 2;
-
+{
     if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
         // Current syntax...
         super.parseCommand( command_string);
+        // Recently added TSList so handle it properly
+        PropList parameters = getCommandParameters();
+        String TSList = parameters.getValue ( "TSList");
+        String TSID = parameters.getValue ( "TSID");
+        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
+                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
+            // Assume old-style where TSList was not specified but TSID was...
+            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+        }
     }
     else {
 		// TODO SAM 2005-08-24 This whole block of code needs to be
@@ -198,8 +210,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// syntax.
 		//
 		// Old syntax without named parameters.
-		Vector v = StringUtil.breakStringList ( command_string,"(),",
-			StringUtil.DELIM_SKIP_BLANKS );
+		Vector v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String ScaleValue = "";
 		String AnalysisStart = "";
@@ -209,8 +220,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			TSID = ((String)v.elementAt(1)).trim();
 			// Third field has scale...
 			ScaleValue = ((String)v.elementAt(2)).trim();
-			// Fourth and fifth fields optionally have analysis
-			// period...
+			// Fourth and fifth fields optionally have analysis period...
 			if ( v.size() >= 4 ) {
 				AnalysisStart = ((String)v.elementAt(3)).trim();
 				if ( AnalysisStart.equals("*") ) {
@@ -231,8 +241,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		if ( TSID.length() > 0 ) {
+        if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
+			// Old style was to match the TSID
+            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 		}
 		if ( ScaleValue.length() > 0 ) {
 			parameters.set ( "ScaleValue", ScaleValue );
@@ -276,8 +288,12 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
-	String TSList = "AllMatchingTSID";
+	String TSList = parameters.getValue ( "TSList" );
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = TSListType.ALL_TS.toString();
+    }
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
@@ -345,8 +361,7 @@ CommandWarningException, CommandException
 			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting AnalysisEnd DateTime(DateTime=" +
-			AnalysisEnd + ") from processor.";
+			message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -384,19 +399,19 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	// Get the time series to process.  Allow TSID to be a pattern or
-	// specific time series...
+	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
 
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\") from processor.";
+		"\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -404,12 +419,15 @@ CommandWarningException, CommandException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 	}
+    if ( bean == null ) {
+        Message.printStatus ( 2, routine, "Bean is null.");
+    }
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	Vector tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\").";
+		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -422,7 +440,7 @@ CommandWarningException, CommandException
         tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\".";
+			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 			Message.printWarning ( log_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
@@ -435,7 +453,8 @@ CommandWarningException, CommandException
 	
 	int nts = tslist.size();
 	if ( nts == 0 ) {
-		message = "Unable to find time series to scale using TSList=\"" + TSList + "\" TSID=\"" +	TSID + "\".";
+		message = "Unable to find time series to scale using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+            "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -480,8 +499,7 @@ CommandWarningException, CommandException
 		
 		try {	// Do the scaling...
 			Message.printStatus ( 2, routine, "Scaling \"" + ts.getIdentifier()+ "\" by " + ScaleValue );
-			TSUtil.scale ( ts, AnalysisStart_DateTime,
-				AnalysisEnd_DateTime, -1, ScaleValue );
+			TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, -1, ScaleValue );
 			// If requested, change the data units...
 			if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
 				ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
@@ -489,23 +507,16 @@ CommandWarningException, CommandException
 			}
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error scaling time series \""+
-				ts.getIdentifier() + "\" by " + ScaleValue +".";
+			message = "Unexpected error scaling time series \""+ ts.getIdentifier() + "\" by " + ScaleValue +".";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
 			Message.printWarning(3,routine,e);
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message,
-                            "See the log file for details - report the problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
-
-	// Resave the data to the processor so that appropriate actions are taken...
-	// TODOSAM 2005-08-25
-	// Is this needed?
-	//_processor.setPropContents ( "TSResultsList", TSResultsList );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -515,7 +526,7 @@ CommandWarningException, CommandException
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-       status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -525,17 +536,31 @@ public String toString ( PropList props )
 {	if ( props == null ) {
 		return getCommandName() + "()";
 	}
+    String TSList = props.getValue( "TSList" );
 	String TSID = props.getValue( "TSID" );
+    String EnsembleID = props.getValue( "EnsembleID" );
 	String ScaleValue = props.getValue("ScaleValue");
 	String AnalysisStart = props.getValue("AnalysisStart");
 	String AnalysisEnd = props.getValue("AnalysisEnd");
 	String NewUnits = props.getValue("NewUnits");
 	StringBuffer b = new StringBuffer ();
-	if ( (TSID != null) && (TSID.length() > 0) ) {
+    if ( (TSList != null) && (TSList.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "TSID=\"" + TSID + "\"" );
+		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
 	}
 	if ( (ScaleValue != null) && (ScaleValue.length() > 0) ) {
 		if ( b.length() > 0 ) {

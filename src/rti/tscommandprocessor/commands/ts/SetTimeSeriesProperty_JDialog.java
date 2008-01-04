@@ -25,6 +25,8 @@ import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -43,19 +45,18 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private SetTimeSeriesProperty_Command __command = null;// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as TextField
+private JTextArea	__command_JTextArea=null;
 private SimpleJComboBox	__TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Editable_JComboBox = null;
 private JTextField __Description_JTextField = null;
 private JTextField __Units_JTextField = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error to be cleared up or Cancel?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether the user
-									// has pressed OK to close the
-									// dialog.
+private boolean		__ok = false;		// Has user has pressed OK to close the dialog?
 
 /**
 Command editor constructor.
@@ -92,11 +93,21 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
-    if ( TSList.equalsIgnoreCase(__command._AllMatchingTSID)) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList)) {
         __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
     }
     else {
         __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
     }
 }
 
@@ -109,6 +120,7 @@ private void checkInput ()
 	PropList parameters = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
@@ -121,6 +133,9 @@ private void checkInput ()
 	if ( TSID.length() > 0 ) {
 		parameters.set ( "TSID", TSID );
 	}
+    if ( EnsembleID.length() > 0 ) {
+        parameters.set ( "EnsembleID", EnsembleID );
+    }
 	if ( Editable.length() > 0 ) {
 		parameters.set ( "Editable", Editable );
 	}
@@ -147,11 +162,13 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "Editable", Editable );
     __command.setCommandParameter ( "Description", Description );
     __command.setCommandParameter ( "Units", Units );
@@ -194,46 +211,21 @@ private void initialize ( JFrame parent, Command command )
 		"The identifier cannot be reset because it is used to connect commands during processing."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( "" );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	tslist_Vector.addElement ( __command._AllTS );
-    tslist_Vector.addElement ( __command._AllMatchingTSID );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates the time series to process (default=AllTS)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("TSID (for " + __command._AllMatchingTSID + "):"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    // Allow edits...
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    __TSID_JComboBox = new SimpleJComboBox ( true );
-    int size = 0;
-    if ( tsids == null ) {
-        tsids = new Vector ();
-    }
-    size = tsids.size();
-    // Blank for default
-    if ( size > 0 ) {
-        tsids.insertElementAt ( "", 0 );
-    }
-    else {  tsids.addElement ( "" );
-    }
-    // Always allow a "*" to let all time series be filled (put at end)...
-    tsids.addElement ( "*" );
-    __TSID_JComboBox.setData ( tsids );
-    __TSID_JComboBox.addItemListener ( this );
-    __TSID_JComboBox.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel (
+            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Description:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -241,8 +233,7 @@ private void initialize ( JFrame parent, Command command )
     __Description_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Often the location."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Often the location."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
@@ -350,6 +341,7 @@ private void refresh ()
 {	String routine = "SetTimeSeriesProperty_JDialog.refresh";
 	String TSList = "";
     String TSID = "";
+    String EnsembleID = "";
     String Description = "";
     String Units = "";
     String Editable = "";
@@ -361,6 +353,7 @@ private void refresh ()
 		parameters = __command.getCommandParameters();
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
+        EnsembleID = parameters.getValue ( "EnsembleID" );
         Description = parameters.getValue ( "Description" );
         Units = parameters.getValue ( "Units" );
         Editable = parameters.getValue ( "Editable" );
@@ -394,6 +387,21 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( Description != null ) {
             __Description_JTextField.setText(Description);
         }
@@ -421,12 +429,14 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
     Description = __Description_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
     Editable = __Editable_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "TSID=" + TSID );
+    parameters.add ( "EnsembleID=" + EnsembleID );
     parameters.add ( "Description=" + Description );
     parameters.add ( "Units=" + Units );
     parameters.add ( "Editable=" + Editable );

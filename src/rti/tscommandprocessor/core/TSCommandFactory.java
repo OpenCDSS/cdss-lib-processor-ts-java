@@ -131,6 +131,7 @@ import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.ConvertDataUnits_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
 import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
@@ -150,6 +151,7 @@ import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
+import rti.tscommandprocessor.commands.ts.SetConstant_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
@@ -202,14 +204,12 @@ not recognized, create a GenericCommand instance that holds the command string.
 This is useful for code that is being migrated to the full command class design.
 @throws UnknownCommandException if the command name is not recognized.
 */
-public Command newCommand ( String command_string,
-		boolean create_generic_command_if_not_recognized )
+public Command newCommand ( String command_string, boolean create_generic_command_if_not_recognized )
 throws UnknownCommandException
 {	command_string = command_string.trim();
     String routine = "TSCommandFactory.newCommand";
 
-	// Parse out arguments for TS alias = foo() commands to be able to
-	// handle nulls here
+	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here
 
 	boolean isTScommand = false;	// Whether TS alias = foo() command.
 	boolean isDataTest_command = false;	// Whether DataTest alias = foo() command.
@@ -251,6 +251,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"CompareTimeSeries") ) {
 		return new compareTimeSeries_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ConvertDataUnits") ) {
+        return new ConvertDataUnits_Command ();
+    }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("Copy") ) {
 		return new copy_Command ();
 	}
@@ -424,6 +427,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Scale") ) {
 		return new scale_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetConstant") ) {
+        return new SetConstant_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetInputPeriod") ) {
 		return new SetInputPeriod_Command ();
 	}

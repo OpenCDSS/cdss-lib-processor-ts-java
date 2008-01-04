@@ -695,6 +695,7 @@ import RTi.TS.ShefATS;
 import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSAnalyst;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
@@ -757,15 +758,6 @@ design.
 */
 public final String TEMPTS = "TEMPTS";
 public final String TEMPTS_SP="TEMPTS ";
-
-/**
-Used to specify which time series are to be processed with the TSList command
-parameter.
-*/
-public final String __AllTS = "AllTS";
-public final String __AllMatchingTSID = "AllMatchingTSID";
-public final String __LastMatchingTSID = "LastMatchingTSID";
-public final String __SelectedTS = "SelectedTS";
 
 public final int OUTPUT_NONE = 0;		// Initial value for _output_format.
 public final int OUTPUT_STATEMOD = 1;		// Formats for outputting the time series.
@@ -1923,55 +1915,6 @@ throws Exception
 }
 
 /**
-Helper method for convertDataUnits() command.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private void do_convertDataUnits ( String command )
-throws Exception
-{	// Don't parse with spaces because a TEMPTS or dates with hours may be
-	// present.
-	Vector v = StringUtil.breakStringList(command,
-		"(),", StringUtil.DELIM_SKIP_BLANKS|
-		StringUtil.DELIM_ALLOW_STRINGS ); 
-	String message, routine = "TSEngine.do_convertDataUnits";
-	if ( (v == null) || (v.size() != 3) ) {
-		message = "Syntax error in \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the individual tokens of the expression...
-	String tsident = ((String)v.elementAt(1)).trim();
-	// New units...
-	String new_units = ((String)v.elementAt(2)).trim();
-	// Apply adjustExtremes()...  If the identifier is "*", apply to
-	// all the time series...
-	TS ts;
-	if ( tsident.equals("*") ) {
-		// Process every time series in memory...
-		int nts = getTimeSeriesSize();
-		// Set first in case there is an exception...
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);
-			TSUtil.convertUnits ( ts, new_units );
-			processTimeSeriesAction ( UPDATE_TS, ts, its );
-		}
-	}
-	else {	// Operate on a single time series...
-		int ts_pos = indexOf ( tsident );
-		ts = getTimeSeries ( ts_pos );
-		if ( ts == null ) {
-			message = "Unable to find time series \"" + tsident +
-			"\" for convertDataUnits().";
-			Message.printWarning ( 1, routine, message );
-			throw new Exception ( message );
-		}
-		TSUtil.convertUnits ( ts, new_units );
-		processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-	}
-}
-
-/**
 Execute the CreateFromList() command.
 @param wl Warning level for important warnings (1=popup, 2=to log only).
 @param command_tag Command number used for messaging.
@@ -2519,7 +2462,7 @@ private void do_fillPattern ( String command )
 throws Exception
 {	String routine = "TSEngine.do_fillPattern", message;
 	TS ts;			// Time series to fill
-	String TSList = __AllMatchingTSID;	// Defaults..
+	String TSList = TSListType.ALL_MATCHING_TSID.toString();	// Defaults..
 	String TSID = "*";
 	String PatternID = null;
 	if ( command.indexOf('=') < 0 ) {
@@ -2532,9 +2475,10 @@ throws Exception
 		TSID = ((String)tokens.elementAt(1)).trim();
 		PatternID = ((String)tokens.elementAt(2)).trim();
 		if ( TSID.indexOf("*") >= 0 ) {	// Default in new syntax
-			TSList = __AllMatchingTSID;
+			TSList = TSListType.ALL_MATCHING_TSID.toString();
 		}
-		else {	TSList = __LastMatchingTSID;
+		else {
+            TSList = TSListType.LAST_MATCHING_TSID.toString();
 		}
 	}
 	else {	// New syntax...
@@ -2575,7 +2519,7 @@ throws Exception
 		fillprops.set ( "IgnoreLessThanOrEqualZero", "true" );
 	}
 	// Get the time series to process...
-	Vector v = getTimeSeriesToProcess ( TSList, TSID );
+	Vector v = getTimeSeriesToProcess ( TSList, TSID, null );
 	Vector tslist = (Vector)v.elementAt(0);
 	int [] tspos = (int [])v.elementAt(1);
 	int nts = tslist.size();
@@ -3778,145 +3722,6 @@ throws Exception
 	date2_string = null;
 	averaging_date1 = null;
 	averaging_date2 = null;
-}
-
-/**
-Execute the setConstant() command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setConstant ( String command )
-throws Exception
-{	String routine = "TSEngine.do_setConstant", message;
-	String TSID = null;
-	String ConstantValue = null;
-	String MonthValues = null;
-	String SetStart = null;
-	String SetEnd = null;
-	DateTime start = null, end = null;
-	if ( command.indexOf('=') < 0 ) {
-		// Old syntax...
-		Vector tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
-		if ( tokens.size() != 3 ) {
-			throw new Exception("Bad command \"" + command + "\"" );
-		}
-		// Parse the identifier...
-		TSID = (String)tokens.elementAt(1);
-		ConstantValue = (String)tokens.elementAt(2);
-	}
-	else {
-        // New syntax...
-		Vector tokens = StringUtil.breakStringList ( command,"()", 0 );
-		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was parsed before...
-			throw new Exception("Bad command: \"" + command + "\"");
-		}
-		// Get the input needed to process the file...
-		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
-		TSID = props.getValue ( "TSID" );
-		ConstantValue = props.getValue ( "ConstantValue" );
-		MonthValues = props.getValue ( "MonthValues" );
-		SetStart = props.getValue ( "SetStart" );
-		SetEnd = props.getValue ( "SetEnd" );
-	}
-	if ( ConstantValue == null ) {
-		ConstantValue = "";
-	}
-	if ( MonthValues == null ) {
-		MonthValues = "";
-	}
-	if (	((ConstantValue.length() == 0) && (MonthValues.length() == 0))||
-		((ConstantValue.length() > 0) && (MonthValues.length() > 0)) ) {
-		message = "Choose a single value or monthly values, but not both.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	double constant = 0.0;
-	if ( ConstantValue.length() > 0 ) {
-		if ( !StringUtil.isDouble(ConstantValue) ) {
-			message = "Constant \"" + ConstantValue + "\" is not a number.\n";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-		else {
-            constant = StringUtil.atod ( ConstantValue );
-            Message.printStatus( 2, routine, "Setting time series to constant " + constant );
-		}
-	}
-	double [] mconstant = null;
-	if ( MonthValues.length() > 0 ) {
-		mconstant = new double[12];
-		Vector v = StringUtil.breakStringList ( MonthValues,",", 0 );
-		if ( (v == null) || (v.size() != 12) ) {
-			message = "12 monthly values must be specified.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-		else {
-            String val;
-			for ( int i = 0; i < 12; i++ ) {
-				val = ((String)v.elementAt(i)).trim();
-				if ( !StringUtil.isDouble(val) ) {
-					message = "\nMonthly value \"" + val + " is not a number.";
-					throw new Exception ( message );
-				}
-				mconstant[i] = StringUtil.atod ( val );
-			}
-		}
-	}
-	try {	if ( SetStart != null ) {
-			start = DateTime.parse(SetStart);
-		}
-	}
-	catch ( Exception e ) {
-		message = "Set start is not a valid date/time...ignoring.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	try {
-        if ( SetEnd != null ) {
-			end = DateTime.parse(SetEnd);
-		}
-	}
-	catch ( Exception e ) {
-		message = "Set end is not a valid date/time...ignoring.";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	TS ts = null;
-	if ( TSID.equals("*") ) {
-		// Fill everything in memory...
-		int nts = getTimeSeriesSize();
-		// Set first in case there is an exception...
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);
-			if ( mconstant == null ) {
-				TSUtil.setConstant ( ts, start, end, constant );
-			}
-			else {
-                TSUtil.setConstantByMonth ( ts, start, end, mconstant );
-			}
-			// Update...
-			processTimeSeriesAction ( UPDATE_TS, ts, its );
-		}
-	}
-	else {	// Fill one time series...
-		int ts_pos = indexOf ( TSID );
-		if ( ts_pos >= 0 ) {
-			ts = getTimeSeries ( ts_pos );
-			if ( mconstant == null ) {
-				TSUtil.setConstant ( ts, start, end, constant );
-			}
-			else {
-                TSUtil.setConstantByMonth ( ts, start, end,	mconstant );
-			}
-			processTimeSeriesAction (UPDATE_TS, ts, ts_pos);
-		}
-		else {	message = "Unable to find time series \"" + TSID + "\" for setConstant() command.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-	}
 }
 
 /**
@@ -5515,22 +5320,21 @@ how the list can be determined.
 @param TSList Indicates how the list of time series for processing is to be
 determined, with one of the following values:
 <ol>
+<li>    "AllMatchingTSID" will use the TSID value to match time series.</li>
 <li>	"AllTS" will result in true being returned.</li>
-<li>	"AllMatchingTSID" will use the TSID value to match time series.</li>
+<li>    "EnsembleID" will return the list of time series associated with an ensemble.</li>
 <li>	"LastMatchingTSID" will use the TSID value to match time series,
 	returning the last match.  This is necessary for backward compatibility.
 	</li>
-<li>	"SelectedTS" will result in true being returned only if the
-	time series is selected.</li>
+<li>	"SelectedTS" will result in true being returned only if the time series is selected.</li>
 </ol>
 @return A Vector that has as its first element a Vector of TS to process and as
 its second element an int[] indicating the positions in the time series list,
 to be used to update the time series.  Use the size of the Vector (in the first
 element) to determine the number of time series to process.  The order of the
-time series will be from first to last.  A non-null list is guaranteed to be
-returned.
+time series will be from first to last.  A non-null list is guaranteed to be returned.
 */
-protected Vector getTimeSeriesToProcess ( String TSList, String TSID )
+protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID )
 {	Vector tslist = new Vector();	// List of time series to process
 	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
 	int [] tspos = new int[nts];	// Positions of time series to process.
@@ -5543,11 +5347,12 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID )
 	// Loop through the time series in memory...
 	int count = 0;
 	TS ts = null;
-	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID + "\"");
-	if ( TSList.equalsIgnoreCase("LastMatchingTSID") ) {
+	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\"");
+	if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
 		// Search backwards for the last single matching time series...
 		for ( int its = (nts - 1); its >= 0; its-- ) {
-			try {	ts = getTimeSeries ( its );
+			try {
+                ts = getTimeSeries ( its );
 			}
 			catch ( Exception e ) {
 				// Don't add...
@@ -5566,7 +5371,8 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID )
 					return v;
 				}
 			}
-			else {	// Just check the main information...
+			else {
+                // Just check the main information...
 				if(ts.getIdentifier().matches(TSID,true,false)){
 					tslist.addElement ( ts );
 					tspos[count++] = its;
@@ -5580,32 +5386,78 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID )
 			}
 		}
 	}
-	// Else will loop through all the time series from first to last and
-	// find matches...
+    else if ( TSList.equalsIgnoreCase(TSListType.ENSEMBLE_ID.toString()) ) {
+        // Return a list of all time series in an ensemble.
+        TSEnsemble ensemble = __ts_processor.getEnsemble ( EnsembleID );
+        if ( ensemble == null ) {
+            return v;
+        }
+        else {
+            int esize = ensemble.size();
+            for ( int ie = 0; ie < esize; ie++ ) {
+                // Set the time series instance...
+                ts = ensemble.get (ie);
+                tslist.addElement ( ts );
+                // Figure out the index by comparing the instance with the main list...
+                TS ts2; // Time series in main list to compare against.
+                boolean found = false;
+                for ( int its = 0; its < nts; its++ ) {
+                    try {
+                        ts2 = getTimeSeries ( its );
+                    }
+                    catch ( Exception e ) {
+                        continue;
+                    }
+                    if ( ts == ts2 ) {
+                        found = true;
+                        tspos[count++] = its;
+                    }
+                }
+                if ( !found ) {
+                    tspos[count++] = -1;    // Should never happen - will trigger problem that need to fix other code
+                }
+            }
+        }
+        // Trim down the "tspos" array to only include matches so that other
+        // code does not mistakenly iterate through a longer array...
+        if ( count == 0 ) {
+            v.setElementAt ( new int[0], 1 );
+        }
+        else {
+            int [] tspos2 = new int[count];
+            for ( int i = 0; i < count; i++ ) {
+                tspos2[i] = tspos[i];
+            }
+            v.setElementAt ( tspos2, 1 );
+        }
+        return v;
+    }
+	// Else will loop through all the time series from first to last and find matches...
 	boolean found = false;
 	for ( int its = 0; its < nts; its++ ) {
 		found = false;
-		try {	ts = getTimeSeries ( its );
+		try {
+            ts = getTimeSeries ( its );
 		}
 		catch ( Exception e ) {
 			// Don't add...
 			continue;
 		}
-		if ( TSList.equalsIgnoreCase(__AllTS) ) {
+		if ( TSList.equalsIgnoreCase(TSListType.ALL_TS.toString()) ) {
 			found = true;
 		}
-		else if( TSList.equalsIgnoreCase(__SelectedTS) &&
-			ts.isSelected() ) {
+		else if( TSList.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) && ts.isSelected() ) {
 			found = true;
 		}
-		else if ( TSList.equalsIgnoreCase(__AllMatchingTSID) ) {
+		else if ( TSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ) {
 			if ( TSID.indexOf("~") > 0 ) {
 				// Include the input type...
 				if (ts.getIdentifier().matches(TSID,true,true)){
 					found = true;
 				}
 			}
-			else {	// Just check the main information...
+			else {
+                // Just check the main information...
 				if(ts.getIdentifier().matches(TSID,true,false)){
 					found = true;
 				}
@@ -5791,15 +5643,6 @@ protected boolean haveOutputPeriod ()
 }
 
 /**
-Indicate whether missing time series are automatically included in output.
-@return true if missing time series are automatically included in output.
-@deprecated use getIncludeMissingTS
-*/
-protected boolean includeMissingTS()
-{	return getIncludeMissingTS();
-}
-
-/**
 Return the position of a time series from either the __tslist vector.
 See the overloaded method for full documentation.  This version assumes that no sequence number is used.
 @param string the alias and/or time series identifier to look for.
@@ -5872,16 +5715,17 @@ private int indexOf ( String string, int sequence_number )
 }
 
 /**
-Determine whether a command parameter is valid.  This is used for common/shared
-parameters.
+Determine whether a command parameter is valid.  This is used for common/shared parameters.
 @param parameter Parameter name.
 @param value Parameter value to check.
 @return true if a parameter value is valid.
 */
 public boolean isParameterValid ( String parameter, String value )
 {	if ( parameter.equalsIgnoreCase("TSList") ) {
-		if ( value.equalsIgnoreCase(__AllTS) ||	value.equalsIgnoreCase(__AllMatchingTSID) ||
-			value.equalsIgnoreCase(__LastMatchingTSID) || value.equalsIgnoreCase(__SelectedTS) ) {
+		if ( value.equalsIgnoreCase(TSListType.ALL_TS.toString()) ||
+                value.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ||
+			value.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ||
+            value.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) ) {
 			return true;
 		}
 		else {
@@ -6686,10 +6530,6 @@ throws Exception
 			do_createYearStatisticsReport ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"convertDataUnits",0,16)){
-			do_convertDataUnits ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"DateTime ",0,9) ) {
 			// Declare a DateTime and set to a literal
 			do_DateTime ( command_String );
@@ -7143,11 +6983,6 @@ throws Exception
 			// Set the averaging period (_averaging_date1 and
 			// _averaging_date2)...
 			do_setAveragePeriod ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setConstant(",0,12) ||
-                command_String.regionMatches(true,0,"setConstant (",0,13)){
-			do_setConstant ( command_String );
 			continue;
 		}
 		else if ( command_String.regionMatches(true,0,"setDataValue",0,12)){

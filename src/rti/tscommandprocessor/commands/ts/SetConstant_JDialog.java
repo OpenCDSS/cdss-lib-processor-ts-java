@@ -1,30 +1,3 @@
-// ----------------------------------------------------------------------------
-// scale_JDialog - editor for scale()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 30 Nov 2000	Steven A. Malers, RTi	Initial version.
-// 2002-04-16	SAM, RTi		Clean up interface.  Add analysis
-//					period.
-// 2002-05-26	SAM, RTi		Fix bug where date with hours is not
-//					properly parsed.
-// 2003-12-15	SAM, RTi		Update to Swing.
-// 2005-08-23	SAM, RTi		Update to free-format parameters and
-//					command classes.
-// 2005-11-10	SAM, RTi		Add DaysInMonth and DaysInMonthInverse
-//					as constants that are recognized as the
-//					scale value.
-//					Add the NewUnits parameter.
-// 2005-11-29	SAM, RTi		Fix bug where new units were not being
-//					parsed out of existing command - were
-//					being displayed as blank.
-// 2007-02-16	SAM, RTi		Update to use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -60,35 +33,40 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
 
-public class scale_JDialog extends JDialog
+/**
+Editor dialog for the SetConstant() command.
+*/
+public class SetConstant_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private scale_Command	__command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;
+private SetConstant_Command __command = null; // Command to edit
+private JTextArea   __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
-private SimpleJComboBox	__TSID_JComboBox = null;
+private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField	__ScaleValue_JTextField = null;// Field for scale
-private JTextField	__AnalysisStart_JTextField = null;
-private JTextField	__AnalysisEnd_JTextField = null;// Fields for analysis period
-private JTextField	__NewUnits_JTextField = null;// Field for new units
-private boolean		__error_wait = false;	// Is there an error to be cleared up or Cancel?
+private JTextField	__ConstantValue_JTextField = null; // Constant value to apply.
+private JTextField	__MonthValues_JTextField = null; // Monthly value to apply.
+private JTextField	__SetStart_JTextField = null; // Start date/time for set
+private JTextField	__SetEnd_JTextField = null;	// End date/time for set
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button has been pressed.
+private boolean     __ok = false;       // Indicates whether OK button has been pressed.
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public scale_JDialog ( JFrame parent, Command command )
-{	super(parent, true);
-	initialize ( parent, command );
+public SetConstant_JDialog ( JFrame parent, Command command )
+{   super(parent, true);
+    initialize ( parent, command );
 }
 
 /**
@@ -140,44 +118,45 @@ to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
 {	// Put together a list of parameters to check...
-	PropList parameters = new PropList ( "" );
+    PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
-	String TSID = __TSID_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-	String ScaleValue = __ScaleValue_JTextField.getText().trim();
-	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
-	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	String NewUnits = __NewUnits_JTextField.getText().trim();
-	__error_wait = false;
+    String ConstantValue = __ConstantValue_JTextField.getText().trim();
+    String MonthValues = __MonthValues_JTextField.getText().trim();
+    String SetStart = __SetStart_JTextField.getText().trim();
+    String SetEnd = __SetEnd_JTextField.getText().trim();
+    
+    __error_wait = false;
 
     if ( TSList.length() > 0 ) {
         parameters.set ( "TSList", TSList );
     }
-	if ( TSID.length() > 0 ) {
-		parameters.set ( "TSID", TSID );
-	}
+    if ( TSID.length() > 0 ) {
+        parameters.set ( "TSID", TSID );
+    }
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-	if ( ScaleValue.length() > 0 ) {
-		parameters.set ( "ScaleValue", ScaleValue );
-	}
-	if ( AnalysisStart.length() > 0 ) {
-		parameters.set ( "AnalysisStart", AnalysisStart );
-	}
-	if ( AnalysisEnd.length() > 0 ) {
-		parameters.set ( "AnalysisEnd", AnalysisEnd );
-	}
-	if ( NewUnits.length() > 0 ) {
-		parameters.set ( "NewUnits", NewUnits );
-	}
-	try {	// This will warn the user...
-		__command.checkCommandParameters ( parameters, null, 1 );
-	}
-	catch ( Exception e ) {
-		// The warning would have been printed in the check code.
-		__error_wait = true;
-	}
+    if ( ConstantValue.length() > 0 ) {
+        parameters.set ( "ConstantValue", ConstantValue );
+    }
+    if ( MonthValues.length() > 0 ) {
+        parameters.set ( "MonthValues", MonthValues );
+    }
+    if ( SetStart.length() > 0 ) {
+        parameters.set ( "AnalysisStart", SetStart );
+    }
+    if ( SetEnd.length() > 0 ) {
+        parameters.set ( "AnalysisEnd", SetEnd );
+    }
+    try {   // This will warn the user...
+        __command.checkCommandParameters ( parameters, null, 1 );
+    }
+    catch ( Exception e ) {
+        // The warning would have been printed in the check code.
+        __error_wait = true;
+    }
 }
 
 /**
@@ -185,20 +164,20 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+{   String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
-	String ScaleValue = __ScaleValue_JTextField.getText().trim();
-	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
-	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	String NewUnits = __NewUnits_JTextField.getText().trim();
+    String ConstantValue = __ConstantValue_JTextField.getText().trim();
+    String MonthValues = __MonthValues_JTextField.getText().trim();
+    String SetStart = __SetStart_JTextField.getText().trim();
+    String SetEnd = __SetEnd_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
-	__command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-	__command.setCommandParameter ( "ScaleValue", ScaleValue );
-	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
-	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
-	__command.setCommandParameter ( "NewUnits", NewUnits );
+    __command.setCommandParameter ( "ConstantValue", ConstantValue );
+    __command.setCommandParameter ( "MonthValues", MonthValues );
+    __command.setCommandParameter ( "SetStart", SetStart );
+    __command.setCommandParameter ( "SetEnd", SetEnd );
 }
 
 /**
@@ -206,16 +185,15 @@ Free memory for garbage collection.
 */
 protected void finalize ()
 throws Throwable
-{	__TSList_JComboBox = null;
-    __TSID_JComboBox = null;
-	__ScaleValue_JTextField = null;
-	__AnalysisStart_JTextField = null;
-	__AnalysisEnd_JTextField = null;
-	__NewUnits_JTextField = null;
+{	__TSID_JComboBox = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__command = null;
 	__ok_JButton = null;
+	__ConstantValue_JTextField = null;
+	__MonthValues_JTextField = null;
+	__SetStart_JTextField = null;
+	__SetEnd_JTextField = null;
 	super.finalize ();
 }
 
@@ -226,11 +204,13 @@ Instantiates the GUI components.
 @param command The command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (scale_Command)command;
+{   __command = (SetConstant_Command)command;
 
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
+
+	// Main panel...
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
@@ -238,13 +218,16 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Scale time series data values (multiply non-missing by a constant)." ), 
+		"Set time series data values to a single or monthly (Jan - Dec) constant values." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify dates with precision appropriate for the data, " +
-		"use blank for all available data, OutputStart, or OutputEnd."),
+		"If the time series data interval is month or smaller, " +
+		"constant values for each month can be specified." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"In this case, each date/time that matches a month will have its corresponding value set." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
@@ -260,48 +243,55 @@ private void initialize ( JFrame parent, Command command )
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Scale value:" ), 
+ 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__ScaleValue_JTextField = new JTextField ( 10 );
-	__ScaleValue_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ScaleValue_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Constant scale value, DaysInMonth, or DaysInMonthInverse."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	__ConstantValue_JTextField = new JTextField ( 10 );
+	__ConstantValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ConstantValue_JTextField,
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Use for all intervals.."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Monthly values:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__AnalysisStart_JTextField = new JTextField ( 15 );
-	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__AnalysisEnd_JTextField = new JTextField ( 15 );
-	__AnalysisEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__MonthValues_JTextField = new JTextField ( 20 );
+	__MonthValues_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __MonthValues_JTextField,
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Monthly values, separated by commas."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New units:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Set start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__NewUnits_JTextField = new JTextField ( 10 );
-	__NewUnits_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"(Optional) new data units string."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	__SetStart_JTextField = new JTextField (20);
+	__SetStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Set start (optional).  Default is all."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set End:"), 
+		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__SetEnd_JTextField = new JTextField (20);
+	__SetEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
+		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Set end (optional).  Default is all."),
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextArea = new JTextArea ( 4, 55 );
-	__command_JTextArea.setLineWrap ( true );
-	__command_JTextArea.setWrapStyleWord ( true );
-	__command_JTextArea.setEditable ( false );
-	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __command_JTextArea = new JTextArea ( 4, 55 );
+    __command_JTextArea.setLineWrap ( true );
+    __command_JTextArea.setWrapStyleWord ( true );
+    __command_JTextArea.setEditable ( false );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
     checkGUIState();
@@ -313,10 +303,12 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
-	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__cancel_JButton = new SimpleJButton("Cancel", this);
+	button_JPanel.add ( __cancel_JButton );
+	__ok_JButton = new SimpleJButton("OK", this);
+	button_JPanel.add ( __ok_JButton );
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -342,51 +334,47 @@ public void keyPressed ( KeyEvent event )
 		refresh ();
 		checkInput();
 		if ( !__error_wait ) {
-			response ( true );
+			response ( false );
 		}
-	}
-	else {	// Combo box...
-		refresh();
 	}
 }
 
 public void keyReleased ( KeyEvent event )
-{	refresh();
+{
+    refresh();
 }
-
-public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
 public boolean ok ()
-{	return __ok;
+{   return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "Scale_JDialog.refresh";
+{	String routine = "SetConstant_JDialog.refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-	String ScaleValue = "";
-	String AnalysisStart = "";
-	String AnalysisEnd = "";
-	String NewUnits = "";
-	PropList props = __command.getCommandParameters();
-	if ( __first_time ) {
-		__first_time = false;
-		// Get the parameters from the command...
+	String ConstantValue = "";
+	String MonthValues = "";
+	String SetStart = "";
+	String SetEnd = "";
+    PropList props = __command.getCommandParameters();
+    if ( __first_time ) {
+        __first_time = false;
+        // Get the parameters from the command...
         TSList = props.getValue ( "TSList" );
-		TSID = props.getValue ( "TSID" );
+        TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
-		ScaleValue = props.getValue ( "ScaleValue" );
-		AnalysisStart = props.getValue ( "AnalysisStart" );
-		AnalysisEnd = props.getValue ( "AnalysisEnd" );
-		NewUnits = props.getValue ( "NewUnits" );
+        ConstantValue = props.getValue ( "ConstantValue" );
+        MonthValues = props.getValue ( "MonthValues" );
+        SetStart = props.getValue ( "SetStart" );
+        SetEnd = props.getValue ( "SetEnd" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -402,20 +390,20 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
-		}
-		else {	// Automatically add to the list after the blank...
-			if ( (TSID != null) && (TSID.length() > 0) ) {
-				__TSID_JComboBox.insertItemAt ( TSID, 1 );
-				// Select...
-				__TSID_JComboBox.select ( TSID );
-			}
-			else {	// Select the blank...
-				__TSID_JComboBox.select ( 0 );
-			}
-		}
+        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
+                JGUIUtil.NONE, null, null ) ) {
+                __TSID_JComboBox.select ( TSID );
+        }
+        else {  // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {  // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
         if ( EnsembleID == null ) {
             // Select default...
             __EnsembleID_JComboBox.select ( 0 );
@@ -431,36 +419,36 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-		if ( ScaleValue != null ) {
-			__ScaleValue_JTextField.setText ( ScaleValue );
+		if ( ConstantValue != null ) {
+			__ConstantValue_JTextField.setText( ConstantValue );
 		}
-		if ( AnalysisStart != null ) {
-			__AnalysisStart_JTextField.setText( AnalysisStart );
+		if ( MonthValues != null ) {
+			__MonthValues_JTextField.setText( MonthValues );
 		}
-		if ( AnalysisEnd != null ) {
-			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
+		if ( SetStart != null ) {
+			__SetStart_JTextField.setText( SetStart );
 		}
-		if ( NewUnits != null ) {
-			__NewUnits_JTextField.setText ( NewUnits );
+		if ( SetEnd != null ) {
+			__SetEnd_JTextField.setText( SetEnd );
 		}
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
-	TSID = __TSID_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-	ScaleValue = __ScaleValue_JTextField.getText().trim();
-	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
-	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	NewUnits = __NewUnits_JTextField.getText().trim();
-	props = new PropList ( __command.getCommandName() );
+	ConstantValue = __ConstantValue_JTextField.getText().trim();
+	MonthValues = __MonthValues_JTextField.getText().trim();
+	SetStart = __SetStart_JTextField.getText().trim();
+	SetEnd = __SetEnd_JTextField.getText().trim();
+    props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
-	props.add ( "TSID=" + TSID );
+    props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-	props.add ( "ScaleValue=" + ScaleValue );
-	props.add ( "AnalysisStart=" + AnalysisStart );
-	props.add ( "AnalysisEnd=" + AnalysisEnd );
-	props.add ( "NewUnits=" + NewUnits );
-	__command_JTextArea.setText( __command.toString ( props ) );
+    props.add ( "ConstantValue=" + ConstantValue );
+    props.add ( "MonthValues=" + MonthValues );
+    props.add ( "SetStart=" + SetStart );
+    props.add ( "SetEnd=" + SetEnd );
+    __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
@@ -469,19 +457,21 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
-	if ( ok ) {
-		// Commit the changes...
-		commitEdits ();
-		if ( __error_wait ) {
-			// Not ready to close out!
-			return;
-		}
-	}
-	// Now close out...
-	setVisible( false );
-	dispose();
+{   __ok = ok;  // Save to be returned by ok()
+    if ( ok ) {
+        // Commit the changes...
+        commitEdits ();
+        if ( __error_wait ) {
+            // Not ready to close out!
+            return;
+        }
+    }
+    // Now close out...
+    setVisible( false );
+    dispose();
 }
+
+public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Responds to WindowEvents.
@@ -498,4 +488,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end scale_JDialog
+} // end setConstant_JDialog

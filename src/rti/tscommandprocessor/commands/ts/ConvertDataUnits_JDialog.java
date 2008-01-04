@@ -1,5 +1,9 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -8,11 +12,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -26,40 +25,48 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.Vector;
+
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.DataUnits;
+import RTi.Util.IO.DataDimension;
 import RTi.Util.IO.PropList;
+//import RTi.Util.IO.DataDimensionData;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
-public class cumulate_JDialog extends JDialog
+/**
+Editor for ConvertDataUnits() command.
+*/
+public class ConvertDataUnits_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private cumulate_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;
+private ConvertDataUnits_Command __command = null;// Command to edit
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private SimpleJComboBox	__HandleMissingHow_JComboBox=null; // Field for handling missing
-private SimpleJComboBox	__Reset_JComboBox=null; // Field for reset date.
-private boolean		__error_wait = false;	// Is there an error that to be cleared up
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button has been pressed.
+private SimpleJComboBox	__Dimension_JComboBox=null; // Field for data dimensions
+private SimpleJComboBox	__NewUnits_JComboBox=null;
+private boolean	__error_wait = false;	// Is there an error to be cleared up
+private boolean	__first_time = true;
+private boolean __ok = false;       // Indicates whether OK button has been pressed.
 
 /**
-cumulate_JDialog constructor.
+Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public cumulate_JDialog ( JFrame parent, Command command )
-{	super(parent, true);
-	initialize ( parent, command );
+public ConvertDataUnits_JDialog ( JFrame parent, Command command )
+{   super(parent, true);
+    initialize ( parent, command );
 }
 
 /**
@@ -73,7 +80,7 @@ public void actionPerformed( ActionEvent event )
 		response ( false );
 	}
 	else if ( o == __ok_JButton ) {
-		refresh ();
+		refresh();
 		checkInput();
 		if ( !__error_wait ) {
 			response ( true );
@@ -106,19 +113,14 @@ private void checkGUIState ()
 }
 
 /**
-Check the input.  If errors exist, warn the user and set the __error_wait flag
-to true.  This should be called before response() is allowed to complete.
+Check the user input for errors and set __error_wait accordingly.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
-	PropList parameters = new PropList ( "" );
+{	PropList parameters = new PropList ( "" );
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
-	String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-	String Reset = __Reset_JComboBox.getSelected();
-	__error_wait = false;
-
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String NewUnits = StringUtil.getToken(__NewUnits_JComboBox.getSelected()," -",StringUtil.DELIM_SKIP_BLANKS,0);
     if ( TSList.length() > 0 ) {
         parameters.set ( "TSList", TSList );
     }
@@ -128,19 +130,17 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-	if ( HandleMissingHow.length() > 0 ) {
-        parameters.set ( "HandleMissingHow", HandleMissingHow );
-	}
-	if ( Reset.length() > 0 ) {
-        parameters.set ( "Reset", Reset );
-	}
-	try {	// This will warn the user...
-		__command.checkCommandParameters ( parameters, null, 1 );
-	}
-	catch ( Exception e ) {
-		// The warning would have been printed in the check code.
-		__error_wait = true;
-	}
+    if ( NewUnits.length() > 0 ) {
+        parameters.set ( "NewUnits", NewUnits );
+    }
+
+    try {   // This will warn the user...
+        __command.checkCommandParameters ( parameters, null, 1 );
+    }
+    catch ( Exception e ) {
+        // The warning would have been printed in the check code.
+        __error_wait = true;
+    }
 }
 
 /**
@@ -148,20 +148,14 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String TSList = __TSList_JComboBox.getSelected();
+{   String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
-	String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-	String Reset = __Reset_JComboBox.getSelected();
-	if ( (Reset != null) && (Reset.length() > 0) ) {
-		// Use the first token...
-		Reset = StringUtil.getToken(Reset,"(",0,0).trim();
-	}
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();   
+    String NewUnits = StringUtil.getToken(__NewUnits_JComboBox.getSelected()," -",StringUtil.DELIM_SKIP_BLANKS,0);;
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-	__command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
-	__command.setCommandParameter ( "Reset", Reset );
+    __command.setCommandParameter ( "NewUnits", NewUnits );
 }
 
 /**
@@ -170,8 +164,8 @@ Free memory for garbage collection.
 protected void finalize ()
 throws Throwable
 {	__TSID_JComboBox = null;
-	__HandleMissingHow_JComboBox = null;
-	__Reset_JComboBox = null;
+	__Dimension_JComboBox = null;
+	__NewUnits_JComboBox = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__command = null;
@@ -182,10 +176,11 @@ throws Throwable
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param command Command to edit.
+@param title Dialog title.
+@param command The command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (cumulate_Command)command;
+{   __command = (ConvertDataUnits_Command)command;
 
 	addWindowListener( this );
 
@@ -199,12 +194,16 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The selected time series will be converted to cumulative values over the period." ), 
+		"The units of the selected time series will be converted to the new data units." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "The units remain the original." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The old and new data units must have the same dimension (e.g., both are length)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify a Reset value of 0000-MM-DD to reset the total to zero on MM-DD of each year." ), 
+		"However, the dimension is not checked until time series are actually processed." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "If desired units are not recognized, try using the Scale() command." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -222,53 +221,63 @@ private void initialize ( JFrame parent, Command command )
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__HandleMissingHow_JComboBox = new SimpleJComboBox ();
-	__HandleMissingHow_JComboBox.addItem ( "" );
-	__HandleMissingHow_JComboBox.addItem ( __command._CarryForwardIfMissing );
-	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfMissing );
-	__HandleMissingHow_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Default (blank) is to set missing."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Reset date/time:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Dimension:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Reset_JComboBox = new SimpleJComboBox (true);    // Editable
-	__Reset_JComboBox.addItem ( "" );  // No reset
-    /*
-    for ( int i = 1; i <= 12; i++ ) {
-        __Reset_JComboBox.addItem ( "Date " + i + "-1 (reset matching MM-DD for day interval)" );
-    }
-    for ( int i = 1; i <= 12; i++ ) {
-        __Reset_JComboBox.addItem ( "Date " + i + "-1 (reset matching MM-DD for month interval)" );
-    }
-	for ( int i = 1; i <= 31; i++ ) {
-		__Reset_JComboBox.addItem ( "Day " + i + " (reset every specified day for day interval)" );
+	__Dimension_JComboBox = new SimpleJComboBox ( false );
+	Vector dimension_data_Vector0 = DataDimension.getDimensionData();
+	Vector dimension_data_Vector = null;
+	int size = 0;
+	if ( dimension_data_Vector0 != null ) {
+		size = dimension_data_Vector0.size();
+		Message.printStatus ( 2, "", "Number of dimension: " + size );
+		dimension_data_Vector = new Vector(size);
+		DataDimension dim;
+		for ( int i = 0; i < size; i++ ) {
+			dim =(DataDimension)dimension_data_Vector0.elementAt(i);
+			if ( dim.getAbbreviation().length() > 0 ) {
+				dimension_data_Vector.addElement ( dim.getAbbreviation() + " - " + dim.getLongName() );
+			}
+		}
+		dimension_data_Vector =	StringUtil.sortStringList(dimension_data_Vector);
 	}
-	for ( int i = 1; i <= 12; i++ ) {
-		__Reset_JComboBox.addItem ( "Month " + i + " (reset every specified month for month interval)" );
+	else {
+		Message.printStatus ( 2, "", "Number of dimension (null): " + 0);
 	}
-    */
-	__Reset_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Reset_JComboBox,
+	size = 0;
+	if ( dimension_data_Vector != null ) {
+		size = dimension_data_Vector.size();
+	}
+	for ( int i = 0; i < size; i++ ) {
+		if ( ((String)dimension_data_Vector.elementAt(i)).length() > 0){
+			__Dimension_JComboBox.add (	(String)dimension_data_Vector.elementAt(i) );
+		}
+	}
+	if ( size > 0 ) {
+		__Dimension_JComboBox.select ( 0 );
+	}
+	__Dimension_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Dimension_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Date/day/time on which to reset to zero (specify zeros for year)."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Select the dimension first, to list corresponding units."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New data units:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__NewUnits_JComboBox = new SimpleJComboBox ( false );
+	__NewUnits_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __NewUnits_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextArea = new JTextArea ( 4, 40 );
-	__command_JTextArea.setLineWrap ( true );
-	__command_JTextArea.setWrapStyleWord ( true );
-	__command_JTextArea.setEditable ( false );
-	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __command_JTextArea = new JTextArea ( 4, 55 );
+    __command_JTextArea.setLineWrap ( true );
+    __command_JTextArea.setWrapStyleWord ( true );
+    __command_JTextArea.setEditable ( false );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
     checkGUIState();
@@ -280,10 +289,12 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
-	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	__cancel_JButton = new SimpleJButton("Cancel", this);
+	button_JPanel.add ( __cancel_JButton );
+	__ok_JButton = new SimpleJButton("OK", this);
+	button_JPanel.add ( __ok_JButton );
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -295,7 +306,14 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	checkGUIState();
+{	Object o = e.getItemSelectable();
+	if ( o == __Dimension_JComboBox ) {
+		// Refresh the units...
+		refreshUnits ();
+	}
+	else {
+        checkGUIState();
+    }
     refresh();
 }
 
@@ -307,13 +325,10 @@ public void keyPressed ( KeyEvent event )
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
-		checkInput();
+		checkInput ();
 		if ( !__error_wait ) {
 			response ( true );
 		}
-	}
-	else {	// Combo box...
-		refresh();
 	}
 }
 
@@ -328,28 +343,26 @@ Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
 public boolean ok ()
-{	return __ok;
+{   return __ok;
 }
 
 /**
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "Cumulate_JDialog.refresh";
+{	String routine = "ConvertDataUnits_JDialog.refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-	String HandleMissingHow = "";
-	String Reset = "";
-	PropList props = __command.getCommandParameters();
-	if ( __first_time ) {
-		__first_time = false;
-		// Get the parameters from the command...
+	String NewUnits = "";
+    PropList props = __command.getCommandParameters();
+    if ( __first_time ) {
+        __first_time = false;
+        // Get the parameters from the command...
         TSList = props.getValue ( "TSList" );
         TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
-		HandleMissingHow = props.getValue ( "HandleMissingHow" );
-		Reset = props.getValue ( "Reset" );
+        NewUnits = props.getValue ( "NewUnits" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -394,53 +407,91 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-		if ( JGUIUtil.isSimpleJComboBoxItem( __HandleMissingHow_JComboBox, HandleMissingHow, JGUIUtil.NONE, null, null ) ) {
-				__HandleMissingHow_JComboBox.select ( HandleMissingHow );
-		}
-		else {
-            // Automatically add to the list after the blank...
-			if ( (HandleMissingHow != null) && (HandleMissingHow.length() > 0) ) {
-				__HandleMissingHow_JComboBox.insertItemAt ( HandleMissingHow, 1 );
-				// Select...
-				__HandleMissingHow_JComboBox.select ( HandleMissingHow );
-			}
-			else {	// Select the blank...
-				__HandleMissingHow_JComboBox.select ( 0 );
-			}
-		}
-		try {
-            JGUIUtil.selectTokenMatches ( __Reset_JComboBox, true, "(", 0, 0, Reset, "", true );
-		}
-		catch ( Exception e ) {
-			// Automatically add to the list after the blank...
-			if (	(Reset != null) &&
-				(Reset.length() > 0) ) {
-				__Reset_JComboBox.insertItemAt ( Reset, 1 );
-				// Select...
-				__Reset_JComboBox.select ( Reset );
-			}
-			else {	// Select the blank...
-				__Reset_JComboBox.select ( 0 );
-			}
-		}
+		// Figure out the dimension of the units and set the dimension choice as well as the units choice...
+		DataUnits dataunits = null;
+        if ( NewUnits == null ) {
+            // Select first dimension and then refresh...
+            __Dimension_JComboBox.select ( 0 );
+            refreshUnits();
+        }
+        else {
+            // Have units to try to display
+    		try {
+                dataunits = DataUnits.lookupUnits ( NewUnits);
+    		}
+    		catch ( Exception e ) {
+    			Message.printWarning ( 1, routine,
+    			"Existing command references unrecognized\n"+ "data units \"" + NewUnits +
+    			"\".  Select recognized data units or Cancel.");
+    			Message.printWarning ( 3,"",e);
+    			__error_wait = true;
+    		}
+    		if ( !__error_wait ) {
+    			try {
+                    // First select the dimension...
+    				JGUIUtil.selectTokenMatches ( __Dimension_JComboBox,
+    				true, " ", 0, 0, dataunits.getDimension().getAbbreviation(), null );
+    			}
+    			catch ( Exception e ) {
+    				Message.printWarning ( 1, routine,
+    				"Existing command references units with unrecognized\n"+ "data dimension \"" +
+    				dataunits.getDimension().getAbbreviation() +
+    				"\".  Select recognized data units or Cancel.");
+    				Message.printWarning ( 3, "", e );
+    				__error_wait = true;
+    			}
+    		}
+    		if ( !__error_wait ) {
+    			try {
+                    // Now select the units...
+    				refreshUnits();
+    				JGUIUtil.selectTokenMatches (__NewUnits_JComboBox,true, " ", 0, 0, NewUnits, null );
+    			}
+    			catch ( Exception e ) {
+    				Message.printWarning ( 1, routine,
+    				"Existing command references unrecognized\n"+ "data units \"" + NewUnits +
+    				"\".  Select recognized data units or Cancel.");
+    				Message.printWarning ( 2,"",e);
+    				__error_wait = true;
+    			}
+    		}
+    		else {
+                refreshUnits ();
+    		}
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-	HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-	Reset = __Reset_JComboBox.getSelected();
-	if ( (Reset != null) && (Reset.length() > 0) ) {
-		// Use the first token...
-		Reset = StringUtil.getToken(Reset,"(",0,0).trim();
-	}
-	props = new PropList ( __command.getCommandName() );
+	NewUnits = StringUtil.getToken(__NewUnits_JComboBox.getSelected()," -",StringUtil.DELIM_SKIP_BLANKS,0);
+    props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-	props.add ( "HandleMissingHow=" + HandleMissingHow );
-	props.add ( "Reset=" + Reset );
-	__command_JTextArea.setText( __command.toString ( props ) );
+    props.add ( "NewUnits=" + NewUnits );
+    __command_JTextArea.setText( __command.toString ( props ) );
+}
+
+/**
+Refresh the data units based on the dimension.
+*/
+private void refreshUnits ()
+{	String dimension = __Dimension_JComboBox.getSelected();
+	Vector units_Vector = DataUnits.lookupUnitsForDimension ( null, StringUtil.getToken(dimension," ",0,0) );
+	int size = 0;
+	if ( units_Vector != null ) {
+		size = units_Vector.size();
+	}
+	__NewUnits_JComboBox.removeAll ();
+	DataUnits units = null;
+	Vector units_sorted_Vector = new Vector();
+	for ( int i = 0; i < size; i++ ) {
+		units = (DataUnits)units_Vector.elementAt(i);
+		units_sorted_Vector.addElement ( units.getAbbreviation() + " - " + units.getLongName() );
+	}
+	units_sorted_Vector = StringUtil.sortStringList ( units_sorted_Vector );
+	__NewUnits_JComboBox.setData ( units_sorted_Vector );
 }
 
 /**
@@ -449,18 +500,18 @@ React to the user response.
 and the dialog is closed.
 */
 private void response ( boolean ok )
-{	__ok = ok;	// Save to be returned by ok()
-	if ( ok ) {
-		// Commit the changes...
-		commitEdits ();
-		if ( __error_wait ) {
-			// Not ready to close out!
-			return;
-		}
-	}
-	// Now close out...
-	setVisible( false );
-	dispose();
+{   __ok = ok;  // Save to be returned by ok()
+    if ( ok ) {
+        // Commit the changes...
+        commitEdits ();
+        if ( __error_wait ) {
+            // Not ready to close out!
+            return;
+        }
+    }
+    // Now close out...
+    setVisible( false );
+    dispose();
 }
 
 /**
@@ -468,7 +519,7 @@ Responds to WindowEvents.
 @param event WindowEvent object
 */
 public void windowClosing( WindowEvent event )
-{	response ( true );
+{	response ( false );
 }
 
 public void windowActivated( WindowEvent evt ){;}
@@ -478,4 +529,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-}
+} // end convertDataUnits_JDialog

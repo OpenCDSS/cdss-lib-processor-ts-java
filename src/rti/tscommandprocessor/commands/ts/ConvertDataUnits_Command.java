@@ -1,17 +1,3 @@
-//------------------------------------------------------------------------------
-// cumulate_Command - handle the cumulate() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-09-29	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					scale().
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -22,7 +8,7 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSUtil_CumulateTimeSeries;
+import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -45,24 +31,18 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the Cumulate() command.
+This class initializes, checks, and runs the ConvertDataUnits() command.
 </p>
 */
-public class cumulate_Command extends AbstractCommand implements Command
+public class ConvertDataUnits_Command extends AbstractCommand implements Command
 {
-
-/**
-Strings used with the command.
-*/
-protected final String _CarryForwardIfMissing = "CarryForwardIfMissing";
-protected final String _SetMissingIfMissing = "SetMissingIfMissing";
 
 /**
 Constructor.
 */
-public cumulate_Command ()
+public ConvertDataUnits_Command ()
 {	super();
-	setCommandName ( "Cumulate" );
+	setCommandName ( "ConvertDataUnits" );
 }
 
 /**
@@ -76,11 +56,9 @@ dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSID = parameters.getValue ( "TSID" );
-	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
-    String Reset = parameters.getValue ( "Reset" );
+{	//String TSID = parameters.getValue ( "TSID" );
 	String warning = "";
-    String message;
+    //String message;
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
@@ -94,38 +72,13 @@ throws InvalidCommandParameterException
                         message, "Provide a time series identifier." ) );
 	}
     */
-	if (	(HandleMissingHow != null) &&
-		!HandleMissingHow.equals("") &&
-		!HandleMissingHow.equalsIgnoreCase(_CarryForwardIfMissing) &&
-		!HandleMissingHow.equalsIgnoreCase(_SetMissingIfMissing) ) {
-        message = "The HandleMissingHow parameter is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "\nHandleMissingHow, if specified, must be " +
-                        _CarryForwardIfMissing + " or " +
-                        _SetMissingIfMissing ) );
-	}
-    if ( (Reset != null) && !Reset.equals("") ){
-        try {
-            DateTime.parse(Reset);
-        }
-        catch ( Exception e ) {
-            message = "The reset date/time \"" + Reset + "\" is not a valid date/time.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time (use zeros for year)." ) );
-        }
-    }
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "HandleMissingHow" );
-    valid_Vector.add ( "Reset" );
+    valid_Vector.add ( "NewUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -146,7 +99,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new cumulate_JDialog ( parent, this )).ok();
+	return (new ConvertDataUnits_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -180,14 +133,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// syntax.
 		//
 		// Old syntax without named parameters.
-		Vector v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
+		Vector v = StringUtil.breakStringList ( command_string,"(),",0 );
 		String TSID = "";
-		String HandleMissingHow = "";
+		String NewUnits = "";
 		if ( (v != null) && (v.size() == 3) ) {
 			// Second field is identifier...
 			TSID = ((String)v.elementAt(1)).trim();
-			// Third field has missing data type...
-			HandleMissingHow = ((String)v.elementAt(2)).trim();
+			// Third field has new units...
+			NewUnits = ((String)v.elementAt(2)).trim();
 		}
 
 		// Set parameters and new defaults...
@@ -199,8 +152,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			// Old style was to match the TSID
             parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 		}
-		if ( HandleMissingHow.length() > 0 ) {
-			parameters.set ( "HandleMissingHow", HandleMissingHow);
+		if ( NewUnits.length() > 0 ) {
+			parameters.set ( "NewUnits", NewUnits );
 		}
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
@@ -220,7 +173,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "cumulate_Command.runCommand", message;
+{	String routine = "ConvertDataUnits_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -240,8 +193,7 @@ CommandWarningException, CommandException
     }
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
-    String Reset = parameters.getValue ( "Reset" );
+    String NewUnits = parameters.getValue ( "NewUnits" );
 
 	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
 
@@ -330,13 +282,6 @@ CommandWarningException, CommandException
 	if ( tslist != null ) {
 		nts = tslist.size();
 	}
-	PropList cumulate_props = new PropList ( "cumulate" );
-	if ( HandleMissingHow != null ) {
-		cumulate_props.add ( "HandleMissingHow=" + HandleMissingHow );
-	}
-    if ( Reset != null ) {
-        cumulate_props.add ( "Reset=" + Reset );
-    }
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		request_params = new PropList ( "" );
@@ -365,19 +310,20 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	ts = (TS)prop_contents;
+		else {
+            ts = (TS)prop_contents;
 		}
 		
 		// TODO SAM 2007-02-17 Evaluate whether to print warning if null TS
 		
 		try {
             // Do the processing...
-			Message.printStatus ( 2, routine, "Cumulating \"" + ts.getIdentifier() + "\"." );
-			TSUtil_CumulateTimeSeries u = new TSUtil_CumulateTimeSeries();
-            u.cumulate ( ts, null, null, cumulate_props );
+            Message.printStatus ( 2, routine, "Converting \"" + ts.getIdentifier() + "\" data units to \"" +
+                    NewUnits + "\"." );
+			TSUtil.convertUnits ( ts, NewUnits );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error cumulating time series \""+	ts.getIdentifier() + "\".";
+			message = "Unexpected error converting units for time series \"" + ts.getIdentifier() + "\".";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
@@ -387,10 +333,6 @@ CommandWarningException, CommandException
                     message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
-
-	// Resave the data to the processor so that appropriate actions are taken...
-	// TODO SAM 2005-08-25 Is this needed?
-	//_processor.setPropContents ( "TSResultsList", TSResultsList );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -414,8 +356,7 @@ public String toString ( PropList props )
     String TSList = props.getValue( "TSList" );
     String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
-	String HandleMissingHow = props.getValue("HandleMissingHow");
-	String Reset = props.getValue("Reset");
+	String NewUnits = props.getValue("NewUnits");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -435,17 +376,11 @@ public String toString ( PropList props )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-	if ( (HandleMissingHow != null) && (HandleMissingHow.length() > 0) ) {
+	if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "HandleMissingHow=" + HandleMissingHow );
-	}
-	if ( (Reset != null) && (Reset.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "Reset=\"" + Reset + "\"" );
+		b.append ( "NewUnits=\"" + NewUnits + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

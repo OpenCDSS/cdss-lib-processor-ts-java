@@ -1,17 +1,3 @@
-// ----------------------------------------------------------------------------
-// fillConstant_JDialog - editor for fillConstant()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2004-09-08	Steven A. Malers, RTi	Initial version.  Throw away old version
-//					and copy fillHistMonthAverage_JDialog.
-//					Add the constant value text field to
-//					this dialog.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -38,6 +24,8 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -51,30 +39,29 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private fillConstant_Command __command = null;
-						// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextArea
-private SimpleJComboBox	__TSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
+private fillConstant_Command __command = null;// Command to edit
+private JTextArea	__command_JTextArea=null;
+private SimpleJComboBox __TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField	__ConstantValue_JTextField = null,
 			__FillStart_JTextField, // Text fields for fill period.
 			__FillEnd_JTextField,
 			__FillFlag_JTextField;	// Flag to set for filled data.
 private boolean		__first_time = true;
 private boolean		__error_wait = false;
-private boolean		__ok = false;		// Indicates whether OK button
-						// has been pressed.
+private boolean		__ok = false; // Indicates whether OK button has been pressed.
 
 /**
-fillConstant_JDialog constructor.
+Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
 public fillConstant_JDialog ( JFrame parent, Command command )
-{	super(parent, true);
-	initialize ( parent, command );
+{   super(parent, true);
+    initialize ( parent, command );
 }
 
 /**
@@ -101,19 +88,27 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the state of the dialog, disabling/enabling components as appropriate.
+Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState()
-{	// If "AllMatchingTSID", enable the list.
-	// Otherwise, clear and disable...
-	String selected = __TSList_JComboBox.getSelected();
-	if ( selected.equals(__command._AllMatchingTSID) ) {
-		__TSID_JComboBox.setEnabled(true);
-	}
-	else {	__TSID_JComboBox.setEnabled(false);
-		// Set the the first choice, which is blank...
-		__TSID_JComboBox.select ( 0 );
-	}
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
 }
 
 /**
@@ -125,6 +120,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String ConstantValue = __ConstantValue_JTextField.getText().trim();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
@@ -137,6 +133,9 @@ private void checkInput ()
 	if ( TSID.length() > 0 ) {
 		props.set ( "TSID", TSID );
 	}
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
 	if ( ConstantValue.length() > 0 ) {
 		props.set ( "ConstantValue", ConstantValue );
 	}
@@ -165,12 +164,14 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String ConstantValue = __ConstantValue_JTextField.getText().trim();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "ConstantValue", ConstantValue );
 	__command.setCommandParameter ( "FillStart", FillStart );
 	__command.setCommandParameter ( "FillEnd", FillEnd );
@@ -213,67 +214,39 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Fill time series missing values with a constant value." ), 
+		"Fill time series data missing values with a constant value." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If TS list is \"" + __command._AllMatchingTSID + "\", "+
-		"pick a single time series, " +
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If TS list is \"" + TSListType.ALL_MATCHING_TSID + "\", pick a single time series, " +
 		"or enter a wildcard time series identifier pattern."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( __command._AllTS );
-	tslist_Vector.addElement ( __command._AllMatchingTSID );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.select ( 0 );
-	__TSList_JComboBox.addActionListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the time series to fill."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Identifier (TSID) to match:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-	// Allow edits...
-	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	__TSID_JComboBox = new SimpleJComboBox ( true );
-	int size = 0;
-	if ( tsids == null ) {
-		tsids = new Vector ();
-	}
-	size = tsids.size();
-	// Blank for default
-	if ( size > 0 ) {
-		tsids.insertElementAt ( "", 0 );
-	}
-	else {	tsids.addElement ( "" );
-	}
-	// Always allow a "*" to let all time series be filled (put at end)...
-	tsids.addElement ( "*" );
-	__TSID_JComboBox.setData ( tsids );
-	__TSID_JComboBox.addItemListener ( this );
-	__TSID_JComboBox.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ConstantValue_JTextField = new JTextField ( 5 );
 	__ConstantValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __ConstantValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Constant value to fill missing data."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -290,17 +263,17 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillFlag_JTextField = new JTextField ( 5 );
 	__FillFlag_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"1-character flag to indicate fill."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 50 );
 	__command_JTextArea.setLineWrap ( true );
@@ -310,6 +283,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South Panel: North
@@ -323,14 +297,13 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 3,
-		"fillConstant_JDialog.initialize", e );
+		Message.printWarning ( 3, "fillConstant_JDialog.initialize", e );
 	}
 }
 
@@ -339,7 +312,8 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	refresh();
+{	checkGUIState();
+    refresh();
 }
 
 /**
@@ -381,8 +355,9 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = "fillConstant_JDialog.refresh";
-	String TSList = "";
-	String TSID = "";
+    String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
 	String ConstantValue = "";
 	String FillStart = "";
 	String FillEnd = "";
@@ -394,6 +369,7 @@ private void refresh ()
 		// Get the parameters from the command...
 		TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
 		ConstantValue = props.getValue ( "ConstantValue" );
 		FillStart = props.getValue("FillStart");
 		FillEnd = props.getValue("FillEnd");
@@ -429,6 +405,21 @@ private void refresh ()
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
+       if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		// Check the GUI state to make sure that components are
 		// enabled as expected (mainly enable/disable the TSID).  If
 		// disabled, the TSID will not be added as a parameter below.
@@ -454,6 +445,7 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	ConstantValue = __ConstantValue_JTextField.getText().trim();
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
@@ -461,6 +453,7 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "ConstantValue=" + ConstantValue );
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );

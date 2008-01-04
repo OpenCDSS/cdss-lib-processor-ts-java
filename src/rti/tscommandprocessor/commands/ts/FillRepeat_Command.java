@@ -31,18 +31,24 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the SetConstant() command.
+This class initializes, checks, and runs the FillRepeat() command.
 </p>
 */
-public class SetConstant_Command extends AbstractCommand implements Command
+public class FillRepeat_Command extends AbstractCommand implements Command
 {
+    
+/**
+Values for the FillDirection parameter.
+*/
+protected String _Forward = "Forward";
+protected String _Backward = "Backward";
 
 /**
 Constructor.
 */
-public SetConstant_Command ()
+public FillRepeat_Command ()
 {	super();
-	setCommandName ( "SetConstant" );
+	setCommandName ( "FillRepeat" );
 }
 
 /**
@@ -58,17 +64,11 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	String ConstantValue = parameters.getValue ( "ConstantValue" );
-    if ( ConstantValue == null ) {
-        ConstantValue = ""; // To simplify checks below
-    }
-    String MonthValues = parameters.getValue ( "MonthValues" );
-    if ( MonthValues == null ) {
-        MonthValues = ""; // To simplify checks below
-    }
-	String SetStart = parameters.getValue ( "SetStart" );
-	String SetEnd = parameters.getValue ( "SetEnd" );
-	//String FillFlag = parameters.getValue ( "SetFlag" );
+	String FillDirection = parameters.getValue ( "FillDirection" );
+    String MaxIntervals = parameters.getValue ( "MaxIntervals" );
+	String FillStart = parameters.getValue ( "FillStart" );
+	String FillEnd = parameters.getValue ( "FillEnd" );
+	//String FillFlag = parameters.getValue ( "FillFlag" );
 	String warning = "";
     String message;
     
@@ -77,14 +77,14 @@ throws InvalidCommandParameterException
     
 	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
 		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID.toString() + ".";
+            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID + ".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Do not specify the TSID parameter when TList=" + TSListType.ALL_MATCHING_TSID.toString() ) );
+                    message, "Do not specify the TSID parameter when TList=" + TSListType.ALL_MATCHING_TSID ) );
 		}
 	}
-    /*
+    /* TODO SAM 2008-01-04 Evaluate need
 	if ( TSList == null ) {
 		// Probably legacy command...
 		// TODO SAM 2005-05-17 Need to require TSList when legacy
@@ -99,66 +99,38 @@ throws InvalidCommandParameterException
 		}
 	}
     */
-	if ( !ConstantValue.equals("") && !StringUtil.isDouble(ConstantValue) ) {
-        message = "The constant value " + ConstantValue + " is not a number.";
+	if ( (FillDirection != null) && !FillDirection.equals("") &&
+            !FillDirection.equals(_Forward) && !FillDirection.equals(_Backward)) {
+        message = "The fill direction is invalid.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the constant value as a number." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the fill direction as " + _Forward + " or " + _Backward + "." ) );
 	}
-    if ( MonthValues.length() > 0 ) {
-        Vector v = StringUtil.breakStringList ( MonthValues,",", 0 );
-        if ( (v == null) || (v.size() != 12) ) {
-            message = "12 monthly values must be specified.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify 12 monthly values separated by commas." ) );
-        }
-        else {
-            String val;
-            for ( int i = 0; i < 12; i++ ) {
-                val = ((String)v.elementAt(i)).trim();
-                if ( !StringUtil.isDouble(val) ) {
-                    message = "Monthly value \"" + val + "\" is not a number.";
-                    warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                             message, "Specify 12 monthly values separated by commas." ) );
-                }
-            }
-        }
-    }
-    if ( (ConstantValue.length() == 0) && (MonthValues.length() == 0) ) {
-        message = "Neither single or monthly contant values are specified.";;
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Choose a single value or monthly values, but not both." ) );
-    }
-    if ( (ConstantValue.length() > 0) && (MonthValues.length() > 0) ) {
-        message = "Both single and monthly contant values are specified.";
+    if ( (MaxIntervals != null) && (MaxIntervals.length() > 0) && !StringUtil.isInteger(MaxIntervals) ) {
+        message = "The maximum intervals \"" + MaxIntervals + "\" is not an integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Choose a single value or monthly values, but not both." ) );
+                message, "Specify the maximum number of intervals as an integer." ) );
     }
-	if ( (SetStart != null) && !SetStart.equals("") && !SetStart.equalsIgnoreCase("OutputStart")){
-		try {	DateTime.parse(SetStart);
+	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
+		try {
+            DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
-            message = "The set start date/time \"" + SetStart + "\" is not a valid date/time.";
+            message = "The fill start date/time \"" + FillStart + "\" is not a valid date/time.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (SetEnd != null) && !SetEnd.equals("") && !SetEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( SetEnd);
+	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
+		try {	DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
-            message = "The set end date/time \"" + SetStart + "\" is not a valid date/time.";
+            message = "The fill end date/time \"" + FillStart + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -180,10 +152,10 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "ConstantValue" );
-    valid_Vector.add ( "MonthValues" );
-    valid_Vector.add ( "SetStart" );
-    valid_Vector.add ( "SetEnd" );
+    valid_Vector.add ( "FillDirection" );
+    valid_Vector.add ( "MaxIntervals" );
+    valid_Vector.add ( "FillStart" );
+    valid_Vector.add ( "FillEnd" );
     //valid_Vector.add ( "FillFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -205,7 +177,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new SetConstant_JDialog ( parent, this )).ok();
+	return (new FillRepeat_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -221,7 +193,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "SetConstant_Command.parseCommand", message;
+	String routine = "fillConstant_Command.parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
         // Current syntax...
@@ -269,7 +241,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 		}
 		parameters.set ( "ConstantValue", ConstantValue );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -290,7 +262,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetConstant_Command.runCommand", message;
+{	String routine = "fillConstant_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -342,17 +314,16 @@ CommandWarningException, CommandException
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message,
-                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+                message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
         tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
-            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+			message = "Unable to find time series to fill using TSList=\"" + TSList +
+			"\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag,++warning_count), routine, message );
+			    MessageUtil.formatMessageTag(
+			        command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.WARNING,
                     message,
@@ -362,14 +333,13 @@ CommandWarningException, CommandException
 	Object o_Indices = bean_PropList.getContents ( "Indices" );
 	int [] tspos = null;
 	if ( o_Indices == null ) {
-        message = "Unable to find indices for time series to process using TSList=\"" + TSList +
-        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
+		message = "Unable to find indices for time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 	}
 	else {
         tspos = (int [])o_Indices;
@@ -377,11 +347,11 @@ CommandWarningException, CommandException
             message = "Unable to find indices for time series to process using TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
 			Message.printWarning ( warning_level,
-			    MessageUtil.formatMessageTag(
-			        command_tag,++warning_count), routine, message );
+				MessageUtil.formatMessageTag(
+					command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report the problem to software support." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 		}
 	}
 	
@@ -390,7 +360,7 @@ CommandWarningException, CommandException
 		nts = tslist.size();
 	}
 	if ( nts == 0 ) {
-        message = "Unable to find any time series to process using TSList=\"" + TSList +
+        message = "Unable to find indices for time series to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -405,66 +375,54 @@ CommandWarningException, CommandException
 
 	String ConstantValue = parameters.getValue("ConstantValue");
 	double ConstantValue_double = StringUtil.atod ( ConstantValue );
-    
-    String MonthValues = parameters.getValue("MonthValues");
-    double [] MonthValues_double = null;
-    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
-        MonthValues_double = new double[12];
-        Vector v = StringUtil.breakStringList ( MonthValues,",", 0 );
-        String val;
-        for ( int i = 0; i < 12; i++ ) {
-            val = ((String)v.elementAt(i)).trim();
-            MonthValues_double[i] = StringUtil.atod ( val );
-        }
-    }
 
-	// Set period...
+	// Fill period...
 
-	String SetStart = parameters.getValue("SetStart");
-	String SetEnd = parameters.getValue("SetEnd");
-	//String FillFlag = parameters.getValue("SetFlag");
+	String FillStart = parameters.getValue("FillStart");
+	String FillEnd = parameters.getValue("FillEnd");
+	String FillFlag = parameters.getValue("FillFlag");
 
 	// Figure out the dates to use for the analysis...
-	DateTime SetStart_DateTime = null;
-	DateTime SetEnd_DateTime = null;
+	DateTime FillStart_DateTime = null;
+	DateTime FillEnd_DateTime = null;
 
 	try {
-	if ( SetStart != null ) {
+	if ( FillStart != null ) {
 		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", SetStart );
+		request_params.set ( "DateTime", FillStart );
 		bean = null;
 		try {
             bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting SetStart DateTime(DateTime=" +	SetStart + ") from processor.";
+			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";
 			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
+			    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for SetStart DateTime(DateTime=" + SetStart + "\") returned from processor.";
+			message = "Null value for FillStart DateTime(DateTime=" + FillStart + "\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetStart_DateTime = (DateTime)prop_contents;
+		else {	FillStart_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
 	catch ( Exception e ) {
-		message = "SetStart \"" + SetStart + "\" is invalid.";
+		message = "FillStart \"" + FillStart + "\" is invalid.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -475,15 +433,15 @@ CommandWarningException, CommandException
 	}
 	
 	try {
-	if ( SetEnd != null ) {
+	if ( FillEnd != null ) {
 		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", SetEnd );
+		request_params.set ( "DateTime", FillEnd );
 		bean = null;
 		try {
             bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting SetEnd DateTime(DateTime=" + SetEnd + "\") from processor.";
+			message = "Error requesting FillEnd DateTime(DateTime=" + FillEnd + "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -496,7 +454,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for SetEnd DateTime(DateTime=" + SetEnd +	"\") returned from processor.";
+			message = "Null value for FillEnd DateTime(DateTime=" + FillEnd +	"\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -505,12 +463,12 @@ CommandWarningException, CommandException
                             message, "Specify a valid date/time or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetEnd_DateTime = (DateTime)prop_contents;
+		else {	FillEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
 	catch ( Exception e ) {
-		message = "SetEnd \"" + SetEnd + "\" is invalid.";
+		message = "FillEnd \"" + FillEnd + "\" is invalid.";
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
@@ -531,12 +489,24 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
     /*
-	PropList props = new PropList ( "SetConstant" );
+	PropList props = new PropList ( "FillRepeat" );
 	if ( FillFlag != null ) {
 		props.set ( "FillFlag", FillFlag );
 	}
     */
-
+    
+    String FillDirection = parameters.getValue("FillDirection");
+    int FillDirection_int = 1;   // Forward
+    if ( (FillDirection != null) && FillDirection.equalsIgnoreCase(_Backward) ) {
+        FillDirection_int = -1;
+    }
+    
+    String MaxIntervals = parameters.getValue("MaxIntervals");
+    int MaxIntervals_int = 0;
+    if ( (MaxIntervals != null) && StringUtil.isInteger(MaxIntervals) ) {
+        MaxIntervals_int = StringUtil.atoi ( MaxIntervals );
+    }
+    
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		ts = null;
@@ -571,34 +541,31 @@ CommandWarningException, CommandException
 		
 		if ( ts == null ) {
 			// Skip time series.
-            message = "Unable to set time series at position " + tspos[its] + " - null time series.";
+            message = "Null time series at position " + tspos[its];
 			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
+					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+						routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Report the problem to software support." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
 			continue;
 		}
 		
-		// Do the setting...
-		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with constant " + ConstantValue + "." );
+		// Do the filling...
+		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" by repeating, direction=" + FillDirection );
 		try {
-            if ( MonthValues_double == null ) {
-                TSUtil.setConstant ( ts, SetStart_DateTime, SetEnd_DateTime, ConstantValue_double );
-            }
-            else {
-                TSUtil.setConstantByMonth ( ts, SetStart_DateTime, SetEnd_DateTime, MonthValues_double );
-            }
+            TSUtil.fillRepeat ( ts, FillStart_DateTime, FillEnd_DateTime, FillDirection_int, MaxIntervals_int );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" to constant.";
+			message = "Unexpected error filling time series \"" + ts.getIdentifier() + "\" by repeating.";
             Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
+                    MessageUtil.formatMessageTag(
+                    command_tag, ++warning_count),
+                    routine,message);
 			Message.printWarning(3,routine,e);
             status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "See the log file for details - report the problem to software support." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
 
@@ -621,56 +588,53 @@ public String toString ( PropList props )
 {	if ( props == null ) {
 		return getCommandName() + "()";
 	}
-    String TSList = props.getValue( "TSList" );
-    String TSID = props.getValue( "TSID" );
+	String TSList = props.getValue( "TSList" );
+	String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
-	String ConstantValue = props.getValue( "ConstantValue" );
-    String MonthValues = props.getValue( "MonthValues" );
-	String SetStart = props.getValue("SetStart");
-	String SetEnd = props.getValue("SetEnd");
+	String FillDirection = props.getValue( "FillDirection" );
+    String MaxIntervals = props.getValue( "MaxIntervals" );
+	String FillStart = props.getValue("FillStart");
+	String FillEnd = props.getValue("FillEnd");
 	//String FillFlag = props.getValue("FillFlag");
 	StringBuffer b = new StringBuffer ();
-    if ( (TSList != null) && (TSList.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSList=" + TSList );
-    }
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "TSID=\"" + TSID + "\"" );
-    }
+	if ( (TSList != null) && (TSList.length() > 0) ) {
+		b.append ( "TSList=" + TSList );
+	}
+	if ( (TSID != null) && (TSID.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "TSID=\"" + TSID + "\"" );
+	}
     if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-	if ( (ConstantValue != null) && (ConstantValue.length() > 0) ) {
+	if ( (FillDirection != null) && (FillDirection.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "ConstantValue=" + ConstantValue );
+		b.append ( "FillDirection=" + FillDirection );
 	}
-    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
+    if ( (MaxIntervals != null) && (MaxIntervals.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "MonthValues=\"" + MonthValues + "\"");
+        b.append ( "MaxIntervals=" + MaxIntervals );
     }
-	if ( (SetStart != null) && (SetStart.length() > 0) ) {
+	if ( (FillStart != null) && (FillStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "SetStart=\"" + SetStart + "\"" );
+		b.append ( "FillStart=\"" + FillStart + "\"" );
 	}
-	if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
+	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "SetEnd=\"" + SetEnd + "\"" );
+		b.append ( "FillEnd=\"" + FillEnd + "\"" );
 	}
     /*
 	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
@@ -678,7 +642,8 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "FillFlag=\"" + FillFlag + "\"" );
-	}*/
+	}
+    */
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

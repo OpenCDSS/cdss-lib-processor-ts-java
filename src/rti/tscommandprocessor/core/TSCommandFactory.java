@@ -141,6 +141,7 @@ import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
 import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
+import rti.tscommandprocessor.commands.ts.FillRepeat_Command;
 import rti.tscommandprocessor.commands.ts.Free_Command;
 //import rti.tscommandprocessor.commands.ts.FreeEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
@@ -153,6 +154,7 @@ import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.SetConstant_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
+import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 
 // Utility commands.
@@ -298,6 +300,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillRegression") ) {
 		return new fillRegression_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FillRepeat") ) {
+        return new FillRepeat_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillUsingDiversionComments") ) {
 		return new fillUsingDiversionComments_Command ();
 	}
@@ -443,6 +448,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetTimeSeriesProperty") ) {
 		return new SetTimeSeriesProperty_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ShiftTimeByInterval") ) {
+        return new ShiftTimeByInterval_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SortTimeSeries") ) {
         return new sortTimeSeries_Command ();
     }

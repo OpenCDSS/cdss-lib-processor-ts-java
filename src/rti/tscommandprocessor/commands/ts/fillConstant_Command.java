@@ -1,22 +1,9 @@
-//------------------------------------------------------------------------------
-// fillConstant_Command - handle the fillConstant() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-09-08	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					fillHistMonthAverage_Command().
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.Vector;
 
@@ -51,13 +38,6 @@ public class fillConstant_Command extends AbstractCommand implements Command
 {
 
 /**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-
-/**
 Constructor.
 */
 public fillConstant_Command ()
@@ -88,15 +68,16 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TSList != null) && !TSList.equalsIgnoreCase(_AllMatchingTSID) ) {
+	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
 		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + _AllMatchingTSID + ".";
+            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID + ".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Do not specify the TSID parameter when TList=" + _AllMatchingTSID ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Do not specify the TSID parameter when TList=" + TSListType.ALL_MATCHING_TSID ) );
 		}
 	}
+    /* TODO SAM 2008-01-04 Evaluate need
 	if ( TSList == null ) {
 		// Probably legacy command...
 		// TODO SAM 2005-05-17 Need to require TSList when legacy
@@ -110,6 +91,7 @@ throws InvalidCommandParameterException
                             message, "Specify a TSList parameter value." ) );
 		}
 	}
+    */
 	if ( (ConstantValue == null) || ConstantValue.equals("") ) {
         message = "The constant value must be specified.";
 		warning += "\n" + message;
@@ -125,7 +107,8 @@ throws InvalidCommandParameterException
                         message, "Specify the constant value as a number." ) );
 	}
 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
-		try {	DateTime.parse(FillStart);
+		try {
+            DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
             message = "The fill start date/time \"" + FillStart + "\" is not a valid date/time.";
@@ -158,6 +141,7 @@ throws InvalidCommandParameterException
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "ConstantValue" );
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
@@ -203,6 +187,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
         // Current syntax...
         super.parseCommand( command_string);
+        // Recently added TSList so handle it properly
+        PropList parameters = getCommandParameters();
+        String TSList = parameters.getValue ( "TSList");
+        String TSID = parameters.getValue ( "TSID");
+        if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
+                ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
+            // Assume old-style where TSList was not specified but TSID was...
+            parameters.set ( "TSList", TSListType.ALL_TS.toString() );
+        }
     }
     else {
 		// TODO SAM 2005-09-08 This whole block of code needs to be
@@ -237,7 +230,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", _AllMatchingTSID );
+            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 		}
 		parameters.set ( "ConstantValue", ConstantValue );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -273,20 +266,25 @@ CommandWarningException, CommandException
     status.clearLog(CommandPhaseType.RUN);
 
 	String TSList = parameters.getValue ( "TSList" );
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = TSListType.ALL_TS.toString();
+    }
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
 
 	// Get the time series to process...
 	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\") from processor.";
+        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -298,13 +296,14 @@ CommandWarningException, CommandException
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	Vector tslist = null;
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
         tslist = (Vector)o_TSList;
@@ -312,12 +311,12 @@ CommandWarningException, CommandException
 			message = "Unable to find time series to fill using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(
-							command_tag,++warning_count), routine, message );
+			    MessageUtil.formatMessageTag(
+			        command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.WARNING,
-                            message,
-                            "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+                new CommandLogRecord(CommandStatusType.WARNING,
+                    message,
+                    "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 		}
 	}
 	Object o_Indices = bean_PropList.getContents ( "Indices" );
@@ -334,11 +333,11 @@ CommandWarningException, CommandException
 	else {
         tspos = (int [])o_Indices;
 		if ( tspos.length == 0 ) {
-			message = "Unable to find indices for time series to fill using TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\".";
+            message = "Unable to find indices for time series to process using TSList=\"" + TSList +
+            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
 			Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(
-							command_tag,++warning_count), routine, message );
+				MessageUtil.formatMessageTag(
+					command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
@@ -350,14 +349,15 @@ CommandWarningException, CommandException
 		nts = tslist.size();
 	}
 	if ( nts == 0 ) {
-		message = "Unable to find time series to fill using TSID \"" + TSID + "\".";
+        message = "Unable to find indices for time series to process using TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                        message,
-                        "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+            new CommandLogRecord(CommandStatusType.WARNING,
+                message,
+                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
 	// Constant value...
@@ -386,11 +386,11 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
 			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";
 			Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
+			    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 
@@ -402,8 +402,8 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
 		else {	FillStart_DateTime = (DateTime)prop_contents;
@@ -575,6 +575,7 @@ public String toString ( PropList props )
 	}
 	String TSList = props.getValue( "TSList" );
 	String TSID = props.getValue( "TSID" );
+    String EnsembleID = props.getValue( "EnsembleID" );
 	String ConstantValue = props.getValue( "ConstantValue" );
 	String FillStart = props.getValue("FillStart");
 	String FillEnd = props.getValue("FillEnd");
@@ -589,6 +590,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
 	if ( (ConstantValue != null) && (ConstantValue.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

@@ -2999,100 +2999,6 @@ throws Exception
 */
 
 /**
-Helper method to execute the fillRepeat() command.
-@param command Command to process.
-@exception Exception if there is an error processing the command.
-*/
-private void do_fillRepeat ( String command )
-throws Exception
-{	String message, routine = "TSEngine.do_fillRepeat";
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || tokens.size() < 2 ) {
-		// Must have at least the command name and a TSID...
-		message = "Bad command \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), "fillRepeat","," );
-	String TSID = props.getValue ( "TSID" );
-	String FillStart = props.getValue ( "FillStart" );
-	String FillEnd = props.getValue ( "FillEnd" );
-	String MaxIntervals = props.getValue ( "MaxIntervals" );
-	String FillDirection = props.getValue ( "FillDirection" );
-	DateTime start = null;
-	DateTime end = null;
-	try {	if ( FillStart != null ) {
-			start = DateTime.parse(FillStart);
-		}
-	}
-	catch ( Exception e ) {
-		message = "Fill start is not a valid date/time...ignoring.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	try {	if ( FillEnd != null ) {
-			end = DateTime.parse(FillEnd);
-		}
-	}
-	catch ( Exception e ) {
-		message = "Fill end is not a valid date/time...ignoring.";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	// Set defaults if not specified...
-	if ( MaxIntervals == null ) {
-		MaxIntervals = "0";
-	}
-	if ( !StringUtil.isInteger(MaxIntervals) ) {
-		message = "MaxIntervals \"" + MaxIntervals +
-			"\" is not an integer.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	int imax = StringUtil.atoi ( MaxIntervals );
-	if ( FillDirection == null ) {
-		FillDirection = "Forward";
-	}
-	if ( 	!FillDirection.equalsIgnoreCase("Forward") &&
-		!FillDirection.equalsIgnoreCase("Backward") ) {
-		message = "FillDirection \"" + FillDirection +
-			"\" is not an Forward or Backward.";
-		Message.printWarning ( 2, routine, message );
-	}
-	int idir = 1;	// Forward
-	if ( FillDirection.equalsIgnoreCase("Backward") ) {
-		idir = -1;
-	}
-	TS ts = null;	// Time series instance to update
-	if ( TSID.equals("*") ) {
-		// Fill everything in memory...
-		int nts = getTimeSeriesSize();
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);
-			TSUtil.fillRepeat ( ts, start, end, idir, imax );
-			processTimeSeriesAction ( UPDATE_TS, ts, its );
-		}
-	}
-	else {	// Fill one time series...
-		int ts_pos = indexOf ( TSID );
-		if ( ts_pos >= 0 ) {
-			ts = getTimeSeries ( ts_pos );
-			TSUtil.fillRepeat ( ts, start, end, idir, imax );
-			processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-		}
-		else {	message = "Unable to find time series \"" +
-				TSID + "\" for fillRepeat() command.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-	}
-	tokens = null;
-}
-
-/**
 Execute the newEndOfMonthTSFromDayTS() command:
 <pre>
 TS Alias = newEndOfMonthTSFromDayTS(TSID,Days)
@@ -4588,52 +4494,6 @@ throws Exception
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
-}
-
-/**
-Helper method for shiftTimeByInterval() command.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private TS do_shiftTimeByInterval ( String command )
-throws Exception
-{	// Don't parse with spaces because a TEMPTS may be present.
-	Vector v = StringUtil.breakStringList(command,
-		"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-	String message, routine = "TSEngine.do_shiftTimeByInterval";
-	if ( (v == null) || (v.size() < 4) || (v.size()%2 != 0) ) {
-		message = "Syntax error in \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the individual tokens of the expression...
-	String dependent = ((String)v.elementAt(1)).trim();
-	// Make sure there are time series available to operate on...
-	int ts_pos = indexOf ( dependent );
-	TS dependentTS = getTimeSeries ( ts_pos );
-	if ( dependentTS == null ) {
-		message = "Unable to find time series \"" + dependent +
-		"\" for shiftTimeByInterval().";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the interval offsets and weights...
-	int intervals[] = new int[(v.size() - 2)/2];
-	double weights[] = new double[(v.size() - 2)/2];
-	int npairs = 0;
-	for ( int i = 2; i < v.size(); i++ ) {
-		if ( (i%2) == 0 ) {
-			intervals[npairs] = StringUtil.atoi (
-				(String)v.elementAt(i) );
-		}
-		else {	weights[npairs++] = StringUtil.atod (
-				(String)v.elementAt(i) );
-		}
-	}
-	// Fill the dependent time series for the analysis period...
-	TS ts = TSUtil.shiftTimeByInterval ( dependentTS, intervals, weights );
-	processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-	return ts;
 }
 
 /**
@@ -6694,11 +6554,6 @@ throws Exception
 			do_fillProrate ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches( true,0,"fillRepeat",0,10) ){
-			// Fill missing data in the time series by repeating values...
-			do_fillRepeat ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"setIncludeMissingTS",0,19)) {
 			do_setIncludeMissingTS ( command_String );
 			continue;
@@ -7039,13 +6894,9 @@ throws Exception
 			do_setWarningLevel ( command_String );
 			continue;
 		}
-		// Put the following before the "shift" command...
-		else if ( command_String.regionMatches(true,0,"shiftTimeByInterval",0,15) ) {
-			// Shift a time series temporally...
-			do_shiftTimeByInterval ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches( true,0,"shift",0,5) ) {
+        // FIXME SAM 2008-01-04 Is this command even supported/documented?
+		else if ( command_String.regionMatches( true,0,"shift(",0,6) ||
+                command_String.regionMatches( true,0,"shift (",0,7) ) {
 			// Shift the time series from one date to another...
 			do_shift ( command_String );
 			continue;

@@ -2281,20 +2281,18 @@ throws Exception
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TS" );
 	if ( o == null ) {
-			String warning = "Request SetTimeSeries() does not provide a TS parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request SetTimeSeries() does not provide a TS parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText ( "This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o;
 	Object o2 = request_params.getContents ( "Index" );
 	if ( o2 == null ) {
-			String warning = "Request SetTimeSeries() does not provide an Index parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request SetTimeSeries() does not provide an Index parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText ("This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	Integer Index = (Integer)o2;
 	__tsengine.setTimeSeries ( ts, Index.intValue() );

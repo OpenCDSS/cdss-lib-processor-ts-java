@@ -151,8 +151,10 @@ import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
+import rti.tscommandprocessor.commands.ts.RunningAverage_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.SetConstant_Command;
+import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
@@ -426,6 +428,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"RunDataTest") ) {
 		return new runDataTest_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"RunningAverage") ) {
+        return new RunningAverage_Command ();
+    }
 
 	// "s" commands...
 
@@ -434,6 +439,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetConstant") ) {
         return new SetConstant_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetFromTS") ) {
+        return new SetFromTS_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetInputPeriod") ) {
 		return new SetInputPeriod_Command ();

@@ -103,11 +103,29 @@ It is assumed that GridBagLayout is used for the layout.
 @param y The GridBagLayout vertical position.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
-public static int addTSListToEditorDialogPanel ( ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y )
+public static int addTSListToEditorDialogPanel (
+        ItemListener dialog, JPanel panel, SimpleJComboBox choices, int y )
+{
+    return addTSListToEditorDialogPanel ( dialog, panel, null, choices, y );
+}
+
+/**
+Add the TSList parameter components to a command dialog.
+It is assumed that GridBagLayout is used for the layout.
+@param dialog The dialog that is being added to.
+@param panel The JPanel to which the controls are being added.
+@param label Label for the row.  If null a default will be provided.
+@param y The GridBagLayout vertical position.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addTSListToEditorDialogPanel (
+        ItemListener dialog, JPanel panel, JLabel label, SimpleJComboBox choices, int y )
 {
     Insets insetsTLBR = new Insets(2,2,2,2);
-    JGUIUtil.addComponent(panel, new JLabel ("TS list:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    if ( label == null ) {
+        label = new JLabel ("TS list:");
+    }
+    JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     Vector TSList_Vector = new Vector();
     TSList_Vector.addElement ( "" );
     TSList_Vector.addElement ( TSListType.ALL_MATCHING_TSID.toString() );

@@ -3750,66 +3750,6 @@ throws Exception
 }
 
 /**
-Helper method for setFromTS() command.
-@param command_tag Command number used for messaging.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private TS do_setFromTS ( String command_tag, String command )
-throws Exception
-{	// Don't parse with spaces because a TEMPTS may be present.
-	Vector v = StringUtil.breakStringList(command,
-		"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-	String message, routine = "TSEngine.do_setFromTS";
-	if ( (v == null) || (v.size() < 5) ) {
-		message = "Syntax error in \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the individual tokens of the expression...
-	String dependent = ((String)v.elementAt(1)).trim();
-	String independent = ((String)v.elementAt(2)).trim();
-	String analysis_period_start_string = ((String)v.elementAt(3)).trim();
-	String analysis_period_end_string = ((String)v.elementAt(4)).trim();
-	v = null;
-	// Make sure there are time series available to operate on...
-	int ts_pos = indexOf ( dependent );
-	TS dependentTS = getTimeSeries ( ts_pos );
-	if ( dependentTS == null ) {
-		message = "Unable to find time series \"" + dependent +
-		"\" for setFromTS().";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	// The independent identifier may or may not have TEMPTS at the front
-	// but is handled by getTimeSeries...
-	TS independentTS = getTimeSeries ( command_tag, independent );
-	if ( independentTS == null ) {
-		message = "Unable to find time series \"" + independent +
-				"\" for setFromTS().";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-
-	DateTime analysis_period_start =
-		getDateTime(analysis_period_start_string);
-	DateTime analysis_period_end = getDateTime(analysis_period_end_string);
-	// Fill the dependent time series for the analysis period...
-	try {	TSUtil.setFromTS (	dependentTS, independentTS,
-					analysis_period_start,
-					analysis_period_end, null );
-		processTimeSeriesAction ( UPDATE_TS, dependentTS, ts_pos );
-	}
-	catch ( Exception e ) {
-		message = "Error executing command: \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		Message.printWarning ( 2, routine, e );
-		throw new Exception ( message );
-	}
-	return dependentTS;
-}
-
-/**
 Execute the new setIgnoreLEZero() or old -ignorelezero command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -6751,79 +6691,6 @@ throws Exception
 			date1 = null;
 			date2 = null;
 		}
-		else if(command_String.regionMatches(true,0,"runningAverage",0,14)){
-			// Convert the time series to a running average...
-			tokens = StringUtil.breakStringList ( command_String,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
-			if ( tokens.size() != 4 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + command_String + "\"" );
-				continue;
-			}
-			// Parse the name and dates...
-			alias = (String)tokens.elementAt(1);
-			String average_type = (String)tokens.elementAt(2);
-			String bracket = (String)tokens.elementAt(3);
-			if ( Message.isDebugOn ) {
-				Message.printDebug ( 1, routine,
-				"Converting TS \"" + alias +
-				"\" to " + average_type +
-				" running average with bracket " + bracket );
-			}
-			if ( alias.equals("*") ) {
-				// Process everything in memory...
-				int nts = getTimeSeriesSize();
-				// Set first in case there is an exception...
-				ts_action = NONE;
-				for ( int its = 0; its < nts; its++ ) {
-					if (	average_type.equalsIgnoreCase(
-						"Centered") ) {
-						ts =
-						TSUtil.createRunningAverageTS (
-						getTimeSeries ( its ),
-						StringUtil.atoi(bracket),
-						TSUtil.RUNNING_AVERAGE_CENTER);
-					}
-					else {	ts =
-						TSUtil.createRunningAverageTS (
-						getTimeSeries ( its ),
-						StringUtil.atoi(bracket),
-						TSUtil.RUNNING_AVERAGE_NYEAR);
-					}
-					// Update...
-					setTimeSeries ( ts, its );
-				}
-			}
-			else {	// Fill one time series...
-				ts_pos = indexOf ( alias );
-				if ( ts_pos >= 0 ) {
-					if (	average_type.equalsIgnoreCase(
-						"Centered") ) {
-						ts =
-						TSUtil.createRunningAverageTS (
-						getTimeSeries ( ts_pos ),
-						StringUtil.atoi(bracket),
-						TSUtil.RUNNING_AVERAGE_CENTER);
-					}
-					else {	ts =
-						TSUtil.createRunningAverageTS (
-						getTimeSeries ( ts_pos ),
-						StringUtil.atoi(bracket),
-						TSUtil.RUNNING_AVERAGE_NYEAR);
-					}
-				}
-				else {	message =
-						"Unable to find time series \""+
-						alias + "\" for " +
-						"runningAverage() command.";
-						Message.printWarning ( 2,
-						routine, message );
-					throw new Exception ( message );
-				}
-				ts_action = UPDATE_TS;
-			}
-			tokens = null;
-		}
 		else if ( command_String.regionMatches( true,0,"selectTimeSeries",0,16)){
 			// Select time series for output...
 			do_selectTimeSeries ( command_String, true );
@@ -6848,11 +6715,6 @@ throws Exception
 		else if (command_String.regionMatches(true,0,"setDebugLevel",0,13)){
 			do_setDebugLevel ( command_String );
 			continue;
-		}
-		else if(command_String.regionMatches(true,0,"setFromTS",0,9)) {
-			ts = do_setFromTS(command_tag, command_String);
-			// Update occurs in method.
-			ts_action = NONE;
 		}
 		else if ( command_String.regionMatches(true,0,"setIgnoreLEZero", 0,15) ) {
 			do_setIgnoreLEZero ( command_String );

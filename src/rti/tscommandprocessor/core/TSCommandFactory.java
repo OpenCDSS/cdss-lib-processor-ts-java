@@ -133,6 +133,7 @@ import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ConvertDataUnits_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
+import rti.tscommandprocessor.commands.ts.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
@@ -257,6 +258,10 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ConvertDataUnits") ) {
         return new ConvertDataUnits_Command ();
+    }
+    // Put CopyEnsemble() before the shorter Copy() command
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"CopyEnsemble") ) {
+        return new CopyEnsemble_Command ();
     }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("Copy") ) {
 		return new copy_Command ();

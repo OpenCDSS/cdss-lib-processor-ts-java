@@ -251,27 +251,23 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel,
         new JLabel ( "Ensemble ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleID_JTextField = new JTextField ( "", 10 );
+    __EnsembleID_JTextField = new JTextField ( "", 20 );
     __EnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-            "Required identifier for ensemble."), 
-            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required identifier for ensemble."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ( "Ensemble name:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleName_JTextField = new JTextField ( "", 10 );
+    __EnsembleName_JTextField = new JTextField ( "", 30 );
     __EnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-            "Optional name for output."), 
-            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional name for output."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel,
-		new JLabel ( "Trace length:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Trace length:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TraceLength_JTextField = new JTextField ( "1Year", 10 );
 	__TraceLength_JTextField.addKeyListener ( this );

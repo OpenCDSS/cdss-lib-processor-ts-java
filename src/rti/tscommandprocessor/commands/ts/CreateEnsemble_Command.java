@@ -82,7 +82,6 @@ throws InvalidCommandParameterException
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
-
     
     if ( (TSID == null) || (TSID.length() == 0) ) {
         message = "A time series identifier must be specified.";

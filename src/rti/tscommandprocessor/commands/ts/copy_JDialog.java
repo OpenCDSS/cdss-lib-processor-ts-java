@@ -102,6 +102,7 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __clear_JButton ) {
 		__NewTSID_JTextArea.setText ( "" );
+        refresh();
 	}
 	else if ( o == __edit_JButton ) {
 		// Edit the NewTSID in the dialog.  It is OK for the string to
@@ -207,40 +208,37 @@ private void initialize ( JFrame parent, Command command )
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Make a copy of a time series, giving the copy an alias." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The copy is exactly the same " +
-		"and can be referenced by its alias in other commands." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The copy is exactly the same and can be referenced by its alias in other commands." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optionally, specify new time series identifier (TSID)" +
-		" information for the copy." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optionally, specify new time series identifier (TSID) information for the copy." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This is highly recommended if there is any chance that the " +
-		"copy will be mistaken for the original." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This is highly recommended if there is any chance that the copy will be mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Alias_JTextField = new JTextField ( "" );
 	__Alias_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Often the location from the TSID, or a short string."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to copy:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to copy:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
 	
@@ -249,12 +247,13 @@ private void initialize ( JFrame parent, Command command )
 	
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
+    __NewTSID_JTextArea.setEditable(false);
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );

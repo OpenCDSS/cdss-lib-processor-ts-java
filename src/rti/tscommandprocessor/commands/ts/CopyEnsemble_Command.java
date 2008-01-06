@@ -64,7 +64,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String NewEnsembleID = parameters.getValue ( "NewEnsembleID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    //String NewTSID = parameters.getValue ( "NewTSID" );
+    String NewTSID = parameters.getValue ( "NewTSID" );
 
 	String warning = "";
     String message;
@@ -88,28 +88,9 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide an identifier for the ensemble to copy."));
 	}
-    /*
-    if ( (NewTSID == null) || NewTSID.equals("") ) {
-        message = "The new time series identifier must be specified.";
-        warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message,
-                "Provide a new time series identifier when defining the command."));
-    }
-    else {
+    if ( (NewTSID != null) && !NewTSID.equals("") ) {
         try {
-            TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
-            try { TimeInterval.parseInterval(tsident.getInterval());
-            }
-            catch ( Exception e2 ) {
-                message = "NewTSID interval \"" + tsident.getInterval() + "\" is not a valid interval.";
-                warning += "\n" + message;
-                status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message,
-                "Provide a valid interval when defining the command."));
-            }
+            TSIdent tsident = TSIdent.parseIdentifier( NewTSID, TSIdent.NO_VALIDATION );
         }
         catch ( Exception e ) {
             // TODO SAM 2007-03-12 Need to catch a specific exception like
@@ -124,14 +105,13 @@ throws InvalidCommandParameterException
             "Use the command editor to enter required fields."));
         }
     }
-    */
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "NewEnsembleID" );
     valid_Vector.add ( "NewEnsembleName" );
     valid_Vector.add ( "EnsembleID" );
-    //valid_Vector.add ( "NewTSID" );
+    valid_Vector.add ( "NewTSID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -238,7 +218,7 @@ CommandWarningException, CommandException
 	String NewEnsembleID = parameters.getValue ( "NewEnsembleID" );
     String NewEnsembleName = parameters.getValue ( "NewEnsembleName" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
-	//String NewTSID = parameters.getValue ( "NewTSID" );
+	String NewTSID = parameters.getValue ( "NewTSID" );
 
     if ( command_phase == CommandPhaseType.RUN ) {
     	// Get the time series ensemble to process.
@@ -248,7 +228,7 @@ CommandWarningException, CommandException
         request_params.set ( "EnsembleID", EnsembleID );
         CommandProcessorRequestResultsBean bean = null;
         try {
-            bean = processor.processRequest( "GetEnsemble", request_params);
+            bean = processor.processRequest( "GetEnsemble", request_params );
         }
         catch ( Exception e ) {
             message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
@@ -276,7 +256,7 @@ CommandWarningException, CommandException
         }
         
         if ( tsensemble == null ) {
-            message = "Unable to find ensemble to analyze using EnsembleID \"" + EnsembleID + "\".";
+            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID + "\".";
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(
             command_tag,++warning_count), routine, message );
@@ -285,12 +265,30 @@ CommandWarningException, CommandException
                     message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
             throw new CommandWarningException ( message );
         }
+        
+        TSIdent NewTSID_TSIdent = null;
+        if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+            try {
+                // Don't validate because the interval will be blank.
+                NewTSID_TSIdent = new TSIdent ( NewTSID, TSIdent.NO_VALIDATION );
+            }
+            catch ( Exception e ) {
+                message = "NewTSID \"" + NewTSID + "\" cannot be parsed - invalid time series identifier.";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the new time series identifier information." ) );
+                throw new CommandWarningException ( message );
+            }
+        }
 
     	// Now process the time series...
     
     	TSEnsemble copy = null;
     	try {
-            // Clone the ensemble...
+            // Clone the ensemble (all time series will also be cloned)...
             copy = (TSEnsemble)tsensemble.clone();
             // Set the new information...
     		copy.setEnsembleID ( NewEnsembleID );
@@ -299,8 +297,25 @@ CommandWarningException, CommandException
             }
             // Also need to add each of the time series in the ensemble since these are new instances.
             int size = copy.size();
+            TS ts = null;   // Individual time series in ensemble
             for ( int i = 0; i < size; i++ ) {
-                int wc2 = TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, copy.get(i) );
+                ts = copy.get(i);
+                if ( NewTSID_TSIdent != null ) {
+                     // Reset individual identifier pieces.
+                     if ( NewTSID_TSIdent.getLocation().length() > 0 ) {
+                         ts.setLocation(NewTSID_TSIdent.getLocation());
+                     }
+                     if ( NewTSID_TSIdent.getSource().length() > 0 ) {
+                         ts.setSource(NewTSID_TSIdent.getSource());
+                     }
+                     if ( NewTSID_TSIdent.getType().length() > 0 ) {
+                         ts.setDataType(NewTSID_TSIdent.getType());
+                     }
+                     if ( NewTSID_TSIdent.getScenario().length() > 0 ) {
+                         ts.getIdentifier().setScenario(NewTSID_TSIdent.getScenario());
+                     }
+                }
+                int wc2 = TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
                 if ( wc2 > 0 ) {
                     message = "Error adding time series [" + i + "] from new ensemble.";
                     Message.printWarning ( warning_level, 
@@ -312,6 +327,9 @@ CommandWarningException, CommandException
                     throw new CommandException ( message );
                 }
             }
+            // Update the data to the processor so that appropriate actions are taken...
+            
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, copy );
     	}
     	catch ( Exception e ) {
     		message = "Unexpected error trying to copy ensemble \""+ tsensemble.getEnsembleID() + "\".";
@@ -323,30 +341,6 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Check the log file - report the problem to software support." ) );
     	}
-    	/* TODOD SAM 2008-01-05 Evaluate whether individual time series need IDs changed
-    	try {
-            if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-    			TSIdent tsident = new TSIdent ( NewTSID );
-    			tscopy.setIdentifier ( tsident );
-    		}
-    		tscopy.setAlias ( Alias );
-    	}
-    	catch ( Exception e ) {
-    		message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\".";
-    		Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(
-    			command_tag,++warning_count),routine,message );
-    		Message.printWarning(3,routine,e);
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Check the log file - report the problem to software support." ) );
-    	}
-        */
-    
-        // Update the data to the processor so that appropriate actions are taken...
-    
-        TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, copy );
-    
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
         // Just want the identifier...
@@ -384,7 +378,7 @@ public String toString ( PropList props )
 	String NewEnsembleID = props.getValue( "NewEnsembleID" );
     String NewEnsembleName = props.getValue( "NewEnsembleName" );
 	String EnsembleID = props.getValue( "EnsembleID" );
-	//String NewTSID = props.getValue( "NewTSID" );
+	String NewTSID = props.getValue( "NewTSID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -397,6 +391,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
+    }
+    if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewTSID=\"" + NewTSID + "\"" );
     }
 	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
 		if ( b.length() > 0 ) {

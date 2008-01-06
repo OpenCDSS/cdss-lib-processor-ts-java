@@ -99,6 +99,7 @@ public void actionPerformed( ActionEvent event )
 	}
 	else if ( o == __clear_JButton ) {
 		__NewTSID_JTextArea.setText ( "" );
+        refresh();
 	}
 	else if ( o == __edit_JButton ) {
 		// Edit the NewTSID in the dialog.  It is OK for the string to

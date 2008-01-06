@@ -49,9 +49,9 @@ private JTextArea	__command_JTextArea=null;// Command as JTextField
 private JTextField	__NewEnsembleID_JTextField = null;
 private JTextField  __NewEnsembleName_JTextField;
 private SimpleJComboBox	__EnsembleID_JComboBox = null;
-//private JTextArea	__NewTSID_JTextArea = null;
-//private SimpleJButton	__edit_JButton = null;	// Edit button
-//private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
+private JTextArea	__NewTSID_JTextArea = null;
+private SimpleJButton	__edit_JButton = null;	// Edit button
+private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
 private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
 private boolean		__ok = false;		// Whether OK has been pressed.
@@ -77,36 +77,38 @@ public void actionPerformed( ActionEvent event )
 	if ( o == __cancel_JButton ) {
 		response ( false );
 	}
-    /*
-	else if ( o == __clear_JButton ) {
+    else if ( o == __clear_JButton ) {
 		__NewTSID_JTextArea.setText ( "" );
+        refresh();
 	}
 	else if ( o == __edit_JButton ) {
-		// Edit the NewTSID in the dialog.  It is OK for the string to
-		// be blank.
+		// Edit the NewTSID in the dialog.  It is OK for the string to be blank.
 		String NewTSID = __NewTSID_JTextArea.getText().trim();
 		TSIdent tsident;
-		try {	if ( NewTSID.length() == 0 ) {
+		try {
+            if ( NewTSID.length() == 0 ) {
 				tsident = new TSIdent();
 			}
-			else {	tsident = new TSIdent ( NewTSID );
+			else {
+                tsident = new TSIdent ( NewTSID );
 			}
-			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame,
-				true, tsident, null )).response();
+            PropList idprops = new PropList("NewTSIDProps" );
+            idprops.set ( "EnableAll=False" );
+            idprops.set ( "EnableLocation=True" );
+            idprops.set ( "EnableSource=True" );
+            idprops.set ( "EnableType=True" );
+            idprops.set ( "EnableScenario=True" );
+			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame, true, tsident, idprops )).response();
 			if ( tsident2 != null ) {
-				__NewTSID_JTextArea.setText (
-					tsident2.toString(true) );
+				__NewTSID_JTextArea.setText ( tsident2.toString(true) );
 				refresh();
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" +
-			NewTSID + "\"." );
+			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
-    */
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput();
@@ -126,7 +128,7 @@ private void checkInput ()
 	String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
-	//String NewTSID = __NewTSID_JTextArea.getText().trim();
+	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	__error_wait = false;
 
 	if ( NewEnsembleID.length() > 0 ) {
@@ -138,12 +140,11 @@ private void checkInput ()
 	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
 		props.set ( "EnsembleID", EnsembleID );
 	}
-    /*
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		props.set ( "NewTSID", NewTSID );
 	}
-    */
-	try {	// This will warn the user...
+	try {
+        // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -160,11 +161,11 @@ private void commitEdits ()
 {	String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
-	//String NewTSID = __NewTSID_JTextArea.getText().trim();
+	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	__command.setCommandParameter ( "NewEnsembleID", NewEnsembleID );
     __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
 	__command.setCommandParameter ( "EnsembleID", EnsembleID );
-	//__command.setCommandParameter ( "NewTSID", NewTSID );
+	__command.setCommandParameter ( "NewTSID", NewTSID );
 }
 
 /**
@@ -174,7 +175,7 @@ protected void finalize ()
 throws Throwable
 {	__NewEnsembleID_JTextField = null;
 	__EnsembleID_JComboBox = null;
-	//__NewTSID_JTextArea = null;
+	__NewTSID_JTextArea = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__ok_JButton = null;
@@ -211,16 +212,14 @@ private void initialize ( JFrame parent, Command command )
         "Because time series in the ensemble are copies of time series from the original ensemble," +
         " the Ensemble ID should be used for processing time series." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    /*
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optionally, specify new time series identifier (TSID)" +
-		" information for the copy." ), 
+		" information for the time series in the copy:  location, source, data type, and/or scenario." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This is highly recommended if there is any chance that the " +
 		"copy will be mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New ensemble identifier:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -239,12 +238,6 @@ private void initialize ( JFrame parent, Command command )
         "Optional name for copy."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Often the location from the TSID, or a short string."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        */
-
     JLabel EnsembleID_JLabel = new JLabel ("Ensemble to copy:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
@@ -252,28 +245,27 @@ private void initialize ( JFrame parent, Command command )
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 	
-    /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID parts:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
+    __NewTSID_JTextArea.setEditable(false);
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
 	// Make 3-high to fit in the edit button...
-        JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Specify to avoid confusion with TSID from original TS."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
-        JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
 		new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
+    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        */
-
+   
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,50);
@@ -347,7 +339,7 @@ private void refresh ()
 {	String NewEnsembleID = "";
     String NewEnsembleName = "";
 	String EnsembleID = "";
-	//String NewTSID = "";
+	String NewTSID = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -355,7 +347,7 @@ private void refresh ()
         NewEnsembleID = props.getValue ( "NewEnsembleID" );
         NewEnsembleName = props.getValue ( "NewEnsembleName" );
         EnsembleID = props.getValue ( "EnsembleID" );
-		//NewTSID = props.getValue ( "NewTSID" );
+		NewTSID = props.getValue ( "NewTSID" );
 		if ( NewEnsembleID != null ) {
 			__NewEnsembleID_JTextField.setText ( NewEnsembleID );
 		}
@@ -379,22 +371,20 @@ private void refresh ()
 				}
 			}
 		}
-        /*
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
-        */
 	}
 	// Regardless, reset the command from the fields...
     NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
     NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-	//NewTSID = __NewTSID_JTextArea.getText().trim();
+	NewTSID = __NewTSID_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "NewEnsembleID=" + NewEnsembleID );
     props.add ( "NewEnsembleName=" + NewEnsembleName );
 	props.add ( "EnsembleID=" + EnsembleID );
-	//props.add ( "NewTSID=" + NewTSID );
+	props.add ( "NewTSID=" + NewTSID );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

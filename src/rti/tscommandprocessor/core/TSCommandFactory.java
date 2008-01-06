@@ -126,7 +126,8 @@ import rti.tscommandprocessor.commands.time.SetInputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
 
 // Time series general commands.
- 
+
+import rti.tscommandprocessor.commands.ts.Add_Command;
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
@@ -137,6 +138,7 @@ import rti.tscommandprocessor.commands.ts.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
+import rti.tscommandprocessor.commands.ts.FillFromTS_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
@@ -238,7 +240,10 @@ throws UnknownCommandException
 
 	// "a" commands...
 
-	if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
+    if ( StringUtil.startsWithIgnoreCase(command_string,"Add") ) {
+        return new Add_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
 		return new analyzePattern_Command ();
 	}
 
@@ -292,6 +297,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillConstant") ) {
 		return new fillConstant_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FillFromTS") ) {
+        return new FillFromTS_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillHistMonthAverage") ) {
 		return new fillHistMonthAverage_Command ();
 	}

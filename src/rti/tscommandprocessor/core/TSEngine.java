@@ -2291,66 +2291,6 @@ throws Exception
 }
 
 /**
-Helper method for fillFromTS() command.
-@param command_tag Command number used for messaging.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private TS do_fillFromTS ( String command_tag, String command )
-throws Exception
-{	// Don't parse with spaces because a TEMPTS may be present.
-	Vector v = StringUtil.breakStringList(command,
-		"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-	String message, routine = "TSEngine.do_fillFromTS";
-	if ( (v == null) || (v.size() < 5) ) {
-		message = "Syntax error in \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the individual tokens of the expression...
-	String dependent = ((String)v.elementAt(1)).trim();
-	String independent = ((String)v.elementAt(2)).trim();
-	String analysis_period_start_string = ((String)v.elementAt(3)).trim();
-	String analysis_period_end_string = ((String)v.elementAt(4)).trim();
-	v = null;
-	// Make sure there are time series available to operate on...
-	int ts_pos = indexOf ( dependent );
-	TS dependentTS = getTimeSeries ( ts_pos );
-	if ( dependentTS == null ) {
-		message = "Unable to find time series \"" + dependent +
-		"\" for fillFromTS().";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	// The independent identifier may or may not have TEMPTS at the front
-	// but is handled by getTimeSeries...
-	TS independentTS = getTimeSeries ( command_tag, independent );
-	if ( independentTS == null ) {
-		message = "Unable to find time series \"" + independent +
-				"\" for fillFromTS().";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-
-	DateTime analysis_period_start =
-		getDateTime(analysis_period_start_string);
-	DateTime analysis_period_end = getDateTime(analysis_period_end_string);
-	// Fill the dependent time series for the analysis period...
-	try {	TSUtil.fillFromTS (	dependentTS, independentTS,
-					analysis_period_start,
-					analysis_period_end );
-		processTimeSeriesAction ( UPDATE_TS, dependentTS, ts_pos );
-	}
-	catch ( Exception e ) {
-		message = "Error executing command: \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		Message.printWarning ( 2, routine, e );
-		throw new Exception ( message );
-	}
-	return dependentTS;
-}
-
-/**
 Helper method to execute the fillMixedStation() command.
 @param command_tag Command number used for messaging.
 @param command Command to process.
@@ -6427,11 +6367,6 @@ throws Exception
 			}
 			ts_action = UPDATE_TS;
 			tokens = null;
-		}
-		else if(command_String.regionMatches(true,0,"fillFromTS",0,10)) {
-			ts = do_fillFromTS(command_tag,command_String);
-			// Update occurs in the method.
-			ts_action = NONE;
 		}
 		else if ( command_String.regionMatches(true,0,"fillInterpolate",0,15) ) {
 			// Fill missing data in the time series using

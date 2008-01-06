@@ -110,7 +110,7 @@ throws InvalidCommandParameterException
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
 				message = "The output file parent directory does " +
-				"not exist: \"" + adjusted_path + "\".";
+				"not exist for: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,

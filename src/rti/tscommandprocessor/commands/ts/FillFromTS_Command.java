@@ -31,18 +31,18 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the SetFromTS() command.
+This class initializes, checks, and runs the FillFromTS() command.
 </p>
 */
-public class SetFromTS_Command extends AbstractCommand implements Command
+public class FillFromTS_Command extends AbstractCommand implements Command
 {
 
 /**
 Constructor.
 */
-public SetFromTS_Command ()
+public FillFromTS_Command ()
 {	super();
-	setCommandName ( "SetFromTS" );
+	setCommandName ( "FillFromTS" );
 }
 
 /**
@@ -58,9 +58,9 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	String SetStart = parameters.getValue ( "SetStart" );
-	String SetEnd = parameters.getValue ( "SetEnd" );
-	String TransferHow = parameters.getValue ( "TransferHow" );
+	String FillStart = parameters.getValue ( "FillStart" );
+	String FillEnd = parameters.getValue ( "FillEnd" );
+	//String TransferHow = parameters.getValue ( "TransferHow" );
 	String warning = "";
     String message;
     
@@ -99,28 +99,29 @@ throws InvalidCommandParameterException
             independent + "\".\n" + "Correct or Cancel.";
     }
     */
- 	if ( (SetStart != null) && !SetStart.equals("") && !SetStart.equalsIgnoreCase("OutputStart")){
-		try {	DateTime.parse(SetStart);
+ 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
+		try {	DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
-            message = "The set start date/time \"" + SetStart + "\" is not a valid date/time.";
+            message = "The fill start date/time \"" + FillStart + "\" is not a valid date/time.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-	if ( (SetEnd != null) && !SetEnd.equals("") && !SetEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( SetEnd);
+	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
+		try {	DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
-            message = "The set end date/time \"" + SetStart + "\" is not a valid date/time.";
+            message = "The fill end date/time \"" + FillStart + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
+    /*
     if ( (TransferHow != null) && !TransferHow.equals("") &&
             !TransferHow.equalsIgnoreCase(TSUtil.TRANSFER_SEQUENTIALLY) &&
             !TransferHow.equalsIgnoreCase(TSUtil.TRANSFER_BYDATETIME) ) {
@@ -131,6 +132,7 @@ throws InvalidCommandParameterException
                 message, "Specify TransferHow as " + TSUtil.TRANSFER_SEQUENTIALLY + " or " +
                 TSUtil.TRANSFER_BYDATETIME ) );
     }
+    */
     
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -140,9 +142,9 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "IndependentTSList" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "IndependentEnsembleID" );
-    valid_Vector.add ( "SetStart" );
-    valid_Vector.add ( "SetEnd" );
-    valid_Vector.add ( "TransferHow" );
+    valid_Vector.add ( "FillStart" );
+    valid_Vector.add ( "FillEnd" );
+    //valid_Vector.add ( "TransferHow" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -163,7 +165,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new SetFromTS_JDialog ( parent, this )).ok();
+	return (new FillFromTS_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -172,7 +174,7 @@ Get the time series to process.
 @param tspos Positions in time series processor time series array.
 */
 private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, int warning_count )
-{   String routine = "SetFromTS_Command.getTimeSeriesToProcess";
+{   String routine = "FillFromTS_Command.getTimeSeriesToProcess";
     TS ts = null;
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
@@ -237,10 +239,9 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "SetFromTS_Command.parseCommand", message;
+	String routine = "FillFromTS_Command.parseCommand", message;
 
-	if ( ((command_string.indexOf('=') > 0) || command_string.endsWith("()")) &&
-            (command_string.indexOf("TransferData=")<0 ) ) {    // One parameter in old style had =
+	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()")) {
         // Current syntax...
         super.parseCommand( command_string);
         // Recently added TSList so handle it properly
@@ -265,9 +266,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( v != null ) {
 			ntokens = v.size();
 		}
-		if ( ntokens != 6 ) {
+		if ( ntokens != 5 ) {
 			// Command name, TSID, and constant...
-			message = "Syntax error in \"" + command_string + "\".  5 parameters expected.";
+			message = "Syntax error in \"" + command_string + "\".  4 parameters expected.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -276,10 +277,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		String TSID = ((String)v.elementAt(1)).trim();
         String IndependentTSID = ((String)v.elementAt(2)).trim();
-		String SetStart = ((String)v.elementAt(3)).trim();
-        String SetEnd = ((String)v.elementAt(4)).trim();
+		String FillStart = ((String)v.elementAt(3)).trim();
+        String FillEnd = ((String)v.elementAt(4)).trim();
         // This parameter is of the format TransferData=...
-        String TransferHow = StringUtil.getToken(((String)v.elementAt(5)).trim(),"=",0,1);
+        //String TransferHow = StringUtil.getToken(((String)v.elementAt(5)).trim(),"=",0,1);
 
 		// Set parameters and new defaults...
 
@@ -296,13 +297,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             parameters.set ( "IndependentTSList", TSListType.ALL_MATCHING_TSID.toString() );
         }
         // Phase out * as default, blank is current default.
-        if ( !SetStart.equals("*")) {
-            parameters.set ( "SetStart", SetStart );
+        if ( !FillStart.equals("*")) {
+            parameters.set ( "FillStart", FillStart );
         }
-        if ( !SetEnd.equals("*")) {
-            parameters.set ( "SetEnd", SetEnd );
+        if ( !FillEnd.equals("*")) {
+            parameters.set ( "FillEnd", FillEnd );
         }
-        parameters.set ( "TransferHow", TransferHow );
+        //parameters.set ( "TransferHow", TransferHow );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}
@@ -321,7 +322,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetFromTS_Command.runCommand", message;
+{	String routine = "FillFromTS_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -541,25 +542,25 @@ CommandWarningException, CommandException
                 "Verify that the IndependentTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
 
-	// Set period...
+	// Fill period...
 
-	String SetStart = parameters.getValue("SetStart");
-	String SetEnd = parameters.getValue("SetEnd");
+	String FillStart = parameters.getValue("FillStart");
+	String FillEnd = parameters.getValue("FillEnd");
 
 	// Figure out the dates to use for the analysis...
-	DateTime SetStart_DateTime = null;
-	DateTime SetEnd_DateTime = null;
+	DateTime FillStart_DateTime = null;
+	DateTime FillEnd_DateTime = null;
 
 	try {
-	if ( SetStart != null ) {
+	if ( FillStart != null ) {
 		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", SetStart );
+		request_params.set ( "DateTime", FillStart );
 		bean = null;
 		try {
             bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting SetStart DateTime(DateTime=" +	SetStart + ") from processor.";
+			message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -572,7 +573,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for SetStart DateTime(DateTime=" + SetStart + "\") returned from processor.";
+			message = "Null value for FillStart DateTime(DateTime=" + FillStart + "\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -581,12 +582,12 @@ CommandWarningException, CommandException
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetStart_DateTime = (DateTime)prop_contents;
+		else {	FillStart_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
 	catch ( Exception e ) {
-		message = "SetStart \"" + SetStart + "\" is invalid.";
+		message = "FillStart \"" + FillStart + "\" is invalid.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -597,15 +598,15 @@ CommandWarningException, CommandException
 	}
 	
 	try {
-	if ( SetEnd != null ) {
+	if ( FillEnd != null ) {
 		request_params = new PropList ( "" );
-		request_params.set ( "DateTime", SetEnd );
+		request_params.set ( "DateTime", FillEnd );
 		bean = null;
 		try {
             bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting SetEnd DateTime(DateTime=" + SetEnd + "\") from processor.";
+			message = "Error requesting FillEnd DateTime(DateTime=" + FillEnd + "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -618,7 +619,7 @@ CommandWarningException, CommandException
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for SetEnd DateTime(DateTime=" + SetEnd +	"\") returned from processor.";
+			message = "Null value for FillEnd DateTime(DateTime=" + FillEnd +	"\") returned from processor.";
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -627,12 +628,12 @@ CommandWarningException, CommandException
                             message, "Specify a valid date/time or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetEnd_DateTime = (DateTime)prop_contents;
+		else {	FillEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
 	catch ( Exception e ) {
-		message = "SetEnd \"" + SetEnd + "\" is invalid.";
+		message = "FillEnd \"" + FillEnd + "\" is invalid.";
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
@@ -652,11 +653,13 @@ CommandWarningException, CommandException
 
 	// Now process the time series...
 
+    /*
     String TransferHow = parameters.getValue("TransferHow");
-	PropList setprops = new PropList ( "SetFromTS" );
+	PropList setprops = new PropList ( "FillFromTS" );
 	if ( (TransferHow != null) && !TransferHow.equals("") ) {
 		setprops.set ( "TransferHow", TransferHow );
 	}
+    */
 
 	TS ts = null;
     TS independent_ts = null;
@@ -696,13 +699,13 @@ CommandWarningException, CommandException
             continue;
         }
         
-		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" from \"" +
+		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" from \"" +
                 independent_ts.getIdentifier() + "\"." );
 		try {
-            TSUtil.setFromTS ( ts, independent_ts, SetStart_DateTime, SetEnd_DateTime, setprops );
+            TSUtil.fillFromTS ( ts, independent_ts, FillStart_DateTime, FillEnd_DateTime );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" from \"" +
+			message = "Unexpected error filling time series \"" + ts.getIdentifier() + "\" from \"" +
                 independent_ts.getIdentifier() + "\".";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);

@@ -1,31 +1,3 @@
-// ----------------------------------------------------------------------------
-// writeNWSRFSESPTraceEnsemble_JDialog - editor for
-//					writeNWSRFSESPTraceEnsemble()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2003-11-24	Steven A. Malers, RTi	Initial version (copy and modify
-//					writeDateValue_JDialog).
-// 2004-02-17	SAM, RTi		Fix bug where directory from file
-//					selection was not getting set as the
-//					last dialog directory in JGUIUtil.
-// 2004-05-27	SAM, RTi		* Change name from writeESP... to
-//					  writeNWSRFSESP...
-//					* Change to variable parameter notation.
-//					* Expand comments to stress that time
-//					  series must be traces.
-// 2004-05-31	SAM, RTi		* Add TSList parameter to specify which
-//					  time series should be written.
-// 2004-06-01	SAM, RTi		* Add properties to pass to the ESP
-//					  trace ensemble code to control the
-//					  write.
-// 2006-01-17	J. Thomas Sapienza, RTi	* Moved from TSTool package.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.nwsrfs;
 
 import java.awt.FlowLayout;
@@ -52,6 +24,8 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.io.File;
 
@@ -67,55 +41,44 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-
 import RTi.Util.Message.Message;
 
-import RTi.Util.String.StringUtil;
-
+/**
+Editor dialog for WriteNwsrfsEspTraceEnsemble() command.
+*/
 public class writeNWSRFSESPTraceEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private final String __SELECTED_TS = "SelectedTS";
-private final String __ALL_TS = "AllTS";
+
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Add Working Directory";
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__browse_JButton = null,// Browse Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Button to add/remove path
-private Command		__command = null;
-private String		__working_dir = null;	// Working directory.
-private JTextArea	__Command_JTextArea=null;// Command as TextField
-private JTextField	__OutputFile_JTextField = null; // Field for time series
-						// identifier
-private JTextField	__CarryoverGroup_JTextField = null;
-						// Field for carryover group
-private JTextField	__ForecastGroup_JTextField = null;
-						// Field for forecast group
-private JTextField	__Segment_JTextField = null;
-						// Field for segment ID
-private JTextField	__SegmentDescription_JTextField = null;
-						// Field for segment description
-private JTextField	__Latitude_JTextField = null;
-						// Field for latitude
-private JTextField	__Longitude_JTextField = null;
-						// Field for longitude
-private JTextField	__RFC_JTextField = null;// Field for RFC
+private writeNWSRFSESPTraceEnsemble_Command	__command = null;
+private String __working_dir = null;	// Working directory.
+private JTextArea __Command_JTextArea=null;// Command as TextField
+private JTextField __OutputFile_JTextField = null;
+private JTextField __CarryoverGroup_JTextField = null;
+private JTextField __ForecastGroup_JTextField = null;// Field for forecast group
+private JTextField __Segment_JTextField = null;// Field for segment ID
+private JTextField __SegmentDescription_JTextField = null;	// Field for segment description
+private JTextField __Latitude_JTextField = null;// Field for latitude
+private JTextField __Longitude_JTextField = null;	// Field for longitude
+private JTextField __RFC_JTextField = null;// Field for RFC
 private SimpleJComboBox	__TSList_JComboBox = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;			
-private final String
-	__REMOVE_WORKING_DIRECTORY = "Remove Working Directory",
-	__ADD_WORKING_DIRECTORY = "Add Working Directory";
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false;			
 
 /**
-writeNWSRFSESPTraceEnsemble_JDialog constructor.
+Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
-@param app_PropList Properties from the application.
-@param command Time series command to parse.
-@param tsids Time series identifiers for available time series.
+@param command Command to edit.
 */
 public writeNWSRFSESPTraceEnsemble_JDialog ( JFrame parent, Command command )
 {
@@ -131,20 +94,16 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+            fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
-		fc.setDialogTitle(
-			"Select NWSRFS ESP Trace Ensemble File to Write");
-		SimpleFileFilter sff = new SimpleFileFilter("CS",
-			"ESP Conditional Trace Ensemble File");
+		fc.setDialogTitle( "Select NWSRFS ESP Trace Ensemble File to Write");
+		SimpleFileFilter sff = new SimpleFileFilter("CS", "ESP Conditional Trace Ensemble File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -174,22 +133,15 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			__ADD_WORKING_DIRECTORY) ) {
-			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__OutputFile_JTextField.getText() ) );
+		if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
+			__OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			__REMOVE_WORKING_DIRECTORY) ) {
-			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__OutputFile_JTextField.getText() ) );
+		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+			try {
+                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,__OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"writeNWSRFSESPTraceEnsemble_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1, "writeNWSRFSESPTraceEnsemble_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -197,86 +149,96 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+     if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
+}
+
+/**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	String file = __OutputFile_JTextField.getText();
-	String Latitude = __Latitude_JTextField.getText();
-	String Longitude = __Longitude_JTextField.getText();
-	String routine = "writeNWSRFSESPTraceEnsemble_JDialog.checkInput";
-	String warning = "";
-	__error_wait = false;
-	// Adjust the working directory that was passed in by the specified
-	// directory.  If the directory does not exist, warn the user...
-	try {	String adjusted_path = IOUtil.adjustPath ( __working_dir, file);
-		File f = new File ( adjusted_path );
-		File f2 = new File ( f.getParent() );
-		if ( !f2.exists() ) {
-			warning += "\nThe NWSRFS ESP trace " +
-			"ensemble parent directory does not exist:\n" +
-			"    " + adjusted_path + "\n" +
-		  	"Correct or Cancel.";
-		}
-		f = null;
-		f2 = null;
-	}
-	catch ( Exception e ) {
-		warning += "\nThe working directory:\n" +
-		"    \"" + __working_dir + "\"\ncannot be adjusted using:\n" +
-		"    \"" + file + "\".\n" +
-		"Correct the file or Cancel.";
-	}
+{	// Put together a list of parameters to check...
+    PropList props = new PropList ( "" );
+    String OutputFile = __OutputFile_JTextField.getText().trim();
+    String CarryoverGroup = __CarryoverGroup_JTextField.getText().trim();
+    String ForecastGroup = __ForecastGroup_JTextField.getText().trim();
+    String Segment = __Segment_JTextField.getText().trim();
+    String SegmentDescription = __SegmentDescription_JTextField.getText().trim();
+    String Latitude = __Latitude_JTextField.getText().trim();
+    String Longitude = __Longitude_JTextField.getText().trim();
+    String RFC = __RFC_JTextField.getText().trim();
+    String TSList = __TSList_JComboBox.getSelected().trim();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected().trim();
+    __error_wait = false;
 
-	try {	String adjusted_path = IOUtil.adjustPath ( __working_dir, file);
-		File f = new File ( adjusted_path );
-		String filename = f.getName();
-		Vector parts = StringUtil.breakStringList(filename, ".", 0);
-		if (parts.size() != 5) {
-			warning += "\nThe file name \"" + filename 
-				+ "\" does not match the expected 5-part ESP "
-				+ "filename format.  Correct the filename or "
-				+ "cancel.";
-		}
-	}		
-	catch ( Exception e ) {
-		warning += "\nThe working directory:\n" +
-		"    \"" + __working_dir + "\"\ncannot be adjusted using:\n" +
-		"    \"" + file + "\".\n" +
-		"Correct the file or Cancel.";
-	}
-
-	// Make sure the filename matches the 5-part ESPADP format standard.
-	// Currently, nothing is checked apart from whether there are
-	// 5 periods.  Invalid units and intervals can still be entered.
-	
-	if ( (Latitude.length() > 0) && !StringUtil.isDouble(Latitude) ) {
-		warning += "\nThe latitude is not a number.";
-	}
-	if ( (Longitude.length() > 0) && !StringUtil.isDouble(Longitude) ) {
-		warning += "\nThe longitude is not a number.";
-	}
-	if ( warning.length() > 0 ) {
-		__error_wait = true;
-		Message.printWarning ( 1, routine, warning );
-	}
+    if ( OutputFile.length() > 0 ) {
+        props.set ( "OutputFile", OutputFile );
+    }
+    if ( CarryoverGroup.length() > 0 ) {
+        props.set ( "CarryoverGroup", CarryoverGroup );
+    }
+    if ( ForecastGroup.length() > 0 ) {
+        props.set ( "ForecastGroup", ForecastGroup );
+    }
+    if ( Segment.length() > 0 ) {
+        props.set ( "Segment", Segment );
+    }
+    if ( SegmentDescription.length() > 0 ) {
+        props.set ( "SegmentDescription", SegmentDescription );
+    }
+    if ( Latitude.length() > 0 ) {
+        props.set ( "Latitude", Latitude );
+    }
+    if ( Longitude.length() > 0 ) {
+        props.set ( "Longitude", Longitude );
+    }
+    if ( RFC.length() > 0 ) {
+        props.set ( "RFC", RFC );
+    }
+    if ( TSList.length() > 0 ) {
+        props.set ( "TSList", TSList );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
+    try {
+        // This will warn the user...
+        __command.checkCommandParameters ( props, null, 1 );
+    }
+    catch ( Exception e ) {
+        // The warning would have been printed in the check code.
+        __error_wait = true;
+    }
 }
 
 /**
 Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
-private void commitEdits() {
+private void commitEdits()
+{
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String CarryoverGroup = __CarryoverGroup_JTextField.getText().trim();
 	String ForecastGroup = __ForecastGroup_JTextField.getText().trim();
 	String Segment = __Segment_JTextField.getText().trim();
-	String SegmentDescription = __SegmentDescription_JTextField.getText()
-		.trim();
+	String SegmentDescription = __SegmentDescription_JTextField.getText().trim();
 	String Latitude = __Latitude_JTextField.getText().trim();
 	String Longitude = __Longitude_JTextField.getText().trim();
 	String RFC = __RFC_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected().trim();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected().trim();
 
 	__command.setCommandParameter("OutputFile", OutputFile);
 	__command.setCommandParameter("CarryoverGroup", CarryoverGroup);
@@ -287,6 +249,7 @@ private void commitEdits() {
 	__command.setCommandParameter("Longitude", Longitude);
 	__command.setCommandParameter("RFC", RFC);
 	__command.setCommandParameter("TSList", TSList);
+    __command.setCommandParameter("EnsembleID", EnsembleID);
 }
 
 /**
@@ -315,166 +278,155 @@ throws Throwable
 /**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
-@param title Dialog title.
-@param app_PropList Properties from the application.
-@param command Vector of String containing the time series command, which
-should have a time series identifier and optionally comments.
-@param tsids Time series identifiers from
-TSEngine.getTSIdentifiersFromCommands().
+@param command command to edit.
 */
-private void initialize (	JFrame parent, Command command)
-{	__command = command;
+private void initialize ( JFrame parent, Command command )
+{	__command = (writeNWSRFSESPTraceEnsemble_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(1,2,1,2);
+    Insets insetsTLBR = new Insets(1,2,1,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command writes in-memory time series to an NWSRFS ESP " +
-		"trace ensemble file."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This command writes time series to an NWSRFS ESP trace ensemble file."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Currently, only conditional simulation (CS) trace files " +
-		"can be written."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Currently, only conditional simulation (CS) trace files can be written."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time series to write must be traces having a consistent"+
-		" period, and the sequence numbers must be defined."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If a time series list is specified (NOT using an ensemble ID), the time series to write " +
+        "must be traces having a consistent period, and the sequence numbers must be defined."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example, traces read from a DateValue file or created " +
-		"with the createTraces() command can be processed."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The file can be specified using a full or " +
-		"relative path (relative to the working directory)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The file can be specified using a full or relative path (relative to the working directory)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel (	"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The Browse button can be used to select an existing file " +
 		"to overwrite (or edit the file name after selection)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"To be understood by the NWS ESPADP program, the file name" +
-		" should adhere to the format:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"To be understood by the NWS ESPADP program, the file name should adhere to the format:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"   Segment.Location.DataType.HH.CS"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"where the DataType is an NWSRFS data type and the interval "+
-		"HH is padded with zeros."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"where the DataType is an NWSRFS data type and the interval HH is padded with zeros."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"File to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "File to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Carryover group:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Carryover group:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__CarryoverGroup_JTextField = new JTextField(10);
 	__CarryoverGroup_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __CarryoverGroup_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Carryover group (optional)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Carryover group (optional)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Forecast group:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Forecast group:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ForecastGroup_JTextField = new JTextField(10);
 	__ForecastGroup_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __ForecastGroup_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Forecast group (optional)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Forecast group (optional)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Segment:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Segment:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Segment_JTextField = new JTextField(10);
 	__Segment_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __Segment_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Segment (optional) - default is 1st part of file name."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Segment description:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Segment description:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SegmentDescription_JTextField = new JTextField(10);
 	__SegmentDescription_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __SegmentDescription_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Segment description (optional) - default is from first time " +
-		"series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Segment description (optional) - default is from first time eries."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Latitude:"),
+     JGUIUtil.addComponent(main_JPanel, new JLabel ("Latitude:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Latitude_JTextField = new JTextField(10);
 	__Latitude_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __Latitude_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Latitude, decimal degrees (optional)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Longitude:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Longitude:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Longitude_JTextField = new JTextField(10);
 	__Longitude_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __Longitude_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Longitude, decimal degrees (optional)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("RFC:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("RFC:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RFC_JTextField = new JTextField(10);
 	__RFC_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __RFC_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"River Forecast Center abbreviation (optional)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	Vector tslist_Vector = new Vector();
 	tslist_Vector.addElement ( "" );
-	tslist_Vector.addElement ( __SELECTED_TS );
-	tslist_Vector.addElement ( __ALL_TS );
+	tslist_Vector.addElement ( TSListType.SELECTED_TS.toString() );
+	tslist_Vector.addElement ( TSListType.ALL_TS.toString() );
+    tslist_Vector.addElement ( TSListType.ENSEMBLE_ID.toString() );
 	__TSList_JComboBox = new SimpleJComboBox(false);
 	__TSList_JComboBox.setData ( tslist_Vector );
 	__TSList_JComboBox.addItemListener (this);
 	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Indicates the time series to output.  Default is AllTS."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea(4, 55);
 	__Command_JTextArea.setLineWrap ( true );
@@ -484,6 +436,7 @@ private void initialize (	JFrame parent, Command command)
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South Panel: North
@@ -493,10 +446,8 @@ private void initialize (	JFrame parent, Command command)
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
-		__path_JButton = new SimpleJButton(__REMOVE_WORKING_DIRECTORY,
-			__REMOVE_WORKING_DIRECTORY, this);
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton(__RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
@@ -504,19 +455,20 @@ private void initialize (	JFrame parent, Command command)
 	__ok_JButton = new SimpleJButton("OK", "OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	setTitle("Edit writeNWSRFSESPTraceEnsemble() Command");
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e) {
+public void itemStateChanged (ItemEvent e)
+{   checkGUIState();
 	refresh();
 }
 
@@ -571,6 +523,7 @@ private void refresh ()
 	String Longitude = "";
 	String RFC = "";
 	String TSList = "";
+    String EnsembleID = "";
 	PropList props = null;
 	__error_wait = false;
 	if ( __first_time ) {
@@ -585,6 +538,7 @@ private void refresh ()
 		Longitude = props.getValue("Longitude");
 		RFC = props.getValue("RFC");
 		TSList = props.getValue("TSList");
+        EnsembleID = props.getValue ( "EnsembleID" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText ( OutputFile );
 		}
@@ -627,6 +581,21 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
+       if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -638,6 +607,7 @@ private void refresh ()
 	Longitude = __Longitude_JTextField.getText().trim();
 	RFC = __RFC_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected().trim();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 
 	props = new PropList(__command.getCommandName());
 	props.add("OutputFile=" + OutputFile);
@@ -649,6 +619,7 @@ private void refresh ()
 	props.add("Longitude=" + Longitude);
 	props.add("RFC=" + RFC);
 	props.add("TSList=" + TSList);
+    props.add("EnsembleID=" + EnsembleID );
 	
 	__Command_JTextArea.setText(__command.toString(props));
 
@@ -656,8 +627,7 @@ private void refresh ()
 }
 
 /**
-Refresh the PathControl text based on the contents of the input text field
-contents.
+Refresh the PathControl text based on the contents of the input text field contents.
 */
 private void refreshPathControl()
 {
@@ -669,16 +639,15 @@ private void refreshPathControl()
 		return;
 	}
 
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText( __REMOVE_WORKING_DIRECTORY);
+			__path_JButton.setText( __RemoveWorkingDirectory);
 		}
 		else {	
-			__path_JButton.setText(__ADD_WORKING_DIRECTORY);
+			__path_JButton.setText(__AddWorkingDirectory);
 		}
 	}
 }

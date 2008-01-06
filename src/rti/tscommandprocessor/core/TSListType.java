@@ -32,6 +32,11 @@ public class TSListType {
 	public static TSListType SELECTED_TS = new TSListType(4, "SelectedTS");
     
     /**
+     * SpecifiedTSID indicates that all specified time series should be in the list. 
+     */
+    public static TSListType SPECIFIED_TSID = new TSListType(4, "SpecifiedTSID");
+    
+    /**
 	 * Integer value of the type.
 	 * @uml.property  name="__type"
 	 */

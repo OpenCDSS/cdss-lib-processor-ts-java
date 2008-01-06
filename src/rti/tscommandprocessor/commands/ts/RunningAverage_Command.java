@@ -38,10 +38,14 @@ public class RunningAverage_Command extends AbstractCommand implements Command
 {
 
 /**
-Strings used with the command.
+Values for the AverageMethod parameter.
 */
 protected final String _Centered = "Centered";
+protected final String _Future = "Future";
+protected final String _FutureInclusive = "FutureInclusive";
 protected final String _NYear = "NYear";
+protected final String _Previous = "Previous";
+protected final String _PreviousInclusive = "PreviousInclusive";
 
 /**
 Constructor.
@@ -82,7 +86,11 @@ throws InvalidCommandParameterException
     */
 	if ( (AverageMethod != null) && !AverageMethod.equals("") &&
 		!AverageMethod.equalsIgnoreCase(_Centered) &&
-		!AverageMethod.equalsIgnoreCase(_NYear) ) {
+        !AverageMethod.equalsIgnoreCase(_Future) &&
+        !AverageMethod.equalsIgnoreCase(_FutureInclusive) &&
+		!AverageMethod.equalsIgnoreCase(_NYear) &&
+        !AverageMethod.equalsIgnoreCase(_Previous) &&
+        !AverageMethod.equalsIgnoreCase(_PreviousInclusive) ) {
         message = "The AverageMethod parameter (" + AverageMethod + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -360,8 +368,20 @@ CommandWarningException, CommandException
             if ( AverageMethod.equalsIgnoreCase( _Centered) ) {
                 newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_CENTER );
             }
-            else {
+            else if ( AverageMethod.equalsIgnoreCase( _Future) ) {
+                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_FUTURE );
+            }
+            else if ( AverageMethod.equalsIgnoreCase( _FutureInclusive) ) {
+                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_FUTURE_INCLUSIVE );
+            }
+            else if ( AverageMethod.equalsIgnoreCase( _NYear) ) {
                 newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_NYEAR );
+            }
+            else if ( AverageMethod.equalsIgnoreCase( _Previous) ) {
+                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_PREVIOUS );
+            }
+            else if ( AverageMethod.equalsIgnoreCase( _PreviousInclusive) ) {
+                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_PREVIOUS_INCLUSIVE );
             }
             // Because the time series is a new instance, replace in the processor...
             request_params = new PropList ( "" );

@@ -31,18 +31,25 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the SetFromTS() command.
+This class initializes, checks, and runs the Add() command.
 </p>
 */
-public class SetFromTS_Command extends AbstractCommand implements Command
+public class Add_Command extends AbstractCommand implements Command
 {
+
+/**
+Values for the HandleMissingHow parameter.
+*/
+protected final String _IgnoreMissing = "IgnoreMissing";
+protected final String _SetMissingIfOtherMissing = "SetMissingIfOtherMissing";
+protected final String _SetMissingIfAnyMissing = "SetMissingIfAnyMissing";
 
 /**
 Constructor.
 */
-public SetFromTS_Command ()
+public Add_Command ()
 {	super();
-	setCommandName ( "SetFromTS" );
+	setCommandName ( "Add" );
 }
 
 /**
@@ -702,8 +709,7 @@ CommandWarningException, CommandException
             TSUtil.setFromTS ( ts, independent_ts, SetStart_DateTime, SetEnd_DateTime, setprops );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" from \"" +
-                independent_ts.getIdentifier() + "\".";
+			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" to constant.";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
 			Message.printWarning(3,routine,e);

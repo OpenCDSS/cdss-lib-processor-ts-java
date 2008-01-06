@@ -18,6 +18,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -67,7 +68,7 @@ Constructor.
 public writeNWSRFSESPTraceEnsemble_Command ()
 {
 	super();
-	setCommandName ( "WriteNWSRFSESPTraceEnsemble" );
+	setCommandName ( "WriteNwsrfsEspTraceEnsemble" );
 }
 
 /**
@@ -96,10 +97,10 @@ throws InvalidCommandParameterException
 	//String ForecastGroup = parameters.getValue("ForecastGroup");
 	//String Segment = parameters.getValue("Segment");
 	//String SegmentDescription = parameters.getValue("SegmentDescription");
-	//String Latitude = parameters.getValue("Latitude");
-	//String Longitude = parameters.getValue("Longitude");
+	String Latitude = parameters.getValue("Latitude");
+	String Longitude = parameters.getValue("Longitude");
 	//String RFC = parameters.getValue("RFC");
-	String TSList = parameters.getValue("TSList");
+	//String TSList = parameters.getValue("TSList");
 	
 	// OutputFile
     if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
@@ -151,9 +152,33 @@ throws InvalidCommandParameterException
         }
     }
 	
-	if( TSList == null || TSList.length() == 0 ) {
-		TSList = "AllTS";
-	}
+    if ( (Latitude != null) && (Latitude.length() > 0) && !StringUtil.isDouble(Latitude) ) {
+        message = "The latitude is not a number.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the latitude as a number -180 to 180." ) );
+    }
+    if ( (Longitude != null) && (Longitude.length() > 0) && !StringUtil.isDouble(Longitude) ) {
+        message = "The longitude is not a number.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the longitude as a number -180 to 180." ) );
+    }
+    
+    // Make sure the filename matches the 5-part ESPADP format standard.
+    // Currently, nothing is checked apart from whether there are
+    // 4 periods.  Invalid units and intervals can still be entered.
+    
+    int nperiods = StringUtil.patternCount( OutputFile, "." );
+    if ( nperiods != 4) {
+        message = "The output file name does not follow the standard.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the output file name similar to: SEGID.TSID.TSTYPE.06.CS" ) );
+    }
     
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "OutputFile" );
@@ -165,6 +190,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Longitude" );
     valid_Vector.add ( "RFC" );
     valid_Vector.add ( "TSList" );
+    valid_Vector.add ( "EnsembleID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -295,23 +321,30 @@ throws InvalidCommandParameterException,
 	String Longitude = parameters.getValue ( "Longitude" );
 	String RFC = parameters.getValue ( "RFC" );
 	String TSList = parameters.getValue ( "TSList" );
-	
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
 	if ( (TSList == null) || (TSList.length() == 0) ) {
-		// Default...
-		TSList = "AllTS";
+        if ( (EnsembleID != null) && !EnsembleID.equals("") ) {
+            TSList = TSListType.ENSEMBLE_ID.toString();
+        }
+        else {
+            // No ensemble so use old default...
+            TSList = TSListType.ALL_TS.toString();
+        }
 	}
 		
 	Vector tslist = null;
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	//request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessor processor = getCommandProcessor();
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
 		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList + "\" from processor).";
+		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList + "\", EnsembleID=\"" +
+        EnsembleID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -323,7 +356,8 @@ throws InvalidCommandParameterException,
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to scale using TSList=\"" + TSList + ".";
+		message = "Unable to find time series to scale using TSList=\"" + TSList + "\", EnsembleID=\"" +
+        EnsembleID + "\".";
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -334,7 +368,8 @@ throws InvalidCommandParameterException,
 	}
 	else {	tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
-			message = "Unable to find time series to write using TSList=\"" + TSList + ".";
+			message = "Unable to find time series to write using TSList=\"" + TSList + "\", EnsembleID=\"" +
+			EnsembleID + "\"";
 			Message.printWarning ( log_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count), routine, message );
@@ -346,7 +381,8 @@ throws InvalidCommandParameterException,
 	}
 	
 	if ((tslist == null) || (tslist.size() == 0)) {
-		message = "Unable to find time series to write using TSList=\"" + TSList + "\".";
+		message = "Unable to find time series to write using TSList=\"" + TSList + "\", EnsembleID=\"" +
+        EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
@@ -390,7 +426,7 @@ throws InvalidCommandParameterException,
         setOutputFile ( new File(OutputFile_full));
 	}
 	catch (Exception e) {
-		message = "An unexpected error occurred while writing to the file \"" + OutputFile_full + "\".";
+		message = "Unexpected error occurred while writing to the file \"" + OutputFile_full + "\".";
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag(command_tag, 
 				++warning_count), routine, message);
@@ -446,6 +482,7 @@ public String toString ( PropList props )
 	String Longitude = props.getValue ( "Longitude" );
 	String RFC = props.getValue ( "RFC" );
 	String TSList = props.getValue ( "TSList" );
+    String EnsembleID = props.getValue ( "EnsembleID" );
 
 	StringBuffer b = new StringBuffer ();
 
@@ -517,6 +554,12 @@ public String toString ( PropList props )
 		}
 		b.append("TSList=\"" + TSList + "\"");
 	}
+    if ((EnsembleID != null) && (EnsembleID.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("EnsembleID=\"" + EnsembleID + "\"");
+    }
 
 	return getCommandName() + "(" + b.toString() + ")";
 }

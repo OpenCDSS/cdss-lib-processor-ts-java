@@ -33,7 +33,6 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 /**
 Editor dialog for the RunningAverage() command.
@@ -41,6 +40,11 @@ Editor dialog for the RunningAverage() command.
 public class RunningAverage_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
+
+private final String __BRACKET_LABEL_CENTERED = "Number of intervals on each side:";
+private final String __BRACKET_LABEL_NYEAR = "Number of years:";
+private final String __BRACKET_LABEL_PREVIOUS = "Number of previous intervals:";
+private final String __BRACKET_LABEL_FUTURE = "Number of future intervals:";
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
@@ -110,11 +114,20 @@ private void checkGUIState ()
         __EnsembleID_JLabel.setEnabled ( false );
     }
     
-    if (  __AverageMethod_JComboBox.getSelected().equalsIgnoreCase( __command._Centered ) ) {
-        __Bracket_JLabel.setText ( "Number of intervals on each side:" );
+    String AverageMethod = __AverageMethod_JComboBox.getSelected();
+    if ( AverageMethod.equalsIgnoreCase( __command._Centered ) ) {
+        __Bracket_JLabel.setText ( __BRACKET_LABEL_CENTERED );
     }
-    else {
-        __Bracket_JLabel.setText ( "Number of years to average:" );
+    else if ( AverageMethod.equalsIgnoreCase( __command._NYear ) ){
+        __Bracket_JLabel.setText ( __BRACKET_LABEL_NYEAR );
+    }
+    else if ( AverageMethod.equalsIgnoreCase( __command._Previous) ||
+            AverageMethod.equalsIgnoreCase( __command._PreviousInclusive) ) {
+        __Bracket_JLabel.setText ( __BRACKET_LABEL_PREVIOUS );
+    }
+    else if ( AverageMethod.equalsIgnoreCase( __command._Future) ||
+            AverageMethod.equalsIgnoreCase( __command._FutureInclusive) ) {
+        __Bracket_JLabel.setText ( __BRACKET_LABEL_FUTURE );
     }
 }
 
@@ -213,6 +226,10 @@ private void initialize ( JFrame parent, Command command )
         "A centered running average averages the values at a date/time and on either side."), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Previous and future running averages use points only on one side of the current point, and optionally" +
+        " inclusive of the current point."), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "An N-year running average averages the values for the date/time and previous years (N years total)."), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -236,12 +253,16 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AverageMethod_JComboBox = new SimpleJComboBox ( false );
 	__AverageMethod_JComboBox.addItem ( __command._Centered );
+    __AverageMethod_JComboBox.addItem ( __command._Future );
+    __AverageMethod_JComboBox.addItem ( __command._FutureInclusive );
 	__AverageMethod_JComboBox.addItem ( __command._NYear );
+    __AverageMethod_JComboBox.addItem ( __command._Previous );
+    __AverageMethod_JComboBox.addItem ( __command._PreviousInclusive );
 	__AverageMethod_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __AverageMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	__Bracket_JLabel = new JLabel ( "Number of intervals on each side:" );
+	__Bracket_JLabel = new JLabel ( __BRACKET_LABEL_CENTERED );
     JGUIUtil.addComponent(main_JPanel, __Bracket_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Bracket_JTextField = new JTextField ( 10 );

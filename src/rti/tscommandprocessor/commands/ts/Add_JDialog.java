@@ -24,10 +24,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -39,7 +37,6 @@ import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.GUI.SimpleJMenuItem;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
@@ -64,6 +61,7 @@ private JLabel __AddTSID_JLabel = null;
 private SimpleJComboBox __AddTSID_JComboBox = null;
 private JLabel __AddEnsembleID_JLabel = null;
 private SimpleJComboBox __AddEnsembleID_JComboBox = null;
+private JLabel __AddSpecifiedTSID_JLabel = null;
 private DefaultListModel __AddSpecifiedTSID_JListModel = null;
 private JList __AddSpecifiedTSID_JList= null;
 private SimpleJComboBox	__HandleMissingHow_JComboBox = null; // Indicates how to handle missing data.
@@ -86,8 +84,7 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	String s = event.getActionCommand();
-	Object o = event.getSource();
+{	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -107,7 +104,8 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState ()
 {
     String TSList = __AddTSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __AddTSID_JComboBox.setEnabled(true);
         __AddTSID_JLabel.setEnabled ( true );
     }
@@ -123,45 +121,70 @@ private void checkGUIState ()
         __AddEnsembleID_JComboBox.setEnabled(false);
         __AddEnsembleID_JLabel.setEnabled ( false );
     }
+    if ( TSListType.SPECIFIED_TSID.equals(TSList)) {
+        __AddSpecifiedTSID_JList.setEnabled(true);
+        __AddSpecifiedTSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __AddSpecifiedTSID_JList.setEnabled(false);
+        __AddSpecifiedTSID_JLabel.setEnabled ( false );
+    }
 }
 
 /**
 Check the user input for errors and set __error_wait accordingly.
 */
 private void checkInput ()
-{	String TSID = __TSID_JComboBox.getSelected();
-	String TSList = __AddTSList_JComboBox.getSelected();
+{	// Put together a list of parameters to check...
+    PropList props = new PropList ( "" );
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String AddTSList = __AddTSList_JComboBox.getSelected();
+    String AddTSID = __AddTSID_JComboBox.getSelected();
+    String AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
+    String AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
+    //String SetStart = __SetStart_JTextField.getText().trim();
+   // String SetEnd = __SetEnd_JTextField.getText().trim();
+    String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    __error_wait = false;
+
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
+    if ( AddTSList.length() > 0 ) {
+        props.set ( "AddTSList", AddTSList );
+    }
+    if ( AddTSID.length() > 0 ) {
+        props.set ( "AddTSID", AddTSID );
+    }
+    if ( AddSpecifiedTSID.length() > 0 ) {
+        props.set ( "AddSpecifiedTSID", AddSpecifiedTSID );
+    }
+    if ( AddEnsembleID.length() > 0 ) {
+        props.set ( "AddEnsembleID", AddEnsembleID );
+    }
     /*
-	String warning = "";
-	if (	TSList.equalsIgnoreCase ( __SpecifiedTS) &&
-		(JGUIUtil.indexOf(__AddSpecifiedTSID_JList, TSID, true, true) >= 0) ) {
-		if ( __command.equalsIgnoreCase("add") ) {
-			warning +=
-			"\nTime series to receive sum \"" + TSID +
-			"\" is the same.\nas a time series to be added.\n" +
-			"Correct or Cancel.";
-		}
-		else {	warning +=
-			"\nTime series to receive difference \"" + TSID +
-			"\" is the same.\nas a time series to be " +
-			"subtracted.\n" +
-			"Correct or Cancel.";
-		}
-	}
-	if ( !TSList.equalsIgnoreCase ( __SpecifiedTS) ) {
-		int [] selected = __AddSpecifiedTSID_JList.getSelectedIndices();
-		if ( (selected != null) && (selected.length > 0) ) {
-			warning +=
-			"\nTS List of \"" + TSList +
-			"\" does not require list selections.  Check input.";
-		}
-	}
-	if ( warning.length() > 0 ) {
-		__error_wait = true;
-		Message.printWarning ( 1, __command + "JDialog.checkInput",
-			warning );
-	}
+    if ( SetStart.length() > 0 ) {
+        props.set ( "SetStart", SetStart );
+    }
+    if ( SetEnd.length() > 0 ) {
+        props.set ( "SetEnd", SetEnd );
+    }
     */
+    if ( HandleMissingHow.length() > 0 ) {
+        props.set ( "HandleMissingHow", HandleMissingHow );
+    }
+    try {
+        // This will warn the user...
+        __command.checkCommandParameters ( props, null, 1 );
+    }
+    catch ( Exception e ) {
+        // The warning would have been printed in the check code.
+        __error_wait = true;
+    }
 }
 
 /**
@@ -169,25 +192,26 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{   /*String TSList = __TSList_JComboBox.getSelected();
-    String TSID = __TSID_JComboBox.getSelected();
+{   String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
-    String IndependentTSID = __IndependentTSID_JComboBox.getSelected();
-    String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected(); 
-    String SetStart = __SetStart_JTextField.getText().trim();
-    String SetEnd = __SetEnd_JTextField.getText().trim();
-    String TransferHow = __TransferHow_JComboBox.getSelected();
-    __command.setCommandParameter ( "TSList", TSList );
+    String AddTSList = __AddTSList_JComboBox.getSelected();
+    String AddTSID = __AddTSID_JComboBox.getSelected();
+    String AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
+    String AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
+    String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    //String SetStart = __SetStart_JTextField.getText().trim();
+    //String SetEnd = __SetEnd_JTextField.getText().trim();
+    //String TransferHow = __TransferHow_JComboBox.getSelected();
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "IndependentTSList", IndependentTSList );
-    __command.setCommandParameter ( "IndependentTSID", IndependentTSID );
-    __command.setCommandParameter ( "IndependentEnsembleID", IndependentEnsembleID );
-    __command.setCommandParameter ( "SetStart", SetStart );
-    __command.setCommandParameter ( "SetEnd", SetEnd );
-    __command.setCommandParameter ( "TransferHow", TransferHow );
-    */
+    __command.setCommandParameter ( "AddTSList", AddTSList );
+    __command.setCommandParameter ( "AddTSID", AddTSID );
+    __command.setCommandParameter ( "AddSpecifiedTSID", AddSpecifiedTSID );
+    __command.setCommandParameter ( "AddEnsembleID", AddEnsembleID );
+    __command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
+    //__command.setCommandParameter ( "SetStart", SetStart );
+    //__command.setCommandParameter ( "SetEnd", SetEnd );
+    //__command.setCommandParameter ( "TransferHow", TransferHow );
 }
 
 /**
@@ -208,6 +232,26 @@ throws Throwable
 }
 
 /**
+Get the AddSpecifiedTSID parameter from the JList and put into a string.
+@return a String containing the selected specified time series, separated by commas.
+*/
+private String getAddSpecifiedTSIDFromList()
+{   StringBuffer buffer = new StringBuffer();
+    if ( JGUIUtil.selectedSize(__AddSpecifiedTSID_JList) > 0 ) {
+        // Get the selected and format...
+        int selected[] = __AddSpecifiedTSID_JList.getSelectedIndices();
+        int size = JGUIUtil.selectedSize(__AddSpecifiedTSID_JList);
+        for ( int i = 0; i < size; i++ ) {
+            if ( i > 0 ) {
+                buffer.append ( ",");
+            }
+            buffer.append ( __AddSpecifiedTSID_JListModel.elementAt( selected[i]) );
+        }
+    }
+    return buffer.toString();
+}
+
+/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -225,7 +269,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
    	JGUIUtil.addComponent(main_JPanel,
-		new JLabel ( "Add one or more time series to a time series (or ensemble)." +
+		new JLabel ( "Add one or more time series to a time series (or ensemble of time series)." +
 		"  The receiving time series (or ensemble) is modified."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -233,93 +277,70 @@ private void initialize ( JFrame parent, Command command )
 		"The time series to be added be selected using the TS list parameter:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  " + TSListType.ALL_TS + " - " + __command +
-		" all previous time series."),
+            "  " + TSListType.ALL_MATCHING_TSID + " - add all previous time series with matching identifiers."),
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"  " + TSListType.ALL_TS + " - add all previous time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  " + TSListType.SELECTED_TS + " - " + __command +
-		" time series selected with selectTimeSeries() commands"),
+		"  " + TSListType.SELECTED_TS + " - add time series selected with selectTimeSeries() commands"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  " + TSListType.SPECIFIED_TSID + " - " + __command +
-		" time series selected from the list below (* will " +
-		__command + " all previous time series)"),
+		"  " + TSListType.SPECIFIED_TSID + " - add time series selected from the list below"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Time series to be added to...
     
     JLabel TSID_JLabel = new JLabel ("Time series to receive results:");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, TSID_JLabel, __TSID_JComboBox, tsids, y );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel (
+            this, this, main_JPanel, TSID_JLabel, __TSID_JComboBox, tsids, y, false );
    
-  /* __EnsembleID_JLabel = new JLabel ("Ensemble to receive results:");
+   JLabel EnsembleID_JLabel = new JLabel ("Ensemble to receive results:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __AddEnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+            this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
     
-    __TSList_JComboBox = new SimpleJComboBox(false);
+    // The time series to supply values (time series to add)...
+    
+    __AddTSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel (
-            this, main_JPanel, new JLabel ("Dependent TS List:"), __TSList_JComboBox, y );
+            this, main_JPanel, new JLabel ("Time series to add (TS list):"), __AddTSList_JComboBox, y );
+    // Default is not to add SelectedTSID so add it here...
+    __AddTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
-    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
-    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    __AddTSID_JLabel = new JLabel ("Add TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __AddTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    // Automatically adds "*"
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __AddTSID_JLabel, __AddTSID_JComboBox, tsids, y );
     
     __AddEnsembleID_JLabel = new JLabel ("Add EnsembleID (for AddTSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __AddEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    Vector AddEnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __AddEnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-    
-        JGUIUtil.addComponent(main_JPanel,
-		new JLabel ( "Time series to receive results:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__TSID_JComboBox = new SimpleJComboBox ( false );
-	int size = 0;
-	if ( tsids != null ) {
-		size = tsids.size();
-	}
-	if ( size == 0 ) {
-		Message.printWarning ( 1, __command + "_JDialog.initialize",
-		"You must define time series before inserting the " +
-		__command + "() command." );
-		response ( 0 );
-	}
-	__TSID_JComboBox.setData ( tsids );
-	__TSID_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            this, this, main_JPanel, __AddEnsembleID_JLabel, __AddEnsembleID_JComboBox, AddEnsembleIDs, y );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( __AllTS );
-	tslist_Vector.addElement ( __SelectedTS );
-	tslist_Vector.addElement ( __SpecifiedTS );
-	__AddTSList_JComboBox = new SimpleJComboBox(false);
-	__AddTSList_JComboBox.setData ( tslist_Vector );
-	__AddTSList_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __AddTSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the time series to " + __command + "."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series to " + __command + ":" ), 
+    __AddSpecifiedTSID_JLabel =
+        new JLabel ("Add specified TSID (for AddTSList=" + TSListType.SPECIFIED_TSID.toString() + "):");
+    JGUIUtil.addComponent(main_JPanel, __AddSpecifiedTSID_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AddSpecifiedTSID_JListModel = new DefaultListModel();
-	__AddSpecifiedTSID_JListModel.addElement ( "*" );
+    // Get the list again because above list will have "*" which we don't want
+    Vector tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    int size = tsids2.size();
 	for ( int i = 0; i < size; i++ ) {
-		__AddSpecifiedTSID_JListModel.addElement(
-		(String)tsids.elementAt(i));
+		__AddSpecifiedTSID_JListModel.addElement( (String)tsids2.elementAt(i));
 	}
 	__AddSpecifiedTSID_JList = new JList ( __AddSpecifiedTSID_JListModel );
+    __AddSpecifiedTSID_JList.setVisibleRowCount(Math.max(5,size));
 	__AddSpecifiedTSID_JList.addListSelectionListener ( this );
 	__AddSpecifiedTSID_JList.addKeyListener ( this );
 	__AddSpecifiedTSID_JList.addMouseListener ( this );
@@ -327,28 +348,27 @@ private void initialize ( JFrame parent, Command command )
 	DefaultListSelectionModel sm = new DefaultListSelectionModel();
 	sm.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__AddSpecifiedTSID_JList.setSelectionModel ( sm );
-        JGUIUtil.addComponent(main_JPanel, new JScrollPane(
-		__AddSpecifiedTSID_JList),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__AddSpecifiedTSID_JList),
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Handle missing data how?:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingHow_JComboBox = new SimpleJComboBox ( false );
-	__HandleMissingHow_JComboBox.addItem ( __IGNORE_MISSING );
-	__HandleMissingHow_JComboBox.addItem ( __SET_MISSING_IF_ANY_MISSING );
-	__HandleMissingHow_JComboBox.addItem ( __SET_MISSING_IF_OTHER_MISSING );
+	__HandleMissingHow_JComboBox.addItem ( __command._IgnoreMissing );
+	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfOtherMissing );
+	__HandleMissingHow_JComboBox.addItem ( __command._SetMissingIfAnyMissing );
 	__HandleMissingHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextField = new JTextField ( 55 );
-	__command_JTextField.setEditable ( false );
-	JGUIUtil.addComponent(main_JPanel, __command_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        */
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __command_JTextArea = new JTextArea ( 4, 50 );
+    __command_JTextArea.setLineWrap ( true );
+    __command_JTextArea.setWrapStyleWord ( true );
+    __command_JTextArea.setEditable ( false );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
     checkGUIState();
@@ -389,8 +409,8 @@ Respond to KeyEvents.
 public void keyPressed ( KeyEvent event )
 {	int code = event.getKeyCode();
 
+    refresh();
 	if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
 		checkInput();
 		if ( !__error_wait ) {
 			response ( true );
@@ -452,282 +472,143 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents:
-<pre>
-Old:
-add(Alias,MissingFlag,TSID1,TSID2,...)
-add(Alias,TSID1,TSID2,...)
-
-New:
-
-add(TSID="X",HandleMissingHow=X,TSList="X",SubtractTSID="X,X,...")
-subtract(TSID="X",HandleMissingHow=X,TSList="X",SubtractTSID="X,X,...")
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = __command + "_JDialog.refresh";
 	String TSID = "";
-	String HandleMissingHow = "";
-	String AddTSID = "";	// Time series to add (or subtract)
-	String TSList = "";	// How to get list of time series
-	__error_wait = false;
-    /*
-	String command_string = ((String)__command_Vector.elementAt(0)).trim();
-	if ( __first_time ) {
-		__first_time = false;
-		if ( (command_string.length() > 0) && command_string.indexOf('=') < 0 ) {
-			// Old syntax...
-			int first_to_add = 2;	// Index of first time series
-						// to add.
-			TSList = __SpecifiedTS;
-			// Parse the incoming string and fill the fields...
-			Vector v = StringUtil.breakStringList (
-				command_string,"(),",
-				StringUtil.DELIM_SKIP_BLANKS );
-			if ( (v != null) && (v.size() >= 3) ) {
-				TSID = ((String)v.elementAt(1)).trim();
-				HandleMissingHow =
-					((String)v.elementAt(2)).trim();
-				if (	HandleMissingHow.equalsIgnoreCase(
-					__IGNORE_MISSING) ||
-					HandleMissingHow.equalsIgnoreCase(
-					__SET_MISSING_IF_OTHER_MISSING) ||
-					HandleMissingHow.equalsIgnoreCase(
-					__SET_MISSING_IF_ANY_MISSING) ) {
-					// New style syntax.
-					first_to_add = 3;
-				}
-				else {	// Old style syntax.
-					first_to_add = 2;
-					// Default...
-					HandleMissingHow = __IGNORE_MISSING;
-				}
-			}
-			StringBuffer buffer = new StringBuffer();
-			int size = v.size();
-			for ( int i = first_to_add; i < size; i++ ) {
-				if ( i != first_to_add ) {
-					buffer.append ( "," );
-				}
-				buffer.append ( (String)v.elementAt(i) );
-			}
-			AddTSID=buffer.toString();
-			Message.printStatus ( 1, "",
-			"AddTSID=\"" + AddTSID + "\"" );
-		}
-		else {	// New syntax...
-			Vector v = StringUtil.breakStringList (
-			((String)__command_Vector.elementAt(0)).trim(),"()",0 );
-			PropList props = null;
-			if (	(v != null) && (v.size() > 1) &&
-				(((String)v.elementAt(1)).indexOf("=") > 0) ) {
-				props = PropList.parse (
-					(String)v.elementAt(1), routine, "," );
-			}
-			if ( props == null ) {
-				props = new PropList ( routine );
-			}
-			TSID = props.getValue ( "TSID" );
-			TSList = props.getValue ( "TSList" );
-			if ( __command.equalsIgnoreCase("add") ) {
-				AddTSID = props.getValue ( "AddTSID" );
-			}
-			else {	AddTSID = props.getValue ( "SubtractTSID" );
-			}
-			HandleMissingHow = props.getValue ( "HandleMissingHow");
-		}
-		if ( (TSID == null) || (TSID.length() == 0) ) {
-			// Select default...
-			__TSID_JComboBox.select ( 0 );
-		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSID_JComboBox,
-				TSID, JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
-			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSID value \"" +
-				TSID +
-				"\".  Select a different value or Cancel.");
-				__error_wait = true;
-			}
-		}
-		if ( TSList == null ) {
-			// Select default...
-			__AddTSList_JComboBox.select ( 0 );
-		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__AddTSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
-				__AddTSList_JComboBox.select ( TSList );
-			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
-				"\".  Select a different value or Cancel.");
-				__error_wait = true;
-			}
-		}
-		if ( HandleMissingHow == null ) {
-			// Select default...
-			__HandleMissingHow_JComboBox.select ( 0 );
-		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__HandleMissingHow_JComboBox,
-				HandleMissingHow, JGUIUtil.NONE, null, null )) {
-				__HandleMissingHow_JComboBox.select (
-				HandleMissingHow );
-			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\n" +
-				"HandleMissingHow value \"" + HandleMissingHow +
-				"\".  Select a different value or Cancel.");
-				__error_wait = true;
-			}
-		}
-		// Check all the items in the list and highlight the
-		// ones that match the command being edited...
-		if (	(TSList != null) &&
-			TSList.equalsIgnoreCase(__SpecifiedTS) &&
-			(AddTSID != null) ) {
-			Vector v = StringUtil.breakStringList (
-				AddTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
-			int size = v.size();
-			String temp = null;
-			int pos = 0;
-			boolean found_ts = false;
-			Vector selected = new Vector();
-			String independent = "";
-			for ( int i = 0; i < size; i++ ) {
-				independent = (String)v.elementAt(i);
-				found_ts = false;
-				if (	(pos = JGUIUtil.indexOf(
-					__AddSpecifiedTSID_JList,
-					independent, false, true))>= 0 ) {
-					// Select it because it is in the
-					// command and the list...
-					selected.addElement ( "" + pos );
-					found_ts = true;
-				}
-				else if ( independent.regionMatches(
-					true,0,"TEMPTS",0,6) ) {
-					// The time series is a TSTEMP so look
-					// for the rest of the time series in
-					// the list.  If it exists, convert to
-					// TSTEMP to match the command.  If not
-					// add to the list as a TSTEMP to match
-					// the command.
-					temp =	StringUtil.getToken(
-						independent, " ",
-						StringUtil.DELIM_SKIP_BLANKS,1);
-					if ( temp != null ) {
-						temp = temp.trim();
-						pos =	JGUIUtil.indexOf(
-							__AddSpecifiedTSID_JList,
-							temp,false,true);
-						if ( (pos >=0) ) {
-							temp = "TEMPTS " + temp;
-							__AddSpecifiedTSID_JListModel
-							.setElementAt(temp,pos);
-							selected.addElement (
-							"" + pos );
-							found_ts = true;
-						}
-					}
-					if ( !found_ts ) {
-						// Probably not in the original
-						// list so add to the bottom.
-						// The TEMPTS is already at the
-						// front of the independent TS..
-						__AddSpecifiedTSID_JListModel.
-						addElement( independent);
-						JGUIUtil.select (
-							__AddSpecifiedTSID_JList,
-							independent, true );
-						selected.addElement ( "" +
-							size );
-					}
-				}
-				else {	Message.printWarning ( 1, routine,
-					"Existing " +
-					"command references a non-existent\n"+
-					"time series \"" + independent +
-					"\".  Select a\n" +
-					"different time series or Cancel." );
-				}
-			}
-			// Select the matched time series...
-			if ( selected.size() > 0  ) {
-				int [] iselected = new int[selected.size()];
-				for ( int is = 0; is < iselected.length; is++ ){
-					iselected[is] = StringUtil.atoi (
-					(String)selected.elementAt(is));
-				}
-				__AddSpecifiedTSID_JList.setSelectedIndices(
-					iselected );
-			}
-		}
+    String EnsembleID = "";
+	String AddTSList = "";
+	String AddTSID = "";
+    String AddEnsembleID = "";
+    String AddSpecifiedTSID = "";
+    String HandleMissingHow = "";
+    PropList props = __command.getCommandParameters();
+    if ( __first_time ) {
+        __first_time = false;
+        // Get the parameters from the command...
+        TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
+        AddTSList = props.getValue ( "AddTSList" );
+        AddTSID = props.getValue ( "AddTSID" );
+        AddSpecifiedTSID = props.getValue ( "AddSpecifiedTSID" );
+        AddEnsembleID = props.getValue ( "AddEnsembleID" );
+        HandleMissingHow = props.getValue ( "HandleMissingHow" );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
+        }
+        else {
+            // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {
+                // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( AddTSList == null ) {
+            // Select default...
+            __AddTSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __AddTSList_JComboBox,AddTSList, JGUIUtil.NONE, null, null ) ) {
+                __AddTSList_JComboBox.select ( AddTSList );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nAddTSList value \"" + AddTSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if (    JGUIUtil.isSimpleJComboBoxItem( __AddTSID_JComboBox, AddTSID,
+                JGUIUtil.NONE, null, null ) ) {
+                __AddTSID_JComboBox.select ( AddTSID );
+        }
+        else {  // Automatically add to the list after the blank...
+            if ( (AddTSID != null) && (AddTSID.length() > 0) ) {
+                __AddTSID_JComboBox.insertItemAt ( AddTSID, 1 );
+                // Select...
+                __AddTSID_JComboBox.select ( AddTSID );
+            }
+            else {  // Select the blank...
+                __AddTSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( AddEnsembleID == null ) {
+            // Select default...
+            __AddEnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __AddEnsembleID_JComboBox,AddEnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __AddEnsembleID_JComboBox.select ( AddEnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nAddEnsembleID value \"" + AddEnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        setupAddSelectedTSID ( AddTSList, AddSpecifiedTSID );
+        if ( HandleMissingHow == null ) {
+            // Select default...
+            __HandleMissingHow_JComboBox.select ( 0 );
+        }
+        else {  if (    JGUIUtil.isSimpleJComboBoxItem(
+                __HandleMissingHow_JComboBox,
+                HandleMissingHow, JGUIUtil.NONE, null, null )) {
+                __HandleMissingHow_JComboBox.select (
+                HandleMissingHow );
+            }
+            else {  Message.printWarning ( 1, routine,
+                "Existing command " +
+                "references an invalid\n" +
+                "HandleMissingHow value \"" + HandleMissingHow +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
-	// Regardless, reset the command from the fields...
-	TSID = __TSID_JComboBox.getSelected();
-	TSList = __AddTSList_JComboBox.getSelected();
-	HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-	if (	TSList.equalsIgnoreCase(__AllTS) ||
-		TSList.equalsIgnoreCase(__SelectedTS) ) {
-		// Don't need...
-		AddTSID = "";
-	}
-	else if ( TSList.equalsIgnoreCase(__SpecifiedTS) ) {
-		// Format from the selected identifiers...
-		AddTSID = "";
-		if ( JGUIUtil.selectedSize(__AddSpecifiedTSID_JList) > 0 ) {
-			// Get the selected and format...
-			int selected[] = __AddSpecifiedTSID_JList.getSelectedIndices();
-			int size = JGUIUtil.selectedSize(__AddSpecifiedTSID_JList);
-			StringBuffer buffer = new StringBuffer();
-			for ( int i = 0; i < size; i++ ) {
-				if ( i > 0 ) {
-					buffer.append ( ",");
-				}
-				buffer.append ( __AddSpecifiedTSID_JListModel.elementAt(
-							selected[i]) );
-			}
-			AddTSID = buffer.toString();
-		}
-	}
-	StringBuffer b = new StringBuffer ();
-	if ( TSID.length() > 0 ) {
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-	if ( TSList.length() > 0 ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSList=\"" + TSList + "\"" );
-	}
-	if ( AddTSID.length() > 0 ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		if ( __command.equalsIgnoreCase("add") ) {
-			b.append ( "AddTSID=\"" + AddTSID + "\"" );
-		}
-		else {	b.append ( "SubtractTSID=\"" + AddTSID + "\"" );
-		}
-	}
-	if ( HandleMissingHow.length() > 0 ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "HandleMissingHow=" + HandleMissingHow );
-	}
-	__command_JTextField.setText( __command + "(" + b.toString() + ")" );
-	__command_Vector.removeAllElements();
-	__command_Vector.addElement ( __command_JTextField.getText() );
-    */
+    // Regardless, reset the command from the fields...
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
+    AddTSList = __AddTSList_JComboBox.getSelected();
+    AddTSID = __AddTSID_JComboBox.getSelected();
+    AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
+    AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
+    //FillStart = __FillStart_JTextField.getText().trim();
+    //FillEnd = __FillEnd_JTextField.getText().trim();
+    HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    props = new PropList ( __command.getCommandName() );
+    props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
+    props.add ( "AddTSList=" + AddTSList );
+    props.add ( "AddTSID=" + AddTSID );
+    props.add ( "AddSpecifiedTSID=" + AddSpecifiedTSID );
+    props.add ( "AddEnsembleID=" + AddEnsembleID );
+    //props.add ( "FillStart=" + FillStart );
+    //props.add ( "FillEnd=" + FillEnd );
+    props.add ( "HandleMissingHow=" + HandleMissingHow );
+    __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
@@ -748,6 +629,45 @@ private void response ( boolean ok )
     // Now close out...
     setVisible( false );
     dispose();
+}
+
+/**
+Setup the AddSelectedTSID list at initialization,
+selecting items in the list that match the AddSpecifiedTSID parameter.
+@param AddSpecifiedTSID The value of the parameter, of form "TSID,TSID,TSID,...".
+*/
+private void setupAddSelectedTSID ( String AddTSList, String AddSpecifiedTSID )
+{   String routine = "Add_JDialog.setupAddSelectedTSID";
+    // Check all the items in the list and highlight the ones that match the command being edited...
+    if ( (AddTSList != null) && TSListType.SPECIFIED_TSID.equals(AddTSList) && (AddSpecifiedTSID != null) ) {
+        // Break list by commas since identifiers may have spaces and other "special" characters (but no commas)
+        Vector v = StringUtil.breakStringList ( AddSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+        int size = v.size();
+        int pos = 0;
+        Vector selected = new Vector();
+        String independent = "";
+        for ( int i = 0; i < size; i++ ) {
+            independent = (String)v.elementAt(i);
+            if ( (pos = JGUIUtil.indexOf( __AddSpecifiedTSID_JList, independent, false, true))>= 0 ) {
+                // Select it because it is in the command and the list...
+                selected.addElement ( "" + pos );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references a non-existent\n"+
+                "specified time series \"" + independent +
+                "\".  Select a\n" + "different time series or Cancel." );
+            }
+        }
+        // Select the matched time series...
+        if ( selected.size() > 0  ) {
+            int [] iselected = new int[selected.size()];
+            for ( int is = 0; is < iselected.length; is++ ){
+                iselected[is] = StringUtil.atoi ( (String)selected.elementAt(is));
+            }
+            __AddSpecifiedTSID_JList.setSelectedIndices( iselected );
+        }
+    }
 }
 
 /**
@@ -772,4 +692,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end add_JDialog
+}

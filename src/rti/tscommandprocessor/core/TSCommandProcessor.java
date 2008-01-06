@@ -365,8 +365,7 @@ This method is meant to be used internally without going through the request mec
 @param EnsembleID Ensemble ID to match.
 */
 protected TSEnsemble getEnsemble ( String EnsembleID )
-{   String routine = "TSCommandProcessor.getEnsemble";
-    if ( (EnsembleID == null) || EnsembleID.equals("") ) {
+{   if ( (EnsembleID == null) || EnsembleID.equals("") ) {
         return null;
     }
     int size = __TSEnsemble_Vector.size();

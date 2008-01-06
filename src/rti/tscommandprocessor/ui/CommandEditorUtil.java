@@ -56,9 +56,9 @@ public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, 
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     return y;
 }
-    
+
 /**
-Add the TSID parameter components to a command dialog.
+Add the TSID parameter components to a command dialog.  A "*" will automatically be added.
 It is assumed that GridBagLayout is used for the layout.
 @param dialog The dialog that is being added to.
 @param panel The JPanel to which the controls are being added.
@@ -69,6 +69,24 @@ It is assumed that GridBagLayout is used for the layout.
 */
 public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
         JPanel panel, JLabel label, SimpleJComboBox choices, Vector tsids, int y )
+{
+    return addTSIDToEditorDialogPanel ( itemlistener, keylistener,
+            panel, label, choices, tsids, y, true );
+}
+    
+/**
+Add the TSID parameter components to a command dialog.
+It is assumed that GridBagLayout is used for the layout.
+@param dialog The dialog that is being added to.
+@param panel The JPanel to which the controls are being added.
+@param label Label for the TSID component (typically can be enabled/disabled elsewhere).
+@param choices Choices for the TSID, as String.
+@param y The GridBagLayout vertical position.
+@param add_asterisk If true, a "*" will be added to the list.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
+        JPanel panel, JLabel label, SimpleJComboBox choices, Vector tsids, int y, boolean add_asterisk )
 {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, label,
@@ -85,8 +103,10 @@ public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyLis
     else {
         tsids.addElement ( "" );
     }
-    // Always allow a "*" to let all time series be filled (put at end)...
-    tsids.addElement ( "*" );
+    if ( add_asterisk ) {
+        // Add a "*" to let all time series be filled (put at end)...
+        tsids.addElement ( "*" );
+    }
     choices.setData ( tsids );
     choices.addItemListener ( itemlistener );
     choices.addKeyListener ( keylistener );

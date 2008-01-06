@@ -1577,214 +1577,6 @@ throws Exception
 }
 
 /**
-Helper method for add() and subtract() commands.
-@param command_tag Command number used for messaging.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private void do_add ( String command_tag, String command )
-throws Exception
-{	String command_name = "add";
-	if ( StringUtil.startsWithIgnoreCase(command,"add") ) {
-		command_name = "add";
-	}
-	else {	command_name = "subtract";
-	}
-	String routine = "TSEngine.do_" + command_name;
-	String TSID = null;
-	String TSList = null;
-	String HandleMissingHow = null;
-	String AddTSID = null;
-	if ( command.indexOf('=') < 0 ) {
-		// Old syntax...
-		// Don't use space because TEMPTS will not parse right.
-		Vector v = StringUtil.breakStringList(command,
-			"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-		if ( (v == null) || (v.size() < 3) ) {
-			Message.printWarning ( 2, routine,
-			"Syntax error in \"" + command + "\"" );
-			throw new Exception ( "Bad command syntax: " +
-				command );
-		}
-
-		// Get the individual tokens of the expression...
-
-		TSList = "SpecifiedTS";
-		TSID = ((String)v.elementAt(1)).trim();
-		HandleMissingHow = ((String)v.elementAt(2)).trim();
-		if (	!HandleMissingHow.equalsIgnoreCase( "IgnoreMissing" ) &&
-			!HandleMissingHow.equalsIgnoreCase(
-			"SetMissingIfOtherMissing") && 
-			!HandleMissingHow.equalsIgnoreCase(
-			"SetMissingIfAnyMissing") ) {
-			// Old style syntax.
-			String message =
-			"Old-style add() command is obsolete.\n" +
-			"Please update to new syntax.  Not processing.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-		StringBuffer b = new StringBuffer();
-		int size = v.size();
-		for ( int i = 3; i < size; i++ ) {
-			if ( i != 3 ) {
-				b.append ( "," );
-			}
-			b.append ( (String)v.elementAt(i) );
-		}
-		AddTSID = b.toString ();
-	}
-	else {	// New syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was
-			// parsed before...
-			throw new Exception (
-			"Bad command: \"" + command + "\"" );
-		}
-		// Get the input needed to process the file...
-		PropList props = PropList.parse (
-			(String)tokens.elementAt(1), routine, "," );
-		TSID = props.getValue ( "TSID" );
-		TSList = props.getValue ( "TSList" );
-		HandleMissingHow = props.getValue ( "HandleMissingHow" );
-		if ( command_name.equalsIgnoreCase("add") ) {
-			AddTSID = props.getValue ( "AddTSID" );
-		}
-		else {	AddTSID = props.getValue ( "SubtractTSID" );
-		}
-	}
-
-	if ( TSID == null ) {
-		String message =
-		"Need TSID or pattern to " + command_name + " time series.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if ( StringUtil.indexOfIgnoreCase(TSID, "FrostDate", 0) >= 0 ) {
-		// TODO - SAM 2005-05-20
-		// This is a special check because the add() command used to
-		// be used in TSTool to add frost date time series.  Now the
-		// add() command is not suitable.
-		String message = "The " + command_name + "() command is not suitable for frost dates." +
-		"Use Blend(), SetFromTS(), or similar commands.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if ( TSList == null ) {
-		String message = "TSList must be defined for: " + command_name;
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if ( TSList.equalsIgnoreCase("SpecifiedTS") && (AddTSID == null) ) {
-		if ( command_name.equalsIgnoreCase("add") ) {
-			String message = "AddTSID must be defined for: " + command_name;
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-		else if ( command_name.equalsIgnoreCase("subtract") ) {
-			String message =
-			"SubtractTSID must be defined for: " + command_name;
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-	}
-
-	int imissing_type = TSUtil.IGNORE_MISSING;
-	if ( HandleMissingHow == null ) {
-		HandleMissingHow = "IgnoreMissing";
-	}
-	if ( HandleMissingHow.equalsIgnoreCase( "IgnoreMissing" ) ) {
-		imissing_type = TSUtil.IGNORE_MISSING;
-	}
-	else if ( HandleMissingHow.equalsIgnoreCase(
-		"SetMissingIfOtherMissing" ) ){
-		imissing_type = TSUtil.SET_MISSING_IF_OTHER_MISSING;
-	}
-	else if ( HandleMissingHow.equalsIgnoreCase(
-		"SetMissingIfAnyMissing" ) ) {
-		imissing_type=TSUtil.SET_MISSING_IF_ANY_MISSING;
-	}
-
-	// Make sure there are time series available to operate on...
-
-	int ts_pos = indexOf ( TSID );
-	TS ts = getTimeSeries ( ts_pos );
-	if ( ts == null ) {
-		String message = "Unable to find time series \"" + TSID +
-			"\" for " + command + "().";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Now loop through the remaining time series and put into a Vector for
-	// processing...
-	Vector v = StringUtil.breakStringList ( AddTSID,
-			",", StringUtil.DELIM_SKIP_BLANKS );
-	int vsize = v.size();
-	Vector vTS = null;
-	TS independentTS = null;
-	
-	if (	TSList.equalsIgnoreCase("AllTS") ||
-		(TSList.equalsIgnoreCase("SpecifiedTS") &&
-		(vsize == 1) && ((String)v.elementAt(0)).trim().equals("*")) ) {
-		// Process everything in memory...
-		int nts = getTimeSeriesSize();
-		vTS = new Vector ( nts );
-		for ( int its = 0; its < nts; its++ ) {
-			independentTS = getTimeSeries ( its );
-			// Do not add a time series to itself...
-			if (	(independentTS != null) &&
-				(independentTS != ts) ) {
-				vTS.addElement (independentTS);
-			}
-		}
-	}
-	else if ( TSList.equalsIgnoreCase("SelectedTS") ) {
-		vTS = getSelectedTimeSeriesList ( false );
-	}
-	else if ( TSList.equalsIgnoreCase("SpecifiedTS") ) {
-		// Get the requested time series...
-		vTS = new Vector ( vsize );
-		String independent = null;
-		int error_count = 0;
-		for (	int its = 0; its < vsize; its++ ) {
-			independent = ((String)v.elementAt(its)).trim();
-			// The following may or may not have TEMPTS at the
-			// front but is handled transparently by getTimeSeries.
-			independentTS = getTimeSeries (
-				command_tag, independent );
-			if ( independentTS == null ) {
-				Message.printWarning ( 2, routine,
-				"Unable to find time series \""+
-				independent + "\" for\n\"" +
-				command + "\"." );
-				++error_count;
-			}
-			else {	vTS.addElement ( independentTS);
-			}
-		}
-		if ( error_count > 0 ) {
-			throw new Exception (
-			"Error finding one or more time series in \"" +
-				command + "\"" );
-		}
-	}
-	if ( command_name.equalsIgnoreCase("add") ) {
-		Message.printStatus ( 2, routine,
-		"Adding " + vTS.size() + " time series." );
-			ts = TSUtil.add ( ts, vTS, imissing_type );
-	}
-	else {	ts = TSUtil.subtract ( ts, vTS, imissing_type );
-	}
-	v = null;
-	vTS = null;
-	independentTS = null;
-	// Update the time series...
-	processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-}
-
-/**
 Helper method for adjustExtremes() command.
 @param command Command being evaluated.
 @exception Exception if there is an error processing the time series.
@@ -5058,16 +4850,21 @@ protected int getTimeSeriesSize ()
 Return the list of time series to process, based on information that indicates
 how the list can be determined.
 @param TSList Indicates how the list of time series for processing is to be
-determined, with one of the following values:
+determined, with one of the following values (see TSListType):
 <ol>
 <li>    "AllMatchingTSID" will use the TSID value to match time series.</li>
 <li>	"AllTS" will result in true being returned.</li>
 <li>    "EnsembleID" will return the list of time series associated with an ensemble.</li>
 <li>	"LastMatchingTSID" will use the TSID value to match time series,
-	returning the last match.  This is necessary for backward compatibility.
-	</li>
-<li>	"SelectedTS" will result in true being returned only if the time series is selected.</li>
+	    returning the last match.  This is necessary for backward compatibility.</li>
+<li>	"SelectedTS" will return a list of time series that are selected.</li>
+<li>    "SpecifiedTSID" will return a list of time series that match the specified identifiers
+        (no wildcards, just a comma-separated list of identifier).</li>
 </ol>
+@param TSID A time series indentifier (pattern) when used with TSList=AllMatchingTSID and
+TSList=LastMatchingTSID, or a list of time series separated by commas when used with
+TSList=SpecifiedTSID.
+@param EnsembleID A time series ensemble identifier (no pattern currently allowed).
 @return A Vector that has as its first element a Vector of TS to process and as
 its second element an int[] indicating the positions in the time series list,
 to be used to update the time series.  Use the size of the Vector (in the first
@@ -5087,7 +4884,8 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
 	// Loop through the time series in memory...
 	int count = 0;
 	TS ts = null;
-	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\"");
+	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID +
+            "\", EnsembleID=\"" + EnsembleID + "\"" );
 	if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
 		// Search backwards for the last single matching time series...
 		for ( int its = (nts - 1); its >= 0; its-- ) {
@@ -5172,7 +4970,60 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         }
         return v;
     }
-	// Else will loop through all the time series from first to last and find matches...
+    else if ( TSList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString()) ) {
+        // Return a list of time series that match the provided identifiers.
+        Vector tsid_Vector = StringUtil.breakStringList ( TSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+        int size_tsid = 0;
+        if ( tsid_Vector != null ) {
+            size_tsid = tsid_Vector.size();
+        }
+        for ( int itsid = 0; itsid < size_tsid; itsid++ ) {
+            String tsid = (String)tsid_Vector.elementAt(itsid);
+            // Loop through the available time series and see if any match..
+            boolean found = false;
+            for ( int its = 0; its < nts; its++ ) {
+                try {
+                    ts = getTimeSeries ( its );
+                }
+                catch ( Exception e ) {
+                    // Don't add...
+                    continue;
+                }
+                // Compare the requested TSID with that in the time series list...
+                if ( tsid.indexOf("~") > 0 ) {
+                    // Include the input type...
+                    if (ts.getIdentifier().matches(tsid,true,true)){
+                        found = true;
+                    }
+                }
+                else {
+                    // Just check the main information...
+                    if(ts.getIdentifier().matches(tsid,true,false)){
+                        found = true;
+                    }
+                }
+                if ( found ) {
+                    // Add the time series and increment the count...
+                    tslist.addElement ( ts );
+                    tspos[count++] = its;
+                }
+            }
+        }
+        // Trim down the "tspos" array to only include matches so that other
+        // code does not mistakenly iterate through a longer array...
+        if ( count == 0 ) {
+            v.setElementAt ( new int[0], 1 );
+        }
+        else {
+            int [] tspos2 = new int[count];
+            for ( int i = 0; i < count; i++ ) {
+                tspos2[i] = tspos[i];
+            }
+            v.setElementAt ( tspos2, 1 );
+        }
+        return v;
+    }
+	// Else loop through all the time series from first to last and find matches...
 	boolean found = false;
 	for ( int its = 0; its < nts; its++ ) {
 		found = false;
@@ -6196,12 +6047,6 @@ throws Exception
 			}
 			tokens = null;
 		}
-		// SAMX - start
-		else if ( command_String.regionMatches(true,0,"add",0,3) ||
-				command_String.regionMatches(true,0,"subtract",0,8) ) {
-			do_add ( command_tag, command_String );
-			continue;
-		}
 		else if(command_String.regionMatches(true,0,"adjustExtremes",0,14)){
 			// Adjust extreme values...
 			do_adjustExtremes ( command_String );
@@ -6705,11 +6550,6 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
-		//else if ( command_String.regionMatches(true,0,"subtract",0,8) ) {
-		//
-		// This is handled in the "add" code since it is so similar.
-		//
-		//}
 		else if ( command_String.regionMatches(true,0,"TS ",0,3) &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "changeInterval") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "copy") &&
@@ -6894,7 +6734,6 @@ throws Exception
 				}
 				ts = do_readRiverWare ( command_tag, command_String, (GenericCommand)command );
 			}
-			// SAMX - in the GUI as general case...
 			else if ( method.equalsIgnoreCase("readTimeSeries") ) {
 				// Reparse to strip quotes from file name...
 				tokens = StringUtil.breakStringList (

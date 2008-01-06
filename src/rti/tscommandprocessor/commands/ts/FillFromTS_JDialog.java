@@ -319,9 +319,6 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
@@ -435,17 +432,18 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __TSID_JComboBox.select ( TSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+            // Automatically add to the list after the blank...
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+                // Select the blank...
                 __TSID_JComboBox.select ( 0 );
             }
         }

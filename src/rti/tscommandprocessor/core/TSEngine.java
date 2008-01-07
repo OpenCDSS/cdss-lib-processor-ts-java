@@ -5994,59 +5994,6 @@ throws Exception
 			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
-		if ( command_String.regionMatches(true,0,"addConstant",0,11) ) {
-			// addConstant command (don't use space because it may
-			// occur in dates)...
-			tokens = StringUtil.breakStringList ( command_String,
-				"(,)", StringUtil.DELIM_SKIP_BLANKS|
-				StringUtil.DELIM_ALLOW_STRINGS );
-			if ( tokens.size() < 3 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + command_String + "\"" );
-				continue;
-			}
-			// First see if a time series is in memory that
-			// matches the alias...
-			alias = (String)tokens.elementAt(1);
-			double d = StringUtil.atod((String)tokens.elementAt(2));
-			DateTime start = null;
-			DateTime end = null;
-			if ( tokens.size() >= 4 ) {
-				String analysis_period_start =
-				((String)tokens.elementAt(3)).trim();
-				start = getDateTime ( analysis_period_start );
-			}
-			if ( tokens.size() >= 5 ) {
-				String analysis_period_end =
-				((String)tokens.elementAt(4)).trim();
-				end = getDateTime ( analysis_period_end );
-			}
-			if ( alias.equals("*") ) {
-				// Fill everything in memory...
-				int nts = getTimeSeriesSize();
-				// Set first in case there is an exception...
-				ts_action = NONE;
-				for ( int its = 0; its < nts; its++ ) {
-					ts = getTimeSeries(its);
-					TSUtil.addConstant ( ts, start, end, d);
-					// Update...
-					setTimeSeries ( ts, its );
-				}
-			}
-			else {	// Fill one time series...
-				ts_pos = indexOf ( alias );
-				if ( ts_pos >= 0 ) {
-					ts = getTimeSeries ( ts_pos );
-					TSUtil.addConstant ( ts, start, end, d);
-				}
-				else {	Message.printWarning ( 1, routine,
-					"Unable to find time series \"" +
-					alias +"\" for addConstant() command.");
-				}
-				ts_action = UPDATE_TS;
-			}
-			tokens = null;
-		}
 		else if(command_String.regionMatches(true,0,"adjustExtremes",0,14)){
 			// Adjust extreme values...
 			do_adjustExtremes ( command_String );

@@ -128,6 +128,7 @@ import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
 // Time series general commands.
 
 import rti.tscommandprocessor.commands.ts.Add_Command;
+import rti.tscommandprocessor.commands.ts.AddConstant_Command;
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
@@ -161,6 +162,7 @@ import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.Subtract_Command;
 
 // Utility commands.
 
@@ -240,7 +242,11 @@ throws UnknownCommandException
 
 	// "a" commands...
 
-    if ( StringUtil.startsWithIgnoreCase(command_string,"Add") ) {
+    // Put the following before "Add"
+    if ( StringUtil.startsWithIgnoreCase(command_string,"AddConstant") ) {
+        return new AddConstant_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"Add") ) {
         return new Add_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
@@ -480,6 +486,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase( command_string,"StartRegressionTestResultsReport") ){
         return new StartRegressionTestResultsReport_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"Subtract") ) {
+        return new Subtract_Command ();
     }
 	
 	// "t" commands...

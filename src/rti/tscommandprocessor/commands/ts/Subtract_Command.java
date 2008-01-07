@@ -29,10 +29,10 @@ import RTi.Util.String.StringUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the Add() command.
+This class initializes, checks, and runs the Subtract() command.
 </p>
 */
-public class Add_Command extends AbstractCommand implements Command
+public class Subtract_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -45,9 +45,9 @@ protected final String _SetMissingIfAnyMissing = "SetMissingIfAnyMissing";
 /**
 Constructor.
 */
-public Add_Command ()
+public Subtract_Command ()
 {	super();
-	setCommandName ( "Add" );
+	setCommandName ( "Subtract" );
 }
 
 /**
@@ -63,7 +63,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String AddTSList = parameters.getValue ( "AddTSList" );
+    String SubtractTSList = parameters.getValue ( "SubtractTSList" );
 	//String SetStart = parameters.getValue ( "SetStart" );
 	//String SetEnd = parameters.getValue ( "SetEnd" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
@@ -156,9 +156,9 @@ throws InvalidCommandParameterException
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "AddTSList" );
-    valid_Vector.add ( "AddTSID" );
-    valid_Vector.add ( "AddEnsembleID" );
+    valid_Vector.add ( "SubtractTSList" );
+    valid_Vector.add ( "SubtractTSID" );
+    valid_Vector.add ( "SubtractEnsembleID" );
     //valid_Vector.add ( "SetStart" );
     //valid_Vector.add ( "SetEnd" );
     valid_Vector.add ( "HandleMissingHow" );
@@ -182,7 +182,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new Add_JDialog ( parent, this )).ok();
+	return (new Subtract_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -191,7 +191,7 @@ Get the time series to process.
 @param tspos Positions in time series processor time series array.
 */
 private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, int warning_count )
-{   String routine = "Add_Command.getTimeSeriesToProcess";
+{   String routine = "Subtract_Command.getTimeSeriesToProcess";
     TS ts = null;
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
@@ -256,7 +256,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "Add_Command.parseCommand", message;
+	String routine = "Subtract_Command.parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()")) {
         // Current syntax...
@@ -264,29 +264,29 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // Recently added TSList so handle it properly
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
-        String AddTSList = parameters.getValue ( "AddTSList");
-        String AddTSID = parameters.getValue ( "TSID");
-        if ( ((AddTSList == null) || (AddTSList.length() == 0)) && ((AddTSID != null) && (AddTSID.length() > 0)) ) {
-            // Old command where AddTSID= is specified but AddTSList is not
-            if ( AddTSID.indexOf("*") >= 0 ) {
-                AddTSList = TSListType.ALL_TS.toString();
+        String SubtractTSList = parameters.getValue ( "SubtractTSList");
+        String SubtractTSID = parameters.getValue ( "TSID");
+        if ( ((SubtractTSList == null) || (SubtractTSList.length() == 0)) && ((SubtractTSID != null) && (SubtractTSID.length() > 0)) ) {
+            // Old command where SubtractTSID= is specified but SubtractTSList is not
+            if ( SubtractTSID.indexOf("*") >= 0 ) {
+                SubtractTSList = TSListType.ALL_TS.toString();
             }
             else {
-                AddTSList = TSListType.SPECIFIED_TSID.toString();
+                SubtractTSList = TSListType.SPECIFIED_TSID.toString();
             }
-            parameters.set ( "AddTSList", AddTSList );
+            parameters.set ( "SubtractTSList", SubtractTSList );
         }
         else if ( (TSList != null) && (TSList.length() > 0) ) {
             // Convert to newer syntax...SpecifiedTS replaced with SpecifiedTSID
-            AddTSList = TSList;
-            if ( AddTSList.equalsIgnoreCase("SpecifiedTS") ) {
-                AddTSList = TSListType.SPECIFIED_TSID.toString();
+            SubtractTSList = TSList;
+            if ( SubtractTSList.equalsIgnoreCase("SpecifiedTS") ) {
+                SubtractTSList = TSListType.SPECIFIED_TSID.toString();
             }
-            parameters.set ( "AddTSList", AddTSList );
+            parameters.set ( "SubtractTSList", SubtractTSList );
         }
     }
     else {
-		message = "Old-style Add() syntax is obsolete.  Edit the command to convert to new syntax.";
+		message = "Old-style Subtract() syntax is obsolete.  Edit the command to convert to new syntax.";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -305,7 +305,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "Add_Command.runCommand", message;
+{	String routine = "Subtract_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -435,24 +435,24 @@ CommandWarningException, CommandException
         }
     }
 
-	// Time series to add...
+	// Time series to subtract...
     
-    String AddTSList = parameters.getValue ( "AddTSList" );
-    if ( (AddTSList == null) || AddTSList.equals("") ) {
-        AddTSList = TSListType.ALL_TS.toString();
+    String SubtractTSList = parameters.getValue ( "SubtractTSList" );
+    if ( (SubtractTSList == null) || SubtractTSList.equals("") ) {
+        SubtractTSList = TSListType.ALL_TS.toString();
     }
-    String AddTSID = parameters.getValue ( "AddTSID" );
-    String AddEnsembleID = parameters.getValue ( "AddEnsembleID" );
+    String SubtractTSID = parameters.getValue ( "SubtractTSID" );
+    String SubtractEnsembleID = parameters.getValue ( "SubtractEnsembleID" );
     request_params = new PropList ( "" );
-    request_params.set ( "TSList", AddTSList );
-    request_params.set ( "TSID", AddTSID );
-    request_params.set ( "EnsembleID", AddEnsembleID );
+    request_params.set ( "TSList", SubtractTSList );
+    request_params.set ( "TSID", SubtractTSID );
+    request_params.set ( "EnsembleID", SubtractEnsembleID );
     try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
     }
     catch ( Exception e ) {
-        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + AddTSList +
-        "\", TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\", SpecifiedTSID=\") from processor.";
+        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + SubtractTSList +
+        "\", TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\") from processor.";
         Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
@@ -462,37 +462,37 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    Vector add_tslist = null;
+    Vector subtract_tslist = null;
     if ( o_TSList2 == null ) {
-        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + AddTSList +
-        "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
+        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + SubtractTSList +
+        "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message,
-                "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
+                "Verify that the SubtractTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        add_tslist = (Vector)o_TSList2;
-        if ( add_tslist.size() == 0 ) {
-            message = "No time series to add are available from processor GetTimeSeriesToProcess (TSList=\"" + AddTSList +
-            "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\"";
+        subtract_tslist = (Vector)o_TSList2;
+        if ( subtract_tslist.size() == 0 ) {
+            message = "No time series to subtract are available from processor GetTimeSeriesToProcess (TSList=\"" + SubtractTSList +
+            "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(
                     command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.WARNING,
                     message,
-                    "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
+                    "Verify that the SubtractTSList parameter matches one or more time series - may be OK for partial run." ) );
         }
     }
     Object o_Indices2 = bean_PropList.getContents ( "Indices" );
-    int [] add_tspos = null;
+    int [] subtract_tspos = null;
     if ( o_Indices2 == null ) {
-        message = "Unable to find indices for time series to add using TSList=\"" + AddTSList +
-        "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
+        message = "Unable to find indices for time series to subtract using TSList=\"" + SubtractTSList +
+        "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
@@ -501,10 +501,10 @@ CommandWarningException, CommandException
                 message, "Report the problem to software support." ) );
     }
     else {
-        add_tspos = (int [])o_Indices2;
-        if ( add_tspos.length == 0 ) {
-            message = "Unable to find indices for time series to add using TSList=\"" + AddTSList +
-            "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
+        subtract_tspos = (int [])o_Indices2;
+        if ( subtract_tspos.length == 0 ) {
+            message = "Unable to find indices for time series to subtract using TSList=\"" + SubtractTSList +
+            "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(
                     command_tag,++warning_count), routine, message );
@@ -514,29 +514,29 @@ CommandWarningException, CommandException
         }
     }
     
-    int n_add_ts = 0;
-    if ( add_tslist != null ) {
-        n_add_ts = add_tslist.size();
+    int n_subtract_ts = 0;
+    if ( subtract_tslist != null ) {
+        n_subtract_ts = subtract_tslist.size();
     }
-    if ( n_add_ts == 0 ) {
-        message = "Unable to find any time series to add using TSList=\"" + AddTSList +
-        "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
+    if ( n_subtract_ts == 0 ) {
+        message = "Unable to find any time series to subtract using TSList=\"" + SubtractTSList +
+        "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.WARNING,
                 message,
-                "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
+                "Verify that the SubtractTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     
     // Make sure that the number of dependent and independent time series is consistent
     // Already checked to make sure there is a single time series above if NOT processing enembles so
     // just check ensembles here.
     
-    if ( TSListType.ENSEMBLE_ID.equals(AddTSList) ) {
-        if ( (n_add_ts != 1) && (n_add_ts != nts) ) {
-            message = "The number if time series to add to the ensemble (" + n_add_ts +
+    if ( TSListType.ENSEMBLE_ID.equals(SubtractTSList) ) {
+        if ( (n_subtract_ts != 1) && (n_subtract_ts != nts) ) {
+            message = "The number if time series to subtract to the ensemble (" + n_subtract_ts +
                 ") must be 1 or the same number in the ensemble (" + nts + ").";
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(
@@ -544,7 +544,7 @@ CommandWarningException, CommandException
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message,
-                    "Verify that the number of time series to add is 1 or the same as the ensemble." ) );
+                    "Verify that the number of time series to subtract is 1 or the same as the ensemble." ) );
         }
     }
 
@@ -560,7 +560,7 @@ CommandWarningException, CommandException
 
     /*
     String TransferHow = parameters.getValue("TransferHow");
-	PropList setprops = new PropList ( "Add" );
+	PropList setprops = new PropList ( "Subtract" );
 	if ( (TransferHow != null) && !TransferHow.equals("") ) {
 		setprops.set ( "TransferHow", TransferHow );
 	}
@@ -581,7 +581,7 @@ CommandWarningException, CommandException
         HandleMissingHow_int=TSUtil.SET_MISSING_IF_ANY_MISSING;
     }
 
-	TS ts = null;  // Time series to be added to
+	TS ts = null;  // Time series to be subtracted from
     // Loop through the time series being modified...
 	for ( int its = 0; its < nts; its++ ) {
 		ts = getTimeSeriesToProcess ( its, tspos, command_tag, warning_count );
@@ -599,12 +599,12 @@ CommandWarningException, CommandException
         
         // TODO SAM 2008-01-06 Phase out if customer does not need or if a more robust way to check
         // for dates can be implemented
-        // Special check inspired by CDSS where people tried to add FrostDate time series
+        // Special check inspired by CDSS where people tried to subtract FrostDate time series
         if ( StringUtil.indexOfIgnoreCase(ts.getDataType(), "FrostDate", 0) >= 0 ) {
             // TODO - SAM 2005-05-20
-            // This is a special check because the add() command used to
-            // be used in TSTool to add frost date time series.  Now the
-            // add() command is not suitable.
+            // This is a special check because the subtract() command used to
+            // be used in TSTool to subtract frost date time series.  Now the
+            // subtract() command is not suitable.
             message = "The " + getCommandName() + "() command is not suitable for frost dates - skipping processing.";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
@@ -613,40 +613,40 @@ CommandWarningException, CommandException
                         message, "Use Blend(), SetFromTS(), or similar commands." ) );
         }
 		
-		// Get the specific time series to add depending on the input parameters...
+		// Get the specific time series to subtract depending on the input parameters...
         
-        TS tstoadd = null;  // Single time series to add
-        Vector tstoadd_list = new Vector(); // List of time series to add
+        TS tstosubtract = null;  // Single time series to subtract
+        Vector tstosubtract_list = new Vector(); // List of time series to subtract
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
-            // Processing a single time series.  Add all the time series to it
+            // Processing a single time series.  Subtract all the time series from it
             // Reuse the same independent time series for all transfers...
-            tstoadd_list = add_tslist;
-            Message.printStatus(2, routine, "Adding " + tstoadd_list.size() +
-                    " time series to single time series \"" + ts.getIdentifier() + "\"" );
+            tstosubtract_list = subtract_tslist;
+            Message.printStatus(2, routine, "Subtracting " + tstosubtract_list.size() +
+                    " time series from single time series \"" + ts.getIdentifier() + "\"" );
         }
         else if ( TSListType.ENSEMBLE_ID.equals(TSList) ) {
-            // Processing an ensemble.  Need to loop through each time series in the ensemble and add a single
+            // Processing an ensemble.  Need to loop through each time series in the ensemble and subtract a single
             // time series (either from a single TS or another ensemble)
             // Get the time series matching the loop index...
-            if ( TSListType.ENSEMBLE_ID.equals(AddTSList) ) {
-                // Adding an ensemble to an ensemble so get the ensemble time series at the position...
-                tstoadd = getTimeSeriesToProcess ( its, add_tspos, command_tag, warning_count );
-                tstoadd_list.addElement( tstoadd );
-                Message.printStatus(2, routine, "Adding ensemble time series \"" + tstoadd.getIdentifier() +
-                        "\" to ensemble time series \"" + ts.getIdentifier() + "\".");
+            if ( TSListType.ENSEMBLE_ID.equals(SubtractTSList) ) {
+                // Subtracting an ensemble from an ensemble so get the ensemble time series at the position...
+                tstosubtract = getTimeSeriesToProcess ( its, subtract_tspos, command_tag, warning_count );
+                tstosubtract_list.addElement( tstosubtract );
+                Message.printStatus(2, routine, "Subtracting ensemble time series \"" + tstosubtract.getIdentifier() +
+                        "\" from ensemble time series \"" + ts.getIdentifier() + "\".");
             }
             else {
-                // Adding another time series to an ensemble (checks above verified that only one time series is added).
-                Message.printStatus(2, routine, "Adding " + tstoadd_list.size() +
-                        " time series to ensemble time series \"" + ts.getIdentifier() + "\".");
-                tstoadd_list = add_tslist;
+                // Subtracting another time series from an ensemble (checks above verified that only one time series is subtracted).
+                Message.printStatus(2, routine, "Subtracting " + tstosubtract_list.size() +
+                        " time series from ensemble time series \"" + ts.getIdentifier() + "\".");
+                tstosubtract_list = subtract_tslist;
             }
         }
         
-        int tstoadd_list_size = tstoadd_list.size();
-        if ( tstoadd_list_size == 0 ) {
+        int tstosubtract_list_size = tstosubtract_list.size();
+        if ( tstosubtract_list_size == 0 ) {
             // Skip time series.
-            message = "Zero time series to add for " + ts.getIdentifier();
+            message = "Zero time series to subtract for " + ts.getIdentifier();
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
@@ -656,30 +656,30 @@ CommandWarningException, CommandException
             continue;
         }
         
-        // Remove from the time series list the time series being added to (don't add to itself)...
+        // Remove from the time series list the time series being subtracted to (don't subtract from itself)...
         
-        TS add_ts;
-        for ( int icheck = 0; icheck < tstoadd_list_size; icheck++ ) {
-            add_ts = (TS)add_tslist.elementAt(icheck);
-            if ( add_ts == null ) {
+        TS subtract_ts;
+        for ( int icheck = 0; icheck < tstosubtract_list_size; icheck++ ) {
+            subtract_ts = (TS)subtract_tslist.elementAt(icheck);
+            if ( subtract_ts == null ) {
                 continue;
             }
-            else if ( add_ts == ts ) {
-                Message.printStatus(2, routine, "Removing \"" + add_ts.getIdentifier() +
-                        "\" from add since it is same as the receiving time series." );
-                add_tslist.removeElementAt(icheck);
+            else if ( subtract_ts == ts ) {
+                Message.printStatus(2, routine, "Removing \"" + subtract_ts.getIdentifier() +
+                        "\" from subtract since it is same as the receiving time series." );
+                subtract_tslist.removeElementAt(icheck);
                 --icheck;
-                --tstoadd_list_size;
+                --tstosubtract_list_size;
             }
         }
         
-        // Finally do the add...
+        // Finally do the subtract...
         
         try {
-            TSUtil.add ( ts, tstoadd_list, HandleMissingHow_int );
+            TSUtil.subtract ( ts, tstosubtract_list, HandleMissingHow_int );
         }
         catch ( Exception e ) {
-            message = "Unexpected error adding to time series \"" + ts.getIdentifier() + "\".";
+            message = "Unexpected error subtracting from time series \"" + ts.getIdentifier() + "\".";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
             Message.printWarning(3,routine,e);
@@ -710,9 +710,9 @@ public String toString ( PropList props )
 	}
     String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
-    String AddTSList = props.getValue( "AddTSList" );
-    String AddTSID = props.getValue( "AddTSID" );
-    String AddEnsembleID = props.getValue( "AddEnsembleID" );
+    String SubtractTSList = props.getValue( "SubtractTSList" );
+    String SubtractTSID = props.getValue( "SubtractTSID" );
+    String SubtractEnsembleID = props.getValue( "SubtractEnsembleID" );
     String HandleMissingHow = props.getValue( "HandleMissingHow" );
 	//String SetStart = props.getValue("SetStart");
 	//String SetEnd = props.getValue("SetEnd");
@@ -730,23 +730,23 @@ public String toString ( PropList props )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( (AddTSList != null) && (AddTSList.length() > 0) ) {
+    if ( (SubtractTSList != null) && (SubtractTSList.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "AddTSList=" + AddTSList );
+        b.append ( "SubtractTSList=" + SubtractTSList );
     }
-    if ( (AddTSID != null) && (AddTSID.length() > 0) ) {
+    if ( (SubtractTSID != null) && (SubtractTSID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "AddTSID=\"" + AddTSID + "\"" );
+        b.append ( "SubtractTSID=\"" + SubtractTSID + "\"" );
     }
-    if ( (AddEnsembleID != null) && (AddEnsembleID.length() > 0) ) {
+    if ( (SubtractEnsembleID != null) && (SubtractEnsembleID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "AddEnsembleID=\"" + AddEnsembleID + "\"" );
+        b.append ( "SubtractEnsembleID=\"" + SubtractEnsembleID + "\"" );
     }
     if ( (HandleMissingHow != null) && (HandleMissingHow.length() > 0) ) {
         if ( b.length() > 0 ) {

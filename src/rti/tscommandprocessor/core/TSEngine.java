@@ -4872,7 +4872,8 @@ element) to determine the number of time series to process.  The order of the
 time series will be from first to last.  A non-null list is guaranteed to be returned.
 */
 protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID )
-{	Vector tslist = new Vector();	// List of time series to process
+{	String routine = "TSEngine.getTimeSeriesToProcess";
+    Vector tslist = new Vector();	// List of time series to process
 	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
 	int [] tspos = new int[nts];	// Positions of time series to process.
 					// Size to match the full list but may
@@ -4928,17 +4929,19 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         // Return a list of all time series in an ensemble.
         TSEnsemble ensemble = __ts_processor.getEnsemble ( EnsembleID );
         if ( ensemble == null ) {
+            Message.printStatus( 3, routine, "Unable to find ensemble \"" + EnsembleID + "\" to get time series.");
             return v;
         }
         else {
             int esize = ensemble.size();
             for ( int ie = 0; ie < esize; ie++ ) {
-                // Set the time series instance...
+                // Set the time series instance (always what is included in the ensemble)...
                 ts = ensemble.get (ie);
                 tslist.addElement ( ts );
-                // Figure out the index by comparing the instance with the main list...
+                // Figure out the index in the processor time series list by comparing the instance...
                 TS ts2; // Time series in main list to compare against.
                 boolean found = false;
+                // Loop through the main list...
                 for ( int its = 0; its < nts; its++ ) {
                     try {
                         ts2 = getTimeSeries ( its );
@@ -4949,9 +4952,12 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
                     if ( ts == ts2 ) {
                         found = true;
                         tspos[count++] = its;
+                        break;
                     }
                 }
                 if ( !found ) {
+                    Message.printStatus( 3, routine, "Unable to find ensemble \"" + EnsembleID + "\" time series \"" +
+                            ts.getIdentifier() + "\" - setting index to -1.");
                     tspos[count++] = -1;    // Should never happen - will trigger problem that need to fix other code
                 }
             }
@@ -9743,11 +9749,13 @@ throws Exception
 {	String routine = "TSEngine.setTimeSeries";
 
 	if ( ts == null ) {
-		Message.printStatus ( 1, routine, "Setting null time series at position " + (position + 1) );
+		Message.printStatus ( 2, routine, "Setting null time series at position " + (position + 1) +
+                " (internal [" + position + "])");
 	}
 	else {
-        Message.printStatus ( 1, routine,
-		"Setting time series \"" + ts.getIdentifierString() + "\" at position " + (position + 1) );
+        Message.printStatus ( 2, routine,
+		"Setting time series \"" + ts.getIdentifierString() + "\" at position " + (position + 1) +
+        " (internal [" + position + "])");
 	}
 	if ( position < 0 ) {
 		return;

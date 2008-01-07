@@ -145,7 +145,7 @@ CommandWarningException, CommandException
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
-    request_params.set ( "EnsembleID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);

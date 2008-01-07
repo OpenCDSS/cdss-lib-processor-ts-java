@@ -188,7 +188,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
         bean = processor.processRequest( "GetTimeSeries", request_params);
     }
     catch ( Exception e ) {
-        message = "Error requesting GetTimeSeries(Index=" + tspos[its] + "\") from processor.";
+        message = "Error requesting GetTimeSeries(Index=" + tspos[its] + ") from processor.";
         Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
@@ -200,7 +200,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
     PropList bean_PropList = bean.getResultsPropList();
     Object prop_contents = bean_PropList.getContents ( "TS" );
     if ( prop_contents == null ) {
-        message = "Null value for GetTimeSeries(Index=" + tspos[its] + "\") returned from processor.";
+        message = "Null value for GetTimeSeries(Index=" + tspos[its] + ") returned from processor.";
         Message.printWarning(log_level,
         MessageUtil.formatMessageTag( command_tag, ++warning_count),
             routine, message );
@@ -449,8 +449,8 @@ CommandWarningException, CommandException
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
     }
     catch ( Exception e ) {
-        message = "Error requesting GetTimeSeriesToProcess(IndependentTSList=\"" + IndependentTSList +
-        "\", IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\") from processor.";
+        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + IndependentTSList +
+        "\", TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\") from processor.";
         Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
@@ -462,8 +462,8 @@ CommandWarningException, CommandException
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
     Vector independent_tslist = null;
     if ( o_TSList2 == null ) {
-        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(IndependentTSList=\"" + IndependentTSList +
-        "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\").";
+        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + IndependentTSList +
+        "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\").";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
@@ -475,8 +475,8 @@ CommandWarningException, CommandException
     else {
         independent_tslist = (Vector)o_TSList2;
         if ( independent_tslist.size() == 0 ) {
-            message = "No independent time series are available from processor GetTimeSeriesToProcess (IndependentTSList=\"" + IndependentTSList +
-            "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\").";
+            message = "No independent time series are available from processor GetTimeSeriesToProcess (TSList=\"" + IndependentTSList +
+            "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\").";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(
                     command_tag,++warning_count), routine, message );
@@ -489,8 +489,8 @@ CommandWarningException, CommandException
     Object o_Indices2 = bean_PropList.getContents ( "Indices" );
     int [] independent_tspos = null;
     if ( o_Indices2 == null ) {
-        message = "Unable to find indices for independent time series to process using IndependentTSList=\"" + IndependentTSList +
-        "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\".";
+        message = "Unable to find indices for independent time series to process using TSList=\"" + IndependentTSList +
+        "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\".";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
@@ -501,8 +501,8 @@ CommandWarningException, CommandException
     else {
         independent_tspos = (int [])o_Indices2;
         if ( independent_tspos.length == 0 ) {
-            message = "Unable to find indices for independent time series to process using IndependentTSList=\"" + IndependentTSList +
-            "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\".";
+            message = "Unable to find indices for independent time series to process using TSList=\"" + IndependentTSList +
+            "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\".";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(
                     command_tag,++warning_count), routine, message );
@@ -517,8 +517,8 @@ CommandWarningException, CommandException
         n_independent_ts = independent_tslist.size();
     }
     if ( n_independent_ts == 0 ) {
-        message = "Unable to find any independent time series to process using IndependentTSList=\"" + IndependentTSList +
-        "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\".";
+        message = "Unable to find any independent time series to process using TSList=\"" + IndependentTSList +
+        "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\".";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
@@ -678,18 +678,20 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the setting...
+        int independent_tspos_touse = -1;
         if ( n_independent_ts == 1 ) {
             // Reuse the same independent time series for all transfers...
-            independent_ts = getTimeSeriesToProcess ( 0, independent_tspos, command_tag, warning_count );
+            independent_tspos_touse = 0;
         }
         else {
-            // Get the time series matching the loop index...
-            independent_ts = getTimeSeriesToProcess ( its, independent_tspos, command_tag, warning_count );
+            // Ensemble - get the time series matching the loop index...
+            independent_tspos_touse = its; 
         }
+        independent_ts = getTimeSeriesToProcess ( independent_tspos_touse, independent_tspos, command_tag, warning_count );
         
         if ( independent_ts == null ) {
             // Skip time series.
-            message = "Unable to get independent time series at position " + tspos[its] + " - null time series.";
+            message = "Unable to get independent time series at position " + tspos[independent_tspos_touse] + " - null time series.";
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );

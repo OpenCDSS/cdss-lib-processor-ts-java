@@ -8,6 +8,7 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
@@ -310,22 +311,69 @@ CommandWarningException, CommandException
                         message, "Report the problem to software support." ) );
 		}
 	}
-	
-	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
-		message = "Insufficient data to run command.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-		// It is OK if no time series.
-	}
+    
+    // The ensemble is needed because its time series will be replaced...
+    
+    TSEnsemble tsensemble = null;
+    if ( TSListType.ENSEMBLE_ID.equals(TSList) ) {
+        request_params = new PropList ( "" );
+        request_params.set ( "CommandTag", command_tag );
+        request_params.set ( "EnsembleID", EnsembleID );
+        try {
+            bean = processor.processRequest( "GetEnsemble", request_params );
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+        if ( o_TSEnsemble == null ) {
+            message = "Null TS requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+        }
+        else {
+            tsensemble = (TSEnsemble)o_TSEnsemble;
+        }
+        
+        if ( tsensemble == null ) {
+            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID + "\".";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+            throw new CommandWarningException ( message );
+        }
+    }
+    
+    if ( warning_count > 0 ) {
+        // Input error (e.g., missing time series)...
+        message = "Insufficient data to run command.";
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(
+        command_tag,++warning_count), routine, message );
+        // It is OK if no time series.
+    }
 
 	// Now process the time series...
+        
+    int nts = 0;
+    if ( tslist != null ) {
+        nts = tslist.size();
+    }
 
-	int nts = 0;
-	if ( tslist != null ) {
-		nts = tslist.size();
-	}
 	int Bracket_int = StringUtil.atoi ( Bracket );
 	TS ts = null;  // Time series to process
     TS newts = null;    // Running average time series
@@ -383,7 +431,7 @@ CommandWarningException, CommandException
             else if ( AverageMethod.equalsIgnoreCase( _PreviousInclusive) ) {
                 newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_PREVIOUS_INCLUSIVE );
             }
-            // Because the time series is a new instance, replace in the processor...
+            // Because the time series is a new instance, replace in the processor (and ensemble if appropriate)...
             request_params = new PropList ( "" );
             request_params.setUsingObject ( "TS", newts );
             request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
@@ -399,6 +447,11 @@ CommandWarningException, CommandException
                 status.addToLog ( CommandPhaseType.RUN,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
+            }
+            if ( TSListType.ENSEMBLE_ID.equals(TSList) ) {
+                // TODO SAM 2008-01-07 Evaluate whether low-level code should be updated to now cause a new
+                // reference to be needed
+                tsensemble.set ( its, newts );
             }
 		}
 		catch ( Exception e ) {

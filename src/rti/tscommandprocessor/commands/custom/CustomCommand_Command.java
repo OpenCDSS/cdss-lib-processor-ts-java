@@ -101,7 +101,7 @@ String [] __BIN_NAMES2 = {
 Output file that is created by this command.
 */
 private File __AdvanceAnalysisOutputFile_File = null;
-private File __VerificationOutputFile_File = null;
+private File __MetricsOutputFile_File = null;
 
 /**
 Constructor.
@@ -130,6 +130,7 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     CommandProcessor processor = getCommandProcessor();
     
+    String Title = parameters.getValue("Title");
     String CurrentRForecastTSID = parameters.getValue("CurrentRForecastTSID");
     String CurrentNForecastTSID = parameters.getValue ( "CurrentNForecastTSID" );
     String PreviousNForecastTSID = parameters.getValue ( "PreviousNForecastTSID" );
@@ -137,8 +138,15 @@ throws InvalidCommandParameterException
     String ChangeCriteria  = parameters.getValue("ChangeCriteria");
     String ValueCriteria = parameters.getValue("ValueCriteria");
     String AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
-    String VerificationOutputFile = parameters.getValue ( "VerificationOutputFile" );
+    String MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
     
+    if ( (Title == null) || (Title.length() == 0) ) {
+        message = "A title must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a title for report headings." ) );
+    }
     if ( (CurrentRForecastTSID == null) || (CurrentRForecastTSID.length() == 0) ) {
         message = "A CurrentRForecast time series identifier must be specified.";
         warning += "\n" + message;
@@ -260,7 +268,7 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (VerificationOutputFile == null) || (VerificationOutputFile.length() == 0) ) {
+    if ( (MetricsOutputFile == null) || (MetricsOutputFile.length() == 0) ) {
         message = "The verification output file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -283,7 +291,7 @@ throws InvalidCommandParameterException
         }
 
         try {
-            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, VerificationOutputFile));
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, MetricsOutputFile));
             File f = new File ( adjusted_path );
             File f2 = new File ( f.getParent() );
             if ( !f2.exists() ) {
@@ -298,7 +306,7 @@ throws InvalidCommandParameterException
         }
         catch ( Exception e ) {
             message = "The output file:\n" +
-            "    \"" + VerificationOutputFile +
+            "    \"" + MetricsOutputFile +
             "\"\ncannot be adjusted using the working directory:\n" +
             "    \"" + working_dir + "\".";
             warning += "\n" + message;
@@ -310,6 +318,7 @@ throws InvalidCommandParameterException
 
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
+	valid_Vector.add ( "Title" );
     valid_Vector.add ( "CurrentRForecastTSID" );
     valid_Vector.add ( "CurrentNForecastTSID" );
     valid_Vector.add ( "PreviousNForecastTSID" );
@@ -317,7 +326,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "ChangeCriteria" );
 	valid_Vector.add ( "ValueCriteria" );
     valid_Vector.add ( "AdvanceAnalysisOutputFile" );
-    valid_Vector.add ( "VerificationOutputFile" );
+    valid_Vector.add ( "MetricsOutputFile" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -329,9 +338,102 @@ throws InvalidCommandParameterException
 }
 
 /**
+Create the Advance Analysis report (modified STP report)
+*/
+private void createAdvanceAnalysisReport ( String title, String AdvanceAnalysisOutputFile, DateTime STPDate_DateTime,
+        TS Np, TS Nc, TS R,
+        double [] Np_mean, double [] Nc_mean, double [] R_mean, DateTime [] bin_end_DateTime )
+throws Exception
+{
+    //String comment = "#";
+    CommandProcessor processor = getCommandProcessor();
+    String AdvanceAnalysisOutputFile_full = IOUtil.verifyPathForOS(
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),AdvanceAnalysisOutputFile));
+    PrintWriter fout = new PrintWriter ( new FileOutputStream ( AdvanceAnalysisOutputFile_full ) );
+    //IOUtil.printCreatorHeader( fout, comment, 120, 0);
+    String format_param = "%-12.12s";
+    //String format_percent = "%16.2f";
+    String format_text = "%16.16s";
+    String format_value = "%16.0f";
+    String space = "  ";
+    //String format_int = "%16d";
+    /*
+    fout.println ( comment );
+    fout.println ( comment + "--------------------------------------------------------------------------------------");
+    fout.println ( comment + " STP date:  " + STPDate_DateTime );
+    fout.println ( comment + " Np period: " + Np_TS.getDate1() + " to " + Np_TS.getDate2());
+    fout.println ( comment + " Nc period: " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2());
+    fout.println ( comment + " R period:  " + R_TS.getDate1() + " to " + R_TS.getDate2());
+    fout.println ( comment );
+    fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin.");
+    fout.println ( comment );
+    fout.println ( comment + " Change criteria :        " +
+            StringUtil.formatString(ChangeCriteria_double,"%.2f") + "%");
+    fout.println ( comment + " Absolute value criteria: " +
+            StringUtil.formatString(ValueCriteria_double,"%.1f") + " " + R_TS.getDataUnits() );
+    fout.println ( comment );
+    fout.println ( comment + "--------------------------------------------------------------------------------------");
+    fout.println ( comment );
+    */
+    
+    fout.println ( "" );
+    fout.println ( title );
+    fout.println ( "" );
+    fout.println ( "STP date:  " + STPDate_DateTime );
+    fout.println ( "" );
+    
+    fout.println ( "" );
+    fout.println ( "Average CFS" );
+    fout.println ( "" );
+    
+    fout.println (
+            StringUtil.formatString("Bin",format_param) + space +
+            StringUtil.formatString("NWS Prev (Np)",format_text) + space +
+            StringUtil.formatString("NWS Current (Nc)",format_text) + space +
+            StringUtil.formatString("RTi (R)",format_text) );
+    fout.println ( "" );
+    for ( int i = 0; i < __BIN_SIZE; i++ ) {
+        fout.println (
+                StringUtil.formatString(__BIN_NAMES[i],format_param) + space +
+                StringUtil.formatString(Np_mean[i],format_value) + space +
+                StringUtil.formatString(Nc_mean[i],format_value) + space +
+                StringUtil.formatString(R_mean[i],format_value) + space );
+    }
+    
+    fout.println ( "" );
+    fout.println ( "Daily Data (CFS)" );
+    fout.println ( "" );
+    fout.println (
+            StringUtil.formatString("Date",format_param ) + space +
+            StringUtil.formatString("NWS Prev (Np)",format_text) + space +
+            StringUtil.formatString("NWS Current (Nc)",format_text) + space +
+            StringUtil.formatString("RTi (R)",format_text) );
+    fout.println ( "" );
+    
+    DateTime end = new DateTime(Nc.getDate2());
+    for ( DateTime date = new DateTime(STPDate_DateTime); date.lessThanOrEqualTo(end); date.addDay(1) ) {
+        fout.println (
+        StringUtil.formatString(date.toString(), format_param) + space +
+        StringUtil.formatString(Np.getDataValue(date), format_value) + space +
+        StringUtil.formatString(Nc.getDataValue(date), format_value) + space +
+        StringUtil.formatString(R.getDataValue(date), format_value) );
+        // Brute force print blank lines after each bin
+        for ( int j = 0; j < bin_end_DateTime.length; j++ ) {
+            if ( bin_end_DateTime[j].equals(date) ) {
+                fout.println ( "" );
+                break;
+            }
+        }
+    }
+    
+    fout.close();
+}
+
+/**
 Process the custom command.
 */
 private int customCommand (
+        String Title,
         DayTS R_TS,
         DayTS Nc_TS,
         DayTS Np_TS,
@@ -339,7 +441,7 @@ private int customCommand (
         double ChangeCriteria_double,
         double ValueCriteria_double,
         String AdvanceAnalysisOutputFile_full,
-        String VerificationOutputFile_full,
+        String MetricsOutputFile_full,
         CommandStatus status )
 {   String routine = "CustomCommand.customCommand";
     int warning_count = 0;
@@ -486,7 +588,7 @@ private int customCommand (
         // Adjust the bin that the value should go into, starting with figuring out the week.
         if ( i == 0 ) {
             // Always in this week with no further adjustments necessary
-            in_between_balweek_and_weekahead = true;
+            in_balweek = true;
             bin_start_DateTime[__BIN_BAL_WEEK] = new DateTime(date);
         }
         else if ( in_balweek ) {
@@ -646,62 +748,51 @@ private int customCommand (
     
     // Write the results with the pass fail results.
     
-    PrintWriter ver_fout = null;
+    PrintWriter fout = null;
     String comment = "#";
     String delim = ",";
     try {
-         ver_fout = new PrintWriter ( new FileOutputStream ( VerificationOutputFile_full ) );
-         IOUtil.printCreatorHeader( ver_fout, comment, 120, 0);
+         fout = new PrintWriter ( new FileOutputStream ( MetricsOutputFile_full ) );
+         IOUtil.printCreatorHeader( fout, comment, 120, 0);
          String format_param = "%-26.26s";
          String format_percent = "%16.2f";
          String format_text = "%16.16s";
          String format_value = "%16.0f";
          String format_int = "%16d";
-         ver_fout.println ( comment );
-         ver_fout.println ( comment + "--------------------------------------------------------------------------------------");
-         ver_fout.println ( comment + " STP date:  " + STPDate_DateTime );
-         ver_fout.println ( comment + " Np period: " + Np_TS.getDate1() + " to " + Np_TS.getDate2());
-         ver_fout.println ( comment + " Nc period: " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2());
-         ver_fout.println ( comment + " R period:  " + R_TS.getDate1() + " to " + R_TS.getDate2());
-         ver_fout.println ( comment );
-         ver_fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin.");
-         ver_fout.println ( comment );
-         ver_fout.println ( comment + " Change criteria :        " +
+         fout.println ( comment );
+         fout.println ( comment + "--------------------------------------------------------------------------------------");
+         fout.println ( comment + " " + Title );
+         fout.println ( comment );
+         fout.println ( comment + " STP date:  " + STPDate_DateTime );
+         fout.println ( comment + " Np period: " + Np_TS.getDate1() + " to " + Np_TS.getDate2());
+         fout.println ( comment + " Nc period: " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2());
+         fout.println ( comment + " R period:  " + R_TS.getDate1() + " to " + R_TS.getDate2());
+         fout.println ( comment );
+         fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin.");
+         fout.println ( comment );
+         fout.println ( comment + " Change criteria :        " +
                  StringUtil.formatString(ChangeCriteria_double,"%.2f") + "%");
-         ver_fout.println ( comment + " Absolute value criteria: " +
+         fout.println ( comment + " Absolute value criteria: " +
                  StringUtil.formatString(ValueCriteria_double,"%.1f") + " " + R_TS.getDataUnits() );
-         ver_fout.println ( comment );
-         ver_fout.println ( comment + "--------------------------------------------------------------------------------------");
-         ver_fout.println ( comment );
-         printReportResultsLine ( ver_fout, "Parameter", format_param, delim, __BIN_NAMES, format_text );
-         printReportResultsLine ( ver_fout, "", format_param, delim, __BIN_NAMES2, format_text );
-         printReportResultsLine ( ver_fout, "Bin start", format_param, delim, bin_start_DateTime, format_value );
-         printReportResultsLine ( ver_fout, "Bin end", format_param, delim, bin_end_DateTime, format_value );
-         printReportDividerLine ( ver_fout, format_param, delim, format_text );
+         fout.println ( comment );
+         fout.println ( comment + "--------------------------------------------------------------------------------------");
+         fout.println ( comment );
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
+         printMetricsReportResultsLine ( fout, "Parameter", format_param, delim, __BIN_NAMES, format_text );
+         printMetricsReportResultsLine ( fout, "", format_param, delim, __BIN_NAMES2, format_text );
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
+         printMetricsReportResultsLine ( fout, "Bin start", format_param, delim, bin_start_DateTime, format_value );
+         printMetricsReportResultsLine ( fout, "Bin end", format_param, delim, bin_end_DateTime, format_value );
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
          // Previous N forecast values....
-         printReportDataLine ( ver_fout, "Previous NWS Forecast (Np)", format_param, delim, Np_mean, format_value );
-         printReportDataLine ( ver_fout, "Np # missing", format_param, delim, Np_missing, format_int );
-         printReportDataLine ( ver_fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
+         printMetricsReportDataLine ( fout, "Previous NWS Forecast (Np)", format_param, delim, Np_mean, format_value );
+         printReportDataLine ( fout, "Np # missing", format_param, delim, Np_missing, format_int );
+         printReportDataLine ( fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
          // Current N forecast values....
-         printReportDataLine ( ver_fout, "Current NWS Forecast (Nc)", format_param, delim, Nc_mean, format_value );
-         printReportDataLine ( ver_fout, "Nc # missing", format_param, delim, Nc_missing, format_int );
-         printReportDataLine ( ver_fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
-         // Value bound (high), based on Nc
-         double [] value_high = new double[__BIN_SIZE];
-         for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( Nc_missing[i] == 0 ) {
-                 value_high[i] = Nc_mean[i] + ValueCriteria_double;
-             }
-         }
-         printReportDataLine ( ver_fout, "Nc Value bound (high)", format_param, delim, value_high, format_value );
-         // Value bound (low), based on Nc
-         double [] value_low = new double[__BIN_SIZE];
-         for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( Nc_missing[i] == 0 ) {
-                 value_low[i] = Nc_mean[i] - ValueCriteria_double;
-             }
-         }
-         printReportDataLine ( ver_fout, "Nc Value bound (low)", format_param, delim, value_low, format_value );
+         printMetricsReportDataLine ( fout, "Current NWS Forecast (Nc)", format_param, delim, Nc_mean, format_value );
+         printReportDataLine ( fout, "Nc # missing", format_param, delim, Nc_missing, format_int );
+         printReportDataLine ( fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
+
          // Difference and percent difference of Nc - Np values...
          double [] NcNp_diff = new double[__BIN_SIZE];
          double [] NcNp_diff_percent = new double[__BIN_SIZE];
@@ -711,16 +802,16 @@ private int customCommand (
                  NcNp_diff_percent[i] = (NcNp_diff[i]/Np_mean[i])*100.0;
              }
          }
-         printReportDataLine ( ver_fout, "Nc - Np", format_param, delim, NcNp_diff, format_value );
-         printReportDataLine ( ver_fout, "Nc - Np (% of Np)", format_param, delim, NcNp_diff_percent, format_percent );
+         printMetricsReportDataLine ( fout, "Nc - Np", format_param, delim, NcNp_diff, format_value );
+         printMetricsReportDataLine ( fout, "Nc - Np (% of Np)", format_param, delim, NcNp_diff_percent, format_percent );
  
          // Raw R values...
-         printReportDataLine ( ver_fout, "Current RTi forecast (R)", format_param, delim, R_mean, format_value );
-         printReportDataLine ( ver_fout, "R # missing", format_param, delim, R_missing, format_int );
-         printReportDataLine ( ver_fout, "R # not missing", format_param, delim, R_notmissing, format_int );
+         printMetricsReportDataLine ( fout, "Current RTi forecast (R)", format_param, delim, R_mean, format_value );
+         printReportDataLine ( fout, "R # missing", format_param, delim, R_missing, format_int );
+         printReportDataLine ( fout, "R # not missing", format_param, delim, R_notmissing, format_int );
 
          // Mark did not want to see the following statistics so turn off but leave code in.
-         boolean ShowAllStatistics_boolean = false;
+         boolean ShowAllStatistics_boolean = true;
 
          // R minus Np, difference and percent, difference and percent difference of Np values...
          double [] RNp_diff = new double[__BIN_SIZE];
@@ -732,8 +823,8 @@ private int customCommand (
              }
          }
          if ( ShowAllStatistics_boolean ) {
-             printReportDataLine ( ver_fout, "R - Np", format_param, delim, RNp_diff, format_value );
-             printReportDataLine ( ver_fout, "R - Np (% of Np)", format_param, delim, RNp_diff_percent, format_percent );
+             printMetricsReportDataLine ( fout, "R - Np", format_param, delim, RNp_diff, format_value );
+             printMetricsReportDataLine ( fout, "R - Np (% of Np)", format_param, delim, RNp_diff_percent, format_percent );
          }
              
          // R minus Nc, difference and percent difference of Nc values...
@@ -745,33 +836,74 @@ private int customCommand (
                  RNc_diff_percent[i] = (RNc_diff[i]/Nc_mean[i])*100.0;
              }
          }
-         printReportDividerLine ( ver_fout, format_param, delim, format_text );
          if ( ShowAllStatistics_boolean ) {
-             printReportDataLine ( ver_fout, "R - Nc", format_param, delim, RNp_diff, format_value );
-             printReportDataLine ( ver_fout, "R - Nc (% of Nc)", format_param, delim, RNc_diff_percent, format_percent );
+             printMetricsReportDataLine ( fout, "R - Nc", format_param, delim, RNp_diff, format_value );
+             printMetricsReportDataLine ( fout, "R - Nc (% of Nc)", format_param, delim, RNc_diff_percent, format_percent );
          }
-
+         
+         // Value bound (high), based on Nc
+         double [] value_high = new double[__BIN_SIZE];
+         double [] value_low = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             if ( Nc_missing[i] == 0 ) {
+                 value_high[i] = Nc_mean[i] + ValueCriteria_double;
+                 value_low[i] = Nc_mean[i] - ValueCriteria_double;
+             }
+         }
+         
+         // Compute the change value and bounds
+         
+         double [] change = new double[__BIN_SIZE];
+         double [] change_low = new double[__BIN_SIZE];
+         double [] change_high = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
+                     change[i] = Math.abs((RNp_diff[i] - NcNp_diff[i])/NcNp_diff[i])*100.0;
+                     change_low[i] = Nc_mean[i] - (ChangeCriteria_double/100.0)*Math.abs(NcNp_diff[i]);
+                     change_high[i] = Nc_mean[i] + (ChangeCriteria_double/100.0)*Math.abs(NcNp_diff[i]);
+             }
+         }
+         
          // Do the final tests, looping through each bin
          String [][] test_results = new String[__TEST_SIZE][__BIN_SIZE];
          for ( int i = 0; i < __BIN_SIZE; i++ ) {
              test ( test_results, i,
                      ValueCriteria_double, ChangeCriteria_double,
                      Np_mean[i], Nc_mean[i], R_mean[i], NcNp_diff[i], RNp_diff[i], RNc_diff[i],
+                     change[i],
                      Np_missing[i], Nc_missing[i], R_missing[i],
                      Np_notmissing[i], Nc_notmissing[i], R_notmissing[i]);
          }
          
-         // Now print the test results, looping through each test criteria and printing a corresponding row...
-         printReportDividerLine ( ver_fout, format_param, delim, format_text );
-         for ( int i = 0; i < __TEST_SIZE; i++ ) {
-             printReportResultsLine ( ver_fout, __TEST_NAMES[i], format_param, delim, test_results[i], format_text );
-         }
-         printReportDividerLine ( ver_fout, format_param, delim, format_text );
+         // Print important results and whether pass
+
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
+         printMetricsReportDataLine ( fout, "Value bound (high)", format_param, delim, value_high, format_value );
+         printMetricsReportDataLine ( fout, "Current RTi forecast (R)", format_param, delim, R_mean, format_value );
+
+         printMetricsReportDataLine ( fout, "Value bound (low)", format_param, delim, value_low, format_value );
+         printMetricsReportResultsLine ( fout,
+                 __TEST_NAMES[__TEST_VALUE], format_param, delim, test_results[__TEST_VALUE], format_text );
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, false );
+         printMetricsReportDataLine ( fout, "Change bound (high)", format_param, delim, change_high, format_value );
+         printMetricsReportDataLine ( fout, "Current RTi forecast (R)", format_param, delim, R_mean, format_value );
+         printMetricsReportDataLine ( fout, "Change bound (low)", format_param, delim, change_low, format_value );
+         printMetricsReportResultsLine ( fout,
+                 __TEST_NAMES[__TEST_CHANGE], format_param, delim, test_results[__TEST_CHANGE], format_text );
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
+         printMetricsReportResultsLine (
+                 fout, __TEST_NAMES[__TEST_FINAL], format_param, delim, test_results[__TEST_FINAL], format_text );
+         printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
         
+         
+         fout.close();
          // Save the output file name...
-         ver_fout.close();
+         setMetricsOutputFile ( new File(MetricsOutputFile_full));
+         
+         // Create the Advance Analysis report
+         createAdvanceAnalysisReport ( Title, AdvanceAnalysisOutputFile_full, STPDate_DateTime,
+                 Np_TS, Nc_TS, R_TS, Np_mean, Nc_mean, R_mean, bin_end_DateTime );
          setAdvanceAnalysisOutputFile ( new File(AdvanceAnalysisOutputFile_full));
-         setVerificationOutputFile ( new File(VerificationOutputFile_full));
     }
     catch ( Exception e ) {
         message = "Unexpected error processing data.";
@@ -805,8 +937,8 @@ public List getGeneratedFileList ()
     if ( getAdvanceAnalysisOutputFile() != null ) {
         list.addElement ( getAdvanceAnalysisOutputFile() );
     }
-    if ( getVerificationOutputFile() != null ) {
-        list.addElement ( getVerificationOutputFile() );
+    if ( getMetricsOutputFile() != null ) {
+        list.addElement ( getMetricsOutputFile() );
     }
     return list;
 }
@@ -822,9 +954,9 @@ private File getAdvanceAnalysisOutputFile ()
 /**
 Return the verification output file generated by this file.  This method is used internally.
 */
-private File getVerificationOutputFile ()
+private File getMetricsOutputFile ()
 {
-    return __VerificationOutputFile_File;
+    return __MetricsOutputFile_File;
 }
 
 // Use base class parseCommand()
@@ -838,7 +970,7 @@ Print a line in the report.
 @param values Values to output.
 @param format_values StringUtil.formtString() format for value columns.
 */
-private void printReportDataLine ( PrintWriter fout, String param_title, String format_param,
+private void printMetricsReportDataLine ( PrintWriter fout, String param_title, String format_param,
         String delim, double [] values, String format_value )
 {
     fout.println (
@@ -876,15 +1008,20 @@ private void printReportDataLine ( PrintWriter fout, String param_title, String 
 /**
 Print a line in the report.
 @param fout PrintWriter to receive output.
-@param param_title parameter title for first column.
 @param format_param StringUtil.formatString() format for parameter column.
 @param delim Delimiter between columns.
-@param values Values to output.
-@param format_values StringUtil.formtString() format for value columns.
+@param format_text StringUtil.formtString() format for text columns.
+@param wide Indicates if wide line should be used.
 */
-private void printReportDividerLine ( PrintWriter fout, String format_param, String delim, String format_text )
+private void printMetricsReportDividerLine (
+        PrintWriter fout, String format_param, String delim, String format_text, boolean wide )
 {
-    String divider = "-----------------------------------------";   // Make long - will be truncated
+    String thinline = "-----------------------------------------";   // Make long - will be truncated
+    String wideline = "=========================================";   // Make long - will be truncated
+    String divider = thinline;
+    if ( wide ) {
+        divider = wideline;
+    }
     fout.println (
         StringUtil.formatString(divider,format_param) + delim +
         StringUtil.formatString(divider,format_text) + delim +
@@ -904,7 +1041,7 @@ Print a line in the report.
 @param values Values to output (test results strings).
 @param format_values StringUtil.formtString() format for value columns.
 */
-private void printReportResultsLine ( PrintWriter fout, String param_title, String format_param,
+private void printMetricsReportResultsLine ( PrintWriter fout, String param_title, String format_param,
         String delim, Object [] values, String format_value )
 {
     fout.println (
@@ -940,6 +1077,7 @@ CommandWarningException, CommandException
 	status.clearLog(command_phase);
     
 	PropList parameters = getCommandParameters();
+	String Title = parameters.getValue("Title");
     String CurrentRForecastTSID = parameters.getValue("CurrentRForecastTSID");
     String CurrentNForecastTSID = parameters.getValue ( "CurrentNForecastTSID" );
     String PreviousNForecastTSID = parameters.getValue ( "PreviousNForecastTSID" );
@@ -947,7 +1085,7 @@ CommandWarningException, CommandException
     String ChangeCriteria  = parameters.getValue("ChangeCriteria");
     String ValueCriteria = parameters.getValue("ValueCriteria");
     String AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
-    String VerificationOutputFile = parameters.getValue ( "VerificationOutputFile" );
+    String MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
 
     // Get the time series to process.  The time series list is searched backwards until the first match...
 
@@ -1198,9 +1336,10 @@ CommandWarningException, CommandException
     try {
         String AdvanceAnalysisOutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),AdvanceAnalysisOutputFile));
-        String VerificationOutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),VerificationOutputFile));
+        String MetricsOutputFile_full = IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),MetricsOutputFile));
         warning_count += customCommand (
+                Title,
                 (DayTS)CurrentRForecastTSID_TS,
                 (DayTS)CurrentNForecastTSID_TS,
                 (DayTS)PreviousNForecastTSID_TS,
@@ -1208,7 +1347,7 @@ CommandWarningException, CommandException
                 ChangeCriteria_double,
                 ValueCriteria_double,
                 AdvanceAnalysisOutputFile_full,
-                VerificationOutputFile_full,
+                MetricsOutputFile_full,
                 status
                 );
     }
@@ -1246,9 +1385,9 @@ private void setAdvanceAnalysisOutputFile ( File file )
 /**
 Set the verification output file that is created by this command.  This is only used internally.
 */
-private void setVerificationOutputFile ( File file )
+private void setMetricsOutputFile ( File file )
 {
-    __VerificationOutputFile_File = file;
+    __MetricsOutputFile_File = file;
 }
 
 /**
@@ -1264,6 +1403,7 @@ The returned values are "YES" (pass), "NO" (fail), or " - " (not applicable).
 @param NcNp_diff (Nc - Np) for the bin.
 @param RNp_diff (R - Np) for the bin.
 @param RNc_diff (R - Nc) for the bin.
+@param change Value of change metric.
 @param Np_missing The number of Np missing values for the bin.
 @param Nc_missing The number of Nc missing values for the bin.
 @param R_missing The number of R missing values for the bin.
@@ -1274,6 +1414,7 @@ The returned values are "YES" (pass), "NO" (fail), or " - " (not applicable).
 private void test ( String [][] test_results, int bin,
         double ValueCriteria_double, double ChangeCriteria_double,
         double Np_mean, double Nc_mean, double R_mean, double NcNp_diff, double RNp_diff, double RNc_diff,
+        double change,
         int Np_missing, int Nc_missing, int R_missing, int Np_notmissing, int Nc_notmissing, int R_notmissing )
 {   String routine = "CustomCommand_test";
     // OK to divide by zero since shown as NaN in reports
@@ -1320,7 +1461,7 @@ private void test ( String [][] test_results, int bin,
         Message.printStatus ( 2, routine, "Change test different number of nonmissing for bin " + __BIN_NAMES[bin] );
         test_results[__TEST_CHANGE][bin] = NA;
     }
-    else if ( Math.abs((RNp_diff - NcNp_diff)/NcNp_diff)*100.0 <= ChangeCriteria_double ) {
+    else if ( change <= ChangeCriteria_double ) {
         // RTi forecast is within the magnitude tolerance.
         Message.printStatus ( 2, routine, "Change test passed for bin " + __BIN_NAMES[bin] );
         test_results[__TEST_CHANGE][bin] = YES;
@@ -1354,6 +1495,7 @@ public String toString ( PropList parameters )
 {	if ( parameters == null ) {
 		return getCommandName() + "()";
 	}
+    String Title = parameters.getValue("Title");
     String CurrentRForecastTSID = parameters.getValue("CurrentRForecastTSID");
     String CurrentNForecastTSID = parameters.getValue ( "CurrentNForecastTSID" );
     String PreviousNForecastTSID = parameters.getValue ( "PreviousNForecastTSID" );
@@ -1361,9 +1503,15 @@ public String toString ( PropList parameters )
     String ChangeCriteria  = parameters.getValue("ChangeCriteria");
     String ValueCriteria = parameters.getValue("ValueCriteria");
     String AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
-    String VerificationOutputFile = parameters.getValue ( "VerificationOutputFile" );
+    String MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
     
 	StringBuffer b = new StringBuffer ();
+	if ( (Title != null) && (Title.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Title=\"" + Title + "\"" );
+    }
 	if ( (CurrentRForecastTSID != null) && (CurrentRForecastTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -1406,11 +1554,11 @@ public String toString ( PropList parameters )
         }
         b.append ( "AdvanceAnalysisOutputFile=\"" + AdvanceAnalysisOutputFile + "\"");
     }
-    if ( (VerificationOutputFile != null) && (VerificationOutputFile.length() > 0) ) {
+    if ( (MetricsOutputFile != null) && (MetricsOutputFile.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "VerificationOutputFile=\"" + VerificationOutputFile + "\"");
+        b.append ( "MetricsOutputFile=\"" + MetricsOutputFile + "\"");
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

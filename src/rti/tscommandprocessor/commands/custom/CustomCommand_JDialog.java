@@ -57,6 +57,7 @@ private SimpleJButton	__browse_JButton = null,
             __path_JButton = null;
 private CustomCommand_Command __command = null;// Command to edit
 private JTextArea	__command_JTextArea=null;
+private JTextField  __Title_JTextField;
 private SimpleJComboBox __CurrentRForecastTSID_JComboBox = null;
 private SimpleJComboBox __CurrentNForecastTSID_JComboBox = null;
 private SimpleJComboBox __PreviousNForecastTSID_JComboBox = null;
@@ -64,7 +65,7 @@ private JTextField  __STPDate_JTextField;
 private JTextField  __ChangeCriteria_JTextField;
 private JTextField  __ValueCriteria_JTextField;
 private JTextField	__AdvanceAnalysisOutputFile_JTextField = null;
-private JTextField  __VerificationOutputFile_JTextField = null;
+private JTextField  __MetricsOutputFile_JTextField = null;
 private String      __working_dir = null;   // Working directory.
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
@@ -152,6 +153,7 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList parameters = new PropList ( "" );
+    String Title = __Title_JTextField.getText().trim();
     String CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
     String CurrentNForecastTSID = __CurrentNForecastTSID_JComboBox.getSelected();
     String PreviousNForecastTSID = __PreviousNForecastTSID_JComboBox.getSelected();
@@ -159,10 +161,13 @@ private void checkInput ()
     String ChangeCriteria = __ChangeCriteria_JTextField.getText().trim();
     String ValueCriteria = __ValueCriteria_JTextField.getText().trim();
     String AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
-    String VerificationOutputFile = __VerificationOutputFile_JTextField.getText().trim();
+    String MetricsOutputFile = __MetricsOutputFile_JTextField.getText().trim();
 
     __error_wait = false;
-    
+
+    if ( Title.length() > 0 ) {
+        parameters.set ( "Title", Title );
+    }
     if ( CurrentRForecastTSID.length() > 0 ) {
         parameters.set ( "CurrentRForecastTSID", CurrentRForecastTSID );
     }
@@ -184,8 +189,8 @@ private void checkInput ()
     if ( AdvanceAnalysisOutputFile.length() > 0 ) {
         parameters.set ( "AdvanceAnalysisOutputFile", AdvanceAnalysisOutputFile );
     }
-    if ( VerificationOutputFile.length() > 0 ) {
-        parameters.set ( "VerificationOutputFile", VerificationOutputFile );
+    if ( MetricsOutputFile.length() > 0 ) {
+        parameters.set ( "MetricsOutputFile", MetricsOutputFile );
     }
     try {   // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -202,15 +207,17 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{   String CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
+{   String Title = __Title_JTextField.getText().trim();
+    String CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
     String CurrentNForecastTSID = __CurrentNForecastTSID_JComboBox.getSelected();
     String PreviousNForecastTSID = __PreviousNForecastTSID_JComboBox.getSelected();
     String STPDate = __STPDate_JTextField.getText().trim();
     String ChangeCriteria = __ChangeCriteria_JTextField.getText().trim();
     String ValueCriteria = __ValueCriteria_JTextField.getText().trim();
     String AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
-    String VerificationOutputFile = __VerificationOutputFile_JTextField.getText().trim();
+    String MetricsOutputFile = __MetricsOutputFile_JTextField.getText().trim();
     
+    __command.setCommandParameter ( "Title", Title );
     __command.setCommandParameter ( "CurrentRForecastTSID", CurrentRForecastTSID );
     __command.setCommandParameter ( "CurrentNForecastTSID", CurrentNForecastTSID );
     __command.setCommandParameter ( "PreviousNForecastTSID", PreviousNForecastTSID );
@@ -218,7 +225,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "ChangeCriteria", ChangeCriteria  );
     __command.setCommandParameter ( "ValueCriteria", ValueCriteria );
     __command.setCommandParameter ( "AdvanceAnalysisOutputFile", AdvanceAnalysisOutputFile );
-    __command.setCommandParameter ( "VerificationOutputFile", VerificationOutputFile );
+    __command.setCommandParameter ( "MetricsOutputFile", MetricsOutputFile );
 }
 
 /**
@@ -260,6 +267,15 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Title:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Title_JTextField = new JTextField ( "", 50 );
+    __Title_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Title_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Title for reports."), 
+            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
  
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -300,7 +316,7 @@ private void initialize ( JFrame parent, Command command )
     __STPDate_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __STPDate_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "First date (to day) in forecast."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "STP date (a Tuesday)."), 
             3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Percent of change criteria (%):" ), 
@@ -331,11 +347,11 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Verification report file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Metrics report file to write:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __VerificationOutputFile_JTextField = new JTextField ( 50 );
-    __VerificationOutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __VerificationOutputFile_JTextField,
+    __MetricsOutputFile_JTextField = new JTextField ( 50 );
+    __MetricsOutputFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __MetricsOutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
@@ -422,19 +438,21 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String CurrentRForecastTSID = "";
+{	String Title = "";
+    String CurrentRForecastTSID = "";
     String CurrentNForecastTSID = "";
     String PreviousNForecastTSID = "";
     String STPDate = "";
     String ChangeCriteria = "";
     String ValueCriteria = "";
     String AdvanceAnalysisOutputFile = "";
-    String VerificationOutputFile = "";
+    String MetricsOutputFile = "";
     PropList parameters = null;      // Parameters as PropList.
     if ( __first_time ) {
         __first_time = false;
         // Get the parameters from the command...
         parameters = __command.getCommandParameters ();
+        Title = parameters.getValue("Title");
         CurrentRForecastTSID = parameters.getValue("CurrentRForecastTSID");
         CurrentNForecastTSID = parameters.getValue ( "CurrentNForecastTSID" );
         PreviousNForecastTSID = parameters.getValue ( "PreviousNForecastTSID" );
@@ -442,8 +460,10 @@ private void refresh ()
         ChangeCriteria  = parameters.getValue("ChangeCriteria");
         ValueCriteria = parameters.getValue("ValueCriteria");
         AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
-        VerificationOutputFile = parameters.getValue ( "VerificationOutputFile" );
-
+        MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
+        if ( Title != null ) {
+            __Title_JTextField.setText ( Title );
+        }
         // Now select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem(
                 __CurrentRForecastTSID_JComboBox, CurrentRForecastTSID, JGUIUtil.NONE, null, null ) ) {
@@ -496,11 +516,12 @@ private void refresh ()
         if ( AdvanceAnalysisOutputFile != null ) {
             __AdvanceAnalysisOutputFile_JTextField.setText ( AdvanceAnalysisOutputFile );
         }
-        if ( VerificationOutputFile != null ) {
-            __VerificationOutputFile_JTextField.setText ( VerificationOutputFile );
+        if ( MetricsOutputFile != null ) {
+            __MetricsOutputFile_JTextField.setText ( MetricsOutputFile );
         }
 	}
 	// Regardless, reset the command from the fields...
+    Title = __Title_JTextField.getText().trim();
     CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
     CurrentNForecastTSID = __CurrentNForecastTSID_JComboBox.getSelected();
     PreviousNForecastTSID = __PreviousNForecastTSID_JComboBox.getSelected();
@@ -508,8 +529,9 @@ private void refresh ()
     ChangeCriteria = __ChangeCriteria_JTextField.getText().trim();
     ValueCriteria = __ValueCriteria_JTextField.getText().trim();
     AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
-    VerificationOutputFile = __VerificationOutputFile_JTextField.getText().trim();
+    MetricsOutputFile = __MetricsOutputFile_JTextField.getText().trim();
     parameters = new PropList ( __command.getCommandName() );
+    parameters.add ( "Title=" + Title );
     parameters.add ( "CurrentRForecastTSID=" + CurrentRForecastTSID );
     parameters.add ( "CurrentNForecastTSID=" + CurrentNForecastTSID );
     parameters.add ( "PreviousNForecastTSID=" + PreviousNForecastTSID );
@@ -517,7 +539,7 @@ private void refresh ()
     parameters.add ( "ChangeCriteria=" + ChangeCriteria );
     parameters.add ( "ValueCriteria=" + ValueCriteria );
     parameters.add ( "AdvanceAnalysisOutputFile=" + AdvanceAnalysisOutputFile );
-    parameters.add ( "VerificationOutputFile=" + VerificationOutputFile  );
+    parameters.add ( "MetricsOutputFile=" + MetricsOutputFile  );
     __command_JTextArea.setText( __command.toString ( parameters ) );
     if ( (AdvanceAnalysisOutputFile == null) || (AdvanceAnalysisOutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {

@@ -56,15 +56,15 @@ private SimpleJButton	__browse_JButton = null,
 			__ok_JButton = null,
             __path_JButton = null;
 private CustomCommand_Command __command = null;// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextField
+private JTextArea	__command_JTextArea=null;
 private SimpleJComboBox __CurrentRForecastTSID_JComboBox = null;
 private SimpleJComboBox __CurrentNForecastTSID_JComboBox = null;
 private SimpleJComboBox __PreviousNForecastTSID_JComboBox = null;
-private JTextField  __ForecastStart_JTextField;// Text fields for query period, both versions.
-private JTextField  __NoiseThreshold_JTextField;
+private JTextField  __STPDate_JTextField;
 private JTextField  __ChangeCriteria_JTextField;
 private JTextField  __ValueCriteria_JTextField;
-private JTextField	__OutputFile_JTextField = null; // Reference date.
+private JTextField	__AdvanceAnalysisOutputFile_JTextField = null;
+private JTextField  __VerificationOutputFile_JTextField = null;
 private String      __working_dir = null;   // Working directory.
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
@@ -110,7 +110,7 @@ public void actionPerformed( ActionEvent event )
             }
     
             if (path != null) {
-                __OutputFile_JTextField.setText(path );
+                __AdvanceAnalysisOutputFile_JTextField.setText(path );
                 JGUIUtil.setLastFileDialogDirectory(directory );
                 refresh();
             }
@@ -128,13 +128,13 @@ public void actionPerformed( ActionEvent event )
 	}
     else if ( o == __path_JButton ) {
         if (    __path_JButton.getText().equals(__AddWorkingDirectory) ) {
-            __OutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
-            __OutputFile_JTextField.getText() ) );
+            __AdvanceAnalysisOutputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
+            __AdvanceAnalysisOutputFile_JTextField.getText() ) );
         }
         else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
             try {
-                __OutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
-                __OutputFile_JTextField.getText() ) );
+                __AdvanceAnalysisOutputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
+                __AdvanceAnalysisOutputFile_JTextField.getText() ) );
             }
             catch ( Exception e ) {
                 Message.printWarning ( 1,
@@ -155,11 +155,11 @@ private void checkInput ()
     String CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
     String CurrentNForecastTSID = __CurrentNForecastTSID_JComboBox.getSelected();
     String PreviousNForecastTSID = __PreviousNForecastTSID_JComboBox.getSelected();
-    String ForecastStart = __ForecastStart_JTextField.getText().trim();
-    String NoiseThreshold = __NoiseThreshold_JTextField.getText().trim();
+    String STPDate = __STPDate_JTextField.getText().trim();
     String ChangeCriteria = __ChangeCriteria_JTextField.getText().trim();
     String ValueCriteria = __ValueCriteria_JTextField.getText().trim();
-    String OutputFile = __OutputFile_JTextField.getText().trim();
+    String AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
+    String VerificationOutputFile = __VerificationOutputFile_JTextField.getText().trim();
 
     __error_wait = false;
     
@@ -172,11 +172,8 @@ private void checkInput ()
     if ( PreviousNForecastTSID.length() > 0 ) {
         parameters.set ( "PreviousNForecastTSID", PreviousNForecastTSID );
     }
-    if ( ForecastStart.length() > 0 ) {
-        parameters.set ( "ForecastStart", ForecastStart );
-    }
-    if ( NoiseThreshold.length() > 0 ) {
-        parameters.set ( "NoiseThreshold", NoiseThreshold );
+    if ( STPDate.length() > 0 ) {
+        parameters.set ( "STPDate", STPDate );
     }
     if ( ChangeCriteria.length() > 0 ) {
         parameters.set ( "ChangeCriteria", ChangeCriteria );
@@ -184,8 +181,11 @@ private void checkInput ()
     if ( ValueCriteria.length() > 0 ) {
         parameters.set ( "ValueCriteria", ValueCriteria );
     }
-    if ( OutputFile.length() > 0 ) {
-        parameters.set ( "OutputFile", OutputFile );
+    if ( AdvanceAnalysisOutputFile.length() > 0 ) {
+        parameters.set ( "AdvanceAnalysisOutputFile", AdvanceAnalysisOutputFile );
+    }
+    if ( VerificationOutputFile.length() > 0 ) {
+        parameters.set ( "VerificationOutputFile", VerificationOutputFile );
     }
     try {   // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -205,20 +205,20 @@ private void commitEdits ()
 {   String CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
     String CurrentNForecastTSID = __CurrentNForecastTSID_JComboBox.getSelected();
     String PreviousNForecastTSID = __PreviousNForecastTSID_JComboBox.getSelected();
-    String ForecastStart = __ForecastStart_JTextField.getText().trim();
-    String NoiseThreshold = __NoiseThreshold_JTextField.getText().trim();
+    String STPDate = __STPDate_JTextField.getText().trim();
     String ChangeCriteria = __ChangeCriteria_JTextField.getText().trim();
     String ValueCriteria = __ValueCriteria_JTextField.getText().trim();
-    String OutputFile = __OutputFile_JTextField.getText().trim();
+    String AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
+    String VerificationOutputFile = __VerificationOutputFile_JTextField.getText().trim();
     
     __command.setCommandParameter ( "CurrentRForecastTSID", CurrentRForecastTSID );
     __command.setCommandParameter ( "CurrentNForecastTSID", CurrentNForecastTSID );
     __command.setCommandParameter ( "PreviousNForecastTSID", PreviousNForecastTSID );
-    __command.setCommandParameter ( "ForecastStart", ForecastStart );
-    __command.setCommandParameter ( "NoiseThreshold", NoiseThreshold );
+    __command.setCommandParameter ( "STPDate", STPDate );
     __command.setCommandParameter ( "ChangeCriteria", ChangeCriteria  );
     __command.setCommandParameter ( "ValueCriteria", ValueCriteria );
-    __command.setCommandParameter ( "OutputFile", OutputFile );
+    __command.setCommandParameter ( "AdvanceAnalysisOutputFile", AdvanceAnalysisOutputFile );
+    __command.setCommandParameter ( "VerificationOutputFile", VerificationOutputFile );
 }
 
 /**
@@ -228,7 +228,7 @@ protected void finalize ()
 throws Throwable
 {	__cancel_JButton = null;
 	__command_JTextArea = null;
-	__OutputFile_JTextField = null;
+	__AdvanceAnalysisOutputFile_JTextField = null;
 	__command = null;
 	__CurrentRForecastTSID_JComboBox = null;
 	__ok_JButton = null;
@@ -254,12 +254,10 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This is a custom command to create a forecast error report."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"This is a custom command to create forecast products."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The working directory is: " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
  
@@ -296,25 +294,16 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __PreviousNForecastTSID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Forecast start:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "STP date:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ForecastStart_JTextField = new JTextField ( "", 10 );
-    __ForecastStart_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ForecastStart_JTextField,
+    __STPDate_JTextField = new JTextField ( "", 10 );
+    __STPDate_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __STPDate_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "First date (to day) in forecast."), 
             3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Noise threshold (%):" ), 
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NoiseThreshold_JTextField = new JTextField ( "", 10 );
-    __NoiseThreshold_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __NoiseThreshold_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required (suggest 5)."), 
-            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Change criteria (%):" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Percent of change criteria (%):" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ChangeCriteria_JTextField = new JTextField ( "", 10 );
     __ChangeCriteria_JTextField.addKeyListener ( this );
@@ -323,20 +312,30 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required (suggest 30)."), 
             3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value criteria (%):" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Absolute value criteria:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueCriteria_JTextField = new JTextField ( "", 10 );
     __ValueCriteria_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ValueCriteria_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required (suggest 5)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required, specific to location."), 
             3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Report file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Advance analysis report file to write:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __OutputFile_JTextField = new JTextField ( 50 );
-    __OutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+    __AdvanceAnalysisOutputFile_JTextField = new JTextField ( 50 );
+    __AdvanceAnalysisOutputFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __AdvanceAnalysisOutputFile_JTextField,
+        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browse_JButton = new SimpleJButton ( "Browse", this );
+        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Verification report file to write:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __VerificationOutputFile_JTextField = new JTextField ( 50 );
+    __VerificationOutputFile_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __VerificationOutputFile_JTextField,
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
@@ -426,11 +425,11 @@ private void refresh ()
 {	String CurrentRForecastTSID = "";
     String CurrentNForecastTSID = "";
     String PreviousNForecastTSID = "";
-    String ForecastStart = "";
-    String NoiseThreshold = "";
+    String STPDate = "";
     String ChangeCriteria = "";
     String ValueCriteria = "";
-    String OutputFile = "";
+    String AdvanceAnalysisOutputFile = "";
+    String VerificationOutputFile = "";
     PropList parameters = null;      // Parameters as PropList.
     if ( __first_time ) {
         __first_time = false;
@@ -439,11 +438,11 @@ private void refresh ()
         CurrentRForecastTSID = parameters.getValue("CurrentRForecastTSID");
         CurrentNForecastTSID = parameters.getValue ( "CurrentNForecastTSID" );
         PreviousNForecastTSID = parameters.getValue ( "PreviousNForecastTSID" );
-        ForecastStart = parameters.getValue ( "ForecastStart" );
-        NoiseThreshold = parameters.getValue ( "NoiseThreshold" );
+        STPDate = parameters.getValue ( "STPDate" );
         ChangeCriteria  = parameters.getValue("ChangeCriteria");
         ValueCriteria = parameters.getValue("ValueCriteria");
-        OutputFile = parameters.getValue("OutputFile");
+        AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
+        VerificationOutputFile = parameters.getValue ( "VerificationOutputFile" );
 
         // Now select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem(
@@ -485,11 +484,8 @@ private void refresh ()
             else {  // Do not select anything...
             }
         }
-        if ( ForecastStart != null ) {
-            __ForecastStart_JTextField.setText ( ForecastStart );
-        }
-        if ( NoiseThreshold != null ) {
-            __NoiseThreshold_JTextField.setText ( NoiseThreshold );
+        if ( STPDate != null ) {
+            __STPDate_JTextField.setText ( STPDate );
         }
         if ( ChangeCriteria != null ) {
             __ChangeCriteria_JTextField.setText ( ChangeCriteria );
@@ -497,38 +493,40 @@ private void refresh ()
         if ( ValueCriteria != null ) {
             __ValueCriteria_JTextField.setText ( ValueCriteria );
         }
-        if ( OutputFile != null ) {
-            __OutputFile_JTextField.setText ( OutputFile );
+        if ( AdvanceAnalysisOutputFile != null ) {
+            __AdvanceAnalysisOutputFile_JTextField.setText ( AdvanceAnalysisOutputFile );
+        }
+        if ( VerificationOutputFile != null ) {
+            __VerificationOutputFile_JTextField.setText ( VerificationOutputFile );
         }
 	}
 	// Regardless, reset the command from the fields...
     CurrentRForecastTSID = __CurrentRForecastTSID_JComboBox.getSelected();
     CurrentNForecastTSID = __CurrentNForecastTSID_JComboBox.getSelected();
     PreviousNForecastTSID = __PreviousNForecastTSID_JComboBox.getSelected();
-    ForecastStart = __ForecastStart_JTextField.getText().trim();
-    NoiseThreshold = __NoiseThreshold_JTextField.getText().trim();
+    STPDate = __STPDate_JTextField.getText().trim();
     ChangeCriteria = __ChangeCriteria_JTextField.getText().trim();
     ValueCriteria = __ValueCriteria_JTextField.getText().trim();
-    OutputFile = __OutputFile_JTextField.getText().trim();
+    AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
+    VerificationOutputFile = __VerificationOutputFile_JTextField.getText().trim();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "CurrentRForecastTSID=" + CurrentRForecastTSID );
     parameters.add ( "CurrentNForecastTSID=" + CurrentNForecastTSID );
     parameters.add ( "PreviousNForecastTSID=" + PreviousNForecastTSID );
-    parameters.add ( "ForecastStart=" + ForecastStart );
-    parameters.add ( "NoiseThreshold=" + NoiseThreshold  );
-    parameters.add ( "NoiseThreshold=" + NoiseThreshold );
+    parameters.add ( "STPDate=" + STPDate );
     parameters.add ( "ChangeCriteria=" + ChangeCriteria );
     parameters.add ( "ValueCriteria=" + ValueCriteria );
-    parameters.add ( "OutputFile=" + OutputFile );
+    parameters.add ( "AdvanceAnalysisOutputFile=" + AdvanceAnalysisOutputFile );
+    parameters.add ( "VerificationOutputFile=" + VerificationOutputFile  );
     __command_JTextArea.setText( __command.toString ( parameters ) );
-    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+    if ( (AdvanceAnalysisOutputFile == null) || (AdvanceAnalysisOutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {
             __path_JButton.setEnabled ( false );
         }
     }
     if ( __path_JButton != null ) {
         __path_JButton.setEnabled ( true );
-        File f = new File ( OutputFile );
+        File f = new File ( AdvanceAnalysisOutputFile );
         if ( f.isAbsolute() ) {
             __path_JButton.setText ( __RemoveWorkingDirectory );
         }

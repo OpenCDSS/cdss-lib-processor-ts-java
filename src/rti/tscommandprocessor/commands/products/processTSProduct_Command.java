@@ -230,6 +230,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "RunMode" );
     valid_Vector.add ( "View" );
     valid_Vector.add ( "OutputFile" );
+    valid_Vector.add ( "DefaultSaveFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -367,10 +368,11 @@ CommandWarningException, CommandException
 		View = _True;
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	if (	(View == null) || View.equals("") && ((OutputFile == null) || OutputFile.equals("")) ) {
+	if ( (View == null) || View.equals("") && ((OutputFile == null) || OutputFile.equals("")) ) {
 		// No output file so view is true by default...
 		View = _True;
 	}
+	String DefaultSaveFile = parameters.getValue ( "DefaultSaveFile" );
 
 	// Get from the processor...
 
@@ -393,8 +395,7 @@ CommandWarningException, CommandException
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
+		MessageUtil.formatMessageTag(command_tag, ++warning_count),	routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 
@@ -414,6 +415,11 @@ CommandWarningException, CommandException
 		if ( View.equalsIgnoreCase(_True) ) {
 			override_props.set ( "InitialView", "Graph" );
 			override_props.set ( "PreviewOutput", "True" );
+			if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
+			    String DefaultSaveFile_full =
+			        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DefaultSaveFile);
+			    override_props.set ( "DefaultSaveFile", DefaultSaveFile_full );
+			}
 		}
 		if ( (IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("Batch")))) ||
 			(!IOUtil.isBatch() && (RunMode.equalsIgnoreCase("GUIAndBatch") ||(RunMode.equalsIgnoreCase("GUIOnly")))) ) {
@@ -489,6 +495,7 @@ public String toString ( PropList props )
 	String RunMode = props.getValue("RunMode");
 	String View = props.getValue("View");
 	String OutputFile = props.getValue("OutputFile");
+	String DefaultSaveFile = props.getValue("DefaultSaveFile");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSProductFile != null) && (TSProductFile.length() > 0) ) {
 		b.append ( "TSProductFile=\"" + TSProductFile + "\"" );
@@ -511,6 +518,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+   if ( (DefaultSaveFile != null) && (DefaultSaveFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DefaultSaveFile=\"" + DefaultSaveFile + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

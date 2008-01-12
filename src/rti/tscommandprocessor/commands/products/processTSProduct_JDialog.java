@@ -68,34 +68,34 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+/**
+Command editor dialog for the ProcessTSProduct() command.
+*/
 public class processTSProduct_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
+    
+private final String __AddWorkingDirectoryToTSP = "Add Working Directory to TSP";
+private final String __RemoveWorkingDirectoryFromTSP = "Remove Working Directory from TSP";
 
 private SimpleJButton	__browse_JButton = null,// Browse for file.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and
-						// absolute paths
+			__path_JButton = null;	// Convert between relative and absolute paths
 private processTSProduct_Command __command = null;// Command to edit
 private String		__working_dir = null;	// Working directory.
-private JTextArea	__command_JTextArea=null;// Command as JTextField
+private JTextArea	__command_JTextArea=null;
 private JTextField	__TSProductFile_JTextField=null;
-						//TSP file as JTextField
-private JTextField	__OutputFile_JTextField=null;//Output file as JTextField
-private SimpleJComboBox	__RunMode_JComboBox = null; // Indicate run mode to
-						// apply.
-private SimpleJComboBox	__View_JComboBox = null; // Preview products?
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private JTextField	__OutputFile_JTextField=null;
+private JTextField  __DefaultSaveFile_JTextField=null;
+private SimpleJComboBox	__RunMode_JComboBox = null;
+private SimpleJComboBox	__View_JComboBox = null;
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private boolean		__ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
-processTSProduct_JDialog constructor.
+Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -112,19 +112,16 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle("Select Time Series Product File");
-		SimpleFileFilter sff = new SimpleFileFilter("tsp",
-			"Time Series Product File");
+		SimpleFileFilter sff = new SimpleFileFilter("tsp", "Time Series Product File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -154,27 +151,24 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory to TSP") ) {
-			__TSProductFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
+		if ( __path_JButton.getText().equals( __AddWorkingDirectoryToTSP) ) {
+			__TSProductFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,
 			__TSProductFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory from TSP") ) {
-			try {	__TSProductFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
+		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectoryFromTSP) ) {
+			try {
+			    __TSProductFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
 				__TSProductFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"processTSProduct_JDialog",
-				"Error converting file to relative path." );
+				"processTSProduct_JDialog",	"Error converting file to relative path." );
 			}
 		}
 		refresh ();
 	}
-	else {	// Other combo boxes, etc...
+	else {
+	    // Other combo boxes, etc...
 		refresh();
 	}
 }
@@ -190,6 +184,7 @@ private void checkInput ()
 	String RunMode = __RunMode_JComboBox.getSelected();
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
 	__error_wait = false;
 	if ( TSProductFile.length() > 0 ) {
 		props.set ( "TSProductFile", TSProductFile );
@@ -203,7 +198,11 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
 	}
-	try {	// This will warn the user...
+    if ( DefaultSaveFile.length() > 0 ) {
+        props.set ( "DefaultSaveFile", DefaultSaveFile );
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -221,10 +220,12 @@ private void commitEdits ()
 	String RunMode = __RunMode_JComboBox.getSelected();
 	String View = __View_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSProductFile", TSProductFile );
 	__command.setCommandParameter ( "RunMode", RunMode );
 	__command.setCommandParameter ( "View", View );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "DefaultSaveFile", DefaultSaveFile );
 }
 
 /**
@@ -267,34 +268,26 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Time series product definition files (typically named *.tsp)"+
 		" contain properties for graphs or other data products." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A product can be processed in a " +
-		"script, resulting in viewable graphs or image files."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"A product can be processed in a script, resulting in viewable graphs or image files."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If the working directory has been specified, the file path" +
-		" can be specified as relative."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If the working directory has been specified, the file path can be specified as relative."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If View is true, the products must be interactively" +
-		" saved to files (the output file is ignored)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The output file extension indicates the output format (only" +
-		" .jpg and .png are supported)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The output file extension indicates the output format (only .jpg and .png are supported)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"TS product file (TSP):" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"TS product file (TSP):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSProductFile_JTextField = new JTextField ( 50 );
 	__TSProductFile_JTextField.addKeyListener ( this );
@@ -304,7 +297,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run mode:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run mode:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RunMode_JComboBox = new SimpleJComboBox ( false );
 	__RunMode_JComboBox.add ( "" );
@@ -314,32 +307,42 @@ private void initialize ( JFrame parent, Command command )
 	__RunMode_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RunMode_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Indicates when products should be processed." ), 
 		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "View:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "View:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__View_JComboBox = new SimpleJComboBox ( false );
 	__View_JComboBox.add ( "" );
 	__View_JComboBox.add ( __command._False );
 	__View_JComboBox.add ( __command._True );
 	__View_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __View_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __View_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(main_JPanel,
 		new JLabel ( "Display product (default=True)." ), 
 		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ();
 	__OutputFile_JTextField.addKeyListener ( this );
 	__OutputFile_JTextField.setEditable ( true );
 	JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default save file:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DefaultSaveFile_JTextField = new JTextField ();
+    __DefaultSaveFile_JTextField.addKeyListener ( this );
+    __DefaultSaveFile_JTextField.setEditable ( true );
+    JGUIUtil.addComponent(main_JPanel, __DefaultSaveFile_JTextField,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    __DefaultSaveFile_JTextField.setToolTipText (
+            "Used when editing time series. Specify the file to save.  The extension indicates file type.");
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,50);
 	__command_JTextArea.setLineWrap ( true );
@@ -358,10 +361,8 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
-		__path_JButton = new SimpleJButton(
-			"Remove Working Directory from TSP", this);
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton( __RemoveWorkingDirectoryFromTSP, this);
 		button_JPanel.add ( __path_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", this);
@@ -371,10 +372,10 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( false );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
@@ -417,17 +418,14 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents.  The syntax of the
-command is:
-<pre>
-processTSProduct(TSProductFile="X",RunMode=X,View=X,OutputFile="X")
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String TSProductFile = "";
 	String RunMode = "";
 	String View = "";
 	String OutputFile = "";
+	String DefaultSaveFile = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -437,24 +435,22 @@ private void refresh ()
 		RunMode = props.getValue ( "RunMode" );
 		View = props.getValue ( "View" );
 		OutputFile = props.getValue("OutputFile");
+		DefaultSaveFile = props.getValue("DefaultSaveFile");
 		if ( TSProductFile != null ) {
 			__TSProductFile_JTextField.setText( TSProductFile );
 		}
-		if ( OutputFile != null ) {
-			__OutputFile_JTextField.setText( OutputFile );
-		}
-		// Now select the item in the list.  If not a match,
-		// print a warning.
+		// Now select the item in the list.  If not a match, print a warning.
 		if ( (RunMode == null) || (RunMode.length() == 0) ) {
 			// Select default...
 			__RunMode_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__RunMode_JComboBox,
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__RunMode_JComboBox,
 				RunMode, JGUIUtil.NONE, null, null ) ) {
 				__RunMode_JComboBox.select ( RunMode );
 			}
-			else {	Message.printWarning ( 1,
+			else {
+			    Message.printWarning ( 1,
 				"processTSProduct_JDialog.refresh", "Existing "+
 				"command references an invalid\n"+
 				"run mode flag \"" + RunMode +
@@ -465,40 +461,48 @@ private void refresh ()
 			// Select default...
 			__View_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__View_JComboBox,
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __View_JComboBox,
 				View, JGUIUtil.NONE, null, null ) ) {
 				__View_JComboBox.select ( View );
 			}
-			else {	Message.printWarning ( 1,
+			else {
+			    Message.printWarning ( 1,
 				"processTSProduct_JDialog.refresh", "Existing "+
 				"command references an invalid\n"+
 				"view flag \"" + View +
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+	    if ( OutputFile != null ) {
+	         __OutputFile_JTextField.setText( OutputFile );
+	    }
+	    if ( DefaultSaveFile != null ) {
+	         __DefaultSaveFile_JTextField.setText( DefaultSaveFile );
+	    }
 	}
 	// Regardless, reset the command from the fields...
 	TSProductFile = __TSProductFile_JTextField.getText().trim();
 	RunMode = __RunMode_JComboBox.getSelected();
 	View = __View_JComboBox.getSelected();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	DefaultSaveFile = __DefaultSaveFile_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSProductFile=" + TSProductFile );
 	props.add ( "RunMode=" + RunMode );
 	props.add ( "View=" + View );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "DefaultSaveFile=" + DefaultSaveFile );
 	__command_JTextArea.setText(__command.toString(props) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( TSProductFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText(
-			"Remove Working Directory from TSP");
+			__path_JButton.setText( __RemoveWorkingDirectoryFromTSP);
 		}
-		else {	__path_JButton.setText ("Add Working Directory to TSP");
+		else {
+		    __path_JButton.setText (__AddWorkingDirectoryToTSP);
 		}
 	}
 }

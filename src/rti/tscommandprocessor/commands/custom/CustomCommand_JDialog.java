@@ -66,6 +66,7 @@ private JTextField  __ChangeCriteria_JTextField;
 private JTextField  __ValueCriteria_JTextField;
 private JTextField	__AdvanceAnalysisOutputFile_JTextField = null;
 private JTextField  __MetricsOutputFile_JTextField = null;
+private SimpleJComboBox __VerboseMetrics_JComboBox = null;
 private String      __working_dir = null;   // Working directory.
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
@@ -162,6 +163,7 @@ private void checkInput ()
     String ValueCriteria = __ValueCriteria_JTextField.getText().trim();
     String AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
     String MetricsOutputFile = __MetricsOutputFile_JTextField.getText().trim();
+    String VerboseMetrics = __VerboseMetrics_JComboBox.getSelected();
 
     __error_wait = false;
 
@@ -192,6 +194,9 @@ private void checkInput ()
     if ( MetricsOutputFile.length() > 0 ) {
         parameters.set ( "MetricsOutputFile", MetricsOutputFile );
     }
+    if ( VerboseMetrics.length() > 0 ) {
+        parameters.set ( "VerboseMetrics", VerboseMetrics );
+    }
     try {   // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
     }
@@ -216,6 +221,7 @@ private void commitEdits ()
     String ValueCriteria = __ValueCriteria_JTextField.getText().trim();
     String AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
     String MetricsOutputFile = __MetricsOutputFile_JTextField.getText().trim();
+    String VerboseMetrics = __VerboseMetrics_JComboBox.getSelected();
     
     __command.setCommandParameter ( "Title", Title );
     __command.setCommandParameter ( "CurrentRForecastTSID", CurrentRForecastTSID );
@@ -226,6 +232,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "ValueCriteria", ValueCriteria );
     __command.setCommandParameter ( "AdvanceAnalysisOutputFile", AdvanceAnalysisOutputFile );
     __command.setCommandParameter ( "MetricsOutputFile", MetricsOutputFile );
+    __command.setCommandParameter ( "VerboseMetrics", VerboseMetrics );
 }
 
 /**
@@ -356,6 +363,21 @@ private void initialize ( JFrame parent, Command command )
     __browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include verbose metrics?:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __VerboseMetrics_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    Vector VerboseMetrics_Vector = new Vector(3);
+    VerboseMetrics_Vector.add ( "" );
+    VerboseMetrics_Vector.add ( __command._False );
+    VerboseMetrics_Vector.add ( __command._True );
+    __VerboseMetrics_JComboBox.setData ( VerboseMetrics_Vector );
+    __VerboseMetrics_JComboBox.addKeyListener ( this );
+    __VerboseMetrics_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __VerboseMetrics_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Print more informatioh for verification."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -447,6 +469,7 @@ private void refresh ()
     String ValueCriteria = "";
     String AdvanceAnalysisOutputFile = "";
     String MetricsOutputFile = "";
+    String VerboseMetrics = "";
     PropList parameters = null;      // Parameters as PropList.
     if ( __first_time ) {
         __first_time = false;
@@ -461,6 +484,7 @@ private void refresh ()
         ValueCriteria = parameters.getValue("ValueCriteria");
         AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
         MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
+        VerboseMetrics = parameters.getValue ( "VerboseMetrics" );
         if ( Title != null ) {
             __Title_JTextField.setText ( Title );
         }
@@ -519,6 +543,19 @@ private void refresh ()
         if ( MetricsOutputFile != null ) {
             __MetricsOutputFile_JTextField.setText ( MetricsOutputFile );
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(
+                __VerboseMetrics_JComboBox, VerboseMetrics, JGUIUtil.NONE, null, null ) ) {
+                __VerboseMetrics_JComboBox.select ( VerboseMetrics );
+        }
+        else {  // Automatically add to the list after the blank...
+            if ( (VerboseMetrics != null) && (VerboseMetrics.length() > 0) ) {
+                __VerboseMetrics_JComboBox.insertItemAt ( VerboseMetrics, 1 );
+                // Select...
+                __VerboseMetrics_JComboBox.select ( VerboseMetrics );
+            }
+            else {  // Do not select anything...
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
     Title = __Title_JTextField.getText().trim();
@@ -530,6 +567,7 @@ private void refresh ()
     ValueCriteria = __ValueCriteria_JTextField.getText().trim();
     AdvanceAnalysisOutputFile = __AdvanceAnalysisOutputFile_JTextField.getText().trim();
     MetricsOutputFile = __MetricsOutputFile_JTextField.getText().trim();
+    VerboseMetrics = __VerboseMetrics_JComboBox.getSelected();
     parameters = new PropList ( __command.getCommandName() );
     parameters.add ( "Title=" + Title );
     parameters.add ( "CurrentRForecastTSID=" + CurrentRForecastTSID );
@@ -540,6 +578,7 @@ private void refresh ()
     parameters.add ( "ValueCriteria=" + ValueCriteria );
     parameters.add ( "AdvanceAnalysisOutputFile=" + AdvanceAnalysisOutputFile );
     parameters.add ( "MetricsOutputFile=" + MetricsOutputFile  );
+    parameters.add ( "VerboseMetrics=" + VerboseMetrics  );
     __command_JTextArea.setText( __command.toString ( parameters ) );
     if ( (AdvanceAnalysisOutputFile == null) || (AdvanceAnalysisOutputFile.length() == 0) ) {
         if ( __path_JButton != null ) {

@@ -43,6 +43,12 @@ public class CustomCommand_Command extends AbstractCommand implements Command, F
 {
     
 /**
+Values for VerboseMetrics parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+    
+/**
 Tests being performed.
 */
 private final int __TEST_VALUE = 0;
@@ -61,9 +67,9 @@ String [] __TEST_NAMES = {
 /**
 Bins to receive the results of the analysis.
 <pre>
-__BIN_BAL_WEEK = Tuesday through Saturday of the first week
+__BIN_BAL_WEEK = Wednesday through Saturday of the first week
 __BIN_WEEK_AHEAD = Monday through Saturday of the next week
-__BIN_BAL_MONTH = Tuesday of this week through the last day of the month, but no Sundays.
+__BIN_BAL_MONTH = Wednesday of this week through the last day of the month, but no Sundays.
 __BIN_MONTH1 = Month + 1 (all days in month except Sundays)
 __BIN_MONTH2 = Month + 2 (all days in month except Sundays)
 __BIN_MONTH3 = Month + 3 (all days in month except Sundays)
@@ -79,7 +85,7 @@ private final int __BIN_SIZE = 6;
 
 // Bin names, used in output and headings
 
-String [] __BIN_NAMES = {
+private final String [] __BIN_NAMES = {
         "Bal week",
         "Week ahead",
         "Bal month",
@@ -88,14 +94,33 @@ String [] __BIN_NAMES = {
         "Month + 3"
         };
 // Used for headings
-String [] __BIN_NAMES2 = {
-        "(Tue-Sat)",
+private final String [] __BIN_NAMES2 = {
+        "(Wed-Sat)",
         "(Mon-Sat)",
         "(all but Sun)",
         "(all but Sun)",
         "(all but Sun)",
         "(all but Sun)"
         };
+
+/**
+Holiday dates to be omitted from bins.
+*/
+private final String [] __HOLIDAYS_TO_OMIT_FROM_BINS = {
+        "2007-01-01",
+        "2007-05-28",
+        "2007-07-04",
+        "2007-09-03",
+        "2007-11-22",
+        "2007-12-25",
+        "2008-01-01",
+        "2008-05-26",
+        "2008-07-04",
+        "2008-09-01",
+        "2008-11-27",
+        "2008-12-25"
+};
+private DateTime [] __HOLIDAYS_TO_OMIT_FROM_BINS_DateTime = null;
   
 /**
 Output file that is created by this command.
@@ -142,6 +167,15 @@ throws InvalidCommandParameterException
     
     if ( (Title == null) || (Title.length() == 0) ) {
         message = "A title must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a title for report headings." ) );
+    }
+    // FIXME SAM 2008-01-11 Need to implement checks like the following for all commands, as appropriate
+    String special = "()";
+    if ( (Title != null) && StringUtil.containsAny(Title,special,false) ) {
+        message = "The title cannot contain any of the characters \"" + special + "\".";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -327,6 +361,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "ValueCriteria" );
     valid_Vector.add ( "AdvanceAnalysisOutputFile" );
     valid_Vector.add ( "MetricsOutputFile" );
+    valid_Vector.add ( "VerboseMetrics" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -355,7 +390,10 @@ throws Exception
     //String format_percent = "%16.2f";
     String format_text = "%16.16s";
     String format_value = "%16.0f";
-    String space = "  ";
+    //String space = "  ";
+    String delim = ","; // Delimiter between data columns (headers are saved in column 1)
+    //String delim2 = ",,";
+    String delim3 = ",,,";
     //String format_int = "%16d";
     /*
     fout.println ( comment );
@@ -376,55 +414,66 @@ throws Exception
     fout.println ( comment );
     */
     
-    fout.println ( "" );
-    fout.println ( title );
-    fout.println ( "" );
-    fout.println ( "STP date:  " + STPDate_DateTime );
-    fout.println ( "" );
+    fout.println ( "" + delim3 );
+    fout.println ( title + delim3 );
+    fout.println ( "" + delim3 );
+    fout.println ( "STP date:  " + STPDate_DateTime + delim3 );
+    DateTime now = new DateTime ( DateTime.DATE_CURRENT );
+    fout.println ( "Creation time:  " + now + delim3 );
+    fout.println ( "" + delim3 );
     
-    fout.println ( "" );
-    fout.println ( "Average CFS" );
-    fout.println ( "" );
+    fout.println ( "" + delim3 );
+    fout.println ( "Average CFS" + delim3 );
+    fout.println ( "" + delim3 );
     
     fout.println (
-            StringUtil.formatString("Bin",format_param) + space +
-            StringUtil.formatString("NWS Prev (Np)",format_text) + space +
-            StringUtil.formatString("NWS Current (Nc)",format_text) + space +
-            StringUtil.formatString("RTi (R)",format_text) );
-    fout.println ( "" );
+            StringUtil.formatString("Bin",format_param) + delim +
+            StringUtil.formatString("NWS Prev (Np)",format_text) + delim +
+            StringUtil.formatString("RTi (R)",format_text) + delim +
+            StringUtil.formatString("NWS Current (Nc)",format_text) );
+           
+    fout.println ( "" + delim3 );
     for ( int i = 0; i < __BIN_SIZE; i++ ) {
         fout.println (
-                StringUtil.formatString(__BIN_NAMES[i],format_param) + space +
-                StringUtil.formatString(Np_mean[i],format_value) + space +
-                StringUtil.formatString(Nc_mean[i],format_value) + space +
-                StringUtil.formatString(R_mean[i],format_value) + space );
+                StringUtil.formatString(__BIN_NAMES[i],format_param) + delim +
+                StringUtil.formatString(Np_mean[i],format_value) + delim +
+                StringUtil.formatString(R_mean[i],format_value) + delim +
+                StringUtil.formatString(Nc_mean[i],format_value) );
+                
     }
     
-    fout.println ( "" );
-    fout.println ( "Daily Data (CFS)" );
-    fout.println ( "" );
+    fout.println ( "" + delim3 );
+    fout.println ( "Daily Data (CFS)" + delim3 );
+    fout.println ( "" + delim3 );
     fout.println (
-            StringUtil.formatString("Date",format_param ) + space +
-            StringUtil.formatString("NWS Prev (Np)",format_text) + space +
-            StringUtil.formatString("NWS Current (Nc)",format_text) + space +
-            StringUtil.formatString("RTi (R)",format_text) );
-    fout.println ( "" );
+            StringUtil.formatString("Date",format_param ) + delim +
+            StringUtil.formatString("NWS Prev (Np)",format_text) + delim +
+            StringUtil.formatString("RTi (R)",format_text) + delim +
+            StringUtil.formatString("NWS Current (Nc)",format_text) );
+
+    fout.println ( "" + delim3 );
     
     DateTime end = new DateTime(Nc.getDate2());
-    for ( DateTime date = new DateTime(STPDate_DateTime); date.lessThanOrEqualTo(end); date.addDay(1) ) {
+    DateTime date = new DateTime(STPDate_DateTime);
+    // Add one day since STP report is issued on Tuesday but first bin starts on following Wednesday
+    date.addDay ( 1 );
+    for ( ; date.lessThanOrEqualTo(end); date.addDay(1) ) {
         fout.println (
-        StringUtil.formatString(date.toString(), format_param) + space +
-        StringUtil.formatString(Np.getDataValue(date), format_value) + space +
-        StringUtil.formatString(Nc.getDataValue(date), format_value) + space +
+        StringUtil.formatString(date.toString(), format_param) + delim +
+        StringUtil.formatString(Np.getDataValue(date), format_value) + delim +
+        StringUtil.formatString(Nc.getDataValue(date), format_value) + delim +
         StringUtil.formatString(R.getDataValue(date), format_value) );
         // Brute force print blank lines after each bin
         for ( int j = 0; j < bin_end_DateTime.length; j++ ) {
             if ( bin_end_DateTime[j].equals(date) ) {
-                fout.println ( "" );
+                fout.println ( "" + delim3 );
                 break;
             }
         }
     }
+    
+    fout.println ( "" + delim3 );
+    fout.println ( "Generated by Riverside Technology inc." + delim3 );
     
     fout.close();
 }
@@ -442,6 +491,7 @@ private int customCommand (
         double ValueCriteria_double,
         String AdvanceAnalysisOutputFile_full,
         String MetricsOutputFile_full,
+        boolean VerboseMetrics_boolean,
         CommandStatus status )
 {   String routine = "CustomCommand.customCommand";
     int warning_count = 0;
@@ -514,6 +564,8 @@ private int customCommand (
     // Loop from the STP start to the end of available data.
     
     DateTime date = new DateTime(STPDate_DateTime);
+    // Add one day to the date because the data to be processed start on Wednesday
+    date.addDay ( 1 );
     DateTime end = new DateTime(Np_TS.getDate2());
     // Initialize the bin end dates to the end of the period in case the loop ends without getting
     // to a bin (due to a short period).
@@ -662,7 +714,11 @@ private int customCommand (
         // Now actually do the processing
         // Weekly metrics...
         int bin_week = -1;
-        if ( in_balweek ) {
+        if ( isHoliday(date) ) {
+            // Just skip it
+            Message.printStatus( 2, routine, "Not adding " + date + " to a week bin because it is a holiday." );
+        }
+        else if ( in_balweek ) {
             bin_week = __BIN_BAL_WEEK;
         }
         else if ( in_weekahead ) {
@@ -694,7 +750,11 @@ private int customCommand (
         }
         // Monthly metrics are computed separately...
         int bin_month = -1;
-        if ( in_balmonth && (day_of_week != day_sunday) ) {   // All days except Sunday
+        if ( isHoliday(date) ) {
+            // Just skip it
+            Message.printStatus( 2, routine, "Not adding " + date + " to a month bin because it is a holiday." );
+        }
+        else if ( in_balmonth && (day_of_week != day_sunday) ) {   // All days except Sunday
             bin_month = __BIN_BAL_MONTH;
         }
         else if ( in_month1 && (day_of_week != day_sunday)) {
@@ -753,30 +813,33 @@ private int customCommand (
     String delim = ",";
     try {
          fout = new PrintWriter ( new FileOutputStream ( MetricsOutputFile_full ) );
-         IOUtil.printCreatorHeader( fout, comment, 120, 0);
+         //IOUtil.printCreatorHeader( fout, comment, 120, 0);
          String format_param = "%-26.26s";
          String format_percent = "%16.2f";
          String format_text = "%16.16s";
          String format_value = "%16.0f";
          String format_int = "%16d";
+         String delim6 = ",,,,,,";
+         fout.println ( comment + delim6);
+         fout.println ( comment + "--------------------------------------------------------------------------------------" + delim6 );
+         fout.println ( comment + " " + Title + delim6 );
          fout.println ( comment );
-         fout.println ( comment + "--------------------------------------------------------------------------------------");
-         fout.println ( comment + " " + Title );
-         fout.println ( comment );
-         fout.println ( comment + " STP date:  " + STPDate_DateTime );
-         fout.println ( comment + " Np period: " + Np_TS.getDate1() + " to " + Np_TS.getDate2());
-         fout.println ( comment + " Nc period: " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2());
-         fout.println ( comment + " R period:  " + R_TS.getDate1() + " to " + R_TS.getDate2());
-         fout.println ( comment );
-         fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin.");
-         fout.println ( comment );
+         fout.println ( comment + " STP date:       " + STPDate_DateTime );
+         DateTime now = new DateTime ( DateTime.DATE_CURRENT );
+         fout.println ( comment + " Creation date:  " + now + delim6 );
+         fout.println ( comment + " Np period:      " + Np_TS.getDate1() + " to " + Np_TS.getDate2() + delim6 );
+         fout.println ( comment + " Nc period:      " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2() + delim6 );
+         fout.println ( comment + " R period:       " + R_TS.getDate1() + " to " + R_TS.getDate2() + delim6 );
+         fout.println ( comment + delim6 );
+         fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin." + delim6 );
+         fout.println ( comment + delim6 );
          fout.println ( comment + " Change criteria :        " +
-                 StringUtil.formatString(ChangeCriteria_double,"%.2f") + "%");
+                 StringUtil.formatString(ChangeCriteria_double,"%.2f") + "%" + delim6 );
          fout.println ( comment + " Absolute value criteria: " +
-                 StringUtil.formatString(ValueCriteria_double,"%.1f") + " " + R_TS.getDataUnits() );
-         fout.println ( comment );
-         fout.println ( comment + "--------------------------------------------------------------------------------------");
-         fout.println ( comment );
+                 StringUtil.formatString(ValueCriteria_double,"%.1f") + " " + R_TS.getDataUnits() + delim6 );
+         fout.println ( comment + delim6 );
+         fout.println ( comment + "--------------------------------------------------------------------------------------"+ delim6);
+         fout.println ( comment + delim6 );
          printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
          printMetricsReportResultsLine ( fout, "Parameter", format_param, delim, __BIN_NAMES, format_text );
          printMetricsReportResultsLine ( fout, "", format_param, delim, __BIN_NAMES2, format_text );
@@ -786,47 +849,13 @@ private int customCommand (
          printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
          // Previous N forecast values....
          printMetricsReportDataLine ( fout, "Previous NWS Forecast (Np)", format_param, delim, Np_mean, format_value );
-         printReportDataLine ( fout, "Np # missing", format_param, delim, Np_missing, format_int );
-         printReportDataLine ( fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
+
+         // R forecast...
+         printMetricsReportDataLine ( fout, "Current RTi forecast (R)", format_param, delim, R_mean, format_value );
+
          // Current N forecast values....
          printMetricsReportDataLine ( fout, "Current NWS Forecast (Nc)", format_param, delim, Nc_mean, format_value );
-         printReportDataLine ( fout, "Nc # missing", format_param, delim, Nc_missing, format_int );
-         printReportDataLine ( fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
-
-         // Difference and percent difference of Nc - Np values...
-         double [] NcNp_diff = new double[__BIN_SIZE];
-         double [] NcNp_diff_percent = new double[__BIN_SIZE];
-         for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) ) {
-                 NcNp_diff[i] = Nc_mean[i] - Np_mean[i];
-                 NcNp_diff_percent[i] = (NcNp_diff[i]/Np_mean[i])*100.0;
-             }
-         }
-         printMetricsReportDataLine ( fout, "Nc - Np", format_param, delim, NcNp_diff, format_value );
-         printMetricsReportDataLine ( fout, "Nc - Np (% of Np)", format_param, delim, NcNp_diff_percent, format_percent );
- 
-         // Raw R values...
-         printMetricsReportDataLine ( fout, "Current RTi forecast (R)", format_param, delim, R_mean, format_value );
-         printReportDataLine ( fout, "R # missing", format_param, delim, R_missing, format_int );
-         printReportDataLine ( fout, "R # not missing", format_param, delim, R_notmissing, format_int );
-
-         // Mark did not want to see the following statistics so turn off but leave code in.
-         boolean ShowAllStatistics_boolean = true;
-
-         // R minus Np, difference and percent, difference and percent difference of Np values...
-         double [] RNp_diff = new double[__BIN_SIZE];
-         double [] RNp_diff_percent = new double[__BIN_SIZE];
-         for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
-                 RNp_diff[i] = R_mean[i] - Np_mean[i];
-                 RNp_diff_percent[i] = (RNp_diff[i]/Np_mean[i])*100.0;
-             }
-         }
-         if ( ShowAllStatistics_boolean ) {
-             printMetricsReportDataLine ( fout, "R - Np", format_param, delim, RNp_diff, format_value );
-             printMetricsReportDataLine ( fout, "R - Np (% of Np)", format_param, delim, RNp_diff_percent, format_percent );
-         }
-             
+         
          // R minus Nc, difference and percent difference of Nc values...
          double [] RNc_diff = new double[__BIN_SIZE];
          double [] RNc_diff_percent = new double[__BIN_SIZE];
@@ -836,9 +865,25 @@ private int customCommand (
                  RNc_diff_percent[i] = (RNc_diff[i]/Nc_mean[i])*100.0;
              }
          }
-         if ( ShowAllStatistics_boolean ) {
-             printMetricsReportDataLine ( fout, "R - Nc", format_param, delim, RNp_diff, format_value );
-             printMetricsReportDataLine ( fout, "R - Nc (% of Nc)", format_param, delim, RNc_diff_percent, format_percent );
+         
+         // Difference and percent difference of Nc - Np values...
+         double [] NcNp_diff = new double[__BIN_SIZE];
+         double [] NcNp_diff_percent = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) ) {
+                 NcNp_diff[i] = Nc_mean[i] - Np_mean[i];
+                 NcNp_diff_percent[i] = (NcNp_diff[i]/Np_mean[i])*100.0;
+             }
+         }
+         
+         // R minus Np, difference and percent, difference and percent difference of Np values...
+         double [] RNp_diff = new double[__BIN_SIZE];
+         double [] RNp_diff_percent = new double[__BIN_SIZE];
+         for ( int i = 0; i < __BIN_SIZE; i++ ) {
+             if ( (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
+                 RNp_diff[i] = R_mean[i] - Np_mean[i];
+                 RNp_diff_percent[i] = (RNp_diff[i]/Np_mean[i])*100.0;
+             }
          }
          
          // Value bound (high), based on Nc
@@ -853,17 +898,42 @@ private int customCommand (
          
          // Compute the change value and bounds
          
-         double [] change = new double[__BIN_SIZE];
-         double [] change_low = new double[__BIN_SIZE];
-         double [] change_high = new double[__BIN_SIZE];
+         double [] change = new double[__BIN_SIZE]; // Computed metric
+         double [] change_delta = new double[__BIN_SIZE];   // Allowed delta on each side of abs(Nc - Np)
+         double [] change_low = new double[__BIN_SIZE]; // Low bound on pass
+         double [] change_high = new double[__BIN_SIZE]; // High bound on pass
          for ( int i = 0; i < __BIN_SIZE; i++ ) {
              if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
                      change[i] = Math.abs((RNp_diff[i] - NcNp_diff[i])/NcNp_diff[i])*100.0;
-                     change_low[i] = Nc_mean[i] - (ChangeCriteria_double/100.0)*Math.abs(NcNp_diff[i]);
-                     change_high[i] = Nc_mean[i] + (ChangeCriteria_double/100.0)*Math.abs(NcNp_diff[i]);
+                     change_delta[i] = Math.abs(NcNp_diff[i])*(ChangeCriteria_double/100.0);
+                     change_low[i] = Nc_mean[i] - change_delta[i];
+                     change_high[i] = Nc_mean[i] + change_delta[i];
              }
          }
+
+         fout.println ( delim6 );
+         printMetricsReportDataLine ( fout, "R - Nc", format_param, delim, RNc_diff, format_value );
+         fout.println ( delim6 );
          
+         printMetricsReportDataLine ( fout, "Nc - Np", format_param, delim, NcNp_diff, format_value );
+         printMetricsReportDataLine ( fout, "Change Criteria", format_param, delim, change_delta, format_value );
+         fout.println ( delim6 );
+         
+         // Print optional metrics for troubleshooting...
+         
+         if ( VerboseMetrics_boolean ) {
+             printMetricsReportDataLine ( fout, "Nc - Np (% of Np)", format_param, delim, NcNp_diff_percent, format_percent );
+             printMetricsReportDataLine ( fout, "R - Np", format_param, delim, RNp_diff, format_value );
+             printMetricsReportDataLine ( fout, "R - Np (% of Np)", format_param, delim, RNp_diff_percent, format_percent );
+             printMetricsReportDataLine ( fout, "Np # missing", format_param, delim, Np_missing, format_int );
+             printMetricsReportDataLine ( fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
+             printMetricsReportDataLine ( fout, "R # missing", format_param, delim, R_missing, format_int );
+             printMetricsReportDataLine ( fout, "R # not missing", format_param, delim, R_notmissing, format_int );
+             printMetricsReportDataLine ( fout, "Nc # missing", format_param, delim, Nc_missing, format_int );
+             printMetricsReportDataLine ( fout, "Np # not missing", format_param, delim, Np_notmissing, format_int );
+             printMetricsReportDataLine ( fout, "R - Nc (% of Nc)", format_param, delim, RNc_diff_percent, format_percent );
+         }
+
          // Do the final tests, looping through each bin
          String [][] test_results = new String[__TEST_SIZE][__BIN_SIZE];
          for ( int i = 0; i < __BIN_SIZE; i++ ) {
@@ -894,8 +964,10 @@ private int customCommand (
          printMetricsReportResultsLine (
                  fout, __TEST_NAMES[__TEST_FINAL], format_param, delim, test_results[__TEST_FINAL], format_text );
          printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
-        
          
+         fout.println ( delim6 );
+         fout.println ( "Generated by Riverside Technology inc." + delim6 );
+                 
          fout.close();
          // Save the output file name...
          setMetricsOutputFile ( new File(MetricsOutputFile_full));
@@ -910,7 +982,7 @@ private int customCommand (
         Message.printWarning( 3, routine, message );
         Message.printWarning ( 3, routine, e);
         status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.WARNING,
+                new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
     }
 
@@ -959,6 +1031,20 @@ private File getMetricsOutputFile ()
     return __MetricsOutputFile_File;
 }
 
+/**
+Determine whether the date is a holiday, in which case the value should not be
+included in totals.
+*/
+private boolean isHoliday ( DateTime date )
+{
+    for ( int i = 0; i < __HOLIDAYS_TO_OMIT_FROM_BINS.length; i++ ) {
+        if ( date.equals(__HOLIDAYS_TO_OMIT_FROM_BINS_DateTime[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Use base class parseCommand()
 
 /**
@@ -992,7 +1078,7 @@ Print a line in the report.
 @param values Values to output.
 @param format_values StringUtil.formtString() format for value columns.
 */
-private void printReportDataLine ( PrintWriter fout, String param_title, String format_param,
+private void printMetricsReportDataLine ( PrintWriter fout, String param_title, String format_param,
         String delim, int [] values, String format_value )
 {
     fout.println (
@@ -1070,7 +1156,7 @@ CommandWarningException, CommandException
     int log_level = 3;  // Non-user warning level
 	String command_tag = "" + command_number;
 	int warning_count = 0;
-
+	
     CommandPhaseType command_phase = CommandPhaseType.RUN;
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
@@ -1086,7 +1172,25 @@ CommandWarningException, CommandException
     String ValueCriteria = parameters.getValue("ValueCriteria");
     String AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
     String MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
+    String VerboseMetrics = parameters.getValue ( "VerboseMetrics" );
 
+    // Initialize the holiday dates to check
+    
+    __HOLIDAYS_TO_OMIT_FROM_BINS_DateTime = new DateTime[__HOLIDAYS_TO_OMIT_FROM_BINS.length];
+    for ( int i = 0; i < __HOLIDAYS_TO_OMIT_FROM_BINS.length; i++ ) {
+        try {
+            __HOLIDAYS_TO_OMIT_FROM_BINS_DateTime[i] = DateTime.parse ( __HOLIDAYS_TO_OMIT_FROM_BINS[i] );
+        }
+        catch ( Exception e ) {
+            message = "Error converting holiday string \"" + __HOLIDAYS_TO_OMIT_FROM_BINS[i] + "\" to DateTime.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+        }
+    }
     // Get the time series to process.  The time series list is searched backwards until the first match...
 
     PropList request_params = new PropList ( "" );
@@ -1330,6 +1434,10 @@ CommandWarningException, CommandException
     
     double ChangeCriteria_double = StringUtil.atod ( ChangeCriteria );
     double ValueCriteria_double = StringUtil.atod ( ValueCriteria );
+    boolean VerboseMetrics_boolean = false;
+    if ( (VerboseMetrics != null) && VerboseMetrics.equalsIgnoreCase("True")) {
+        VerboseMetrics_boolean = true;
+    }
     
 	// Now try to process.
     
@@ -1348,6 +1456,7 @@ CommandWarningException, CommandException
                 ValueCriteria_double,
                 AdvanceAnalysisOutputFile_full,
                 MetricsOutputFile_full,
+                VerboseMetrics_boolean,
                 status
                 );
     }
@@ -1504,6 +1613,7 @@ public String toString ( PropList parameters )
     String ValueCriteria = parameters.getValue("ValueCriteria");
     String AdvanceAnalysisOutputFile = parameters.getValue("AdvanceAnalysisOutputFile");
     String MetricsOutputFile = parameters.getValue ( "MetricsOutputFile" );
+    String VerboseMetrics = parameters.getValue ( "VerboseMetrics" );
     
 	StringBuffer b = new StringBuffer ();
 	if ( (Title != null) && (Title.length() > 0) ) {
@@ -1559,6 +1669,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "MetricsOutputFile=\"" + MetricsOutputFile + "\"");
+    }
+    if ( (VerboseMetrics != null) && (VerboseMetrics.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "VerboseMetrics=" + VerboseMetrics );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -61,9 +61,7 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 //private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
 private JTextField  __EnsembleID_JTextField;
 private JTextArea	 __Command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error to be cleared up
 private boolean		__first_time = true;
 
 private boolean 	__isAliasVersion = false;	
@@ -369,15 +367,13 @@ private void initialize(JFrame parent, Command command) {
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    JGUIUtil.addComponent(main_JPanel,
-            new JLabel ( "Ensemble ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble ID:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __EnsembleID_JTextField = new JTextField ( "", 10 );
+    __EnsembleID_JTextField = new JTextField ( "", 20 );
     __EnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required identifier for ensemble."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required identifier for ensemble."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         /*

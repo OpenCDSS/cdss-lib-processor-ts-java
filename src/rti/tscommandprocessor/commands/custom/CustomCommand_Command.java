@@ -461,8 +461,8 @@ throws Exception
         fout.println (
         StringUtil.formatString(date.toString(), format_param) + delim +
         StringUtil.formatString(Np.getDataValue(date), format_value) + delim +
-        StringUtil.formatString(Nc.getDataValue(date), format_value) + delim +
-        StringUtil.formatString(R.getDataValue(date), format_value) );
+        StringUtil.formatString(R.getDataValue(date), format_value) + delim +
+        StringUtil.formatString(Nc.getDataValue(date), format_value) );
         // Brute force print blank lines after each bin
         for ( int j = 0; j < bin_end_DateTime.length; j++ ) {
             if ( bin_end_DateTime[j].equals(date) ) {

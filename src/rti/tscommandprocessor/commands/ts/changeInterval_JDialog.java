@@ -462,7 +462,7 @@ private void initialize ( JFrame parent, Command command )
 	__OutputFillMethod_JComboBox = new SimpleJComboBox ( false );
 	Vector fill_Vector = new Vector(3);
 	fill_Vector.addElement ( "" );	// Blank is default
-	fill_Vector.addElement ( __command.__Interpolate );
+	fill_Vector.addElement ( __command._Interpolate );
 	fill_Vector.addElement ( __command.__Repeat );
 	__OutputFillMethod_JComboBox.setData ( fill_Vector );
 	__OutputFillMethod_JComboBox.select ( 0 );	// Default
@@ -481,7 +481,7 @@ private void initialize ( JFrame parent, Command command )
 	__HandleMissingInputHow_JComboBox = new SimpleJComboBox ( false );
 	Vector missing_Vector = new Vector(4);
 	missing_Vector.addElement ( "" );	// Blank is default
-	missing_Vector.addElement ( __command.__KeepMissing );
+	missing_Vector.addElement ( __command._KeepMissing );
 	missing_Vector.addElement ( __command.__Repeat );
 	missing_Vector.addElement ( __command.__SetToZero );
 	__HandleMissingInputHow_JComboBox.setData ( missing_Vector );
@@ -490,7 +490,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicate how to handle missing values in input (default=" + __command.__KeepMissing + "."),
+		"Indicate how to handle missing values in input (default=" + __command._KeepMissing + "."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command

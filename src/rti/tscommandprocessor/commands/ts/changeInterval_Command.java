@@ -35,7 +35,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
-import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_ChangeInterval;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
@@ -60,12 +60,12 @@ public class changeInterval_Command extends AbstractCommand implements Command
 {
 
 // Defines used by this class and its changeInterval_Dialog counterpart.
-protected final String __Interpolate = "Interpolate";
-protected final String __KeepMissing = "KeepMissing";
+protected final String _Interpolate = "Interpolate";
+protected final String _KeepMissing = "KeepMissing";
 protected final String __Repeat      = "Repeat";
 protected final String __SetToZero   = "SetToZero";
 
-private final boolean  __read_one    = true;	// For now only enable the TS X notation.
+private final boolean  __read_one    = true;	// For now only enable the TS Alias notation.
 /**
 changeInterval_Command constructor.
 */
@@ -247,26 +247,26 @@ throws InvalidCommandParameterException
 	// If the OutputFillMethod is specified, make sure it is valid.
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
 		if (	!OutputFillMethod.equalsIgnoreCase( __Repeat      ) &&
-			!OutputFillMethod.equalsIgnoreCase( __Interpolate ) ) {
+			!OutputFillMethod.equalsIgnoreCase( _Interpolate ) ) {
             message = "The OutputFillMethod (" + OutputFillMethod + ") parameter is invalid.";
 			warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(
-                    CommandStatusType.FAILURE, message, "Valid values are \"" + __Interpolate
+                    CommandStatusType.FAILURE, message, "Valid values are \"" + _Interpolate
                         + "\" and \"" + __Repeat + "\"."));
 		}
 	}
 
 	// If the HandleMissingInputHow is specified, make sure it is valid.
 	if ( HandleMissingInputHow!=null && HandleMissingInputHow.length()>0 ) {
-		if (	!HandleMissingInputHow.equalsIgnoreCase(__KeepMissing)&&
+		if (	!HandleMissingInputHow.equalsIgnoreCase(_KeepMissing)&&
 			!HandleMissingInputHow.equalsIgnoreCase(__Repeat     )&&
 			!HandleMissingInputHow.equalsIgnoreCase(__SetToZero  )){
             message = "The HandleMissingInputHow (" + HandleMissingInputHow + ") parameter is invalid.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(
-                    CommandStatusType.FAILURE, message, "Valid values are \"" + __KeepMissing
+                    CommandStatusType.FAILURE, message, "Valid values are \"" + _KeepMissing
                         + "\", " + __Repeat + ", and \"" + __SetToZero + "\"."));
 		}
 	}
@@ -510,10 +510,11 @@ throws InvalidCommandParameterException,
 	}
 	
 	// Change interval
-	TS   result_ts = null;		// Result time series
+	TS result_ts = null;		// Result time series
 	try {
 		// Process the change of interval
-		result_ts= TSUtil.changeInterval(original_ts,NewInterval,props);	
+	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
+		result_ts = tsu.changeInterval(original_ts,NewInterval,props);	
 		
 		// Update the newly created time series alias.
 		TSIdent tsIdent = result_ts.getIdentifier();
@@ -527,7 +528,7 @@ throws InvalidCommandParameterException,
         TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
 	} 
 	catch ( Exception e ) {
-		message = "Unexpected error processing the changeInterval for TSID=\"" + TSID + "\"";
+		message = "Unexpected error changing the interval for TSID=\"" + TSID + "\"";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -564,17 +565,17 @@ public String toString ( PropList props )
 	}
 
 	// Get the properties from the command; 
-	String Alias		     = props.getValue( "Alias"		     );
-	String TSID		     = props.getValue( "TSID"		     );
-	String NewInterval	     = props.getValue( "NewInterval"	     );
-	String OldTimeScale	     = props.getValue( "OldTimeScale"	     );
-	String NewTimeScale	     = props.getValue( "NewTimeScale"	     );
-	String NewDataType	     = props.getValue( "NewDataType"	     );
-	String AllowMissingCount    = props.getValue( "AllowMissingCount"    );
+	String Alias = props.getValue( "Alias" );
+	String TSID = props.getValue( "TSID" );
+	String NewInterval = props.getValue( "NewInterval" );
+	String OldTimeScale = props.getValue( "OldTimeScale" );
+	String NewTimeScale = props.getValue( "NewTimeScale" );
+	String NewDataType = props.getValue( "NewDataType" );
+	String AllowMissingCount = props.getValue( "AllowMissingCount" );
 	/* TODO SAM 2005-02-18 may enable later
-	String AllowMissingPercent  = props.getValue( "AllowMissingPercent"  );
+	String AllowMissingPercent = props.getValue( "AllowMissingPercent" );
 	*/
-	String OutputFillMethod     = props.getValue( "OutputFillMethod"     );
+	String OutputFillMethod = props.getValue( "OutputFillMethod" );
 	String HandleMissingInputHow= props.getValue( "HandleMissingInputHow");
 	
 	// Creating the command string

@@ -646,7 +646,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.String;
 import java.io.PrintWriter;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
@@ -686,6 +685,7 @@ import RTi.GRTS.TSViewJFrame;
 
 import RTi.TS.DateValueTS;
 import RTi.TS.DayTS;
+import RTi.TS.IrregularTS;
 import RTi.TS.MexicoCsmnTS;
 import RTi.TS.ModsimTS;
 import RTi.TS.MonthTS;
@@ -700,6 +700,7 @@ import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
 import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_ChangeInterval;
 import RTi.TS.UsgsNwisTS;
 import RTi.TS.YearTS;
 
@@ -1395,7 +1396,8 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 
 		if ( ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
 			// Convert to a daily time series...
-			ts = TSUtil.changeInterval ( ts, TimeInterval.DAY, 1 );
+		    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval ();
+			ts = tsu.OLDchangeToDayTS ( (IrregularTS)ts, 1, null );
 		}
 
 		int interval_base = ts.getDataIntervalBase();
@@ -2762,7 +2764,8 @@ throws Exception
 	PropList changeprops = new PropList ( "newEndOfMonthTSFromDayTS" );
 	changeprops.set ( "UseNearestToEnd", ndays );
 	Message.printStatus ( 1, routine, "Changing interval..." );
-	MonthTS monthts = (MonthTS)TSUtil.changeInterval ( dayts, TimeInterval.MONTH, 1, changeprops );
+	TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
+	MonthTS monthts = tsu.OLDchangeToMonthTS ( (DayTS)dayts, 1, changeprops );
 	// Save the original data limits...
 	if ( needHistoricalAverages(monthts) ) {
 		try {

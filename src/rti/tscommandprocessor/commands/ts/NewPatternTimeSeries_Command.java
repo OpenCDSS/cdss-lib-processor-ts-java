@@ -6,6 +6,7 @@ import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.IrregularTS;
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
@@ -71,7 +72,8 @@ public void checkCommandParameters (	PropList parameters, String command_tag,
 throws InvalidCommandParameterException
 {	String routine = getClass().getName() + ".checkCommandParameters";
     String Alias = parameters.getValue ( "Alias" );
-	String NewTSID = parameters.getValue ( "NewTSID" );
+	//String NewTSID = parameters.getValue ( "NewTSID" );
+	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String PatternValues = parameters.getValue ( "PatternValues" );
@@ -128,6 +130,20 @@ throws InvalidCommandParameterException
 		}
 	}
     */
+	
+	if ( (IrregularInterval != null) && !IrregularInterval.equals("") ) {
+    	try {
+    	    TimeInterval.parseInterval ( IrregularInterval );
+    	}
+    	catch ( Exception e ) {
+            message = "The irregular time series interval is not valid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message,
+                    "Specify a standard interval (e.g., 6Hour, Day, Month)."));
+    	}
+	}
     
     if ( (PatternValues == null) || PatternValues.equals("") ) {
         message = "The pattern values must be specified.";
@@ -224,6 +240,7 @@ throws InvalidCommandParameterException
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "Alias" );
 	valid_Vector.add ( "NewTSID" );
+	valid_Vector.add ( "IrregularInterval" );
 	valid_Vector.add ( "Description" );
 	valid_Vector.add ( "SetStart" );
 	valid_Vector.add ( "SetEnd" );
@@ -348,6 +365,7 @@ CommandWarningException, CommandException
 
 	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
+	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String Description = parameters.getValue ( "Description" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
@@ -525,6 +543,31 @@ CommandWarningException, CommandException
 					"Verify that the output period is not huge and check computer memory."));
 		}
 		if ( (__PatternValues_double != null) && (__PatternValues_double.length > 0) ) {
+		    if ( ts instanceof IrregularTS ) {
+		        // Irregular time series don't have a regular data space so need to fill in some
+		        // missing values first.  Use the period to iterate and define missing values.
+		        DateTime end = new DateTime ( ts.getDate2() );
+		        TimeInterval tsinterval = null;
+		        try {
+		            tsinterval = TimeInterval.parseInterval ( IrregularInterval );
+		        }
+		        catch ( Exception e ) {
+		            message = "Unable to allocate memory for time series.";
+		            Message.printWarning ( warning_level,
+		            MessageUtil.formatMessageTag(
+		            command_tag,++warning_count),routine,message );
+		            status.addToLog(CommandPhaseType.RUN,
+		                    new CommandLogRecord(
+		                    CommandStatusType.FAILURE, message,
+		                    "Verify that the output period is not huge and check computer memory."));
+		        }
+		        double missing = ts.getMissing();
+		        for ( DateTime date = new DateTime(ts.getDate1()); date.lessThanOrEqualTo(end);
+		            date.addInterval(tsinterval.getBase(),tsinterval.getMultiplier())) {
+		            ts.setDataValue(date, missing );
+		        }
+		    }
+		    // Set the data.  This will reset the initial missing values in the time series.
 			TSUtil_SetDataValuesUsingPattern tsworker = new TSUtil_SetDataValuesUsingPattern ();
 			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime, __PatternValues_double );
 		}
@@ -602,6 +645,7 @@ public String toString ( PropList props )
 	}
 	String Alias = props.getValue( "Alias" );
 	String NewTSID = props.getValue( "NewTSID" );
+	String IrregularInterval = props.getValue( "IrregularInterval" );
 	String Description = props.getValue( "Description" );
 	String SetStart = props.getValue( "SetStart" );
 	String SetEnd = props.getValue( "SetEnd" );
@@ -614,6 +658,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
+   if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IrregularInterval=" + IrregularInterval );
+    }
 	if ( (Description != null) && (Description.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

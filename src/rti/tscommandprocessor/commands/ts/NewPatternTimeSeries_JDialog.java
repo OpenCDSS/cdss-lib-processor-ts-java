@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.ts;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -11,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -25,37 +27,35 @@ import RTi.TS.TSIdent_JDialog;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor for the TS Alias = newPatternTimeSeries() command.
 */
 public class NewPatternTimeSeries_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton	__cancel_JButton = null,
+			__ok_JButton = null;
 private JFrame		__parent_JFrame = null;	// parent JFrame
 private NewPatternTimeSeries_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextField
-private JTextField	__Alias_JTextField = null;// Field for time series alias
-private JTextArea	__NewTSID_JTextArea=null;// NewTSID as JTextArea
-private SimpleJButton	__edit_JButton = null;	// Edit button
-private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
-private JTextField	__Description_JTextField = null;
-						// Time series description.
+private JTextArea	__command_JTextArea=null;
+private JTextField	__Alias_JTextField = null;
+private JTextArea	__NewTSID_JTextArea=null;
+private SimpleJButton	__edit_JButton = null;
+private SimpleJButton	__clear_JButton = null;
+private SimpleJComboBox   __IrregularInterval_JComboBox=null;// Interval used to initialize irregular time series
+private JTextField	__Description_JTextField = null; // Time series description.
 private JTextField	__SetStart_JTextField = null;
-						// Period start.
 private JTextField	__SetEnd_JTextField = null;
-						// Period end.
-private JTextField	__Units_JTextField = null;// Data units.
-private JTextArea	__PatternValues_JTextArea=null; // Value to fill TS with.
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private JTextField	__Units_JTextField = null;
+private JTextArea	__PatternValues_JTextArea=null; // Value(s) to fill TS with.
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
 private boolean		__ok = false;		// Whether OK has been pressed.
 
@@ -126,6 +126,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
+	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	String Description = __Description_JTextField.getText().trim();
 	String SetStart = __SetStart_JTextField.getText().trim();
 	String SetEnd = __SetEnd_JTextField.getText().trim();
@@ -138,6 +139,9 @@ private void checkInput ()
 	}
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		props.set ( "NewTSID", NewTSID );
+	}
+	if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+	    props.set ( "IrregularInterval", IrregularInterval );
 	}
 	if ( (Description != null) && (Description.length() > 0) ) {
 		props.set ( "Description", Description );
@@ -170,6 +174,7 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String Alias = __Alias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
+	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	String Description = __Description_JTextField.getText().trim();
 	String SetStart = __SetStart_JTextField.getText().trim();
 	String SetEnd = __SetEnd_JTextField.getText().trim();
@@ -177,6 +182,7 @@ private void commitEdits ()
 	String PatternValues = __PatternValues_JTextArea.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
+	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
 	__command.setCommandParameter ( "Description", Description );
 	__command.setCommandParameter ( "SetStart", SetStart );
 	__command.setCommandParameter ( "SetEnd", SetEnd );
@@ -226,10 +232,13 @@ private void initialize ( JFrame parent, Command command )
 		"Create a new time series, which can be referenced using the "+
 		"alias or TSID, using a repeating pattern of values."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify period start and end date/times using a precision " +
-		"consistent with the data interval."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify period start and end date/times using a precision consistent with the data interval."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "If the time series has an interval of irregular, provide the interval to define data (more options" +
+        " for irregular data may be added later)."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -255,12 +264,23 @@ private void initialize ( JFrame parent, Command command )
 		"Specify to avoid confusion with TSID from original TS."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
-    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
-		new SimpleJButton ( "Edit", "Edit", this ) ),
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
-		new SimpleJButton ( "Clear", "Clear", this ) ),
+    JGUIUtil.addComponent(main_JPanel, (__clear_JButton = new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
+    Vector interval_Vector = TimeInterval.getTimeIntervalChoices(
+        TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, true);
+    __IrregularInterval_JComboBox.setData ( interval_Vector );
+    __IrregularInterval_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Use to initialize data."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -388,6 +408,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String Alias = "";
 	String NewTSID = "";
+	String IrregularInterval = "";
 	String Description = "";
 	String SetStart = "*";
 	String SetEnd = "*";
@@ -398,6 +419,7 @@ private void refresh ()
 		__first_time = false;
 		Alias = props.getValue ( "Alias" );
 		NewTSID = props.getValue ( "NewTSID" );
+		IrregularInterval = props.getValue ( "IrregularInterval" );
 		Description = props.getValue ( "Description" );
 		SetStart = props.getValue ( "SetStart" );
 		SetEnd = props.getValue ( "SetEnd" );
@@ -409,6 +431,21 @@ private void refresh ()
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularInterval_JComboBox, IrregularInterval, JGUIUtil.NONE, null, null ) ) {
+            __IrregularInterval_JComboBox.select ( IrregularInterval );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple)...
+            if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+                __IrregularInterval_JComboBox.insertItemAt ( IrregularInterval, 1 );
+                // Select...
+                __IrregularInterval_JComboBox.select ( IrregularInterval );
+            }
+            else {
+                // Select the blank...
+                __IrregularInterval_JComboBox.select ( 0 );
+            }
+        }
 		if ( Description != null ) {
 			__Description_JTextField.setText ( Description );
 		}
@@ -428,6 +465,7 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
+	IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	Description = __Description_JTextField.getText().trim();
 	SetStart = __SetStart_JTextField.getText().trim();
 	SetEnd = __SetEnd_JTextField.getText().trim();
@@ -436,6 +474,7 @@ private void refresh ()
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "NewTSID=" + NewTSID );
+	props.add ( "IrregularInterval=" + IrregularInterval );
 	props.add ( "Description=" + Description );
 	props.add ( "SetStart=" + SetStart );
 	props.add ( "SetEnd=" + SetEnd );
@@ -479,4 +518,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end newPatternTimeSeries_JDialog
+}

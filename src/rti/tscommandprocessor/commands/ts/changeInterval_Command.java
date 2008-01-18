@@ -62,8 +62,8 @@ public class changeInterval_Command extends AbstractCommand implements Command
 // Defines used by this class and its changeInterval_Dialog counterpart.
 protected final String _Interpolate = "Interpolate";
 protected final String _KeepMissing = "KeepMissing";
-protected final String __Repeat      = "Repeat";
-protected final String __SetToZero   = "SetToZero";
+protected final String _Repeat      = "Repeat";
+protected final String _SetToZero   = "SetToZero";
 
 private final boolean  __read_one    = true;	// For now only enable the TS Alias notation.
 /**
@@ -246,28 +246,28 @@ throws InvalidCommandParameterException
 	
 	// If the OutputFillMethod is specified, make sure it is valid.
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
-		if (	!OutputFillMethod.equalsIgnoreCase( __Repeat      ) &&
+		if (	!OutputFillMethod.equalsIgnoreCase( _Repeat      ) &&
 			!OutputFillMethod.equalsIgnoreCase( _Interpolate ) ) {
             message = "The OutputFillMethod (" + OutputFillMethod + ") parameter is invalid.";
 			warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(
                     CommandStatusType.FAILURE, message, "Valid values are \"" + _Interpolate
-                        + "\" and \"" + __Repeat + "\"."));
+                        + "\" and \"" + _Repeat + "\"."));
 		}
 	}
 
 	// If the HandleMissingInputHow is specified, make sure it is valid.
 	if ( HandleMissingInputHow!=null && HandleMissingInputHow.length()>0 ) {
 		if (	!HandleMissingInputHow.equalsIgnoreCase(_KeepMissing)&&
-			!HandleMissingInputHow.equalsIgnoreCase(__Repeat     )&&
-			!HandleMissingInputHow.equalsIgnoreCase(__SetToZero  )){
+			!HandleMissingInputHow.equalsIgnoreCase(_Repeat     )&&
+			!HandleMissingInputHow.equalsIgnoreCase(_SetToZero  )){
             message = "The HandleMissingInputHow (" + HandleMissingInputHow + ") parameter is invalid.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(
                     CommandStatusType.FAILURE, message, "Valid values are \"" + _KeepMissing
-                        + "\", " + __Repeat + ", and \"" + __SetToZero + "\"."));
+                        + "\", " + _Repeat + ", and \"" + _SetToZero + "\"."));
 		}
 	}
     

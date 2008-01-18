@@ -428,7 +428,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __NewDataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__NewDataType_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Will be set in new time series identifier."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is to use data type from original time series."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
@@ -463,7 +463,7 @@ private void initialize ( JFrame parent, Command command )
 	Vector fill_Vector = new Vector(3);
 	fill_Vector.addElement ( "" );	// Blank is default
 	fill_Vector.addElement ( __command._Interpolate );
-	fill_Vector.addElement ( __command.__Repeat );
+	fill_Vector.addElement ( __command._Repeat );
 	__OutputFillMethod_JComboBox.setData ( fill_Vector );
 	__OutputFillMethod_JComboBox.select ( 0 );	// Default
 	__OutputFillMethod_JComboBox.addItemListener ( this );
@@ -471,7 +471,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Use to fill output when converting from large to small " +
-		"interval (default=" + __command.__Repeat + "."),
+		"interval (default=" + __command._Repeat + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Handle missing input how?
@@ -482,15 +482,15 @@ private void initialize ( JFrame parent, Command command )
 	Vector missing_Vector = new Vector(4);
 	missing_Vector.addElement ( "" );	// Blank is default
 	missing_Vector.addElement ( __command._KeepMissing );
-	missing_Vector.addElement ( __command.__Repeat );
-	missing_Vector.addElement ( __command.__SetToZero );
+	missing_Vector.addElement ( __command._Repeat );
+	missing_Vector.addElement ( __command._SetToZero );
 	__HandleMissingInputHow_JComboBox.setData ( missing_Vector );
 	__HandleMissingInputHow_JComboBox.select ( 0 );	// Default
 	__HandleMissingInputHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicate how to handle missing values in input (default=" + __command._KeepMissing + "."),
+		"Indicate how to handle missing values in input (default=" + __command._KeepMissing + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command

@@ -211,15 +211,15 @@ throws InvalidCommandParameterException
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a forecast start that is a Tuesday." ) );
+                                message, "Specify an STP date that is a Tuesday." ) );
             }
         }
         catch ( Exception e ) {
-            message = "The forecast start date/time \"" + STPDate + "\" is not a valid date/time.";
+            message = "The STP date \"" + STPDate + "\" is not a valid date.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time." ) );
+                            message, "Specify a valid date." ) );
         }
     }
     
@@ -453,16 +453,46 @@ throws Exception
 
     fout.println ( "" + delim3 );
     
-    DateTime end = new DateTime(Nc.getDate2());
+    DateTime end = null;
+    if ( Nc != null ) {
+        end = new DateTime(Nc.getDate2());
+    }
+    else {
+        // Take from RTi forecast
+        end = new DateTime(R.getDate2());
+    }
     DateTime date = new DateTime(STPDate_DateTime);
     // Add one day since STP report is issued on Tuesday but first bin starts on following Wednesday
     date.addDay ( 1 );
+    double Np_value;
+    double R_value;
+    double Nc_value;
+    double missing = -999.0;
     for ( ; date.lessThanOrEqualTo(end); date.addDay(1) ) {
+        // Allow any of the time series to be missing, in particular Nc will be missing during daily forecasts
+        if ( Np == null ) {
+            Np_value = missing;
+        }
+        else {
+            Np_value = Np.getDataValue(date);
+        }
+        if ( R == null ) {
+            R_value = missing;
+        }
+        else {
+            R_value = R.getDataValue(date);
+        }
+        if ( Nc == null ) {
+            Nc_value = missing;
+        }
+        else {
+            Nc_value = Nc.getDataValue(date);
+        }
         fout.println (
         StringUtil.formatString(date.toString(), format_param) + delim +
-        StringUtil.formatString(Np.getDataValue(date), format_value) + delim +
-        StringUtil.formatString(R.getDataValue(date), format_value) + delim +
-        StringUtil.formatString(Nc.getDataValue(date), format_value) );
+        StringUtil.formatString(Np_value, format_value) + delim +
+        StringUtil.formatString(R_value, format_value) + delim +
+        StringUtil.formatString(Nc_value, format_value) );
         // Brute force print blank lines after each bin
         for ( int j = 0; j < bin_end_DateTime.length; j++ ) {
             if ( bin_end_DateTime[j].equals(date) ) {
@@ -573,6 +603,7 @@ private int customCommand (
         bin_end_DateTime[i] = new DateTime(end);
     }
     Message.printStatus ( 2, routine, "Generating report starting on " + STPDate_DateTime + " through " + end );
+    double missing = -999.0;    // Use this if time series are missing
     for ( int i = 0; date.lessThanOrEqualTo(end); date.addDay(1), i++ ) {
         // Determine which bin the values should go into...
         day = date.getDay();
@@ -580,7 +611,12 @@ private int customCommand (
         Message.printStatus ( 2, routine, "Processing date " + date + " day of week " + day_of_week );
         // TODO SAM 2007-12-21 May need to move this below to avoid spurious messages at end of period
         // Get the current values corresponding to the date iterator
-        R_value = R_TS.getDataValue ( date );
+        if ( R_TS == null ) {
+            R_value = missing;
+        }
+        else {
+            R_value = R_TS.getDataValue ( date );
+        }
         if ( R_TS.isDataMissing(R_value) ) {
             message = "CurrentRForecast(" + date + ") is missing - treat as zero.";
             Message.printWarning( 3, routine, message );
@@ -599,8 +635,13 @@ private int customCommand (
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        Nc_value = Nc_TS.getDataValue ( date );
-        if ( Nc_TS.isDataMissing(Nc_value) ) {
+        if ( Nc_TS == null ) {
+            Nc_value = missing;
+        }
+        else {
+            Nc_value = Nc_TS.getDataValue ( date );
+        }
+        if ( (Nc_TS == null) || Nc_TS.isDataMissing(Nc_value) ) {
             message = "CurrentNForecast(" + date + ") is missing - treat as zero.";
             Message.printWarning( 3, routine, message );
             Nc_value = 0.0;
@@ -618,7 +659,12 @@ private int customCommand (
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        Np_value = Np_TS.getDataValue ( date );
+        if ( Np_TS == null ) {
+            Np_value = missing;
+        }
+        else {
+            Np_value = Np_TS.getDataValue ( date );
+        }
         if ( Np_TS.isDataMissing(Np_value) ) {
             message = "PreviousNForecast(" + date + ") is missing - treat as zero.";
             Message.printWarning( 3, routine, message );
@@ -733,7 +779,7 @@ private int customCommand (
                 ++Np_notmissing[bin_week];
                 Np_total[bin_week] += Np_value;
             }
-            if ( Nc_TS.isDataMissing(Nc_value) ) {
+            if ( (Nc_TS == null) || Nc_TS.isDataMissing(Nc_value) ) {
                 ++Nc_missing[bin_week];
             }
             else {
@@ -775,7 +821,7 @@ private int customCommand (
                 Np_total[bin_month] += Np_value;
                 ++Np_notmissing[bin_month];
             }
-            if ( Nc_TS.isDataMissing(Nc_value) ) {
+            if ( (Nc_TS == null) || Nc_TS.isDataMissing(Nc_value) ) {
                 ++Nc_missing[bin_month];
             }
             else {
@@ -828,7 +874,12 @@ private int customCommand (
          DateTime now = new DateTime ( DateTime.DATE_CURRENT );
          fout.println ( comment + " Creation date:  " + now + delim6 );
          fout.println ( comment + " Np period:      " + Np_TS.getDate1() + " to " + Np_TS.getDate2() + delim6 );
-         fout.println ( comment + " Nc period:      " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2() + delim6 );
+         if ( Nc_TS == null ) {
+             fout.println ( comment + " Nc period:      " + "NA" + delim6 );
+         }
+         else {
+             fout.println ( comment + " Nc period:      " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2() + delim6 );
+         }
          fout.println ( comment + " R period:       " + R_TS.getDate1() + " to " + R_TS.getDate2() + delim6 );
          fout.println ( comment + delim6 );
          fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin." + delim6 );
@@ -1266,8 +1317,9 @@ CommandWarningException, CommandException
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
         status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify the time series identifier.  A previous error may also cause this problem." +
+                        		"  OK for daily products." ) );
     }
     else {
         CurrentNForecastTSID_TS = (TS)o_TS;
@@ -1279,9 +1331,11 @@ CommandWarningException, CommandException
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( command_phase,
-        new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-        throw new CommandWarningException ( message );
+        new CommandLogRecord(CommandStatusType.WARNING,
+                message, "Verify the time series identifier.  A previous error may also cause this problem." +
+                		"  OK for daily products." ) );
+        // Don't throw an exception because the time series will be missing for daily forecasts
+        //throw new CommandWarningException ( message );
     }
     
     // PreviousNForecastTSID...
@@ -1341,7 +1395,8 @@ CommandWarningException, CommandException
                 message, "Specify a day interval time series." ) );
         throw new CommandWarningException ( message );
     }
-    if ( CurrentNForecastTSID_TS.getDataIntervalBase() != TimeInterval.DAY ) {
+    if ( (CurrentNForecastTSID_TS) != null &&
+            CurrentNForecastTSID_TS.getDataIntervalBase() != TimeInterval.DAY ) {
         message = "CurrentNForecast time series does not have interval of Day";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
@@ -1362,7 +1417,7 @@ CommandWarningException, CommandException
         throw new CommandWarningException ( message );
     }
     
-    // Forecast start
+    // STP date
     
     DateTime STPDate_DateTime = null;
     if ( (STPDate != null) && (STPDate.length() > 0) ) {
@@ -1417,7 +1472,9 @@ CommandWarningException, CommandException
     
     Vector tslist = new Vector(3);
     tslist.addElement ( CurrentRForecastTSID_TS );
-    tslist.addElement ( CurrentNForecastTSID_TS );
+    if ( CurrentNForecastTSID_TS != null ) {
+        tslist.addElement ( CurrentNForecastTSID_TS );
+    }
     tslist.addElement ( PreviousNForecastTSID_TS );
     if ( !TSUtil.areUnitsCompatible(tslist,true) ) {
         message = "Units for time series are different.";

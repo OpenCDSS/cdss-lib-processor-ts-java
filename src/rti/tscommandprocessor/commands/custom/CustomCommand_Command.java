@@ -15,10 +15,6 @@ import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
 import RTi.Util.IO.AbstractCommand;
-import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
-import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -32,7 +28,12 @@ import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeUtil;
 
 /**
 <p>
@@ -205,7 +206,9 @@ throws InvalidCommandParameterException
    
     if ( (STPDate != null) && !STPDate.equals("") ) {
         try {
-            DateTime date = DateTime.parse(STPDate);
+            //DateTime date =
+                DateTime.parse(STPDate);
+            /* FIXME SAM 2008-01-19 Allow STPDate to be other than Tuesday but warn at runtime
             if ( date.getWeekDay() != 2 ) {
                 message = "The STP start date/time \"" + STPDate + "\" must be a Tuesday.";
                 warning += "\n" + message;
@@ -213,6 +216,7 @@ throws InvalidCommandParameterException
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Specify an STP date that is a Tuesday." ) );
             }
+            */
         }
         catch ( Exception e ) {
             message = "The STP date \"" + STPDate + "\" is not a valid date.";
@@ -594,8 +598,34 @@ private int customCommand (
     // Loop from the STP start to the end of available data.
     
     DateTime date = new DateTime(STPDate_DateTime);
-    // Add one day to the date because the data to be processed start on Wednesday
-    date.addDay ( 1 );
+    if ( date.getWeekDay() == 0 ) {
+        message = "The STP start date/time \"" + STPDate_DateTime + "\" is a Sunday.";
+        Message.printWarning( 3, routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Dates later in the week are allowed but not before Tuesday." ) );
+        ++warning_count;
+    }
+    else if ( date.getWeekDay() == 1 ) {
+        message = "The STP start date/time \"" + STPDate_DateTime + "\" is a Monday.";
+        Message.printWarning( 3, routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Dates later in the week are allowed but not before Tuesday." ) );
+        ++warning_count;
+    }
+    else if ( date.getWeekDay() != 2 ) {
+        message = "The STP start date/time \"" + STPDate_DateTime + "\" is not a Tuesday.";
+        Message.printWarning( 3, routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Allowing but first bin results will have fewer values averaged." ) );
+        ++warning_count;
+    }
+    // Increment so the first day to process is after Tuesday
+    while ( date.getWeekDay() <= 2 ) {
+        date.addDay ( 1 );
+    }
     DateTime end = null;
     if ( Nc_TS != null ) {
         end = new DateTime(Nc_TS.getDate2());
@@ -876,17 +906,20 @@ private int customCommand (
          fout.println ( comment + "--------------------------------------------------------------------------------------" + delim6 );
          fout.println ( comment + " " + Title + delim6 );
          fout.println ( comment );
-         fout.println ( comment + " STP date:       " + STPDate_DateTime );
+         fout.println ( comment + " STP date:       " + STPDate_DateTime + getDayOfWeekString ( STPDate_DateTime ) );
          DateTime now = new DateTime ( DateTime.DATE_CURRENT );
-         fout.println ( comment + " Creation date:  " + now + delim6 );
-         fout.println ( comment + " Np period:      " + Np_TS.getDate1() + " to " + Np_TS.getDate2() + delim6 );
+         fout.println ( comment + " Creation date:  " + now + getDayOfWeekString ( now ) + delim6 );
+         fout.println ( comment + " Np period:      " + Np_TS.getDate1() + getDayOfWeekString ( Np_TS.getDate1() ) +
+                 " to " + Np_TS.getDate2() + getDayOfWeekString ( Np_TS.getDate2() ) + delim6 );
+         fout.println ( comment + " R period:       " + R_TS.getDate1() + getDayOfWeekString ( R_TS.getDate1() )+
+                 " to " + R_TS.getDate2() + getDayOfWeekString ( R_TS.getDate2() ) + delim6 );
          if ( Nc_TS == null ) {
              fout.println ( comment + " Nc period:      " + "NA" + delim6 );
          }
          else {
-             fout.println ( comment + " Nc period:      " + Nc_TS.getDate1() + " to " + Nc_TS.getDate2() + delim6 );
+             fout.println ( comment + " Nc period:      " + Nc_TS.getDate1() + getDayOfWeekString ( Nc_TS.getDate1() )
+                     + " to " + Nc_TS.getDate2() + getDayOfWeekString ( Nc_TS.getDate2() )+ delim6 );
          }
-         fout.println ( comment + " R period:       " + R_TS.getDate1() + " to " + R_TS.getDate2() + delim6 );
          fout.println ( comment + delim6 );
          fout.println ( comment + " Units of output are mean " + R_TS.getDataUnits() + " over bin." + delim6 );
          fout.println ( comment + delim6 );
@@ -902,7 +935,9 @@ private int customCommand (
          printMetricsReportResultsLine ( fout, "", format_param, delim, __BIN_NAMES2, format_text );
          printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
          printMetricsReportResultsLine ( fout, "Bin start", format_param, delim, bin_start_DateTime, format_value );
+         printMetricsReportDayOfWeekLine ( fout, "", format_param, delim, bin_start_DateTime, format_value );
          printMetricsReportResultsLine ( fout, "Bin end", format_param, delim, bin_end_DateTime, format_value );
+         printMetricsReportDayOfWeekLine ( fout, "", format_param, delim, bin_end_DateTime, format_value );
          printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
          // Previous N forecast values....
          printMetricsReportDataLine ( fout, "Previous NWS Forecast (Np)", format_param, delim, Np_mean, format_value );
@@ -1058,6 +1093,18 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Get the day of week string used in reports " (Dayofweek)".
+*/
+private String getDayOfWeekString ( DateTime dt )
+{   if ( dt == null ) {
+        return " (unknown)";
+    }
+    else {
+        return " (" + TimeUtil.DAY_NAMES[dt.getWeekDay()] + ")";
+    }
+}
+
+/**
 Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
@@ -1195,6 +1242,40 @@ private void printMetricsReportResultsLine ( PrintWriter fout, String param_titl
         StringUtil.formatString(values[__BIN_MONTH1],format_value) + delim +
         StringUtil.formatString(values[__BIN_MONTH2],format_value) + delim +
         StringUtil.formatString(values[__BIN_MONTH3],format_value) );
+}
+
+/**
+Print a line in the report.
+@param fout PrintWriter to receive output.
+@param param_title parameter title for first column.
+@param format_param StringUtil.formatString() format for parameter column.
+@param delim Delimiter between columns.
+@param values Values to output (test results strings).
+@param format_values StringUtil.formtString() format for value columns.
+*/
+private void printMetricsReportDayOfWeekLine ( PrintWriter fout, String param_title, String format_param,
+        String delim, Object [] values, String format_value )
+{
+    // The objects are a list of the start or end dates.  Convert to day of week strings.
+    String [] daysofweek = new String[__BIN_SIZE];
+    DateTime dt = null;
+    for ( int i = 0; i < __BIN_SIZE; i++ ) {
+        if ( values[i] == null ) {
+            daysofweek[i] = "unknown";
+        }
+        else {
+            dt = (DateTime)values[i];
+            daysofweek[i] = TimeUtil.DAY_NAMES[dt.getWeekDay()];
+        }
+    }
+    fout.println (
+        StringUtil.formatString(param_title,format_param) + delim +
+        StringUtil.formatString(daysofweek[__BIN_BAL_WEEK],format_value) + delim +
+        StringUtil.formatString(daysofweek[__BIN_WEEK_AHEAD],format_value) + delim +
+        StringUtil.formatString(daysofweek[__BIN_BAL_MONTH],format_value) + delim +
+        StringUtil.formatString(daysofweek[__BIN_MONTH1],format_value) + delim +
+        StringUtil.formatString(daysofweek[__BIN_MONTH2],format_value) + delim +
+        StringUtil.formatString(daysofweek[__BIN_MONTH3],format_value) );
 }
 
 /**

@@ -103,7 +103,6 @@ private SimpleJComboBox	__HandleMissingInputHow_JComboBox = null;
 						// How to handle missing data
 						// in input time series.
 private JTextArea	__Command_JTextArea   = null;
-private JLabel		__Command_JLabel      = null;
 private JScrollPane	__Command_JScrollPane = null;
 						// Command JTextArea and
 						// related controls
@@ -308,7 +307,6 @@ throws Throwable
 	__OutputFillMethod_JComboBox 	  = null;
 	__HandleMissingInputHow_JComboBox = null;
 	__Command_JTextArea		  = null;
-	__Command_JLabel		  = null;
 	__Command_JScrollPane		  = null;
 	
 	// Command Buttons
@@ -475,8 +473,7 @@ private void initialize ( JFrame parent, Command command )
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Handle missing input how?
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Handle missing input how?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Handle missing input how?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingInputHow_JComboBox = new SimpleJComboBox ( false );
 	Vector missing_Vector = new Vector(4);
@@ -489,13 +486,13 @@ private void initialize ( JFrame parent, Command command )
 	__HandleMissingInputHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Indicate how to handle missing values in input (default=" + __command._KeepMissing + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command
-        __Command_JLabel = new JLabel ( "Command:" );
-        JGUIUtil.addComponent(main_JPanel, __Command_JLabel,
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Command_JTextArea = new JTextArea (3,55);
 	__Command_JTextArea.setLineWrap ( true );

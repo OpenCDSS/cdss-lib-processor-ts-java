@@ -495,7 +495,7 @@ throws Exception
         StringUtil.formatString(Nc_value, format_value) );
         // Brute force print blank lines after each bin
         for ( int j = 0; j < bin_end_DateTime.length; j++ ) {
-            if ( bin_end_DateTime[j].equals(date) ) {
+            if ( (bin_end_DateTime[j] != null) && bin_end_DateTime[j].equals(date) ) {
                 fout.println ( "" + delim3 );
                 break;
             }
@@ -596,11 +596,12 @@ private int customCommand (
     DateTime date = new DateTime(STPDate_DateTime);
     // Add one day to the date because the data to be processed start on Wednesday
     date.addDay ( 1 );
-    DateTime end = new DateTime(Np_TS.getDate2());
-    // Initialize the bin end dates to the end of the period in case the loop ends without getting
-    // to a bin (due to a short period).
-    for ( int i = 0; i < __BIN_SIZE; i++ ) {
-        bin_end_DateTime[i] = new DateTime(end);
+    DateTime end = null;
+    if ( Nc_TS != null ) {
+        end = new DateTime(Nc_TS.getDate2());
+    }
+    else {
+        end = new DateTime(R_TS.getDate2());
     }
     Message.printStatus ( 2, routine, "Generating report starting on " + STPDate_DateTime + " through " + end );
     double missing = -999.0;    // Use this if time series are missing
@@ -618,12 +619,11 @@ private int customCommand (
             R_value = R_TS.getDataValue ( date );
         }
         if ( R_TS.isDataMissing(R_value) ) {
-            message = "CurrentRForecast(" + date + ") is missing - treat as zero.";
+            message = "CurrentRForecast(" + date + ") is missing.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
-            R_value = 0.0;
             ++warning_count;
         }
         else if ( R_value <= 0.0 ) {
@@ -642,9 +642,8 @@ private int customCommand (
             Nc_value = Nc_TS.getDataValue ( date );
         }
         if ( (Nc_TS == null) || Nc_TS.isDataMissing(Nc_value) ) {
-            message = "CurrentNForecast(" + date + ") is missing - treat as zero.";
+            message = "CurrentNForecast(" + date + ") is missing.";
             Message.printWarning( 3, routine, message );
-            Nc_value = 0.0;
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
@@ -666,12 +665,11 @@ private int customCommand (
             Np_value = Np_TS.getDataValue ( date );
         }
         if ( Np_TS.isDataMissing(Np_value) ) {
-            message = "PreviousNForecast(" + date + ") is missing - treat as zero.";
+            message = "PreviousNForecast(" + date + ") is missing.";
             Message.printWarning( 3, routine, message );
             status.addToLog ( command_phase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify input time series." ) );
-            Np_value = 0.0;
             ++warning_count;
         }
         else if ( Np_value <= 0.0 ) {
@@ -755,6 +753,14 @@ private int customCommand (
                 in_month3 = false;
                 bin_end_DateTime[__BIN_MONTH3] = new DateTime(date);
                 bin_end_DateTime[__BIN_MONTH3].addDay ( -1 );
+            }
+        }
+        // Make sure that months have ends.  Leave as null for bins with no data.
+        if ( date.equals(end) ) {
+            for ( int ibin = 0; ibin < __BIN_SIZE; ibin++ ) {
+                if ( (bin_start_DateTime[ibin] != null) && (bin_end_DateTime[ibin] == null) ) {
+                    bin_end_DateTime[ibin] = new DateTime(end);
+                }
             }
         }
         // Now actually do the processing

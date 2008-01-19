@@ -174,16 +174,6 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid input start." ) );
 		}
-		
-		if (__InputStart != null) {
-			if (__InputStart.getPrecision() != DateTime.PRECISION_HOUR) {
-                message = "The input start date/time \"" + InputStart + "\" precision is not hour.";
-				warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the input start to hour precision." ) );
-			}		
-		}
 	}
 
 	// InputEnd
@@ -197,16 +187,6 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid input end." ) );
-		}
-		
-		if (__InputEnd != null) {
-			if (__InputEnd.getPrecision() != DateTime.PRECISION_HOUR) {
-                message = "The input end date/time \"" + InputStart + "\" precision is not hour.";
-				warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the input end to hour precision." ) );
-			}
 		}
 	}
 

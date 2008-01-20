@@ -573,18 +573,20 @@ private int customCommand (
     // to allow comparing the bin for the change criteria
 
     double [] R_total = new double[__BIN_SIZE];
+    double [] R_total_when_Np_not_missing = new double[__BIN_SIZE];     // Exclude days missing in Np
     double [] Nc_total = new double[__BIN_SIZE];
     double [] Nc_total_when_Np_not_missing = new double[__BIN_SIZE];   // Exclude days missing in Np
     double [] Np_total = new double[__BIN_SIZE];
     double [] R_mean = new double[__BIN_SIZE];
+    double [] R_mean_when_Np_not_missing = new double[__BIN_SIZE];      // Exclude days missing in Np
     double [] Nc_mean = new double[__BIN_SIZE];
-    double [] Nc_mean_when_Np_not_missing = new double[__BIN_SIZE];    
+    double [] Nc_mean_when_Np_not_missing = new double[__BIN_SIZE];    // Exclude days missing in Np
     double [] Np_mean = new double[__BIN_SIZE];
     // Count of not missing in each bin
     int [] R_notmissing = new int[__BIN_SIZE];
     int [] Nc_notmissing = new int[__BIN_SIZE];
     int [] Np_notmissing = new int[__BIN_SIZE];
-    int [] Np_and_Nc_notmissing = new int[__BIN_SIZE];
+    int [] Np_Nc_R_notmissing = new int[__BIN_SIZE];
     int [] Nc_missing_because_Np_missing = new int[__BIN_SIZE];
     // Count of missing values in each bin
     int [] R_missing = new int[__BIN_SIZE];
@@ -600,10 +602,12 @@ private int customCommand (
     
     for ( int i = 0; i < __BIN_SIZE; i++ ) {
         R_total[i] = 0;
+        R_total_when_Np_not_missing[i] = 0;
         Nc_total[i] = 0;
         Nc_total_when_Np_not_missing[i] = 0;
         Np_total[i] = 0;
         R_mean[i] = Double.NaN;
+        R_mean_when_Np_not_missing[i] = Double.NaN;
         Nc_mean[i] = Double.NaN;
         Nc_mean_when_Np_not_missing[i] = Double.NaN;
         Np_mean[i] = Double.NaN;
@@ -612,7 +616,7 @@ private int customCommand (
         Np_missing[i] = 0;
         R_notmissing[i] = 0;
         Nc_notmissing[i] = 0;
-        Np_and_Nc_notmissing[i] = 0;
+        Np_Nc_R_notmissing[i] = 0;
         Nc_missing_because_Np_missing[i] = 0;
         Np_notmissing[i] = 0;
         bin_start_DateTime[i] = null;
@@ -676,8 +680,9 @@ private int customCommand (
     }
     Message.printStatus ( 2, routine, "Generating report starting on " + STPDate_DateTime + " through " + end );
     double missing = -999.0;    // Use this if time series are missing
-    boolean Np_is_missing = false;
+    boolean Np_is_missing = false;  // Used when computing change criteria, which depends on overlapping Np, Nc, and R
     boolean Nc_is_missing = false;
+    boolean R_is_missing = false;
     for ( int i = 0; date.lessThanOrEqualTo(end); date.addDay(1), i++ ) {
         // Determine which bin the values should go into...
         day = date.getDay();
@@ -852,6 +857,7 @@ private int customCommand (
         }
         Np_is_missing = false;
         Nc_is_missing = false;
+        R_is_missing = false;
         if ( bin_week >= 0 ) {
             // Have a weekly bin to put data in so do it (if data is not missing).
             if ( Np_TS.isDataMissing(Np_value) ) {
@@ -872,6 +878,7 @@ private int customCommand (
             }
             if ( R_TS.isDataMissing(R_value) ) {
                 ++R_missing[bin_week];
+                R_is_missing = true;
             }
             else {
                 R_total[bin_week] += R_value;
@@ -880,16 +887,18 @@ private int customCommand (
             if ( Np_is_missing && !Nc_is_missing ) {
                 ++Nc_missing_because_Np_missing[bin_week];
             }
-            else if ( !Np_is_missing && !Nc_is_missing ){
+            if ( !Np_is_missing && !Nc_is_missing && !R_is_missing ){
                 // Also add to the array that only has values when Np and Nc are not missing
-                ++Np_and_Nc_notmissing[bin_week];
+                ++Np_Nc_R_notmissing[bin_week];
                 Nc_total_when_Np_not_missing[bin_week] += Nc_value;
+                R_total_when_Np_not_missing[bin_week] += R_value;
             }
         }
         // Monthly metrics are computed separately...
         int bin_month = -1;
         Np_is_missing = false;
         Nc_is_missing = false;
+        R_is_missing = false;
         if ( isHoliday(date) ) {
             // Just skip it
             Message.printStatus( 2, routine, "Not adding " + date + " to a month bin because it is a holiday." );
@@ -927,6 +936,7 @@ private int customCommand (
             }
             if ( R_TS.isDataMissing(R_value) ) {
                 ++R_missing[bin_month];
+                R_is_missing = true;
             }
             else {
                 R_total[bin_month] += R_value;
@@ -935,10 +945,11 @@ private int customCommand (
             if ( Np_is_missing && !Nc_is_missing ) {
                 ++Nc_missing_because_Np_missing[bin_month];
             }
-            else if ( !Np_is_missing && !Nc_is_missing ){
+            if ( !Np_is_missing && !Nc_is_missing && !R_is_missing){
                 // Also add to the array that only has values when Np and Nc are not missing
-                ++Np_and_Nc_notmissing[bin_month];
+                ++Np_Nc_R_notmissing[bin_month];
                 Nc_total_when_Np_not_missing[bin_month] += Nc_value;
+                R_total_when_Np_not_missing[bin_month] += R_value;
             }
         }
     }
@@ -955,8 +966,9 @@ private int customCommand (
         if ( Np_notmissing[i] > 0 ) {
             Np_mean[i] = Np_total[i]/Np_notmissing[i];
         }
-        if ( Np_and_Nc_notmissing[i] > 0 ) {
-            Nc_mean_when_Np_not_missing[i] = Nc_total_when_Np_not_missing[i]/Np_and_Nc_notmissing[i];
+        if ( Np_Nc_R_notmissing[i] > 0 ) {
+            Nc_mean_when_Np_not_missing[i] = Nc_total_when_Np_not_missing[i]/Np_Nc_R_notmissing[i];
+            R_mean_when_Np_not_missing[i] = R_total_when_Np_not_missing[i]/Np_Nc_R_notmissing[i];
         }
     }
     
@@ -1032,9 +1044,15 @@ private int customCommand (
          
          // Difference and percent difference of Nc - Np values...
          double [] NcNp_diff = new double[__BIN_SIZE];
+         double [] NcNp_diff_when_Np_not_missing = new double[__BIN_SIZE];
          double [] NcNp_diff_percent = new double[__BIN_SIZE];
          for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) ) {
+             if ( (Np_missing[i] <= nmissing_allowed) && (Nc_missing[i] <= nmissing_allowed) ) {
+                 NcNp_diff_when_Np_not_missing[i] = Nc_mean_when_Np_not_missing[i] - Np_mean[i];
+                 NcNp_diff[i] = NcNp_diff_when_Np_not_missing[i];
+                 NcNp_diff_percent[i] = (NcNp_diff_when_Np_not_missing[i]/Np_mean[i])*100.0;
+             }
+             else if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) ) {
                  NcNp_diff[i] = Nc_mean[i] - Np_mean[i];
                  NcNp_diff_percent[i] = (NcNp_diff[i]/Np_mean[i])*100.0;
              }
@@ -1042,9 +1060,15 @@ private int customCommand (
          
          // R minus Np, difference and percent, difference and percent difference of Np values...
          double [] RNp_diff = new double[__BIN_SIZE];
+         double [] RNp_diff_when_Np_not_missing = new double[__BIN_SIZE];
          double [] RNp_diff_percent = new double[__BIN_SIZE];
          for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
+             if ( (Np_missing[i] <= nmissing_allowed) && (R_missing[i] <= nmissing_allowed) ) {
+                 RNp_diff_when_Np_not_missing[i] = R_mean_when_Np_not_missing[i] - Np_mean[i];
+                 RNp_diff[i] = RNp_diff_when_Np_not_missing[i];
+                 RNp_diff_percent[i] = (RNp_diff_when_Np_not_missing[i]/Np_mean[i])*100.0;
+             }
+             else if ( (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
                  RNp_diff[i] = R_mean[i] - Np_mean[i];
                  RNp_diff_percent[i] = (RNp_diff[i]/Np_mean[i])*100.0;
              }
@@ -1067,11 +1091,19 @@ private int customCommand (
          double [] change_low = new double[__BIN_SIZE]; // Low bound on pass
          double [] change_high = new double[__BIN_SIZE]; // High bound on pass
          for ( int i = 0; i < __BIN_SIZE; i++ ) {
-             if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
-                     change[i] = Math.abs((RNp_diff[i] - NcNp_diff[i])/NcNp_diff[i])*100.0;
-                     change_delta[i] = Math.abs(NcNp_diff[i])*(ChangeCriteria_double/100.0);
-                     change_low[i] = Nc_mean[i] - change_delta[i];
-                     change_high[i] = Nc_mean[i] + change_delta[i];
+             if ( (Np_missing[i] > 0) && (Np_missing[i] <= nmissing_allowed) ) {
+                 // Use the reduced bin points.
+                 change[i] = Math.abs((RNp_diff_when_Np_not_missing[i] -
+                         NcNp_diff_when_Np_not_missing[i])/NcNp_diff_when_Np_not_missing[i])*100.0;
+                 change_delta[i] = Math.abs(NcNp_diff_when_Np_not_missing[i])*(ChangeCriteria_double/100.0);
+                 change_low[i] = Nc_mean_when_Np_not_missing[i] - change_delta[i];
+                 change_high[i] = Nc_mean_when_Np_not_missing[i] + change_delta[i];
+             }
+             else if ( (Nc_missing[i] == 0) && (Np_missing[i] == 0) && (R_missing[i] == 0) ) {
+                 change[i] = Math.abs((RNp_diff[i] - NcNp_diff[i])/NcNp_diff[i])*100.0;
+                 change_delta[i] = Math.abs(NcNp_diff[i])*(ChangeCriteria_double/100.0);
+                 change_low[i] = Nc_mean[i] - change_delta[i];
+                 change_high[i] = Nc_mean[i] + change_delta[i];
              }
          }
 
@@ -1108,7 +1140,9 @@ private int customCommand (
                      nmissing_allowed,
                      Np_missing[i], Nc_missing[i], R_missing[i],
                      Np_notmissing[i], Nc_notmissing[i], R_notmissing[i],
-                     Nc_missing_because_Np_missing[i], Nc_mean_when_Np_not_missing[i] );
+                     Nc_missing_because_Np_missing[i],
+                     Np_Nc_R_notmissing[i],
+                     Nc_mean_when_Np_not_missing[i], R_mean_when_Np_not_missing[i] );
          }
          
          // Print important results and whether pass
@@ -1392,7 +1426,7 @@ private void printMissingDataFootnote ( PrintWriter fout, int nmissing_allowed, 
             // Have some NP data in the bin but had the allowed missing, which also caused Nc to be ignored.
             // Print a warning because numbers will be computed but will be incomplete.
             fout.println ( "Bin " + __BIN_NAMES[i] + " had " + Nc_missing_because_Np_missing[i] +
-                    " missing Np.  The corresponding Nc value was ignored for computations.");
+                    " missing Np.  The corresponding Nc and R values were ignored for computations." + line_end );
         }
     }
 }
@@ -1789,7 +1823,9 @@ private void test ( String [][] test_results, int bin,
         double change,
         int nmissing_allowed, int Np_missing, int Nc_missing, int R_missing,
         int Np_notmissing, int Nc_notmissing, int R_notmissing,
-        int Nc_missing_because_Np_missing, double Nc_mean_when_Np_not_missing )
+        int Nc_missing_because_Np_missing,
+        int Np_Nc_R_notmissing,
+        double Nc_mean_when_Np_not_missing, double R_mean_when_Np_not_missing )
 {   String routine = "CustomCommand_test";
     // OK to divide by zero since shown as NaN in reports
     // Keep around to see if people wan
@@ -1826,23 +1862,28 @@ private void test ( String [][] test_results, int bin,
     }
     
     // Change test
+    // If NP has up to nmissing_allowed, then use the values that are consistent.  These may
+    // be different from the totals of the value criteria.
     if ( (Np_missing > nmissing_allowed) || (Nc_missing > 0) || (R_missing > 0) ||
             (Np_notmissing == 0) || (Nc_notmissing == 0) || (R_notmissing == 0) ) {
         Message.printStatus ( 2, routine, "Change test not enough data for bin " + __BIN_NAMES[bin] );
         test_results[__TEST_CHANGE][bin] = NO_DATA;
     }
-    else if ( (Np_notmissing != Nc_notmissing) || (Np_notmissing != R_notmissing) ) {
+    else if ( (Np_notmissing == 0) && ((Np_notmissing != Nc_notmissing) || (Np_notmissing != R_notmissing)) ) {
+        // Check for full months.  Any missing in Np is handled in the case above or below.
         Message.printStatus ( 2, routine, "Change test different number of nonmissing for bin " + __BIN_NAMES[bin] );
         test_results[__TEST_CHANGE][bin] = NA;
     }
-    else if ( change <= ChangeCriteria_double ) {
-        // RTi forecast is within the magnitude tolerance.
-        Message.printStatus ( 2, routine, "Change test passed for bin " + __BIN_NAMES[bin] );
-        test_results[__TEST_CHANGE][bin] = YES;
-    }
     else {
-        Message.printStatus ( 2, routine, "Change test failed for bin " + __BIN_NAMES[bin] );
-        test_results[__TEST_CHANGE][bin] = NO;
+        if ( change <= ChangeCriteria_double ) {
+            // RTi forecast is within the magnitude tolerance.
+            Message.printStatus ( 2, routine, "Change test passed for bin " + __BIN_NAMES[bin] );
+            test_results[__TEST_CHANGE][bin] = YES;
+        }
+        else {
+            Message.printStatus ( 2, routine, "Change test failed for bin " + __BIN_NAMES[bin] );
+            test_results[__TEST_CHANGE][bin] = NO;
+        }
     }
  
     // Final test - need to pass one of the above.

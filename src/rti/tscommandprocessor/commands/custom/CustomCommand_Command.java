@@ -138,6 +138,29 @@ public CustomCommand_Command ()
 }
 
 /**
+Add the date to the list of holidays that are ignored.
+These can be used to print footnotes on reports.
+*/
+private void addDateAsIgnoredHoliday ( Vector ignored_holiday_dates, DateTime date )
+{
+    // Need to search what is already added because the same dates are processed for
+    // some weekly and monthly bins.
+    int size = ignored_holiday_dates.size();
+    boolean found = false;
+    DateTime d;
+    for ( int i = 0; i < size; i++ ) {
+        d = (DateTime)ignored_holiday_dates.elementAt(i);
+        if ( d.equals(date) ) {
+            found = true;
+            break;
+        }
+    }
+    if ( !found ) {
+        ignored_holiday_dates.addElement ( date );
+    }
+}
+
+/**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
 @param command_tag an indicator to be used when printing messages, to allow a
@@ -532,8 +555,9 @@ private int customCommand (
     String message;
     CommandPhaseType command_phase = CommandPhaseType.RUN;
     
-    // Start on the forecast date and loop through the data to fill bins of data to fill the
-    // following bins.
+    // Allowed missing values in monthly bin (set to 1 to account for one day sometimes being
+    // left off (leap year?)...
+    int nmissing_allowed = 1;
 
     // Single values used during iteration...
     
@@ -542,17 +566,26 @@ private int customCommand (
     double Np_value = 0.0;
     
     // Values in the bins, used to evaluate accuracy of forecast
+    // When the Nc advances to a new month, it is possible that Nc will have a full count of data
+    // but Np is missing a value at the end of the month.  For example, Np may end on March 30
+    // instead of March 31.  This will result in the change criteria not being computed for that
+    // bin.  Therefore, the Nc_total_with_Np_missing and corresponding mean are computed below
+    // to allow comparing the bin for the change criteria
 
     double [] R_total = new double[__BIN_SIZE];
     double [] Nc_total = new double[__BIN_SIZE];
+    double [] Nc_total_when_Np_not_missing = new double[__BIN_SIZE];   // Exclude days missing in Np
     double [] Np_total = new double[__BIN_SIZE];
     double [] R_mean = new double[__BIN_SIZE];
     double [] Nc_mean = new double[__BIN_SIZE];
+    double [] Nc_mean_when_Np_not_missing = new double[__BIN_SIZE];    
     double [] Np_mean = new double[__BIN_SIZE];
     // Count of not missing in each bin
     int [] R_notmissing = new int[__BIN_SIZE];
     int [] Nc_notmissing = new int[__BIN_SIZE];
     int [] Np_notmissing = new int[__BIN_SIZE];
+    int [] Np_and_Nc_notmissing = new int[__BIN_SIZE];
+    int [] Nc_missing_because_Np_missing = new int[__BIN_SIZE];
     // Count of missing values in each bin
     int [] R_missing = new int[__BIN_SIZE];
     int [] Nc_missing = new int[__BIN_SIZE];
@@ -561,18 +594,26 @@ private int customCommand (
     DateTime [] bin_start_DateTime = new DateTime[__BIN_SIZE];
     DateTime [] bin_end_DateTime = new DateTime[__BIN_SIZE];
     
+    // Holiday dates that are ignored in processing...
+    
+    Vector ignored_holiday_dates = new Vector();
+    
     for ( int i = 0; i < __BIN_SIZE; i++ ) {
         R_total[i] = 0;
         Nc_total[i] = 0;
+        Nc_total_when_Np_not_missing[i] = 0;
         Np_total[i] = 0;
         R_mean[i] = Double.NaN;
         Nc_mean[i] = Double.NaN;
+        Nc_mean_when_Np_not_missing[i] = Double.NaN;
         Np_mean[i] = Double.NaN;
         R_missing[i] = 0;
         Nc_missing[i] = 0;
         Np_missing[i] = 0;
         R_notmissing[i] = 0;
         Nc_notmissing[i] = 0;
+        Np_and_Nc_notmissing[i] = 0;
+        Nc_missing_because_Np_missing[i] = 0;
         Np_notmissing[i] = 0;
         bin_start_DateTime[i] = null;
         bin_end_DateTime[i] = null;
@@ -635,6 +676,8 @@ private int customCommand (
     }
     Message.printStatus ( 2, routine, "Generating report starting on " + STPDate_DateTime + " through " + end );
     double missing = -999.0;    // Use this if time series are missing
+    boolean Np_is_missing = false;
+    boolean Nc_is_missing = false;
     for ( int i = 0; date.lessThanOrEqualTo(end); date.addDay(1), i++ ) {
         // Determine which bin the values should go into...
         day = date.getDay();
@@ -656,7 +699,7 @@ private int customCommand (
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        else if ( R_value <= 0.0 ) {
+        else if ( R_value < 0.0 ) {
             message = "CurrentRForecast(" + date + ") is negative (" +
             R_value + ") - will decrease total.";
             Message.printWarning( 3, routine, message );
@@ -679,7 +722,7 @@ private int customCommand (
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        else if ( Nc_value <= 0.0 ) {
+        else if ( Nc_value < 0.0 ) {
             message = "CurrentNForecast(" + date + ") is negative (" +
             Nc_value + ") - will decrease total.";
             Message.printWarning( 3, routine, message );
@@ -702,7 +745,7 @@ private int customCommand (
                             message, "Verify input time series." ) );
             ++warning_count;
         }
-        else if ( Np_value <= 0.0 ) {
+        else if ( Np_value < 0.0 ) {
             message = "PreviousNForecast(" + date + ") is negative (" +
             Np_value + ") - will decrease total.";
             Message.printWarning( 3, routine, message );
@@ -799,6 +842,7 @@ private int customCommand (
         if ( isHoliday(date) ) {
             // Just skip it
             Message.printStatus( 2, routine, "Not adding " + date + " to a week bin because it is a holiday." );
+            addDateAsIgnoredHoliday ( ignored_holiday_dates, new DateTime(date) );
         }
         else if ( in_balweek ) {
             bin_week = __BIN_BAL_WEEK;
@@ -806,9 +850,12 @@ private int customCommand (
         else if ( in_weekahead ) {
             bin_week = __BIN_WEEK_AHEAD;
         }
+        Np_is_missing = false;
+        Nc_is_missing = false;
         if ( bin_week >= 0 ) {
             // Have a weekly bin to put data in so do it (if data is not missing).
             if ( Np_TS.isDataMissing(Np_value) ) {
+                Np_is_missing = true;
                 ++Np_missing[bin_week];
             }
             else {
@@ -816,6 +863,7 @@ private int customCommand (
                 Np_total[bin_week] += Np_value;
             }
             if ( (Nc_TS == null) || Nc_TS.isDataMissing(Nc_value) ) {
+                Nc_is_missing = true;
                 ++Nc_missing[bin_week];
             }
             else {
@@ -829,12 +877,23 @@ private int customCommand (
                 R_total[bin_week] += R_value;
                 ++R_notmissing[bin_week];
             }
+            if ( Np_is_missing && !Nc_is_missing ) {
+                ++Nc_missing_because_Np_missing[bin_week];
+            }
+            else if ( !Np_is_missing && !Nc_is_missing ){
+                // Also add to the array that only has values when Np and Nc are not missing
+                ++Np_and_Nc_notmissing[bin_week];
+                Nc_total_when_Np_not_missing[bin_week] += Nc_value;
+            }
         }
         // Monthly metrics are computed separately...
         int bin_month = -1;
+        Np_is_missing = false;
+        Nc_is_missing = false;
         if ( isHoliday(date) ) {
             // Just skip it
             Message.printStatus( 2, routine, "Not adding " + date + " to a month bin because it is a holiday." );
+            addDateAsIgnoredHoliday ( ignored_holiday_dates, new DateTime(date) );
         }
         else if ( in_balmonth && (day_of_week != day_sunday) ) {   // All days except Sunday
             bin_month = __BIN_BAL_MONTH;
@@ -852,6 +911,7 @@ private int customCommand (
             // Have a monthly bin identified so put data in it (if data not missing).
             if ( Np_TS.isDataMissing(Np_value) ) {
                 ++Np_missing[bin_month];
+                Np_is_missing = true;
             }
             else {
                 Np_total[bin_month] += Np_value;
@@ -859,6 +919,7 @@ private int customCommand (
             }
             if ( (Nc_TS == null) || Nc_TS.isDataMissing(Nc_value) ) {
                 ++Nc_missing[bin_month];
+                Nc_is_missing = true;
             }
             else {
                 Nc_total[bin_month] += Nc_value;
@@ -870,6 +931,14 @@ private int customCommand (
             else {
                 R_total[bin_month] += R_value;
                 ++R_notmissing[bin_month];
+            }
+            if ( Np_is_missing && !Nc_is_missing ) {
+                ++Nc_missing_because_Np_missing[bin_month];
+            }
+            else if ( !Np_is_missing && !Nc_is_missing ){
+                // Also add to the array that only has values when Np and Nc are not missing
+                ++Np_and_Nc_notmissing[bin_month];
+                Nc_total_when_Np_not_missing[bin_month] += Nc_value;
             }
         }
     }
@@ -885,6 +954,9 @@ private int customCommand (
         }
         if ( Np_notmissing[i] > 0 ) {
             Np_mean[i] = Np_total[i]/Np_notmissing[i];
+        }
+        if ( Np_and_Nc_notmissing[i] > 0 ) {
+            Nc_mean_when_Np_not_missing[i] = Nc_total_when_Np_not_missing[i]/Np_and_Nc_notmissing[i];
         }
     }
     
@@ -1033,8 +1105,10 @@ private int customCommand (
                      ValueCriteria_double, ChangeCriteria_double,
                      Np_mean[i], Nc_mean[i], R_mean[i], NcNp_diff[i], RNp_diff[i], RNc_diff[i],
                      change[i],
+                     nmissing_allowed,
                      Np_missing[i], Nc_missing[i], R_missing[i],
-                     Np_notmissing[i], Nc_notmissing[i], R_notmissing[i]);
+                     Np_notmissing[i], Nc_notmissing[i], R_notmissing[i],
+                     Nc_missing_because_Np_missing[i], Nc_mean_when_Np_not_missing[i] );
          }
          
          // Print important results and whether pass
@@ -1057,6 +1131,10 @@ private int customCommand (
                  fout, __TEST_NAMES[__TEST_FINAL], format_param, delim, test_results[__TEST_FINAL], format_text );
          printMetricsReportDividerLine ( fout, format_param, delim, format_text, true );
          
+         // Print footnote if any holidays were ignored...
+         printIgnoredHolidaysFootnote ( fout, ignored_holiday_dates, delim6 );
+         // Print footnote if any missing data at the end of NP
+         printMissingDataFootnote ( fout, nmissing_allowed, Np_notmissing, Nc_missing_because_Np_missing, delim6 );
          fout.println ( delim6 );
          fout.println ( "Generated by Riverside Technology inc." + delim6 );
                  
@@ -1150,6 +1228,26 @@ private boolean isHoliday ( DateTime date )
 }
 
 // Use base class parseCommand()
+
+/**
+Print the list of holidays that were ignored in processing the data.
+@param fout PrintWriter for output.
+@param ignored_holiday_dates List of holiday dates that were ignored.
+@param line_end Text to put at end of line (e.g., list of delimiters for blank fields).
+*/
+private void printIgnoredHolidaysFootnote ( PrintWriter fout, List ignored_holiday_dates, String line_end )
+{
+    int size = ignored_holiday_dates.size();
+    if ( size > 0 ) {
+        // Blank line...
+        fout.println ( line_end );
+    }
+    DateTime date = null;
+    for ( int i = 0; i < size; i++ ) {
+        date = (DateTime)ignored_holiday_dates.get(i);
+        fout.println ( "Ignored holiday in bin averages:  " + date + line_end );
+    }
+}
 
 /**
 Print a line in the report.
@@ -1276,6 +1374,27 @@ private void printMetricsReportDayOfWeekLine ( PrintWriter fout, String param_ti
         StringUtil.formatString(daysofweek[__BIN_MONTH1],format_value) + delim +
         StringUtil.formatString(daysofweek[__BIN_MONTH2],format_value) + delim +
         StringUtil.formatString(daysofweek[__BIN_MONTH3],format_value) );
+}
+
+/**
+Print a footnote in the report about missing data.
+@param fout PrintWriter for output.
+@param Nc_missing_because_Np_missing Count of Nc set to missing because Np was missing.
+@param line_end String for the end of line, typically a repeated delimiter
+*/
+private void printMissingDataFootnote ( PrintWriter fout, int nmissing_allowed, int [] Np_notmissing,
+        int [] Nc_missing_because_Np_missing,
+        String line_end )
+{
+    for ( int i = 0; i < __BIN_SIZE; i++ ) {
+        if ( (Nc_missing_because_Np_missing[i] > 0) && (nmissing_allowed == Nc_missing_because_Np_missing[i]) &&
+                (Np_notmissing[i] > 0) ) {
+            // Have some NP data in the bin but had the allowed missing, which also caused Nc to be ignored.
+            // Print a warning because numbers will be computed but will be incomplete.
+            fout.println ( "Bin " + __BIN_NAMES[i] + " had " + Nc_missing_because_Np_missing[i] +
+                    " missing Np.  The corresponding Nc value was ignored for computations.");
+        }
+    }
 }
 
 /**
@@ -1668,7 +1787,9 @@ private void test ( String [][] test_results, int bin,
         double ValueCriteria_double, double ChangeCriteria_double,
         double Np_mean, double Nc_mean, double R_mean, double NcNp_diff, double RNp_diff, double RNc_diff,
         double change,
-        int Np_missing, int Nc_missing, int R_missing, int Np_notmissing, int Nc_notmissing, int R_notmissing )
+        int nmissing_allowed, int Np_missing, int Nc_missing, int R_missing,
+        int Np_notmissing, int Nc_notmissing, int R_notmissing,
+        int Nc_missing_because_Np_missing, double Nc_mean_when_Np_not_missing )
 {   String routine = "CustomCommand_test";
     // OK to divide by zero since shown as NaN in reports
     // Keep around to see if people wan
@@ -1705,7 +1826,7 @@ private void test ( String [][] test_results, int bin,
     }
     
     // Change test
-    if ( (Np_missing > 0) || (Nc_missing > 0) || (R_missing > 0) ||
+    if ( (Np_missing > nmissing_allowed) || (Nc_missing > 0) || (R_missing > 0) ||
             (Np_notmissing == 0) || (Nc_notmissing == 0) || (R_notmissing == 0) ) {
         Message.printStatus ( 2, routine, "Change test not enough data for bin " + __BIN_NAMES[bin] );
         test_results[__TEST_CHANGE][bin] = NO_DATA;

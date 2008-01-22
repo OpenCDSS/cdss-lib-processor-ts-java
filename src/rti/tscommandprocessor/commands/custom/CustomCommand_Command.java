@@ -692,7 +692,10 @@ private int customCommand (
     
     // Only handle Np that end on the end of the month or one day previous.
     DateTime R_end_DateTime = new DateTime(R_TS.getDate2());
-    DateTime Nc_end_DateTime = new DateTime(Nc_TS.getDate2());
+    DateTime Nc_end_DateTime = null;
+    if ( Nc_TS != null ) {
+        Nc_end_DateTime = new DateTime(Nc_TS.getDate2());
+    }
     DateTime Np_end_DateTime = new DateTime(Np_TS.getDate2());
     if ( (TimeUtil.numDaysInMonth(Np_end_DateTime.getMonth(),Np_end_DateTime.getYear()) - Np_end_DateTime.getDay())
             > nNp_missing_atendofmonth_allowed ) {

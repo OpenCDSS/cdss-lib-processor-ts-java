@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // changeInterval_JDialog - editor for TS X = changeInterval()
 //
-// REVISIT SAM 2005-02-12
+// TODO SAM 2005-02-12
 //		In the future may also support changeInterval() to operate on
 //		multiple time series.
 // ----------------------------------------------------------------------------
@@ -85,13 +85,12 @@ private SimpleJComboBox	__OldTimeScale_JComboBox = null;
 						// Old time scale for time
 						// series.
 private SimpleJComboBox	__NewTimeScale_JComboBox = null;
-						// New time scale for result.
 private JTextField	__NewDataType_JTextField = null;
-						// New data type in result.
+private JTextField  __NewUnits_JTextField = null;// Field for new units
 private JTextField	__AllowMissingCount_JTextField = null;
 						// Number of missing to allow
 						// in input when converting.
-/* REVISIT SAM 2005-02-18 may enable later
+/* TODO SAM 2005-02-18 may enable later
 private JTextField	__AllowMissingPercent_JTextField = null;
 						// Percent of missing to allow
 						// in input when converting.
@@ -107,19 +106,14 @@ private JScrollPane	__Command_JScrollPane = null;
 						// Command JTextArea and
 						// related controls
 private SimpleJButton	__cancel_JButton = null;// Cancel Button
-private String 		__cancel_String  = "Cancel";
-private String		__cancel_Tip =
-	"Close the window, without returning the command.";
+private String __cancel_String  = "Cancel";
+private String __cancel_Tip = "Close the window, without returning the command.";
 private SimpleJButton	__ok_JButton 	 = null;// Ok Button
-private String 		__ok_String  = "OK";
-private String		__ok_Tip =
-	"Close the window, returning the command.";
+private String __ok_String  = "OK";
+private String __ok_Tip = "Close the window, returning the command.";
 
-private JTextField	__statusJTextField = null;
-						// Status bar					
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private JTextField	__statusJTextField = null; // Status bar					
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
 private boolean		__ok         = false;						
 
@@ -161,23 +155,18 @@ Check the user input for errors and set __error_wait accordingly.
 */
 private void checkInput ()
 {	// Get the values from the interface.
-	String Alias	    = __Alias_JTextField.getText().trim();
-	String TSID	    = __TSID_JComboBox.getSelected();
+	String Alias = __Alias_JTextField.getText().trim();
+	String TSID = __TSID_JComboBox.getSelected();
 	String NewInterval  = __NewInterval_JComboBox.getSelected();
-	String OldTimeScale = StringUtil.getToken(
-		__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	String NewTimeScale  = StringUtil.getToken(
-		__NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+	String NewTimeScale  = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewDataType = __NewDataType_JTextField.getText().trim();
-	String AllowMissingCount = 
-		__AllowMissingCount_JTextField.getText().trim();
-	/* REVISIT LT 2005-05-24 may enable later		
-	String AllowMissingPercent = 
-		__AllowMissingPercent_JTextField.getText().trim(); */
-	String OutputFillMethod =
-		__OutputFillMethod_JComboBox.getSelected();
-	String HandleMissingInputHow =
-		__HandleMissingInputHow_JComboBox.getSelected();
+	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
+	/* TODO LT 2005-05-24 may enable later		
+	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
+	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
+	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
 	
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
@@ -205,12 +194,15 @@ private void checkInput ()
 	if ( NewDataType != null && NewDataType.length() > 0 ) {
 		props.set( "NewDataType", NewDataType );
 	}
+	if ( NewUnits != null && NewUnits.length() > 0 ) {
+	     props.set( "NewUnits", NewUnits );
+	}
 	// AllowMissingCount
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
 		props.set( "AllowMissingCount", AllowMissingCount );
 	}
 	// AllowMissingPercent
-	/* REVISIT LT 2005-05-24 may enable later
+	/* TODO LT 2005-05-24 may enable later
 	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
 		props.set( "AllowMissingPercent", AllowMissingPercent );
 	} */
@@ -241,50 +233,32 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {
 	// Get the values from the interface.
-	String Alias	              =
-			__Alias_JTextField.getText().trim();
-	String TSID	              = 
-			__TSID_JComboBox.getSelected();
-	String NewInterval           =
-			__NewInterval_JComboBox.getSelected();
-	String OldTimeScale          = StringUtil.getToken(
-			__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	String NewTimeScale          = StringUtil.getToken(
-			__NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	String NewDataType           =
-			__NewDataType_JTextField.getText().trim();
-	String AllowMissingCount     = 
-			__AllowMissingCount_JTextField.getText().trim();
-	/* REVISIT LT 2005-05-24 may enable later		
-	String AllowMissingPercent   = 
-			__AllowMissingPercent_JTextField.getText().trim(); */
-	String OutputFillMethod      =
-			__OutputFillMethod_JComboBox.getSelected();
-	String HandleMissingInputHow =
-			__HandleMissingInputHow_JComboBox.getSelected();
+	String Alias = __Alias_JTextField.getText().trim();
+	String TSID = __TSID_JComboBox.getSelected();
+	String NewInterval = __NewInterval_JComboBox.getSelected();
+	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+	String NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+	String NewDataType = __NewDataType_JTextField.getText().trim();
+	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
+	/* TODO LT 2005-05-24 may enable later		
+	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
+	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
+	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
 
 	// Commit the values to the command object.
-	__command.setCommandParameter ( "Alias",
-					 Alias );
-	__command.setCommandParameter ( "TSID",
-				         TSID );
-	__command.setCommandParameter ( "NewInterval",
-					 NewInterval );
-	__command.setCommandParameter ( "OldTimeScale", 
-					 OldTimeScale );
-	__command.setCommandParameter ( "NewTimeScale",
-					 NewTimeScale );
-	__command.setCommandParameter ( "NewDataType",
-					 NewDataType );
-	__command.setCommandParameter ( "AllowMissingCount",
-					 AllowMissingCount );
-	/* REVISIT LT 2005-05-24 may enable later
-	__command.setCommandParameter ( "AllowMissingPercent",
-					 AllowMissingPercent ); */
-	__command.setCommandParameter ( "OutputFillMethod",
-					 OutputFillMethod );
-	__command.setCommandParameter ( "HandleMissingInputHow",
-					 HandleMissingInputHow );
+	__command.setCommandParameter ( "Alias", Alias );
+	__command.setCommandParameter ( "TSID", TSID );
+	__command.setCommandParameter ( "NewInterval", NewInterval );
+	__command.setCommandParameter ( "OldTimeScale", OldTimeScale );
+	__command.setCommandParameter ( "NewTimeScale", NewTimeScale );
+	__command.setCommandParameter ( "NewDataType", NewDataType );
+	__command.setCommandParameter ( "NewUnits", NewUnits );
+	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount );
+	/* TODO LT 2005-05-24 may enable later
+	__command.setCommandParameter ( "AllowMissingPercent", AllowMissingPercent ); */
+	__command.setCommandParameter ( "OutputFillMethod", OutputFillMethod );
+	__command.setCommandParameter ( "HandleMissingInputHow", HandleMissingInputHow );
 }
 
 /**
@@ -300,7 +274,7 @@ throws Throwable
 	__NewInterval_JComboBox 	  = null;
 	__OldTimeScale_JComboBox 	  = null;
 	__AllowMissingCount_JTextField    = null;
-	/* REVISIT SAM 2005-02-18 may enable later
+	/* TODO SAM 2005-02-18 may enable later
 	__AllowMissingPercent_JTextField  = null; */
 	__NewTimeScale_JComboBox 	  = null;
 	__NewDataType_JTextField 	  = null;
@@ -322,9 +296,7 @@ Instantiates the GUI components.
 @param command Vector of String containing the command.
 */
 private void initialize ( JFrame parent, Command command )
-{	
-	String routine = "changeInterval_JDialog.initialize";
-	
+{		
 	__command 	= (changeInterval_Command) command;
 	
 	// GUI Title
@@ -339,35 +311,33 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a new time series by changing the data interval of an existing time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the alias to reference the new time series.  Data units are not changed."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Use the alias to reference the new time series.  Data units are not changed unless specified."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The conversion process depends on whether the original and "
 		+ "new time series contain accumulated, mean, or instantaneous data."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time scales must be specified (they are not"
-		+ " automatically determined from the data type)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The time scales must be specified (they are not automatically determined from the data type)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Other time series information will be copied from the original."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Time series alias
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Alias_JTextField = new JTextField ( 20 );
 	__Alias_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// List of time series available for conversion
-        JGUIUtil.addComponent(main_JPanel,
-		new JLabel("Time series to convert:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to convert:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -391,14 +361,13 @@ private void initialize ( JFrame parent, Command command )
 	// Select a default...
 	__NewInterval_JComboBox.select ( 0 );
 	__NewInterval_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __NewInterval_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __NewInterval_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data interval for result."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data interval for result."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Old time scale
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Old time scale:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Old time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OldTimeScale_JComboBox = new SimpleJComboBox ( false );
 	Vector scale_Vector = MeasTimeScale.getTimeScaleChoices(true);
@@ -406,7 +375,7 @@ private void initialize ( JFrame parent, Command command )
 	__OldTimeScale_JComboBox.setData ( scale_Vector );
 	__OldTimeScale_JComboBox.select ( 0 );	// Default
 	__OldTimeScale_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OldTimeScale_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __OldTimeScale_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// New time scale
@@ -416,27 +385,37 @@ private void initialize ( JFrame parent, Command command )
 	__NewTimeScale_JComboBox.setData ( MeasTimeScale.getTimeScaleChoices(true) );
 	__NewTimeScale_JComboBox.select ( 0 );	// Default
 	__NewTimeScale_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __NewTimeScale_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __NewTimeScale_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// New data type
-        JGUIUtil.addComponent(main_JPanel,new JLabel ("New data type:" ),
+    JGUIUtil.addComponent(main_JPanel,new JLabel ("New data type:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewDataType_JTextField = new JTextField ( "", 10 );
 	JGUIUtil.addComponent(main_JPanel, __NewDataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__NewDataType_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is to use data type from original time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is to use the data type from original time series."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // New data type
+    JGUIUtil.addComponent(main_JPanel,new JLabel ("New units:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewUnits_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __NewUnits_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is to use the units from original time series."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Allow missing count:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Allow missing count:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingCount_JTextField = new JTextField ( "", 10 );
 	JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__AllowMissingCount_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Number of missing values allowed in original " +
 		"processing interval (default=0)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -597,14 +576,15 @@ private void refresh ()
 {	
 	String mthd = "changeInterval_JDialog.refresh", mssg;
 	
-	String Alias		 = "";
-	String TSID		 = "";
-	String NewInterval	 = "";
-	String NewDataType	 = "";
-	String OldTimeScale	 = "";
-	String NewTimeScale	 = "";
+	String Alias = "";
+	String TSID = "";
+	String NewInterval = "";
+	String NewDataType = "";
+	String NewUnits = "";
+	String OldTimeScale = "";
+	String NewTimeScale = "";
 	String AllowMissingCount = "";
-	/* REVISIT SAM 2005-02-18 may enable later
+	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent = ""; */
 	String OutputFillMethod	 = "";
 	String HandleMissingInputHow = "";
@@ -618,19 +598,20 @@ private void refresh ()
 		__first_time = false;
 		
 		// Get the properties from the command
-		props 		     = __command.getCommandParameters(); 
-		Alias		     = props.getValue( "Alias"		      );
-		TSID		     = props.getValue( "TSID"		      );
-		NewInterval	     = props.getValue( "NewInterval"	      );
-		NewDataType	     = props.getValue( "NewDataType"	      );
-		OldTimeScale	     = props.getValue( "OldTimeScale"	      );
-		NewTimeScale	     = props.getValue( "NewTimeScale"	      );
-		AllowMissingCount    = props.getValue( "AllowMissingCount"    );
-		/* REVISIT SAM 2005-02-18 may enable later
-		AllowMissingPercent  = props.getValue( "AllowMissingPercent"  );
+		props = __command.getCommandParameters(); 
+		Alias = props.getValue( "Alias" );
+		TSID = props.getValue( "TSID" );
+		NewInterval = props.getValue( "NewInterval" );
+		NewDataType = props.getValue( "NewDataType" );
+		NewUnits = props.getValue( "NewUnits" );
+		OldTimeScale = props.getValue( "OldTimeScale" );
+		NewTimeScale = props.getValue( "NewTimeScale" );
+		AllowMissingCount = props.getValue( "AllowMissingCount" );
+		/* TODO SAM 2005-02-18 may enable later
+		AllowMissingPercent = props.getValue( "AllowMissingPercent"  );
 		*/
-		OutputFillMethod     = props.getValue( "OutputFillMethod"     );
-		HandleMissingInputHow= props.getValue( "HandleMissingInputHow");
+		OutputFillMethod = props.getValue( "OutputFillMethod" );
+		HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
 		
 		// Update Alias text field
 		if ( Alias == null ) {
@@ -733,6 +714,10 @@ private void refresh ()
 			__NewDataType_JTextField.setText ( NewDataType);
 		}
 		
+        if ( NewUnits != null ) {
+            __NewUnits_JTextField.setText ( NewUnits );
+        }
+		
 		// Update AllowMissingCount text field
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText (
@@ -740,7 +725,7 @@ private void refresh ()
 		}
 		
 		// Update AllowMissingPercent text field
-		/* REVISIT SAM 2005-02-18 may enable later
+		/* TODO SAM 2005-02-18 may enable later
 		if ( AllowMissingPercent != null ) {
 			__AllowMissingPercent_JTextField.setText (
 				AllowMissingPercent );
@@ -796,40 +781,32 @@ private void refresh ()
 	
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
-	Alias	              =
-			__Alias_JTextField.getText().trim();
-	TSID	              = 
-			__TSID_JComboBox.getSelected();
-	NewInterval           =
-			__NewInterval_JComboBox.getSelected();
-	OldTimeScale          = StringUtil.getToken(
-			__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	NewTimeScale          = StringUtil.getToken(
-			__NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
-	NewDataType           =
-			__NewDataType_JTextField.getText().trim();
-	AllowMissingCount     = 
-			__AllowMissingCount_JTextField.getText().trim();
-	/* REVISIT LT 2005-05-24 may enable later		
-	AllowMissingPercent   = 
-			__AllowMissingPercent_JTextField.getText().trim(); */
-	OutputFillMethod      =
-			__OutputFillMethod_JComboBox.getSelected();
-	HandleMissingInputHow =
-			__HandleMissingInputHow_JComboBox.getSelected();
+	Alias = __Alias_JTextField.getText().trim();
+	TSID = __TSID_JComboBox.getSelected();
+	NewInterval = __NewInterval_JComboBox.getSelected();
+	OldTimeScale = StringUtil.getToken(	__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+	NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+	NewDataType = __NewDataType_JTextField.getText().trim();
+	NewUnits = __NewUnits_JTextField.getText().trim();
+	AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
+	/* TODO LT 2005-05-24 may enable later		
+	AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
+	OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
+	HandleMissingInputHow =	__HandleMissingInputHow_JComboBox.getSelected();
 	
 	// And set the command properties.
 	props = new PropList ( __command.getCommandName() );
-	props.add ( "Alias="                 + Alias                 );
-	props.add ( "TSID="                  + TSID                  );
-	props.add ( "NewInterval="           + NewInterval           );
-	props.add ( "OldTimeScale="          + OldTimeScale          );
-	props.add ( "NewTimeScale="          + NewTimeScale          );
-	props.add ( "NewDataType="           + NewDataType           );
-	props.add ( "AllowMissingCount="     + AllowMissingCount     );
-	/* REVISIT LT 2005-05-24 may enable later	
-	props.add ( "AllowMissingPercent="   + AllowMissingPercent   ); */
-	props.add ( "OutputFillMethod="      + OutputFillMethod      );
+	props.add ( "Alias=" + Alias );
+	props.add ( "TSID=" + TSID );
+	props.add ( "NewInterval=" + NewInterval );
+	props.add ( "OldTimeScale=" + OldTimeScale );
+	props.add ( "NewTimeScale=" + NewTimeScale );
+	props.add ( "NewDataType=" + NewDataType );
+	props.add ( "NewUnits=" + NewUnits );
+	props.add ( "AllowMissingCount=" + AllowMissingCount );
+	/* TODO LT 2005-05-24 may enable later	
+	props.add ( "AllowMissingPercent=" + AllowMissingPercent   ); */
+	props.add ( "OutputFillMethod=" + OutputFillMethod );
 	props.add ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	
 	__Command_JTextArea.setText( __command.toString(props) );

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // changeInterval_Command - editor for TS X = changeInterval()
 //
-// REVISIT SAM 2005-02-12
+// TODO SAM 2005-02-12
 //		In the future may also support changeInterval() to operate on
 //		multiple time series.
 // ----------------------------------------------------------------------------
@@ -93,17 +93,17 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	// Get the properties from the PropList parameters.
-	String	Alias        = parameters.getValue( "Alias" );
-	String	TSID         = parameters.getValue( "TSID"  );
-	String	NewInterval  = parameters.getValue( "NewInterval"  );
-	String	OldTimeScale = parameters.getValue( "OldTimeScale"  );
-	String	NewTimeScale = parameters.getValue( "NewTimeScale"  );
-	String	AllowMissingCount  = parameters.getValue("AllowMissingCount"  );
+	String Alias = parameters.getValue( "Alias" );
+	String TSID = parameters.getValue( "TSID"  );
+	String NewInterval = parameters.getValue( "NewInterval"  );
+	String OldTimeScale = parameters.getValue( "OldTimeScale"  );
+	String NewTimeScale = parameters.getValue( "NewTimeScale"  );
+	String AllowMissingCount  = parameters.getValue("AllowMissingCount"  );
 	/* TODO SAM 2005-02-18 may enable later
-	String	AllowMissingPercent= parameters.getValue("AllowMissingPercent");
+	String AllowMissingPercent= parameters.getValue("AllowMissingPercent");
 	*/
-	String	OutputFillMethod =	parameters.getValue( "OutputFillMethod" );
-	String	HandleMissingInputHow =	parameters.getValue( "HandleMissingInputHow" );
+	String OutputFillMethod =	parameters.getValue( "OutputFillMethod" );
+	String HandleMissingInputHow =	parameters.getValue( "HandleMissingInputHow" );
 
 	// Alias must be specified.
 	// TODO [LT 2005-05-24] How about the __read_one issue
@@ -164,7 +164,7 @@ throws InvalidCommandParameterException
 	// may edit the command without using the changeInterval_JDialog editor
 	// and try to run it, so this method should at least make sure the 
 	// NewInterval property is given.
-	// REVISIT [LT 2005-05-26] Better test may be put in place here, to make
+	// TODO [LT 2005-05-26] Better test may be put in place here, to make
 	// sure the given NewInterval is actually a valid value for interval.
 	if ( NewInterval != null && NewInterval.length() == 0 ) {
 		message = "The new interval must be specified.";
@@ -279,6 +279,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "OldTimeScale" );
     valid_Vector.add ( "NewTimeScale" );
     valid_Vector.add ( "NewDataType" );
+    valid_Vector.add ( "NewUnits" );
     valid_Vector.add ( "AllowMissingCount" );
     valid_Vector.add ( "OutputFillMethod" );
     valid_Vector.add ( "HandleMissingInputHow" );
@@ -424,18 +425,19 @@ throws InvalidCommandParameterException,
     status.clearLog(CommandPhaseType.RUN);
 	
 	PropList parameters = getCommandParameters();
-	String	Alias        = parameters.getValue( "Alias" );
-	String	TSID         = parameters.getValue( "TSID"  );
-	String	NewInterval  = parameters.getValue( "NewInterval"  );
-	String	OldTimeScale = parameters.getValue( "OldTimeScale" );
-	String	NewTimeScale = parameters.getValue( "NewTimeScale" );
-	String	NewDataType  = parameters.getValue( "NewDataType"  );
-	String	AllowMissingCount = parameters.getValue("AllowMissingCount"  );
+	String Alias = parameters.getValue( "Alias" );
+	String TSID = parameters.getValue( "TSID"  );
+	String NewInterval = parameters.getValue( "NewInterval"  );
+	String OldTimeScale = parameters.getValue( "OldTimeScale" );
+	String NewTimeScale = parameters.getValue( "NewTimeScale" );
+	String NewDataType = parameters.getValue( "NewDataType" );
+	String NewUnits = parameters.getValue( "NewUnits" );
+	String AllowMissingCount = parameters.getValue("AllowMissingCount"  );
 	/* TODO SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
 	*/
-	String	OutputFillMethod  =	parameters.getValue( "OutputFillMethod"      );
-	String	HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
+	String OutputFillMethod  =	parameters.getValue( "OutputFillMethod"      );
+	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
 	
 	// Set the properties for the method TSUtil.changeInterval()!
 	PropList props = new PropList ( "TSUtil.changeInterval" );
@@ -448,6 +450,9 @@ throws InvalidCommandParameterException,
 	if ( NewDataType != null && NewDataType.length() > 0  ) {
 		props.set ( "NewDataType", NewDataType );
 	}
+    if ( NewUnits != null && NewUnits.length() > 0  ) {
+        props.set ( "NewUnits", NewUnits );
+    }
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0  ) {
 		props.set ( "AllowMissingCount", AllowMissingCount );
 	}
@@ -571,6 +576,7 @@ public String toString ( PropList props )
 	String OldTimeScale = props.getValue( "OldTimeScale" );
 	String NewTimeScale = props.getValue( "NewTimeScale" );
 	String NewDataType = props.getValue( "NewDataType" );
+	String NewUnits = props.getValue( "NewUnits" );
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent = props.getValue( "AllowMissingPercent" );
@@ -612,6 +618,11 @@ public String toString ( PropList props )
 		b.append ( "NewDataType=" + NewDataType );
 	}
 	
+    if ( NewUnits != null && NewUnits.length() > 0 ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "NewUnits=" + NewUnits );
+    }
+	
 	// Adding the AllowMissingCount
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
@@ -619,7 +630,7 @@ public String toString ( PropList props )
 	}
 	
 	// Adding the AllowMissingPercent
-	/* REVISIT SAM 2005-02-18 may enable later
+	/* TODO SAM 2005-02-18 may enable later
 	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "AllowMissingPercent=" + AllowMissingPercent );

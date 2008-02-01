@@ -369,7 +369,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 }
 
 /**
-Run metehod internal to this class, to handle running in discovery and run mode.
+Run method internal to this class, to handle running in discovery and run mode.
 @param command_number Command number 1+ from processor.
 @param command_phase Command phase being executed (RUN or DISCOVERY).
 */

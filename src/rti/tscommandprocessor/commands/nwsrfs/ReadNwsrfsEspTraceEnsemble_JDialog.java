@@ -40,18 +40,18 @@ import RTi.Util.Message.Message;
 
 /**
 The class edits the TS Alias = ReadNwsrfsEspTraceEnsemble() and non-TS Alias
-ReadNwsrfsEspTraceEnsemble() commands.
+ReadNwsrfsEspTraceEnsemble() commands.  Currently only the latter is implemented,
+although the Alias parameter is used for both versions.
 */
 public class ReadNwsrfsEspTraceEnsemble_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and
-						// absolute path.
+			__path_JButton = null,	// Convert between relative and absolute path.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private Command		__command = null;
-private String		__working_dir = null;	// Working directory.
+private ReadNwsrfsEspTraceEnsemble_Command	__command = null;
+private String __working_dir = null;
 private JTextField	__Alias_JTextField = null,// Alias for time series.
 			//__InputStart_JTextField,
 			//__InputEnd_JTextField,
@@ -60,11 +60,11 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 				// Units to convert to at read
 //private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
 private JTextField  __EnsembleID_JTextField;
-private JTextArea	 __Command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error to be cleared up
-private boolean		__first_time = true;
+private JTextArea __Command_JTextArea = null;
+private boolean __error_wait = false;	// Is there an error to be cleared up
+private boolean __first_time = true;
 
-private boolean 	__isAliasVersion = false;	
+private boolean __isAliasVersion = false;	
 			// Whether this dialog is being opened for the version
 			// of the command that returns an alias or not
 private boolean		__ok = false;			
@@ -85,7 +85,7 @@ public ReadNwsrfsEspTraceEnsemble_JDialog ( JFrame parent, Command command )
 	Message.printStatus(1, "", "Props: " + props.toString("\n"));
 	if (alias == null || alias.trim().equalsIgnoreCase("")) {
 		if (((ReadNwsrfsEspTraceEnsemble_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
-		    	__isAliasVersion = true;
+		    __isAliasVersion = true;
 		}
 		else {
 			__isAliasVersion = false;
@@ -107,7 +107,7 @@ public void actionPerformed( ActionEvent event )
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
-		fc.setDialogTitle( "Select NWS Card Time Series File");
+		fc.setDialogTitle( "Select NWSRFS ESP Trace Ensemble File");
 		SimpleFileFilter sff = new SimpleFileFilter("CS", "Conditional Simulation Trace File");
         fc.addChoosableFileFilter(sff);
         /* TODO SAM 2007-12-18 Evaluate enabling later when tested.
@@ -180,6 +180,7 @@ private void checkInput () {
 	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String EnsembleID = __EnsembleID_JTextField.getText().trim();
     /*
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -187,9 +188,7 @@ private void checkInput () {
 	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
     */
 	String Alias = null;
-    String EnsembleID = __EnsembleID_JTextField.getText().trim();
-    
-	if (__isAliasVersion) { 
+	if ( __Alias_JTextField != null ) {
 		Alias = __Alias_JTextField.getText().trim();
 	}
 	
@@ -254,7 +253,7 @@ private void commitEdits() {
     */
     __command.setCommandParameter("EnsembleID", EnsembleID);
 	
-	if (__isAliasVersion) {
+	if ( __Alias_JTextField != null ) {
 		String Alias = __Alias_JTextField.getText().trim();
 		__command.setCommandParameter("Alias", Alias);
 	}
@@ -288,7 +287,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize(JFrame parent, Command command) {
-	__command = command;
+	__command = (ReadNwsrfsEspTraceEnsemble_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -375,6 +374,17 @@ private void initialize(JFrame parent, Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required identifier for ensemble."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    if ( !__isAliasVersion) {
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Alias to assign:" ), 
+                0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __Alias_JTextField = new JTextField ( "", 20 );
+        __Alias_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is Location_Trace_HistYear."), 
+            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    }
 
         /*
         JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
@@ -519,7 +529,7 @@ private void refresh()
 		//Read24HourAsDay = props.getValue("Read24HourAsDay");
 
 		// Set the control fields
-		if (Alias != null && __isAliasVersion) {
+		if (Alias != null && (__Alias_JTextField != null) ) {
 			__Alias_JTextField.setText(Alias.trim());
 		}
 		if (InputFile != null) {
@@ -564,12 +574,12 @@ private void refresh()
 	NewUnits = __NewUnits_JTextField.getText().trim();
 	Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
     */
-	if (__isAliasVersion) {
+	if ( __Alias_JTextField != null ) {
 		Alias = __Alias_JTextField.getText().trim();
 	}
 
 	props = new PropList(__command.getCommandName());
-	props.add("InputFile=" + InputFile);
+	props.add ( "InputFile=" + InputFile);
     props.add ( "EnsembleID=" + EnsembleID );
     /*
 	props.add("InputStart=" + InputStart);
@@ -666,4 +676,4 @@ public void windowOpened( WindowEvent evt )
 {
 }
 
-} // end readNwsCard_JDialog
+}

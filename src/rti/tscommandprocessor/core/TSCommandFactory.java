@@ -59,9 +59,6 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
-// Custom commands that have not been made generic
-import rti.tscommandprocessor.commands.custom.CustomCommand_Command;
-
 // DataTest commands
 // FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
 
@@ -72,6 +69,10 @@ import rti.tscommandprocessor.commands.datatest.runDataTest_Command;
 
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
 import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
+
+// Delimited time series file commands
+
+import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 
 // GRTS commands (time series products).
 
@@ -173,6 +174,7 @@ import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
+import rti.tscommandprocessor.commands.util.SetProperty_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
@@ -286,9 +288,6 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Cumulate") ) {
 		return new cumulate_Command ();
 	}
-    else if ( StringUtil.startsWithIgnoreCase(command_string,"CustomCommand") ) {
-        return new CustomCommand_Command ();
-    }
 	
 	// "e" commands...
 	
@@ -395,6 +394,9 @@ throws UnknownCommandException
     else if ( isTScommand && TScommand.equalsIgnoreCase("ReadDateValue") ) {
         return new ReadDateValue_Command();
     }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadDelimitedFile") ) {
+        return new ReadDelimitedFile_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadHydroBase") ) {
 		return new readHydroBase_Command ();
 	}
@@ -468,6 +470,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputPeriod") ) {
 		return new SetOutputPeriod_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetProperty") ) {
+        return new SetProperty_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetQueryPeriod") ) {
 		// Phasing into new syntax...
 		return new SetInputPeriod_Command ();

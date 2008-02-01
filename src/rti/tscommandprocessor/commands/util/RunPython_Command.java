@@ -1,6 +1,12 @@
 package rti.tscommandprocessor.commands.util;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -104,7 +110,7 @@ throws InvalidCommandParameterException
 		}
 		catch ( Exception e ) {
             message = "The input file \"" + InputFile +
-            "\" ncannot be adjusted to an absolute path using the working directory \"" +
+            "\" cannot be adjusted to an absolute path using the working directory \"" +
             working_dir + "\".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -209,21 +215,12 @@ throws PyException
     }
     PythonInterpreter interp = new PythonInterpreter();
 
+    // Tell Jython where to send its output...
+    //PipedOutputStream out = new PipedOutputStream();
+    //interp.setOut( out );
+    // Now take Jython's output and read it here to echo to the log file...
+    //BufferedReader out_reader = new BufferedReader ( new PipedInputStream (out));
     interp.execfile ( pyfile );
-    /*
-    System.out.println("Hello, brave new world");
-    interp.exec("import sys");
-    interp.exec("print sys");
-
-    interp.set("a", new PyInteger(42));
-    interp.exec("print a");
-    interp.exec("x = 2+2");
-    PyObject x = interp.get("x");
-
-    System.out.println("x: "+x);
-    System.out.println("Goodbye, cruel world");
-    */
-
 }
 
 /**

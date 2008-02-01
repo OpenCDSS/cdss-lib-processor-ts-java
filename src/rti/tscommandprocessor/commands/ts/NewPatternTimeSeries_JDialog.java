@@ -274,12 +274,14 @@ private void initialize ( JFrame parent, Command command )
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
     Vector interval_Vector = TimeInterval.getTimeIntervalChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, true);
+    // Add a blank
+    interval_Vector.insertElementAt("", 0);
     __IrregularInterval_JComboBox.setData ( interval_Vector );
     __IrregularInterval_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Use to initialize data."),
+        "Use to initialize data (irregular time series only)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 

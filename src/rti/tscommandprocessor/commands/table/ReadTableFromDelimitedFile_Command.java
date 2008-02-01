@@ -25,6 +25,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
 /**
@@ -188,6 +189,53 @@ throws InvalidCommandParameterException
 }
 
 /**
+Convert a properting containing a number sequence like "1,4-5,13" to zero offset like
+"0,3-4,12".  This method is used to convert user-based parameters that have values 1+
+with internal code values 0+.
+*/
+private String convertNumberSequenceToZeroOffset ( String sequence_param )
+{
+    if ( (sequence_param == null) || (sequence_param.length() == 0) ) {
+        return sequence_param;
+    }
+    StringBuffer b = new StringBuffer();
+    Vector v = StringUtil.breakStringList ( sequence_param, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    int vsize = 0;
+    if ( v != null ) {
+        vsize = v.size();
+    }
+    for ( int i = 0; i < vsize; i++ ) {
+        String vi = (String)v.elementAt(i);
+        if ( i != 0 ) {
+            b.append (",");
+        }
+        if ( StringUtil.isInteger(vi)) {
+            int index = Integer.parseInt(vi);
+            b.append ( "" + (index - 1) );
+        }
+        else {
+            int pos = vi.indexOf("-");
+            if ( pos >= 0 ) {
+                // Specifying a range of values...
+                int first_in_range = -1;
+                int last_in_range = -1;
+                if ( pos == 0 ) {
+                    // First index is 1 (will be decremented below)...
+                    first_in_range = 1;
+                }
+                else {
+                    // Get first to skip...
+                    first_in_range = Integer.parseInt(vi.substring(0,pos).trim());
+                }
+                last_in_range = Integer.parseInt(vi.substring(pos+1).trim());
+                b.append ( "" + (first_in_range - 1) + "-" + (last_in_range - 1));
+            }
+        }
+    }
+    return b.toString();
+}
+
+/**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if
@@ -281,8 +329,10 @@ CommandWarningException, CommandException
     String TableID = parameters.getValue ( "TableID" );
 	String InputFile = parameters.getValue ( "InputFile" );
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
-	//String SkipRows = parameters.getValue ( "SkipRows" );
-	//String HeaderRows = parameters.getValue ( "HeaderRows" );
+	String SkipRows = parameters.getValue ( "SkipRows" );
+	String HeaderRows = parameters.getValue ( "HeaderRows" );
+	Message.printStatus( 2, routine, "parameter SkipRows=\"" + SkipRows + "\"");
+	Message.printStatus( 2, routine, "parameter HeaderRows=\"" + HeaderRows + "\"");
 
 	String InputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
@@ -364,8 +414,21 @@ CommandWarningException, CommandException
 	props.set ( "CommentLineIndicator=#" );	// Skip comment lines
 	props.set ( "TrimInput=True" );		// Trim strings after reading.
 	props.set ( "TrimStrings=True" );	// Trim strings after parsing
+	//props.set ( "ColumnDataTypes=Auto" );  // Automatically determine column data types
+	if ( (SkipRows != null) && (SkipRows.length() > 0) ) {
+	    props.set ( "SkipRows=" + convertNumberSequenceToZeroOffset(SkipRows) );
+	}
+    if ( (HeaderRows != null) && (HeaderRows.length() > 0) ) {
+        props.set ( "HeaderRows=" + convertNumberSequenceToZeroOffset(HeaderRows) );
+    }
+    Message.printStatus( 2, routine, "parameter zero index SkipRows=\"" + props.getValue("SkipRows") + "\"");
+    Message.printStatus( 2, routine, "parameter zero index HeaderRows=\"" + props.getValue("HeaderRows") + "\"");
 	try {
         table = DataTable.parseFile ( InputFile_full, props );
+        
+        // Set the table identifier...
+        
+        table.setTableID ( TableID );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -378,72 +441,7 @@ CommandWarningException, CommandException
                         message, "Verify that the file exists and is readable." ) );
 		throw new CommandWarningException ( message );
 	}
-    
-    // Set the table identifier...
-    
-    table.setTableID ( TableID );
-    
-    // Set the table in the processor...
 	
-	// Loop through the table records, merge the columns and set in the new column...
-
-    /*
-	int size = table.getNumberOfRecords();
-	String merged;	// Merged column string
-	int mergedcol = table.getNumberOfFields() - 1;	// New at end
-	Vector v = new Vector ( __Columns_intArray.length );
-	TableRecord rec = null;
-	String s;
-	int j;
-	for ( int i = 0; i < size; i++ ) {
-		v.removeAllElements();
-		try {	rec = table.getRecord(i);
-		}
-		catch ( Exception e ) {
-			message = "Error getting table record [" + i + "]";
-			Message.printWarning ( 2,
-			MessageUtil.formatMessageTag(command_tag,
-			++warning_count),
-			routine,message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the format of the list file." ) );
-			continue;
-		}
-		for ( j = 0; j < __Columns_intArray.length; j++ ) {
-			try {
-                s = (String)rec.getFieldValue(__Columns_intArray[j]);
-				v.addElement ( s );
-			}
-			catch ( Exception e ) {
-				message = "Error getting table field [" + i + "][" + j + "]";
-				Message.printWarning ( 2,
-				MessageUtil.formatMessageTag(command_tag,
-				++warning_count),
-				routine,message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the format of the list file - report the problem to software support." ) );
-				continue;
-			}
-		}
-		merged = StringUtil.formatString ( v, SimpleMergeFormat2 );
-		try {	rec.setFieldValue ( mergedcol, merged );
-		}
-		catch ( Exception e ) {
-			message = "Error modifying table record [" + i + "]";
-			Message.printWarning ( 2,
-			MessageUtil.formatMessageTag(command_tag,
-			++warning_count),
-			routine,message );
-              status.addToLog ( command_phase,
-                      new CommandLogRecord(CommandStatusType.FAILURE,
-                              message, "Report the problem to software support." ) );
-			continue;
-		}
-	}
-    */
-
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,

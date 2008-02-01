@@ -321,9 +321,7 @@ throws InvalidCommandParameterException
     
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
-    if ( _use_alias ) {
-        valid_Vector.add ( "Alias" );
-    }
+    valid_Vector.add ( "Alias" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "EnsembleID" );
     //valid_Vector.add ( "InputStart" );
@@ -534,12 +532,13 @@ throws InvalidCommandParameterException,
 	String InputFile = parameters.getValue("InputFile");
     String EnsembleID = parameters.getValue("EnsembleID");  // Get from file?
     String EnsembleName = "";   // FIXME SAM 2007-12-18 Need to get from file?
+    String Alias = parameters.getValue("Alias");
 	//String NewUnits = parameters.getValue("NewUnits");
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
 	//String InputStart = _parameters.getValue("InputStart");
 	//String InputEnd = _parameters.getValue("InputEnd");
 	//String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
-	//String Alias = parameters.getValue("Alias");
+	
 
 	//props.set("Read24HourAsDay=" + Read24HourAsDay);
 
@@ -560,19 +559,32 @@ throws InvalidCommandParameterException,
 			tscount = tslist.size();
 			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
 			Message.printStatus ( 2, routine, message );
-        }
+		}
+		if ( (Alias != null) && (Alias.length() > 0) ) {
+    		for ( int i = 0; i < tscount; i++ ) {
+    		    TS ts = (TS)tslist.elementAt(i);
+    		    if ( ts == null ) {
+    		        continue;
+    		    }
+    		    if ( _use_alias ) {
+    		        // Reading a single time series so set the alias
+    		        ts.setAlias ( Alias );
+    		    }
+    		    else {
+    		        // Set the alias to the desired string.
+    		        ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+    		                processor, ts, Alias, status, command_phase) );
+    		    }
+    		}
+		}
 	} 
 	catch ( Exception e ) {
 		message = "Unexpected error reading NWSRFS ensemble file. \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+			MessageUtil.formatMessageTag(command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
         status.addToLog(command_phase,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message,
-                "Check the log file for details."));
+                new CommandLogRecord(CommandStatusType.FAILURE, message,"Check the log file for details."));
 		throw new CommandException ( message );
 	}
     
@@ -713,6 +725,15 @@ public String toString ( PropList props )
     String lead = "";
 	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
 		lead = "TS " + Alias + " = ";
+	}
+	else {
+	    // Add alias like any other parameter
+	    if ((Alias != null) && (Alias.length() > 0)) {
+	        if (b.length() > 0) {
+	            b.append(",");
+	        }
+	        b.append("Alias=\"" + Alias + "\"");
+	    }
 	}
 
 	return lead + getCommandName() + "(" + b.toString() + ")";

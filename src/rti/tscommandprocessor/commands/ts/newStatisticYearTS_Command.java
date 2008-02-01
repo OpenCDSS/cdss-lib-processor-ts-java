@@ -79,6 +79,8 @@ throws InvalidCommandParameterException
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
 	String SearchStart = parameters.getValue ( "SearchStart" );
 	String warning = "";
     String message;
@@ -174,6 +176,30 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
+    if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.equals("") ) {
+       try {
+           DateTime.parse(AnalysisWindowStart);
+       }
+       catch ( Exception e ) {
+           message = "The analysis window start date \"" + AnalysisWindowStart + "\" is not a valid date/time.";
+           warning += "\n" + message;
+           status.addToLog ( CommandPhaseType.INITIALIZATION,
+                   new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Specify a valid date/time." ) );
+       }
+    }
+    if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.equals("") ) {
+       try {
+           DateTime.parse( AnalysisWindowEnd );
+       }
+       catch ( Exception e ) {
+           message = "The analysis window end date \"" + AnalysisWindowEnd + "\" is not a valid date.";
+           warning += "\n" + message;
+           status.addToLog ( CommandPhaseType.INITIALIZATION,
+                   new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Specify a valid date/time." ) );
+       }
+    }
 	if (	(SearchStart != null) && !SearchStart.equals("") &&
 		!SearchStart.equalsIgnoreCase("OutputStart") &&
 		!SearchStart.equalsIgnoreCase("OutputEnd") ) {
@@ -319,6 +345,8 @@ CommandWarningException, CommandException
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
 	String SearchStart = parameters.getValue ( "SearchStart" );
 
 	// Figure out the dates to use for the analysis...
@@ -420,6 +448,104 @@ CommandWarningException, CommandException
                             message, "Verify the AnalysisEnd information." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
+		
+	  DateTime AnalysisWindowStart_DateTime = null;
+	    DateTime AnalysisWindowEnd_DateTime = null;
+	    try {
+	        if ( AnalysisWindowStart != null ) {
+	            PropList request_params = new PropList ( "" );
+	            request_params.set ( "DateTime", AnalysisWindowStart );
+	            CommandProcessorRequestResultsBean bean = null;
+	            try { bean =
+	                processor.processRequest( "DateTime", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting AnalysisWindowStart DateTime(DateTime=" +
+	                AnalysisWindowStart + ") from processor.";
+	                Message.printWarning(log_level,
+	                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                        routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                                message, "Report the problem to software support." ) );
+	                throw new InvalidCommandParameterException ( message );
+	            }
+
+	            PropList bean_PropList = bean.getResultsPropList();
+	            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+	            if ( prop_contents == null ) {
+	                message = "Null value for AnalysisWindowStart DateTime(DateTime=" +
+	                AnalysisWindowStart + ") returned from processor.";
+	                Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                                message, "Verify the AnalysisWindowStart information." ) );
+	                throw new InvalidCommandParameterException ( message );
+	            }
+	            else {  AnalysisWindowStart_DateTime = (DateTime)prop_contents;
+	            }
+	        }
+	        }
+	        catch ( Exception e ) {
+	            message = "AnalysisWindowStart \"" + AnalysisWindowStart + "\" is invalid.";
+	            Message.printWarning(warning_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify the AnalysisWindowStart information." ) );
+	            throw new InvalidCommandParameterException ( message );
+	        }
+	        
+	        try {
+	        if ( AnalysisWindowEnd != null ) {
+	            PropList request_params = new PropList ( "" );
+	            request_params.set ( "DateTime", AnalysisWindowEnd );
+	            CommandProcessorRequestResultsBean bean = null;
+	            try { bean =
+	                processor.processRequest( "DateTime", request_params);
+	            }
+	            catch ( Exception e ) {
+	                message = "Error requesting AnalysisWindowEnd DateTime(DateTime=" +
+	                AnalysisWindowEnd + ") from processor.";
+	                Message.printWarning(log_level,
+	                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                        routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                                message, "Report the problem to software support." ) );
+	                throw new InvalidCommandParameterException ( message );
+	            }
+
+	            PropList bean_PropList = bean.getResultsPropList();
+	            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+	            if ( prop_contents == null ) {
+	                message = "Null value for AnalysisWindowEnd DateTime(DateTime=" +
+	                AnalysisStart + ") returned from processor.";
+	                Message.printWarning(log_level,
+	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                    routine, message );
+	                status.addToLog ( CommandPhaseType.RUN,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                                message, "Verify the AnalysisWindowEnd information." ) );
+	                throw new InvalidCommandParameterException ( message );
+	            }
+	            else {  AnalysisWindowEnd_DateTime = (DateTime)prop_contents;
+	            }
+	        }
+	        }
+	        catch ( Exception e ) {
+	            message = "AnalysisWindowEnd \"" + AnalysisWindowEnd + "\" is invalid.";
+	            Message.printWarning(warning_level,
+	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+	                routine, message );
+	            status.addToLog ( CommandPhaseType.RUN,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Verify the AnalysisWindowEnd information." ) );
+	            throw new InvalidCommandParameterException ( message );
+	        }
 	
 	// TODO SAM 2007-02-13 Need to enable SearchStart or remove
 	/*DateTime SearchStart_DateTime = null;
@@ -499,15 +625,16 @@ CommandWarningException, CommandException
 		if ( (TestValue != null) && (TestValue.length() > 0) ) {
 			tsa_props.set ( "TestValue", TestValue);// Optional
 		}
-		if (	(AllowMissingCount != null) &&
-			(AllowMissingCount.length() > 0) ) {
+		if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
 			tsa_props.set ( "AllowMissingCount",AllowMissingCount);	// Optional
 		}
 		if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
 			tsa_props.set ( "SearchStart", SearchStart);// Optional
 		}
 		stats_ts = tsa.createStatisticYearTS ( ts,
-				AnalysisStart_DateTime, AnalysisEnd_DateTime,tsa_props );
+				AnalysisStart_DateTime, AnalysisEnd_DateTime,
+				AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
+				tsa_props );
 		stats_ts.setAlias ( Alias );	// Do separate because setting
 						// the NewTSID might cause the
 						// alias set to fail below.
@@ -555,6 +682,8 @@ public String toString ( PropList props )
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
 	String AnalysisStart = props.getValue( "AnalysisStart" );
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
+	String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
+	String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
 	String SearchStart = props.getValue( "SearchStart" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
@@ -599,6 +728,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
 	}
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
+    }
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
+    }
 	if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

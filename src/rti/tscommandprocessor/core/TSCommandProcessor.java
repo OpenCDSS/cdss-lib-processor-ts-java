@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -146,6 +147,11 @@ The current workding directory for processing, which was initialized to
 InitialWorkingDir and modified by setWorkingDir() commands.
 */
 private String __WorkingDir_String = null;
+
+/**
+Hashtable of properties used by the processor.
+*/
+Hashtable __property_Hashtable = new Hashtable();
 
 /**
 Indicates whether the processor is currently running (false if has not started
@@ -1139,6 +1145,20 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>GetProperty</b></td>
+<td>Get a processor property.  Parameters to this request are:
+<ol>
+<li>    <b>PropertyName</b> The property name.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    <b>PropertyValue</b> The property value, as an object
+        (e.g., DateTime, Double, Integer, or String.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>GetTable</b></td>
 <td>Get a DataTable instance managed by the processor.  Parameters to this request are:
 <ol>
@@ -1357,6 +1377,21 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>SetProperty</b></td>
+<td>Set a processor property.  Parameters to this request are:
+<ol>
+<li>    <b>PropertyName</b> The property name.</li>
+<li>    <b>PropertyValue</b> The property value, as an object
+        (e.g., DateTime, Double, Integer, or String.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>SetTable</b></td>
 <td>Set a DataTable instance.  Parameters to this request are:
 <ol>
@@ -1416,6 +1451,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("GetHydroBaseDMI") ) {
 		return processRequest_GetHydroBaseDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("GetProperty") ) {
+        return processRequest_GetProperty ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("GetTable") ) {
         return processRequest_GetTable ( request, request_params );
     }
@@ -1467,6 +1505,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
 		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetProperty") ) {
+        return processRequest_SetProperty ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("SetRiversideDB_DMI") ) {
         return processRequest_SetRiversideDB_DMI ( request, request_params );
     }
@@ -1664,6 +1705,30 @@ throws Exception
 	// This will be set in the bean because the PropList is a reference...
 	results.setUsingObject("HydroBaseDMI", dmi );
 	return bean;
+}
+
+/**
+Process the GetProperty request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetProperty (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "PropertyName" );
+    if ( o == null ) {
+            String warning = "Request GetProperty() does not provide a PropertyName parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String PropertyName = (String)o;
+    Object PropertyValue = __property_Hashtable.get ( PropertyName );
+    // Return the property value in the bean.
+    PropList results = bean.getResultsPropList();
+    // This will be set in the bean because the PropList is a reference...
+    results.setUsingObject("PropertyValue", PropertyValue );
+    return bean;
 }
 
 /**
@@ -2214,7 +2279,35 @@ throws Exception
 }
 
 /**
-Process the SetHydroBaseDMI request.
+Process the SetProperty request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetProperty (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "PropertyName" );
+    if ( o == null ) {
+            String warning = "Request SetProperty() does not provide a PropertyName parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String PropertyName = (String)o;
+    Object o2 = request_params.getContents ( "PropertyValue" );
+    if ( o2 == null ) {
+            String warning = "Request SetProperty() does not provide a PropertyValue parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    __property_Hashtable.put ( PropertyName, o2 );
+    // No data are returned in the bean.
+    return bean;
+}
+
+/**
+Process the SetRiversideDB_DMI request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetRiversideDB_DMI (
         String request, PropList request_params )

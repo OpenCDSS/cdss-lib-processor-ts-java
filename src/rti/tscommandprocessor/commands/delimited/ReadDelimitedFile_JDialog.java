@@ -6,6 +6,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -27,6 +29,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
@@ -39,30 +42,42 @@ import RTi.Util.Message.Message;
 Editor for the TS Alias = readDateValue() and non-TS Alias ReadDateValue() commands.
 */
 public class ReadDelimitedFile_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and
-						// absolute path.
+			__path_JButton = null,	// Convert between relative and absolute path.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private Command		__command = null;
-private String		__working_dir = null;	// Working directory.
-private JTextField	__Alias_JTextField = null,// Alias for time series.
-            __TSID_JTextField = null,
-			__InputStart_JTextField,
-			__InputEnd_JTextField, // Text fields for input period.
-			__InputFile_JTextField = null, // Field for input file
-			__NewUnits_JTextField = null; // Units to convert to at read
-private JTextArea	 __Command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
+private ReadDelimitedFile_Command __command = null;   // Command to edit
+private String __working_dir = null;	// Working directory.
+private JTextField __Alias_JTextField = null;
+//            __TSID_JTextField = null,
+private JTextField __InputFile_JTextField = null;
+private JTextField __Delimiter_JTextField = null;
+private SimpleJComboBox __TreatConsecutiveDelimitersAsOne_JComboBox = null;
+private JTextField __ColumnNames_JTextField = null;
+private JTextField __DateColumn_JTextField = null;
+private JTextField __TimeColumn_JTextField = null;
+private JTextField __DateTimeColumn_JTextField = null;
+private JTextField __ValueColumn_JTextField = null;
+private JTextField __LocationID_JTextField = null;
+private JTextField __DataProviderID_JTextField = null;
+private JTextField __DataType_JTextField = null;
+private JTextField __Interval_JTextField = null;
+private JTextField __Scenario_JTextField = null;
+private JTextField __Units_JTextField = null;
+private JTextField __MissingValue_JTextField = null;
+private JTextField __SkipRows_JTextField = null;
+//private JTextField __InputStart_JTextField = null;
+//private JTextField __InputEnd_JTextField = null;
+private JTextArea __Command_JTextArea = null;
+private boolean __error_wait = false;	// Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
 
-private boolean 	__isAliasVersion = false;	
+//private boolean __isAliasVersion = false;	
 			// Whether this dialog is being opened for the version
 			// of the command that returns an alias or not
+            // TODO SAM 2008-01-31 Evaluate whether alias version is appropriate - for now don't implement
 private boolean		__ok = false;			
 private final String __RemoveWorkingDirectory = "Remove Working Directory",
 	__AddWorkingDirectory = "Add Working Directory";
@@ -76,6 +91,7 @@ public ReadDelimitedFile_JDialog ( JFrame parent, Command command )
 {
 	super(parent, true);
 
+	/*
 	PropList props = command.getCommandParameters();
 	String alias = props.getValue("Alias");
 	Message.printStatus(1, "", "Props: " + props.toString("\n"));
@@ -90,6 +106,7 @@ public ReadDelimitedFile_JDialog ( JFrame parent, Command command )
 	else {
 		__isAliasVersion = true;
 	}
+	*/
 	initialize ( parent, command );
 }
 
@@ -103,10 +120,10 @@ public void actionPerformed( ActionEvent event )
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle( "Select DateValue Time Series File");
-        SimpleFileFilter sff = new SimpleFileFilter("txt","DateValue Time Series File");
+        fc.setDialogTitle( "Select Delimited Time Series File");
+        SimpleFileFilter sff = new SimpleFileFilter("txt","Delimited Time Series File");
         fc.addChoosableFileFilter(sff);
-        sff = new SimpleFileFilter("dv","DateValue Time Series File");
+        sff = new SimpleFileFilter("csv","Delimited (Comma Separated Value) Time Series File");
         fc.addChoosableFileFilter(sff);
 		
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
@@ -151,11 +168,19 @@ public void actionPerformed( ActionEvent event )
                 __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,	__InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, "ReadDateValue_JDialog", "Error converting file to relative path." );
+				Message.printWarning ( 1, "ReadDelimitedFile_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
 	}
+}
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    // Add to this as more functionality is added
 }
 
 /**
@@ -167,9 +192,26 @@ private void checkInput () {
 	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
-	String InputStart = __InputStart_JTextField.getText().trim();
-	String InputEnd = __InputEnd_JTextField.getText().trim();
-	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String SkipRows = __SkipRows_JTextField.getText().trim();
+	String Delimiter = __Delimiter_JTextField.getText().trim();
+	String TreatConsecutiveDelimitersAsOne = __TreatConsecutiveDelimitersAsOne_JComboBox.getSelected();
+	String ColumnNames = __ColumnNames_JTextField.getText().trim();
+	String DateColumn = __DateColumn_JTextField.getText().trim();
+	String TimeColumn = __TimeColumn_JTextField.getText().trim();
+	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+	String ValueColumn = __ValueColumn_JTextField.getText().trim();
+	String LocationID = __LocationID_JTextField.getText().trim();
+	String DataProviderID = __DataProviderID_JTextField.getText().trim();
+	String DataType = __DataType_JTextField.getText().trim();
+	String Interval = __Interval_JTextField.getText().trim();
+	String Scenario = __Scenario_JTextField.getText().trim();
+	String Units = __Units_JTextField.getText().trim();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
+
+	//String InputStart = __InputStart_JTextField.getText().trim();
+	//String InputEnd = __InputEnd_JTextField.getText().trim();
+	/*
 	String Alias = null;
     String TSID = null;
 	if (__isAliasVersion) { 
@@ -182,21 +224,70 @@ private void checkInput () {
             props.set("TSID", TSID);
         }
 	}
+	*/
 	
 	__error_wait = false;
 	
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
-	if (InputStart.length() > 0 && !InputStart.equals("*")) {
+    if (SkipRows.length() > 0) {
+        props.set("SkipRows", SkipRows);
+    }
+    if (Delimiter.length() > 0) {
+        props.set("Delimiter", Delimiter);
+    }
+    if (TreatConsecutiveDelimitersAsOne.length() > 0) {
+        props.set("TreatConsecutiveDelimitersAsOne", TreatConsecutiveDelimitersAsOne);
+    }
+    if (ColumnNames.length() > 0) {
+        props.set("ColumnNames", ColumnNames);
+    }
+    if (DateColumn.length() > 0) {
+        props.set("DateColumn", DateColumn);
+    }
+    if (TimeColumn.length() > 0) {
+        props.set("TimeColumn", TimeColumn);
+    }
+    if (DateTimeColumn.length() > 0) {
+        props.set("DateTimeColumn", DateTimeColumn);
+    }
+    if (ValueColumn.length() > 0) {
+        props.set("ValueColumn", ValueColumn);
+    }
+    if (LocationID.length() > 0) {
+        props.set("LocationID", LocationID);
+    }
+    if (DataProviderID.length() > 0) {
+        props.set("DataProviderID", DataProviderID);
+    }
+    if (DataType.length() > 0) {
+        props.set("DataType", DataType);
+    }
+    if (Interval.length() > 0) {
+        props.set("Interval", Interval);
+    }
+    if (Scenario.length() > 0) {
+        props.set("Scenario", Scenario);
+    }
+    if (Units.length() > 0) {
+        props.set("Units", Units);
+    }
+    if (MissingValue.length() > 0) {
+        props.set("MissingValue", MissingValue);
+    }
+    if (Alias.length() > 0) {
+        props.set("Alias", Alias);
+    }
+
+    /*
+	if (InputStart.length() > 0 ) {
 		props.set("InputStart", InputStart);
 	}
-	if (InputEnd.length() > 0 && !InputEnd.equals("*")) {
+	if (InputEnd.length() > 0 ) {
 		props.set("InputEnd", InputEnd);
 	}
-	if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
-		props.set("NewUnits", NewUnits);
-	}
+	*/
 
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -213,21 +304,45 @@ already been checked and no errors were detected.
 */
 private void commitEdits() {
 	String InputFile = __InputFile_JTextField.getText().trim();
-	String InputStart = __InputStart_JTextField.getText().trim();
-	String InputEnd = __InputEnd_JTextField.getText().trim();
-	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String SkipRows = __SkipRows_JTextField.getText().trim();
+    String Delimiter = __Delimiter_JTextField.getText().trim();
+    String TreatConsecutiveDelimitersAsOne = __TreatConsecutiveDelimitersAsOne_JComboBox.getSelected();
+    String ColumnNames = __ColumnNames_JTextField.getText().trim();
+    String DateColumn = __DateColumn_JTextField.getText().trim();
+    String TimeColumn = __TimeColumn_JTextField.getText().trim();
+    String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String LocationID = __LocationID_JTextField.getText().trim();
+    String DataProviderID = __DataProviderID_JTextField.getText().trim();
+    String DataType = __DataType_JTextField.getText().trim();
+    String Interval = __Interval_JTextField.getText().trim();
+    String Scenario = __Scenario_JTextField.getText().trim();
+    String Units = __Units_JTextField.getText().trim();
+    String MissingValue = __MissingValue_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
+    
+	//String InputStart = __InputStart_JTextField.getText().trim();
+	//String InputEnd = __InputEnd_JTextField.getText().trim();
 
 	__command.setCommandParameter("InputFile", InputFile);
-	__command.setCommandParameter("InputStart", InputStart);
-	__command.setCommandParameter("InputEnd", InputEnd);
-	__command.setCommandParameter("NewUnits", NewUnits);
-	
-	if (__isAliasVersion) {
-		String Alias = __Alias_JTextField.getText().trim();
-		__command.setCommandParameter("Alias", Alias);
-        String TSID = __TSID_JTextField.getText().trim();
-        __command.setCommandParameter("TSID", TSID);
-	}
+	__command.setCommandParameter("SkipRows", SkipRows);
+	__command.setCommandParameter("Delimiter", Delimiter);
+	__command.setCommandParameter("TreatConsecutiveDelimitersAsOne", TreatConsecutiveDelimitersAsOne);
+	__command.setCommandParameter("ColumnNames", ColumnNames);
+	__command.setCommandParameter("DateColumn", DateColumn);
+	__command.setCommandParameter("TimeColumn", TimeColumn);
+	__command.setCommandParameter("DateTimeColumn", DateTimeColumn);
+	__command.setCommandParameter("ValueColumn", ValueColumn);
+	__command.setCommandParameter("LocationID", LocationID);
+	__command.setCommandParameter("DataProviderID", DataProviderID );
+	__command.setCommandParameter("DataType", DataType);
+	__command.setCommandParameter("Interval", Interval);
+	__command.setCommandParameter("Scenario", Scenario);
+	__command.setCommandParameter("Units", Units);
+	__command.setCommandParameter("MissingValue", MissingValue);
+	__command.setCommandParameter("Alias", Alias);
+	//__command.setCommandParameter("InputStart", InputStart);
+	//__command.setCommandParameter("InputEnd", InputEnd);
 }
 
 /**
@@ -242,10 +357,9 @@ throws Throwable {
 	__command = null;
 	__working_dir = null;
 	__Alias_JTextField = null;
-	__InputStart_JTextField = null;
-	__InputEnd_JTextField = null;
+	//__InputStart_JTextField = null;
+	//__InputEnd_JTextField = null;
 	__InputFile_JTextField = null;
-	__NewUnits_JTextField = null;
 	__Command_JTextArea = null;
 
 	super.finalize();
@@ -258,7 +372,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize(JFrame parent, Command command) {
-	__command = command;
+	__command = (ReadDelimitedFile_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -270,38 +384,42 @@ private void initialize(JFrame parent, Command command) {
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
+	
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+            "<HTML><B>This command is under development.</B></HTML>."),
+            0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+	/*
 	if (__isAliasVersion) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a DateValue format file and " +
-		"assign an alias to the time series."),
+		"Read one time series from a delimited format file that is column-oriented."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	else {
+	*/
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "Read all the time series from a DateValue file, using " +
-            "information in the file to assign "),
-            0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "the identifier and alias.  Specify a full or relative " +
-            "path (relative to working directory)." ), 
+            "Read all the time series from a column-oriented delimited file, using " +
+            "provided information to assign the time series metadata."),
             0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
+	//}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
-		"directory) for a DateValue file to read." ), 
+		"directory) for a delimited file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
+	/*
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the input period will limit data that are " +
 		"available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		*/
 
+    /*
 	if (__isAliasVersion) {
 	    JGUIUtil.addComponent(main_JPanel, 
 			new JLabel("Time series alias:"),
@@ -311,8 +429,9 @@ private void initialize(JFrame parent, Command command) {
 		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 			1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	}
+	*/
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"DateValue file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Delimited file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -322,25 +441,189 @@ private void initialize(JFrame parent, Command command) {
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    if (__isAliasVersion) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Identifier/Alias to Read:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        __TSID_JTextField = new JTextField ( "*", 30 );
-        __TSID_JTextField.addKeyListener ( this );
-        __TSID_JTextField.setEnabled ( false );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
-            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern to match a time series to read (under development)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    }
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SkipRows_JTextField = new JTextField (10);
+    __SkipRows_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify as comma-separated numbers or ranges."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Delimiter_JTextField = new JTextField (10);
+    __Delimiter_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Default is \",\", use \\t for tab."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Treat consecutive delimiters as one?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TreatConsecutiveDelimitersAsOne_JComboBox = new SimpleJComboBox ( false );
+    __TreatConsecutiveDelimitersAsOne_JComboBox.addItem ( "" );
+    __TreatConsecutiveDelimitersAsOne_JComboBox.addItem ( __command._False );
+    __TreatConsecutiveDelimitersAsOne_JComboBox.addItem ( __command._True );
+    __TreatConsecutiveDelimitersAsOne_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __TreatConsecutiveDelimitersAsOne_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Default=False."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Column names:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ColumnNames_JTextField = new JTextField (10);
+    __ColumnNames_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __ColumnNames_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Used by other parameters."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimeColumn_JTextField = new JTextField (10);
+    __DateTimeColumn_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __DateTimeColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify if date and time are in the same column."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JTextField __DateTimeFormat_JTextField;
+    JLabel DateTimeFormat_JLabel = new JLabel ("Date/time format:");
+    DateTimeFormat_JLabel.setEnabled( false );
+    JGUIUtil.addComponent(main_JPanel, DateTimeFormat_JLabel,
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimeFormat_JTextField = new JTextField (10);
+    __DateTimeFormat_JTextField.setEnabled( false );
+    __DateTimeFormat_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Indiate date/time format MM/DD/YYYY, etc. - under development."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JLabel DateColumn_JLabel = new JLabel ("Date column:");
+    DateColumn_JLabel.setEnabled( false );
+    JGUIUtil.addComponent(main_JPanel, DateColumn_JLabel,
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateColumn_JTextField = new JTextField (10);
+    __DateColumn_JTextField.setEnabled( false );
+    __DateColumn_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __DateColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify if date and time are in separate columns."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JLabel TimeColumn_JLabel = new JLabel ("Time column:");
+    TimeColumn_JLabel.setEnabled( false );
+    JGUIUtil.addComponent(main_JPanel, TimeColumn_JLabel,
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TimeColumn_JTextField = new JTextField (10);
+    __TimeColumn_JTextField.setEnabled( false);
+    __TimeColumn_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __TimeColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify if date and time are in separate columns."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Value column(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ValueColumn_JTextField = new JTextField (10);
+    __ValueColumn_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __ValueColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify column names separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Location ID(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LocationID_JTextField = new JTextField (10);
+    __LocationID_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __LocationID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify location ID for each value column, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data provider ID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataProviderID_JTextField = new JTextField (10);
+    __DataProviderID_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __DataProviderID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify data provider ID for the data."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataType_JTextField = new JTextField (10);
+    __DataType_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Data type for each value column, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Interval_JTextField = new JTextField (10);
+    __Interval_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Data interval for data (e.g., 6Hour, Day)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Scenario:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Scenario_JTextField = new JTextField (10);
+    __Scenario_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __Scenario_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Scenario for the time series (specify none or one)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Units of data:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__NewUnits_JTextField = new JTextField ( "", 10 );
-	__NewUnits_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
+	__Units_JTextField = new JTextField ( "", 10 );
+	__Units_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify for each time series, separated by commas."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Missing value:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField (10);
+    __MissingValue_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Missing value indicator (if missing values are in file)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Alias to assign:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new JTextField ( "", 20 );
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is no alias is assigned."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+	/* FIXME SAM 2008-01-31 Enable when functionality of low-level code is confirmed
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputStart_JTextField = new JTextField ( "", 15 );
@@ -353,6 +636,7 @@ private void initialize(JFrame parent, Command command) {
 	__InputEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		*/
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -382,19 +666,30 @@ private void initialize(JFrame parent, Command command) {
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
+	/*
 	if (__isAliasVersion) {
 		setTitle("Edit TS Alias = ReadDateValue() Command");
 	}
-	else {
-		setTitle("Edit ReadDateValue() Command");
-	}
+	else {*/
+		setTitle("Edit ReadDelimitedFile() Command");
+	//}
 
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
+    pack();
+    JGUIUtil.center( this );
 //	refresh();	// Sets the __path_JButton status
 	refreshPathControl();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
+}
+
+
+/**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{   checkGUIState();
+    refresh();
 }
 
 /**
@@ -433,13 +728,27 @@ public boolean ok() {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh() {
-	String InputFile = "",
-	       InputStart = "",
-	       InputEnd = "",
-	       NewUnits = "",
-	       Alias = "",
-           TSID = "";
+private void refresh()
+{   String routine = "ReadDelimitedFile_JDialog.refresh";
+    String InputFile = "";
+    String SkipRows = "";
+    String Delimiter = "";
+    String TreatConsecutiveDelimitersAsOne = "";
+    String ColumnNames = "";
+    String DateColumn = "";
+    String TimeColumn = "";
+    String DateTimeColumn = "";
+    String ValueColumn = "";
+    String LocationID = "";
+    String DataProviderID = "";
+    String DataType = "";
+    String Interval = "";
+    String Scenario = "";
+    String Units = "";
+    String MissingValue = "";
+    String Alias = "";
+    String InputStart = "";
+    String InputEnd = "";
 
 	PropList props = null;
 
@@ -448,58 +757,165 @@ private void refresh() {
 
 		// Get the properties from the command
 		props = __command.getCommandParameters();
+		/*
         if ( __isAliasVersion ) {
             Alias = props.getValue("Alias");
             TSID = props.getValue("TSID");
         }
+        */
 		InputFile = props.getValue("InputFile");
+		SkipRows = props.getValue("SkipRows");
+	    Delimiter = props.getValue("Delimiter");
+	    TreatConsecutiveDelimitersAsOne = props.getValue("TreatConsecutiveDelimitersAsOne");
+	    ColumnNames = props.getValue("ColumnNames");
+	    DateColumn = props.getValue("DateColumn");
+	    TimeColumn = props.getValue("TimeColumn");
+	    DateTimeColumn = props.getValue("DateTimeColumn");
+	    ValueColumn = props.getValue("ValueColumn");
+	    LocationID = props.getValue("LocationID");
+	    DataProviderID = props.getValue("DataProviderID");
+	    DataType = props.getValue("DataType");
+	    Interval = props.getValue("Interval");
+	    Scenario = props.getValue("Scenario");
+	    Units = props.getValue("Units");
+	    MissingValue = props.getValue("MissingValue");
+	    Alias = props.getValue("Alias");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
-		NewUnits = props.getValue("NewUnits");
 		// Set the control fields
-		if (Alias != null && __isAliasVersion) {
-			__Alias_JTextField.setText(Alias.trim());
-		}
+		/*
         if (TSID != null && __isAliasVersion) {
             __TSID_JTextField.setText(TSID.trim());
         }
+        */
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
+        if ( SkipRows != null) {
+            __SkipRows_JTextField.setText(SkipRows);
+        }
+	    if (Delimiter != null) {
+	         __Delimiter_JTextField.setText(Delimiter);
+	    }
+        if ( TreatConsecutiveDelimitersAsOne == null ) {
+            // Select default...
+            __TreatConsecutiveDelimitersAsOne_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(
+                __TreatConsecutiveDelimitersAsOne_JComboBox,
+                TreatConsecutiveDelimitersAsOne, JGUIUtil.NONE, null, null ) ) {
+                __TreatConsecutiveDelimitersAsOne_JComboBox.select ( TreatConsecutiveDelimitersAsOne );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTreatConsecutiveDelimitersAsOne value \"" +
+                TreatConsecutiveDelimitersAsOne + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if (ColumnNames != null) {
+            __ColumnNames_JTextField.setText(ColumnNames);
+        }
+        if (DateColumn != null) {
+            __DateColumn_JTextField.setText(DateColumn);
+        }
+        if (TimeColumn != null) {
+            __TimeColumn_JTextField.setText(TimeColumn);
+        }
+        if (DateTimeColumn != null) {
+            __DateTimeColumn_JTextField.setText(DateTimeColumn);
+        }
+        if (ValueColumn != null) {
+            __ValueColumn_JTextField.setText(ValueColumn);
+        }
+        if (LocationID != null) {
+            __LocationID_JTextField.setText(LocationID);
+        }
+        if (DataProviderID != null) {
+            __DataProviderID_JTextField.setText(DataProviderID);
+        }
+        if (DataType != null) {
+            __DataType_JTextField.setText(DataType);
+        }
+        if (Interval != null) {
+            __Interval_JTextField.setText(Interval);
+        }
+        if (Scenario != null) {
+            __Scenario_JTextField.setText(Scenario);
+        }
+        if (Units != null) {
+            __Units_JTextField.setText(Units);
+        }
+        if (MissingValue != null) {
+            __MissingValue_JTextField.setText(MissingValue);
+        }
+        if ( Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
+        /*
 		if (InputStart != null) {
 			__InputStart_JTextField.setText(InputStart);
 		}
 		if (InputEnd != null) {
 			__InputEnd_JTextField.setText(InputEnd);
 		}
-		if (NewUnits != null) {
-			__NewUnits_JTextField.setText(NewUnits);
-		}
+		*/
 	}
 
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
-	InputStart = __InputStart_JTextField.getText().trim();
-	InputEnd = __InputEnd_JTextField.getText().trim();
-	NewUnits = __NewUnits_JTextField.getText().trim();
+    SkipRows = __SkipRows_JTextField.getText().trim();
+    Delimiter = __Delimiter_JTextField.getText().trim();
+    TreatConsecutiveDelimitersAsOne = __TreatConsecutiveDelimitersAsOne_JComboBox.getSelected();
+    ColumnNames = __ColumnNames_JTextField.getText().trim();
+    DateColumn = __DateColumn_JTextField.getText().trim();
+    TimeColumn = __TimeColumn_JTextField.getText().trim();
+    DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    ValueColumn = __ValueColumn_JTextField.getText().trim();
+    LocationID = __LocationID_JTextField.getText().trim();
+    DataProviderID = __DataProviderID_JTextField.getText().trim();
+    DataType = __DataType_JTextField.getText().trim();
+    Interval = __Interval_JTextField.getText().trim();
+    Scenario = __Scenario_JTextField.getText().trim();
+    Units = __Units_JTextField.getText().trim();
+    MissingValue = __MissingValue_JTextField.getText().trim();
+    Alias = __Alias_JTextField.getText().trim();
+	//InputStart = __InputStart_JTextField.getText().trim();
+	//InputEnd = __InputEnd_JTextField.getText().trim();
+	/*
 	if (__isAliasVersion) {
 		Alias = __Alias_JTextField.getText().trim();
         TSID = __TSID_JTextField.getText().trim();
 	}
+	*/
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
-
+	props.add("SkipRows=" + SkipRows );
+    props.add("Delimiter=" + Delimiter );
+    props.add("TreatConsecutiveDelimitersAsOne=" + TreatConsecutiveDelimitersAsOne );
+    props.add("ColumnNames=" + ColumnNames );
+    props.add("DateColumn=" + DateColumn );
+    props.add("TimeColumn=" + TimeColumn );
+    props.add("DateTimeColumn=" + DateTimeColumn );
+    props.add("ValueColumn=" + ValueColumn );
+    props.add("LocationID=" + LocationID );
+    props.add("DataProviderID=" + DataProviderID );
+    props.add("DataType=" + DataType );
+    props.add("Interval=" + Interval );
+    props.add("Scenario=" + Scenario );
+    props.add("Units=" + Units );
+    props.add("MissingValue=" + MissingValue );
+    props.add("Alias=" + Alias );
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
-	props.add("NewUnits=" + NewUnits);
-	if (Alias != null) {
-		props.add("Alias=" + Alias);
-	}
+	/*
     if (TSID != null) {
         props.add("TSID=" + TSID);
     }
+    */
 	
 	__Command_JTextArea.setText( __command.toString(props) );
 

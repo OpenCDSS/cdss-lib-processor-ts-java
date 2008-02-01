@@ -47,21 +47,22 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectoryToFile = "Add Working Directory To File";
 private final String __RemoveWorkingDirectoryFromFile = "Remove Working Directory From File";
 
-private boolean		__error_wait = false;	// To track errors
-private boolean		__first_time = true;	// Indicate first time display
-private JTextArea	__command_JTextArea=null;// For command
+private boolean __error_wait = false;	// To track errors
+private boolean __first_time = true;	// Indicate first time display
+private JTextArea __command_JTextArea=null;// For command
 private JTextField  __TableID_JTextField = null;
-private JTextField	__InputFile_JTextField = null;
-private JTextField	__SkipRows_JTextField = null;
-private JTextField	__SkipColumns_JTextField = null;
-private JTextField	__HeaderRows_JTextField = null;
-private SimpleJButton	__cancel_JButton = null;
-private SimpleJButton	__ok_JButton = null;	
-private SimpleJButton	__browse_JButton = null;
-private SimpleJButton	__path_JButton = null;
-private String		__working_dir = null;	
-private ReadTableFromDelimitedFile_Command	__command = null;
-private boolean		__ok = false;
+private JTextField __InputFile_JTextField = null;
+private JTextField __SkipRows_JTextField = null;
+// FIXME SAM 2008-01-27 Enable later
+//private JTextField __SkipColumns_JTextField = null;
+private JTextField __HeaderRows_JTextField = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private String __working_dir = null;	
+private ReadTableFromDelimitedFile_Command __command = null;
+private boolean __ok = false;
 
 /**
 Command dialog constructor.
@@ -150,7 +151,7 @@ private void checkInput ()
     String TableID = __TableID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String SkipRows = __SkipRows_JTextField.getText().trim();
-	String SkipColumns = __SkipColumns_JTextField.getText().trim();
+	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderRows = __HeaderRows_JTextField.getText().trim();
 	__error_wait = false;
 
@@ -163,9 +164,9 @@ private void checkInput ()
 	if ( SkipRows.length() > 0 ) {
 		props.set ( "SkipRows", SkipRows );
 	}
-	if ( SkipColumns.length() > 0 ) {
-		props.set ( "Columns", SkipColumns );
-	}
+	//if ( SkipColumns.length() > 0 ) {
+	//	props.set ( "Columns", SkipColumns );
+	//}
 	if ( HeaderRows.length() > 0 ) {
 		props.set ( "HeaderRows", HeaderRows );
 	}
@@ -187,12 +188,12 @@ private void commitEdits ()
 {	String TableID = __TableID_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
 	String SkipRows = __SkipRows_JTextField.getText().trim();
-	String SkipColumns = __SkipColumns_JTextField.getText().trim();
+	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
 	String HeaderRows = __HeaderRows_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "SkipRows", SkipRows );
-	__command.setCommandParameter ( "SkipColumns", SkipColumns );
+	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
 	__command.setCommandParameter ( "HeaderRows", HeaderRows );
 }
 
@@ -239,25 +240,25 @@ private void initialize ( JFrame parent, Command command )
 	paragraph.setLayout(new GridBagLayout());
 	int yy = 0;
     
-       	JGUIUtil.addComponent(paragraph, new JLabel (
+   	JGUIUtil.addComponent(paragraph, new JLabel (
 	"This command reads a table from a delimited file."),
 	0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
        	JGUIUtil.addComponent(paragraph, new JLabel (
                 "The table can then be used by other commands."),
 	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(paragraph, new JLabel (
+    JGUIUtil.addComponent(paragraph, new JLabel (
 		"Columns should be delimited by commas (user-specified" +
 		" delimiters will be added in the future)."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(paragraph, new JLabel (
+    JGUIUtil.addComponent(paragraph, new JLabel (
 		"It is recommended that the location of the files be " +
 		"specified using a path relative to the working directory."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
-        JGUIUtil.addComponent(paragraph, new JLabel ( ""),
+    JGUIUtil.addComponent(paragraph, new JLabel ( ""),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);		
 	if (__working_dir != null) {
-        	JGUIUtil.addComponent(paragraph, new JLabel (
+    	JGUIUtil.addComponent(paragraph, new JLabel (
 		"The working directory is: " + __working_dir), 
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
@@ -266,16 +267,16 @@ private void initialize ( JFrame parent, Command command )
 		0, y, 7, 1, 0, 0, 5, 0, 10, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        __TableID_JTextField = new JTextField (10);
-        __TableID_JTextField.addKeyListener (this);
-            JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
-            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-            JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "Provide a unique identifier for the table."),
-            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JTextField = new JTextField (10);
+    __TableID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Provide a unique identifier for the table."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField (35);
 	__InputFile_JTextField.addKeyListener (this);
@@ -286,15 +287,16 @@ private void initialize ( JFrame parent, Command command )
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip:"),
-                0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            __SkipRows_JTextField = new JTextField (10);
-            __SkipRows_JTextField.addKeyListener (this);
-                JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
-                1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-                JGUIUtil.addComponent(main_JPanel, new JLabel (
-                "Specify as comma-separated numbers or ranges."),
-                3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SkipRows_JTextField = new JTextField (10);
+    __SkipRows_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify as comma-separated numbers or ranges."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+        /*
         JGUIUtil.addComponent(main_JPanel, new JLabel ("Columns to skip:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SkipColumns_JTextField = new JTextField (10);
@@ -304,18 +306,19 @@ private void initialize ( JFrame parent, Command command )
        	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify as comma-separated numbers or ranges."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		*/
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows containing headers:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Row containing column names (header):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HeaderRows_JTextField = new JTextField (10);
 	__HeaderRows_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __HeaderRows_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify as a range (e.g., \"5-7\")."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify row number 1+." ),
+		//"Specify as a range (e.g., \"5-7\")."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,40);
 	__command_JTextArea.setLineWrap ( true );
@@ -397,7 +400,7 @@ private void refresh ()
 {	String TableID = "";
     String InputFile = "";
 	String SkipRows = "";
-	String SkipColumns = "";
+	//String SkipColumns = "";
 	String HeaderRows = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
@@ -405,7 +408,7 @@ private void refresh ()
         TableID = props.getValue ( "TableID" );
 		InputFile = props.getValue ( "InputFile" );
 		SkipRows = props.getValue ( "SkipRows" );
-		SkipColumns = props.getValue ( "SkipColumns" );
+		//SkipColumns = props.getValue ( "SkipColumns" );
 		HeaderRows = props.getValue ( "HeaderRows" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
@@ -416,9 +419,9 @@ private void refresh ()
 		if ( SkipRows != null ) {
 			__SkipRows_JTextField.setText ( SkipRows );
 		}
-		if ( SkipColumns != null ) {
-			__SkipColumns_JTextField.setText ( SkipColumns );
-		}
+		//if ( SkipColumns != null ) {
+		//	__SkipColumns_JTextField.setText ( SkipColumns );
+		//}
 		if ( HeaderRows != null ) {
 			__HeaderRows_JTextField.setText ( HeaderRows );
 		}
@@ -427,13 +430,13 @@ private void refresh ()
     TableID = __TableID_JTextField.getText().trim();
 	InputFile = __InputFile_JTextField.getText().trim();
 	SkipRows = __SkipRows_JTextField.getText().trim();
-	SkipColumns = __SkipColumns_JTextField.getText().trim();
+	//SkipColumns = __SkipColumns_JTextField.getText().trim();
 	HeaderRows = __HeaderRows_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "SkipRows=" + SkipRows );
-	props.add ( "SkiipColumns=" + SkipColumns );
+	//props.add ( "SkiipColumns=" + SkipColumns );
 	props.add ( "HeaderRows=" + HeaderRows );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should

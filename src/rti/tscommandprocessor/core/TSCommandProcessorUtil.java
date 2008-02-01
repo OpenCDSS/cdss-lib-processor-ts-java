@@ -21,6 +21,7 @@ import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
@@ -228,6 +229,104 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         }
     }
     return parameter_value;
+}
+
+/**
+Expand a string to recognize time series % formatting strings using TS.formatLegend()
+and also ${Property} strings.  If a property string is not found, it will remain
+without being replaced.
+@param processor The processor that is being used.
+@param ts Time series to be used for metadata string.
+@param s String to expand.  The string can contain % format specifiers used with TS.
+@param status CommandStatus to add messages to if problems occur.
+*/
+public static String expandTimeSeriesMetadataString ( CommandProcessor processor, TS ts, String s,
+        CommandStatus status, CommandPhaseType command_phase )
+{   String routine = "TSCommandProcessorUtil.expandTimeSeriesMetadataString";
+    if ( s == null ) {
+        return "";
+    }
+    // First expand using the % characters...
+    String s2 = ts.formatLegend ( s );
+    Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
+    // Now replace ${Property} strings with properties from the processor
+    int start = 0;
+    int pos2 = 0;
+    while ( pos2 < s2.length() ) {
+        int pos1 = s2.indexOf( "${", start );
+        if ( pos1 >= 0 ) {
+            // Find the end of the property
+            pos2 = s2.indexOf( "}", pos1 );
+            if ( pos2 > 0 ) {
+                // Get the property...
+                String propname = s2.substring(pos1+2,pos2);
+                String propval_string = "";
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "PropertyName", propname );
+                CommandProcessorRequestResultsBean bean = null;
+                try {
+                    bean = processor.processRequest( "GetProperty", request_params);
+                }
+                catch ( Exception e ) {
+                    String message = "Error requesting GetProperty(Property=\"" + propname + "\") from processor.";
+                    Message.printWarning ( 3,routine, message );
+                    if ( status != null ) {
+                        status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                    }
+                    start = pos2;
+                    continue;
+                }
+                if ( bean == null ) {
+                    String message =
+                        "Unable to find property from processor using GetProperty(Property=\"" + propname + "\").";
+                    Message.printWarning ( 3,routine, message );
+                    if ( status != null ) {
+                        status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message,
+                                "Verify that the property name is valid - must match case." ) );
+                    }
+                    start = pos2;
+                    continue;
+                }
+                PropList bean_PropList = bean.getResultsPropList();
+                Object o_PropertyValue = bean_PropList.getContents ( "PropertyValue" );
+                if ( o_PropertyValue == null ) {
+                    String message =
+                        "Null PropertyValue returned from processor for GetProperty(PropertyName=\"" + propname + "\").";
+                    Message.printWarning ( 3, routine, message );
+                    if ( status != null ) {
+                        status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message,
+                                "Verify that the property name is valid - must match case." ) );
+                    }
+                    start = pos2;
+                    continue;
+                }
+                else {
+                    propval_string = o_PropertyValue.toString();
+                    start = pos2;
+                }
+                // Replace the string and continue to evaluate s2
+                s2 = s2.substring ( 0, pos1 ) + propval_string + s2.substring (pos2 + 1);
+            }
+            else {
+                // No closing character so march on...
+                start = pos1 + 2;
+                if ( start > s2.length() ) {
+                    break;
+                }
+            }
+        }
+        else {
+            // Done processing properties.
+            break;
+        }
+    }
+    return s2;
 }
 	
 /**
@@ -452,6 +551,53 @@ public static Vector getPropertyNameList( CommandProcessor processor )
 		return ((TSCommandProcessor)processor).getPropertyNameList();
 	}
 	return new Vector();
+}
+
+// FIXME SAM 2008-01-31 Need to sort the column names.
+/**
+Return the table column names, searching commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of
+column names to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@param sort Indicates whether column names should be sorted (NOT YET IMPLEMENTED).
+@return a Vector of String containing the ensemble identifiers, or an empty Vector.
+*/
+public static Vector getTableColumnNamesFromCommandsBeforeCommand(
+        TSCommandProcessor processor, Command command, String table_id, boolean sort )
+{   String routine = "TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand";
+    // Get the position of the command in the list...
+    int pos = processor.indexOf(command);
+    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    // Loop backwards because tables may be modified and we want the column names from
+    // the table as close previous to the command in question.
+    DataTable table;
+    for ( int i = (pos - 1); i >= 0; i-- ) {
+        command = (Command)processor.get(i);
+        if ( command instanceof ObjectListProvider ) {
+            // Request table objects
+            List tables = ((ObjectListProvider)command).getObjectList(DataTable.class);
+            int ntables = 0;
+            if ( tables != null ) {
+                ntables = tables.size();
+            }
+            for ( int it = 0; it < ntables; it++ ) {
+                table = (DataTable)tables.get(it);
+                if ( !table.getTableID().equalsIgnoreCase(table_id) ) {
+                    continue;
+                }
+                // Found the table.  Get its column names.
+                String [] field_names = table.getFieldNames();
+                Vector field_names_Vector = new Vector();
+                for ( int in = 0; in < field_names.length; in++ ) {
+                    field_names_Vector.addElement ( field_names[in] );
+                }
+                return field_names_Vector;
+            }
+        }
+    }
+    // Nothing found...
+    return new Vector();
 }
 
 /**

@@ -25,6 +25,8 @@ public class TimeSeriesAssembler {
     private int dateColumn;
 
     private final List/*<ColumnInfo>*/ columnInfos;
+    
+    private Converter dateTimeConverter = Converter.STRING_TO_DATE_TIME;
 
     /**
      * Create a TimeSeriesAssembler that uses the provided RowCursor to read
@@ -33,9 +35,7 @@ public class TimeSeriesAssembler {
      */
     public TimeSeriesAssembler(RowCursor cursor) {
         this.cursor = cursor;
-        // FIXME SAM Java 1.5 issue
-        //columnInfos = new ArrayList<ColumnInfo>();
-        columnInfos = new ArrayList();
+        columnInfos = new ArrayList/*<ColumnInfo>*/();
     }
 
     /**
@@ -46,6 +46,19 @@ public class TimeSeriesAssembler {
      */
     public TimeSeriesAssembler setDateColumn(int col) {
         this.dateColumn = col;
+        return this;
+    }
+    
+    /**
+     * Set the Converter to use for parsing the time column.
+     * @param dateConverter A non-null String to DateTime Converter.
+     * @return this TimeSeriesAssembler for use in method chaining
+     */
+    public TimeSeriesAssembler setDateTimeConverter(Converter dateConverter) {
+        if (dateConverter == null) {
+            throw new NullPointerException("dateConverter");
+        }
+        this.dateTimeConverter = dateConverter;
         return this;
     }
 
@@ -142,12 +155,17 @@ public class TimeSeriesAssembler {
             ts.allocateDataSpace();
             return ts;
         }
+
+        public String toString() {
+            return ident + ", " + col;
+        }
+        
     }
 
     private ScrollableRowCursor buildScrollableRowCursor() throws IOException {
         // build the converter we use to read datetime and values
         RowConverterBuilder converter = new RowConverterBuilder(cursor);
-        converter.convert(dateColumn, Converter.STRING_TO_DATE_TIME);
+        converter.convert(dateColumn, dateTimeConverter);
         for (int i = 0; i < columnInfos.size(); i++) {
             int col = ((ColumnInfo) columnInfos.get(i)).col;
             converter.convert( col, Converter.STRING_TO_DOUBLE);

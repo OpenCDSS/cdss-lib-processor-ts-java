@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.lang.IllegalArgumentException;
 
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * A location to get various Converter related implementations.
@@ -32,6 +36,45 @@ public class Converters {
                 } catch (Exception ex) {
                     //throw new IllegalArgumentException(ex);
                     throw new IllegalArgumentException(ex.toString());
+                }
+            }
+        };
+    }
+    
+    /**
+     * Obtain a Converter that will parse a String to a DateTime object using
+     * the provided format specification from DateTimeFormat.
+     * @param dateTimeFormat A specifier for parsing DateTime
+     * @return a non-null converter
+     */
+    public static Converter getDateTimeFormatConverter(final String dateTimeFormatSpecifier) {
+        return new Converter() {
+            final DateTimeFormat format = new DateTimeFormat(dateTimeFormatSpecifier);
+            public Object convert(Object o) throws IllegalArgumentException {
+                try {
+                    return format.parse(o.toString());
+                } catch (Exception ex) {
+                    throw (IllegalArgumentException) new IllegalArgumentException(ex.toString()).initCause(ex);
+                }
+            }
+        };
+    }
+    
+    /**
+     * Obtain a Converter that will parse a String to a DateTime object using
+     * the provided format specification from java.text.SimpleDateFormat.
+     * @param dateTimeFormat A specifier for parsing DateTime
+     * @return a non-null converter
+     */
+    public static Converter getDateFormatConverter(final String dateFormatSpecifier) {
+        return new Converter() {
+            final SimpleDateFormat format = new SimpleDateFormat(dateFormatSpecifier);
+            public Object convert(Object o) throws IllegalArgumentException {
+                try {
+                    Date parsed = format.parse(o.toString());
+                    return new DateTime(parsed);
+                } catch (ParseException pe) {
+                    throw new IllegalArgumentException("Unable to parse " + o.toString() + " : " + pe.getMessage());
                 }
             }
         };

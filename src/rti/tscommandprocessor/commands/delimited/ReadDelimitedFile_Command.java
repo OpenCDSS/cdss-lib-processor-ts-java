@@ -402,7 +402,7 @@ throws IOException, FileNotFoundException
     }
     else {
         // Replace \t literal with tab character...
-        Delimiter.replaceAll("\\t", "\t" );
+        Delimiter = Delimiter.replaceAll("\\\\t", "\t" );
     }
     
     List ColumnNames_List = null;
@@ -538,7 +538,7 @@ throws IOException, FileNotFoundException
     // Create a row cursor for the data using the specified delimiter
     // FIXME SAM 2008-02-01 Delimiter should allow more than just a single character
     // FIXME SAM 2008-02-01 TreatConsecutiveDelimitersAsOne needs handled
-    CSVCursor row_cursor = new CSVCursor ( new BufferedReader(new FileReader(InputFile_full)), null, Delimiter );
+    CSVCursor row_cursor = new CSVCursor ( new BufferedReader(new FileReader(InputFile_full)), Delimiter, null, ColumnNames_List.size() );
     // Skip over the requested number of rows.
     // FIXME SAM 2008-02-01 SkipRows is actually designed for more than just the lines at
     // the top of the file, but only do that for now
@@ -550,6 +550,7 @@ throws IOException, FileNotFoundException
     // Create a time series assembler and set the date to the specified column
     // FIXME SAM 2008-02-01 Need to handle separate date and time columns and revisit formats.
     TimeSeriesAssembler assembler = new TimeSeriesAssembler ( row_cursor ).setDateColumn ( DateTimeColumn_int );
+    assembler.setDateTimeConverter(Converters.getDateFormatConverter("M/d/yyyy hh:mm:ss a"));
     // Add time series columns based on the data columns
     for ( int i = 0; i < ValueColumn_int.length; i++ ) {
         String tsid_string = LocationID_List.get(i) + "." + DataProviderID + "." +

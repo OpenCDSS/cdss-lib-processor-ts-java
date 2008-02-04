@@ -9,6 +9,7 @@
 
 package rti.tscommandprocessor.commands.delimited;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ import java.util.List;
  * @author Ben Ballard (rewrote advQuoted to handle '""' and for readability)
  * @author Ian Schneider optimized and use modern classes
  */
-public final class CSVParser {
+public final class CSVParser implements LineSplitter {
 
     /** Construct a CSV parser, with the default separator (`,'). */
     public CSVParser() {
@@ -59,9 +60,6 @@ public final class CSVParser {
         }
     }
 
-    /** The fields in the current String */
-    private final ArrayList list = new ArrayList/*String*/();
-
     private final StringBuffer sb = new StringBuffer();
 
     /** the separator char for this parser */
@@ -72,8 +70,10 @@ public final class CSVParser {
      * 
      * @return List containing each field from the original as a String, in order.
      */
-    public List parse(final String line) {
-        list.clear(); // recycle to initial state
+    public List split(final String line,List list) {
+        if (list == null) {
+            list = new ArrayList();
+        }
         int i = 0;
 
         if (line.length() == 0) {

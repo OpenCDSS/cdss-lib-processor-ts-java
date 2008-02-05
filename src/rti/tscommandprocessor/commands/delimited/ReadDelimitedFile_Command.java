@@ -360,9 +360,7 @@ public List getObjectList ( Class c )
         return null;
     }
     TS datats = (TS)discovery_TS_List.get(0);
-    // Use the most generic for the base class...
-    TS ts = new TS();
-    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_List;
     }
     else {
@@ -535,6 +533,23 @@ throws IOException, FileNotFoundException
     }
     */
     
+    String Units = props.getValue ( "Units" );
+    List Units_List = null;
+    if ( Units == null ) {
+        message = "No Units parameter has been specified.";
+        Message.printWarning( 3, routine, message);
+        throw new RuntimeException ( message );
+    }
+    else {
+        // Parse for other code to use...
+        Units_List = StringUtil.breakStringList ( Units, ",", StringUtil.DELIM_ALLOW_STRINGS );
+        if ( (Units_List == null) || (Units_List.size() == 0) ) {
+            message = "No Units parameter has been specified.";
+            Message.printWarning( 3, routine, message);
+            throw new RuntimeException ( message );
+        }
+    }
+    
     // Create a row cursor for the data using the specified delimiter
     // FIXME SAM 2008-02-01 Delimiter should allow more than just a single character
     // FIXME SAM 2008-02-01 TreatConsecutiveDelimitersAsOne needs handled
@@ -563,6 +578,8 @@ throws IOException, FileNotFoundException
     // Transfer to a Vector that adheres to the List interface...
     Vector tslist = new Vector(ts.length);
     for ( int i = 0; i < ts.length; i++ ) {
+        ts[i].setDataUnitsOriginal ( (String)Units_List.get(i) );
+        ts[i].setDataUnits ( (String)Units_List.get(i) );
         tslist.add ( ts[i] );
     }
     return tslist;
@@ -626,8 +643,8 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
 	String NewUnits = parameters.getValue("NewUnits");
-	String InputStart = parameters.getValue("InputStart");
-	String InputEnd = parameters.getValue("InputEnd");
+	//String InputStart = parameters.getValue("InputStart");
+	//String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");   // Alias version
     //String TSID = parameters.getValue("TSID");  // Alias version
     
@@ -892,6 +909,7 @@ public String toString ( PropList props )
     String Scenario = props.getValue("Scenario" );
     String Units = props.getValue("Units" );
     String MissingValue = props.getValue("MissingValue" );
+    String Alias = props.getValue("Alias" );
 
 	//String InputStart = props.getValue("InputStart");
 	//String InputEnd = props.getValue("InputEnd");
@@ -1002,7 +1020,13 @@ public String toString ( PropList props )
         if (b.length() > 0) {
             b.append(",");
         }
-        b.append("MissingValue=\"" + MissingValue + "\"");
+        b.append("MissingValue=" + MissingValue );
+    }
+    if ((Alias != null) && (Alias.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Alias=\"" + Alias + "\"");
     }
 
 	/*

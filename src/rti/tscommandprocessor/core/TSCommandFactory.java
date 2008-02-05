@@ -134,6 +134,7 @@ import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.ComputeErrorTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ConvertDataUnits_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
 import rti.tscommandprocessor.commands.ts.CopyEnsemble_Command;
@@ -269,6 +270,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"CompareTimeSeries") ) {
 		return new compareTimeSeries_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ComputeErrorTimeSeries") ) {
+        return new ComputeErrorTimeSeries_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ConvertDataUnits") ) {
         return new ConvertDataUnits_Command ();
     }

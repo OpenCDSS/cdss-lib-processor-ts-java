@@ -917,6 +917,17 @@ throws FileNotFoundException
 }
 
 /**
+Process a time series after reading.  This calls the command processor readTimeSeries2() method.
+Command status messages will be added if problems arise but exceptions are not thrown.
+*/
+public static int processTimeSeriesAfterRead( CommandProcessor processor, Command command, TS ts )
+{
+    Vector tslist = new Vector();
+    tslist.add ( ts );
+    return processTimeSeriesListAfterRead ( processor, command, tslist );
+}
+
+/**
 Process a list of time series after reading.  This calls the command processor readTimeSeries2() method.
 Command status messages will be added if problems arise but exceptions are not thrown.
 */

@@ -4988,6 +4988,7 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         }
         for ( int itsid = 0; itsid < size_tsid; itsid++ ) {
             String tsid = (String)tsid_Vector.elementAt(itsid);
+            Message.printStatus( 2, routine, "Trying to match \"" + tsid + "\"" );
             // Loop through the available time series and see if any match..
             boolean found = false;
             for ( int its = 0; its < nts; its++ ) {
@@ -5002,12 +5003,18 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
                 if ( tsid.indexOf("~") > 0 ) {
                     // Include the input type...
                     if (ts.getIdentifier().matches(tsid,true,true)){
+                        //Message.printStatus( 2, routine,
+                        //        "Matched using input with TSID=\"" + ts.getIdentifier() + "\"" +
+                        //        " Alias=\"" + ts.getAlias() + "\"");
                         found = true;
                     }
                 }
                 else {
                     // Just check the main information...
                     if(ts.getIdentifier().matches(tsid,true,false)){
+                        //Message.printStatus( 2, routine,
+                        //        "Matched not using input with TSID=\"" + ts.getIdentifier() + "\"" +
+                        //        " Alias=\"" + ts.getAlias() + "\"");
                         found = true;
                     }
                 }
@@ -5015,11 +5022,15 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
                     // Add the time series and increment the count...
                     tslist.addElement ( ts );
                     tspos[count++] = its;
+                    // Found the specific time series so break out of the list.
+                    // FIXME SAM 2008-02-05 What if user has the same ID more than once?
+                    break;
                 }
             }
         }
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
+        Message.printStatus( 2, routine, "Matched " + count + " time series." );
         if ( count == 0 ) {
             v.setElementAt ( new int[0], 1 );
         }

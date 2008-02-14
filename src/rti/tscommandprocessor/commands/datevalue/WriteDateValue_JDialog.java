@@ -57,19 +57,16 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Button to add/remove path
 private WriteDateValue_Command __command = null;// Command to edit
-private String		__working_dir = null;	// Working directory.
-private JTextArea	__command_JTextArea=null;// Command as TextField
-private JTextField	__OutputFile_JTextField = null; // Field for time series identifier
-private JTextField	__OutputStart_JTextField = null;
-private JTextField	__OutputEnd_JTextField = null;
+private String __working_dir = null;	// Working directory.
+private JTextArea __command_JTextArea=null;
+private JTextField __OutputFile_JTextField = null;
+private JTextField __Delimiter_JTextField = null;
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether the user
-									// has pressed OK to close the
-									// dialog.
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false;		// Has user pressed OK to close the dialog.
 
 /**
 WriteDateValue_JDialog constructor.
@@ -160,6 +157,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
@@ -172,6 +170,9 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
+    if (Delimiter.length() > 0) {
+        parameters.set("Delimiter", Delimiter);
+    }
 	if ( OutputStart.length() > 0 ) {
 		parameters.set ( "OutputStart", OutputStart );
 	}
@@ -195,10 +196,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter("Delimiter", Delimiter);
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
@@ -267,6 +270,16 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Delimiter_JTextField = new JTextField (10);
+    __Delimiter_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Default is space.  Comma is only other allowed delimiter."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -384,6 +397,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = "WriteDateValue_JDialog.refresh";
 	String OutputFile = "";
+	String Delimiter = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	String TSList = "";
@@ -394,12 +408,16 @@ private void refresh ()
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
+	    Delimiter = parameters.getValue("Delimiter");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		TSList = parameters.getValue ( "TSList" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
+	    if (Delimiter != null) {
+	         __Delimiter_JTextField.setText(Delimiter);
+	    }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
 		}
@@ -426,12 +444,14 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	Delimiter = __Delimiter_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "OutputFile=" + OutputFile );
+	parameters.add("Delimiter=" + Delimiter );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );

@@ -358,7 +358,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
-	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoices ( TimeInterval.YEAR, null ) );
+	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoicesForInterval ( TimeInterval.YEAR, null ) );
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
 	JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,

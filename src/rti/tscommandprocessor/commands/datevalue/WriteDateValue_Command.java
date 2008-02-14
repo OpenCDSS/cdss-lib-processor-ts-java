@@ -72,6 +72,7 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
+    String Delimiter = parameters.getValue("Delimiter" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
@@ -130,6 +131,14 @@ throws InvalidCommandParameterException
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
+	
+	if ( (Delimiter != null) && !Delimiter.equals("") && !Delimiter.equals(",")) {
+        message = "The delimiter \"" + Delimiter + "\" currently must be blank (to indicate space) or a comma.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the delimiter as blank or a comma." ) );
+	}
 
 	if ( (OutputStart != null) && !OutputStart.equals("")) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
@@ -162,6 +171,7 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
+	valid_Vector.add ( "Delimiter" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "TSList" );
@@ -419,6 +429,11 @@ CommandWarningException, CommandException
     // TODO SAM 2007-11-19 Evaluate whether DateValueTS.writeTimeSeriesList() should allow empty list,
     // resulting in just a header in the output.  This might be useful during testing
 
+	PropList props = new PropList ( "WriteDateValue" );
+	String Delimiter = parameters.getValue( "Delimiter" );
+	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+	    props.set("Delimiter=" + Delimiter);
+	}
     if ( (tslist != null) && (tslist.size() > 0) ) {
         String OutputFile_full = OutputFile;
         try {
@@ -427,7 +442,7 @@ CommandWarningException, CommandException
                     IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
             Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
             DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
-				OutputStart_DateTime, OutputEnd_DateTime, "", true );
+				OutputStart_DateTime, OutputEnd_DateTime, "", true, props );
             // Save the output file name...
             setOutputFile ( new File(OutputFile_full));
         }
@@ -463,6 +478,7 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String Delimiter = parameters.getValue ( "Delimiter" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String TSList = parameters.getValue ( "TSList" );
@@ -473,6 +489,18 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
+    if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Delimiter=\"" + Delimiter + "\"" );
+    }
+    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputStart=\"" + OutputStart + "\"" );
+    }
 	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

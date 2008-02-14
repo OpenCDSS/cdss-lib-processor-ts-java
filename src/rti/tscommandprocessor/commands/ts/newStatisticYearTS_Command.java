@@ -44,6 +44,7 @@ import RTi.Util.IO.PropList;
 
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeUtil;
 
 /**
 <p>
@@ -177,10 +178,7 @@ throws InvalidCommandParameterException
 		}
 	}
     if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.equals("") ) {
-       try {
-           DateTime.parse(AnalysisWindowStart);
-       }
-       catch ( Exception e ) {
+       if ( !TimeUtil.isDateTime(AnalysisWindowStart) ) {
            message = "The analysis window start date \"" + AnalysisWindowStart + "\" is not a valid date/time.";
            warning += "\n" + message;
            status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -226,6 +224,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TestEnd" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
+    valid_Vector.add ( "AnalysisWindowStart" );
+    valid_Vector.add ( "AnalysisWindowEnd" );
     valid_Vector.add ( "SearchStart" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     

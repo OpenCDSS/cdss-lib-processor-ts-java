@@ -81,19 +81,21 @@ public ReadNwsrfsEspTraceEnsemble_JDialog ( JFrame parent, Command command )
 	super(parent, true);
 
 	PropList props = command.getCommandParameters();
-	String alias = props.getValue("Alias");
-	Message.printStatus(1, "", "Props: " + props.toString("\n"));
-	if (alias == null || alias.trim().equalsIgnoreCase("")) {
-		if (((ReadNwsrfsEspTraceEnsemble_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
-		    __isAliasVersion = true;
-		}
-		else {
+	//String alias = props.getValue("Alias");
+	//Message.printStatus(2, "", "Props: " + props.toString("\n"));
+	//if (alias == null || alias.trim().equalsIgnoreCase("")) {
+	//	if (((ReadNwsrfsEspTraceEnsemble_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
+	//	    __isAliasVersion = true;
+	//	}
+	//	else {
 			__isAliasVersion = false;
-		}
-	}
+	//	}
+	//}
+	/*
 	else {
 		__isAliasVersion = true;
 	}
+	*/
 	initialize ( parent, command );
 }
 

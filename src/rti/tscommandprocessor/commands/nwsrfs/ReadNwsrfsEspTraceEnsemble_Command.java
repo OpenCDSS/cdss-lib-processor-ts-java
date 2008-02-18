@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Vector;
 
@@ -153,7 +154,8 @@ throws InvalidCommandParameterException
     
         try {
             //String adjusted_path = 
-            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
+            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         }
         catch ( Exception e ) {
             message = "The output file:\n" +
@@ -551,7 +553,8 @@ throws InvalidCommandParameterException,
             read_data = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( InputFile_full, read_data );
         tslist = ensemble.getTimeSeriesVector ();
 		int tscount = 0;
@@ -577,7 +580,15 @@ throws InvalidCommandParameterException,
     		    }
     		}
 		}
-	} 
+	}
+    catch ( FileNotFoundException e ) {
+        message = "File does not exist for NWSRFS ensemble file: \"" + InputFile_full + "\"";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(command_tag, ++warning_count ),routine, message );
+        status.addToLog(command_phase,
+                new CommandLogRecord(CommandStatusType.FAILURE, message,"Verify that the file exists."));
+        throw new CommandException ( message );
+    }
 	catch ( Exception e ) {
 		message = "Unexpected error reading NWSRFS ensemble file. \"" + InputFile_full + "\"";
 		Message.printWarning ( warning_level,

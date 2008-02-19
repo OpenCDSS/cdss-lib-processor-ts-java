@@ -53,18 +53,14 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Button to add/remove path
 private WriteProperty_Command __command = null;// Command to edit
-private String		__working_dir = null;	// Working directory.
-private JTextArea	__command_JTextArea=null;// Command as TextField
-private JTextField	__OutputFile_JTextField = null; // Field for time series identifier
-private SimpleJComboBox	__Property_JComboBox = null;
+private String __working_dir = null;	// Working directory.
+private JTextArea __command_JTextArea=null;// Command as TextField
+private JTextField __OutputFile_JTextField = null; // Field for time series identifier
+private SimpleJComboBox	__PropertyName_JComboBox = null;
 private SimpleJComboBox	__Append_JComboBox = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether the user
-									// has pressed OK to close the
-									// dialog.
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
 Command editor constructor.
@@ -150,7 +146,7 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
-	String Property = __Property_JComboBox.getSelected();
+	String PropertyName = __PropertyName_JComboBox.getSelected();
 	String Append = __Append_JComboBox.getSelected();
 
 	__error_wait = false;
@@ -158,10 +154,10 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-	if ( Property.length() > 0 ) {
-		parameters.set ( "Property", Property );
+	if ( PropertyName.length() > 0 ) {
+		parameters.set ( "PropertyName", PropertyName );
 	}
-	if ( Property.length() > 0 ) {
+	if ( PropertyName.length() > 0 ) {
 		parameters.set ( "Append", Append );
 	}
 	try {	// This will warn the user...
@@ -179,10 +175,10 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String Property = __Property_JComboBox.getSelected();
+{	String PropertyName = __PropertyName_JComboBox.getSelected();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
-	__command.setCommandParameter ( "Property", Property );
+	__command.setCommandParameter ( "PropertyName", PropertyName );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Append", Append );
 }
@@ -195,7 +191,7 @@ throws Throwable
 {	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__OutputFile_JTextField = null;
-	__Property_JComboBox = null;
+	__PropertyName_JComboBox = null;
 	__Append_JComboBox = null;
 	__command = null;
 	__ok_JButton = null;
@@ -236,8 +232,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Property file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -249,10 +244,10 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to write:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Property_JComboBox = new SimpleJComboBox(false);
-	__Property_JComboBox.setData ( TSCommandProcessorUtil.getPropertyNameList(processor) );
-	__Property_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __Property_JComboBox,
+	__PropertyName_JComboBox = new SimpleJComboBox(false);
+	__PropertyName_JComboBox.setData ( new Vector(TSCommandProcessorUtil.getPropertyNameList(processor)) );
+	__PropertyName_JComboBox.addItemListener (this);
+	JGUIUtil.addComponent(main_JPanel, __PropertyName_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Properties are maintained by the command processor."),
@@ -356,7 +351,7 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = "WriteProperty_JDialog.refresh";
 	String OutputFile = "";
-	String Property = "";
+	String PropertyName = "";
 	String Append = "";
 	__error_wait = false;
 	PropList parameters = null;
@@ -365,24 +360,24 @@ private void refresh ()
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
-		Property = parameters.getValue ( "Property" );
+		PropertyName = parameters.getValue ( "PropertyName" );
 		Append = parameters.getValue ( "Append" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
-		if ( Property == null ) {
+		if ( PropertyName == null ) {
 			// Select default...
-			__Property_JComboBox.select ( 0 );
+			__PropertyName_JComboBox.select ( 0 );
 		}
 		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__Property_JComboBox,
-				Property, JGUIUtil.NONE, null, null ) ) {
-				__Property_JComboBox.select ( Property );
+				__PropertyName_JComboBox,
+				PropertyName, JGUIUtil.NONE, null, null ) ) {
+				__PropertyName_JComboBox.select ( PropertyName );
 			}
 			else {	Message.printWarning ( 1, routine,
 				"Existing command " +
-				"references an invalid\nProperty value \"" +
-				Property +
+				"references an invalid\nPropertyName value \"" +
+				PropertyName +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
@@ -397,8 +392,7 @@ private void refresh ()
 				__Append_JComboBox.select ( Append );
 			}
 			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nAppend value \"" +
+				"Existing command references an invalid\nAppend value \"" +
 				Append +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
@@ -407,11 +401,11 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
-	Property = __Property_JComboBox.getSelected();
+	PropertyName = __PropertyName_JComboBox.getSelected();
 	Append = __Append_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
-	parameters.add ( "Property=" + Property );
+	parameters.add ( "PropertyName=" + PropertyName );
 	parameters.add ( "Append=" + Append );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {

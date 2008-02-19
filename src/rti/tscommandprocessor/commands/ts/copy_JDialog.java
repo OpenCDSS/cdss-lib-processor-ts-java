@@ -63,24 +63,20 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
-private JFrame		__parent_JFrame = null;	// parent JFrame
-private copy_Command	__command = null;	// Command to edit.
-private JTextArea	__command_JTextArea=null;// Command as JTextField
-private JTextField	__Alias_JTextField = null;// Field for time series alias
-private SimpleJComboBox	__TSID_JComboBox = null;// Time series available to
-						// operate on.
-private JTextArea	__NewTSID_JTextArea = null;
-						// New TSID.
-private SimpleJButton	__edit_JButton = null;	// Edit button
-private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Whether OK has been pressed.
+private JFrame __parent_JFrame = null;	// parent JFrame
+private copy_Command __command = null;	// Command to edit.
+private JTextArea __command_JTextArea=null;
+private JTextField	__Alias_JTextField = null;
+private SimpleJComboBox	__TSID_JComboBox = null;// Time series available to operate on.
+private JTextArea __NewTSID_JTextArea = null; // New TSID.
+private SimpleJButton __edit_JButton = null;	// Edit button
+private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
+private boolean	__error_wait = false;	// Is there an error to be cleared up?
+private boolean	__first_time = true;
+private boolean	__ok = false;		// Whether OK has been pressed.
 
 /**
-copy_JDialog constructor.
+Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -222,10 +218,10 @@ private void initialize ( JFrame parent, Command command )
 		"The copy is exactly the same and can be referenced by its alias in other commands." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optionally, specify new time series identifier (TSID) information for the copy." ), 
+		"Specify new time series identifier (TSID) information for the copy." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This is highly recommended if there is any chance that the copy will be mistaken for the original." ), 
+		"This is necessary to avoid errors with the copy being mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 

@@ -92,6 +92,7 @@ import rti.tscommandprocessor.commands.logging.startLog_Command;
 
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
+import rti.tscommandprocessor.commands.nwsrfs.SetPropertyFromNwsrfsAppDefault_Command;
 import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Command;
 
@@ -474,6 +475,10 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputPeriod") ) {
 		return new SetOutputPeriod_Command ();
 	}
+    // Put this before the shorter SetProperty() to avoid ambiguity.
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetPropertyFromNwsrfsAppDefault") ) {
+        return new SetPropertyFromNwsrfsAppDefault_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetProperty") ) {
         return new SetProperty_Command ();
     }

@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.lang.StringBuffer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
@@ -19,6 +20,7 @@ import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.ObjectListProvider;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -75,7 +77,11 @@ public static int appendEnsembleToResultsEnsembleList ( CommandProcessor process
     }
     return warning_count;
 }
-   
+
+/**
+Count of output lines in regression output report.
+*/
+private static int regressionTestLineCount = 0;
 /**
 Add a record to the regression test results report.  The report is a simple text file
 that indicates whether a test passed.
@@ -86,8 +92,12 @@ that indicates whether a test passed.
 public static void appendToRegressionTestReport(CommandProcessor processor, CommandStatusType max_severity,
         String InputFile_full )
 {
+    ++regressionTestLineCount;
     if ( __regression_test_fp != null ) {
-        __regression_test_fp.println ( StringUtil.formatString(max_severity,"%-10.10s") + "  " + InputFile_full);
+        // FIXME SAM 2008-02-19 Would be useful to have command run time.
+        __regression_test_fp.println (
+                StringUtil.formatString(regressionTestLineCount,"%4d") + " " +
+                StringUtil.formatString(max_severity,"%-10.10s") + " " + InputFile_full);
     }
 }
 
@@ -163,7 +173,7 @@ public static void closeRegressionTestReportFile ()
 
 /**
 Expand a parameter valueto recognize processor-level properties.  For example, a parameter value like
-"$WorkingDir/morepath" will be expanded to include the working directory.
+"${WorkingDir}/morepath" will be expanded to include the working directory.
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
 @param parameter_value the parameter value being expanded.
@@ -177,56 +187,49 @@ public static String expandParameterValue( CommandProcessor processor, Command c
     // Else see if the parameter value can be expanded to replace $ symbolic references with other values
     // Search the parameter string for $ until all processor parameters have been resolved
     int searchpos = 0;  // Position in the "parameter_val" string to search for $ references
-    int foundpos;       // Position when $ is found
-    boolean found;      // Indicates if $ was found for current "searchpos"
+    int foundpos;       // Position when leading ${ is found
+    int foundpos_end;   // Position when ending } is found
     String foundprop = null;    // Whether a property is found that matches the $ symbol
-    int foundprop_length = 1;
+    String delimstart = "${";
+    String delimend = "}";
     while ( searchpos < parameter_value.length() ) {
-        foundpos = parameter_value.indexOf("$", searchpos);
-        if ( foundpos < 0 ) {
+        foundpos = parameter_value.indexOf(delimstart, searchpos);
+        foundpos_end = parameter_value.indexOf(delimend, (searchpos + 2));
+        if ( (foundpos < 0) && (foundpos_end < 0)  ) {
             // No more $ property names, so return what we have.
             return parameter_value;
         }
-        Message.printStatus ( 2, routine, "Found $ at position [" + foundpos + "]");
-        found = false;
-        // FIXME SAM 2007-12-23 Need to process a list of recognized processor properties
-        if ( parameter_value.regionMatches(true,searchpos,"$WorkingDir",0,11) ) {
-            foundprop = "WorkingDir";
-            foundprop_length = 11;
-            found = true;
+        Message.printStatus ( 2, routine, "Found " + delimstart + " at position [" + foundpos + "]");
+        // Get the name of the property
+        foundprop = parameter_value.substring((foundpos+2),foundpos_end);
+        // Try to get the property from the processor
+        // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
+        Object propval = null;
+        String propval_string = null;
+        try {
+            propval = processor.getPropContents ( foundprop );
+            propval_string = "" + propval;
         }
-        if ( found ) {
-            // Found a recognized property so replace in the string if it is found.
-            // First try to get the property.
-            // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
-            Object propval = null;
-            String propval_string = null;
-            try {
-                propval = processor.getPropContents ( foundprop );
-                propval_string = "" + propval;
-            }
-            catch ( Exception e ) {
-                propval_string = "null";
-            }
-            StringBuffer b = new StringBuffer();
-            // Append the start of the string
-            if ( searchpos > 0 ) {
-                b.append ( parameter_value.substring(0,searchpos) );
-            }
-            // Now append the value of the property...
-            b.append ( propval_string );
-            // Now append the end of the orginal string...
-            b.append ( parameter_value.substring(searchpos + foundprop_length) );
-            // Now reset the search position to finish looking expanding the string.
-            parameter_value = b.toString();
-            searchpos += propval_string.length();
-            Message.printStatus( 2, routine, "Expanded property value is \"" + parameter_value + "\" searchpos is now " +
-                    searchpos );
+        catch ( Exception e ) {
+            // Keep the original value
+            propval_string = delimstart + propval + delimend;
         }
-        else {
-            // Did not find a property so at least skip over the $
-            ++searchpos;
+        StringBuffer b = new StringBuffer();
+        // Append the start of the string
+        if ( searchpos > 0 ) {
+            b.append ( parameter_value.substring(0,searchpos) );
         }
+        // Now append the value of the property...
+        b.append ( propval_string );
+        // Now append the end of the original string if anything is at the end...
+        if ( parameter_value.length() > (foundpos_end + 1) ) {
+            b.append ( parameter_value.substring(foundpos_end + 1) );
+        }
+        // Now reset the search position to finish evaluating whether to expand the string.
+        parameter_value = b.toString();
+        searchpos += propval_string.length();   // Expanded so no need to consider delim*
+        Message.printStatus( 2, routine, "Expanded property value is \"" + parameter_value + "\" searchpos is now " +
+                searchpos );
     }
     return parameter_value;
 }
@@ -544,7 +547,7 @@ Return the list of property names available from the processor.
 These properties can be requested using getPropContents().
 @return the list of property names available from the processor.
 */
-public static Vector getPropertyNameList( CommandProcessor processor )
+public static Collection getPropertyNameList( CommandProcessor processor )
 {
 	// This could use reflection.
 	if ( processor instanceof TSCommandProcessor ) {
@@ -914,6 +917,8 @@ public static void openNewRegressionTestReportFile ( String OutputFile_full, boo
 throws FileNotFoundException
 {
     __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
+    IOUtil.printCreatorHeader ( __regression_test_fp, "#", 80, 0 );
+    __regression_test_fp.println ( "# Num Status     Command File" );
 }
 
 /**
@@ -956,7 +961,9 @@ public static int processTimeSeriesListAfterRead( CommandProcessor processor, Co
 }
 
 /**
-Validate command parameter names and generate standard feedback.
+Validate command parameter names and generate standard feedback.  A list of allowed parameter
+names is provided.  If a name is not recognized, it is removed so as to prevent the user from
+continuing.
 @param valid_Vector List of valid parameter names (others will be flagged as invalid).
 @param command The command being checked.
 @param warning A warning String that is receiving warning messages, for logging.  It
@@ -972,8 +979,10 @@ public static String validateParameterNames (
 	}
 	PropList parameters = command.getCommandParameters();
 	Vector warning_Vector = null;
-	try {	warning_Vector = parameters.validatePropNames (
-			valid_Vector, null, null, "parameter" );
+	try {
+	    // Validate the properties and discard any that are invalid (a message will be generated)
+	    // and will be displayed once.
+	    warning_Vector = parameters.validatePropNames (	valid_Vector, null, null, "parameter", true );
 	}
 	catch ( Exception e ) {
 		// Ignore.  Should not happen.

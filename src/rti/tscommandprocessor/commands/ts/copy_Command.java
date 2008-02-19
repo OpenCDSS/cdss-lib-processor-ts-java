@@ -101,7 +101,8 @@ throws InvalidCommandParameterException
         status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,
-                "Provide a new time series identifier when defining the command."));
+                "Provide a new time series identifier when defining the command.  " +
+                "Previously was optional but is now required."));
     }
     else {
         try {

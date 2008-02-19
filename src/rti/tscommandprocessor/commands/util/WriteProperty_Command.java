@@ -65,7 +65,7 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Property = parameters.getValue ( "Property" );
+	String PropertyName = parameters.getValue ( "PropertyName" );
 	String Append = parameters.getValue ( "Append" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
@@ -123,7 +123,7 @@ throws InvalidCommandParameterException
 		}
 	}
 		
-	if ( (Property == null) || (Property.length() == 0) ) {
+	if ( (PropertyName == null) || (PropertyName.length() == 0) ) {
 		message = "A property name must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -131,20 +131,20 @@ throws InvalidCommandParameterException
 						message, "Specify a property name." ) );
 	}
 	else {
-		Vector valid_properties = TSCommandProcessorUtil.getPropertyNameList(processor);
+		Vector valid_properties = new Vector(TSCommandProcessorUtil.getPropertyNameList(processor));
 		int size = 0;
 		if ( valid_properties != null ) {
 			size = valid_properties.size();
 		}
 		boolean found = false;
 		for ( int i = 0; i < size; i++ ) {
-			if ( Property.equalsIgnoreCase((String)valid_properties.elementAt(i))) {
+			if ( PropertyName.equalsIgnoreCase((String)valid_properties.elementAt(i))) {
 				found = true;
 				break;
 			}
 		}
 		if ( !found ) {
-			message = "The property name \"" + Property + "\" is not valid.";
+			message = "The property name \"" + PropertyName + "\" is not valid.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -164,7 +164,7 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "Property" );
+	valid_Vector.add ( "PropertyName" );
 	valid_Vector.add ( "Append" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -239,7 +239,7 @@ CommandWarningException, CommandException
 
 	PropList parameters = getCommandParameters();
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Property = parameters.getValue ( "Property" );
+	String PropertyName = parameters.getValue ( "PropertyName" );
 	String Append = parameters.getValue ( "Append" );
 	
 	CommandStatus status = getCommandStatus();
@@ -249,10 +249,10 @@ CommandWarningException, CommandException
 	
 	Object Property_Object = null;
 	try {
-		Property_Object = processor.getPropContents ( Property );
+		Property_Object = processor.getPropContents ( PropertyName );
 	}
 	catch ( Exception e ) {
-		message = "Error requesting property named \"" + Property + "\" from processor.";
+		message = "Error requesting property named \"" + PropertyName + "\" from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -274,7 +274,7 @@ CommandWarningException, CommandException
 		// Open the file...
 		PrintWriter fout = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
 		// Write the output (no output for now since it is mainly for testing)...
-		fout.println ( Property + "=\"" + Property_Object + "\"" );
+		fout.println ( PropertyName + "=\"" + Property_Object + "\"" );
 		// Close the file...
 		fout.close();
 		// Save the output file name...
@@ -311,7 +311,7 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
-	String Property = parameters.getValue ( "Property" );
+	String PropertyName = parameters.getValue ( "PropertyName" );
 	String Append = parameters.getValue ( "Append" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
@@ -320,11 +320,11 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputFile=\"" + OutputFile + "\"" );
 	}
-	if ( (Property != null) && (Property.length() > 0) ) {
+	if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Property=\"" + Property + "\"" );
+		b.append ( "PropertyName=\"" + PropertyName + "\"" );
 	}
 	if ( (Append != null) && (Append.length() > 0) ) {
 		if ( b.length() > 0 ) {

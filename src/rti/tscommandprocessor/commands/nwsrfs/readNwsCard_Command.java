@@ -165,7 +165,8 @@ throws InvalidCommandParameterException
     
         try {
             //String adjusted_path = 
-            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
+            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         }
         catch ( Exception e ) {
             message = "The input file:\n" +
@@ -666,7 +667,8 @@ throws InvalidCommandParameterException,
             read_data = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full)) {
             message = "The NwsCard file \"" + InputFile_full + "\" does not exist.";
             status.addToLog(command_phase,

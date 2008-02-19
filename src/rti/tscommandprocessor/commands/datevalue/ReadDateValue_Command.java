@@ -144,7 +144,8 @@ throws InvalidCommandParameterException
     
         try {
             //String adjusted_path = 
-            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
+            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         }
         catch ( Exception e ) {
             message = "The input file:\n" +
@@ -571,7 +572,8 @@ throws InvalidCommandParameterException,
             read_data = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile));
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( _use_alias ) {
             TS ts = null;
             if ( (TSID == null) || TSID.equals("") || TSID.equals("*") ) {

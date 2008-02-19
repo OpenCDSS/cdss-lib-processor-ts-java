@@ -105,7 +105,8 @@ throws InvalidCommandParameterException
 		}
 
 		try {
-            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -427,7 +428,8 @@ CommandWarningException, CommandException
         try {
             // Convert to an absolute path...
             OutputFile_full = IOUtil.verifyPathForOS(
-                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
+                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                            TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing NWS Card file \"" + OutputFile_full + "\"" );
             NWSCardTS.writeTimeSeries ( ts, OutputFile_full, OutputStart_DateTime, OutputEnd_DateTime, "", true );
             // Save the output file name...

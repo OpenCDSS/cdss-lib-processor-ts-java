@@ -35,8 +35,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import java.awt.event.WindowListener;	// To know when graph closes to close app
@@ -630,10 +632,20 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
 	}
-	else {	String warning = "Unknown GetPropContents request \"" + prop + "\"";
-			// TODO SAM 2007-02-07 Need to figure out a way to indicate
-			// an error and pass back useful information.
-			throw new UnrecognizedRequestException ( warning );
+	else {
+	    // Property is not one of the individual objects that have been historically
+	    // maintained, but it may be a property in the hashtable.
+	    Object o = __property_Hashtable.get ( prop );
+	    if ( o == null ) {
+    	    String warning = "Unknown GetPropContents request \"" + prop + "\"";
+    		// TODO SAM 2007-02-07 Need to figure out a way to indicate
+    		// an error and pass back useful information.
+    		throw new UnrecognizedRequestException ( warning );
+	    }
+	    else {
+	        // Return the object from the hashtable
+	        return o;
+	    }
 	}
 }
 
@@ -884,9 +896,14 @@ Return the list of property names available from the processor.
 These properties can be requested using getPropContents().
 @return the list of property names available from the processor.
 */
-public Vector getPropertyNameList()
+public Collection getPropertyNameList()
 {
 	Vector v = new Vector();
+	// FIXME SAM 2008-02-15 Evaluate whether these should be in the
+	// property hashtable - should properties be available before ever
+	// being defined (in case they are used later) or should only defined
+	// properties be available (and rely on discovery to pass to other commands)?
+	// Add properties that are hard-coded.
     v.addElement ( "AutoExtendPeriod" );
     v.addElement ( "AverageStart" );
     v.addElement ( "AverageEnd" );
@@ -899,7 +916,11 @@ public Vector getPropertyNameList()
 	v.addElement ( "OutputEnd" );
     v.addElement ( "OutputYearType" );
     v.addElement ( "WorkingDir" );
-	return v;
+    // Create a set that includes the above.
+    TreeSet set = new TreeSet(v);
+    // Add the hashtable keys and make a unique list
+    set.addAll ( __property_Hashtable.keySet() );
+	return set;
 }
 
 /**

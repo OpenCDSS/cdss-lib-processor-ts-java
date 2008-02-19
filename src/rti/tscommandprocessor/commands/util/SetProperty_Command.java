@@ -42,7 +42,7 @@ public class SetProperty_Command extends AbstractCommand implements Command, Com
 {
 
 /**
-Possible value for ScaleValue, when not a number.
+Possible value for PropertyType.
 */
 protected final String _DateTime = "DateTime";
 protected final String _Double = "Double";
@@ -229,7 +229,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Run the command.
-ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 @param command_number Number of command in sequence.
 @param command_phase The command phase that is being run (RUN or DISCOVERY).
 @exception CommandWarningException Thrown if non-fatal warnings occur (the

@@ -25,8 +25,6 @@ import javax.swing.JTextField;
 import java.io.File;
 import java.util.Vector;
 
-import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -39,8 +37,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
 /**
 Command editor dialog for the WriteDateValue() command.

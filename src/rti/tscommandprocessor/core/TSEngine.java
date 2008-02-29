@@ -1286,7 +1286,8 @@ private Vector createMonthSummaryReport ( Vector tslist, PropList props )
 	if ( (prop_val != null) && prop_val.equalsIgnoreCase("Total") ) {
 		report.addElement ( "MONTHLY SUMMARY REPORT (Daily Totals)" );
 	}
-	else {	report.addElement ( "MONTHLY SUMMARY REPORT (Daily Means)" );
+	else {
+	    report.addElement ( "MONTHLY SUMMARY REPORT (Daily Means)" );
 	}
 	report.addElement ( "" );
 
@@ -1300,11 +1301,10 @@ private Vector createMonthSummaryReport ( Vector tslist, PropList props )
 			continue;
 		}
 		interval_base = ts.getDataIntervalBase();
-		if (	(interval_base == TimeInterval.DAY) ||
-			(interval_base == TimeInterval.HOUR) ||
+		if ( (interval_base == TimeInterval.DAY) || (interval_base == TimeInterval.HOUR) ||
 			(interval_base == TimeInterval.MINUTE) ) {
-			try {	summary = TSUtil.createMonthSummary ( ts,
-					ts.getDate1(), ts.getDate2(), props );
+			try {
+			    summary = TSUtil.createMonthSummary ( ts, ts.getDate1(), ts.getDate2(), props );
 				if ( summary == null ) {
 					continue;
 				}
@@ -1318,20 +1318,19 @@ private Vector createMonthSummaryReport ( Vector tslist, PropList props )
 			StringUtil.addListToStringList ( report, summary );
 			report.addElement ( "" );
 		}
-		else {	report.addElement ( "" );
+		else {
+		    report.addElement ( "" );
 			report.addElement ( ts.getDescription() );
 			report.addElement ( ts.getIdentifierString() );
 			report.addElement ( "" );
-			report.addElement ( "Summary report is not supported" +
-				" for time series interval." );
+			report.addElement ( "Summary report is not supported for time series interval." );
 			report.addElement ( "" );
 			++error_count;
 		}
 	}
 	if ( error_count > 0 ) {
 		Message.printWarning ( 1, routine,
-		"There was an error creating the report.\n" +
-		"See the log file for details." );
+		"There was an unexpected error creating the report.  See the log file for details." );
 	}
 	ts = null;
 	summary = null;

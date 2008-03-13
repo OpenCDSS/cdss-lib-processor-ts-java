@@ -75,13 +75,16 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
+	        !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
 		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID.toString() + ".";
+            message = "TSID should only be specified when TSList=" +
+            TSListType.ALL_MATCHING_TSID.toString() + " or " +
+            TSListType.LAST_MATCHING_TSID.toString() + ".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Do not specify the TSID parameter when TList=" + TSListType.ALL_MATCHING_TSID.toString() ) );
+                    message, "Do not specify the TSID parameter." ) );
 		}
 	}
     /*
@@ -233,7 +236,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
         }
     }
     else {

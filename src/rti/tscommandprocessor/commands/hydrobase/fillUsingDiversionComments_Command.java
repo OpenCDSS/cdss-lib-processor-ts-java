@@ -312,7 +312,8 @@ CommandWarningException, CommandException
 	
 	DateTime start = null;
 	DateTime end = null;
-	try {	if ( FillStart != null ) {
+	try {
+	    if ( FillStart != null ) {
 			start = DateTime.parse(FillStart);
 		}
 	}
@@ -326,7 +327,8 @@ CommandWarningException, CommandException
                         message, "Specify a valid fill start." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
-	try {	if ( FillEnd != null ) {
+	try {
+	    if ( FillEnd != null ) {
 			end = DateTime.parse(FillEnd);
 		}
 	}
@@ -360,7 +362,8 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify that time series to fill are specified correctly - may be OK if partial run." ) );
 		}
-		else {	nts = ((Integer)o).intValue();
+		else {
+		    nts = ((Integer)o).intValue();
 		}
 	}
 	catch ( Exception e ) {
@@ -373,18 +376,19 @@ CommandWarningException, CommandException
                                 message, "Report the problem to software support." ) );
 	}
 	int start_pos = 0;	// starting position TSID iterator
-	int end_pos = nts;	// end position for TSID iterator
+	int end_pos = nts - 1;	// end position for TSID iterator
 	
 	if( !TSID.equals( "*" )) {
 		// A specific TSID was chosen and should be used
+	    int its = -1;  // Index of time series to process
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "TSID", TSID );
 		CommandProcessorRequestResultsBean bean = null;
-		try { bean =
-			processor.processRequest( "IndexOf", request_params);
+		try {
+		    bean = processor.processRequest( "IndexOf", request_params);
 		}
 		catch ( Exception e ) {
-            message = "Error requesting IndexOf(TSID=" + TSID + "\" from processor.";
+            message = "Error requesting IndexOf(TSID=" + TSID + "\") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -404,10 +408,11 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	nts = ((Integer)o).intValue();
+		else {
+		    its = ((Integer)prop_contents).intValue();
 		}
-		if ( nts != 1 ) {
-			// Unable to get a list of time series to process.
+		if ( its < 0 ) {
+			// Unable to get single time series to process.
 			message = "Unable to find time series \"" + TSID + "\" for " + getCommandName() + "() command.";
 			Message.printWarning ( warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -415,24 +420,17 @@ CommandWarningException, CommandException
             status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify that time series to fill are specified correctly - may be OK if partial run." ) );
-			try {
-				throw new Exception ( message );
-			} catch (Exception e) {
-				Message.printWarning(warningLevel,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, e.toString());
-				// do not update if TSID is not find	
-				return;
-			}
+			// Do not update if TSID is not found	
+			return;
 		}
 		// Start is the specific time series to process
-		start_pos = nts;
-		// End is one more for "<" conditional in loop.
-		end_pos = ++nts;
+		start_pos = its;
+		end_pos = its;
 	}
 	
 	boolean HaveOutputPeriod_boolean = false;
-	try { o = processor.getPropContents ( "HaveOutputPeriod");
+	try {
+	    o = processor.getPropContents ( "HaveOutputPeriod");
 		if ( o == null ) {
             message = "Unable to whether output period is available.  Assuming False.";
 			Message.printWarning(warningLevel,
@@ -442,7 +440,8 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	HaveOutputPeriod_boolean = ((Boolean)o).booleanValue();
+		else {
+		    HaveOutputPeriod_boolean = ((Boolean)o).booleanValue();
 		}
 	}
 	catch ( Exception e ) {
@@ -456,17 +455,17 @@ CommandWarningException, CommandException
 	}
 	
 	// Loop through and fill data for TSID's chosen
-	for ( int its = start_pos; its < end_pos; its++ ) {
+	for ( int its = start_pos; its <= end_pos; its++ ) {
 		// Get the time series to process...
 		
 		PropList request_params = new PropList ( "" );
 		request_params.setUsingObject ( "Index", new Integer(its) );
 		CommandProcessorRequestResultsBean bean = null;
-		try { bean =
-			processor.processRequest( "GetTimeSeries", request_params);
+		try {
+		    bean = processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
-            message = "Error requesting GetTimeSeries(Index=" + its + "\" from processor.  Skipping.";
+            message = "Error requesting GetTimeSeries(Index=" + its + "\") from processor.  Skipping.";
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );

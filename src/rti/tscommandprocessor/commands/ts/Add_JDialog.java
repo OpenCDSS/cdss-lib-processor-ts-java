@@ -316,7 +316,7 @@ private void initialize ( JFrame parent, Command command )
     
     __AddTSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel (
-            this, main_JPanel, new JLabel ("Time series to add (TS list):"), __AddTSList_JComboBox, y );
+            this, main_JPanel, new JLabel ("Time series to add (AddTSlist):"), __AddTSList_JComboBox, y );
     // Default is not to add SelectedTSID so add it here...
     __AddTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
@@ -488,7 +488,7 @@ private void refresh ()
 	String AddTSList = "";
 	String AddTSID = "";
     String AddEnsembleID = "";
-    String AddSpecifiedTSID = "";
+    //String AddSpecifiedTSID = "";
     String HandleMissingHow = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -498,7 +498,7 @@ private void refresh ()
         EnsembleID = props.getValue ( "EnsembleID" );
         AddTSList = props.getValue ( "AddTSList" );
         AddTSID = props.getValue ( "AddTSID" );
-        AddSpecifiedTSID = props.getValue ( "AddSpecifiedTSID" );
+        //AddSpecifiedTSID = props.getValue ( "AddSpecifiedTSID" );
         AddEnsembleID = props.getValue ( "AddEnsembleID" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
@@ -552,9 +552,14 @@ private void refresh ()
         }
         else {  // Automatically add to the list after the blank...
             if ( (AddTSID != null) && (AddTSID.length() > 0) ) {
-                __AddTSID_JComboBox.insertItemAt ( AddTSID, 1 );
-                // Select...
-                __AddTSID_JComboBox.select ( AddTSID );
+                if ( !TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
+                    __AddTSID_JComboBox.insertItemAt ( AddTSID, 1 );
+                    // Select...
+                    __AddTSID_JComboBox.select ( AddTSID );
+                }
+                else {  // Select the blank...
+                    __AddTSID_JComboBox.select ( 0 );
+                }
             }
             else {  // Select the blank...
                 __AddTSID_JComboBox.select ( 0 );
@@ -575,7 +580,10 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        setupAddSpecifiedTSID ( AddTSList, AddSpecifiedTSID );
+        // Setup the list of time series to add, which will be a list of available time series,
+        // selecting the ones that were in the previous command.
+        //setupAddSpecifiedTSID ( AddTSList, AddSpecifiedTSID );
+        setupAddSpecifiedTSID ( AddTSList, AddTSID );
         if ( HandleMissingHow == null ) {
             // Select default...
             __HandleMissingHow_JComboBox.select ( 0 );
@@ -600,12 +608,12 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     AddTSList = __AddTSList_JComboBox.getSelected();
     AddTSID = __AddTSID_JComboBox.getSelected();
-    AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
+    String AddSpecifiedTSID = getAddSpecifiedTSIDFromList();
     AddEnsembleID = __AddEnsembleID_JComboBox.getSelected();
     //FillStart = __FillStart_JTextField.getText().trim();
     //FillEnd = __FillEnd_JTextField.getText().trim();
     HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-    // TSID is used for several variations of SubtractTSList
+    // Use the list of specified TSID instead of the __AddTSID_JComboBox above
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
         AddTSID = AddSpecifiedTSID;
     }
@@ -614,7 +622,7 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "AddTSList=" + AddTSList );
     props.add ( "AddTSID=" + AddTSID );
-    props.add ( "AddSpecifiedTSID=" + AddSpecifiedTSID );
+    //props.add ( "AddSpecifiedTSID=" + AddSpecifiedTSID );
     props.add ( "AddEnsembleID=" + AddEnsembleID );
     //props.add ( "FillStart=" + FillStart );
     //props.add ( "FillEnd=" + FillEnd );
@@ -644,7 +652,7 @@ private void response ( boolean ok )
 
 /**
 Setup the AddSpecifiedTSID list at initialization,
-selecting items in the list that match the AddSpecifiedTSID parameter.
+selecting items in the list that match the AddTSID parameter.
 @param AddSpecifiedTSID The value of the parameter, of form "TSID,TSID,TSID,...".
 */
 private void setupAddSpecifiedTSID ( String AddTSList, String AddSpecifiedTSID )

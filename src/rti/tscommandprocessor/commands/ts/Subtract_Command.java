@@ -265,14 +265,26 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String SubtractTSList = parameters.getValue ( "SubtractTSList");
-        String SubtractTSID = parameters.getValue ( "TSID");
+        String SubtractTSID = parameters.getValue ( "SubtractTSID");
         if ( ((SubtractTSList == null) || (SubtractTSList.length() == 0)) && ((SubtractTSID != null) && (SubtractTSID.length() > 0)) ) {
-            // Old command where SubtractTSID= is specified but SubtractTSList is not
-            if ( SubtractTSID.indexOf("*") >= 0 ) {
-                SubtractTSList = TSListType.ALL_TS.toString();
+            // Old command where SubtractTSID= is specified but SubtractTSList is not.
+            // TSList may be used instead of SubtractTSList and if so use it
+            if ( (TSList != null) && (TSList.length() > 0) ) {
+                SubtractTSList = TSList;
+                // Convert to newer syntax...SpecifiedTS replaced with SpecifiedTSID
+                if ( SubtractTSList.equalsIgnoreCase("SpecifiedTS") ) {
+                    SubtractTSList = TSListType.SPECIFIED_TSID.toString();
+                }
+                parameters.set ( "SubtractTSList", SubtractTSList );
             }
             else {
-                SubtractTSList = TSListType.SPECIFIED_TSID.toString();
+                // Examine SubtractTSID to figure out what to do...
+                if ( SubtractTSID.indexOf("*") >= 0 ) {
+                    SubtractTSList = TSListType.ALL_TS.toString();
+                }
+                else {
+                    SubtractTSList = TSListType.SPECIFIED_TSID.toString();
+                }
             }
             parameters.set ( "SubtractTSList", SubtractTSList );
         }

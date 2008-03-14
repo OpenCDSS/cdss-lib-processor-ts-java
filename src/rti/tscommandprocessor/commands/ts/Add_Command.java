@@ -265,14 +265,26 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList");
         String AddTSList = parameters.getValue ( "AddTSList");
-        String AddTSID = parameters.getValue ( "TSID");
+        String AddTSID = parameters.getValue ( "AddTSID");
         if ( ((AddTSList == null) || (AddTSList.length() == 0)) && ((AddTSID != null) && (AddTSID.length() > 0)) ) {
-            // Old command where AddTSID= is specified but AddTSList is not
-            if ( AddTSID.indexOf("*") >= 0 ) {
-                AddTSList = TSListType.ALL_TS.toString();
+            // Old command where AddTSID= is specified but AddTSList is not.
+            // TSList may be used instead of AddTSList and if so use it
+            if ( (TSList != null) && (TSList.length() > 0) ) {
+                AddTSList = TSList;
+                // Convert to newer syntax...SpecifiedTS replaced with SpecifiedTSID
+                if ( AddTSList.equalsIgnoreCase("SpecifiedTS") ) {
+                    AddTSList = TSListType.SPECIFIED_TSID.toString();
+                }
+                parameters.set ( "AddTSList", AddTSList );
             }
             else {
-                AddTSList = TSListType.SPECIFIED_TSID.toString();
+                // Examine AddTSID to figure out what to do...
+                if ( AddTSID.indexOf("*") >= 0 ) {
+                    AddTSList = TSListType.ALL_TS.toString();
+                }
+                else {
+                    AddTSList = TSListType.SPECIFIED_TSID.toString();
+                }
             }
             parameters.set ( "AddTSList", AddTSList );
         }

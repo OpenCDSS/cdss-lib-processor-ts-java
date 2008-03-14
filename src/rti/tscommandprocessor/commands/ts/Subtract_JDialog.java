@@ -315,7 +315,7 @@ private void initialize ( JFrame parent, Command command )
     
     __SubtractTSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel (
-            this, main_JPanel, new JLabel ("Time series to subtract (TS list):"), __SubtractTSList_JComboBox, y );
+            this, main_JPanel, new JLabel ("Time series to subtract (SubtractTSList):"), __SubtractTSList_JComboBox, y );
     // Default is not to add SelectedTSID so add it here...
     __SubtractTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
@@ -487,7 +487,7 @@ private void refresh ()
 	String SubtractTSList = "";
 	String SubtractTSID = "";
     String SubtractEnsembleID = "";
-    String SubtractSpecifiedTSID = "";
+    //String SubtractSpecifiedTSID = "";
     String HandleMissingHow = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -497,7 +497,7 @@ private void refresh ()
         EnsembleID = props.getValue ( "EnsembleID" );
         SubtractTSList = props.getValue ( "SubtractTSList" );
         SubtractTSID = props.getValue ( "SubtractTSID" );
-        SubtractSpecifiedTSID = props.getValue ( "SubtractSpecifiedTSID" );
+        //SubtractSpecifiedTSID = props.getValue ( "SubtractSpecifiedTSID" );
         SubtractEnsembleID = props.getValue ( "SubtractEnsembleID" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
@@ -551,11 +551,18 @@ private void refresh ()
         }
         else {  // Automatically add to the list after the blank...
             if ( (SubtractTSID != null) && (SubtractTSID.length() > 0) ) {
-                __SubtractTSID_JComboBox.insertItemAt ( SubtractTSID, 1 );
-                // Select...
-                __SubtractTSID_JComboBox.select ( SubtractTSID );
+                if ( !TSListType.SPECIFIED_TSID.equals(SubtractTSList) ) {
+                    __SubtractTSID_JComboBox.insertItemAt ( SubtractTSID, 1 );
+                    // Select...
+                    __SubtractTSID_JComboBox.select ( SubtractTSID );
+                }
+                else {
+                    // Select the blank...
+                    __SubtractTSID_JComboBox.select ( 0 );
+                }
             }
-            else {  // Select the blank...
+            else {
+                // Select the blank...
                 __SubtractTSID_JComboBox.select ( 0 );
             }
         }
@@ -574,7 +581,10 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        setupSubtractSpecifiedTSID ( SubtractTSList, SubtractSpecifiedTSID );
+        // Setup the list of time series to subtract, which will be a list of available time series,
+        // selecting the ones that were in the previous command.
+        //setupSubtractSpecifiedTSID ( SubtractTSList, SubtractSpecifiedTSID );
+        setupSubtractSpecifiedTSID ( SubtractTSList, SubtractTSID );
         if ( HandleMissingHow == null ) {
             // Select default...
             __HandleMissingHow_JComboBox.select ( 0 );
@@ -599,12 +609,12 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     SubtractTSList = __SubtractTSList_JComboBox.getSelected();
     SubtractTSID = __SubtractTSID_JComboBox.getSelected();
-    SubtractSpecifiedTSID = getSubtractSpecifiedTSIDFromList();
+    String SubtractSpecifiedTSID = getSubtractSpecifiedTSIDFromList();
     SubtractEnsembleID = __SubtractEnsembleID_JComboBox.getSelected();
     //FillStart = __FillStart_JTextField.getText().trim();
     //FillEnd = __FillEnd_JTextField.getText().trim();
     HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
-    // TSID is used for several variations of SubtractTSList
+    // Use the list of specified TSID instead of the __SubtractTSID_JComboBox above
     if ( TSListType.SPECIFIED_TSID.equals(SubtractTSList) ) {
         SubtractTSID = SubtractSpecifiedTSID;
     }
@@ -642,7 +652,7 @@ private void response ( boolean ok )
 
 /**
 Setup the SubtractSpecifiedTSID list at initialization,
-selecting items in the list that match the SubtractSpecifiedTSID parameter.
+selecting items in the list that match the SubtractTSID parameter.
 @param SubtractSpecifiedTSID The value of the parameter, of form "TSID,TSID,TSID,...".
 */
 private void setupSubtractSpecifiedTSID ( String SubtractTSList, String SubtractSpecifiedTSID )

@@ -7,8 +7,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/RiversideDB_DMI"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SatmonSysDMI"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
-	<classpathentry kind="lib" path="externals/abbot.jar"/>
-	<classpathentry kind="lib" path="externals/Jython/jython.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/RTi_Common"/>
+	<classpathentry kind="lib" path="lib/Jython/jython.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -51,8 +51,6 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
-import DWR.StateMod.StateMod_TS;
-
 /**
 <p>
 This class initializes, checks, and runs the WriteSHEF() command.

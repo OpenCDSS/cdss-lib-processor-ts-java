@@ -265,9 +265,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( v != null ) {
 			ntokens = v.size();
 		}
-		if ( ntokens != 6 ) {
+		int n_expected = 5;
+		if ( command_string.indexOf("TransferData=")>0 ) {
+		    n_expected = 6;
+		}
+		if ( ntokens != n_expected ) {
 			// Command name, TSID, and constant...
-			message = "Syntax error in \"" + command_string + "\".  5 parameters expected.";
+			message = "Syntax error in \"" + command_string + "\".  " + n_expected + " parameters expected.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -278,8 +282,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String IndependentTSID = ((String)v.elementAt(2)).trim();
 		String SetStart = ((String)v.elementAt(3)).trim();
         String SetEnd = ((String)v.elementAt(4)).trim();
-        // This parameter is of the format TransferData=...
-        String TransferHow = StringUtil.getToken(((String)v.elementAt(5)).trim(),"=",0,1);
+        String TransferHow = null;
+        if ( n_expected == 6 ) {
+            // This parameter is of the format TransferData=...
+            TransferHow = StringUtil.getToken(((String)v.elementAt(5)).trim(),"=",0,1);
+        }
 
 		// Set parameters and new defaults...
 
@@ -302,7 +309,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( !SetEnd.equals("*")) {
             parameters.set ( "SetEnd", SetEnd );
         }
-        parameters.set ( "TransferHow", TransferHow );
+        if ( TransferHow != null ) {
+            parameters.set ( "TransferHow", TransferHow );
+        }
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}

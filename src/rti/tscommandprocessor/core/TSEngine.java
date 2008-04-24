@@ -1339,22 +1339,19 @@ private Vector createMonthSummaryReport ( Vector tslist, PropList props )
 
 /**
 Create a year to date report listing the total accumulation of water volume for
-each year to the specified date.  Handle real-time and historic.  But only
-CFS units.
+each year to the specified date.  Handle real-time and historic.  But only CFS units.
 @param tslist list of time series to analyze.
 @param end_date Ending date for annual total (precision day!).
 @param props Properties to control output (currently the only property is
 SortTotals=true/false).
 */
-private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
-				PropList props )
+private Vector createYearToDateReport ( Vector tslist, DateTime end_date, PropList props )
 {	int size = tslist.size();
 	Vector report = new Vector ();
 
 	report.addElement ( "" );
 	report.addElement ( "Annual totals to date ending on " +
-			TimeUtil.MONTH_ABBREVIATIONS[end_date.getMonth() - 1]
-			+ " " + end_date.getDay() );
+			TimeUtil.MONTH_ABBREVIATIONS[end_date.getMonth() - 1] + " " + end_date.getDay() );
 	report.addElement ( "" );
 
 	TS ts = null;
@@ -1374,8 +1371,7 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 			(ts.getDataIntervalBase() == TimeInterval.IRREGULAR)) &&
 			ts.getDataUnits().equalsIgnoreCase("CFS")) ) {
 			report.addElement ( "" );
-			report.addElement ( ts.getIdentifierString() +
-			" - " + ts.getDescription() + " Not CFS" );
+			report.addElement ( ts.getIdentifierString() + " - " + ts.getDescription() + " Not CFS" );
 			report.addElement ( "" );
 			continue;
 		}
@@ -1410,17 +1406,14 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 		// Should not hit the following now since put in a check above.
 		if ( interval_base == TimeInterval.MONTH ) {
 			// Should make comparisons work...
-			end.setDay ( TimeUtil.numDaysInMonth(end.getMonth(),
-				end.getYear()) );
+			end.setDay ( TimeUtil.numDaysInMonth(end.getMonth(), end.getYear()) );
 		}
 		// Memory for yearly values...
 		totals = new double[nyears];
 		missing = new int[nyears];
 		years = new int[nyears];
 		for ( int j = 0; j < nyears; j++ ) {
-			totals[j] = 0.0;	// OK to initialize to zero
-						// since we are tracking the
-						// number of missing now.
+			totals[j] = 0.0;	// OK to initialize to zero since we are tracking the number of missing now.
 			years[j] = year1 + j;
 			missing[j] = 0;
 		}
@@ -1430,8 +1423,7 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 		// Date to stop accumulating for the year, passed in...
 		DateTime compare_date = new DateTime ( end_date );
 		compare_date.setYear ( date.getYear());
-		// Use next_year as a quick check for whether we have gone to
-		// the next year...
+		// Use next_year as a quick check for whether we have gone to the next year...
 		int next_year = date.getYear() + 1;
 		for ( ;
 			date.lessThanOrEqualTo( end );
@@ -1441,57 +1433,48 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date,
 				// Got the data value...
 				;
 			}
-			// This checks exactly for the next year, which will
-			// work with daily or other regular data data...
+			// This checks exactly for the next year, which will work with daily or other regular data data...
 			else if ( date.getYear() == next_year ) {
-				// Have read the next starting date (start of
-				// next year)...
+				// Have read the next starting date (start of next year)...
 				// Need to set the new compare date...
 				compare_date.setYear ( date.getYear());
 				++next_year;
-				// Data value still in memory and will be
-				// checked below...
+				// Data value still in memory and will be checked below...
 			}
-			else {	// Period after compare_date and before the
-				// end of the year.  Ignore the data in the
-				// total...
+			else {
+			    // Period after compare_date and before the end of the year.  Ignore the data in the total...
 				continue;
 			}
-			// Below here have a valid piece of data so check it
-			// for correctness...
+			// Below here have a valid piece of data so check it for correctness...
 			ypos = date.getYear() - year1;
 			if ( ts.isDataMissing(value) ) {
-				// Keep track of how many missing in the
-				// year...
+				// Keep track of how many missing in the year...
 				++missing[ypos];
 			}
 			else {	if ( interval_base == TimeInterval.DAY ) {
 					// Convert daily average flow to ACFT...
 					value = value*1.9835;
 				}
-				//Message.printStatus ( 1, "",
-				//"Adding " + value + " to year " +
-				//years[ypos] +
-				//" " + date.toString());
+				//Message.printStatus ( 1, "", "Adding " + value + " to year " +
+				//years[ypos] + " " + date.toString());
 				if ( totals[ypos] < 0.0 ) {
 					// Initial value of total so set it...
 					totals[ypos] = value;
 				}
-				else {	// Just add to existing total...
+				else {
+				    // Just add to existing total...
 					totals[ypos] += value;
 				}
 			}
 		}
 		// Print the sorted totals...
 		int sort_order[] = new int[nyears];
-		MathUtil.sort ( totals, MathUtil.SORT_QUICK,
-				MathUtil.SORT_ASCENDING, sort_order, true );
+		MathUtil.sort ( totals, MathUtil.SORT_QUICK, MathUtil.SORT_ASCENDING, sort_order, true );
 		for ( int j = 0; j < nyears; j++ ) {
 			report.addElement ( years[sort_order[j]] + "  "
 			+ StringUtil.formatString(totals[j], "%11.0f") +
 			"          " +
-			StringUtil.formatString(missing[sort_order[j]],
-			"%5d"));
+			StringUtil.formatString(missing[sort_order[j]], "%5d"));
 		}
 		sort_order = null;
 		totals = null;
@@ -1518,29 +1501,24 @@ throws Exception
 	// consistent with how TSTool handles time series in memory now.
 
 	MonthTS newts = null;
-	Message.printStatus ( 1, routine, "Starting report at:  " +
-		new DateTime(DateTime.DATE_CURRENT).toString() );
+	Message.printStatus ( 1, routine, "Starting report at:  " +	new DateTime(DateTime.DATE_CURRENT).toString() );
 	TSAnalyst analyst = new TSAnalyst();
 	// Start the data coverage report...
 	try {	PropList props = new PropList ( "tsanalyst" );
 		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			props.set( "CalendarType=WaterYear" );
 		}
-		else {	// Default...
+		else {
+		    // Default...
 		}
 		if ( haveOutputPeriod() ) {
 			// Use it...
-			analyst.startDataCoverageReport (
-				__OutputStart_DateTime,
-				__OutputEnd_DateTime, props );
+			analyst.startDataCoverageReport ( __OutputStart_DateTime,	__OutputEnd_DateTime, props );
 		}
-		else {	// Figure out the maximum period and start the report
-			// with that...
-			TSLimits report_limits = TSUtil.getPeriodFromTS (
-				__tslist, TSUtil.MAX_POR );
-			analyst.startDataCoverageReport (
-				report_limits.getDate1(),
-				report_limits.getDate2(), props );
+		else {
+		    // Figure out the maximum period and start the report with that...
+			TSLimits report_limits = TSUtil.getPeriodFromTS ( __tslist, TSUtil.MAX_POR );
+			analyst.startDataCoverageReport ( report_limits.getDate1(),	report_limits.getDate2(), props );
 		}
 		props = null;
 	}
@@ -1549,24 +1527,21 @@ throws Exception
 		throw new Exception ( "Error starting data coverage report." );
 	}
 	// Convert each time series to a monthly statistics time series.
-	Message.printStatus ( 1, routine,
-	"Changing time series to data coverage time series." );
+	Message.printStatus ( 1, routine, "Changing time series to data coverage time series." );
 	int ntslist = 0;
 	if ( orig_tslist != null ) {
 		ntslist = orig_tslist.size();
 	}
 	for ( int i = 0; i < ntslist; i++ ) {
-		try {	newts = TSAnalyst.createStatisticMonthTS(
-				(TS)orig_tslist.elementAt(i), null );
+		try {
+		    newts = TSAnalyst.createStatisticMonthTS( (TS)orig_tslist.elementAt(i), null );
 			analyst.appendToDataCoverageSummaryReport ( newts );
 			// Don't actually need the time series...
 			newts = null;
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 2, routine,
-			"Error creating Statistic Month TS for \"" +
-			((TS)orig_tslist.elementAt(i)).getIdentifierString() +
-			"\"" );
+			Message.printWarning ( 2, routine, "Error creating Statistic Month TS for \"" +
+			((TS)orig_tslist.elementAt(i)).getIdentifierString() + "\"" );
 			continue;
 		}
 	}
@@ -1587,8 +1562,7 @@ throws Exception
 {	// Don't parse with spaces because a TEMPTS or dates with hours may be
 	// present.
 	Vector v = StringUtil.breakStringList(command,
-		"(),", StringUtil.DELIM_SKIP_BLANKS|
-		StringUtil.DELIM_ALLOW_STRINGS ); 
+		"(),", StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS ); 
 	String message, routine = "TSEngine.do_adjustExtremes";
 	if ( (v == null) || (v.size() < 8) ) {
 		message = "Syntax error in \"" + command + "\"";
@@ -1610,8 +1584,7 @@ throws Exception
 	DateTime start = getDateTime ( analysis_period_start );
 	String analysis_period_end = ((String)v.elementAt(7)).trim();
 	DateTime end = getDateTime ( analysis_period_end );
-	// Apply adjustExtremes()...  If the identifier is "*", apply to
-	// all the time series...
+	// Apply adjustExtremes()...  If the identifier is "*", apply to all the time series...
 	TS ts;
 	if ( tsident.equals("*") ) {
 		// Fill everything in memory...
@@ -1619,8 +1592,7 @@ throws Exception
 		// Set first in case there is an exception...
 		for ( int its = 0; its < nts; its++ ) {
 			ts = getTimeSeries(its);
-			TSUtil.adjustExtremes ( ts, adjust_method, extreme_flag,
-				StringUtil.atod(extreme_value),
+			TSUtil.adjustExtremes ( ts, adjust_method, extreme_flag, StringUtil.atod(extreme_value),
 				StringUtil.atoi(max_intervals), start, end );
 			processTimeSeriesAction ( UPDATE_TS, ts, its );
 		}
@@ -1629,14 +1601,12 @@ throws Exception
 		int ts_pos = indexOf ( tsident );
 		ts = getTimeSeries ( ts_pos );
 		if ( ts == null ) {
-			message = "Unable to find time series \"" + tsident +
-			"\" for adjustExtremes().";
+			message = "Unable to find time series \"" + tsident + "\" for adjustExtremes().";
 			Message.printWarning ( 1, routine, message );
 			throw new Exception ( message );
 		}
 		TSUtil.adjustExtremes ( ts, adjust_method, extreme_flag,
-			StringUtil.atod(extreme_value),
-			StringUtil.atoi(max_intervals), start, end );
+			StringUtil.atod(extreme_value),	StringUtil.atoi(max_intervals), start, end );
 		processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
 	}
 }
@@ -1649,8 +1619,7 @@ Helper method for ARMA() command.
 private TS do_ARMA ( String command )
 throws Exception
 {	// Don't parse with spaces because a TEMPTS may be present.
-	Vector v = StringUtil.breakStringList(command,
-		"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
+	Vector v = StringUtil.breakStringList(command, "(),\t", StringUtil.DELIM_SKIP_BLANKS); 
 	String message, routine = "TSEngine.do_ARMA";
 	if ( (v == null) || (v.size() < 5) ) {
 		message = "Syntax error in \"" + command + "\"";
@@ -1663,8 +1632,7 @@ throws Exception
 	int ts_pos = indexOf ( dependent );
 	TS dependentTS = getTimeSeries ( ts_pos );
 	if ( dependentTS == null ) {
-		message = "Unable to find time series \"" + dependent +
-		"\" for ARMA().";
+		message = "Unable to find time series \"" + dependent + "\" for ARMA().";
 		Message.printWarning ( 1, routine, message );
 		throw new Exception ( message );
 	}
@@ -1693,12 +1661,10 @@ throws Exception
 			continue;
 		}
 		if ( in_p ) {
-			a[n_a++] = StringUtil.atod (
-				((String)v.elementAt(i)).trim() );
+			a[n_a++] = StringUtil.atod ( ((String)v.elementAt(i)).trim() );
 		}
 		else if ( in_q ) {
-			b[n_b++] = StringUtil.atod (
-				((String)v.elementAt(i)).trim() );
+			b[n_b++] = StringUtil.atod ( ((String)v.elementAt(i)).trim() );
 		}
 	}
 	// Apply ARMA...
@@ -1734,8 +1700,7 @@ throws Exception
 	if ( command.indexOf('=') < 0 ) {
 		// Old syntax...
 		Vector tokens = StringUtil.breakStringList ( command,
-			" \t(),", StringUtil.DELIM_SKIP_BLANKS |
-			StringUtil.DELIM_ALLOW_STRINGS );
+			" \t(),", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
 		if ( (tokens == null) || (tokens.size() != 6) ) {
 			throw new Exception ( "Bad command: \"" + command+"\"");
 		}
@@ -1747,14 +1712,12 @@ throws Exception
 		InputType = "HydroBase";	// old default
 		HandleMissingTSHow = (String)tokens.elementAt(5);
 	}
-	else {	// New syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	else {
+	    // New syntax...
+		Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was
-			// parsed before...
-			throw new Exception (
-			"Bad command: \"" + command + "\"" );
+			// Should never happen because the command name was parsed before...
+			throw new Exception ( "Bad command: \"" + command + "\"" );
 		}
 		// Get the input needed to process the file...
 		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
@@ -1826,8 +1789,7 @@ throws Exception
 	boolean	include_missing_ts = false;
 	if (	!HandleMissingTSHow.equalsIgnoreCase("IgnoreMissingTS") &&
 		!HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS") ) {
-		message = "Unknown HandleMissingTSHow flag \"" +
-			HandleMissingTSHow + "\" for \""+ command + "\"";
+		message = "Unknown HandleMissingTSHow flag \"" + HandleMissingTSHow + "\" for \""+ command + "\"";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
@@ -1854,8 +1816,7 @@ throws Exception
 		tsize = table.getNumberOfRecords();
 	}
 
-	Message.printStatus ( 2, "", "List file has " + tsize +
-		" records and " + table.getNumberOfFields() + " fields" );
+	Message.printStatus ( 2, "", "List file has " + tsize + " records and " + table.getNumberOfFields() + " fields" );
 
 	// Loop through the records in the table and match the identifiers...
 
@@ -1873,19 +1834,13 @@ throws Exception
 		}
 
 		tsident_string.setLength(0);
-		tsident_string.append ( id + "." +
-				DataSource + "." +
-				DataType + "." +
-				Interval + "~" +
-				InputType );
+		tsident_string.append ( id + "." + DataSource + "." + DataType + "." + Interval + "~" + InputType );
 		if ( InputName.length() > 0 ) {
 			tsident_string.append ( "~" + InputName );
 		}
-		// Now read the time series (the following will create
-		// an empty time series if requested).
+		// Now read the time series (the following will create an empty time series if requested).
 		// Temporarily reset the __include_missing_ts flag based
-		// on this command because the global flag is used in the
-		// readTimeSeries method.
+		// on this command because the global flag is used in the readTimeSeries method.
 		// TODO SAM 2007-03-12 Need to avoid global flag.
 		include_missing_ts_old = getIncludeMissingTS();
 		try {
@@ -1922,16 +1877,13 @@ createYearStatisticsReport(OutputFile="x",TSOutputFile="x")
 private void do_createYearStatisticsReport ( String command )
 throws Exception
 {	String routine = "TSEngine.do_createYearStatisticsReport", message;
-	Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
-		// Should never happen because the command name was parsed
-		// before...
+		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
 	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine, "," );
+	PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
 	String OutputFile = props.getValue ( "OutputFile" );
 	String TSOutputFile = props.getValue ( "TSOutputFile" );
 	String MeasTimeScale = props.getValue ( "MeasTimeScale" );
@@ -1944,21 +1896,18 @@ throws Exception
 	}
 
 	if ( MeasTimeScale == null ) {
-		message = "The measurement time scale must be specified as " +
-			"Accm, Mean, or Inst.";
+		message = "The measurement time scale must be specified as Accm, Mean, or Inst.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 
 	if ( Statistic == null ) {
-		message = "The statistic time must be specified as Mean or" +
-			" Sum";
+		message = "The statistic time must be specified as Mean or Sum";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 
-	// Loop through the time series and convert to yearly...  Do it the
-	// brute force way right now...
+	// Loop through the time series and convert to yearly...  Do it the brute force way right now...
 
 	int nts = getTimeSeriesSize();
 	Vector yts_Vector = new Vector(nts);
@@ -1998,21 +1947,13 @@ throws Exception
 					++count;
 				}
 				if ( datetime.getMonth() == 12 ) {
-					// Transfer to year time series only if
-					// all data are available in month...
+					// Transfer to year time series only if all data are available in month...
 					if ( count == 12 ) {
-						if (	MeasTimeScale.
-							equalsIgnoreCase(
-							"Mean") ) {
-							yts.setDataValue(
-							datetime,
-							total/(double)count);
+						if ( MeasTimeScale.equalsIgnoreCase( "Mean") ) {
+							yts.setDataValue( datetime, total/(double)count);
 						}
-						else if ( MeasTimeScale.
-							equalsIgnoreCase(
-							"Accm") ) {
-							yts.setDataValue(
-							datetime, total);
+						else if ( MeasTimeScale.equalsIgnoreCase( "Accm") ) {
+							yts.setDataValue( datetime, total);
 						}
 					}
 					// Reset the accumulators...
@@ -2037,25 +1978,20 @@ throws Exception
 		yts_data = TSUtil.toArray ( yts, null, null );
 		statistic_val = -999.0;
 		if ( Statistic.equalsIgnoreCase("Mean") ) {
-			statistic_val = MathUtil.mean ( yts_data.length,
-				yts_data, yts.getMissing() );
+			statistic_val = MathUtil.mean ( yts_data.length, yts_data, yts.getMissing() );
 		}
 		else if ( Statistic.equalsIgnoreCase("Sum") ) {
-			statistic_val = MathUtil.sum ( yts_data.length,
-				yts_data, yts.getMissing() );
+			statistic_val = MathUtil.sum ( yts_data.length, yts_data, yts.getMissing() );
 		}
 		out.println("\"" + yts.getLocation() + "\",\"" +
-			yts.getDescription() + "\"," +
-			StringUtil.formatString(statistic_val,"%.6f") );
+			yts.getDescription() + "\"," + StringUtil.formatString(statistic_val,"%.6f") );
 	}
 	out.flush();
 	out.close();
-	// If the time series output file was specified, write out the time
-	// series that were analyzed...
+	// If the time series output file was specified, write out the time series that were analyzed...
 	if ( TSOutputFile != null ) {
 		DateValueTS.writeTimeSeriesList ( yts_Vector,
-			IOUtil.getPathUsingWorkingDir ( TSOutputFile ),
-			null, null, null, true );
+			IOUtil.getPathUsingWorkingDir ( TSOutputFile ),	null, null, null, true );
 	}
 }
 
@@ -2067,18 +2003,16 @@ Execute the DateTime x = xxxxx command.
 private void do_DateTime ( String command )
 throws Exception
 {	String routine = "TSEngine.doDateTime";
-	Vector tokens = StringUtil.breakStringList ( command,
-		" =\t", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, " =\t", StringUtil.DELIM_SKIP_BLANKS );
 	if ( tokens.size() < 3 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	// Set the date...
-	try {	__datetime_Hashtable.put ( (String)tokens.elementAt(1),
-			(Object)DateTime.parse((String)tokens.elementAt(2)));
+	try {
+	    __datetime_Hashtable.put ( (String)tokens.elementAt(1), (Object)DateTime.parse((String)tokens.elementAt(2)));
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 1, routine,
-		"Unable to set date using \"" + command + "\"" );
+		Message.printWarning ( 1, routine, "Unable to set date using \"" + command + "\"" );
 		Message.printWarning ( 2, routine, e );
 	}
 }
@@ -2200,8 +2134,7 @@ throws Exception
 	String PatternID = null;
 	if ( command.indexOf('=') < 0 ) {
 		// Old command syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-				"() ,", StringUtil.DELIM_SKIP_BLANKS );
+		Vector tokens = StringUtil.breakStringList ( command, "() ,", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 3) ) {
 			throw new Exception ( "Bad command: \"" + command+"\"");
 		}
@@ -2215,16 +2148,13 @@ throws Exception
 		}
 	}
 	else {	// New syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+		Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was
-			// parsed before...
+			// Should never happen because the command name was parsed before...
 			throw new Exception("Bad command: \"" + command + "\"");
 		}
 		// Get the input needed to process the file...
-		PropList props = PropList.parse (
-			(String)tokens.elementAt(1), routine, "," );
+		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
 		TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
 		PatternID = props.getValue ( "PatternID" );
@@ -2232,8 +2162,7 @@ throws Exception
 	if ( !isParameterValid("TSList",TSList) ) {
 		message = "TSList value \"" + TSList + "\" is not valid.";
 		Message.printWarning ( 2, routine, message );
-		throw new Exception("Invalid TSList parameter: \"" + command +
-		"\"");
+		throw new Exception("Invalid TSList parameter: \"" + command + "\"");
 	}
 	Message.printStatus ( 2, routine, "Filling with pattern \"" + PatternID
 	+ "\" for TSList=\"" + TSList + "\" TSID=\"" + TSID + "\"" );
@@ -2264,7 +2193,8 @@ throws Exception
 	}
 	int pos = 0;
 	for ( int its = 0; its < nts; its++ ) {
-		try {	ts = getTimeSeries(pos = tspos[its]);
+		try {
+		    ts = getTimeSeries(pos = tspos[its]);
 		}
 		catch ( Exception e ) {
 			continue;
@@ -2272,13 +2202,12 @@ throws Exception
 		// Do the filling...
 		Message.printStatus ( 2, routine, "Filling \"" +
 		ts.getIdentifier()+"\" with pattern \"" + PatternID + "\"" );
-		try {	TSUtil.fillPattern ( ts, patternts, fillprops );
+		try {
+		    TSUtil.fillPattern ( ts, patternts, fillprops );
 			processTimeSeriesAction ( UPDATE_TS, ts, pos );
 		}
 		catch ( Exception e ) {
-			message = "Unable to fill time series \""+
-				ts.getIdentifier() + "\" with "+"pattern ID \""+
-				 PatternID + "\".";
+			message = "Unable to fill time series \""+ ts.getIdentifier() + "\" with "+"pattern ID \""+ PatternID + "\".";
 			++warning_count;
 			Message.printWarning(2,routine,message);
 		}
@@ -2286,9 +2215,7 @@ throws Exception
 	patternts = null;
 	fillprops = null;
 	if ( warning_count > 0 ) {
-		throw new Exception (
-		"One or more warnings ocurred processing command \"" +
-			command + "\"" );
+		throw new Exception ( "One or more warnings ocurred processing command \"" + command + "\"" );
 	}
 }
 
@@ -2300,8 +2227,7 @@ Helper method to execute the fillProrate() command.
 private void do_fillProrate ( String command )
 throws Exception
 {	String message, routine = "TSEngine.do_fillProrate";
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and a TSID...
 		message = "Bad command \"" + command + "\"";
@@ -2309,8 +2235,7 @@ throws Exception
 		throw new Exception ( message );
 	}
 	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), "fillProrate","," );
+	PropList props = PropList.parse ( (String)tokens.elementAt(1), "fillProrate","," );
 	String TSID = props.getValue ( "TSID" );
 	String IndependentTSID = props.getValue ( "IndependentTSID" );
 	String FillStart = props.getValue ( "FillStart" );
@@ -2327,21 +2252,21 @@ throws Exception
 	DateTime start = null;
 	DateTime end = null;
 	if ( FillStart != null ) {
-		try {	start = DateTime.parse(FillStart);
+		try {
+		    start = DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
-			message =
-			"Fill start is not a valid date/time...ignoring.";
+			message = "Fill start is not a valid date/time...ignoring.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
 	}
 	if ( FillEnd != null ) {
-		try {	end = DateTime.parse(FillEnd);
+		try {
+		    end = DateTime.parse(FillEnd);
 		}
 		catch ( Exception e ) {
-			message =
-			"Fill end is not a valid date/time...ignoring.";
+			message = "Fill end is not a valid date/time...ignoring.";
 			Message.printWarning ( 1, routine, message );
 			throw new Exception ( message );
 		}
@@ -2349,33 +2274,31 @@ throws Exception
 	//DateTime AnalysisStart_DateTime = null;
 	//DateTime AnalysisEnd_DateTime = null;
 	if ( AnalysisStart != null ) {
-		try {	start = DateTime.parse(AnalysisStart);
+		try {
+		    start = DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
-			message =
-			"Analysis start is not a valid date/time...ignoring.";
+			message = "Analysis start is not a valid date/time...ignoring.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
 	}
 	if ( AnalysisEnd != null ) {
-		try {	end = DateTime.parse(AnalysisEnd);
+		try {
+		    end = DateTime.parse(AnalysisEnd);
 		}
 		catch ( Exception e ) {
-			message =
-			"Analysis end is not a valid date/time...ignoring.";
+			message = "Analysis end is not a valid date/time...ignoring.";
 			Message.printWarning ( 1, routine, message );
 			throw new Exception ( message );
 		}
 	}
 	// Set defaults if not specified...
 	if ( InitialValue != null ) {
-		if (	!InitialValue.equalsIgnoreCase("NearestBackward") &&
+		if ( !InitialValue.equalsIgnoreCase("NearestBackward") &&
 			!InitialValue.equalsIgnoreCase("NearestForeward") &&
 			!StringUtil.isDouble(InitialValue) ) {
-			message = "InitialValue \"" + InitialValue +
-				"\" must be a number, NearestBackward " +
-				"or NearestForeward.";
+			message = "InitialValue \"" + InitialValue + "\" must be a number, NearestBackward or NearestForeward.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -2383,10 +2306,8 @@ throws Exception
 	if ( FillDirection == null ) {
 		FillDirection = "Forward";
 	}
-	if ( 	!FillDirection.equalsIgnoreCase("Forward") &&
-		!FillDirection.equalsIgnoreCase("Backward") ) {
-		message = "FillDirection \"" + FillDirection +
-			"\" is not an Forward or Backward.";
+	if ( !FillDirection.equalsIgnoreCase("Forward") && !FillDirection.equalsIgnoreCase("Backward") ) {
+		message = "FillDirection \"" + FillDirection + "\" is not an Forward or Backward.";
 		Message.printWarning ( 2, routine, message );
 	}
 	// Get the independent time series...
@@ -2409,11 +2330,10 @@ throws Exception
 				continue;
 			}
 			if ( InitialValue == null ) {
-				TSUtil.fillProrate (
-				ts, independent_ts, start, end, props );
+				TSUtil.fillProrate ( ts, independent_ts, start, end, props );
 			}
-			else {	TSUtil.fillProrate (
-				ts, independent_ts, start, end, props );
+			else {
+			    TSUtil.fillProrate ( ts, independent_ts, start, end, props );
 			}
 			processTimeSeriesAction ( UPDATE_TS, ts, its );
 		}
@@ -2423,16 +2343,15 @@ throws Exception
 		if ( ts_pos >= 0 ) {
 			ts = getTimeSeries ( ts_pos );
 			if ( InitialValue == null ) {
-				TSUtil.fillProrate (
-				ts, independent_ts, start, end, props );
+				TSUtil.fillProrate ( ts, independent_ts, start, end, props );
 			}
-			else {	TSUtil.fillProrate (
-				ts, independent_ts, start, end, props );
+			else {
+			    TSUtil.fillProrate ( ts, independent_ts, start, end, props );
 			}
 			processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
 		}
-		else {	message = "Unable to find time series to fill \"" +
-				TSID + "\".  Cannot fill.";
+		else {
+		    message = "Unable to find time series to fill \"" + TSID + "\".  Cannot fill.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -2441,8 +2360,7 @@ throws Exception
 }
 
 // TODO SAM 2005-05-19 Remove when MOVE2 code is transferred to a command.
-// Currently fillRegression is run in a separate command class but the MOVE2
-// code is used below.
+// Currently fillRegression is run in a separate command class but the MOVE2 code is used below.
 /**
 Helper method for old and new style regression, and also MOVE1, and MOVE2.
 @param command_string Command being evaluated.
@@ -2743,8 +2661,7 @@ private TS do_newEndOfMonthTSFromDayTS ( String command )
 throws Exception
 {	String routine = "TSEngine.do_newEndOfMonthTSFromDayTS";
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command, "=(,)",
-			StringUtil.DELIM_ALLOW_STRINGS);
+	Vector tokens = StringUtil.breakStringList ( command, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
 	String tsid = ((String)tokens.elementAt(2)).trim();
 	String ndays = ((String)tokens.elementAt(3)).trim();
 
@@ -2753,8 +2670,7 @@ throws Exception
 	int ts_pos = indexOf ( tsid );
 	TS dayts = getTimeSeries ( ts_pos );
 	if ( dayts == null ) {
-		String message = "Unable to find time series \"" + tsid +
-		"\" for newEndOfMonthTSFromDayTS().";
+		String message = "Unable to find time series \"" + tsid + "\" for newEndOfMonthTSFromDayTS().";
 		Message.printWarning ( 1, routine, message );
 		throw new Exception ( message );
 	}
@@ -2848,16 +2764,13 @@ readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
 private void do_readNWSRFSFS5Files ( String command )
 throws Exception
 {	//String routine = "TSEngine.do_readNWSRFSFS5Files";
-	Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 2) ) {
-		// Should never happen because the command name was parsed
-		// before...
+		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
 	// Get the input needed to process the file...
-	//PropList props = PropList.parse (
-	//	(String)tokens.elementAt(1), routine, "," );
+	//PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
 	//String TSID = props.getValue ( "TSList" );
 	//String QueryStart = props.getValue ( "QueryStart" );
 	//String QueryEnd = props.getValue ( "QueryEnd" );
@@ -2872,11 +2785,9 @@ throws Exception
 	if ( QueryEnd_DateTime == null ) {
 		QueryEnd_DateTime = __query_date2;
 	}
-	Message.printStatus ( 2, routine,
-	"Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
+	Message.printStatus ( 2, routine, "Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
 	TS ts = null;
-	ts = __nwsrfs_dmi.readTimeSeries (
-		TSID, QueryStart_DateTime, QueryEnd_DateTime, Units, true );
+	ts = __nwsrfs_dmi.readTimeSeries ( TSID, QueryStart_DateTime, QueryEnd_DateTime, Units, true );
 	// Now post-process...
 	readTimeSeries2 ( ts, null, true );
 	if ( ts != null ) {
@@ -2906,8 +2817,7 @@ throws Exception
     status.clearLog(CommandPhaseType.RUN);
 
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)",
-			StringUtil.DELIM_ALLOW_STRINGS);
+	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	//String tsid = ((String)tokens.elementAt(3)).trim();
 	//String units = ((String)tokens.elementAt(3)).trim();
@@ -2961,15 +2871,12 @@ private TS do_TS_readNWSRFSFS5Files ( String command )
 throws Exception
 {	String message, routine = "TSEngine.do_TS_readNWSRFSFS5Files";
 	// Get the alias as the second token...
-	String Alias = StringUtil.getToken(command," ",
-			StringUtil.DELIM_SKIP_BLANKS,1);
+	String Alias = StringUtil.getToken(command," ", StringUtil.DELIM_SKIP_BLANKS,1);
 	// Split out the command...
 	int pos = command.indexOf('=');
 	Vector tokens = StringUtil.breakStringList (
-			command.substring(pos + 1).trim(),
-			"()", StringUtil.DELIM_SKIP_BLANKS );
-	PropList props = PropList.parse(
-		(String)tokens.elementAt(1),routine,",");
+			command.substring(pos + 1).trim(), "()", StringUtil.DELIM_SKIP_BLANKS );
+	PropList props = PropList.parse( (String)tokens.elementAt(1),routine,",");
 	String TSID = props.getValue ( "TSID" );
 	String QueryStart = props.getValue ( "QueryStart" );
 	String QueryEnd = props.getValue ( "QueryEnd" );
@@ -2984,20 +2891,20 @@ throws Exception
 	if ( QueryStart != null ) {
 		query_date1 = DateTime.parse ( QueryStart );
 	}
-	else {	query_date1 = __InputStart_DateTime;
+	else {
+	    query_date1 = __InputStart_DateTime;
 	}
 	if ( QueryEnd != null ) {
 		query_date2 = DateTime.parse ( QueryEnd );
 	}
-	else {	query_date2 = __InputEnd_DateTime;
+	else {
+	    query_date2 = __InputEnd_DateTime;
 	}
 	Message.printStatus ( 2, routine, "Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
-	// Get the TSIdent for the TSID string.  The input name is checked to
-	// see if it is a directory.
+	// Get the TSIdent for the TSID string.  The input name is checked to see if it is a directory.
 	// Default to the DMI instance from the calling code, which will
 	// be used if a path is not specified in the input name.  In this case,
-	// the user has possibly indicated that files should be found using the
-	// Apps Defaults.
+	// the user has possibly indicated that files should be found using the Apps Defaults.
 
 	TSIdent tsident = new TSIdent ( TSID );
 	String input_name = tsident.getInputName();
@@ -3048,8 +2955,7 @@ throws Exception
     status.clearLog(CommandPhaseType.RUN);
     
 	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)",
-			StringUtil.DELIM_ALLOW_STRINGS);
+	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
 	String infile = ((String)tokens.elementAt(2)).trim();
 	String date1_string = ((String)tokens.elementAt(3)).trim();
 	String date2_string = ((String)tokens.elementAt(4)).trim();
@@ -3061,7 +2967,9 @@ throws Exception
 	else if ( date1_string.equalsIgnoreCase("OutputStart") ) {
 		query_date1 = __OutputStart_DateTime;
 	}
-	else {	try {	query_date1 = DateTime.parse ( date1_string);
+	else {
+	    try {
+	        query_date1 = DateTime.parse ( date1_string);
 		}
 		catch ( Exception e ) {
 			query_date1 = null;
@@ -3073,7 +2981,9 @@ throws Exception
 	else if ( date2_string.equalsIgnoreCase("OutputEnd") ) {
 		query_date2 = __OutputEnd_DateTime;
 	}
-	else {	try {	query_date2 = DateTime.parse ( date2_string);
+	else {
+	    try {
+	        query_date2 = DateTime.parse ( date2_string);
 		}
 		catch ( Exception e ) {
 			query_date2 = null;
@@ -3133,35 +3043,29 @@ throws Exception
 		routine = "TSEngine.do_deselectTimeSeries";
 		action = "deselect";
 	}
-	Vector tokens = StringUtil.breakStringList ( command,
-			"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
-		// Should never happen because the command name was parsed
-		// before...
+		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
 	// Get the input needed to process the file...
-	PropList props = PropList.parse (
-		(String)tokens.elementAt(1), routine, "," );
+	PropList props = PropList.parse ((String)tokens.elementAt(1), routine, "," );
 	String TSID = props.getValue ( "TSID" );
 	String Pos = props.getValue ( "Pos" );
 	String DeselectAllFirst = props.getValue ( "DeselectAllFirst" );
 	String SelectAllFirst = props.getValue ( "SelectAllFirst" );
 	if ( (TSID == null) && (Pos == null) ) {
-		String message =
-		"Need TSID pattern or position to " + action + " time series.";
+		String message = "Need TSID pattern or position to " + action + " time series.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
-	// If using positions, create an array of position ranges that will
-	// be matched...
+	// If using positions, create an array of position ranges that will be matched...
 	int [] start_pos = null;
 	int [] end_pos = null;
 	int npos = 0;
 	String token = null;
 	if ( Pos != null ) {
-		tokens = StringUtil.breakStringList ( Pos,
-			",", StringUtil.DELIM_SKIP_BLANKS );
+		tokens = StringUtil.breakStringList ( Pos,",", StringUtil.DELIM_SKIP_BLANKS );
 		if ( tokens != null ) {
 			npos = tokens.size();
 		}
@@ -3171,38 +3075,29 @@ throws Exception
 			token = (String)tokens.elementAt(i);
 			if ( token.indexOf("-") >= 0 ) {
 				// Range...
-				start_pos[i] = StringUtil.atoi(
-					StringUtil.getToken(token, "-",0,0).
-					trim());
-				end_pos[i] = StringUtil.atoi(
-					StringUtil.getToken(token, "-",0,1).
-					trim());
+				start_pos[i] = StringUtil.atoi( StringUtil.getToken(token, "-",0,0).trim());
+				end_pos[i] = StringUtil.atoi( StringUtil.getToken(token, "-",0,1).trim());
 			}
-			else {	// Single value.  Treat as a range of 1.
+			else {
+			    // Single value.  Treat as a range of 1.
 				start_pos[i] = StringUtil.atoi(token);
 				end_pos[i] = start_pos[i];
 			}
-			Message.printStatus ( 1, "",
-			"Range " + i + " from " + token + " is " +
-			start_pos[i] + "," + end_pos[i] );
+			Message.printStatus ( 1, "", "Range " + i + " from " + token + " is " +	start_pos[i] + "," + end_pos[i] );
 		}
 	}
 	// Clear if requested...
 	int nts = getTimeSeriesSize();
 	TS ts = null;
-	if (	(DeselectAllFirst != null) &&
-		DeselectAllFirst.equalsIgnoreCase("true") ) {
-		Message.printStatus ( 2, routine,
-		"Deselecting all time series first." );
+	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {
+		Message.printStatus ( 2, routine, "Deselecting all time series first." );
 		for ( int its = 0; its < nts; its++ ) {
 			ts = getTimeSeries(its);	// Will throw Exception
 			ts.setSelected ( false );
 		}
 	}
-	if (	(SelectAllFirst != null) &&
-		SelectAllFirst.equalsIgnoreCase("true") ) {
-		Message.printStatus ( 2, routine,
-		"Selecting all time series first." );
+	if ( (SelectAllFirst != null) && SelectAllFirst.equalsIgnoreCase("true") ) {
+		Message.printStatus ( 2, routine, "Selecting all time series first." );
 		for ( int its = 0; its < nts; its++ ) {
 			ts = getTimeSeries(its);	// Will throw Exception
 			ts.setSelected ( true );
@@ -3220,12 +3115,10 @@ throws Exception
 			}
 		}
 		if ( Pos != null ) {
-			// Evaluate whether the position matches one of the
-			// requested...
+			// Evaluate whether the position matches one of the requested...
 			match = false;
 			for ( int j = 0; j < npos; j++ ) {
-				if (	((its + 1) >= start_pos[j]) &&
-					((its + 1) <= end_pos[j]) ) {
+				if ( ((its + 1) >= start_pos[j]) && ((its + 1) <= end_pos[j]) ) {
 					match = true;
 					break;
 				}
@@ -3238,18 +3131,15 @@ throws Exception
 		++count;
 		if ( do_select ) {
 			ts.setSelected ( true );
-			Message.printStatus ( 2, routine,
-			"Selecting [" + its + "]:" + ts.getIdentifierString() );
+			Message.printStatus ( 2, routine, "Selecting [" + its + "]:" + ts.getIdentifierString() );
 		}
 		else {	ts.setSelected ( false );
-			Message.printStatus ( 2, routine,
-			"Deselecting [" + its + "]:"+ts.getIdentifierString() );
+			Message.printStatus ( 2, routine, "Deselecting [" + its + "]:"+ts.getIdentifierString() );
 		}
 	}
 	if ( count == 0 ) {
 		// Probably an error.
-		String message =
-		"No time series were matched for \"" + command + "\"";
+		String message = "No time series were matched for \"" + command + "\"";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
@@ -3263,8 +3153,7 @@ Execute the setAutoExtendPeriod() command.
 private void do_setAutoExtendPeriod ( String command )
 throws Exception
 {	String routine = "TSEngine.do_setAutoExtendPeriod";
-	Vector tokens = StringUtil.breakStringList ( command,
-			" (,)", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() != 2) ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
@@ -3272,16 +3161,14 @@ throws Exception
 	String toggle = ((String)tokens.elementAt(1)).trim();
 	if ( toggle.equalsIgnoreCase("True") ) {
 		setAutoExtendPeriod ( true );
-		Message.printStatus ( 1, routine, "TS period will " +
-		"automatically be extended to the output period." );
+		Message.printStatus ( 1, routine, "TS period will automatically be extended to the output period." );
 	}
 	else if ( toggle.equalsIgnoreCase("False") ) {
 		setAutoExtendPeriod ( false );
-		Message.printStatus ( 1, routine, "TS period will NOT " +
-		"automatically be extended to the output period." );
+		Message.printStatus ( 1, routine, "TS period will NOT automatically be extended to the output period." );
 	}
-	else {	throw new Exception (
-		"Unrecognized value \"" +toggle+"\" (expecting true or false)");
+	else {
+	    throw new Exception ( "Unrecognized value \"" +toggle+"\" (expecting true or false)");
 	}
 	tokens = null;
 	toggle = null;
@@ -3299,13 +3186,11 @@ throws Exception
 	DateTime	averaging_date1 = null, averaging_date2 = null;
 	if ( command.regionMatches( true,0,"setAveragePeriod",0,16) ) {
 		// New syntax...
-		tokens = StringUtil.breakStringList ( command,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
+		tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 	}
 	else if ( command.regionMatches(true,0,"-averageperiod",0,14) ) {
 		// Old syntax...
-		tokens = StringUtil.breakStringList ( command,
-				" ", StringUtil.DELIM_SKIP_BLANKS );
+		tokens = StringUtil.breakStringList ( command, " ", StringUtil.DELIM_SKIP_BLANKS );
 	}
 	if ( (tokens == null) || (tokens.size() != 3) ) {
 		tokens = null;
@@ -3320,12 +3205,11 @@ throws Exception
 		averaging_date1=(DateTime)__datetime_Hashtable.get(date1_string);
 		if ( averaging_date1 == null ) {
 			// Need to parse the string...
-			try {	averaging_date1 = DateTime.parse(date1_string);
+			try {
+			    averaging_date1 = DateTime.parse(date1_string);
 			}
 			catch ( Exception e ) {
-				throw new Exception (
-				"Error processing start date for \"" +
-				command + "\"." );
+				throw new Exception ( "Error processing start date for \"" + command + "\"." );
 			}
 		}
 	}
@@ -3333,7 +3217,8 @@ throws Exception
 		averaging_date2=(DateTime)__datetime_Hashtable.get(date2_string);
 		if ( averaging_date2 == null ) {
 			// Need to parse the string...
-			try {	averaging_date2 = DateTime.parse(date2_string);
+			try {
+			    averaging_date2 = DateTime.parse(date2_string);
 			}
 			catch ( Exception e ) {
 				throw new Exception ( "Error processing end date for \"" + command+	"\"." );
@@ -3372,8 +3257,7 @@ Execute the setDataValue() command.
 private void do_setDataValue ( String command )
 throws Exception
 {	String routine = "TSEngine.do_setDataValue";
-	Vector tokens = StringUtil.breakStringList ( command,
-		"(, )\t", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "(, )\t", StringUtil.DELIM_SKIP_BLANKS );
 	if ( tokens.size() != 4 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
@@ -3384,8 +3268,7 @@ throws Exception
 	String constant_string = ((String)tokens.elementAt(3)).trim();
 	double constant = StringUtil.atod(constant_string);
 	if ( (setdate == null) || (setdate.getYear() == 0) ) {
-		String message = "Set date \"" + datestring +
-			"\" is not a valid date";
+		String message = "Set date \"" + datestring + "\" is not a valid date";
 		Message.printWarning ( 1, routine, message );
 		throw new Exception ( message );
 	}
@@ -3393,12 +3276,11 @@ throws Exception
 	if ( ts_pos >= 0 ) {
 		TS ts = getTimeSeries ( ts_pos );
 		ts.setDataValue ( setdate, constant );
-		ts.addToGenesis ( "Set " + constant_string +
-			" on " + datestring );
+		ts.addToGenesis ( "Set " + constant_string + " on " + datestring );
 		processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
 	}
-	else {	String message = "Unable to find time series \"" +
-			alias + "\" for setDataValue() command.";
+	else {
+	    String message = "Unable to find time series \"" + alias + "\" for setDataValue() command.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
@@ -3417,30 +3299,23 @@ throws Exception
 {	Vector	tokens = null;
 	if ( expression.regionMatches(true,0, "setDebugLevel", 0,13) ) {
 		// New style...
-		tokens = StringUtil.breakStringList ( expression,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
+		tokens = StringUtil.breakStringList ( expression, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 	}
 	else if (expression.length() >= 2 ) {
 		// Old style -d#... or -d #...
-		if (	(expression.length() == 2) ||
-			((expression.length() > 2) &&
-			(expression.charAt(2) == ' ')) ) {
+		if ( (expression.length() == 2) || ((expression.length() > 2) && (expression.charAt(2) == ' ')) ) {
 			// Parse the whole thing...
-			tokens = StringUtil.breakStringList ( expression,
-				" ,", StringUtil.DELIM_SKIP_BLANKS );
+			tokens = StringUtil.breakStringList ( expression, " ,", StringUtil.DELIM_SKIP_BLANKS );
 		}
-		else {	// Parse from the 3rd character on and then insert a
-			// dummy command...
-			tokens = StringUtil.breakStringList (
-				expression.substring(2),
-				" ,", StringUtil.DELIM_SKIP_BLANKS );
+		else {
+		    // Parse from the 3rd character on and then insert a dummy command...
+			tokens = StringUtil.breakStringList ( expression.substring(2), " ,", StringUtil.DELIM_SKIP_BLANKS );
 			tokens.insertElementAt("-d",0);
 		}
 	}
 	// Now the same token structure...
 	if ( tokens == null ) {
-		throw new Exception (
-		"Bad command \"" + expression + "\"" );
+		throw new Exception ( "Bad command \"" + expression + "\"" );
 	}
 	int size = tokens.size();
 	if ( size == 1 ) {
@@ -3451,33 +3326,31 @@ throws Exception
 	}
 	else if ( size == 2 ) {
 		// Set debug level to same value for all...
-		int debug = StringUtil.atoi(
-			((String)tokens.elementAt(1)).trim());
+		int debug = StringUtil.atoi( ((String)tokens.elementAt(1)).trim());
 		if ( debug == 0 ) {
 			Message.isDebugOn = false;
 		}
-		else {	Message.isDebugOn = true;
+		else {
+		    Message.isDebugOn = true;
 		}
 		Message.setDebugLevel( Message.TERM_OUTPUT, debug );
 		Message.setDebugLevel( Message.LOG_OUTPUT, debug );
 	}
 	else if ( size == 3 ) {
 		// Set debug level to different values for log and display...
-		int debug1 = StringUtil.atoi(
-			((String)tokens.elementAt(1)).trim());
-		int debug2 = StringUtil.atoi(
-			((String)tokens.elementAt(2)).trim());
+		int debug1 = StringUtil.atoi( ((String)tokens.elementAt(1)).trim());
+		int debug2 = StringUtil.atoi( ((String)tokens.elementAt(2)).trim());
 		if ( (debug1 == 0) && (debug2 == 0) ) {
 			Message.isDebugOn = false;
 		}
-		else {	Message.isDebugOn = true;
+		else {
+		    Message.isDebugOn = true;
 		}
 		Message.setDebugLevel( Message.TERM_OUTPUT, debug1 );
 		Message.setDebugLevel( Message.LOG_OUTPUT, debug2 );
 	}
 	else {	tokens = null;
-		throw new Exception (
-		"Bad command \"" + expression + "\"" );
+		throw new Exception ( "Bad command \"" + expression + "\"" );
 	}
 	// Clean up...
 	tokens = null;
@@ -3535,8 +3408,7 @@ throws Exception
 	}
 	else if ( expression.regionMatches(true,0, "setIncludeMissingTS",0,19)){
 		// Check the second token for "true" or "false".
-		Vector tokens = StringUtil.breakStringList ( expression,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
+		Vector tokens = StringUtil.breakStringList ( expression, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 2) ) {
 			throw new Exception ( "Bad command \"" + expression + "\"" );
 		}
@@ -4338,83 +4210,6 @@ throws Exception
 }
 
 /**
-Return an empty time series.
-@return An empty time series.  The time series will have the output period set
-by the setOutputPeriod() command or no data if the output period is not set.
-Because little can be assumed for the time series, information like units, etc.
-may not be set correctly (units currently default to "ACFT" and the data type
-is taken from the current GUI choice).
-@exception Exception if the time series identifier is bad.
-*/
-private MonthTS getEmptyTimeSeries ( String tsident_string )
-throws Exception
-{	MonthTS ts = new MonthTS ();
-	// Allocate the data space...  If the dates have been set, use them.
-	// Otherwise, leave the data as null so that it will return missing
-	// when accessed.
-	if ( haveOutputPeriod() ) {
-		ts.setDate1 ( __OutputStart_DateTime );
-		ts.setDate2 ( __OutputEnd_DateTime );
-		ts.allocateDataSpace ();
-	}
-	// Now set the rest of the information...
-	TSIdent ident = new TSIdent ( tsident_string );
-	ts.setIdentifier ( ident );
-	ts.setDescription ( "Empty time series" );
-	return ts;
-}
-
-/**
-Get a list of graph identifiers from a list of commands.  See documentation
-for fully loaded method.  The list is not sorted
-@param commands Time series commands to search.
-@return list of graph identifiers or an empty non-null Vector if nothing found.
-*/
-private static Vector getGraphIdentifiersFromCommands ( Vector commands )
-{	return getGraphIdentifiersFromCommands ( commands, false );
-}
-
-/**
-Get a list of graph identifiers from a list of commands.  Commands that
-start with "Graph ? = " are returned.
-These strings are suitable for drop-down lists, etc.
-@param commands Time series commands to search.
-@param sort Should output be sorted by identifier.
-@return list of graph identifiers or an empty non-null Vector if nothing found.
-*/
-private static Vector getGraphIdentifiersFromCommands ( Vector commands,
-						boolean sort )
-{	if ( commands == null ) {
-		return new Vector();
-	}
-	Vector v = new Vector ( 10, 10 );
-	int size = commands.size();
-	String command = null;
-	Vector tokens = null;
-	for ( int i = 0; i < size; i++ ) {
-		command = ((String)commands.elementAt(i)).trim();
-		if (	(command == null) ||
-			command.startsWith("#") ||
-			(command.length() == 0) ) {
-			// Make sure comments are ignored...
-			continue;
-		}
-		else if ( command.regionMatches(true,0,"Graph ",0,6) ) {
-			// Use the alias...
-			tokens = StringUtil.breakStringList(
-				command.substring(6)," =",
-				StringUtil.DELIM_SKIP_BLANKS);
-			if ( (tokens != null) && (tokens.size() > 0) ) {
-				v.addElement ( (String)tokens.elementAt(0) );
-			}
-			tokens = null;
-		}
-	}
-	tokens = null;
-	return v;
-}
-
-/**
 Return the HydroBaseDMI that is being used.  Use a blank input name to get
 the default.
 @param input_name Input name for the DMI, can be blank.
@@ -4661,87 +4456,6 @@ protected RiversideDB_DMI getRiversideDB_DMI ( String input_name )
     }
     return null;
 }
-
-/**
-Return a Vector of the selected time series, or all time series if none are
-specifically selected.
-@return the selected time series (those where ts.setSelected(true) has been
-called).
-@param return_all_if_none_selected If true return all if no time series happen
-to be selected.
-*/
-private Vector getSelectedTimeSeriesList ( boolean return_all_if_none_selected )
-{	Vector selected = new Vector();
-	int size = 0;
-	if ( __tslist != null ) {
-		size = __tslist.size();
-	}
-	TS ts = null;
-	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)__tslist.elementAt(i);
-		if ( ts.isSelected() ) {
-			selected.addElement ( ts );
-		}
-	}
-	if ( (selected.size() == 0) && return_all_if_none_selected ) {
-		// Nothing selected but requested to return all...
-		selected = null;
-		return __tslist;
-	}
-	else {	// Return what we have...
-		return selected;
-	}
-}
-
-/**
-Return a Vector of the specified time series, determined by matching the
-specified time series identifiers with the available time series in memory.
-@return the specified time series (those whose TSIdent match).  The result
-is guaranteed to be non-null but may be empty.
-@param command_tag Command number used for messaging.
-@param tsids A Vector of TSID strings to match.
-@param routine The routine that is calling this helper method (for messaging).
-@param command Command that is being processed (for messaging).
-*/
-/* TODO SAM 2007-02-08
-Is this needed?
-private Vector getSpecifiedTimeSeries ( String command_tag, Vector tsids,
-					String routine, String command )
-throws Exception
-{	int size = 0;
-	if ( tsids != null ) {
-		size = tsids.size();
-	}
-	Vector v = new Vector ( size );
-	String tsid = null;
-	TS ts = null;
-	int warning_count = 0;
-	for ( int its = 0; its < size; its++ ) {
-		tsid = ((String)v.elementAt(its)).trim();
-		// The following may or may not have TEMPTS at the
-		// front but is handled transparently by getTimeSeries.
-		try {	ts = getTimeSeries ( command_tag, tsid );
-		}
-		catch ( Exception e ) {
-			ts = null;	// to trigger next check and message
-		}
-		if ( ts == null ) {
-			Message.printWarning ( 2, routine,
-			"Unable to find time series \"" +
-			tsid + "\" for\n\"" + command + "\"." );
-			++warning_count;
-		}
-		else {	v.addElement ( tsid );
-		}
-	}
-	if ( warning_count > 0 ) {
-		throw new Exception (
-		"Error finding one or more time series in \"" +
-			command + "\"" );
-	}
-	return v;
-}
-*/
 
 /**
 Return a time series from the __tslist vector.
@@ -6516,20 +6230,23 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
+		// The following are TS Alias = commands.  Only handle below what has not been converted to
+		// new command classes.
 		else if ( command_String.regionMatches(true,0,"TS ",0,3) &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "changeInterval") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "copy") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "lagK") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ChangeInterval") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Copy") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "LagK") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newStatisticYearTS") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "newTimeSeries") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readDateValue") &&
-            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readHydroBase") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNDFD") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readNwsCard") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "readStateMod") ) {
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticYearTS") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewTimeSeries") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadDateValue") &&
+            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadHydroBase") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNDFD") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNwsCard") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "WeightTraces")) {
 			// All these cases are time series to be inserted.
 			// Declare a time series and set it to some function
 			// Do not handle because they are handled in the TSCommandFactory.
@@ -6544,8 +6261,7 @@ throws Exception
 			// All TS methods result in a new time series being inserted...
 			ts_action = INSERT_TS;
 			if ( method.equalsIgnoreCase("newEndOfMonthTSFromDayTS") ) {
-				// TS Alias =
-				// newEndOfMonthTSFromDayTS(TSID,Days)
+				// TS Alias = newEndOfMonthTSFromDayTS(TSID,Days)
 				// Reparse to allow spaces in the dates...
 				tokens = StringUtil.breakStringList ( command_String, "=(,)",
 					StringUtil.DELIM_ALLOW_STRINGS);
@@ -6765,13 +6481,7 @@ throws Exception
 					++error_count;
 				}
 			}
-			else if ( method.equalsIgnoreCase("weightTraces") ) {
-				if ( tokens.size() < 7 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +	"\"" );
-					++error_count;
-					continue;
-				}
+/*
 				// Weight traces and create a new time series...
 				alias2 = ((String)tokens.elementAt(3)).trim();
 				String weight_method =
@@ -6872,6 +6582,7 @@ throws Exception
 				ts.setAlias ( tsalias );
 			}
 			tokens = null;
+		}*/
 		}
 		else if(command_String.regionMatches(true,0,"writeStateCU",0,12) ){
 			// Write the time series in memory to a StateCU time series file...
@@ -7241,313 +6952,201 @@ private boolean processCommands_CheckForObsoleteCommands(
         String command_String, CommandStatusProvider command, String message_tag, int i_for_message)
 throws Exception
 {	String routine = getClass().getName() + ".processCommands_CheckForObsoleteCommands";
-    String message;
+    String message = null;  // problem - non-null will indicate obsolete command for return value
+    String suggest = null;  // Suggestion to fix
 	// Print at level 1 or set in command status because these messages need to be addressed.
 	
-	boolean is_obsolete = false;
 	if (command_String.regionMatches(true,0,"-averageperiod",0,14)){
-		Message.printWarning ( 1, routine,
-		"-averageperiod is obsolete.\n" +
-		"Use setAveragePeriod().\n" +
-		"Automatically using setAveragePeriod()." );
-		is_obsolete = true;
+		message = "-averageperiod is obsolete.  Automatically using SetAveragePeriod().";
+		suggest = "Use SetAveragePeriod()";
 		do_setAveragePeriod ( command_String );
 	}
 	else if ( command_String.regionMatches(true,0,"-batch",0,6)) {
-		// Old syntax command.  Leave around because this
-		// functionality has never really been implemented but
-		// needs to be (e.g., call TSTool from web site and
-		// tell it to create a plot?).
-		Message.printStatus ( 1, routine,"Running in batch mode." );
-		is_obsolete = true;
+		// Old syntax command.  Leave around because this functionality has never really been implemented but
+		// needs to be (e.g., call TSTool from web site and tell it to create a plot?).
+	    message = "-batch has never been enabled.";
+	    suggest = "Use -commmands (and -nomaingui)";
 		IOUtil.isBatch ( true );
 	}
 	else if ( command_String.regionMatches(true,0,"-binary_day_cutoff",0,18)) {
-		Message.printWarning ( 1, routine,
-		"-binary_day_cutoff is obsolete.  There is no need to use any command equivalent." );
-		is_obsolete = true;
+		message = "-binary_day_cutoff is obsolete.";
+		suggest = "There is no need to use any command equivalent.  Remove the command.";
 	}
 	else if ( command_String.regionMatches(true,0,"-binary_ts_file",0,20)) {
-		Message.printWarning ( 1, routine, "-binary_ts_file is obsolete.  There is no need to use any command equivalent." );
+		message = "-binary_ts_file is obsolete.";
+		suggest = "There is no need to use any command equivalent.  Remove the command.";
 	}
     else if ( command_String.regionMatches(true,0,"createTraces",0,12)) {
-        is_obsolete = true;
         message = "CreateTraces() is obsolete.";
-        command.getCommandStatus().addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Use CreateEnsemble()." ) );
+        suggest = "Use CreateEnsemble().";
     }
 	else if ( command_String.equalsIgnoreCase("-cy") ) {
-		Message.printWarning ( 1, routine,
-		"-cy is obsolete.\n" +
-		"Use setOutputYearType().\n" +
-		"Automatically using setOutputYearType()." );
-		is_obsolete = true;
+		message = "-cy is obsolete.  Automatically using SetOutputYearType().";
+		suggest = "Use SetOutputYearType().";
 		do_setOutputYearType ( command_String );
 	}
 	else if(command_String.regionMatches(true,0,"-data_interval",0,14)){
-		Message.printWarning ( 1, routine,"-data_interval is obsolete.  Use CreateFromList()." );
-		is_obsolete = true;
+		message = "-data_interval is obsolete.";
+		suggest = "Use CreateFromList().";
 	}
 	else if ( command_String.regionMatches(true,0,"-datasource",0,11)) {
-		// Handled by HBParse.  Ignore here.  The data source
-		// name is in the same arg so don't need to increment.
+	    message = "-datasource is obsolete.";
+	    suggest = "Use HydroBase login dialog or OpenHydroBase().";
 	}
 	else if(command_String.regionMatches(true,0,"-data_type",0,10)){
-		Message.printWarning ( 1, routine,"-data_type is obsolete.  Use CreateFromList()." );
-		is_obsolete = true;
+		message = "-data_type is obsolete.";
+		suggest = "Use CreateFromList().";
 	}
-	else if ( command_String.regionMatches(
-		true,0,"-detailedheader",0,15) ) {
-		Message.printWarning ( 1, routine,
-		"-detailedheader is obsolete.\n" +
-		"Use setOutputDetailedHeaders().\n" +
-		"Automatically using setOutputDetailedHeaders()." );
-		is_obsolete = true;
+	else if ( command_String.regionMatches(true,0,"-detailedheader",0,15) ) {
+		message = "-detailedheader is obsolete.  Automatically using SetOutputDetailedHeaders().";
+		suggest = "Use SetOutputDetailedHeaders().";
 		do_setOutputDetailedHeaders ( command_String );
 	}
 	else if ( command_String.regionMatches(true,0,"-d",0,2) ) {
-		is_obsolete = true;
+	    message = "-d is obsolete.  Automatically using SetDebugLevel().";
+        suggest = "Use SetDebugLevel().";
 		do_setDebugLevel ( command_String );
 	}
     else if ( command_String.regionMatches(true,0,"day_to_month_reservoir",0,22) ) {
-        is_obsolete = true;
-        // Leave this code in for backward compatibility but the
-        // new TSTool (as of 2002-08-27) uses
-        // TS Alias = dayToMonthReservoir()...
-        // Convert daily time series to monthly using reservoir
-        // conventions (end of month)...
-        // Expect that TSID, nearness limit and flag for
-        // linear interpolation are set.
-        // THIS IS AN OLD STYLE COMMAND.  READ THE TIME SERIES
-        // AND THEN INSERT.
-        Message.printWarning ( 1, routine,
-        "day_to_month_reservoir is obsolete.\n" +
-        "Use dayToMonthReservoir()." );
-        /*
-        ++update_count;
-        Message.printStatus ( 1, routine,
-        "Processing reservoir storage..." );
-        Vector v = 
-            StringUtil.breakStringList(command_String, "(,) ",
-            StringUtil.DELIM_SKIP_BLANKS );
-        if ( v.size() != 4) {
-            Message.printWarning ( 1, routine, 
-            "Invalid day_to_month_reservoir(): \"" +
-            command_String + "\"" );
-            ++error_count;
-            continue;
-        }
-        ts = readTimeSeries ( popup_warning_level, command_tag,
-            ((String)v.elementAt(1)).trim() );
-        if ( ts != null ) {
-            // Now have a daily time series... Convert to
-            // monthly using the nearest values...
-            PropList changeprops = new PropList (
-            "day_to_month_reservoir" );
-            changeprops.set ( "UseNearestToEnd",
-                ((String)v.elementAt(2)).trim() );
-            Message.printStatus ( 1, routine,
-            "Changing interval..." );
-            MonthTS monthts = (MonthTS)
-                TSUtil.changeInterval (
-                ts, TimeInterval.MONTH, 1,
-                changeprops );
-            // Now fill with linear interpolation...
-            if ( ((String)v.elementAt(3)).equalsIgnoreCase(
-                "true") ) {
-                Message.printStatus ( 1, routine,
-                "Filling by interpolation..." );
-                TSUtil.fillInterpolate ( monthts,
-                (DateTime)null, (DateTime)null );
-            }
-            ts_pos = getTimeSeriesSize();
-            changeprops = null;
-            ts = monthts;
-        }
-        ts_action = INSERT_TS;
-        v = null;
-        */
+        message = "day_to_month_reservoir is obsolete.";
+        suggest = "Use EndOfMonthTSToDayTS().";
     }
     else if ( command_String.regionMatches( true,0,"FillCarryForward",0,16) ) {
         message = "FillCarryForward() is obsolete.";
-        Message.printWarning ( 2, routine, message );
-        command.getCommandStatus().addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING, message, "Use FillRepeat()." ) );
-        is_obsolete = true;
+        suggest = "Use FillRepeat().";
     }
 	else if ( command_String.regionMatches(true,0,"fillconst(",0,10) ) {
-		is_obsolete = true;
-		message ="fillconst() is obsolete.  Use fillConstant().";
-		Message.printWarning ( 1,
-		//MessageUtil.formatMessageTag(command_tag,
-		//++error_count),
-		routine, message );
+		message ="fillconst() is obsolete.";
+		suggest = "Use FillConstant().";
 	}
 	else if ( command_String.regionMatches(	true,0,"-filldata",0,9) ) {
-		Message.printWarning ( 1, routine,
-		"-filldata is obsolete.\n" +
-		"Use setPatternFile().\n" +
-		"Automatically using setPatternFile()." );
-		is_obsolete = true;
+		message = "-filldata is obsolete.  Automatically using SetPatternFile().";
+		suggest = "Use SetPatternFile()";
 		do_setPatternFile ( command_String );
 	}
 	else if ( command_String.regionMatches(true,0,"-fillhistave",0,12)){
-		Message.printWarning ( 1, routine,
-		"-fillhistave is obsolete.\n" +
-		"Use fillHistMonthAverage() or " +
-		"fillHistYearAverage().\n" +
-		"Automatically using appropriate new command." );
-		is_obsolete = true;
+		message = "-fillhistave is obsolete.  Automatically using appropriate new command.";
+		suggest = "Use FillHistMonthAverage() or FillHistYearAverage().";
 	}
 	else if ( command_String.regionMatches( true,0,"fillpattern_setconstbefore",0,26)){
-		Message.printWarning ( 1, routine,
-		"fillpattern_setconstbefore() is obsolete.  " +
-		"Use fillpattern() and setConstant()." );
-		is_obsolete = true;
+		message = "fillpattern_setconstbefore() is obsolete.";
+		suggest = "Use Fillpattern() and SetConstant().";
 	}
 	else if ( command_String.regionMatches(true,0,"-fillUsingComments",0,18)){
-		Message.printWarning ( 1, routine,
-		"-fillUsingComments is obsolete.\n" +
-		"Use fillUsingDiversionComments().");
-		is_obsolete = true;
+		message = "-fillUsingComments is obsolete.";
+		suggest = "Use FillUsingDiversionComments().";
 	}
 	else if(command_String.regionMatches(true,0,"-ignorelezero",0,13) ){
-		Message.printWarning ( 1, routine,
-		"-ignorelezero is obsolete.\n" +
-		"Use setIgnoreLEZero().\n" +
-		"Automatically using setIgnoreLEZero()." );
-		is_obsolete = true;
+		message = "-ignorelezero is obsolete.  Automatically using SetIgnoreLEZero().";
+		suggest = "Use SetIgnoreLEZero().";
 		do_setIgnoreLEZero ( command_String );
 	}
 	else if ( command_String.regionMatches(true,0,"-include_missing_ts",0,19)) {
-		Message.printWarning ( 1, routine,
-		"-include_missing_ts is obsolete.\n" +
-		"Use setIncludeMissingTS().  Automatically using\n" +
-		"setIncludeMissingTS(true)" );
-		is_obsolete = true;
+		message = "-include_missing_ts is obsolete.  Automatically using SetIncludeMissingTS(true).";
+		suggest = "Use SetIncludeMissingTS().";
 		do_setIncludeMissingTS ( command_String );
 	}
 	else if ( command_String.regionMatches( true,0,"-missing",0,8) ) {
-		Message.printWarning ( 1, routine,
-		"-missing is obsolete.\n" +
-		"Use setMissingDataValue().\n" +
-		"Automatically using setMissingDataValue()." );
-		is_obsolete = true;
+		message = "-missing is obsolete.  Automatically using SetMissingDataValue().";
+		suggest = "Use SetMissingDataValue().";
 		do_setMissingDataValue ( command_String );
 	}
 	else if ( command_String.regionMatches( true,0,"-ostatemod",0,10) ){
-		Message.printWarning ( 1, routine,
-		"-ostatemod is obsolete.\nUse writeStateMod()." );
-		is_obsolete = true;
+		message = "-ostatemod is obsolete.";
+		suggest = "Use WriteStateMod().";
 	}
 	else if ( command_String.regionMatches( true,0,"-osummary",0,9) ){
-		Message.printStatus ( 1, routine,
-			"\"-osummary\" is obsolete.  Use WriteSummary() or other output commands." );
-		is_obsolete = true;
+		message = "-osummary is obsolete.";
+		suggest = "Use WriteSummary() or other output commands.";
 	}
 	else if ( command_String.regionMatches(true,0,"-osummarynostats",0,16) ){
-		Message.printStatus ( 1, routine,
-			"\"-osummarynostats\" is obsolete.  Use WriteSummary() or other output commands." );
-		is_obsolete = true;
+		message = "-osummarynostats is obsolete.";
+		suggest = "Use WriteSummary() or other output commands.";
 	}
 	// Put this after all the other -o options...
 	else if ( command_String.regionMatches( true,0,"-o",0,2) ){
 		// Output in StateMod format...
-		Message.printWarning ( 1, routine,
-		"\"-o File\" is obsolete.\n" +
-		"Use writeStateMod() or other output commands." );
-		is_obsolete = true;
+		message = "\"-o File\" is obsolete.";
+		suggest = "Use WriteStateMod() or other output commands.";
 	}
 	else if ( command_String.regionMatches(true,0,"regress",0,7) ) {
-		Message.printWarning ( 1, routine, "regress() is obsolete.  Use FillRegression()." );
-		is_obsolete = true;
+		message = "regress() is obsolete.";
+		suggest = "Use FillRegression().";
 	}
     else if ( command_String.regionMatches( true,0,"setBinaryTSDayCutoff",0,20)) {
-        Message.printWarning ( 1, routine, "SetBinaryTSDayCutoff() is obsolete.  There is no need for this command." );
-        is_obsolete = true;
+        message = "SetBinaryTSDayCutoff() is obsolete.";
+        suggest = "There is no need for this command.";
     }
     else if ( command_String.regionMatches( true,0,"setBinaryTSPeriod",0,17) ) {
-        Message.printWarning ( 1, routine, "SetBinaryTSPeriod() is obsolete.  There is no need for this command." );
-        is_obsolete = true;
+        message = "SetBinaryTSPeriod() is obsolete.";
+        suggest = "There is no need for this command.";
     }
 	else if ( command_String.regionMatches(true,0,"setconst(",0,9) ) {
-		is_obsolete = true;
-		message = "setconst() is obsolete.  Use setConstant().";
-		Message.printWarning ( 1, routine, message );
+		message = "setconst() is obsolete.";
+		suggest = "Use SetConstant().";
 	}
     else if ( command_String.regionMatches(true,0,"setConstantBefore",0,17) ) {
         message = "SetConstantBefore() is obsolete.";
-        Message.printWarning ( 2, routine, message );
-        command.getCommandStatus().addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Use SetConstant()." ) );
+        suggest = "Use SetConstant().";
     }
 	else if(command_String.regionMatches(true,0,"setconstbefore",0,14)){
-		Message.printWarning ( 1, routine, "setconstbefore() " +
-		"is obsolete.  Use setConstant()." );
-		is_obsolete = true;
+		message = "setconstbefore() is obsolete.";
+		suggest = "Use SetConstant().";
 	}
 	else if ( command_String.regionMatches(true,0,"setDatabaseEngine", 0,17) ) {
-		Message.printWarning ( 1, routine,
-		"setDatabaseEngine is obsolete.\nUse openHydroBase().");
-		is_obsolete = true;
+		message = "setDatabaseEngine is obsolete.";
+		suggest = "Use OpenHydroBase().";
 	}
 	else if ( command_String.regionMatches(true,0,"setDatabaseHost", 0,15) ) {
-		Message.printWarning ( 1, routine,
-		"setDatabaseHost is obsolete.\nUse openHydroBase()." );
-		is_obsolete = true;
+		message = "setDatabaseHost is obsolete.";
+		suggest = "Use OpenHydroBase().";
 	}
 	else if (command_String.regionMatches(true,0,"setDataSource",0,13)){
-		Message.printWarning ( 1, routine,
-		"setDataSource is obsolete.\nUse openHydroBase()." );
-		is_obsolete = true;
+		message = "setDataSource is obsolete.";
+		suggest = "Use OpenHydroBase().";
 	}
 	else if ( command_String.regionMatches(true,0,"setUseDiversionComments", 0,23) ) {
-		Message.printWarning ( 1, routine,
-		"setUseDiversionComments() is obsolete.\n" +
-		"Use fillUsingDiversionComments()." );
-		is_obsolete = true;
+		message = "setUseDiversionComments() is obsolete.";
+		suggest = "Use FillUsingDiversionComments().";
 	}
 	else if ( command_String.regionMatches(true,0,"-slist",0,6) ) {
-		Message.printWarning ( 1, routine,"-slist is obsolete.  Use CreateFromList()." );
-		is_obsolete = true;
+		message = "-slist is obsolete.";
+		suggest = "Use CreateFromList().";
 	}
 	else if ( command_String.regionMatches(true,0,"-units",0,6) ) {
-		Message.printWarning ( 1, routine, "-units is obsolete.  Other commands now handle units." );
-		is_obsolete = true;
+		message = "-units is obsolete.";
+		suggest = "Remove command because other commands now handle units.";
 	}
 	else if ( command_String.equalsIgnoreCase("-wy") ) {
-		Message.printWarning ( 1, routine,
-		"-wy is obsolete.  Use setOutputYearType().  Automatically using setOutputYearType()." );
-		is_obsolete = true;
+		message = "-wy is obsolete.  Automatically using setOutputYearType().";
+		suggest = "Use SetOutputYearType().";
 		do_setOutputYearType ( command_String );
 	}
 	// Put after -wy...
 	else if ( command_String.regionMatches(true,0,"-w",0,2) ) {
-		do_setWarningLevel ( command_String );
-		Message.printWarning ( 1, routine,
-			"-w is obsolete.\n" +
-			"Use setWarningLevel() instead.");
-		is_obsolete = true;
+		message = "-w is obsolete.";
+		suggest = "Use SetWarningLevel().";
 	}
 	else if ( command_String.regionMatches(true,0,"setRegressionPeriod",0,19) ) {
-		// Set the regression period - this is no longer needed.
-		Message.printWarning ( 1, routine,
-		"setRegressionPeriod() is used for " +
-		"backward-compatibility).\n" +
-		"Set dates in fillRegression() instead.  Ignoring.");
-		is_obsolete = true;
+		message = "SetRegressionPeriod() is used for backward-compatibility.  Ignoring.";
+		suggest = "Set dates in FillRegression() instead.";
 	}
-	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String,
-		" \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
+	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String," \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
 		// Old-style date...
-		Message.printWarning ( 1, routine, "Setting output " +
-		"period with MM/YYYY MM/YYYY is obsolete.\n" +
-		"Use SetOutputPeriod()." );
-		is_obsolete = true;
+		message = "Setting output period with MM/YYYY MM/YYYY is obsolete.";
+		suggest = "Use SetOutputPeriod().";
 	}
-	return is_obsolete;
+	if ( message != null ) {
+        Message.printWarning ( 2, routine, message );
+        if ( suggest != null ) {
+            command.getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE, message, suggest ) );
+        }
+        // An obsolete command was detected
+        return true;
+	}
+	// The command is not obsolete
+	return false;
 }
 
 /**
@@ -7652,7 +7251,8 @@ throws IOException
 		if ( tslist_output == null ) {
 			tslist_output = new Vector ( ts_indices_size );
 		}
-		else {	// This does not work because if the Vector is passed
+		else {
+		    // This does not work because if the Vector is passed
 			// to TSViewJFrame, etc., the Vector is reused but the
 			// contents will have changed.  Therefore, need to
 			// create a new Vector for each output product.  The
@@ -7680,7 +7280,6 @@ throws IOException
 	String parameters = props.getValue ( "Parameters" );
 	if ( prop_value != null ) {
 		// Reports...
-
 		if ( prop_value.equalsIgnoreCase("-odata_coverage_report") ) {
 			output_format = OUTPUT_DATA_COVERAGE_REPORT;
 		}
@@ -7817,14 +7416,13 @@ throws IOException
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
 
-		try {	// For now, put the code in here at the bottom of this
-			// file...
+		try {
+		    // For now, put the code in here at the bottom of this file...
 			Vector report = createDataCoverageReport ( tslist_output );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error printing summary." );
+			Message.printWarning ( 1, routine, "Error printing summary." );
 			Message.printWarning ( 2, routine, e );
 		}
 	}
@@ -7843,8 +7441,8 @@ throws IOException
 		reportProps.set ( "PageLength", "5000" );
 		reportProps.set ( "Search", "true" );
 
-		try {	// For now, put the code in here at the bottom of this
-			// file...
+		try {
+		    // For now, put the code in here at the bottom of this file...
 			Vector report = createDataLimitsReport(tslist_output);
 			new ReportJFrame ( report, reportProps );
 		}
@@ -7889,8 +7487,7 @@ throws IOException
 			//	date1, date2, units, true );
 			
 			DateValueTS.writeTimeSeriesList ( tslist_output,
-				__output_file, __OutputStart_DateTime,
-				__OutputEnd_DateTime, units, true );
+				__output_file, __OutputStart_DateTime, __OutputEnd_DateTime, units, true );
 		}
 		else {
             Message.printWarning ( 1, routine, "Unable to write DateValue time series of different intervals." );
@@ -7922,12 +7519,11 @@ throws IOException
 		reportProps.set ( "TotalWidth", "750" );
 		reportProps.set ( "TotalHeight", "550" );
 		if ( output_format == OUTPUT_MONTH_MEAN_SUMMARY_REPORT ) {
-			reportProps.set ( "Title",
-			"Monthly Summary Report (Daily Means)" );
+			reportProps.set ( "Title", "Monthly Summary Report (Daily Means)" );
 			daytype = "Mean";
 		}
-		else {	reportProps.set ( "Title",
-			"Monthly Summary Report (Daily Totals)" );
+		else {
+		    reportProps.set ( "Title", "Monthly Summary Report (Daily Totals)" );
 			daytype = "Total";
 		}
 		reportProps.set ( "DisplayFont", "Courier" );
@@ -7944,11 +7540,12 @@ throws IOException
 		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			sumprops.set ( "CalendarType", "WaterYear" );
 		}
-		else {	sumprops.set ( "CalendarType", "CalendarYear" );
+		else {
+		    sumprops.set ( "CalendarType", "CalendarYear" );
 		}
 
-		try {	// For now, put the code in here at the bottom of this
-			// file...
+		try {
+		    // For now, put the code in here at the bottom of this file...
 			Vector report = createMonthSummaryReport ( tslist_output, sumprops );
 			new ReportJFrame ( report, reportProps );
 		}
@@ -7982,8 +7579,7 @@ throws IOException
 		// case, add the commands used to generate the file...
 		int interval_mult = 1;
 		interval_mult = ((TS)tslist_output.elementAt(0)).getDataIntervalMult();
-		// Need date precision to be hour and NWS uses hour 1 - 24 so
-		// adjust dates accordingly.
+		// Need date precision to be hour and NWS uses hour 1 - 24 so adjust dates accordingly.
 		DateTime date1 = __OutputStart_DateTime;
 		if ( __OutputStart_DateTime != null ) {
 			date1 = new DateTime ( __OutputStart_DateTime );
@@ -8031,8 +7627,7 @@ throws IOException
 		// Format the comments to add to the top of the file.  In this
 		// case, add the commands used to generate the file...
 		RiverWareTS.writeTimeSeries ( (TS)tslist_output.elementAt(0),
-			__output_file, __OutputStart_DateTime,
-			__OutputEnd_DateTime, units, 1.0, null, -1.0, true );
+			__output_file, __OutputStart_DateTime, __OutputEnd_DateTime, units, 1.0, null, -1.0, true );
 		} catch ( Exception e ) {
 			message = "Error writing RiverWare file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -8080,8 +7675,7 @@ throws IOException
 		// Check the first time series.  If NWSCARD or DateValue, don't
 		// use comments for header...
 		/* TODO SAM 2004-07-20 - try default header always -
-			transition to HydroBase comments being only additional
-			information
+			transition to HydroBase comments being only additional information
 		else {	// HydroBase, so use the comments for the header...
 			sumprops.set ( "UseCommentsForHeader", "true" );
 		}
@@ -8135,25 +7729,11 @@ throws IOException
 
 			try {
 				Vector summary = TSUtil.formatOutput ( tslist_output, sumprops );
-				// Now display (the user can save as a file,
-				// etc.).
-/*
-				if (	(_output_filter ==
-					OUTPUT_FILTER_DATA_COVERAGE)
-					&& !_frost_dates_detected ) {
-					// Add the summary to the results...
-					summary.addElement ( "" );
-					summary =
-					StringUtil.addListToStringList (
-					summary,
-					TSAnalyst.getDataCoverageReport() );
-				}
-*/
+				// Now display (the user can save as a file, etc.).
 				new ReportJFrame ( summary, reportProps );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1, routine,
-				"Error printing summary." );
+				Message.printWarning ( 1, routine, "Error printing summary." );
 				Message.printWarning ( 2, routine, e );
 			}
 		}
@@ -8173,8 +7753,7 @@ throws IOException
 		Vector tslist = tslist_output;
 		try {
 		if ( IOUtil.isBatch() ) {
-			Message.printWarning ( 1, routine,
-			"Can only generate a table from GUI" );
+			Message.printWarning ( 1, routine, "Can only generate a table from GUI" );
 			return;
 		}
 
@@ -8196,7 +7775,8 @@ throws IOException
 		if ( _non_co_detected ) {
 			graphprops.set ( "UseCommentsForHeader", "false" );
 		}
-		else {	graphprops.set ( "UseCommentsForHeader", "true" );
+		else {
+		    graphprops.set ( "UseCommentsForHeader", "true" );
 		}
 		*/
 		// Set the total size of the graph window...
@@ -8207,8 +7787,7 @@ throws IOException
 		graphprops.set("GraphType=Line");
 
 		graphprops.set ( "InitialView", "Table" );
-		// Summary properties for secondary displays (copy
-		// from summary output)...
+		// Summary properties for secondary displays (copy from summary output)...
 		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
 		graphprops.set ( "TotalWidth", "600" );
 		graphprops.set ( "TotalHeight", "400" );
@@ -8284,13 +7863,13 @@ throws IOException
 		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 			graphprops.set ( "CalendarType", "WaterYear" );
 		}
-		else {	graphprops.set ( "CalendarType", "CalendarYear" );
+		else {
+		    graphprops.set ( "CalendarType", "CalendarYear" );
 		}
 		// Check the first time series.  If NWSCARD or DateValue, don't
 		// use comments for header...
 		/* TODO SAM 2004-07-20 - try default header always -
-			transition to HydroBase comments being only additional
-			information
+			transition to HydroBase comments being only additional information
 		if ( _non_co_detected ) {
 			graphprops.set ( "UseCommentsForHeader", "false" );
 		}
@@ -8301,18 +7880,15 @@ throws IOException
 		graphprops.set ( "TotalWidth", "600" );
 		graphprops.set ( "TotalHeight", "400" );
 
-		if (	(tslist != null) &&
-			(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ) {
+		if ( (tslist != null) && (output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ) {
 /* Currently disabled...
 			// Go through each time series in the list and break
 			// into annual traces, and then plot those results...
-			Message.printStatus ( 1, routine,
-			"Splitting time series into traces..." );
+			Message.printStatus ( 1, routine, "Splitting time series into traces..." );
 			int size = tslist.size();
 			Vector new_tslist = new Vector ( size );
 			Vector traces = null;
-			DateTime reference_date = new DateTime (
-				DateTime.PRECISION_DAY );
+			DateTime reference_date = new DateTime ( DateTime.PRECISION_DAY );
 			reference_date.setYear ( _reference_year );
 			reference_date.setMonth ( 1 );
 			reference_date.setDay ( 1 );
@@ -8322,33 +7898,23 @@ throws IOException
 				if ( ts == null ) {
 					continue;
 				}
-				// Get the trace time series, using Jan 1 of the
-				// reference year.
-				// This allows the raw data to temporally
-				// correct but is a pain to deal with in the
+				// Get the trace time series, using Jan 1 of the reference year.
+				// This allows the raw data to temporally correct but is a pain to deal with in the
 				// plot code...
-				//traces = TSUtil.getTracesFromTS ( ts,
-				//		reference_date, null );
-				// Using this results in some funny labels but
-				// at least things plot...
-				traces = TSUtil.getTracesFromTS ( ts,
-						reference_date, reference_date);
+				//traces = TSUtil.getTracesFromTS ( ts, reference_date, null );
+				// Using this results in some funny labels but at least things plot...
+				traces = TSUtil.getTracesFromTS ( ts, reference_date, reference_date);
 				if ( traces == null ) {
-					// If real-time data, add to the
-					// output...
-					if (	ts.getDataIntervalBase() ==
-						TimeInterval.IRREGULAR ) {
+					// If real-time data, add to the output...
+					if ( ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
 						new_tslist.addElement ( ts );
 					}
 				}
-				else {	// Add the traces to the tslist.  Set
-					// the legend explicitly because the
-					// default is to print the period which
-					// is not useful...
+				else {
+				    // Add the traces to the tslist.  Set the legend explicitly because the
+					// default is to print the period which is not useful...
 					int traces_size = traces.size();
-					Message.printStatus ( 1, routine,
-					"Split " + ts.getIdentifier() +
-					" into " + traces_size + " traces" );
+					Message.printStatus ( 1, routine, "Split " + ts.getIdentifier() + " into " + traces_size + " traces" );
 					TS ts2 = null;
 					for ( int j = 0; j < traces_size; j++ ){
 						ts2 = (TS)traces.elementAt(j);
@@ -8360,10 +7926,8 @@ throws IOException
 			// Now replace the original list with the new one...
 			tslist = new_tslist;
 			// The offset only affects the graph.  All other data
-			// are as if they were slices out of the original
-			// data...
-			//graphprops.set ("ReferenceDate",
-			//reference_date.toString());
+			// are as if they were slices out of the original data...
+			//graphprops.set ("ReferenceDate", reference_date.toString());
 			graphprops.set ( "Title", "Annual Traces" );
 			graphprops.set ( "XAxis.Format", "MM-DD" );
 */
@@ -8382,26 +7946,21 @@ throws IOException
 			graphprops.set("YAxisType=Log");
 			// Handle flags...
 			/* TODO SAM 2006-05-22
-			Can be very slow because blank labels are not ignored
-			in low-level code.
-			GRTS_Util.addDefaultPropertiesForDataFlags (
-				tslist, graphprops );
+			Can be very slow because blank labels are not ignored in low-level code.
+			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
 			*/
 		}
 		else if ( output_format == OUTPUT_PERCENT_EXCEED_GRAPH ) {
 			graphprops.set("GraphType=PercentExceedance");
 			graphprops.set("Title=Period Exceedance Curve");
-			graphprops.set("XAxisLabelString=" +
-				"Percent of Time Exceeded");
+			graphprops.set("XAxisLabelString=Percent of Time Exceeded");
 		}
 		else if ( output_format == OUTPUT_POINT_GRAPH ) {
 			graphprops.set("GraphType=Point");
 			// Handle flags...
 			/* TODO SAM 2006-05-22
-			Can be very slow because blank labels are not ignored
-			in low-level code.
-			GRTS_Util.addDefaultPropertiesForDataFlags (
-				tslist, graphprops );
+			Can be very slow because blank labels are not ignored in low-level code.
+			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
 			*/
 		}
 		else if ( output_format == OUTPUT_PORGRAPH ) {
@@ -8423,17 +7982,14 @@ throws IOException
 			graphprops.set("GraphType=Line");
 			// Handle flags...
 			/* TODO SAM 2006-05-22
-			Can be very slow because blank labels are not ignored
-			in low-level code.
-			GRTS_Util.addDefaultPropertiesForDataFlags (
-				tslist, graphprops );
+			Can be very slow because blank labels are not ignored in low-level code.
+			GRTS_Util.addDefaultPropertiesForDataFlags ( tslist, graphprops );
 			*/
 		}
 
 		// For now always use new graph...
 		graphprops.set ( "InitialView", "Graph" );
-		// Summary properties for secondary displays (copy
-		// from summary output)...
+		// Summary properties for secondary displays (copy from summary output)...
 		//graphprops.set ( "HelpKey", "TSTool.ExportMenu" );
 		graphprops.set ( "TotalWidth", "600" );
 		graphprops.set ( "TotalHeight", "400" );
@@ -8488,8 +8044,7 @@ throws Exception
 /**
 Get a time series from the database/file using current date and units settings.
 @param wl Warning level if the time series is not found.  Typically this will be 1 if
-mimicing the old processing, and 2+ during transition to the new command status
-approach.
+mimicing the old processing, and 2+ during transition to the new command status approach.
 @param tsident_string Time series identifier.
 @return the time series.
 @exception Exception if there is an error reading the time series.
@@ -8502,22 +8057,19 @@ throws Exception
 /**
 Get a time series from the database/file using current date and units settings.
 @param wl Warning level if the time series is not found.  Typically this will be 1 if
-mimicing the old processing, and 2+ during transition to the new command status
-approach.
+mimicing the old processing, and 2+ during transition to the new command status approach.
 @param tsident_string Time series identifier.
 @param full_period Indicates whether the full period should be queried.
 @return the time series.
 @exception Exception if there is an error reading the time series.
 */
-protected TS readTimeSeries ( int wl, String command_tag, String tsident_string,
-				boolean full_period )
+protected TS readTimeSeries ( int wl, String command_tag, String tsident_string, boolean full_period )
 throws Exception
 {	return readTimeSeries ( wl, command_tag, tsident_string, full_period, false);
 }
 
 /**
-Read a time series from a database or file.  The following occur related to
-periods:
+Read a time series from a database or file.  The following occur related to periods:
 <ol>
 <li>	If the query period has been specified, then it is used to limit the
 	read/query.  Otherwise, the full period is retrieved.  Normally the
@@ -8543,8 +8095,7 @@ SAMX - need to phase out "full_period".
 @exception Exception if there is an error reading the time series.
 */
 private TS readTimeSeries (	int wl, String command_tag, String tsident_string,
-		boolean full_period,
-		boolean ignore_errors )
+		boolean full_period, boolean ignore_errors )
 throws Exception
 {	TS	ts = null;
 	String	routine = "TSEngine.readTimeSeries";
@@ -8561,9 +8112,7 @@ throws Exception
 
 	// Read the time series using the generic code...
 
-	ts = readTimeSeries0 (	tsident_string,
-				query_date1,
-				query_date2,
+	ts = readTimeSeries0 ( tsident_string, query_date1, query_date2,
 				null,		// units
 				true );		// read data
 
@@ -8575,39 +8124,32 @@ throws Exception
 		}
 		// Else do not ignore errors...
 		if ( getIncludeMissingTS() && haveOutputPeriod() ) {
-			// Even if time series is missing, create an empty one
-			// for output.
+			// Even if time series is missing, create an empty one for output.
 			ts = TSUtil.newTimeSeries ( tsident_string, true );
 			// else leave null and ignore
 			if ( ts != null ) {
 				ts.setDate1 ( __OutputStart_DateTime );
 				ts.setDate2 ( __OutputEnd_DateTime );
-				// Leave original dates as is.  The
-				// following will fill with missing...
+				// Leave original dates as is.  The following will fill with missing...
 				ts.allocateDataSpace();
 				Vector v = StringUtil.breakStringList (	tsident_string, "~", 0 );
 				// Version without the input...
 				String tsident_string2;
 				tsident_string2 = (String)v.elementAt(0);
 				ts.setIdentifier ( tsident_string2 );
-				Message.printStatus ( 1, routine,
-				"Created empty time series for \"" +
-				tsident_string2 + "\" - not in DB and" +
-				" setIncludeMissingTS(true) is specified." );
+				Message.printStatus ( 1, routine, "Created empty time series for \"" +
+				tsident_string2 + "\" - not in DB and SetIncludeMissingTS(true) is specified." );
 			}
 		}
-		else {	// Not able to query the time series and we are not
-			// supposed to create empty time series...
+		else {
+		    // Not able to query the time series and we are not supposed to create empty time series...
 			String message = 
 				"Null TS from read and not creating blank - unable to" +
-				" process command:\n\""+ tsident_string +"\".\n" +
-				"You must correct the command.  " +
-				"Make sure that the data are in "+
-				"the database or\ninput file" +
+				" process command:\n\""+ tsident_string +"\".\nYou must correct the command.  " +
+				"Make sure that the data are in the database or\ninput file" +
 				" or use time series creation commands.";
 			Message.printWarning ( wl,
-			MessageUtil.formatMessageTag(command_tag,
-			++_fatal_error_count), routine, message );
+			MessageUtil.formatMessageTag(command_tag,++_fatal_error_count), routine, message );
 			getMissingTS().addElement(tsident_string);
 			throw new TimeSeriesNotFoundException ( message );
 		}
@@ -8617,10 +8159,8 @@ throws Exception
 			Message.printDebug ( 1, routine, "Retrieved TS" );
 		}
 		// Now do the second set of processing on the time series (e.g.,
-		// to guarantee a period that is at least as long as the output
-		// period.
-		// SAMX - passing tsident_string2 causes problems - the
-		// input is lost...
+		// to guarantee a period that is at least as long as the output period.
+		// TODO SAM - passing tsident_string2 causes problems - the input is lost...
 		readTimeSeries2 ( ts, tsident_string, full_period );
 	}
 	return ts;
@@ -8642,15 +8182,13 @@ header will be read.
 @return the requested time series or null if an error.
 @exception Exception if there is an error reading the time series.
 */
-private TS readTimeSeries0 (	String tsident_string,
-				DateTime query_date1, DateTime query_date2,
+private TS readTimeSeries0 ( String tsident_string, DateTime query_date1, DateTime query_date2,
 				String units, boolean read_data )
 throws Exception
 {	String routine = "TSEngine.readTimeSeries0";
 
 	if ( Message.isDebugOn ) {
-		Message.printDebug ( 10, routine,
-		"Getting time series \"" + tsident_string + "\"" );
+		Message.printDebug ( 10, routine, "Getting time series \"" + tsident_string + "\"" );
 	}
 
 	// Separate out the input from the TSID...
@@ -8683,9 +8221,9 @@ throws Exception
 	TS ts = null;
 	if ( (input_type != null) && input_type.equalsIgnoreCase("DateValue") ) {
 		// New style TSID~input_type~input_name
-		try {	ts = DateValueTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units,
-				true );
+		try {
+		    ts = DateValueTS.readTimeSeries ( tsident_string2,
+				input_name_full, query_date1, query_date2, units, true );
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, te );
@@ -8694,8 +8232,8 @@ throws Exception
 	}
 	else if ( source.equalsIgnoreCase("DateValue") ) {
 		// Old style (scenario may or may not be used to find the file)...
-		try {	ts = DateValueTS.readTimeSeries ( tsident_string,
-				query_date1, query_date2, units, true );
+		try {
+		    ts = DateValueTS.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine, e );
@@ -8722,11 +8260,10 @@ throws Exception
 		}
 	}
 */
-	else if (	(input_type != null) &&
-			input_type.equalsIgnoreCase("DIADvisor") ) {
+	else if ( (input_type != null) && input_type.equalsIgnoreCase("DIADvisor") ) {
 		// New style TSID~input_type~input_name for DIADvisor...
-		try {	ts = __DIADvisor_dmi.readTimeSeries ( tsident_string2,
-				query_date1, query_date2, units, true );
+		try {
+		    ts = __DIADvisor_dmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, true );
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine,
@@ -8773,12 +8310,10 @@ throws Exception
 	}
 	else if ((input_type != null) && input_type.equalsIgnoreCase("MexicoCSMN") ) {
 		// New style TSID~input_type~input_name for MexicoCSMN...
-		// Pass the front TSID as the first argument and the
-		// input_name file as the second...
+		// Pass the front TSID as the first argument and the input_name file as the second...
 		try {
             ts = MexicoCsmnTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units,
-				true );
+				input_name_full, query_date1, query_date2, units, true );
 		}
 		catch ( Exception te ) {
 			ts = null;
@@ -8798,8 +8333,7 @@ throws Exception
 		// New style TSID~input_type~input_name for NWSCardTS...
 		//Message.printStatus ( 1, routine, "Trying to read \"" +
 		//		tsident_string2 + "\" \"" + input_name + "\"" );
-		ts = NWSCardTS.readTimeSeries ( tsident_string2, input_name_full,
-			query_date1, query_date2, units, true );
+		ts = NWSCardTS.readTimeSeries ( tsident_string2, input_name_full, query_date1, query_date2, units, true );
 		//Message.printStatus ( 1, "", "SAMX TSEngine TS id = \"" +
 			//ts.getIdentifier().toString(true) + "\"" );
 	}
@@ -8963,8 +8497,7 @@ read.  The data are converted to the requested units.
 @param req_date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
@@ -8984,8 +8517,7 @@ throws Exception
 	}
 
 	// If the tsident_string contains a ~, then use the full identifier with
-	// input fields to search below.  Otherwise, just use the main part of
-	// the identifier...
+	// input fields to search below.  Otherwise, just use the main part of the identifier...
 
 	boolean full_tsid_check = false;
 	if ( tsident_string.indexOf("~") >= 0 ) {
@@ -9091,57 +8623,45 @@ throws Exception
 		// handle the exception and use a null time series if needed.
 		Message.printWarning ( 2, routine,
 		"TSID \"" + tsident_string + "\" could not be matched." );
-		throw new Exception ( "TSID \"" + tsident_string +
-			"\" could not be matched." );
+		throw new Exception ( "TSID \"" + tsident_string + "\" could not be matched." );
 	}
-	else {	Message.printStatus ( 2, routine,
-			"TSID \"" + tsident_string + "\" could not be matched in memory." +
-					"  Trying to read using TSID." );
+	else {
+	    Message.printStatus ( 2, routine,
+			"TSID \"" + tsident_string + "\" could not be matched in memory.  Trying to read using TSID." );
 	}
 
 	// If not found, try reading from a persistent source.  If called with
-	// an alias, this will fail.  If called with a TSID, this should
-	// succeed...
+	// an alias, this will fail.  If called with a TSID, this should succeed...
 
-	TS ts = readTimeSeries0 ( tsident_string, req_date1, req_date2,
-				req_units, read_data );
+	TS ts = readTimeSeries0 ( tsident_string, req_date1, req_date2,	req_units, read_data );
 	if ( ts == null ) {
 		Message.printStatus ( 2, routine,
-				"TSID \"" + tsident_string +
-				"\" could not read using TSID.  Not able to provide." );
+				"TSID \"" + tsident_string + "\" could not read using TSID.  Not able to provide." );
 	}
 	else {
-		Message.printStatus ( 2, routine,
-				"TSID \"" + tsident_string + "\" successfully read using TSID." );
+		Message.printStatus ( 2, routine, "TSID \"" + tsident_string + "\" successfully read using TSID." );
 	}
 	return ts;
 }
 
 /**
-Method for TSSupplier interface.
-Read a time series given an existing time series and a file name.
-The specified period is read.
-The data are converted to the requested units.
+Method for TSSupplier interface.  Read a time series given an existing time series and a file name.
+The specified period is read.  The data are converted to the requested units.
 @param req_ts Requested time series to fill.  If null, return a new time series.
 If not null, all data are reset, except for the identifier, which is assumed
 to have been set in the calling code.  This can be used to query a single
 time series from a file that contains multiple time series.
 @param fname File name to read.
-@param date1 First date to query.  If specified as null the entire period will
-be read.
-@param date2 Last date to query.  If specified as null the entire period will
-be read.
+@param date1 First date to query.  If specified as null the entire period will be read.
+@param date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public TS readTimeSeries (	TS req_ts, String fname,
-				DateTime date1, DateTime date2,
-				String req_units,
-				boolean read_data )
+public TS readTimeSeries (	TS req_ts, String fname, DateTime date1, DateTime date2,
+				String req_units, boolean read_data )
 throws Exception
 {	return null;
 }
@@ -9150,13 +8670,10 @@ throws Exception
 Method for TSSupplier interface.
 Read a time series list from a file (this is typically used used where a time
 series file can contain one or more time series).
-The specified period is
-read.  The data are converted to the requested units.
+The specified period is read.  The data are converted to the requested units.
 @param fname File to read.
-@param date1 First date to query.  If specified as null the entire period will
-be read.
-@param date2 Last date to query.  If specified as null the entire period will
-be read.
+@param date1 First date to query.  If specified as null the entire period will be read.
+@param date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series
@@ -9164,10 +8681,8 @@ header will be read.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList (	String fname,
-					DateTime date1, DateTime date2,
-					String req_units,
-					boolean read_data )
+public Vector readTimeSeriesList ( String fname, DateTime date1, DateTime date2,
+					String req_units, boolean read_data )
 throws Exception
 {	return null;
 }
@@ -9175,19 +8690,15 @@ throws Exception
 /**
 Method for TSSupplier interface.
 Read a time series list from a file or database using the time series identifier
-information as a query pattern.
-The specified period is
+information as a query pattern.  The specified period is
 read.  The data are converted to the requested units.
 @param tsident A TSIdent instance that indicates which time series to query.
 If the identifier parts are empty, they will be ignored in the selection.  If
 set to "*", then any time series identifier matching the field will be selected.
-If set to a literal string, the identifier field must match exactly to be
-selected.
+If set to a literal string, the identifier field must match exactly to be selected.
 @param fname File to read.
-@param date1 First date to query.  If specified as null the entire period will
-be read.
-@param date2 Last date to query.  If specified as null the entire period will
-be read.
+@param date1 First date to query.  If specified as null the entire period will be read.
+@param date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
 @param read_data if true, the data will be read.  If false, only the time series
@@ -9195,10 +8706,8 @@ header will be read.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList (	TSIdent tsident, String fname,
-					DateTime date1, DateTime date2,
-					String req_units,
-					boolean read_data )
+public Vector readTimeSeriesList ( TSIdent tsident, String fname, DateTime date1, DateTime date2,
+					String req_units, boolean read_data )
 throws Exception {
 	return null;
 }
@@ -9295,8 +8804,7 @@ throws Exception
 	// If the output period has been specified, make sure that the time
 	// series has a period at least that long.  This will allow for data	
 	// filling and other manipulation.  Do not change the interval if the
-	// time series has irregular data or if the auto extend feature has
-	// been turned off.
+	// time series has irregular data or if the auto extend feature has been turned off.
 	//
 	// Check by getting the maximum overlapping period of the time series
 	// and output period.  Then if the max period start is before the
@@ -9330,8 +8838,7 @@ throws Exception
 
 /**
 Call readTimeSeries2() for every time series in the Vector, with the
-full_period parameter having a value of true.  This version is called by
-read commands.
+full_period parameter having a value of true.  This version is called by read commands.
 @param tslist Vector of TS to process.
 @exception Exception if there is an error processing the time series.
 */
@@ -9405,8 +8912,7 @@ private void runInterpreter ( Vector commands )
 			continue;
 		}
 		if ( command.regionMatches(true,0,"runInterpreter",0,14)) {
-			// We already know this because that command triggered
-			// a call to this method...
+			// We already know this because that command triggered a call to this method...
 			continue;
 		}
 	}
@@ -9496,10 +9002,8 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 	for ( int i = 0; i < size; i++ ) {
 		hbdmi2 = (HydroBaseDMI)__hbdmi_Vector.elementAt(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
-			// The input name of the current instance
-			// matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the
-			// new instance...
+			// The input name of the current instance matches that of the instance in the Vector.
+			// Replace the instance in the Vector by the new instance...
 			if ( close_old ) {
 				try {	hbdmi2.close();
 				}
@@ -9568,10 +9072,8 @@ This is mainly for memory management since NDFD Adapters do not currently keep
 a connection open.
 */
 
-//TODO KAT 2006-10-30
+//TODO KAT 2006-10-30 Need to enable NDFD
 //Commenting this out for now to get it to compile
-//Danny will be adding service stuff in the future
-//which should replace this ...
 /**
 private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 {	if ( adapter == null ) {
@@ -9585,14 +9087,13 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 	for ( int i = 0; i < size; i++ ) {
 		adapter2 = (Adapter)__NDFDAdapter_Vector.elementAt(i);
 		if ( adapter2.getIdentifier().equalsIgnoreCase(input_name)){
-			// The identifier of the current instance
-			// matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the
-			// new instance...
+			// The identifier of the current instance matches that of the instance in the Vector.
+			// Replace the instance in the Vector by the new instance...
 			if ( close_old ) {
 				/ * TODO SAM 2006-07-13
 				Probably not needed - evaluate for later
-				try {	hbdmi2.close();
+				try {
+				    hbdmi2.close();
 				}
 				catch ( Exception e ) {
 					// Probably can ignore.
@@ -9610,7 +9111,8 @@ private void setNDFDAdapter ( Adapter adapter, boolean close_old )
 		// Add as the first item...
 		__NDFDAdapter_Vector.addElement ( adapter );
 	}
-	else {	__NDFDAdapter_Vector.setElementAt ( adapter, 0 );
+	else {
+	    __NDFDAdapter_Vector.setElementAt ( adapter, 0 );
 	}
 }
 
@@ -9636,12 +9138,11 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	for ( int i = 0; i < size; i++ ) {
 		nwsrfs_dmi2 = (NWSRFS_DMI)__nwsrfs_dmi_Vector.elementAt(i);
 		if ( nwsrfs_dmi2.getInputName().equalsIgnoreCase(input_name)){
-			// The input name of the current instance
-			// matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the
-			// new instance...
+			// The input name of the current instance matches that of the instance in the Vector.
+			// Replace the instance in the Vector by the new instance...
 			if ( close_old ) {
-				try {	nwsrfs_dmi2.close();
+				try {
+				    nwsrfs_dmi2.close();
 				}
 				catch ( Exception e ) {
 					// Probably can ignore.
@@ -9654,7 +9155,6 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	// Add a new instance to the Vector...
 	__nwsrfs_dmi_Vector.addElement ( nwsrfs_dmi );
 }
-
 
 /**
 Set the value of the OutputDetailedHeader property.
@@ -9913,13 +9413,11 @@ private void updateComments ( TS ts )
 		comment = (String)comments.elementAt(i);
 		if ( comment.regionMatches(true,0,"Data units",0,10) ) {
 			pos = comment.indexOf ( "=" );
-			comments.setElementAt(
-			comment.substring(0,pos + 2) + ts.getDataUnits(), i);
+			comments.setElementAt( comment.substring(0,pos + 2) + ts.getDataUnits(), i);
 		}
 		else if ( comment.regionMatches(true,0,"Description",0,11) ) {
 			pos = comment.indexOf ( "=" );
-			comments.setElementAt(
-			comment.substring(0,pos + 2) + ts.getDescription(), i);
+			comments.setElementAt( comment.substring(0,pos + 2) + ts.getDescription(), i);
 		}
 	}
 	comments = null;
@@ -9946,15 +9444,14 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 	if ( getOutputYearTypeInt() == __WATER_YEAR ) {
 		calendar = "WaterYear";
 	}
-	else {	calendar = "CalendarYear";
+	else {
+	    calendar = "CalendarYear";
 	}
-	// Set the precision default precision for output (-2 generally works
-	// OK)...
+	// Set the precision default precision for output (-2 generally works OK)...
 	int	precision = -2;
-	if (	!precision_string.equals("*") && !precision_string.equals("") &&
+	if ( !precision_string.equals("*") && !precision_string.equals("") &&
 		StringUtil.isInteger(precision_string) ) {
-		// Use the specified precision because the user has specified
-		// an integer precision...
+		// Use the specified precision because the user has specified an integer precision...
 		precision = StringUtil.atoi(precision_string);
 	}
 	else {

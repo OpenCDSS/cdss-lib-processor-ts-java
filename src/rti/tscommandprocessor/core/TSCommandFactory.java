@@ -166,6 +166,7 @@ import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Subtract_Command;
+import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
 
 // Utility commands.
 
@@ -463,7 +464,12 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Scale") ) {
 		return new scale_Command ();
 	}
-    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetConstant") ) {
+    // Do a check for the obsolete SetConst() and SetConstantBefore().
+    // If encountered, they will be handled as an unknown command.
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetConstant") &&
+            !StringUtil.startsWithIgnoreCase(command_string,"SetConstantBefore") &&
+            !StringUtil.startsWithIgnoreCase(command_string,"SetConst ") &&
+            !StringUtil.startsWithIgnoreCase(command_string,"SetConst(") ) {
         return new SetConstant_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetFromTS") ) {
@@ -513,6 +519,9 @@ throws UnknownCommandException
 
 	// "w" commands...
 
+    else if ( isTScommand && TScommand.equalsIgnoreCase("WeightTraces") ) {
+        return new WeightTraces_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteDateValue") ) {
 		return new WriteDateValue_Command ();
 	}

@@ -47,17 +47,24 @@ import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandListListener;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorListener;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandStatusProvider;
+import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.GenericCommand;
-import RTi.Util.Message.Message;
+import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.RequestParameterInvalidException;
 import RTi.Util.IO.RequestParameterNotFoundException;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
+import RTi.Util.Message.Message;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 
@@ -145,7 +152,7 @@ setWorkingDir() commands.
 private String __InitialWorkingDir_String = null;
 
 /**
-The current workding directory for processing, which was initialized to
+The current working directory for processing, which was initialized to
 InitialWorkingDir and modified by setWorkingDir() commands.
 */
 private String __WorkingDir_String = null;
@@ -225,8 +232,7 @@ public void addCommand ( String command_string )
 	Command command = new GenericCommand ();
 	command.setCommandString ( command_string );
 	addCommand ( command );
-	Message.printStatus(2, routine, "Creating generic command from string \"" +
-			command_string + "\"." );
+	Message.printStatus(2, routine, "Creating generic command from string \"" + command_string + "\"." );
 }
 
 /**
@@ -256,10 +262,10 @@ public void addCommandListListener ( CommandListListener listener )
 			__CommandListListener_array = new CommandListListener[1];
 			__CommandListListener_array[0] = listener;
 		}
-		else {	// Need to resize and transfer the list...
+		else {
+		    // Need to resize and transfer the list...
 			size = __CommandListListener_array.length;
-			CommandListListener [] newlisteners =
-				new CommandListListener[size + 1];
+			CommandListListener [] newlisteners = new CommandListListener[size + 1];
 			for ( int i = 0; i < size; i++ ) {
 					newlisteners[i] = __CommandListListener_array[i];
 			}
@@ -297,10 +303,10 @@ public void addCommandProcessorListener ( CommandProcessorListener listener )
 			__CommandProcessorListener_array = new CommandProcessorListener[1];
 			__CommandProcessorListener_array[0] = listener;
 		}
-		else {	// Need to resize and transfer the list...
+		else {
+		    // Need to resize and transfer the list...
 			size = __CommandProcessorListener_array.length;
-			CommandProcessorListener [] newlisteners =
-				new CommandProcessorListener[size + 1];
+			CommandProcessorListener [] newlisteners = new CommandProcessorListener[size + 1];
 			for ( int i = 0; i < size; i++ ) {
 					newlisteners[i] = __CommandProcessorListener_array[i];
 			}
@@ -2418,34 +2424,15 @@ throws Exception
 Read the commands file and initialize new commands.
 @param path Path to the commands file - this should be an absolute path.
 @param create_generic_command_if_not_recognized If true, create a GenericCommand
-if the command is not recognized.  This is being used during transition of old
-string commands to full Command classes.
-@param append If true, the commands will be appended to the existing commands.
-@exception IOException if there is a problem reading the file.
-@exception FileNotFoundException if the specified commands file does not exist.
-@deprecated Use readCommandFile
-*/
-public void readCommandsFile ( String path,
-		boolean create_generic_command_if_not_recognized,
-		boolean append )
-throws IOException, FileNotFoundException
-{
-	readCommandsFile ( path,	create_generic_command_if_not_recognized, append );
-}
-
-/**
-Read the commands file and initialize new commands.
-@param path Path to the commands file - this should be an absolute path.
-@param create_generic_command_if_not_recognized If true, create a GenericCommand
-if the command is not recognized.  This is being used during transition of old
-string commands to full Command classes.
+if the command is not recognized or has a syntax problem.
+This is being used during transition of old string commands to full Command classes and
+may be needed in any case to preserve commands that were manually edited.  Commands with
+problems will in any case be flagged at run-time as unrecognized or problematic.
 @param append If true, the commands will be appended to the existing commands.
 @exception IOException if there is a problem reading the file.
 @exception FileNotFoundException if the specified commands file does not exist.
 */
-public void readCommandFile ( String path,
-		boolean create_generic_command_if_not_recognized,
-		boolean append )
+public void readCommandFile ( String path, boolean create_generic_command_if_not_recognized, boolean append )
 throws IOException, FileNotFoundException
 {	String routine = getClass().getName() + ".readCommandFile";
 	BufferedReader br = null;
@@ -2472,32 +2459,65 @@ throws IOException, FileNotFoundException
 		if ( line == null ) {
 			break;
 		}
-		// Create a command from the line...
+		// Create a command from the line.
+		// Normally will create the command even if not recognized.
 		if ( create_generic_command_if_not_recognized ) {
-			try {	command = cf.newCommand ( line, create_generic_command_if_not_recognized );
+			try {
+			    command = cf.newCommand ( line, create_generic_command_if_not_recognized );
 			}
 			catch ( UnknownCommandException e ) {
 				// Should not happen because of parameter passed above
 			}
 		}
 		else {
-			try {	command = cf.newCommand ( line, create_generic_command_if_not_recognized );
+			try {
+			    command = cf.newCommand ( line, create_generic_command_if_not_recognized );
 			}
 			catch ( UnknownCommandException e ) {
 				// TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load
-				// In this case skip the command, although the above case
-				// may always be needed?
+				// In this case skip the command, although the above case may always be needed?
 			}
 		}
-		// Initialize the command...
+		// Have a command instance.  Initialize the command...
 		try {
 			command.initializeCommand(
 				line,	// Command string, needed to do full parse on parameters
 				this,	// Processor, needed to make requests
 				true);	// Do full initialization
-            // TODO SAM 2007-10-09 Evaluate whether to call listeners each time.
-            // Could be good to indicate progress of load
-            // Add the command, without notifying listeners of changes...
+		}
+		catch ( InvalidCommandSyntaxException e ) {
+		    // Can't use cf.newCommand() because it will recognized the command
+		    // and generate yet another exception!  So, treat as a generic command with a problem.
+		    Message.printWarning (2, routine, "Invalid command syntax.  Adding command with problems:  " + line );
+            Message.printWarning(3, routine, e);
+            // CommandStatus will be set while initializing so no need to set here
+		}
+		catch ( InvalidCommandParameterException e) {
+            // Can't use cf.newCommand() because it will recognized the command
+            // and generate yet another exception!  So, treat as a generic command with a problem.
+		    Message.printWarning (2, routine, "Invalid command parameter.  Adding command with problems:  " + line );
+            Message.printWarning(3, routine, e);
+            // CommandStatus will be set while initializing so no need to set here
+		}
+        catch ( Exception e ) {
+            // TODO SAM 2007-11-29 Need to decide whether to handle here or in command with CommandStatus
+            // It is important that the command get added, even if it is invalid, so the user can edit the
+            // command file.  They will likely need to replace the command, not edit it.
+            Message.printWarning( 1, routine, "Error creating command \"" + line + "\" - report to software support." );
+            Message.printWarning ( 3, routine, e );
+            // CommandStatus likely not set while initializing so need to set here to alert user
+            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
+                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Unexpected error creating the command.",
+                                "Report the problem to software support.  See log file for details." ) );
+            }
+        }
+        // TODO SAM 2007-10-09 Evaluate whether to call listeners each time a command is added.
+        // Could be good to indicate progress of load in the GUI.
+        // For now, add the command, without notifying listeners of changes...
+        if ( command != null ) {
             addCommand ( command, notify_listeners_for_each_add );
             ++num_added;
             // Run discovery on the command so that the identifiers are available to other commands.
@@ -2505,20 +2525,8 @@ throws IOException, FileNotFoundException
             if ( command instanceof CommandDiscoverable ) {
                 readCommandFile_RunDiscoveryOnCommand ( command );
             }
-		}
-        /*
-		catch ( InvalidCommandSyntaxException e ) {
-			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
-		}
-		catch ( InvalidCommandParameterException e2) {
-			// TODO SAM 2007-09-08 Need to decide whether to handle here or in command with CommandStatus
-		}
-        */
-        catch ( Exception e3 ) {
-            // TODO SAM 2007-11-29 Need to decide whether to handle here or in command with CommandStatus
-            Message.printWarning( 1, routine, "Error creating command \"" + line + "\" - report to software support." );
         }
-	}
+	} // Looping over commands in file
 	// Close the file...
 	br.close();
 	// Now notify listeners about the add one time (only need to do if it
@@ -2554,113 +2562,85 @@ a file name if the time series are stored in files, or may be a true identifier
 string if the time series is stored in a database.  The specified period is
 read.  The data are converted to the requested units.
 @param tsident_string Time series identifier or file name to read.
-@param req_date1 First date to query.  If specified as null the entire period
-will be read.
-@param req_date2 Last date to query.  If specified as null the entire period
-will be read.
+@param req_date1 First date to query.  If specified as null the entire period will be read.
+@param req_date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public TS readTimeSeries (	String tsident_string,
-				DateTime req_date1, DateTime req_date2,
-				String req_units,
-				boolean read_data )
+public TS readTimeSeries (	String tsident_string, DateTime req_date1, DateTime req_date2,
+				String req_units, boolean read_data )
 throws Exception
-{	return __tsengine.readTimeSeries ( tsident_string, req_date1,
-		req_date2, req_units, read_data );
+{	return __tsengine.readTimeSeries ( tsident_string, req_date1, req_date2, req_units, read_data );
 }
 
 /**
 Method for TSSupplier interface.
-Read a time series given an existing time series and a file name.
-The specified period is read.
+Read a time series given an existing time series and a file name.  The specified period is read.
 The data are converted to the requested units.
 @param req_ts Requested time series to fill.  If null, return a new time series.
 If not null, all data are reset, except for the identifier, which is assumed
 to have been set in the calling code.  This can be used to query a single
 time series from a file that contains multiple time series.
 @param fname File name to read.
-@param date1 First date to query.  If specified as null the entire period will
-be read.
-@param date2 Last date to query.  If specified as null the entire period will
-be read.
+@param date1 First date to query.  If specified as null the entire period will be read.
+@param date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public TS readTimeSeries (	TS req_ts, String fname,
-				DateTime date1, DateTime date2,
-				String req_units,
-				boolean read_data )
+public TS readTimeSeries (	TS req_ts, String fname, DateTime date1, DateTime date2,
+				String req_units, boolean read_data )
 throws Exception
-{	return __tsengine.readTimeSeries ( req_ts, fname, date1, date2,
-			req_units, read_data );
+{	return __tsengine.readTimeSeries ( req_ts, fname, date1, date2, req_units, read_data );
 }
 
 /**
 Method for TSSupplier interface.
 Read a time series list from a file (this is typically used used where a time
-series file can contain one or more time series).
-The specified period is
+series file can contain one or more time series).  The specified period is
 read.  The data are converted to the requested units.
 @param fname File to read.
-@param date1 First date to query.  If specified as null the entire period will
-be read.
-@param date2 Last date to query.  If specified as null the entire period will
-be read.
+@param date1 First date to query.  If specified as null the entire period will be read.
+@param date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList (	String fname,
-					DateTime date1, DateTime date2,
-					String req_units,
-					boolean read_data )
+public Vector readTimeSeriesList (	String fname, DateTime date1, DateTime date2,
+					String req_units, boolean read_data )
 throws Exception
-{	return __tsengine.readTimeSeriesList ( fname, date1, date2, req_units,
-				read_data );
+{	return __tsengine.readTimeSeriesList ( fname, date1, date2, req_units, read_data );
 }
 
 /**
 Method for TSSupplier interface.
 Read a time series list from a file or database using the time series identifier
-information as a query pattern.
-The specified period is
+information as a query pattern.  The specified period is
 read.  The data are converted to the requested units.
 @param tsident A TSIdent instance that indicates which time series to query.
 If the identifier parts are empty, they will be ignored in the selection.  If
 set to "*", then any time series identifier matching the field will be selected.
-If set to a literal string, the identifier field must match exactly to be
-selected.
+If set to a literal string, the identifier field must match exactly to be selected.
 @param fname File to read.
-@param date1 First date to query.  If specified as null the entire period will
-be read.
-@param date2 Last date to query.  If specified as null the entire period will
-be read.
+@param date1 First date to query.  If specified as null the entire period will be read.
+@param date2 Last date to query.  If specified as null the entire period will be read.
 @param req_units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList (	TSIdent tsident, String fname,
-					DateTime date1, DateTime date2,
-					String req_units,
-					boolean read_data )
+public Vector readTimeSeriesList (	TSIdent tsident, String fname, DateTime date1, DateTime date2,
+					String req_units, boolean read_data )
 throws Exception {
-	return __tsengine.readTimeSeriesList ( tsident, fname, date1, date2,
-				req_units, read_data );
+	return __tsengine.readTimeSeriesList ( tsident, fname, date1, date2, req_units, read_data );
 }
 
 /**
@@ -2702,21 +2682,19 @@ public void removeCommandListListener ( CommandListListener listener )
 		return;
 	}
 	if ( __CommandListListener_array != null ) {
-		// Loop through and set to null any listeners that match the
-		// requested listener...
+		// Loop through and set to null any listeners that match the requested listener...
 		int size = __CommandListListener_array.length;
 		int count = 0;
 		for ( int i = 0; i < size; i++ ) {
-			if (	(__CommandListListener_array[i] != null) &&
-				(__CommandListListener_array[i] == listener) ) {
+			if ( (__CommandListListener_array[i] != null) && (__CommandListListener_array[i] == listener) ) {
 				__CommandListListener_array[i] = null;
 			}
-			else {	++count;
+			else {
+			    ++count;
 			}
 		}
 		// Now resize the listener array...
-		CommandListListener [] newlisteners =
-			new CommandListListener[count];
+		CommandListListener [] newlisteners = new CommandListListener[count];
 		count = 0;
 		for ( int i = 0; i < size; i++ ) {
 			if ( __CommandListListener_array[i] != null ) {
@@ -2771,8 +2749,7 @@ protected void setCreateOutput ( Boolean CreateOutput_Boolean )
 /**
 Set the initial working directory for the processor.  This is typically the location
 of the commands file, or a temporary directory if the commands have not been saved.
-Also set the current working directory by calling setWorkingDir() with the same
-information.
+Also set the current working directory by calling setWorkingDir() with the same information.
 @param WorkingDir The current working directory.
 */
 public void setInitialWorkingDir ( String InitialWorkingDir )
@@ -2797,8 +2774,7 @@ protected void setIsRunning ( boolean is_running )
 /**
 Set the data for a named property, required by the CommandProcessor
 interface.  See the getPropContents method for a list of properties that are
-handled.  This method simply calls setPropContents () using the information in
-the Prop instance.
+handled.  This method simply calls setPropContents () using the information in the Prop instance.
 @param prop Property to set.
 @return the named property, or null if a value is not found.
 @exception Exception if there is an error setting the property.
@@ -2882,8 +2858,7 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 		__tsengine.setTimeSeriesList ( (Vector)contents );
 	}
 	else {// Not recognized...
-		String message = "Unable to set data for unknown property \"" +
-		prop +	"\".";
+		String message = "Unable to set data for unknown property \"" + prop + "\".";
 		throw new UnrecognizedRequestException ( message );
 	}
 }

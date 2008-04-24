@@ -351,19 +351,19 @@ private void refresh ()
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
-		// Now select the item in the list.  If not a match, print a
-		// warning.
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+		// Now select the item in the list.  If not a match, print a warning.
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+		    __TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {
+		    // Automatically add to the list...
 			if ( (TSID != null) && (TSID.length() > 0) ) {
-				__TSID_JComboBox.insertItemAt ( TSID, 1 );
+				__TSID_JComboBox.insertItemAt ( TSID, 0 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the first choice...
+			else {
+			    // Select the first choice...
 				if ( __TSID_JComboBox.getItemCount() > 0 ) {
 					__TSID_JComboBox.select ( 0 );
 				}

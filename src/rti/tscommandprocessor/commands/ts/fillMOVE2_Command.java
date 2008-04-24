@@ -324,20 +324,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
 		// TODO SAM 2006-04-16 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax (not free-format parameters)...
-		// Parse up front.  Don't parse with spaces because a
-		// TEMPTS may be present.
 		Vector v = StringUtil.breakStringList(command_string,
-			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
+			"(),\t", StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
 			ntokens = v.size();
 		}
-		if ( ntokens < 10 ) {
-			message = "Syntax error in \"" + command_string + "\".  Not enough tokens.";
+		// v[0] is the command name
+		if ( ntokens < 11 ) {
+			message = "Syntax error in \"" + command_string + "\".  Not enough parameters.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -356,7 +354,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String IndependentAnalysisEnd = "";
 		String FillStart = "";
 		String FillEnd = "";
-		int ic = 0;
+		int ic = 1;   // Skip command name
 		TSID = ((String)v.elementAt(ic++)).trim();
 		IndependentTSID = ((String)v.elementAt(ic++)).trim();
 		NumberOfEquations=((String)v.elementAt(ic++)).trim();

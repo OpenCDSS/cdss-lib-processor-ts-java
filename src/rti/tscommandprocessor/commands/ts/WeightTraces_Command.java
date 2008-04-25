@@ -31,7 +31,6 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the WeightTraces() command.
@@ -50,6 +49,16 @@ List of time series read during discovery.  These are TS objects but with mainly
 metadata (TSIdent) filled in.
 */
 private Vector __discovery_TS_Vector = null;
+
+/**
+Years as array of integers (populated during data check).
+*/
+private int [] __Year_int = null;
+
+/**
+Weights as array of doubles (populated during data check).
+*/
+private double [] __Weight_double = null;
 
 /**
 Constructor.
@@ -72,8 +81,7 @@ throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String SpecifyWeightsHow = parameters.getValue ( "SpecifyWeightsHow" );
-    String Year = parameters.getValue ( "Year" );
-    String Weight = parameters.getValue ( "Weight" );
+    String Weights = parameters.getValue ( "Weights" );
     String NewTSID = parameters.getValue ( "NewTSID" );
     String message;
     String warning = "";
@@ -107,43 +115,69 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide an identifier for the ensemble to copy."));
 	}
-	Vector Year_Vector = StringUtil.breakStringList ( Year, "\n, ", StringUtil.DELIM_SKIP_BLANKS );
-	int Year_size = 0;
-	if ( Year_Vector != null ) {
-	    Year_size = Year_Vector.size();
-	}
-	Vector Weight_Vector = StringUtil.breakStringList ( Weight, "\n, ", StringUtil.DELIM_SKIP_BLANKS );
-    int Weight_size = 0;
-    if ( Weight_Vector != null ) {
-        Weight_size = Weight_Vector.size();
+	Vector Weights_Vector = StringUtil.breakStringList ( Weights, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    int Weights_size = 0;
+    if ( Weights_Vector != null ) {
+        Weights_size = Weights_Vector.size();
     }
-    if ( Year_size != Weight_size ) {
-        message = "The number of trace years and weights is not equal.";
+    if ( Weights_size == 0 ) {
+        message = "Pairs of year/weights values are not specifed (no values).";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,
-                "Specify the same number of trace years and weights."));
+                "Specify pairs of trace years and weights seperated by commas."));   
     }
-    for ( int i = 0; i < Year_size; i++ ) {
-        if ( !StringUtil.isInteger((String)Year_Vector.elementAt(i)) ) {
-            message = "Trace year \"" + Year_Vector.elementAt(i) + "\" is not an integer.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(
-                    CommandStatusType.FAILURE, message, "Specify an integer year."));
+    else if ( (Weights_size %2) != 0 ) {
+        message = "Pairs of year/weights values are not specifed (odd number of values).";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Specify pairs of trace years and weights seperated by commas."));
+    }
+    else {
+        __Year_int = new int[Weights_size/2];
+        __Weight_double = new double[Weights_size/2];
+        for ( int i = 0; i < Weights_size; i++ ) {
+            String value = (String)Weights_Vector.elementAt(i);
+            if ( (i%2) == 0 ) {
+                // Year...
+                if ( !StringUtil.isInteger(value) ) {
+                    message = "Trace year \"" + Weights_Vector.elementAt(i) + "\" is not an integer.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(
+                            CommandStatusType.FAILURE, message, "Specify an integer year."));
+                }
+                else {
+                    __Year_int[i/2] = Integer.parseInt(value);
+                }
+            }
+            else {
+                // Weights
+                if ( !StringUtil.isDouble(value) ) {
+                    message = "Weight \"" + Weights_Vector.elementAt(i) + "\" is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(
+                            CommandStatusType.FAILURE, message, "Specify a number for the weight."));
+                }
+                else {
+                    __Weight_double[i/2] = Double.parseDouble(value);
+                }
+            }
         }
     }
-    for ( int i = 0; i < Weight_size; i++ ) {
-        if ( !StringUtil.isDouble((String)Weight_Vector.elementAt(i)) ) {
-            message = "Weight \"" + Weight_Vector.elementAt(i) + "\" is not a number.";
-            warning += "\n" + message;
-            status.addToLog(CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(
-                    CommandStatusType.FAILURE, message, "Specify a number for the weight."));
-        }
+    if ( (NewTSID == null) || NewTSID.equals("") ) {
+        message = "The new time series identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a new time series identifier when defining the command."));
     }
-    if ( (NewTSID != null) && !NewTSID.equals("") ) {
+    else {
         try {
             TSIdent.parseIdentifier( NewTSID, TSIdent.NO_VALIDATION );
         }
@@ -155,8 +189,7 @@ throws InvalidCommandParameterException
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(
-            CommandStatusType.FAILURE, message,
-            "Use the command editor to enter required fields."));
+            CommandStatusType.FAILURE, message, "Use the command editor to enter required fields."));
         }
     }
     
@@ -165,8 +198,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "SpecifyWeightsHow" );
-    valid_Vector.add ( "Year" );
-    valid_Vector.add ( "Weight" );
+    valid_Vector.add ( "Weights" );
     valid_Vector.add ( "NewTSID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -188,7 +220,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new CopyEnsemble_JDialog ( parent, this )).ok();
+	return (new WeightTraces_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -221,10 +253,9 @@ public List getObjectList ( Class c )
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports very-old syntax (separate commands for different combinations of
-parameters), newer syntax (one command but fixed-parameter list), and current
-syntax (free-format parameters).
+Parse the command string into a PropList of parameters.  Only new syntax is
+supported because the command has not been used for a long time and now operates
+on an EnsembleID (very old used convoluted TSID with sequence number).
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
@@ -234,122 +265,33 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {   int warning_level = 2;
-    String routine = "fillMOVE2_Command.parseCommand", message;
-
-    if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
-        super.parseCommand( command_string);
+    String routine = "WeightTraces_Command.parseCommand", message;
+    
+    // Get the part of the command after the TS Alias =...
+    int pos = command_string.indexOf ( "=" );
+    if ( pos < 0 ) {
+        message = "Syntax error in \"" + command_string + "\".  Expecting:  TS Alias = WeightTraces(...)";
+        Message.printWarning ( warning_level, routine, message);
+        throw new InvalidCommandSyntaxException ( message );
     }
-    else {
-        // TODO SAM 2006-04-16 This whole block of code needs to be
-        // removed as soon as commands have been migrated to the new syntax.
-        //
-        // Old syntax (not free-format parameters)...
-        Vector v = StringUtil.breakStringList(command_string,
-            "(),\t", StringUtil.DELIM_ALLOW_STRINGS );
-        int ntokens = 0;
-        if ( v != null ) {
-            ntokens = v.size();
-        }
-        // v[0] is the command name
-        if ( ntokens < 11 ) {
-            message = "Syntax error in \"" + command_string + "\".  Not enough parameters.";
-            Message.printWarning ( warning_level, routine, message);
-            throw new InvalidCommandSyntaxException ( message );
-        }
-
-        // Get the individual tokens of the expression...
-
-        String TSID = "";
-        String IndependentTSID = "";
-        String NumberOfEquations = "";
-        //String AnalysisMonth = "";
-        String Transformation = "";
-        //String Intercept = "";
-        String DependentAnalysisStart = "";
-        String DependentAnalysisEnd = "";
-        String IndependentAnalysisStart = "";
-        String IndependentAnalysisEnd = "";
-        String FillStart = "";
-        String FillEnd = "";
-        int ic = 1;   // Skip command name
-        TSID = ((String)v.elementAt(ic++)).trim();
-        IndependentTSID = ((String)v.elementAt(ic++)).trim();
-        NumberOfEquations=((String)v.elementAt(ic++)).trim();
-        Transformation = ((String)v.elementAt(ic++)).trim();
-        DependentAnalysisStart = ((String)v.elementAt(ic++)).trim();
-        if ( DependentAnalysisStart.equals("*") ) {
-            DependentAnalysisStart = "";// Current default
-        }
-        DependentAnalysisEnd =((String)v.elementAt(ic++)).trim();
-        if ( DependentAnalysisEnd.equals("*") ) {
-            DependentAnalysisEnd = "";// Current default
-        }
-        IndependentAnalysisStart = ((String)v.elementAt(ic++)).trim();
-        if ( IndependentAnalysisStart.equals("*") ) {
-            IndependentAnalysisStart = "";// Current default
-        }
-        IndependentAnalysisEnd =((String)v.elementAt(ic++)).trim();
-        if ( IndependentAnalysisEnd.equals("*") ) {
-            IndependentAnalysisEnd = "";// Current default
-        }
-        FillStart = ((String)v.elementAt(ic++)).trim();
-        if ( FillStart.equals("*") ) {
-            FillStart = ""; // Current default.
-        }
-        FillEnd = ((String)v.elementAt(ic++)).trim();
-        if ( FillEnd.equals("*") ) {
-            FillEnd = "";   // Current default.
-        }
-
-        v = null;
-        PropList parameters = new PropList ( getCommandName() );
-        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-        if ( TSID.length() > 0 ) {
-            parameters.set ( "TSID", TSID );
-        }
-        if ( IndependentTSID.length() > 0 ) {
-            parameters.set ( "IndependentTSID", IndependentTSID );
-        }
-        if ( NumberOfEquations.length() > 0 ) {
-            parameters.set("NumberOfEquations", NumberOfEquations);
-        }
-        /* TODO SAM 2006-04-16
-            Evaluate whether this can be enabled
-        if ( AnalysisMonth.length() > 0 ) {
-            _parameters.set ( "AnalysisMonth", AnalysisMonth );
-        }
-        */
-        if ( Transformation.length() > 0 ) {
-            parameters.set ( "Transformation", Transformation );
-        }
-        /* TODO SAM 2006-04-16
-            Evaluate whether this can be enabled
-        if ( Intercept.length() > 0 ) {
-            _parameters.set ( "Intercept", Intercept );
-        }
-        */
-        if ( DependentAnalysisStart.length() > 0 ) {
-            parameters.set ( "DependentAnalysisStart",DependentAnalysisStart );
-        }
-        if ( DependentAnalysisEnd.length() > 0 ) {
-            parameters.set ( "DependentAnalysisEnd",DependentAnalysisEnd );
-        }
-        if ( IndependentAnalysisStart.length() > 0 ) {
-            parameters.set ( "IndependentAnalysisStart",IndependentAnalysisStart );
-        }
-        if ( IndependentAnalysisEnd.length() > 0 ) {
-            parameters.set ( "IndependentAnalysisEnd",IndependentAnalysisEnd );
-        }
-        if ( FillStart.length() > 0 ) {
-            parameters.set ( "FillStart", FillStart );
-        }
-        if ( FillEnd.length() > 0 ) {
-            parameters.set ( "FillEnd", FillEnd );
-        }
-        parameters.setHowSet ( Prop.SET_UNKNOWN );
-        setCommandParameters ( parameters );
+    String token0 = command_string.substring ( 0, pos ).trim();    // TS Alias
+    String token1 = command_string.substring ( pos + 1 ).trim();   // command(...)
+    if ( (token0 == null) || (token1 == null) ) {
+        message = "Syntax error in \"" + command_string + "\".  Expecting:  TS Alias = WeightTraces(...)";
+        Message.printWarning ( warning_level, routine, message);
+        throw new InvalidCommandSyntaxException ( message );
     }
+    
+    // Get the alias from the first token before the equal sign...
+    
+    String Alias = StringUtil.getToken ( token0, " ", StringUtil.DELIM_SKIP_BLANKS, 1 );
+    super.parseCommand( token1 );
+    
+    PropList parameters = getCommandParameters();
+    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+    parameters.set ( "Alias", Alias );
+    parameters.setHowSet ( Prop.SET_UNKNOWN );
+    setCommandParameters ( parameters );
 }
 
 /**
@@ -391,7 +333,7 @@ not produce output).
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "CopyEnsemble_Command.runCommand", message;
+{	String routine = "WeightTraces_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -410,9 +352,8 @@ CommandWarningException, CommandException
 	
     String Alias = parameters.getValue ( "Alias" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+    // Currently only one option...
 	//String SpecifyWeightsHow = parameters.getValue ( "SpecifyWeightsHow" );
-	String Year = parameters.getValue ( "Year" );
-	String Weight = parameters.getValue ( "Weight" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 
     if ( command_phase == CommandPhaseType.RUN ) {
@@ -481,10 +422,8 @@ CommandWarningException, CommandException
     	// Now process the time series...
         
         try {
-            // Get the years and weights...
-            Vector Year_Vector = StringUtil.breakStringList( Year, ", ", 0);
-            Vector Weight_Vector = StringUtil.breakStringList( Weight, ", ", 0);
-            
+            // Years and weights were previously determined...
+           
             // Create a new time series to hold the results.
             
             TS newts = null;
@@ -492,8 +431,8 @@ CommandWarningException, CommandException
             // Loop through each requested year and get the time series in the ensemble to process.
             
             int size_ensemble = tsensemble.size();
-            for ( int iyear = 0; iyear < Year_Vector.size(); iyear++ ) {
-                int year = Integer.parseInt((String)Year_Vector.get(iyear));
+            for ( int iyear = 0; iyear < __Year_int.length; iyear++ ) {
+                int year = __Year_int[iyear];   // Year to be weighted
                 TS ts = null;   // Time series in ensemble
                 boolean found = false;  // Is year trace found?
                 for ( int i = 0; i < size_ensemble; i++ ) {
@@ -515,18 +454,25 @@ CommandWarningException, CommandException
                 }
                 // If the first time series being added, simply clone the original time series, set the
                 // new time series identifier, and clear out the data.
+                boolean first_ts = false;
                 if ( newts == null ) {
                     newts = (TS)ts.clone();
+                    newts.setAlias ( Alias );
                     newts.setIdentifier ( NewTSID );
-                    newts.allocateDataSpace();
+                    // Set the description to empty since it will be reset in the TSUtil.add call below.
+                    newts.setDescription("");
+                    // Set the data values to missing to clear out
+                    TSUtil.setConstant(newts,newts.getMissing());
+                    first_ts = true;
                 }
-                // Add the time series to the new time series.
-                double weight = Double.parseDouble((String)Weight_Vector.get(iyear));
+                // Add the time series to the new time series.  This will add to the description for each
+                // added/scaled value.
                 Vector v = new Vector();
                 v.add ( ts );
                 double [] factor = new double[1];
-                factor[0] = weight;
-                TSUtil.add ( newts, v, factor, TSUtil.IGNORE_MISSING );
+                factor[0] = __Weight_double[iyear];
+                // The missing flag will work here for the first and subsequent time series.
+                TSUtil.add ( newts, v, factor, TSUtil.SET_MISSING_IF_OTHER_MISSING );
             }
             
             // Update the data to the processor so that appropriate actions are taken...
@@ -594,13 +540,12 @@ Return the string representation of the command.
 */
 public String toString ( PropList props )
 {	if ( props == null ) {
-		return getCommandName() + "()";
+		return "TS Alias = " + getCommandName() + "()";
 	}
     String Alias = props.getValue( "Alias" );
 	String EnsembleID = props.getValue( "EnsembleID" );
 	String SpecifyWeightsHow = props.getValue( "SpecifyWeightsHow" );
-	String Year = props.getValue( "Year" );
-	String Weight = props.getValue( "Weight" );
+	String Weights = props.getValue( "Weights" );
 	String NewTSID = props.getValue( "NewTSID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
@@ -615,17 +560,11 @@ public String toString ( PropList props )
         }
         b.append ( "SpecifyWeightsHow=\"" + SpecifyWeightsHow + "\"" );
     }
-    if ( (Year != null) && (Year.length() > 0) ) {
+    if ( (Weights != null) && (Weights.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "Year=\"" + Year + "\"" );
-    }
-    if ( (Weight != null) && (Weight.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Weight=\"" + Weight + "\"" );
+        b.append ( "Weights=\"" + Weights + "\"" );
     }
     if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
         if ( b.length() > 0 ) {

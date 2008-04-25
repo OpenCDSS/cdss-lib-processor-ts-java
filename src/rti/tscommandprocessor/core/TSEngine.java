@@ -6481,108 +6481,11 @@ throws Exception
 					++error_count;
 				}
 			}
-/*
-				// Weight traces and create a new time series...
-				alias2 = ((String)tokens.elementAt(3)).trim();
-				String weight_method =
-					((String)tokens.elementAt(4)).trim();
-				if ( !weight_method.equalsIgnoreCase(
-					"AbsoluteWeights") ) {
-					Message.printWarning ( 1, routine,
-					"Weight method is not recognized for \""
-					+ command_String + "\"" );
-					++error_count;
-					continue;
-				}
-				// Get the trace numbers and weights...
-				Vector traces = new Vector();
-				Vector weights = new Vector();
-				int tsize = tokens.size();
-				for ( int iw = 5; iw < tsize; iw++ ) {
-					if ( (iw%2) != 0 ) {
-						traces.addElement( ((String)
-						tokens.elementAt(iw)).trim() );
-						if (	!StringUtil.isInteger(
-							(String)
-							tokens.elementAt(iw))){
-							Message.printWarning(1,
-							routine, "Non-integer "+
-							"trace number in \"" +
-							command_String + "\"" );
-							++error_count;
-							continue;
-						}
-					}
-					else {	weights.addElement( ((String)
-						tokens.elementAt(iw)).trim() );
-						if (	!StringUtil.isDouble(
-							(String)
-							tokens.elementAt(iw))){
-							Message.printWarning(1,
-							routine, "Non-number "+
-							"weight in \"" +
-							command_String + "\"" );
-							++error_count;
-							continue;
-						}
-					}
-				}
-				// Now loop through.  Copy the first trace to
-				// a new time series (set the alias).  Then
-				// loop through the other traces and add to the
-				// first.  Later, if normalized weights are
-				// added, will need to do more in TSUtil...
-				TS its = getTimeSeries ( command_tag, alias2,
-					StringUtil.atoi(
-					(String)traces.elementAt(0)) );
-				if ( its == null ) {
-					Message.printWarning ( 1, routine,
-					"Unable to find time series \"" +
-					alias2 + "\" trace " +
-					(String)traces.elementAt(0) );
-					++error_count;
-					continue;
-				}
-				ts = (TS)its.clone();
-				// Set all the data to missing since the values
-				// will be set during the add...
-				TSUtil.setConstant(ts,ts.getMissing());
-				// Set the description to empty since it will
-				// be reset in the TSUtil.add call below.
-				ts.setDescription("");
-				tsize = traces.size();
-				double addfac[] = new double[1];
-				Vector addvec = new Vector(1);
-				for ( int iw = 0; iw < tsize; iw++ ) {
-					its = getTimeSeries ( command_tag,
-						alias2,
-						StringUtil.atoi(
-						(String)traces.elementAt(iw)));
-					if ( its == null ) {
-						Message.printWarning ( 1,
-						routine,
-						"Unable to find time series \""+
-						alias2 + "\" trace " +
-						(String)traces.elementAt(iw) );
-						++error_count;
-						continue;
-					}
-					// Else do the add...
-					addvec.removeAllElements();
-					addvec.addElement(its);
-					addfac[0] = StringUtil.atod((String)
-						weights.elementAt(iw));
-					ts = TSUtil.add ( ts, addvec, addfac,
-						TSUtil.IGNORE_MISSING );
-				}
-			}
-			// Set the alias for the new time series to the value
-			// originally read after the TS...
-			if ( ts != null ) {
-				ts.setAlias ( tsalias );
-			}
-			tokens = null;
-		}*/
+	        // Set the alias for the new time series to the value originally read after the TS...
+            if ( ts != null ) {
+                ts.setAlias ( tsalias );
+            }
+            tokens = null;
 		}
 		else if(command_String.regionMatches(true,0,"writeStateCU",0,12) ){
 			// Write the time series in memory to a StateCU time series file...

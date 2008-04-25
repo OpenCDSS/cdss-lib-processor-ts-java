@@ -80,7 +80,7 @@ public void actionPerformed( ActionEvent event )
     Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
-		response ( true );
+		response ( false );
 	}
     else if ( o == __clear_JButton ) {
         __NewTSID_JTextArea.setText ( "" );
@@ -98,11 +98,6 @@ public void actionPerformed( ActionEvent event )
                 tsident = new TSIdent ( NewTSID );
             }
             PropList idprops = new PropList("NewTSIDProps" );
-            idprops.set ( "EnableAll=False" );
-            idprops.set ( "EnableLocation=True" );
-            idprops.set ( "EnableSource=True" );
-            idprops.set ( "EnableType=True" );
-            idprops.set ( "EnableScenario=True" );
             TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame, true, tsident, idprops )).response();
             if ( tsident2 != null ) {
                 __NewTSID_JTextArea.setText ( tsident2.toString(true) );
@@ -118,7 +113,7 @@ public void actionPerformed( ActionEvent event )
 		refresh ();
 		checkInput();
 		if ( !__error_wait ) {
-			response ( false );
+			response ( true );
 		}
 	}
 }
@@ -133,8 +128,7 @@ private void checkInput ()
 	String Alias = __Alias_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String SpecifyWeightsHow = __SpecifyWeightsHow_JComboBox.getSelected();
-	String Year = __Year_JTextArea.getText().trim(); 
-	String Weight = __Weight_JTextArea.getText().trim();
+	String Weights = getWeights();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
     __error_wait = false;
 
@@ -147,11 +141,8 @@ private void checkInput ()
     if ( (SpecifyWeightsHow != null) && (SpecifyWeightsHow.length() > 0) ) {
         props.set ( "SpecifyWeightsHow", SpecifyWeightsHow );
     }
-    if ( (Year != null) && (Year.length() > 0) ) {
-        props.set ( "Year", Year );
-    }
-    if ( (Weight != null) && (Weight.length() > 0) ) {
-        props.set ( "Weight", Weight );
+    if ( (Weights != null) && (Weights.length() > 0) ) {
+        props.set ( "Weights", Weights );
     }
     if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
         props.set ( "NewTSID", NewTSID );
@@ -163,6 +154,7 @@ private void checkInput ()
     catch ( Exception e ) {
         // The warning would have been printed in the check code.
         __error_wait = true;
+        Message.printWarning ( 2, "", e );
     }
 }
 
@@ -174,14 +166,12 @@ private void commitEdits ()
 {   String Alias = __Alias_JTextField.getText().trim();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String SpecifyWeightsHow = __SpecifyWeightsHow_JComboBox.getSelected();
-    String Year = __Year_JTextArea.getText().trim(); 
-    String Weight = __Weight_JTextArea.getText().trim();
+    String Weights = getWeights();
     String NewTSID = __NewTSID_JTextArea.getText().trim();
     __command.setCommandParameter ( "Alias", Alias );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "SpecifyWeightsHow", SpecifyWeightsHow );
-    __command.setCommandParameter ( "Year", Year );
-    __command.setCommandParameter ( "Weight", Weight );
+    __command.setCommandParameter ( "Weights", Weights );
     __command.setCommandParameter ( "NewTSID", NewTSID );
 }
 
@@ -203,6 +193,44 @@ throws Throwable
 }
 
 /**
+Get the weights string from the GUI components.  The returned string has the format
+"Year,Weight,Year,Weight".
+*/
+private String getWeights()
+{
+    StringBuffer weights = new StringBuffer();
+    Vector Year_Vector = StringUtil.breakStringList ( __Year_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
+    int Year_size = 0;
+    if ( Year_Vector != null ) {
+        Year_size = Year_Vector.size();
+    }
+    Vector Weight_Vector = StringUtil.breakStringList ( __Weight_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
+    int Weight_size = 0;
+    if ( Weight_Vector != null ) {
+        Weight_size = Weight_Vector.size();
+    }
+    int size = Year_size;
+    if ( Weight_size > size ) {
+        size = Weight_size;
+    }
+    for ( int i = 0; i < size; i++ ) {
+        if ( i > 0 ) {
+            weights.append ( "," );
+        }
+        if ( i < Year_size ) {
+            weights.append ( "" + Year_Vector.elementAt(i) + ",");
+        }
+        else {
+            weights.append ( "," );
+        }
+        if ( i < Weight_size ) {
+            weights.append ( "" + Weight_Vector.elementAt(i) );
+        }
+    }
+    return weights.toString();
+}
+
+/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -221,11 +249,14 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a new time series by weighting traces.  The result is identified by its alias."),
+		"Create a new time series by weighting traces from an ensemble.  The result is identified by its alias."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Enter trace years and weights one value per line."),
+		"Enter trace years and weights (0.0 to 1.0), one value per line."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Any trace value that is missing will cause the weighted result to be missing."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -240,27 +271,6 @@ private void initialize ( JFrame parent, Command command )
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID parts:" ),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewTSID_JTextArea = new JTextArea ( 3, 25 );
-    __NewTSID_JTextArea.setEditable(false);
-    __NewTSID_JTextArea.setLineWrap ( true );
-    __NewTSID_JTextArea.setWrapStyleWord ( true );
-    __NewTSID_JTextArea.addKeyListener ( this );
-    // Make 3-high to fit in the edit button...
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
-        1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Specify to avoid confusion with TSID from original TS."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    y += 2;
-    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
-        new SimpleJButton ( "Edit", "Edit", this ) ),
-        3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
-        new SimpleJButton ( "Clear", "Clear", this ) ),
-        4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Specify weights how?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -284,6 +294,27 @@ private void initialize ( JFrame parent, Command command )
 	__Weight_JTextArea.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Weight_JTextArea),
 		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID parts:" ),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewTSID_JTextArea = new JTextArea ( 3, 25 );
+    __NewTSID_JTextArea.setEditable(false);
+    __NewTSID_JTextArea.setLineWrap ( true );
+    __NewTSID_JTextArea.setWrapStyleWord ( true );
+    __NewTSID_JTextArea.addKeyListener ( this );
+    // Make 3-high to fit in the edit button...
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
+        1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Specify to avoid confusion with TSID from original TS."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    y += 2;
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
+        new SimpleJButton ( "Edit", "Edit", this ) ),
+        3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
+        new SimpleJButton ( "Clear", "Clear", this ) ),
+        4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -351,8 +382,7 @@ private void refresh ()
 {	String routine = "WeightTraces_JDialog.refresh";
     String Alias = "";
     String SpecifyWeightsHow = "";
-    String Year = "";
-    String Weight = "";
+    String Weights = "";
     String EnsembleID = "";
     String NewTSID = "";
     PropList props = __command.getCommandParameters();
@@ -362,9 +392,11 @@ private void refresh ()
         Alias = props.getValue ( "Alias" );
         EnsembleID = props.getValue ( "EnsembleID" );
         SpecifyWeightsHow = props.getValue ( "SpecifyWeightsHow" );
-        Year = props.getValue ( "Year" );
-        Weight = props.getValue ( "Weight" );
+        Weights = props.getValue ( "Weights" );
         NewTSID = props.getValue ( "NewTSID" );
+        if ( Alias != null ) {
+            __Alias_JTextField.setText ( Alias );
+        }
         // Now select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox, EnsembleID, JGUIUtil.NONE, null, null ) ) {
             __EnsembleID_JComboBox.select ( EnsembleID );
@@ -382,40 +414,39 @@ private void refresh ()
                 }
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem( __SpecifyWeightsHow_JComboBox, SpecifyWeightsHow, JGUIUtil.NONE, null, null ) ) {
-			__SpecifyWeightsHow_JComboBox.select (SpecifyWeightsHow);
-		}
-        else {
-            Message.printWarning ( 1, routine,
-				"Existing command references an invalid weight type \"" +
-				SpecifyWeightsHow + "\".\nSelect a different type or Cancel." );
-		}
-        if ( Year != null ) {
-            Vector v = StringUtil.breakStringList ( Year, ", ", StringUtil.DELIM_SKIP_BLANKS );
-            int size =0;
-            if ( v != null ) {
-                size = v.size();
-            }
-			for ( int i = 0; i < size; i++ ) {
-				if ( i != 0 ) {
-					__Year_JTextArea.append ( "\n" );
-				}
-				__Year_JTextArea.append (
-				(String)v.elementAt(i) );
-			}
+        if ( SpecifyWeightsHow == null ) {
+            // Select the default
+            __SpecifyWeightsHow_JComboBox.select (0);
         }
-        if ( Weight != null ) {
-            Vector v = StringUtil.breakStringList ( Weight, ", ", StringUtil.DELIM_SKIP_BLANKS );
-            int size =0;
-            if ( v != null ) {
-                size = v.size();
-            }
-			for ( int i = 0; i < size; i++ ) {
-				if ( i != 0 ) {
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __SpecifyWeightsHow_JComboBox, SpecifyWeightsHow, JGUIUtil.NONE, null, null ) ) {
+    			__SpecifyWeightsHow_JComboBox.select (SpecifyWeightsHow);
+    		}
+            else {
+                Message.printWarning ( 1, routine,
+    				"Existing command references an invalid weight type \"" +
+    				SpecifyWeightsHow + "\".\nSelect a different type or Cancel." );
+    		}
+        }
+        Vector v = StringUtil.breakStringList ( Weights, ",", StringUtil.DELIM_SKIP_BLANKS );
+        int size = 0;
+        if ( v != null ) {
+            size = v.size();
+        }
+		for ( int i = 0; i < size; i++ ) {
+		    if ( (i%2) == 0 ) {
+		        // Year
+    			if ( i != 0 ) {
+    				__Year_JTextArea.append ( "\n" );
+    			}
+    			__Year_JTextArea.append ( (String)v.elementAt(i) );
+		    }
+		    else {
+		        // Weight
+				if ( i != 1 ) {
 					__Weight_JTextArea.append ( "\n" );
 				}
-				__Weight_JTextArea.append (
-				(String)v.elementAt(i) );
+				__Weight_JTextArea.append (	(String)v.elementAt(i) );
 			}
 		}
         if ( NewTSID != null ) {
@@ -426,14 +457,12 @@ private void refresh ()
 	Alias = __Alias_JTextField.getText().trim();
 	EnsembleID = __EnsembleID_JComboBox.getSelected();
 	SpecifyWeightsHow = __SpecifyWeightsHow_JComboBox.getSelected();
-	Year = __Year_JTextArea.getText().trim().replace('\n', ',');
-	Weight = __Weight_JTextArea.getText().trim().replace('\n', ',');
+	Weights = getWeights();
     props = new PropList ( __command.getCommandName() );
     props.add ( "Alias=" + Alias );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "SpecifyWeightsHow=" + SpecifyWeightsHow );
-    props.add ( "Year=" + Year );
-    props.add ( "Weight=" + Weight );
+    props.add ( "Weights=" + Weights );
     props.add ( "NewTSID=" + NewTSID );
     __command_JTextArea.setText( __command.toString ( props ) );
 }

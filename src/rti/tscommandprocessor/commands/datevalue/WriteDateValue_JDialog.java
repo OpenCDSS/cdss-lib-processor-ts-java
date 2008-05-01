@@ -25,7 +25,10 @@ import javax.swing.JTextField;
 import java.io.File;
 import java.util.Vector;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -60,6 +63,10 @@ private JTextField __Delimiter_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
@@ -146,6 +153,30 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
+}
+
+/**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
@@ -157,12 +188,20 @@ private void checkInput ()
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected(); 
 
 	__error_wait = false;
 	
 	if ( TSList.length() > 0 ) {
 		parameters.set ( "TSList", TSList );
 	}
+    if ( TSID.length() > 0 ) {
+        parameters.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        parameters.set ( "EnsembleID", EnsembleID );
+    }
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
@@ -191,13 +230,17 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
-	__command.setCommandParameter("Delimiter", Delimiter);
+	__command.setCommandParameter ( "Delimiter", Delimiter );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
@@ -297,20 +340,21 @@ private void initialize ( JFrame parent, Command command )
 		"Overrides the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( "" );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	tslist_Vector.addElement ( __command._AllTS );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates the time series to output (default=AllTS)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -322,6 +366,7 @@ private void initialize ( JFrame parent, Command command )
     		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South Panel: North
@@ -352,7 +397,8 @@ private void initialize ( JFrame parent, Command command )
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
-public void itemStateChanged (ItemEvent e) {
+public void itemStateChanged (ItemEvent e)
+{   checkGUIState();
 	refresh();
 }
 
@@ -397,6 +443,8 @@ private void refresh ()
 	String OutputStart = "";
 	String OutputEnd = "";
 	String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -408,6 +456,8 @@ private void refresh ()
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		TSList = parameters.getValue ( "TSList" );
+        TSID = parameters.getValue ( "TSID" );
+        EnsembleID = parameters.getValue ( "EnsembleID" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -420,23 +470,50 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
-		if ( TSList == null ) {
-			// Select default...
-			__TSList_JComboBox.select ( 0 );
-		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
-				__TSList_JComboBox.select ( TSList );
-			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
-				"\".  Select a different value or Cancel.");
-				__error_wait = true;
-			}
-		}
+        if ( TSList == null ) {
+            // Select default...
+            __TSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
+                JGUIUtil.NONE, null, null ) ) {
+                __TSID_JComboBox.select ( TSID );
+        }
+        else {  // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {  // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -444,10 +521,14 @@ private void refresh ()
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
+    parameters.add ( "TSID=" + TSID );
+    parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputFile=" + OutputFile );
-	parameters.add("Delimiter=" + Delimiter );
+	parameters.add ( "Delimiter=" + Delimiter );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );

@@ -7,6 +7,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.DateValueTS;
 
@@ -39,13 +40,6 @@ This class initializes, checks, and runs the WriteDateValue() command.
 */
 public class WriteDateValue_Command extends AbstractCommand implements Command, FileGenerator
 {
-
-/**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-//protected final String _AllMatchingTSID = "AllMatchingTSID";
 
 /**
 Output file that is created by this command.
@@ -176,6 +170,8 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "TSList" );
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "EnsembleID" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -289,23 +285,25 @@ CommandWarningException, CommandException
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
-	if ( TSList == null ) {
-		TSList = _AllTS;
-	}
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = TSListType.ALL_TS.toString();
+    }
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\" from processor.";
+        message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -316,8 +314,8 @@ CommandWarningException, CommandException
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to write using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+        message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -327,7 +325,8 @@ CommandWarningException, CommandException
 	}
 	Vector tslist = (Vector)o_TSList;
 	if ( tslist.size() == 0 ) {
-		message = "Zero time series in list to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+        message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
@@ -484,6 +483,8 @@ public String toString ( PropList parameters )
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String TSList = parameters.getValue ( "TSList" );
+    String TSID = parameters.getValue( "TSID" );
+    String EnsembleID = parameters.getValue( "EnsembleID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -520,6 +521,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

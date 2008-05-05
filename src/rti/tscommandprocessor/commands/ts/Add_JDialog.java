@@ -279,22 +279,11 @@ private void initialize ( JFrame parent, Command command )
 		new JLabel ( "Add one or more time series to a time series (or ensemble of time series)." +
 		"  The receiving time series (or ensemble) is modified."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+   	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time series to be subtracted are selected using the TS list parameter:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "  " + TSListType.ALL_MATCHING_TSID + " - add all previous time series with matching identifiers."),
+        "The time series to be added are selected using the AddTSList parameter:"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  " + TSListType.ALL_TS + " - add all previous time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  " + TSListType.SELECTED_TS + " - add time series selected with selectTimeSeries() commands"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  " + TSListType.SPECIFIED_TSID + " - add time series selected from the list below"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    y = CommandEditorUtil.addTSListNotesWithSpecifiedTSIDToEditorDialogPanel ( main_JPanel, y );
     
     // Time series to be added to...
     
@@ -317,7 +306,7 @@ private void initialize ( JFrame parent, Command command )
     __AddTSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel (
             this, main_JPanel, new JLabel ("Time series to add (AddTSlist):"), __AddTSList_JComboBox, y );
-    // Default is not to add SelectedTSID so add it here...
+    // Default is not to add SpecifiedTSID so add it here...
     __AddTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
     __AddTSID_JLabel = new JLabel ("Add TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
@@ -347,7 +336,7 @@ private void initialize ( JFrame parent, Command command )
 		__AddSpecifiedTSID_JListModel.addElement( (String)tsids2.elementAt(i));
 	}
 	__AddSpecifiedTSID_JList = new JList ( __AddSpecifiedTSID_JListModel );
-    __AddSpecifiedTSID_JList.setVisibleRowCount(Math.max(5,size));
+    __AddSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
 	__AddSpecifiedTSID_JList.addListSelectionListener ( this );
 	__AddSpecifiedTSID_JList.addKeyListener ( this );
 	__AddSpecifiedTSID_JList.addMouseListener ( this );

@@ -198,7 +198,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Convert a time series to an ensemble of traces."),
+		"Create an ensemble of time series traces from a time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Each trace will start on the reference date and will be as long as specified."),

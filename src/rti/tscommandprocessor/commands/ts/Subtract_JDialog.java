@@ -346,7 +346,7 @@ private void initialize ( JFrame parent, Command command )
 		__SubtractSpecifiedTSID_JListModel.addElement( (String)tsids2.elementAt(i));
 	}
 	__SubtractSpecifiedTSID_JList = new JList ( __SubtractSpecifiedTSID_JListModel );
-    __SubtractSpecifiedTSID_JList.setVisibleRowCount(Math.max(5,size));
+    __SubtractSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
 	__SubtractSpecifiedTSID_JList.addListSelectionListener ( this );
 	__SubtractSpecifiedTSID_JList.addKeyListener ( this );
 	__SubtractSpecifiedTSID_JList.addMouseListener ( this );

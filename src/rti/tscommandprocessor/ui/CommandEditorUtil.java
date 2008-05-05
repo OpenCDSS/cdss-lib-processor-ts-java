@@ -116,6 +116,53 @@ public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyLis
 }
 
 /**
+Add the TSList parameter notes components to a command dialog.
+The standard set of TSList values is described (does not include SpecifiedTSID).
+It is assumed that GridBagLayout is used for the layout.
+@param panel The JPanel to which the controls are being added.
+@param y The GridBagLayout vertical position.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addTSListNotesToEditorDialogPanel ( JPanel panel, int y )
+{
+    Insets insetsTLBR = new Insets(2,2,2,2);
+    JGUIUtil.addComponent(panel, new JLabel (
+    "  " + TSListType.ALL_MATCHING_TSID + " - add all previous time series with matching identifiers."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(panel, new JLabel (
+    "  " + TSListType.ALL_TS + " - add all previous time series."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(panel, new JLabel (
+            "  " + TSListType.ENSEMBLE_ID + " - add all time series for the ensemble."),
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(panel, new JLabel (
+        "  " + TSListType.LAST_MATCHING_TSID +
+        " - add the last time series (before this command) with matching identifier."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(panel, new JLabel (
+    "  " + TSListType.SELECTED_TS + " - add time series selected with SelectTimeSeries() commands"),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    return y;
+}
+
+/**
+Add the TSList parameter notes components to a command dialog.
+It is assumed that GridBagLayout is used for the layout.
+@param panel The JPanel to which the controls are being added.
+@param y The GridBagLayout vertical position.
+@return Incremented y reflecting the addition of a new vertical component group.
+*/
+public static int addTSListNotesWithSpecifiedTSIDToEditorDialogPanel ( JPanel panel, int y )
+{
+    Insets insetsTLBR = new Insets(2,2,2,2);
+    y = addTSListNotesToEditorDialogPanel ( panel, y );
+    JGUIUtil.addComponent(panel, new JLabel (
+    "  " + TSListType.SPECIFIED_TSID + " - add time series selected from the list below"),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    return y;
+}
+
+/**
 Add the TSList parameter components to a command dialog.
 It is assumed that GridBagLayout is used for the layout.
 @param dialog The dialog that is being added to.

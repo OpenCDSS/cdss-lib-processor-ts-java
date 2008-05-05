@@ -86,21 +86,13 @@ private JTextField	__AnalysisStart_JTextField,
 			__FillEnd_JTextField,
 			__FillFlag_JTextField;	// Flag to set for filled data.
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private SimpleJComboBox	__IndependentTSID_JComboBox= null;
-						// List for independent time
-						// series identifier(s)
-private SimpleJComboBox	__NumberOfEquations_JComboBox = null;
-						// One or monthly equations.
-private SimpleJComboBox	__AnalysisMonth_JComboBox = null;
-						// Month to analyze - monthly
-						// equations only.
-private SimpleJComboBox	__Transformation_JComboBox=null;// Linear or log
-						// transformation.
-private boolean		__error_wait = false;	// True if there is an error
-						// in the input.
+private SimpleJComboBox	__IndependentTSID_JComboBox= null; // List for independent time series identifier(s)
+private SimpleJComboBox	__NumberOfEquations_JComboBox = null; // One or monthly equations.
+private SimpleJComboBox	__AnalysisMonth_JComboBox = null; // Month to analyze - monthly equations only.
+private SimpleJComboBox	__Transformation_JComboBox=null;// None or log transformation.
+private boolean		__error_wait = false;	// True if there is an error in the input.
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Was OK pressed last (false=
-						// cancel)?
+private boolean		__ok = false;		// Was OK pressed last (false=cancel)?
 private fillRegression_Command __command = null;// Command to edit
 
 /**
@@ -130,7 +122,8 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
-	else {	// A combo box.  Refresh the command...
+	else {
+	    // A combo box.  Refresh the command...
 		checkGUIState();
 		refresh ();
 	}
@@ -290,8 +283,7 @@ private void initialize ( JFrame parent, Command command )
 		"use blank for all available data, OutputStart, or OutputEnd."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series to fill (dependent):" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to fill (dependent):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 
@@ -306,8 +298,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel,
-		new JLabel ("Independent time series:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Independent time series:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IndependentTSID_JComboBox = new SimpleJComboBox ( true );
 	__IndependentTSID_JComboBox.setData ( tsids );
@@ -316,7 +307,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __IndependentTSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number of equations:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number of equations:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
 	__NumberOfEquations_JComboBox.addItem ( "" );	// Default
@@ -324,13 +315,13 @@ private void initialize ( JFrame parent, Command command )
 	__NumberOfEquations_JComboBox.addItem ( __command._MonthlyEquations );
 	__NumberOfEquations_JComboBox.select ( __command._OneEquation );
 	__NumberOfEquations_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Number of equations to use (blank=one equation)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis month:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis month:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AnalysisMonth_JComboBox = new SimpleJComboBox ( false );
 	__AnalysisMonth_JComboBox.setMaximumRowCount ( 13 );
@@ -342,11 +333,11 @@ private void initialize ( JFrame parent, Command command )
 	__AnalysisMonth_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(main_JPanel, __AnalysisMonth_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Can be used with monthly equations (blank=all months)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Transformation_JComboBox = new SimpleJComboBox ( false );
 	__Transformation_JComboBox.addItem ( "" );
@@ -354,19 +345,19 @@ private void initialize ( JFrame parent, Command command )
 	__Transformation_JComboBox.addItem ( __command._Log );
 	__Transformation_JComboBox.select ( 0 );
 	__Transformation_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"How to transform data before analysis (blank=None)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Intercept_JTextField = new JTextField ( 5 );
 	__Intercept_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Intercept_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Intercept_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Blank or 0.0 are allowed with no transformation."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -397,13 +388,13 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillFlag_JTextField = new JTextField ( 5 );
 	__FillFlag_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"1-character flag to indicate fill."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -451,7 +442,8 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// One of the combo boxes...
+	else {
+	    // One of the combo boxes...
 		refresh();
 	}
 }
@@ -473,8 +465,7 @@ public boolean ok ()
 }
 
 /**
-Refresh the expression from the other text field contents.
-The syntax is:
+Refresh the expression from the other text field contents.  The syntax is:
 <pre>
 fillRegression(TSID="X",IndependentID="X",NumberOfEquations=X,AnalysisMonth=X,
 Transformation=X,AnalysisStart="X",AnalysisEnd="X",FillStart="X",FillEnd="X",

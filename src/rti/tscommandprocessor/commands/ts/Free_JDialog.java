@@ -144,8 +144,7 @@ private void initialize ( JFrame parent, Command command )
         "and therefore unneeded time series may need to be removed."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Select the time series to free from the list or enter " +
-        "a time series identifier or alias."),
+        "Select the time series to free from the list or enter a time series identifier or alias."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Identifiers follow the pattern:"),
@@ -163,11 +162,10 @@ private void initialize ( JFrame parent, Command command )
         "ABC* - matches locations starting with ABC"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "ABC*.*.TYPE.MONTH - matches locations starting with ABC, with"+
-        " data type TYPE and interval MONTH."),
+        "ABC*.*.Type.Month - matches locations starting with ABC, with data type Type and interval Month."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "See also the selectTimeSeries() and deselectTimeSeries() commands."),
+        "See also the SelectTimeSeries() and DeselectTimeSeries() commands."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Time series that are in an ensemble will be removed from the ensemble."),

@@ -562,8 +562,7 @@ CommandWarningException, CommandException
 	}
 	props.set ( "NumberOfEquations", NumberOfEquations );
 
-	/* REVISIT SAM 2006-04-16
-		Evaluate whether this can be enabled.
+	/* TODO SAM 2006-04-16 Evaluate whether this can be enabled.
 	String AnalysisMonth =_parameters.getValue("AnalysisMonth");
 	if ( AnalysisMonth != null ) {
 		props.set ( "AnalysisMonth", AnalysisMonth );
@@ -733,11 +732,34 @@ CommandWarningException, CommandException
 		}
 	
 	// Fill the dependent time series...
-	// This will result in the time series in the original data
-	// being modified...
-	try {	TSRegression regress_results = TSUtil.fillRegress ( 
-			ts_to_fill, ts_independent, FillStart_DateTime,
+	// This will result in the time series in the original data being modified...
+	try {
+	    TSRegression regress_results = TSUtil.fillRegress ( ts_to_fill, ts_independent, FillStart_DateTime,
 			FillEnd_DateTime, props );
+        if ( NumberOfEquations.equalsIgnoreCase(_OneEquation)) {
+            if ( regress_results.getN1() == 0 ) {
+                message = "Number of overlapping points is 0.";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that time series have overlapping periods." ) );
+            }
+        }
+        else {
+            for ( int i = 0; i < 12; i++ ) {
+                if ( regress_results.getN1(i) == 0 ) {
+                    message = "Number of overlapping points in month " + i + " is 0.";
+                    Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                    command_tag,++warning_count), routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that time series have overlapping periods." ) );
+                }
+            }
+        }
 		// Print the results to the log file...
 		if ( regress_results != null ) {
 			Message.printStatus ( 2, routine,"Analysis results are..." );

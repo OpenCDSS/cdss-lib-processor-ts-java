@@ -204,7 +204,8 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "The units remain the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify a Reset value of 0000-MM-DD to reset the total to zero on MM-DD of each year." ), 
+        "<HTML>Specify a Reset value of 0000-MM-DD to reset the total to zero on MM-DD of each year" +
+        " (<B>UNDER DEVELOPMENT</B>)</HTML>." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);

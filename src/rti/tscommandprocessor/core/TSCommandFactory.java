@@ -132,6 +132,7 @@ import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
 import rti.tscommandprocessor.commands.ts.Add_Command;
 import rti.tscommandprocessor.commands.ts.AddConstant_Command;
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
+import rti.tscommandprocessor.commands.ts.Blend_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.compareTimeSeries_Command;
@@ -257,6 +258,12 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
 		return new analyzePattern_Command ();
 	}
+    
+    // "b" commands...
+    
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"Blend") ) {
+        return new Blend_Command ();
+    }
 
 	// "c" commands...
 

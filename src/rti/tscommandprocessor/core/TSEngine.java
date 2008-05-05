@@ -5737,60 +5737,11 @@ throws Exception
 			do_ARMA ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"blend",0,5)) {
-			// Don't use space because TEMPTS will not parse right.
-			Vector v = StringUtil.breakStringList(command_String,
-				"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-			if ( (v == null) || (v.size() < 3) ) {
-				Message.printWarning ( 2, routine,
-				"Syntax error in \"" + command_String + "\"" );
-				++error_count;
-				v = null;
-				continue;
-			}
-
-			// Get the individual tokens of the expression...
-
-			alias = ((String)v.elementAt(1)).trim();
-			String independent = null;
-
-			// Make sure there are time series available to
-			// operate on...
-
-			ts_pos = indexOf ( alias );
-			ts = getTimeSeries ( ts_pos );
-			if ( ts == null ) {
-				Message.printWarning ( 1, routine,
-				"Unable to find time series \"" + alias +
-				"\" for\n" + command_String + "\"." );
-				++error_count;
-				v = null;
-				continue;
-			}
-			independent = ((String)v.elementAt(2)).trim();
-			TS independentTS = null;
-			// The following may or may not have
-			// TEMPTS at the front but is handled
-			// transparently by getTimeSeries.
-			independentTS = getTimeSeries (command_tag,independent);
-			if ( independentTS == null ) {
-				Message.printWarning ( 1, routine,
-				"Unable to find time series \"" + independent +
-				"\" for \"" + command_String + "\"." );
-				++error_count;
-			}
-			else {	TSUtil.blend ( ts, independentTS );
-			}
-			v = null;
-			independentTS = null;
-			ts_action = UPDATE_TS;
-		}
 		else if(command_String.regionMatches(true,0,"createFromList",0,14)){
 			do_createFromList ( popup_warning_level, command_tag, command_String );
 			continue;
 		}
-		// TODO SAM 2005-09-14
-		// Evaluate how this works with other TSAnalyst capabilities
+		// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
 		else if ( command_String.regionMatches(true,0,"createYearStatisticsReport",0,26)){
 			do_createYearStatisticsReport ( command_String );
 			continue;

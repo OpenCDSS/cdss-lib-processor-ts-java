@@ -153,7 +153,6 @@ supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -169,13 +168,20 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_TS.toString() );
+            if ( TSID.equals("*") ) {
+                parameters.set ( "TSList", TSListType.ALL_TS.toString() );
+                // TSID is not needed
+                parameters.unSet( "TSID" );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+                // TSID that was set is OK to leave.
+            }
         }
     }
     else {
 		//TODO SAM 2005-08-24 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
 		Vector v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
@@ -193,9 +199,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
-			parameters.set ( "TSID", TSID );
-			// Old style was to match the TSID
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+		    if ( TSID.equals("*") ) {
+		        parameters.set ( "TSList", TSListType.ALL_TS.toString() );
+		    }
+		    else {
+		        parameters.set ( "TSID", TSID );
+		        // Old style was to match the TSID
+		        parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+		    }
 		}
 		if ( HandleMissingHow.length() > 0 ) {
 			parameters.set ( "HandleMissingHow", HandleMissingHow);

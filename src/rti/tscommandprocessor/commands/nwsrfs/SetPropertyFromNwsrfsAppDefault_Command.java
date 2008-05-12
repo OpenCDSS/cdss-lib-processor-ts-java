@@ -360,7 +360,7 @@ CommandWarningException, CommandException
 	    }
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error setting property \""+ PropertyName + "=" + PropertyValue;
+		message = "Unexpected error setting property \""+ PropertyName + "\"=\"" + PropertyValue + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

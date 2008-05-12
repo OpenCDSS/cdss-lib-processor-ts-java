@@ -436,7 +436,7 @@ CommandWarningException, CommandException
             setOutputFile ( new File(OutputFile_full));
         }
         catch ( Exception e ) {
-            message = "Unexpected error writing time series to NWS Card file \"" + OutputFile_full + "\".";
+            message = "Unexpected error writing time series to NWS Card file \"" + OutputFile_full + "\" (" + e + ").";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );

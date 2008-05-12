@@ -465,7 +465,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error processing TSProduct file \"" + TSProductFile_full + "\".";
+		message = "Unexpected error processing TSProduct file \"" + TSProductFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,

@@ -151,7 +151,7 @@ private void initialize ( JFrame parent, Command command )
 	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Use a setOutputPeriod() command to guarantee longer periods if filling data."),
+	"Use a SetOutputPeriod() command to guarantee longer periods if filling data."),
 	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 	"Specify the command at the top of commands when filling a specific period."),

@@ -292,7 +292,7 @@ throws CommandWarningException, CommandException
 		processor.setPropContents ( "OutputEnd", OutputEnd_DateTime );
 	}
 	catch ( Exception e ) {
-		message = "Error setting output period in processor.";
+		message = "Unexpected error setting output period in processor (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

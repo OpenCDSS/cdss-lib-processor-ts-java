@@ -63,7 +63,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String SubtractTSList = parameters.getValue ( "SubtractTSList" );
+    //String SubtractTSList = parameters.getValue ( "SubtractTSList" );
 	//String SetStart = parameters.getValue ( "SetStart" );
 	//String SetEnd = parameters.getValue ( "SetEnd" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
@@ -691,7 +691,7 @@ CommandWarningException, CommandException
             TSUtil.subtract ( ts, tstosubtract_list, HandleMissingHow_int );
         }
         catch ( Exception e ) {
-            message = "Unexpected error subtracting from time series \"" + ts.getIdentifier() + "\".";
+            message = "Unexpected error subtracting from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
             Message.printWarning(3,routine,e);

@@ -812,7 +812,7 @@ throws InvalidCommandParameterException,
 		}
 	} 
 	catch ( Exception e ) {
-		message = "Unexpected error reading delimited file. \"" + InputFile_full + "\"";
+		message = "Unexpected error reading delimited file. \"" + InputFile_full + "\" (" + e + ")";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),

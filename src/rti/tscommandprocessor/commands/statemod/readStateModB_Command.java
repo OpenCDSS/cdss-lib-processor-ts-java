@@ -473,7 +473,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexepected error reading time series from StateMod binary file.";
+		message = "Unexepected error reading StateMod binary file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

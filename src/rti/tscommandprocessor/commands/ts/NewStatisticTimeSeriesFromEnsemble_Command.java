@@ -491,7 +491,7 @@ CommandWarningException, CommandException
 						// alias set to fail below.
 	}
 	catch ( Exception e ) {
-		message ="Unexpected error generating the statistic time series from ensemble \""+ EnsembleID + "\".";
+		message ="Unexpected error generating the statistic time series from ensemble \""+ EnsembleID + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

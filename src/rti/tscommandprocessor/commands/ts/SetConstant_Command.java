@@ -595,7 +595,7 @@ CommandWarningException, CommandException
             }
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" to constant.";
+			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" to constant (" + e + ").";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
 			Message.printWarning(3,routine,e);

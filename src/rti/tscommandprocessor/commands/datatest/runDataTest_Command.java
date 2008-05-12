@@ -325,7 +325,7 @@ throws InvalidCommandParameterException,
 
 		}
 		catch (Exception e) {
-			message = "Error while running DataTest.";
+			message = "Unexpected error running DataTest. (" + e + ")";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 					command_tag, ++warning_count ),
@@ -336,8 +336,7 @@ throws InvalidCommandParameterException,
 
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),

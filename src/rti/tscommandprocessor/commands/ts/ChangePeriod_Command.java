@@ -441,7 +441,7 @@ CommandWarningException, CommandException
             // No need to re-add to results list since the original reference is maintained.
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error changing period for \"" + ts.getIdentifier() + "\".";
+			message = "Unexpected error changing period for \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                     command_tag, ++warning_count),

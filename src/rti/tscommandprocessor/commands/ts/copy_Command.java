@@ -342,7 +342,7 @@ CommandWarningException, CommandException
 		tscopy.setAlias ( Alias );
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\".";
+		message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

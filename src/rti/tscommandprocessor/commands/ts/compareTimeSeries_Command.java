@@ -1248,7 +1248,7 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error comparing time series.";
+		message = "Unexpected error comparing time series (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

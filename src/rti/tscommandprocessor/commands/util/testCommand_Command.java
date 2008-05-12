@@ -15,12 +15,9 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 
 /**
 <p>

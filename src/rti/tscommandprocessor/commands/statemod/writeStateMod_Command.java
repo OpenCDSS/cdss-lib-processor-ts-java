@@ -690,7 +690,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Error writing time series to StateMod file \"" + OutputFile_full + "\".";
+		message = "Error writing time series to StateMod file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

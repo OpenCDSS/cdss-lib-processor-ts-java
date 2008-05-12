@@ -575,8 +575,7 @@ CommandWarningException, CommandException
         ts.setAlias ( Alias );
 
 		// Further process the time series...
-        // This makes sure the period is at least as long as the
-        // output period, and computes the historical averages.
+        // This makes sure the period is at least as long as the output period, and computes the historical averages.
 		Vector tslist = new Vector();
         tslist.addElement ( ts );
         PropList request_params = new PropList ( "" );
@@ -595,9 +594,26 @@ CommandWarningException, CommandException
                             message, "Report the problem to software support." ) );
             throw new CommandException ( message );
         }
+        
+        // Update the data to the processor...
+        
+        try {
+            TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
+        }
+        catch ( Exception e ){
+                message = "Cannot append new time series to results list.  Skipping.";
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                    command_tag, ++warning_count),
+                    routine,message);
+                status.addToLog(CommandPhaseType.RUN,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Unable to provide recommendation - check log file for details."));
+        }
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error creating a new pattern time series for \""+ NewTSID + "\".";
+		message = "Unexpected error creating a new pattern time series for \""+ NewTSID + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
@@ -606,22 +622,6 @@ CommandWarningException, CommandException
 				new CommandLogRecord(
 				CommandStatusType.FAILURE, message,
 				"Report the problem to software support - check log file for details."));
-	}
-
-	// Update the data to the processor...
-	
-	try { TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
-	}
-	catch ( Exception e ){
-			message = "Cannot append new time series to results list.  Skipping.";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag, ++warning_count),
-				routine,message);
-			status.addToLog(CommandPhaseType.RUN,
-					new CommandLogRecord(
-					CommandStatusType.FAILURE, message,
-					"Unable to provide recommendation - check log file for details."));
 	}
 
 	if ( warning_count > 0 ) {

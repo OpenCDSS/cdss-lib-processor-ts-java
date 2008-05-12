@@ -308,7 +308,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error blending \""+ ts_to_modify.getIdentifier() +"\" into \"" +
-		    ts_independent.getIdentifier() + "\"";
+		    ts_independent.getIdentifier() + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );

@@ -190,7 +190,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Error processing Python file \"" + InputFile_full + "\".";
+		message = "Unexpected error processing Python file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -221,24 +221,6 @@ throws PyException
     // Now take Jython's output and read it here to echo to the log file...
     //BufferedReader out_reader = new BufferedReader ( new PipedInputStream (out));
     interp.execfile ( pyfile );
-}
-
-/**
-Return the string representation of the command.
-*/
-public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
-	String InputFile = props.getValue("InputFile");
-	StringBuffer b = new StringBuffer ();
-	if ( (InputFile != null) && (InputFile.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputFile=\"" + InputFile + "\"" );
-	}
-	return getCommandName() + "(" + b.toString() + ")";
 }
 
 }

@@ -479,7 +479,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
         message ="Unexpected error generating the statistic time series from \""+
-        ts.getIdentifier() + "\".";
+        ts.getIdentifier() + "\" (" + e + ").";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count),routine,message );

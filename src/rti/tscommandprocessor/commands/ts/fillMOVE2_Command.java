@@ -778,7 +778,7 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-        message = "Unexpected error performing regression for \""+toString() +"\"";
+        message = "Unexpected error filling with regression for \""+toString() +"\" (" + e + ").";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(
             command_tag,++warning_count), routine, message );

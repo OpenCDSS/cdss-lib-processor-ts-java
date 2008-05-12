@@ -557,7 +557,7 @@ CommandWarningException, CommandException
             TSUtil.fillRepeat ( ts, FillStart_DateTime, FillEnd_DateTime, FillDirection_int, MaxIntervals_int );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error filling time series \"" + ts.getIdentifier() + "\" by repeating.";
+			message = "Unexpected error filling by repeating for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                     command_tag, ++warning_count),

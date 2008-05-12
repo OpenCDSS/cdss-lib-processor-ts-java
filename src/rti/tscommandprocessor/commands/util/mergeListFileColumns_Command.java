@@ -33,8 +33,6 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
@@ -480,7 +478,7 @@ CommandWarningException, CommandException
 		// (and NOT also open the file).
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error writing table file \"" + OutputFile_full + "\"";
+		message = "Unexpected error writing table file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( 2,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine,message );

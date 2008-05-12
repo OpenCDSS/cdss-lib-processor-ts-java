@@ -204,7 +204,7 @@ CommandWarningException, CommandException
             ts.setEditable ( Editable_boolean );
         }
         catch ( Exception e ) {
-            message = "Unexpected error setting properties for time series \"" + ts.getIdentifier() + "\"";
+            message = "Unexpected error setting properties for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );

@@ -25,12 +25,8 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.String.StringUtil;
-import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the CopyEnsemble() command.
@@ -90,7 +86,7 @@ throws InvalidCommandParameterException
 	}
     if ( (NewTSID != null) && !NewTSID.equals("") ) {
         try {
-            TSIdent tsident = TSIdent.parseIdentifier( NewTSID, TSIdent.NO_VALIDATION );
+            TSIdent.parseIdentifier( NewTSID, TSIdent.NO_VALIDATION );
         }
         catch ( Exception e ) {
             // TODO SAM 2007-03-12 Need to catch a specific exception like
@@ -332,7 +328,7 @@ CommandWarningException, CommandException
             TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, copy );
     	}
     	catch ( Exception e ) {
-    		message = "Unexpected error trying to copy ensemble \""+ tsensemble.getEnsembleID() + "\".";
+    		message = "Unexpected error trying to copy ensemble \""+ tsensemble.getEnsembleID() + "\" (" + e + ").";
     		Message.printWarning ( warning_level,
     			MessageUtil.formatMessageTag(
     			command_tag,++warning_count),routine,message );

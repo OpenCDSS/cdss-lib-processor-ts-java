@@ -528,9 +528,10 @@ CommandWarningException, CommandException
 
 	// Now try to write...
 
+	String OutputFile_full = OutputFile;
 	try {
 		// Convert to an absolute path...
-		String OutputFile_full = IOUtil.verifyPathForOS(
+		OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing RiverWare file \"" + OutputFile_full + "\"" );
 		// Only write the first time series...
@@ -543,7 +544,7 @@ CommandWarningException, CommandException
 		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-		message = "Error writing time series to RiverWare file.";
+		message = "Unexpected error writing time series to RiverWare file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

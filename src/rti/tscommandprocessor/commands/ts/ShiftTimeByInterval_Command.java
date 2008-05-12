@@ -445,7 +445,7 @@ CommandWarningException, CommandException
             TSUtil.shiftTimeByInterval ( ts, intervals, weights );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error shifting time series \"" + ts.getIdentifier() + "\".";
+			message = "Unexpected error shifting time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
 			Message.printWarning(3,routine,e);

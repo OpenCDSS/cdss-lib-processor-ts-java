@@ -490,7 +490,7 @@ CommandWarningException, CommandException
             }
     	}
     	catch ( Exception e ) {
-    		message = "Unexpected error trying to weight ensemble traces \""+ tsensemble.getEnsembleID() + "\".";
+    		message = "Unexpected error trying to weight ensemble traces \""+ tsensemble.getEnsembleID() + "\" (" + e + ").";
     		Message.printWarning ( warning_level,
     			MessageUtil.formatMessageTag(
     			command_tag,++warning_count),routine,message );

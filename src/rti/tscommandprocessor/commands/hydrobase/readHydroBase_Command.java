@@ -80,7 +80,7 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
 
 /**
 <p>
-This class initializes, checks, and runs the ReadHydroBase() command.
+This class initializes, checks, and runs the ReadHydroBase() and Alias = ReadHydroBase() commands.
 </p>
 */
 public class readHydroBase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
@@ -1048,7 +1048,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message ="Unexpected error reading time series from HydroBase.";
+		message ="Unexpected error reading time series from HydroBase (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -1098,7 +1098,8 @@ public String toString ( PropList props )
 		if ( _use_alias ) {
 			return "TS Alias = " + getCommandName() + "()";
 		}
-		else {	return getCommandName() + "()";
+		else {
+		    return getCommandName() + "()";
 		}
 	}
 	if ( _use_alias ) {
@@ -1110,7 +1111,8 @@ public String toString ( PropList props )
 			b.append ( "TSID=\"" + TSID + "\"" );
 		}
 	}
-	else {	String DataType = props.getValue("DataType");
+	else {
+	    String DataType = props.getValue("DataType");
 		if ( (DataType != null) && (DataType.length() > 0) ) {
 			if ( b.length() > 0 ) {
 				b.append ( "," );
@@ -1195,8 +1197,7 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
 	}
-	/* TODO SAM 2006-04-27 Code cleanup
-	As per Ray Bennett always do this.
+	/* TODO SAM 2006-04-27 Code cleanup. As per Ray Bennett always do this so no optional parameter.
 	String FillDailyDiv = props.getValue("FillDailyDiv");
 	if ( (FillDailyDiv != null) && (FillDailyDiv.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -1213,28 +1214,25 @@ public String toString ( PropList props )
 	}
 	*/
 	String FillUsingDivComments = props.getValue("FillUsingDivComments");
-	if (	(FillUsingDivComments != null) &&
-		(FillUsingDivComments.length() > 0) ) {
+	if ( (FillUsingDivComments != null) && (FillUsingDivComments.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
 		b.append ( "FillUsingDivComments=" + FillUsingDivComments );
 	}
 	String FillUsingDivCommentsFlag = props.getValue("FillUsingDivCommentsFlag");
-	if (	(FillUsingDivCommentsFlag != null) &&
-		(FillUsingDivCommentsFlag.length() > 0) ) {
+	if ( (FillUsingDivCommentsFlag != null) && (FillUsingDivCommentsFlag.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "FillUsingDivCommentsFlag=\"" +
-			FillUsingDivCommentsFlag + "\"" );
+		b.append ( "FillUsingDivCommentsFlag=\"" + FillUsingDivCommentsFlag + "\"" );
 	}
 	if ( _use_alias ) {
 		String Alias = props.getValue ( "Alias" );
-		return "TS " + Alias + " = " + getCommandName() +
-			"(" + b.toString() + ")";
+		return "TS " + Alias + " = " + getCommandName() + "(" + b.toString() + ")";
 	}
-	else {	return getCommandName() + "(" + b.toString() + ")";
+	else {
+	    return getCommandName() + "(" + b.toString() + ")";
 	}
 }
 

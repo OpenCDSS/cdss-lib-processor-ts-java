@@ -507,7 +507,8 @@ CommandWarningException, CommandException
 			}
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error scaling time series \""+ ts.getIdentifier() + "\" by " + ScaleValue +".";
+			message = "Unexpected error scaling time series \""+ ts.getIdentifier() + "\" by " + ScaleValue +
+			    "(" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );

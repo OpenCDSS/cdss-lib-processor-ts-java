@@ -535,7 +535,8 @@ CommandWarningException, CommandException
             }
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error filling time series \""+ ts.getIdentifier() + "\" with historical averages.";
+			message = "Unexpected error filling time series \""+ ts.getIdentifier() +
+			    "\" with historical averages (" + e + ").";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                     command_tag, ++warning_count),

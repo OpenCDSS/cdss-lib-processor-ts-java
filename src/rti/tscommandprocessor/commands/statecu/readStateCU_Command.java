@@ -13,6 +13,7 @@
 package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Vector;
@@ -610,7 +611,8 @@ CommandWarningException, CommandException
 			file_type = "irrigation practice";
 			// Clear the status...
 			status.clearLog(command_phase);
-			try {	Vector ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
+			try {
+			    Vector ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
 					InputFile_full, InputStart_DateTime, InputEnd_DateTime );
 					// Get the individual time series for use by TSTool.
 					tslist = StateCU_IrrigationPracticeTS.toTSVector(
@@ -710,9 +712,18 @@ CommandWarningException, CommandException
 		// Free resources from StateMod list...
 		tslist = null;
 	}
+    catch ( FileNotFoundException e ) {
+        message = "StateCU file \"" + InputFile_full + "\" is not found or accessible.";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                status.addToLog(command_phase,
+                    new CommandLogRecord( CommandStatusType.FAILURE, message,
+                        "Verify that the file exists and is readable."));
+        throw new CommandException ( message );
+    }
 	catch ( Exception e ) {
 		Message.printWarning ( log_level, routine, e );
-		message = "Unexpected error reading time series from StateCU file.";
+		message = "Unexpected error reading time series from StateCU file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

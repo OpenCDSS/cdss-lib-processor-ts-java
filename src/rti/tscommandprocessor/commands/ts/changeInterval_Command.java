@@ -533,7 +533,7 @@ throws InvalidCommandParameterException,
         TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
 	} 
 	catch ( Exception e ) {
-		message = "Unexpected error changing the interval for TSID=\"" + TSID + "\"";
+		message = "Unexpected error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );

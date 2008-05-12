@@ -323,7 +323,7 @@ CommandWarningException, CommandException
 			TSUtil.convertUnits ( ts, NewUnits );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error converting units for time series \"" + ts.getIdentifier() + "\".";
+			message = "Unexpected error converting units for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );

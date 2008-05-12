@@ -275,7 +275,7 @@ throws CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "Error (re)starting the log file \"" + LogFile_full + "\".";
+		message = "Unexpected error (re)starting the log file \"" + LogFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );

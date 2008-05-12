@@ -16,13 +16,10 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 
 /**
 This class initializes, checks, and runs the RemoveFile() command.
@@ -170,7 +167,7 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "Removed file \"" + InputFile_full + "\".");
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error removing file \"" + InputFile_full + "\".";
+		message = "Unexpected error removing file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );

@@ -28,7 +28,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
 /**
 <p>
@@ -67,7 +66,7 @@ dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSID = parameters.getValue ( "TSID" );
+{	//String TSID = parameters.getValue ( "TSID" );
 	String AverageMethod = parameters.getValue ( "AverageMethod" );
     String Bracket = parameters.getValue ( "Bracket" );
 	String warning = "";
@@ -455,7 +454,7 @@ CommandWarningException, CommandException
             }
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error converting time series \""+	ts.getIdentifier() + "\" to running average.";
+			message = "Unexpected error converting time series \""+	ts.getIdentifier() + "\" to running average (" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );

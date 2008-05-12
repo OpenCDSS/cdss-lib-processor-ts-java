@@ -691,7 +691,7 @@ CommandWarningException, CommandException
             TSUtil.add ( ts, tstoadd_list, HandleMissingHow_int );
         }
         catch ( Exception e ) {
-            message = "Unexpected error adding to time series \"" + ts.getIdentifier() + "\".";
+            message = "Unexpected error adding to time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
             Message.printWarning(3,routine,e);

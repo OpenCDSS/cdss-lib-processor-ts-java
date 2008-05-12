@@ -310,20 +310,16 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __browseSearchFolder_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Command file name pattern:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file name pattern:" ), 
     	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FilenamePattern_JTextField = new JTextField ( 50 );
     __FilenamePattern_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FilenamePattern_JTextField,
 	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    __FilenamePattern_JTextField = new JTextField ( 50 );
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-    		"Default is \"Test_*.TSTool\""), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is \"Test_*.TSTool\""), 
     		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Commands file to create:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Commands file to create:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -420,20 +416,10 @@ private void refresh ()
 	String FilenamePattern = "";
 	String OutputFile = "";
 	String Append = "";
+	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
-		Vector v = StringUtil.breakStringList (
-			__command.toString(),"()",
-			StringUtil.DELIM_SKIP_BLANKS );
-		PropList props = null;
-		if (	(v != null) && (v.size() > 1) &&
-			(((String)v.elementAt(1)).indexOf("=") > 0) ) {
-			props = PropList.parse (
-				(String)v.elementAt(1), routine, "," );
-		}
-		if ( props == null ) {
-			props = new PropList ( __command.getCommandName() );
-		}
+		props = __command.getCommandParameters();
 		SearchFolder = props.getValue ( "SearchFolder" );
 		FilenamePattern = props.getValue ( "FilenamePattern" );
 		OutputFile = props.getValue ( "OutputFile" );
@@ -472,14 +458,13 @@ private void refresh ()
 	FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Append = __Append_JComboBox.getSelected();
-	PropList props = new PropList ( __command.getCommandName() );
+	props = new PropList ( __command.getCommandName() );
 	props.add ( "SearchFolder=" + SearchFolder );
 	props.add ( "FilenamePattern=" + FilenamePattern );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "Append=" + Append );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __pathSearchFolder_JButton != null ) {
 		__pathSearchFolder_JButton.setEnabled ( true );
 		File f = new File ( SearchFolder );

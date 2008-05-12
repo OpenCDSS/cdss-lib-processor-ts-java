@@ -874,7 +874,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 
 	} 
 	catch ( Exception e ) {
-        message ="Unexpected error lagging the time series";
+        message ="Unexpected error lagging the time series (" + e + ").";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count),routine,message );

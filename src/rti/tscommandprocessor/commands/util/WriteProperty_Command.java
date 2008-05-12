@@ -263,13 +263,14 @@ CommandWarningException, CommandException
 
 	// Now try to write...
 
+	String OutputFile_full = OutputFile;
 	try {
 		boolean Append_boolean = true;	// Default
 		if ( (Append != null) && Append.equalsIgnoreCase(_False)) {
 			Append_boolean = false;
 		}
 		// Convert to an absolute path...
-		String OutputFile_full = IOUtil.verifyPathForOS(
+		OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		// Open the file...
 		PrintWriter fout = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
@@ -281,13 +282,12 @@ CommandWarningException, CommandException
 		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-		message = "Error writing property to file.";
+		message = "Unexpected error writing property to file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check log file for details." ) );
+				new CommandLogRecord(CommandStatusType.FAILURE, message, "Check log file for details." ) );
 		throw new CommandException ( message );
 	}
 	

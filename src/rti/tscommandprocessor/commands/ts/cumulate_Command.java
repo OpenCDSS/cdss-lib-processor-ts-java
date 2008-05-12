@@ -386,7 +386,7 @@ CommandWarningException, CommandException
             u.cumulate ( ts, null, null, cumulate_props );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error cumulating time series \""+	ts.getIdentifier() + "\".";
+			message = "Unexpected error cumulating time series \""+	ts.getIdentifier() + "\" (" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );

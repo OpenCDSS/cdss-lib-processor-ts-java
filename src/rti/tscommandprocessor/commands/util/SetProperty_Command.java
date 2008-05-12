@@ -3,13 +3,9 @@ package rti.tscommandprocessor.commands.util;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-import rti.tscommandprocessor.core.TSListType;
 
 import java.util.List;
 import java.util.Vector;
-
-import RTi.TS.TS;
-import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -20,12 +16,10 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
@@ -298,7 +292,7 @@ CommandWarningException, CommandException
     	}
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error setting property \""+ PropertyName + "=" + PropertyValue;
+		message = "Unexpected error setting property \""+ PropertyName + "\"=\"" + PropertyValue + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

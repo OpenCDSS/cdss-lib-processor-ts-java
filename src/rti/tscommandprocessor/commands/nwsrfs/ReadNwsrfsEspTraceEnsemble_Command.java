@@ -54,7 +54,7 @@ runCommand() methods (prevent code duplication parsing DateTime strings).
 //private DateTime __InputEnd   = null;
 
 /**
-TSEnsemble created in discovery mode (basically to get the identifier for other commands).
+TSEnsemble created in discovery mode (to provide the identifier for other commands).
 */
 private TSEnsemble __tsensemble = null;
 
@@ -326,6 +326,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "EnsembleName" );
     //valid_Vector.add ( "InputStart" );
     //valid_Vector.add ( "InputEnd" );
     //valid_Vector.add ( "NewUnits" );
@@ -393,9 +394,7 @@ public List getObjectList ( Class c )
         datats = (TS)discovery_TS_Vector.elementAt(0);
     }
     // Use the most generic for the base class...
-    TS ts = new TS();
-    TSEnsemble tsensemble = new TSEnsemble();
-    if ( (c == ts.getClass()) || ((datats != null) && (c == datats.getClass())) ) {
+    if ( (c == TS.class) || ((datats != null) && (c == datats.getClass())) ) {
         // Get the list of time series...
         if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
             return null;
@@ -404,7 +403,7 @@ public List getObjectList ( Class c )
             return discovery_TS_Vector;
         }
     }
-    else if ( c == tsensemble.getClass() ) {
+    else if ( c == TSEnsemble.class ) {
         TSEnsemble ensemble = getDiscoveryEnsemble();
         if ( ensemble == null ) {
             return null;
@@ -533,7 +532,10 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
     String EnsembleID = parameters.getValue("EnsembleID");  // Get from file?
-    String EnsembleName = "";   // FIXME SAM 2007-12-18 Need to get from file?
+    String EnsembleName = parameters.getValue("EnsembleName");
+    if ( EnsembleName == null ) {
+        EnsembleName = "";
+    }
     String Alias = parameters.getValue("Alias");
 	//String NewUnits = parameters.getValue("NewUnits");
 	// TODO SAM 2007-02-18 Need to enable InputStart and InputEnd handling.
@@ -541,7 +543,6 @@ throws InvalidCommandParameterException,
 	//String InputEnd = _parameters.getValue("InputEnd");
 	//String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
 	
-
 	//props.set("Read24HourAsDay=" + Read24HourAsDay);
 
 	// Read the ensemble file.
@@ -590,7 +591,7 @@ throws InvalidCommandParameterException,
         throw new CommandException ( message );
     }
 	catch ( Exception e ) {
-		message = "Unexpected error reading NWSRFS ensemble file. \"" + InputFile_full + "\"";
+		message = "Unexpected error reading NWSRFS ensemble file. \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
@@ -680,6 +681,7 @@ public String toString ( PropList props )
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
     String EnsembleID = props.getValue("EnsembleID" );
+    String EnsembleName = props.getValue("EnsembleName" );
     /*
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
@@ -698,6 +700,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("EnsembleID=\"" + EnsembleID + "\"");
+    }
+    if ((EnsembleName != null) && (EnsembleName.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("EnsembleName=\"" + EnsembleName + "\"");
     }
 
     /*

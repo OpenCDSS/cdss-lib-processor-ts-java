@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
@@ -73,6 +74,11 @@ private DateTime __InputStart = null;
 private DateTime __InputEnd   = null;
 
 /**
+TSEnsemble created in discovery mode (to provide the identifier for other commands).
+*/
+private TSEnsemble __tsensemble = null;
+
+/**
 List of time series read during discovery.  These are TS objects but with maintly the
 metadata (TSIdent) filled in.
 */
@@ -98,8 +104,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -114,6 +119,9 @@ throws InvalidCommandParameterException
 	
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
+	// Currently difficult to check without knowing if file is ensemble
+	//String EnsembleID = parameters.getValue("EnsembleID");
+	//String EnsembleName = parameters.getValue("EnsembleName");
 	String NewUnits  = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd   = parameters.getValue("InputEnd");
@@ -326,6 +334,10 @@ throws InvalidCommandParameterException
     if ( _use_alias ) {
         valid_Vector.add ( "Alias" );
     }
+    else {
+        valid_Vector.add ( "EnsembleID" );
+        valid_Vector.add ( "EnsembleName" );
+    }
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -369,6 +381,14 @@ throws Throwable
 }
 
 /**
+Return the table that is read by this class when run in discovery mode.
+*/
+private TSEnsemble getDiscoveryEnsemble()
+{
+    return __tsensemble;
+}
+
+/**
 Return the list of time series read in discovery phase.
 */
 private Vector getDiscoveryTSList ()
@@ -387,9 +407,19 @@ public List getObjectList ( Class c )
     }
     TS datats = (TS)discovery_TS_Vector.elementAt(0);
     // Use the most generic for the base class...
-    TS ts = new TS();
-    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_Vector;
+    }
+    else if ( c == TSEnsemble.class ) {
+        TSEnsemble ensemble = getDiscoveryEnsemble();
+        if ( ensemble == null ) {
+            return null;
+        }
+        else {
+            Vector v = new Vector();
+            v.addElement ( ensemble );
+            return v;
+        }
     }
     else {
         return null;
@@ -452,7 +482,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         super.parseCommand ( command_string );
     }
  
- 	// The following is for backwards compatability with old commands files.
+ 	// The following is for backwards compatibility with old commands files.
     PropList parameters = getCommandParameters ();
 	if (parameters.getValue("InputStart") == null) {
 		parameters.set("InputStart", parameters.getValue("ReadStart"));
@@ -519,6 +549,12 @@ throws InvalidCommandParameterException,
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
+	String EnsembleID = parameters.getValue("EnsembleID");
+	String EnsembleName = parameters.getValue("EnsembleName");
+	if ( (EnsembleID != null) && (EnsembleID.length() > 0) && (EnsembleName == null) ) {
+	    // Make sure that the EnsembleName is not null when EnsembleID is specified.
+	    EnsembleName = "";
+	}
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
@@ -573,8 +609,10 @@ throws InvalidCommandParameterException,
         throw new InvalidCommandParameterException ( message );
     }
     }
-    else {  // Get the global input start from the processor...
-        try {   Object o = processor.getPropContents ( "InputStart" );
+    else {
+        // Get the global input start from the processor...
+        try {
+            Object o = processor.getPropContents ( "InputStart" );
                 if ( o != null ) {
                     InputStart_DateTime = (DateTime)o;
                 }
@@ -622,7 +660,8 @@ throws InvalidCommandParameterException,
                                 message, "Verify that the end date/time is valid." ) );
                 throw new InvalidCommandParameterException ( message );
             }
-            else {  InputEnd_DateTime = (DateTime)prop_contents;
+            else {
+                InputEnd_DateTime = (DateTime)prop_contents;
             }
         }
         catch ( Exception e ) {
@@ -637,8 +676,10 @@ throws InvalidCommandParameterException,
             throw new InvalidCommandParameterException ( message );
         }
         }
-        else {  // Get from the processor...
-            try {   Object o = processor.getPropContents ( "InputEnd" );
+        else {
+            // Get from the processor...
+            try {
+                Object o = processor.getPropContents ( "InputEnd" );
                     if ( o != null ) {
                         InputEnd_DateTime = (DateTime)o;
                     }
@@ -710,7 +751,7 @@ throws InvalidCommandParameterException,
         }
 	} 
 	catch ( Exception e ) {
-		message = "Unexpected error reading NWS Card File. \"" + InputFile_full + "\"";
+		message = "Unexpected error reading NWS Card File. \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
@@ -756,9 +797,19 @@ throws InvalidCommandParameterException,
                 throw new CommandException ( message );
             }
         }
+        if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+            // Create an ensemble and add to the processor...
+            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
+        }
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( tslist );
+        // Create an ensemble to store the identifier, if it was specified...
+        if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, null );
+            setDiscoveryEnsemble ( ensemble );
+        }
     }
 
 	// Throw CommandWarningException in case of problems.
@@ -770,6 +821,14 @@ throws InvalidCommandParameterException,
 	}
     
     status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the ensemble that is processed by this class in discovery mode.
+*/
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
+{
+    __tsensemble = tsensemble;
 }
 
 /**
@@ -786,11 +845,18 @@ Return the string representation of the command.
 public String toString ( PropList props )
 {
 	if ( props == null ) {
-		return getCommandName() + "()";
+	    if ( _use_alias ) {
+	        return "TS Alias = " + getCommandName() + "()";
+	    }
+	    else {
+	        return getCommandName() + "()";
+	    }
 	}
 
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
+	String EnsembleID = props.getValue("EnsembleID" );
+	String EnsembleName = props.getValue("EnsembleName" );
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
@@ -801,6 +867,20 @@ public String toString ( PropList props )
 	// Input File
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
+	}
+	if ( !_use_alias ) {
+	    if ((EnsembleID != null) && (EnsembleID.length() > 0)) {
+	        if (b.length() > 0) {
+	            b.append(",");
+	        }
+	        b.append("EnsembleID=\"" + EnsembleID + "\"");
+	    }
+	    if ((EnsembleName != null) && (EnsembleName.length() > 0)) {
+	        if (b.length() > 0) {
+	            b.append(",");
+	        }
+	        b.append("EnsembleName=\"" + EnsembleName + "\"");
+	    }
 	}
 
 	// New Units

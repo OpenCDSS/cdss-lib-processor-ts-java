@@ -1,6 +1,5 @@
 package rti.tscommandprocessor.commands.util;
 
-import java.io.File;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -17,7 +16,6 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessManager;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
@@ -228,7 +226,7 @@ CommandWarningException, CommandException
         }
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error running program \"" + CommandLine + "\".";
+		message = "Unexpected error running program \"" + CommandLine + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );

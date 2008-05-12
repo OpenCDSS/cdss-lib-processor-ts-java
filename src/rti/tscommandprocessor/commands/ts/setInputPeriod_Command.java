@@ -292,7 +292,7 @@ throws CommandWarningException, CommandException
 		processor.setPropContents ( "InputEnd", InputEnd_DateTime );
 	}
 	catch ( Exception e ) {
-		message = "Error setting input period.";
+		message = "Unexpected error setting input period (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

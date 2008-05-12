@@ -432,7 +432,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unable to read delimited table file \"" + InputFile_full + "\".";
+		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( 2,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine,message );

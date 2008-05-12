@@ -334,8 +334,7 @@ throws InvalidCommandParameterException,
 
 		if (hasWildcards) {
 			Vector v = test.getWildcardTSIDs();
-			Vector tsList = (Vector)processor.getPropContents(
-				"TSResultsList");
+			Vector tsList = (Vector)processor.getPropContents( "TSResultsList");
 			Vector matches = findTSMatches(v, tsList);
 
 			if (matches == null) {
@@ -368,19 +367,15 @@ throws InvalidCommandParameterException,
 		processor.setPropContents("DataTestList", DataTestList_Vector);
 	}
 	catch (Exception e) {
-		message = "Unable to create DataTest for expression \""
-			+ TestExpression + "\"";
+		message = "Unexpected error creating DataTest for expression \"" + TestExpression + "\" (" + e + ")";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
 		Message.printWarning ( warning_level, routine, e);		
 	}
 
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
+		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),

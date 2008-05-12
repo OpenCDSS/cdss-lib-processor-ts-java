@@ -698,7 +698,7 @@ CommandWarningException, CommandException
             ts.addToGenesis( "Resequenced data using years: " + b.toString() );
         }
         catch ( Exception e ) {
-            message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\"";
+            message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );

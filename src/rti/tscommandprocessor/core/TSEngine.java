@@ -6517,7 +6517,7 @@ throws Exception
 				}
 			}
 			catch ( InvalidCommandSyntaxException e ) {
-				message = "Unable to process command (invalid syntax).";
+				message = "Unable to process command - invalid syntax (" + e + ").";
 				if ( command instanceof CommandStatusProvider ) {
 				       if (	CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
                                greaterThan(CommandStatusType.UNKNOWN) ) {
@@ -6533,7 +6533,8 @@ throws Exception
                                             message, "Check the log for more details." ) );
                        }
 				}
-				else {	// Command has not been updated to set warning/failure in status so show here
+				else {
+				    // Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
 						MessageUtil.formatMessageTag(command_tag,
 						++error_count), routine, message );
@@ -6545,7 +6546,7 @@ throws Exception
 				continue;
 			}
 			catch ( InvalidCommandParameterException e ) {
-				message = "Unable to process command invalid parameter).";
+				message = "Unable to process command - invalid parameter (" + e + ").";
 				if ( command instanceof CommandStatusProvider ) {
 				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
                             greaterThan(CommandStatusType.UNKNOWN) ) {
@@ -6561,7 +6562,8 @@ throws Exception
                                         message, "Check the log for more details." ) );
                     }
 				}
-				else {	// Command has not been updated to set warning/failure in status so show here
+				else {
+				    // Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
 							MessageUtil.formatMessageTag(command_tag,
 									++error_count), routine, message );
@@ -6572,7 +6574,7 @@ throws Exception
 				continue;
 			}
 			catch ( CommandWarningException e ) {
-				message = "Warnings were generated processing command (output may be incomplete).";
+				message = "Warnings were generated processing command - output may be incomplete (" + e + ").";
 				if ( command instanceof CommandStatusProvider ) {
 				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
                             greaterThan(CommandStatusType.UNKNOWN) ) {
@@ -6599,7 +6601,7 @@ throws Exception
 				continue;
 			}
 			catch ( CommandException e ) {
-				message = "Error processing command (unable to complete command).";
+				message = "Error processing command - unable to complete command (" + e + ").";
 				if ( command instanceof CommandStatusProvider ) {
 				    if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
                             greaterThan(CommandStatusType.UNKNOWN) ) {
@@ -6627,7 +6629,8 @@ throws Exception
                                         message, "Check the log file for more details." ) );
                     }
 				}
-				else {	// Command has not been updated to set warning/failure in status so show here
+				else {
+				    // Command has not been updated to set warning/failure in status so show here
 					Message.printWarning ( popup_warning_level,
 						MessageUtil.formatMessageTag(command_tag,
 						++error_count), routine, message );
@@ -6638,7 +6641,7 @@ throws Exception
 				continue;
 			}
 			catch ( Exception e ) {
-				message = "Unexpected error processing command (unable to complete command).";
+				message = "Unexpected error processing command - unable to complete command (" + e + ").";
 				if ( command instanceof CommandStatusProvider ) {
 					// Add to the log as a failure...
 					Message.printWarning ( 2,
@@ -6718,8 +6721,7 @@ throws Exception
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 	}
 	
-	// Indicate that processing is done and now there is no need to worry about
-	// cancelling.
+	// Indicate that processing is done and now there is no need to worry about cancelling.
 	__ts_processor.setIsRunning ( false );
 	if ( __ts_processor.getCancelProcessingRequested() ) {
 		// Have gotten to here probably because the last command was processed
@@ -6729,8 +6731,7 @@ throws Exception
 	__ts_processor.setCancelProcessingRequested ( false );
 	
 	if ( popup_warning_dialog ) {
-		// Change so from this point user always has to acknowledge the
-		// warnings...
+		// Change so from this point user always has to acknowledge the warnings...
 		Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
 		Message.setPropValue ( "WarningDialogCancelButton=false" );
 		Message.setPropValue ( "WarningDialogViewLogButton=false" );
@@ -6742,8 +6743,7 @@ throws Exception
 
 	size = getTimeSeriesSize();
 
-	// Get the final time - note this includes intervening warnings if
-	// any occurred...
+	// Get the final time - note this includes intervening warnings if any occurred...
 
 	stopwatch.stop();
 	Message.printStatus ( 1, routine, "Processing took " +

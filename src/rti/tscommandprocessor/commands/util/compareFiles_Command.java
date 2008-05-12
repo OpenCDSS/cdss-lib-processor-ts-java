@@ -314,7 +314,7 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different.");
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error comparing files.";
+		message = "Unexpected error comparing files (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

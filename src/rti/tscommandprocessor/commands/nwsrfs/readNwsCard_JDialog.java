@@ -39,8 +39,8 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-The readNwsCard_JDialog edits the TS Alias = readNwsCard() and non-TS Alias
-readNWSCard() commands.
+The readNwsCard_JDialog edits the TS Alias = ReadNwsCard() and non-TS Alias
+ReadNWSCard() commands.
 */
 public class readNwsCard_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
@@ -55,6 +55,8 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputStart_JTextField,
 			__InputEnd_JTextField,
 			__InputFile_JTextField = null,
+			__EnsembleID_JTextField = null,
+			__EnsembleName_JTextField = null,
 			__NewUnits_JTextField = null; // Units to convert to at read
 private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
 private JTextArea	 __Command_JTextArea = null;
@@ -70,7 +72,7 @@ private final String
 	__AddWorkingDirectory = "Add Working Directory";
 
 /**
-readNwsCard_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -177,8 +179,14 @@ private void checkInput () {
 	String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
 	String Alias = null;
+	String EnsembleID = null;
+	String EnsembleName = null;
 	if (__isAliasVersion) { 
 		Alias = __Alias_JTextField.getText().trim();
+	}
+	else {
+	    EnsembleID = __EnsembleID_JTextField.getText().trim();
+	    EnsembleName = __EnsembleName_JTextField.getText().trim();
 	}
 	
 	__error_wait = false;
@@ -186,6 +194,12 @@ private void checkInput () {
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
+    if ((EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        props.set("EnsembleID", EnsembleID);
+    }
+    if ((EnsembleName != null) && (EnsembleName.length() > 0) ) {
+        props.set("EnsembleName", EnsembleName);
+    }
 	if (InputStart.length() > 0 && !InputStart.equals("*")) {
 		props.set("InputStart", InputStart);
 	}
@@ -202,12 +216,12 @@ private void checkInput () {
 		props.set("Read24HourAsDay", Read24HourAsDay);
 	}
 
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	} 
 	catch ( Exception e ) {
-		// The warning would have been printed in the check 
-		// code.
+		// The warning would have been printed in the check code.
 		__error_wait = true;
 	}
 }
@@ -216,7 +230,8 @@ private void checkInput () {
 Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
-private void commitEdits() {
+private void commitEdits()
+{
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -232,6 +247,12 @@ private void commitEdits() {
 	if (__isAliasVersion) {
 		String Alias = __Alias_JTextField.getText().trim();
 		__command.setCommandParameter("Alias", Alias);
+	}
+	else {
+	    String EnsembleID = __EnsembleID_JTextField.getText().trim();
+	    __command.setCommandParameter("EnsembleID", EnsembleID);
+	    String EnsembleName = __EnsembleName_JTextField.getText().trim();
+	    __command.setCommandParameter("EnsembleName", EnsembleName);
 	}
 }
 
@@ -278,8 +299,7 @@ private void initialize(JFrame parent, Command command) {
 
 	if (__isAliasVersion) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a NWS Card format file and " +
-		"assign an alias to the time series."),
+		"Read a single time series from a NWS Card format file and assign an alias to the time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	else {
@@ -291,6 +311,9 @@ private void initialize(JFrame parent, Command command) {
 		"The file may contain one time series or be an ESP trace " +
 		"ensemble file (in NWS Card format) with multiple time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify an EnsembleID if processing an ensemble file to facilitate additional ensemble processing."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
@@ -301,10 +324,6 @@ private void initialize(JFrame parent, Command command) {
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying units causes conversion during the read." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If reading 24Hour data as Day and the input period is " +
@@ -342,13 +361,35 @@ private void initialize(JFrame parent, Command command) {
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+        
+    if ( !__isAliasVersion ) {
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "EnsembleID:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            __EnsembleID_JTextField = new JTextField ( 10 );
+            __EnsembleID_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
+            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify if reading an ensemble file."),
+            3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __EnsembleName_JTextField = new JTextField ( 20 );
+        __EnsembleName_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
+            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify if reading an ensemble file."),
+            3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__NewUnits_JTextField = new JTextField ( "", 10 );
+	__NewUnits_JTextField = new JTextField ( "", 5 );
 	__NewUnits_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is units from file."),
+            3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel("Read 24 hour as day:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -360,7 +401,7 @@ private void initialize(JFrame parent, Command command) {
 	__Read24HourAsDay_JComboBox.select(0);
 	__Read24HourAsDay_JComboBox.addActionListener(this);
 	JGUIUtil.addComponent(main_JPanel, __Read24HourAsDay_JComboBox,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Convert 24Hour interval to 1Day interval (default=False)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -397,10 +438,8 @@ private void initialize(JFrame parent, Command command) {
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
-		__path_JButton = new SimpleJButton(
-			"Remove Working Directory", this);
+		// Add the button to allow conversion to/from relative path...
+		__path_JButton = new SimpleJButton( "Remove Working Directory", this);
 		button_JPanel.add ( __path_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", this);
@@ -409,18 +448,18 @@ private void initialize(JFrame parent, Command command) {
 	button_JPanel.add ( __ok_JButton );
 
 	if (__isAliasVersion) {
-		setTitle("Edit TS Alias = readNwsCard() Command");
+		setTitle("Edit TS Alias = " + __command.getCommandName() + " Command");
 	}
 	else {
-		setTitle("Edit readNwsCard() Command");
+		setTitle("Edit " + __command.getCommandName() + " Command");
 	}
 
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-//	refresh();	// Sets the __path_JButton status
+    pack();
+    JGUIUtil.center( this );
+    //	refresh();	// Sets the __path_JButton status
 	refreshPathControl();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**
@@ -460,12 +499,14 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh() {
-	String InputFile = "",
-	       InputStart = "",
-	       InputEnd = "",
-	       NewUnits = "",
-	       Alias = "",
-	       Read24HourAsDay = "";
+	String InputFile = "";
+	String EnsembleID = "";
+	String EnsembleName = "";
+	String InputStart = "";
+	String InputEnd = "";
+	String NewUnits = "";
+	String Alias = "";
+	String Read24HourAsDay = "";
 
 	PropList props = null;
 
@@ -475,6 +516,8 @@ private void refresh() {
 		// Get the properties from the command
 		props = __command.getCommandParameters();
 		InputFile = props.getValue("InputFile");
+		EnsembleID = props.getValue("EnsembleID");
+		EnsembleName = props.getValue("EnsembleName");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");
@@ -485,6 +528,12 @@ private void refresh() {
 		if (Alias != null && __isAliasVersion) {
 			__Alias_JTextField.setText(Alias.trim());
 		}
+	    if (EnsembleID != null && !__isAliasVersion) {
+	        __EnsembleID_JTextField.setText(EnsembleID.trim());
+	    }
+	    if (EnsembleName != null && !__isAliasVersion) {
+	        __EnsembleName_JTextField.setText(EnsembleName.trim());
+	    }
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
@@ -522,10 +571,19 @@ private void refresh() {
 	if (__isAliasVersion) {
 		Alias = __Alias_JTextField.getText().trim();
 	}
+	else {
+	    EnsembleID = __EnsembleID_JTextField.getText().trim();
+	    EnsembleName = __EnsembleName_JTextField.getText().trim();
+	}
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
-
+	if ( EnsembleID != null) {
+	    props.add("EnsembleID=" + EnsembleID);
+	}
+	if ( EnsembleName != null) {
+	    props.add("EnsembleName=" + EnsembleName);
+	}
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	props.add("NewUnits=" + NewUnits);
@@ -541,8 +599,7 @@ private void refresh() {
 }
 
 /**
-Refresh the PathControl text based on the contents of the input text field
-contents.
+Refresh the PathControl text based on the contents of the input text field contents.
 */
 private void refreshPathControl()
 {
@@ -554,17 +611,15 @@ private void refreshPathControl()
 		return;
 	}
 
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText(
-				__RemoveWorkingDirectory);
+			__path_JButton.setText(	__RemoveWorkingDirectory);
 		}
-		else {	__path_JButton.setText(
-				__AddWorkingDirectory);
+		else {
+		    __path_JButton.setText(	__AddWorkingDirectory);
 		}
 	}
 }

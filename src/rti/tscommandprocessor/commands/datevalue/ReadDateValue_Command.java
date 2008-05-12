@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Vector;
 
@@ -628,9 +629,18 @@ throws InvalidCommandParameterException,
                 }
             }
 		}
-	} 
+	}
+	catch ( FileNotFoundException e ) {
+        message = "DateValue file \"" + InputFile_full + "\" is not found or accessible.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+            status.addToLog(command_phase,
+                new CommandLogRecord( CommandStatusType.FAILURE, message,
+                    "Verify that the file exists and is readable."));
+        throw new CommandException ( message );
+	}
 	catch ( Exception e ) {
-		message = "Unexpected error reading DateValue File. \"" + InputFile_full + "\"";
+		message = "Unexpected error reading DateValue file. \"" + InputFile_full + "\" (" + e + ")";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
@@ -641,11 +651,6 @@ throws InvalidCommandParameterException,
 		throw new CommandException ( message );
 	}
     
-    int size = 0;
-    if ( tslist != null ) {
-        size = tslist.size();
-    }
-
     if ( command_phase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
             // Further process the time series...

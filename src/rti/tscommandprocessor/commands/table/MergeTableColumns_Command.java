@@ -480,7 +480,7 @@ CommandWarningException, CommandException
 		// (and NOT also open the file).
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error writing table file \"" + OutputFile_full + "\"";
+		message = "Unexpected error writing table file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( 2,
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine,message );

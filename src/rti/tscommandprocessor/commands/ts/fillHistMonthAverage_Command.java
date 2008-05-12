@@ -553,7 +553,7 @@ CommandWarningException, CommandException
 			else {
                 // Not sure why there is an error so print the trace...
 				message = "Unexpected error filling time series \""+
-					ts.getIdentifierString() + "\" with historical averages.";
+					ts.getIdentifierString() + "\" with historical averages (" + e + ").";
                 Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(
                         command_tag, ++warning_count),

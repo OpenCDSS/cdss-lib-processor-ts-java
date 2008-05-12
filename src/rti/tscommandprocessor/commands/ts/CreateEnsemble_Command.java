@@ -452,7 +452,7 @@ CommandWarningException, CommandException
                     InputEnd_DateTime );
     }
     catch ( Exception e ) {
-        message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\"";
+        message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
         Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );

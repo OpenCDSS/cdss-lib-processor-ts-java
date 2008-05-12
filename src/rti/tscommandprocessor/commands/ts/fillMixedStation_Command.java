@@ -851,14 +851,13 @@ throws InvalidCommandParameterException,
 		// from here to be catch by the calling object. This method
 		// is called by actionPerformed and it is not allowing me 
 		// to declare "Throws Exception". How to fix this?
-		mssg = "Error instantiating the MixedStationAnalysis object";
+		mssg = "Unexpected error performing mixed station analysis (" + e + ").";
 		Message.printWarning (1, mthd, mssg );
 	} 
 
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
-		mssg = "There were " + warning_count +
-			" warnings processing the command.";
+		mssg = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),

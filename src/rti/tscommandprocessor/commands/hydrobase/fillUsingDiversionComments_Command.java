@@ -664,7 +664,8 @@ CommandWarningException, CommandException
 					}
 				}
 				catch (Exception e) {
-                    message = "Could not fill time series with CIU code: " + ts.getIdentifier();
+                    message = "Unexpected error fillling time series with CIU code: " + ts.getIdentifier() +
+                        "(" + e + ")";
 					Message.printWarning(warningLevel, 
 						MessageUtil.formatMessageTag( command_tag,
 						++warning_count), routine, message);

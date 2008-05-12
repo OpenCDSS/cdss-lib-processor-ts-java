@@ -59,7 +59,8 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 			//__NewUnits_JTextField = null;
 				// Units to convert to at read
 //private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
-private JTextField  __EnsembleID_JTextField;
+private JTextField __EnsembleID_JTextField = null;
+private JTextField __EnsembleName_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up
 private boolean __first_time = true;
@@ -183,6 +184,7 @@ private void checkInput () {
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JTextField.getText().trim();
+	String EnsembleName = __EnsembleName_JTextField.getText().trim();
     /*
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -201,6 +203,9 @@ private void checkInput () {
 	}
     if ( EnsembleID.length() > 0 ) {
         props.set ( "EnsembleID", EnsembleID );
+    }
+    if ( EnsembleName.length() > 0 ) {
+        props.set ( "EnsembleName", EnsembleName );
     }
     /*
 	if (InputStart.length() > 0 && !InputStart.equals("*")) {
@@ -245,6 +250,7 @@ private void commitEdits() {
 	String Read24HourAsDay = __Read24HourAsDay_JComboBox.getSelected().trim();
     */
     String EnsembleID = __EnsembleID_JTextField.getText().trim();
+    String EnsembleName = __EnsembleName_JTextField.getText().trim();
 
 	__command.setCommandParameter("InputFile", InputFile);
     /*
@@ -254,6 +260,7 @@ private void commitEdits() {
 	__command.setCommandParameter("Read24HourAsDay", Read24HourAsDay);
     */
     __command.setCommandParameter("EnsembleID", EnsembleID);
+    __command.setCommandParameter("EnsembleName", EnsembleName);
 	
 	if ( __Alias_JTextField != null ) {
 		String Alias = __Alias_JTextField.getText().trim();
@@ -376,6 +383,15 @@ private void initialize(JFrame parent, Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required identifier for ensemble."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ),
+    0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __EnsembleName_JTextField = new JTextField ( 20 );
+    __EnsembleName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify if reading an ensemble file."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     if ( !__isAliasVersion) {
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Alias to assign:" ), 
@@ -514,6 +530,7 @@ private void refresh()
 	       //Read24HourAsDay = ""
              ;
     String EnsembleID = "";
+    String EnsembleName = "";
 
 	PropList props = null;
 
@@ -524,6 +541,7 @@ private void refresh()
 		props = __command.getCommandParameters();
 		InputFile = props.getValue("InputFile");
         EnsembleID = props.getValue ( "EnsembleID" );
+        EnsembleName = props.getValue("EnsembleName");
 		//InputStart = props.getValue("InputStart");
 		//InputEnd = props.getValue("InputEnd");
 		//NewUnits = props.getValue("NewUnits");
@@ -539,6 +557,9 @@ private void refresh()
 		}
         if ( EnsembleID != null ) {
             __EnsembleID_JTextField.setText ( EnsembleID );
+        }
+        if (EnsembleName != null && !__isAliasVersion) {
+            __EnsembleName_JTextField.setText(EnsembleName.trim());
         }
         /*
 		if (InputStart != null) {
@@ -570,6 +591,7 @@ private void refresh()
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
     EnsembleID = __EnsembleID_JTextField.getText().trim();
+    EnsembleName = __EnsembleName_JTextField.getText().trim();
     /*
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
@@ -583,6 +605,7 @@ private void refresh()
 	props = new PropList(__command.getCommandName());
 	props.add ( "InputFile=" + InputFile);
     props.add ( "EnsembleID=" + EnsembleID );
+    props.add("EnsembleName=" + EnsembleName);
     /*
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);

@@ -78,13 +78,15 @@ public class openHydroBase_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
+/**
+Strings used to help the user understand the ODBC DSN parameter.
+*/
 private final String 
-	__TYPE_ACCESS = 	"Access",
-	__TYPE_SQLSERVER = 	"SQL Server";
+	__TYPE_ACCESS = "Access",
+	__TYPE_SQLSERVER = "SQL Server";
 
 /**
-Default string that shows up if a server has no database that match 
-HydroBase*.
+Default string that shows up if a server has no database that match HydroBase*.
 */
 private final String __NO_DATABASES = "[No HydroBase databases available]";
 
@@ -136,8 +138,7 @@ private SimpleJComboBox	__UseStoredProcedures_JComboBox=null;
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
 
-private Vector		__available_OdbcDsn = null;	// Available ODBC DSN
-							// to list.
+private Vector		__available_OdbcDsn = null;	// Available ODBC DSN to list.
 private openHydroBase_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
@@ -284,30 +285,22 @@ private void databaseTypeSelected(String databaseType) {
 	if (databaseType.equals(__TYPE_ACCESS)) {
 		__OdbcDsn_JComboBox.setEnabled(true);
 		__DatabaseServer_JComboBox.setEnabled(false);
-		__DatabaseServer_JComboBox.getJTextComponent()
-			.setEnabled(false);
-		__DatabaseServer_JComboBox.getJTextComponent()
-			.setEditable(false);
+		__DatabaseServer_JComboBox.getJTextComponent().setEnabled(false);
+		__DatabaseServer_JComboBox.getJTextComponent().setEditable(false);
 		__DatabaseName_JComboBox.setEnabled(false);
-		__DatabaseName_JComboBox.getJTextComponent()
-			.setEnabled(false);
-		__DatabaseName_JComboBox.getJTextComponent()
-			.setEditable(false);			
+		__DatabaseName_JComboBox.getJTextComponent().setEnabled(false);
+		__DatabaseName_JComboBox.getJTextComponent().setEditable(false);			
 		__UseStoredProcedures_JComboBox.setEnabled(false);
 		__UseStoredProcedures_JComboBox.setEditable(false);
 	}
 	else {
 		__OdbcDsn_JComboBox.setEnabled(false);
 		__DatabaseServer_JComboBox.setEnabled(true);
-		__DatabaseServer_JComboBox.getJTextComponent()
-			.setEnabled(true);
-		__DatabaseServer_JComboBox.getJTextComponent()
-			.setEditable(true);
+		__DatabaseServer_JComboBox.getJTextComponent().setEnabled(true);
+		__DatabaseServer_JComboBox.getJTextComponent().setEditable(true);
 		__DatabaseName_JComboBox.setEnabled(true);
-		__DatabaseName_JComboBox.getJTextComponent()
-			.setEnabled(true);
-		__DatabaseName_JComboBox.getJTextComponent()
-			.setEditable(true);					
+		__DatabaseName_JComboBox.getJTextComponent().setEnabled(true);
+		__DatabaseName_JComboBox.getJTextComponent().setEditable(true);					
 		__UseStoredProcedures_JComboBox.setEnabled(true);	
 		__UseStoredProcedures_JComboBox.setEditable(true);	
 	}
@@ -352,7 +345,7 @@ private void initialize ( JFrame parent, Command command )
 	try {
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -366,7 +359,7 @@ private void initialize ( JFrame parent, Command command )
 		" closing the previous connection with the same input name." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This is useful, for example, when making connections to more "+
+		"This command is used, for example, when making connections to more "+
 		"than one HydroBase database, or running in batch mode."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -374,12 +367,10 @@ private void initialize ( JFrame parent, Command command )
 		"is run in batch mode, in interactive sessions, or both."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The connection can be made either by specifying a database " +
-		"server/name for SQL Server,"),
+		"The connection can be made either by specifying a database server/name for SQL Server,"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"or an ODBC Data Source Name (DSN) for a Microsoft Access " +
-		"HydroBase database."),
+		"or an ODBC Data Source Name (DSN) for a Microsoft Access HydroBase database."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel("Database type:"),
@@ -387,12 +378,13 @@ private void initialize ( JFrame parent, Command command )
 	__databaseType_JComboBox = new SimpleJComboBox();
 	__databaseType_JComboBox.add(__TYPE_ACCESS);
 	__databaseType_JComboBox.add(__TYPE_SQLSERVER);
+	// Default to SQL Server
+	__databaseType_JComboBox.select ( __TYPE_SQLSERVER );
 	__databaseType_JComboBox.addActionListener(this);
 	JGUIUtil.addComponent(main_JPanel, __databaseType_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates whether a database server/name or ODBC DSN is " +
-		"specified."),
+		"Indicates whether a database server/name or ODBC DSN is specified."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "ODBC DSN:" ),
@@ -608,12 +600,7 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents.  The command is
-of the form:
-<pre>
-openHydroBase(OdbcDsn=xxx,DatabaseServer=xxx,DatabaseName="X",InputName="X",
-UseStoredProcedures=X,RunMode=xxx)
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String OdbcDsn = "";
@@ -637,7 +624,7 @@ private void refresh ()
 			__OdbcDsn_JComboBox.select ( 0 );
 		}
 		else {	
-			if (	JGUIUtil.isSimpleJComboBoxItem(
+			if ( JGUIUtil.isSimpleJComboBoxItem(
 				__OdbcDsn_JComboBox,
 				OdbcDsn, JGUIUtil.NONE, null, null ) ) {
 				__OdbcDsn_JComboBox.select ( OdbcDsn );

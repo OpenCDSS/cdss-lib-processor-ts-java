@@ -293,7 +293,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read all the time series from a StateMod time series or well rights file, using " +
+		"Read all the time series from a StateMod time series or water right file, using " +
 		"information in the file to assign the identifier."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -304,8 +304,7 @@ private void initialize ( JFrame parent, Command command )
         "Specify the interval and parcel year only for well rights, based on how data will be used."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full or relative path (relative to working " +
-		"directory)." ), 
+		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -387,7 +386,7 @@ private void initialize ( JFrame parent, Command command )
                JGUIUtil.addComponent(main_JPanel, __ParcelYear_JTextField,
        		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
                JGUIUtil.addComponent(main_JPanel, new JLabel (
-       		"Use to only read a single irrigated lands year from a well right file ."),
+       		"Use to only read a single irrigated lands year from a well right file."),
        		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
        
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),

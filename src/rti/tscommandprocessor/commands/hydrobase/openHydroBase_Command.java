@@ -319,7 +319,7 @@ CommandWarningException, CommandException
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 3, routine, e );
-			message = "Unexpected error opening HydroBase connection";
+			message = "Unexpected error opening HydroBase connection (" + e + ")";
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );

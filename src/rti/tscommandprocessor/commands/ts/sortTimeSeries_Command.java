@@ -143,7 +143,7 @@ throws CommandWarningException, CommandException
                 processor.setPropContents ( "TSResultsList", tslist_sorted );
         }
         catch ( Exception e ) {
-            message = "Unexpected error sorting time series.";
+            message = "Unexpected error sorting time series (" + e + ").";
             Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag, ++warning_count),
                     routine, message );

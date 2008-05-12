@@ -261,7 +261,8 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message = "Unexpected error processing command file \"" + InputFile + "\", full path=\"" + InputFile_full + "\".";
+		message = "Unexpected error processing command file \"" + InputFile + "\", full path=\"" +
+		    InputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

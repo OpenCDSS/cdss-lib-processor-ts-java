@@ -15,6 +15,7 @@
 package rti.tscommandprocessor.commands.statemod;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Vector;
 
@@ -551,16 +552,26 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     // Now try to read...
 
+    String InputFile_full = InputFile;
     try {
         boolean read_data = true;
         if ( command_phase == CommandPhaseType.DISCOVERY ){
             read_data = false;
         }
-        String InputFile_full = IOUtil.verifyPathForOS(
+        InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile_full + "\"" );
     
         Vector tslist = null;
+        if ( !IOUtil.fileReadable(InputFile_full) || !IOUtil.fileExists(InputFile_full)) {
+            message = "StateMod file \"" + InputFile_full + "\" is not found or accessible.";
+            Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                    status.addToLog(command_phase,
+                        new CommandLogRecord( CommandStatusType.FAILURE, message,
+                            "Verify that the file exists and is readable."));
+            throw new CommandException ( message );
+        }
         if ( StateMod_DiversionRight.isDiversionRightFile(InputFile_full)) {
             if ( (Interval == null) || Interval.equals("") ) {
                 Interval = "Year";
@@ -717,9 +728,19 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Free resources from StateMod list...
         tslist = null;
     }
+    catch ( FileNotFoundException e ) {
+        message = "StateMod file \"" + InputFile_full + "\" is not found or accessible.";
+        Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                Message.printWarning ( 3, routine, e );
+                status.addToLog(command_phase,
+                    new CommandLogRecord( CommandStatusType.FAILURE, message,
+                        "Verify that the file exists and is readable."));
+        throw new CommandException ( message );
+    }
     catch ( Exception e ) {
         Message.printWarning ( log_level, routine, e );
-        message = "Unexpected error reading time series from StateMod file.";
+        message = "Unexpected error reading time series from StateMod file \"" + InputFile_full + "\" (" + e + ").";
         Message.printWarning ( warning_level, 
         MessageUtil.formatMessageTag(command_tag, ++warning_count),
         routine, message );

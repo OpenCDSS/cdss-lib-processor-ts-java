@@ -47,9 +47,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -773,7 +771,7 @@ throws InvalidCommandParameterException,
 
 	} catch ( Exception e ) {
 		Message.printWarning ( log_level, routine, e );
-		message = "Unexpected error processing the pattern analysis.";
+		message = "Unexpected error performing the pattern analysis (" + e + ").";
         status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.WARNING,
                         message, "Report the problem to software support - see the log file for details." ) );

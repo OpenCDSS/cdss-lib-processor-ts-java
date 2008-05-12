@@ -469,7 +469,7 @@ CommandWarningException, CommandException
             TSUtil.addConstant ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, ConstantValue_double );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error adding constant to time series \""+ ts.getIdentifier() + "\".";
+			message = "Unexpected error adding constant to time series \""+ ts.getIdentifier() + "\" (" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );

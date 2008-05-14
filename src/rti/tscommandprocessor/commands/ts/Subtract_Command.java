@@ -100,8 +100,8 @@ throws InvalidCommandParameterException
 	}
     */
     
-    if ( ((TSID == null) || TSID.equals("")) && ((EnsembleID == null) && EnsembleID.equals("")) ) {
-        message = "TSID and EnsembleID have not been specified.";
+    if ( ((TSID == null) || TSID.equals("")) && ((EnsembleID == null) || EnsembleID.equals("")) ) {
+        message = "Neither TSID or EnsembleID have been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,

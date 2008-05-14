@@ -58,6 +58,7 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeUtil;
 
 /**
 <p>
@@ -755,9 +756,10 @@ CommandWarningException, CommandException
 	        }
 	    }
 	    else {
-	        for ( int i = 0; i < 12; i++ ) {
+	        for ( int i = 1; i <= 12; i++ ) {
 	            if ( regress_results.getN1(i) == 0 ) {
-	                message = "Number of overlapping points in month " + i + " is 0.";
+	                message = "Number of overlapping points in month " + i + "(" +
+                    TimeUtil.monthAbbreviation(i) + ") is 0.";
 	                Message.printWarning ( warning_level,
 	                MessageUtil.formatMessageTag(
 	                command_tag,++warning_count), routine, message );

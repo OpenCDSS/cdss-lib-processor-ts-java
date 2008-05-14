@@ -63,7 +63,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String AddTSList = parameters.getValue ( "AddTSList" );
+    //String AddTSList = parameters.getValue ( "AddTSList" );
 	//String SetStart = parameters.getValue ( "SetStart" );
 	//String SetEnd = parameters.getValue ( "SetEnd" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
@@ -100,8 +100,8 @@ throws InvalidCommandParameterException
 	}
     */
     
-    if ( ((TSID == null) || TSID.equals("")) && ((EnsembleID == null) && EnsembleID.equals("")) ) {
-        message = "TSID and EnsembleID have not been specified.";
+    if ( ((TSID == null) || TSID.equals("")) && ((EnsembleID == null) || EnsembleID.equals("")) ) {
+        message = "Neither TSID or EnsembleID have been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -296,6 +296,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             }
             parameters.set ( "AddTSList", AddTSList );
         }
+        message = "Automatically updated to current syntax from old command \"" + command_string + "\".";
+        CommandStatus status = getCommandStatus();
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.INFO, message, "" ) ); 
     }
     else {
 		message = "Old-style Add() syntax is obsolete.  Edit the command to convert to new syntax.";

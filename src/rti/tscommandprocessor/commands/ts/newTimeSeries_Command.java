@@ -205,7 +205,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "newTimeSeries.parseCommand", message;
+	String routine = "NewTimeSeries.parseCommand", message;
 
 	// Get the part of the command after the TS Alias =...
 	int pos = command.indexOf ( "=" );
@@ -245,7 +245,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
-	try {	PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
+	try {
+	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
 			(String)tokens.elementAt(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );

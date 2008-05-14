@@ -55,6 +55,7 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.GenericCommand;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
@@ -65,6 +66,7 @@ import RTi.Util.IO.RequestParameterNotFoundException;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
 import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 
@@ -139,21 +141,20 @@ during troubleshooting to increase performance.
 private Boolean __CreateOutput_Boolean = new Boolean(true);
 
 /**
-The list of TSEnsemble managed by this command processor,
-guaranteed to be non-null.
+The list of TSEnsemble managed by this command processor, guaranteed to be non-null.
 */
 private Vector __TSEnsemble_Vector = new Vector();
 
 /**
 The initial working directory for processing, typically the location of the commands
 file from read/write.  This is used to adjust the working directory with
-setWorkingDir() commands.
+SetWorkingDir() commands.
 */
 private String __InitialWorkingDir_String = null;
 
 /**
 The current working directory for processing, which was initialized to
-InitialWorkingDir and modified by setWorkingDir() commands.
+InitialWorkingDir and modified by SetWorkingDir() commands.
 */
 private String __WorkingDir_String = null;
 
@@ -193,8 +194,7 @@ public TSCommandProcessor ()
 }
 
 /**
-Add a command at the end of the list and notify command list listeners of the
-add.
+Add a command at the end of the list and notify command list listeners of the add.
 @param command Command to add.
 */
 public void addCommand ( Command command )
@@ -222,8 +222,7 @@ public void addCommand ( Command command, boolean notifyCommandListListeners )
 Add a command at the end of the list using the string text.  This should currently only be
 used for commands that do not have command classes, which perform
 additional validation on the commands.  A GenericCommand instance will
-be instantiated to maintain the string and allow command status to be
-set.
+be instantiated to maintain the string and allow command status to be set.
 @param command_string Command string for command.
 @param index Index (0+) at which to insert the command.
 */
@@ -277,8 +276,7 @@ public void addCommandListListener ( CommandListListener listener )
 
 /**
 Add a CommandProcessorListener, to be notified when commands are started,
-progress made, and completed.  This is useful to allow calling software to
-report progress.
+progress made, and completed.  This is useful to allow calling software to report progress.
 If the listener has already been added, the listener will remain in
 the list in the original order.
 */
@@ -415,8 +413,7 @@ public boolean getIsRunning ()
 
 /**
 Return data for a named property, required by the CommandProcessor
-interface.  See getPropcontents() for a list of properties that are
-handled.
+interface.  See getPropcontents() for a list of properties that are handled.
 @param prop Property to set.
 @return the named property, or null if a value is not found.
 @exception Exception if the property cannot be found or there is an
@@ -446,7 +443,7 @@ interface. Currently the following properties are handled:
 </tr>
 
 <td><b>CreateOutput</b></td>
-<td>ndicate if output should be created, as Boolean.  If True, commands that create output
+<td>indicate if output should be created, as Boolean.  If True, commands that create output
 should do so.  If False, the commands should be skipped.  This is used to
 speed performance during initial testing.
 </td>
@@ -669,7 +666,7 @@ private Boolean getPropContents_AutoExtendPeriod()
 /**
 Handle the AverageEnd property request.
 @return DateTime for AverageEnd, or null if not set.
- */
+*/
 private DateTime getPropContents_AverageEnd()
 {
     return __tsengine.getAverageEnd();
@@ -678,7 +675,7 @@ private DateTime getPropContents_AverageEnd()
 /**
 Handle the AverageStart property request.
 @return DateTime for AverageStart, or null if not set.
- */
+*/
 private DateTime getPropContents_AverageStart()
 {
     return __tsengine.getAverageStart();
@@ -687,7 +684,7 @@ private DateTime getPropContents_AverageStart()
 /**
 Handle the CreateOutput property request.
 @return Boolean indicating whether output should be created.
- */
+*/
 private Boolean getPropContents_CreateOutput()
 {
 	return __CreateOutput_Boolean;
@@ -696,7 +693,7 @@ private Boolean getPropContents_CreateOutput()
 /**
 Handle the DataTestList property request.
 @return Vector of DataTest instances.
- */
+*/
 private Vector getPropContents_DataTestList()
 {
 	return __tsengine.getDataTestList();
@@ -705,7 +702,7 @@ private Vector getPropContents_DataTestList()
 /**
 Handle the EnsembleResultsList property request.
 @return The ensemble results list, as a List of DataTable.
- */
+*/
 private List getPropContents_EnsembleResultsList()
 {
     return __TSEnsemble_Vector;
@@ -714,7 +711,7 @@ private List getPropContents_EnsembleResultsList()
 /**
 Handle the HaveOutputPeriod property request.
 @return Boolean depending on whether the output period has been set.
- */
+*/
 private Boolean getPropContents_HaveOutputPeriod()
 {
 	boolean b = __tsengine.haveOutputPeriod();
@@ -724,7 +721,7 @@ private Boolean getPropContents_HaveOutputPeriod()
 /**
 Handle the HydroBaseDMIList property request.
 @return Vector of open HydroBaseDMI instances.
- */
+*/
 private Vector getPropContents_HydroBaseDMIList()
 {
 	return __tsengine.getHydroBaseDMIList();
@@ -733,7 +730,7 @@ private Vector getPropContents_HydroBaseDMIList()
 /**
 Handle the HydroBaseDMIListSize property request.
 @return Number of open HydroBaseDMI instances.
- */
+*/
 private Integer getPropContents_HydroBaseDMIListSize()
 {
     Vector v = __tsengine.getHydroBaseDMIList();
@@ -758,7 +755,7 @@ private Boolean getPropContents_IgnoreLEZero()
 /**
 Handle the IncludeMissingTS property request.
 @return Boolean indicating whether missing time series should be created when no data found.
- */
+*/
 private Boolean getPropContents_IncludeMissingTS()
 {
 	boolean b = __tsengine.getIncludeMissingTS();
@@ -767,11 +764,10 @@ private Boolean getPropContents_IncludeMissingTS()
 
 /**
 Handle the InitialWorkingDir property request.  The initial working directory is the home of the
-commands file if read/saved and should be passed by the calling code when
-running commands.
+commands file if read/saved and should be passed by the calling code when running commands.
 Use getPropContents_WorkingDir to get the working directory after processing.
 @return The working directory, as a String.
- */
+*/
 private String getPropContents_InitialWorkingDir()
 {
 	return getInitialWorkingDir();
@@ -780,7 +776,7 @@ private String getPropContents_InitialWorkingDir()
 /**
 Handle the InputEnd property request.
 @return DateTime for InputEnd, or null if not set.
- */
+*/
 private DateTime getPropContents_InputEnd()
 {
 	return __tsengine.getInputEnd();
@@ -789,7 +785,7 @@ private DateTime getPropContents_InputEnd()
 /**
 Handle the InputStart property request.
 @return DateTime for InputStart, or null if not set.
- */
+*/
 private DateTime getPropContents_InputStart()
 {
 	return __tsengine.getInputStart();
@@ -798,10 +794,9 @@ private DateTime getPropContents_InputStart()
 /**
 Handle the OutputComments property request.  This includes, for example,
 the commands that are active and HydroBase version information that documents
-data available for a commands.
-run.
+data available for a command.
 @return Vector of String containing comments for output.
- */
+*/
 private Vector getPropContents_OutputComments()
 {
 	String [] array = __tsengine.formatOutputHeaderComments(getCommands());
@@ -817,7 +812,7 @@ private Vector getPropContents_OutputComments()
 /**
 Handle the OutputEnd property request.
 @return DateTime for OutputEnd, or null if not set.
- */
+*/
 private DateTime getPropContents_OutputEnd()
 {
 	return __tsengine.getOutputEnd();
@@ -826,7 +821,7 @@ private DateTime getPropContents_OutputEnd()
 /**
 Handle the OutputStart property request.
 @return DateTime for OutputStart, or null if not set.
- */
+*/
 private DateTime getPropContents_OutputStart()
 {
 	return __tsengine.getOutputStart();
@@ -835,7 +830,7 @@ private DateTime getPropContents_OutputStart()
 /**
 Handle the OutputYearType property request.
 @return DateTime for OutputYearType, or null if not set.
- */
+*/
 private String getPropContents_OutputYearType()
 {
 	return __tsengine.getOutputYearType();
@@ -844,7 +839,7 @@ private String getPropContents_OutputYearType()
 /**
 Handle the TableResultsList property request.
 @return The time series results list, as a List of DataTable.
- */
+*/
 private List getPropContents_TableResultsList()
 {
     return __Table_Vector;
@@ -854,7 +849,7 @@ private List getPropContents_TableResultsList()
 Handle the TSProductAnnotationProviderList property request.
 @return The time series product annotation provider list,
 as a Vector of TSProductAnnotationProvider.
- */
+*/
 private Vector getPropContents_TSProductAnnotationProviderList()
 {
 	return __tsengine.getTSProductAnnotationProviders();
@@ -863,7 +858,7 @@ private Vector getPropContents_TSProductAnnotationProviderList()
 /**
 Handle the TSResultsList property request.
 @return The time series results list, as a Vector of TS.
- */
+*/
 private Vector getPropContents_TSResultsList()
 {
 	return __tsengine.getTimeSeriesList(null);
@@ -872,7 +867,7 @@ private Vector getPropContents_TSResultsList()
 /**
 Handle the TSResultsListSize property request.
 @return Size of the time series results list, as an Integer.
- */
+*/
 private Integer getPropContents_TSResultsListSize()
 {
 	return new Integer( __tsengine.getTimeSeriesList(null).size());
@@ -881,7 +876,7 @@ private Integer getPropContents_TSResultsListSize()
 /**
 Handle the TSViewWindowListener property request.
 @return TSViewWindowListener that listens for plot windows closing.
- */
+*/
 private WindowListener getPropContents_TSViewWindowListener()
 {
 	return __tsengine.getTSViewWindowListener();
@@ -891,7 +886,7 @@ private WindowListener getPropContents_TSViewWindowListener()
 Handle the WorkingDir property request.  The working directory is set based on
 the initial working directory and subsequent setWorkingDir() commands.
 @return The working directory, as a String.
- */
+*/
 private String getPropContents_WorkingDir()
 {
 	return getWorkingDir();
@@ -2437,6 +2432,7 @@ throws IOException, FileNotFoundException
 {	String routine = getClass().getName() + ".readCommandFile";
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
+	// Set the working directory because this may be used by other commands.
 	File path_File = new File(path);
 	setInitialWorkingDir ( path_File.getParent() );
 	String line;
@@ -2446,7 +2442,7 @@ throws IOException, FileNotFoundException
 	// insert.  Why would this be done?  If, for example, a GUI should display
 	// the progress in reading/initializing the commands.
 	//
-	// Why would this not be done?  Becuse of performance issues.
+	// Why would this not be done?  Because of performance issues.
 	boolean notify_listeners_for_each_add = true;
 	// If not appending, remove all...
 	if ( !append ) {
@@ -2478,12 +2474,14 @@ throws IOException, FileNotFoundException
 				// In this case skip the command, although the above case may always be needed?
 			}
 		}
-		// Have a command instance.  Initialize the command...
+		// Have a command instance.  Initialize the command (parse the command string) and
+		// check its arguments.
+		String fixme = "FIXME! ";  // String for inserted messages
 		try {
 			command.initializeCommand(
 				line,	// Command string, needed to do full parse on parameters
 				this,	// Processor, needed to make requests
-				true);	// Do full initialization
+				true);	// Do full initialization (parse)
 		}
 		catch ( InvalidCommandSyntaxException e ) {
 		    // Can't use cf.newCommand() because it will recognized the command
@@ -2491,6 +2489,36 @@ throws IOException, FileNotFoundException
 		    Message.printWarning (2, routine, "Invalid command syntax.  Adding command with problems:  " + line );
             Message.printWarning(3, routine, e);
             // CommandStatus will be set while initializing so no need to set here
+            // Do it anyway to make sure something does not fall through the cracks
+            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
+                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Invalid command syntax (" + e + ").",
+                                "Correct the command.  See log file for details." ) );
+            }
+            // Add generic commands as comments prior to this command to show the original,
+            Command command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme +
+                    "The following command had errors and needs to be corrected below and this comment removed.");
+            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading the following command.",
+                            "Correct the command below (typically a parameter error due to manual edit)." ) );
+            addCommand ( command2, notify_listeners_for_each_add );
+            ++num_added;
+            command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme + line );
+            status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading this command.",
+                            "Correct the command below (typically a parameter error due to manual edit)." ) );
+            addCommand ( command2, notify_listeners_for_each_add );
+            ++num_added;
+            // Allow the bad command to be loaded below.  It may have no arguments or partial
+            // parameters that need corrected.
 		}
 		catch ( InvalidCommandParameterException e) {
             // Can't use cf.newCommand() because it will recognized the command
@@ -2498,12 +2526,42 @@ throws IOException, FileNotFoundException
 		    Message.printWarning (2, routine, "Invalid command parameter.  Adding command with problems:  " + line );
             Message.printWarning(3, routine, e);
             // CommandStatus will be set while initializing so no need to set here
+            // Do it anyway to make sure something does not fall through the cracks
+            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
+                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Invalid command parameter." + e + ").",
+                                "Correct the command.  See log file for details." ) );
+            }
+            // Add generic commands as comments prior to this command to show the original,
+            Command command2 = new GenericCommand ();
+            command2.setCommandString ( "# " + fixme +
+                    "The following command had errors and needs to be corrected below and this comment removed.");
+            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading the following command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notify_listeners_for_each_add );
+            ++num_added;
+            command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + line );
+            status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading this command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notify_listeners_for_each_add );
+            ++num_added;
+            // Allow the bad command to be loaded below.  It may have no arguments or partial
+            // parameters that need corrected.
 		}
         catch ( Exception e ) {
             // TODO SAM 2007-11-29 Need to decide whether to handle here or in command with CommandStatus
             // It is important that the command get added, even if it is invalid, so the user can edit the
             // command file.  They will likely need to replace the command, not edit it.
-            Message.printWarning( 1, routine, "Error creating command \"" + line + "\" - report to software support." );
+            Message.printWarning( 1, routine, "Unexpected error creating command \"" + line + "\" - report to software support." );
             Message.printWarning ( 3, routine, e );
             // CommandStatus likely not set while initializing so need to set here to alert user
             if ( (command != null) && (command instanceof CommandStatusProvider) ) {
@@ -2511,13 +2569,95 @@ throws IOException, FileNotFoundException
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 "Unexpected error creating the command.",
-                                "Report the problem to software support.  See log file for details." ) );
+                                "Check the command syntax.  See log file for details." ) );
             }
+            // Add generic commands as comments prior to this command to show the original,
+            Command command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme +
+                    " The following command had errors and needs to be corrected below and this comment removed.");
+            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading the following command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notify_listeners_for_each_add );
+            ++num_added;
+            command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme + line );
+            status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading this command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notify_listeners_for_each_add );
+            ++num_added;
+            // Allow the bad command to be loaded below.  It may have no arguments or partial
+            // parameters that need corrected.
         }
         // TODO SAM 2007-10-09 Evaluate whether to call listeners each time a command is added.
         // Could be good to indicate progress of load in the GUI.
         // For now, add the command, without notifying listeners of changes...
         if ( command != null ) {
+            // Check the command parameters
+            String command_tag = "" + num_added + 1;  // Command number, for messaging
+            int error_count = 0;
+            try {  
+                command.checkCommandParameters(command.getCommandParameters(), command_tag, 2 );
+            }
+            catch ( InvalidCommandParameterException e ) {
+                /* TODO SAM 2008-05-14 Evaluate whether this can work - don't want a bunch
+                of extra comments for commands that are already being flagged with status.
+                // Add generic commands as comments prior to this command to show the original,
+                Command command2 = new GenericCommand ();
+                command2.setCommandString ( "#" + fixme +
+                "The following command had errors and needs to be corrected below and this comment removed.");
+                CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "There was an error loading the following command.",
+                                "Correct the command below (typically an error due to manual edit)." ) );
+                addCommand ( command2, notify_listeners_for_each_add );
+                ++num_added;
+                command2 = new GenericCommand ();
+                command2.setCommandString ( "#" + fixme + line );
+                status = ((CommandStatusProvider)command2).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "There was an error loading this command.",
+                                "Correct the command below (typically an error due to manual edit)." ) );
+                addCommand ( command2, notify_listeners_for_each_add );
+                ++num_added;
+                */
+                // Add command status to the command itself, handling whether a recognized
+                // command or a generic command (string command)...
+                String message = "Error loading command - invalid syntax (" + e + ").";
+                if ( command instanceof CommandStatusProvider ) {
+                       if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                               greaterThan(CommandStatusType.UNKNOWN) ) {
+                           // No need to print a message to the screen because a visual marker will be shown, but log...
+                           Message.printWarning ( 2,
+                                   MessageUtil.formatMessageTag(command_tag,
+                                           ++error_count), routine, message );
+                       }
+                       if ( command instanceof GenericCommand ) {
+                            // The command class will not have added a log record so do it here...
+                            ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Check the log for more details." ) );
+                       }
+                }
+                else {
+                    // Command has not been updated to set warning/failure in status so show here
+                    Message.printWarning ( 2,
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++error_count), routine, message );
+                }
+                // Log the exception.
+                if (Message.isDebugOn) {
+                    Message.printDebug(3, routine, e);
+                }
+            }
+            // Now finally add the command to the list
             addCommand ( command, notify_listeners_for_each_add );
             ++num_added;
             // Run discovery on the command so that the identifiers are available to other commands.
@@ -2530,7 +2670,7 @@ throws IOException, FileNotFoundException
 	// Close the file...
 	br.close();
 	// Now notify listeners about the add one time (only need to do if it
-	// was not getting done for each add...
+	// was not getting done for each add)...
 	if ( !notify_listeners_for_each_add ) {
 		notifyCommandListListenersOfAdd ( 0, (num_added - 1) );
 	}

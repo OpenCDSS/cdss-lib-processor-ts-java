@@ -24,6 +24,8 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -40,7 +42,10 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 private ChangePeriod_Command __command = null; // Command to edit
 private JTextArea	__command_JTextArea=null;// Command as JTextArea
 private SimpleJComboBox	__TSList_JComboBox = null; // Indicate how to get time series list.
+private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField	__NewStart_JTextField = null,
 			__NewEnd_JTextField;
 private boolean		__first_time = true;
@@ -81,20 +86,27 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
-Check the state of the dialog, disabling/enabling components as appropriate.
+Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
-private void checkGUIState()
-{	// If "AllMatchingTSID", enable the list.
-	// Otherwise, clear and disable...
-	String selected = __TSList_JComboBox.getSelected();
-	if ( selected.equals(__command._AllMatchingTSID) ) {
-		__TSID_JComboBox.setEnabled(true);
-	}
-	else {
+private void checkGUIState ()
+{
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
         __TSID_JComboBox.setEnabled(false);
-		// Set the the first choice, which is blank...
-		__TSID_JComboBox.select ( 0 );
-	}
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JComboBox.setEnabled(true);
+        __EnsembleID_JLabel.setEnabled ( true );
+    }
+    else {
+        __EnsembleID_JComboBox.setEnabled(false);
+        __EnsembleID_JLabel.setEnabled ( false );
+    }
 }
 
 /**
@@ -106,6 +118,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String NewStart = __NewStart_JTextField.getText().trim();
 	String NewEnd = __NewEnd_JTextField.getText().trim();
 	__error_wait = false;
@@ -116,6 +129,9 @@ private void checkInput ()
 	if ( TSID.length() > 0 ) {
 		props.set ( "TSID", TSID );
 	}
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
 	if ( NewStart.length() > 0 ) {
 		props.set ( "NewStart", NewStart );
 	}
@@ -139,10 +155,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
+	String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String NewStart = __NewStart_JTextField.getText().trim();
 	String NewEnd = __NewEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "NewStart", NewStart );
 	__command.setCommandParameter ( "NewEnd", NewEnd );
 }
@@ -195,48 +213,21 @@ private void initialize ( JFrame parent, Command command )
     "Specify period start and end date/times using a precision consistent with the data interval."),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( __command._AllTS );
-	tslist_Vector.addElement ( __command._AllMatchingTSID );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.select ( 0 );
-	__TSList_JComboBox.addActionListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the time series to fill."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Identifier (TSID) to match:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-
-	// Allow edits...
-	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	__TSID_JComboBox = new SimpleJComboBox ( true );
-	int size = 0;
-	if ( tsids == null ) {
-		tsids = new Vector ();
-	}
-	size = tsids.size();
-	// Blank for default
-	if ( size > 0 ) {
-		tsids.insertElementAt ( "", 0 );
-	}
-	else {
-        tsids.addElement ( "" );
-	}
-	// Always allow a "*" to let all time series be filled (put at end)...
-	tsids.addElement ( "*" );
-	__TSID_JComboBox.setData ( tsids );
-	__TSID_JComboBox.addItemListener ( this );
-	__TSID_JComboBox.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New start date/time:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -268,6 +259,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh ();
 
 	// South Panel: North
@@ -296,7 +288,8 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	refresh();
+{	checkGUIState();
+    refresh();
 }
 
 /**
@@ -340,6 +333,7 @@ private void refresh ()
 {	String routine = "ChangePeriod_JDialog.refresh";
 	String TSList = "";
 	String TSID = "";
+    String EnsembleID = "";
 	String NewStart = "";
 	String NewEnd = "";
 	PropList props = __command.getCommandParameters();
@@ -349,6 +343,7 @@ private void refresh ()
 		// Get the parameters from the command...
 		TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
+		EnsembleID = props.getValue ( "EnsembleID" );
 		NewStart = props.getValue("NewStart");
         NewEnd = props.getValue("NewEnd");
 		if ( TSList == null ) {
@@ -381,6 +376,21 @@ private void refresh ()
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 		// Check the GUI state to make sure that components are
 		// enabled as expected (mainly enable/disable the TSID).  If
 		// disabled, the TSID will not be added as a parameter below.
@@ -399,11 +409,13 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
     NewStart = __NewStart_JTextField.getText().trim();
     NewEnd = __NewEnd_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
+	props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "NewStart=" + NewStart );
 	props.add ( "NewEnd=" + NewEnd );
 	__command_JTextArea.setText( __command.toString ( props ) );

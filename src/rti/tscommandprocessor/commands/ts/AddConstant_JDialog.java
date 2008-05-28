@@ -144,7 +144,8 @@ private void checkInput ()
     if ( AnalysisEnd.length() > 0 ) {
         parameters.set ( "AnalysisEnd", AnalysisEnd );
     }
-    try {   // This will warn the user...
+    try {
+        // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {

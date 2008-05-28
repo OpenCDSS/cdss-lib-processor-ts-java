@@ -7,7 +7,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -22,10 +21,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -128,6 +124,7 @@ throws InvalidCommandParameterException
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "NewStart" );
     valid_Vector.add ( "NewEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -184,19 +181,21 @@ CommandWarningException, CommandException
 
 	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
 
 	// Get the time series to process...
 	
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
+	request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
 		processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\") from processor.";
+	    message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -208,8 +207,8 @@ CommandWarningException, CommandException
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
 	Vector tslist = null;
 	if ( o_TSList == null ) {
-		message = "Unable to find time series to fill using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
+	    message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+        "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -220,8 +219,8 @@ CommandWarningException, CommandException
 	else {
         tslist = (Vector)o_TSList;
 		if ( tslist.size() == 0 ) {
-			message = "Unable to find time series to fill using TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\".";
+		    message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 			Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
@@ -262,7 +261,8 @@ CommandWarningException, CommandException
 		nts = tslist.size();
 	}
 	if ( nts == 0 ) {
-		message = "Unable to find time series to fill using TSID \"" + TSID + "\".";
+	      message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+          "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
@@ -412,7 +412,8 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	ts = (TS)prop_contents;
+		else {
+		    ts = (TS)prop_contents;
 		}
 		
 		if ( ts == null ) {

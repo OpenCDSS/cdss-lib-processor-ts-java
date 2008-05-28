@@ -56,7 +56,7 @@ dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSID = parameters.getValue ( "TSID" );
+{	//String TSID = parameters.getValue ( "TSID" );
 	String ConstantValue = parameters.getValue ( "ConstantValue" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );

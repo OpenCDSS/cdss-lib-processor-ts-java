@@ -166,7 +166,6 @@ supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -200,8 +199,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
 		// No parameters have = in them...
 		// TODO SAM 2005-08-25 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
 
@@ -226,8 +224,78 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     if ( Alias.length() > 0 ) {
         parameters.set ( "Alias", Alias );
     }
+    // Reset using above information
     if ( (TSID != null) && (TSID.length() > 0) ) {
         parameters.set ( "TSID", TSID );
+    }
+    // Get from the parameters...
+    TSID = parameters.getValue( "TSID");
+    String NewTSID = parameters.getValue( "NewTSID");
+    if ( (NewTSID == null) || (NewTSID.length() == 0) ) {
+        // NewTSID is not specified.  The requirement that this be specified was added to
+        // avoid confusion between copies and the original.  However, this has caused a lot
+        // of migration issues.  Therefore, if TSID is specified, copy it to NewTSID and use
+        // "copy" for the scenario.  This can't be done with aliases.
+        if ( (TSID != null) && (TSID.length() > 0) ) {
+            // Try to evaluate whether it is an alias..
+            if ( StringUtil.patternCount(TSID, ".") >= 3 ) {
+                // Probably not an alias so try to process
+                try {
+                    TSIdent ident = TSIdent.parseIdentifier ( TSID );
+                    ident.setScenario ( "copy" );
+                    // Set the new identifier
+                    parameters.set ( "NewTSID", ident.toString(false) );
+                }
+                catch ( Exception e ) {
+                    // Don't set the NewTSID and force the user to set it when command
+                    // validation occurs.
+                    // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
+                    Message.printWarning( 3, routine, "Unable to parse the TSID to use for NewTSID.");
+                    Message.printWarning( 3, routine, e);
+                }
+            } 
+        }
+    }
+    else {
+        // Have NewTSID parameter but the interval may be invalid.  Copy from TSID if that is the case.
+        try {
+            TSIdent newident = TSIdent.parseIdentifier ( NewTSID );
+            try {
+                TimeInterval.parseInterval(newident.getInterval());
+            }
+            catch ( Exception e ) {
+                // Bad interval in NewTSID so try to use the one from TSID.  First have to parse out TSID
+                try {
+                    TSIdent ident = TSIdent.parseIdentifier ( TSID );
+                    // Make sure the interval is valid from the original (won't be able to get if Alias).
+                    try {
+                        TimeInterval.parseInterval(ident.getInterval());
+                        newident.setInterval(ident.getInterval());
+                        // Set the new identifier
+                        parameters.set ( "NewTSID", newident.toString(false) );
+                    }
+                    catch ( Exception e3 ) {
+                        // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
+                        Message.printWarning ( 3, routine, "Invalid TSID interval \"" + ident.getInterval() +
+                                "\" to fill in NewTSID interval.");
+                        Message.printWarning( 3, routine, e3 );
+                    }
+                }
+                catch ( Exception e2 ) {
+                    // Not able to parse the TSID so user will need to fix manually.
+                    // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
+                    Message.printWarning ( 3, routine, "Unable to parse TSID to fill in NewTSID interval.");
+                    Message.printWarning( 3, routine, e2 );
+                }
+            }
+        }
+        catch ( Exception e ) {
+            // Don't set the NewTSID and force the user to set it when command
+            // validation occurs.
+            // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
+            Message.printWarning ( 3, routine, "Unable to parse NewTSID to check its interval." );
+            Message.printWarning( 3, routine, e);
+        }
     }
     parameters.setHowSet ( Prop.SET_UNKNOWN );
 }

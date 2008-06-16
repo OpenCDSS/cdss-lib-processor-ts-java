@@ -2969,6 +2969,13 @@ startup directory.
 </td>
 </tr>
 
+<tr>
+<td><b>TSViewWindowListener</b></td>
+<td>The WindowListener that is interested in listing to TSView window events.
+This is used when processing a TSProduct in batch mode so that the main
+application can close when the TSView window is closed.</td>
+</tr>
+
 </table>
 @exception Exception if there is an error setting the properties.
 */
@@ -2997,6 +3004,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (Vector)contents );
 	}
+    else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
+        __tsengine.addTSViewWindowListener((WindowListener)contents );
+    }
 	else {// Not recognized...
 		String message = "Unable to set data for unknown property \"" + prop + "\".";
 		throw new UnrecognizedRequestException ( message );

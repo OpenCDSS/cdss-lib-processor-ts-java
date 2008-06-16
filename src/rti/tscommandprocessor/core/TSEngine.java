@@ -1066,7 +1066,7 @@ only one listener can be set.  This is needed to be able to close down the
 application when simple plot interfaces are displayed.
 @param listener WindowListener to listen to TSViewJFrame WindowEvents.
 */
-private void addTSViewWindowListener ( WindowListener listener )
+public void addTSViewWindowListener ( WindowListener listener )
 {	_tsview_window_listener = listener;
 }
 

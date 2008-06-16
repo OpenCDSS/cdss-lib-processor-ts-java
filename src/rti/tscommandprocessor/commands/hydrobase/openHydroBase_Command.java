@@ -47,7 +47,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 /**
 <p>
-This class initializes, checks, and runs the openHydroBase() command.
+This class initializes, checks, and runs the OpenHydroBase() command.
 </p>
 <p>The CommandProcessor must return the following properties:  HydroBaseDMIList.
 </p>
@@ -79,8 +79,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -161,7 +160,6 @@ Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -172,8 +170,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     
     CommandStatus status = getCommandStatus();
 	
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	if ( (tokens == null) ) {
 		message = "Invalid syntax for \"" + command + "\".  Expecting OpenHydroBase(...).";
@@ -185,7 +182,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+		try {
+		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
 				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
@@ -200,18 +198,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the commands:
-<pre>
-openHydroBase("RunMode=xxxx","OdbcDsn=xxxx","DatabaseServer=xxxx",
-DatabaseName="XX",UseStoredProcedures=X,InputName="X")
-</pre>
+Run the command.
 @param processor The CommandProcessor that is executing the command, which will
 provide necessary data inputs and receive output(s).
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -235,11 +228,7 @@ CommandWarningException, CommandException
 	if ( RunMode == null ) {
 		RunMode = _GUIAndBatch;
 	}
-	if ( UseStoredProcedures == null ) {
-		// Default is to use stored procedures...
-		UseStoredProcedures = "true";
-	}
-	if (	(!IOUtil.isBatch() && RunMode.equalsIgnoreCase(_GUIOnly)) ||
+	if ( (!IOUtil.isBatch() && RunMode.equalsIgnoreCase(_GUIOnly)) ||
 		(IOUtil.isBatch() && RunMode.equalsIgnoreCase(_BatchOnly)) ||
 		RunMode.equalsIgnoreCase(_GUIAndBatch) ) {
 		// OK to to run...
@@ -250,66 +239,35 @@ CommandWarningException, CommandException
 			hbdmi = new HydroBaseDMI("Access", OdbcDsn, null, null);
 			hbdmi.open();
 		}
-		else if ( (DatabaseServer != null)&&!DatabaseServer.equals("")){
-			// Use SQL Servier.  Stored procedures may or may not
-			// be used...
-			int[] ports = new int[2];
-			ports[0] = -1;
-			ports[1] = 21784;
-
+		else if ( (DatabaseServer != null) && !DatabaseServer.equals("")){
 			boolean successful = false;
-			String portString = "";
-
-			for (int i = 0; i < ports.length; i++) {
-				// build the error string to be shown in case 
-				// none of the ports could be connected to.
-				if (i < (ports.length - 1)) {
-					portString += "" + ports[i] + ", ";	
-				}
-				else {
-					portString += "" + ports[i];
-				}
-					
-				try {
-				if (DatabaseName != null
-				    && DatabaseName.equals("")) {
+			
+			try {
+				if (DatabaseName != null && DatabaseName.equals("")) {
 					DatabaseName = null;
 				}
 				
-				if (UseStoredProcedures.equalsIgnoreCase("true")) {
-				    	// instantiate a HydroBaseDMI that uses stored procedures
-					hbdmi =new HydroBaseDMI("SQLServer2000",
-						DatabaseServer, DatabaseName, 
-						ports[i], null, null, true);
-					
-				}
-				else {	
-				    	// instantiate a HydroBaseDMI that
-					// does not use stored procedures
-					hbdmi =new HydroBaseDMI("SQLServer2000",
-						DatabaseServer, DatabaseName, 
-						ports[i], null, null, false);
-				}
+				PropList props = new PropList("");
+				props.set ( "HydroBase.DatabaseServer", DatabaseServer );
+				props.set ( "HydroBase.DatabaseName", DatabaseName );
+				props.set ( "HydroBase.UseStoredProcedures", UseStoredProcedures );
+				hbdmi = new HydroBaseDMI ( props );
 				
 				hbdmi.open();
-				
 				successful = true;
-				break;
-
-				}
-				catch (Exception e) {
-					Message.printWarning(3, routine, e);
-					message = "Error opening HydroBase connection to port # " + ports[i];
-					Message.printWarning(warning_level,
-						MessageUtil.formatMessageTag(
-						command_tag, warning_count), 
-						routine, message);
-				}
+			}
+			catch (Exception e) {
+				Message.printWarning(3, routine, e);
+				message = "Error opening HydroBase connection";
+				Message.printWarning(warning_level,
+					MessageUtil.formatMessageTag(
+					command_tag, warning_count), 
+					routine, message);
 			}
 			
 			if (!successful) {
-                message = "Could not connect to a HydroBase database on any of the "
-                     + "possible ports (" + portString + ").";
+                message = "Could not connect to a HydroBase database \"" + DatabaseName + "\" on server \"" +
+                DatabaseServer + "\".";
                 status.addToLog ( CommandPhaseType.RUN,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify the HydroBase database information." ) );
@@ -336,8 +294,7 @@ CommandWarningException, CommandException
 		}
 		// Set the HydroBaseDMI instance in the Vector of open
 		// connections, passed back to the CommandProcessor...
-		warning_count = setHydroBaseDMI ( hbdmi, false, warning_level,
-				warning_count, command_tag );
+		warning_count = setHydroBaseDMI ( hbdmi, false, warning_level, warning_count, command_tag );
 		// Print a message to the log file...
 		try {	String [] comments = hbdmi.getVersionComments();
 			for ( int i = 0; i < comments.length; i++ ) {
@@ -425,10 +382,8 @@ throws CommandException
 	for ( int i = 0; i < size; i++ ) {
 		hbdmi2 = (HydroBaseDMI)dmilist.elementAt(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
-			// The input name of the current instance
-			// matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the
-			// new instance...
+			// The input name of the current instance matches that of the instance in the Vector.
+			// Replace the instance in the Vector by the new instance...
 			if ( close_old ) {
 				try {	hbdmi2.close();
 				}
@@ -437,7 +392,8 @@ throws CommandException
 				}
 			}
 			dmilist.setElementAt ( hbdmi, i );
-			try { processor.setPropContents ( "HydroBaseDMIList",dmilist );
+			try {
+			    processor.setPropContents ( "HydroBaseDMIList",dmilist );
 			}
 			catch ( Exception e ){
 				message = "Cannot set updated HydroBaseDMI list.";

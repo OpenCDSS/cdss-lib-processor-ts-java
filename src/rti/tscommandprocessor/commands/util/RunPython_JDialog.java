@@ -7,6 +7,8 @@ import java.awt.Insets;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -30,6 +32,7 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
@@ -40,7 +43,7 @@ import RTi.Util.Message.Message;
 Class to edit the RunPython() command.
 */
 public class RunPython_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
 private final String __AddWorkingDirectory = "Add Working Directory";
@@ -51,9 +54,11 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and absolute paths.
 private RunPython_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as TextField
 private String		__working_dir = null;	// Working directory.
 private JTextField	__InputFile_JTextField = null;
+private JTextArea   __Arguments_JTextArea=null;
+private SimpleJComboBox __Interpreter_JComboBox = null;    // Whether Python or Jython
+private JTextArea   __command_JTextArea=null;// Command as TextArea
 private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
 private boolean		__ok = false; // Indicates whether OK was pressed when closing the dialog.
@@ -138,11 +143,20 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
+	String Arguments = __Arguments_JTextArea.getText().trim();
+	String Interpreter = __Interpreter_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
-	try {	// This will warn the user...
+    if ( Arguments.length() > 0 ) {
+        props.set ( "Arguments", Arguments );
+    }
+	if ( Interpreter.length() > 0 ) {
+	    props.set ( "Interpreter", Interpreter );
+	}
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -157,7 +171,11 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
+    String Arguments = __Arguments_JTextArea.getText().trim();
+    String Interpreter = __Interpreter_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
+	__command.setCommandParameter ( "Arguments", Arguments );
+	__command.setCommandParameter ( "Interpreter", Interpreter );
 }
 
 /**
@@ -199,22 +217,24 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Run a Python script, using Jython (Java implementation of Python)." ),
+		"Run a Python script, by using Jython (Java implementation of Python) or calling Python." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This is useful for manipulating data and command files to streamline bulk processing." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Python scripts are useful for manipulating data outside of TSTool's capabilities." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full or relative path (relative to working directory)." ), 
+        "Jython must be used if the script includes Jython-only features, such as using Java classes, " +
+        "but is limited to the Python 2.2 specification." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify a full or relative path to the script file (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel("The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Python file to run:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Python/Jython file to run:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -223,6 +243,26 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Arguments:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Arguments_JTextArea = new JTextArea ( 4, 55 );
+    __Arguments_JTextArea.setLineWrap ( true );
+    __Arguments_JTextArea.setWrapStyleWord ( true );
+    __Arguments_JTextArea.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Arguments_JTextArea),
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interpreter:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Interpreter_JComboBox = new SimpleJComboBox ( false );
+    __Interpreter_JComboBox.addItem ( __command._Jython );
+    __Interpreter_JComboBox.addItem ( __command._Python );
+    __Interpreter_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Interpreter_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Jython is more flexibile."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -260,13 +300,22 @@ private void initialize ( JFrame parent, Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
 {	int code = event.getKeyCode();
 
+    refresh ();
 	if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
 			response ( false );
@@ -294,24 +343,50 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String InputFile = "";
+{	String routine = __command.getCommandName() + "_JDialog.refresh";
+    String InputFile = "";
+    String Arguments = "";
+    String Interpreter = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
 		InputFile = props.getValue ( "InputFile" );
+		Arguments = props.getValue ( "Arguments" );
+		Interpreter = props.getValue ( "Interpreter" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
+        if ( Arguments != null ) {
+            __Arguments_JTextArea.setText ( Arguments );
+        }
+        if ( Interpreter == null ) {
+            // Select default...
+            __Interpreter_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Interpreter_JComboBox,Interpreter, JGUIUtil.NONE, null, null ) ) {
+                __Interpreter_JComboBox.select ( Interpreter );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nInterpreter value \"" + Interpreter +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
+	Arguments = __Arguments_JTextArea.getText().trim();
+	Interpreter = __Interpreter_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
+	props.add ( "Arguments=" + Arguments );
+	props.add ( "Interpreter=" + Interpreter );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );

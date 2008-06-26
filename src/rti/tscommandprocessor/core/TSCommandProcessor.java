@@ -424,8 +424,8 @@ public Prop getProp ( String prop ) throws Exception
 	if ( o == null ) {
 		return null;
 	}
-	else {	// Contents will be a Vector, etc., so convert to a full
-		// property.
+	else {
+	    // Contents will be a Vector, etc., so convert to a full property.
 		// TODO SAM 2005-05-13 This will work seamlessly for strings
 		// but may have a side-effects (conversions) for non-strings...
 		Prop p = new Prop ( prop, o, o.toString() );
@@ -549,6 +549,16 @@ application can close when the TSView window is closed.</td>
 </tr>
 
 <tr>
+<td><b>WarningLevelLogFile</b></td>
+<td>The warning level for log file messages.</td>
+</tr>
+
+<tr>
+<td><b>WarningLevelScreen</b></td>
+<td>The warning level for screen messages.</td>
+</tr>
+
+<tr>
 <td><b>WorkingDir</b></td>
 <td>The current working directory for the processor, reflecting the initial
 working directory and changes from setWorkingDir() commands.
@@ -632,6 +642,12 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
 		return getPropContents_TSViewWindowListener();
 	}
+    else if ( prop.equalsIgnoreCase("WarningLevelLogFile") ) {
+        return new Integer(Message.getWarningLevel(Message.LOG_OUTPUT));
+    }
+    else if ( prop.equalsIgnoreCase("WarningLevelScreen") ) {
+        return new Integer(Message.getWarningLevel(Message.TERM_OUTPUT));
+    }
 	else if ( prop.equalsIgnoreCase("WorkingDir") ) {
 		return getPropContents_WorkingDir();
 	}
@@ -916,6 +932,8 @@ public Collection getPropertyNameList()
 	v.addElement ( "OutputStart" );
 	v.addElement ( "OutputEnd" );
     v.addElement ( "OutputYearType" );
+    v.addElement ( "WarningLevelLogFile" );
+    v.addElement ( "WarningLevelScreen" );
     v.addElement ( "WorkingDir" );
     // Create a set that includes the above.
     TreeSet set = new TreeSet(v);

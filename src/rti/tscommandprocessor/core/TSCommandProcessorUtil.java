@@ -23,7 +23,6 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 
@@ -176,62 +175,63 @@ Expand a parameter valueto recognize processor-level properties.  For example, a
 "${WorkingDir}/morepath" will be expanded to include the working directory.
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
-@param parameter_value the parameter value being expanded.
+@param parameterValue the parameter value being expanded.
 */
-public static String expandParameterValue( CommandProcessor processor, Command command, String parameter_value )
+public static String expandParameterValue( CommandProcessor processor, Command command, String parameterValue )
 {   String routine = "TSCommandProcessorUtil.expandParameterValue";
-    if ( (parameter_value == null) || (parameter_value.length() == 0) ) {
+    if ( (parameterValue == null) || (parameterValue.length() == 0) ) {
         // Just return what was provided.
-        return parameter_value;
+        return parameterValue;
     }
     // Else see if the parameter value can be expanded to replace $ symbolic references with other values
     // Search the parameter string for $ until all processor parameters have been resolved
-    int searchpos = 0;  // Position in the "parameter_val" string to search for $ references
-    int foundpos;       // Position when leading ${ is found
-    int foundpos_end;   // Position when ending } is found
-    String foundprop = null;    // Whether a property is found that matches the $ symbol
-    String delimstart = "${";
-    String delimend = "}";
-    while ( searchpos < parameter_value.length() ) {
-        foundpos = parameter_value.indexOf(delimstart, searchpos);
-        foundpos_end = parameter_value.indexOf(delimend, (searchpos + 2));
-        if ( (foundpos < 0) && (foundpos_end < 0)  ) {
+    int searchPos = 0;  // Position in the "parameter_val" string to search for $ references
+    int foundPos;       // Position when leading ${ is found
+    int foundPosEnd;   // Position when ending } is found
+    String foundProp = null;    // Whether a property is found that matches the $ symbol
+    String delimStart = "${";
+    String delimEnd = "}";
+    while ( searchPos < parameterValue.length() ) {
+        foundPos = parameterValue.indexOf(delimStart, searchPos);
+        foundPosEnd = parameterValue.indexOf(delimEnd, (searchPos + delimStart.length()));
+        if ( (foundPos < 0) && (foundPosEnd < 0)  ) {
             // No more $ property names, so return what we have.
-            return parameter_value;
+            return parameterValue;
         }
-        Message.printStatus ( 2, routine, "Found " + delimstart + " at position [" + foundpos + "]");
+        // Else found the delimiter so continue with the replacement
+        Message.printStatus ( 2, routine, "Found " + delimStart + " at position [" + foundPos + "]");
         // Get the name of the property
-        foundprop = parameter_value.substring((foundpos+2),foundpos_end);
+        foundProp = parameterValue.substring((foundPos+2),foundPosEnd);
         // Try to get the property from the processor
         // TODO SAM 2007-12-23 Evaluate whether to skip null.  For now show null in result.
         Object propval = null;
-        String propval_string = null;
+        String propvalString = null;
         try {
-            propval = processor.getPropContents ( foundprop );
-            propval_string = "" + propval;
+            propval = processor.getPropContents ( foundProp );
+            propvalString = "" + propval;
         }
         catch ( Exception e ) {
             // Keep the original value
-            propval_string = delimstart + propval + delimend;
+            propvalString = delimStart + propval + delimEnd;
         }
         StringBuffer b = new StringBuffer();
         // Append the start of the string
-        if ( searchpos > 0 ) {
-            b.append ( parameter_value.substring(0,searchpos) );
+        if ( foundPos > 0 ) {
+            b.append ( parameterValue.substring(0,foundPos) );
         }
         // Now append the value of the property...
-        b.append ( propval_string );
+        b.append ( propvalString );
         // Now append the end of the original string if anything is at the end...
-        if ( parameter_value.length() > (foundpos_end + 1) ) {
-            b.append ( parameter_value.substring(foundpos_end + 1) );
+        if ( parameterValue.length() > (foundPosEnd + 1) ) {
+            b.append ( parameterValue.substring(foundPosEnd + 1) );
         }
         // Now reset the search position to finish evaluating whether to expand the string.
-        parameter_value = b.toString();
-        searchpos += propval_string.length();   // Expanded so no need to consider delim*
-        Message.printStatus( 2, routine, "Expanded property value is \"" + parameter_value + "\" searchpos is now " +
-                searchpos );
+        parameterValue = b.toString();
+        searchPos = foundPos + propvalString.length();   // Expanded so no need to consider delim*
+        Message.printStatus( 2, routine, "Expanded property value is \"" + parameterValue +
+                "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
     }
-    return parameter_value;
+    return parameterValue;
 }
 
 /**

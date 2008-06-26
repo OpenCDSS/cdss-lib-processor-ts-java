@@ -3767,61 +3767,6 @@ throws Exception
 }
 
 /**
-Execute the new setWarningLevel() or old -w command.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setWarningLevel ( String expression )
-throws Exception
-{	Vector	tokens = null;
-	if ( expression.regionMatches(true,0, "setWarningLevel", 0,15) ) {
-		// New style...
-		tokens = StringUtil.breakStringList ( expression, " (,)", StringUtil.DELIM_SKIP_BLANKS );
-	}
-	else if ( expression.length() >= 2 ) {
-		// Old style -w#... or -w #...
-		if ((expression.length() == 2) || ((expression.length() > 2) &&	(expression.charAt(2) == ' ')) ){
-			// Parse the whole thing...
-			tokens = StringUtil.breakStringList ( expression," ,", StringUtil.DELIM_SKIP_BLANKS );
-		}
-		else {	// Parse from the 3rd character on and then insert a
-			// dummy command...
-			tokens = StringUtil.breakStringList (expression.substring(2),
-				" ,", StringUtil.DELIM_SKIP_BLANKS );
-			tokens.insertElementAt("-w",0);
-		}
-	}
-	// Now the same token structure...
-	if ( tokens == null ) {
-		throw new Exception ("Bad command \"" + expression + "\"" );
-	}
-	int size = tokens.size();
-	if ( size == 1 ) {
-		// Set warning level to 1...
-		Message.setWarningLevel( Message.TERM_OUTPUT, 1 );
-		Message.setWarningLevel( Message.LOG_OUTPUT, 1 );
-	}
-	else if ( size == 2 ) {
-		// Set warning level to same value for all...
-		int warning = StringUtil.atoi(((String)tokens.elementAt(1)).trim());
-		Message.setWarningLevel( Message.TERM_OUTPUT, warning );
-		Message.setWarningLevel( Message.LOG_OUTPUT, warning );
-	}
-	else if ( size == 3 ) {
-		// Set warning level to different values for log and display...
-		int warning = StringUtil.atoi(((String)tokens.elementAt(1)).trim());
-		Message.setWarningLevel( Message.TERM_OUTPUT, warning );
-		warning = StringUtil.atoi(((String)tokens.elementAt(2)).trim());
-		Message.setWarningLevel( Message.LOG_OUTPUT, warning );
-	}
-	else {	tokens = null;
-		throw new Exception ("Bad command \"" + expression + "\"" );
-	}
-	// Clean up...
-	tokens = null;
-}
-
-/**
 Execute the stateModMax() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -6161,10 +6106,6 @@ throws Exception
 		}
 		else if ( command_String.regionMatches(true,0,"setWorkingDir", 0,13) ) {
 			do_setWorkingDir ( command_String, app_PropList );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setWarningLevel", 0,13) ) {
-			do_setWarningLevel ( command_String );
 			continue;
 		}
         // FIXME SAM 2008-01-04 Is this command even supported/documented?

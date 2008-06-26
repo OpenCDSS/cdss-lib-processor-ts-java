@@ -86,6 +86,7 @@ import rti.tscommandprocessor.commands.hydrobase.readHydroBase_Command;
 
 // Logging commands.
 
+import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;
 import rti.tscommandprocessor.commands.logging.startLog_Command;
 
 // NWSRFS commands.
@@ -502,6 +503,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetTimeSeriesProperty") ) {
 		return new SetTimeSeriesProperty_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetWarningLevel") ) {
+        return new SetWarningLevel_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ShiftTimeByInterval") ) {
         return new ShiftTimeByInterval_Command ();
     }

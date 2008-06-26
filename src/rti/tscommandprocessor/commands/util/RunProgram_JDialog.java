@@ -151,17 +151,14 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"TSTool can run other programs as part of a command file."),
+		"This command runs another program, and TSTool waits for it to complete before continuing."),
 		0, y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Commands must use a full path or TSTool must be started from directory to run in (SetWorkingDir() has no effect)."),
+		"Commands must use a full path to files, TSTool must be started from the directory where files exist " +
+		"to use relative paths, or "),
 		0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	if ( System.getProperty("os.name").equalsIgnoreCase("Windows NT") ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Programs can have maximum of 9 command-line arguments."), 
-		0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "$WorkingDir in the command line will be replaced with the working directory."),
+        "use ${WorkingDir} in the command line to specify files relatative to the working directory."),
         0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command to run (with arguments):" ), 

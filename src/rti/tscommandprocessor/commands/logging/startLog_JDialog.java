@@ -32,7 +32,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -42,9 +41,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-
-import rti.tscommandprocessor.core.TSCommandProcessor;
-import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
@@ -57,7 +53,6 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 public class startLog_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
@@ -74,9 +69,7 @@ private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
 private startLog_Command __command = null;	// Command to edit
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private boolean		__ok = false;		// Indicates whether user pressed OK to close the dialog.
 private String		__working_dir = null;	// The working directory.
 
 /**
@@ -101,15 +94,13 @@ public void actionPerformed( ActionEvent event )
 			JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select Log File");
-		SimpleFileFilter sff = new SimpleFileFilter("log",
-			"Log File");
+		SimpleFileFilter sff = new SimpleFileFilter("log", "Log File");
 		fc.addChoosableFileFilter(sff);
 		
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -145,27 +136,24 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory") ) {
+		if ( __path_JButton.getText().equals( "Add Working Directory") ) {
 			__LogFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__LogFile_JTextField.getText() ) );
+			        IOUtil.toAbsolutePath(__working_dir, __LogFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory") ) {
-			try {	__LogFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__LogFile_JTextField.getText() ) );
+		else if ( __path_JButton.getText().equals( "Remove Working Directory") ) {
+			try {
+			    __LogFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __LogFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"writeDateValue_JDialog",
-				"Error converting file to relative path." );
+				"StartLog_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
 	}
-	else {	// Combo box...
+	else {
+	    // Combo box...
 		refresh();
 	}
 }
@@ -310,18 +298,16 @@ private void initialize ( JFrame parent, Command command )
 	__Suffix_JComboBox.addItem ( __command._DateTime );
 	__Suffix_JComboBox.select ( 0 );
 	__Suffix_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Suffix_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Suffix for log file (blank=none)."), 
+    JGUIUtil.addComponent(main_JPanel, __Suffix_JComboBox,
+	    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Suffix for log file (blank=none)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
-	__command_JTextArea.addKeyListener ( this );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -336,11 +322,9 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
+		// Add the button to allow conversion to/from relative path...
 		button_JPanel.add ( __path_JButton = new SimpleJButton(
-			"Remove Working Directory",
-			"Remove Working Directory", this) );
+			"Remove Working Directory", "Remove Working Directory", this) );
 	}
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -349,9 +333,9 @@ private void initialize ( JFrame parent, Command command )
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
@@ -388,20 +372,9 @@ startLog(LogFile="X",Suffix="X")
 private void refresh ()
 {	String routine = "startLog_JDialog.refresh";
 	String LogFile = "", Suffix = "";
+	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		Vector v = StringUtil.breakStringList (
-			__command.toString(),"()",
-			StringUtil.DELIM_SKIP_BLANKS );
-		PropList props = null;
-		if (	(v != null) && (v.size() > 1) &&
-			(((String)v.elementAt(1)).indexOf("=") > 0) ) {
-			props = PropList.parse (
-				(String)v.elementAt(1), routine, "," );
-		}
-		if ( props == null ) {
-			props = new PropList ( __command.getCommandName() );
-		}
 		Suffix = props.getValue ( "Suffix" );
 		LogFile = props.getValue ( "LogFile" );
 		if ( LogFile != null ) {
@@ -427,12 +400,11 @@ private void refresh ()
 	// information that has not been committed in the command.
 	LogFile = __LogFile_JTextField.getText().trim();
 	Suffix = __Suffix_JComboBox.getSelected();
-	PropList props = new PropList ( __command.getCommandName() );
+	props = new PropList ( __command.getCommandName() );
 	props.add ( "LogFile=" + LogFile );
 	props.add ( "Suffix=" + Suffix );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( (LogFile == null) || (LogFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
 			__path_JButton.setEnabled ( false );
@@ -484,4 +456,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end startLog_JDialog
+}

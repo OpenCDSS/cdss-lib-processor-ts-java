@@ -1893,10 +1893,16 @@ throws Exception
     if ( o_EnsembleID != null ) {
         EnsembleID = (String)o_EnsembleID;
     }
+    // The following can be null.  Let the called code handle it.
+    Object o_TSPosition = request_params.getContents ( "TSPosition" );
+    String TSPosition = null;
+    if ( o_TSPosition != null ) {
+        TSPosition = (String)o_TSPosition;
+    }
 	// Get the information from TSEngine, which is returned as a Vector
 	// with the first element being the matching time series list and the second
 	// being the indices of those time series in the time series results list.
-	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID );
+	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
 	Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );

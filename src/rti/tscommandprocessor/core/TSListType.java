@@ -32,9 +32,15 @@ public class TSListType {
 	public static TSListType SELECTED_TS = new TSListType(4, "SelectedTS");
     
     /**
+     * SpecifiedTSID indicates that all specified time series should be in the list.
+     * Specified time series are those that are explicitly included in a list.
+     */
+    public static TSListType SPECIFIED_TSID = new TSListType(5, "SpecifiedTSID");
+    
+    /**
      * SpecifiedTSID indicates that all specified time series should be in the list. 
      */
-    public static TSListType SPECIFIED_TSID = new TSListType(4, "SpecifiedTSID");
+    public static TSListType TSPOSITION = new TSListType(6, "TSPosition");
     
     /**
 	 * Integer value of the type.

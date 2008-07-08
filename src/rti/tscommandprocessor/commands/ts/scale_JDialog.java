@@ -345,7 +345,8 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// Combo box...
+	else {
+	    // Combo box...
 		refresh();
 	}
 }

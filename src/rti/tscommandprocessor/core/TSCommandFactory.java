@@ -162,6 +162,7 @@ import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.RunningAverage_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
+import rti.tscommandprocessor.commands.ts.SelectTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.SetConstant_Command;
 import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
@@ -176,6 +177,7 @@ import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
+import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
@@ -344,6 +346,9 @@ throws UnknownCommandException
             StringUtil.startsWithIgnoreCase(command_string,"Free (")) {
         return new Free_Command ();
     }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FTPGet") ) {
+        return new FTPGet_Command ();
+    }
     /*
     else if ( StringUtil.startsWithIgnoreCase(command_string,"FreeEnsemble") ||
             StringUtil.startsWithIgnoreCase(command_string,"FreeEnsemble")) {
@@ -472,6 +477,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Scale") ) {
 		return new scale_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SelectTimeSeries") ) {
+        return new SelectTimeSeries_Command ();
+    }
     // Do a check for the obsolete SetConst() and SetConstantBefore().
     // If encountered, they will be handled as an unknown command.
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetConstant") &&

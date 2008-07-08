@@ -2181,7 +2181,7 @@ throws Exception
 		fillprops.set ( "IgnoreLessThanOrEqualZero", "true" );
 	}
 	// Get the time series to process...
-	Vector v = getTimeSeriesToProcess ( TSList, TSID, null );
+	Vector v = getTimeSeriesToProcess ( TSList, TSID, null, null );
 	Vector tslist = (Vector)v.elementAt(0);
 	int [] tspos = (int [])v.elementAt(1);
 	int nts = tslist.size();
@@ -3022,127 +3022,6 @@ throws Exception
     }
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 	return ts;
-}
-
-/**
-Execute the commands:
-<pre>
-selectTimeSeries(TSID="pattern",Pos="positions",DeselectAllFirst="true|false")
-deselectTimeSeries(TSID="pattern",Pos="positions,SelectAllFirst="true|false"")
-</pre>
-@param command Command to execute.
-@param do_select If true, then a selectTimeSeries() is occurring.  Otherwise
-a deselectTimeSeries() is occurring.
-@exception Exception if there is an error.
-*/
-private void do_selectTimeSeries ( String command, boolean do_select )
-throws Exception
-{	String routine = "TSEngine.do_selectTimeSeries";
-	String action = "select";
-	if ( !do_select ) {
-		routine = "TSEngine.do_deselectTimeSeries";
-		action = "deselect";
-	}
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || (tokens.size() < 1) ) {
-		// Should never happen because the command name was parsed before...
-		throw new Exception ( "Bad command: \"" + command + "\"" );
-	}
-	// Get the input needed to process the file...
-	PropList props = PropList.parse ((String)tokens.elementAt(1), routine, "," );
-	String TSID = props.getValue ( "TSID" );
-	String Pos = props.getValue ( "Pos" );
-	String DeselectAllFirst = props.getValue ( "DeselectAllFirst" );
-	String SelectAllFirst = props.getValue ( "SelectAllFirst" );
-	if ( (TSID == null) && (Pos == null) ) {
-		String message = "Need TSID pattern or position to " + action + " time series.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// If using positions, create an array of position ranges that will be matched...
-	int [] start_pos = null;
-	int [] end_pos = null;
-	int npos = 0;
-	String token = null;
-	if ( Pos != null ) {
-		tokens = StringUtil.breakStringList ( Pos,",", StringUtil.DELIM_SKIP_BLANKS );
-		if ( tokens != null ) {
-			npos = tokens.size();
-		}
-		start_pos = new int[npos];
-		end_pos = new int[npos];
-		for ( int i = 0; i < npos; i++ ) {
-			token = (String)tokens.elementAt(i);
-			if ( token.indexOf("-") >= 0 ) {
-				// Range...
-				start_pos[i] = StringUtil.atoi( StringUtil.getToken(token, "-",0,0).trim());
-				end_pos[i] = StringUtil.atoi( StringUtil.getToken(token, "-",0,1).trim());
-			}
-			else {
-			    // Single value.  Treat as a range of 1.
-				start_pos[i] = StringUtil.atoi(token);
-				end_pos[i] = start_pos[i];
-			}
-			Message.printStatus ( 1, "", "Range " + i + " from " + token + " is " +	start_pos[i] + "," + end_pos[i] );
-		}
-	}
-	// Clear if requested...
-	int nts = getTimeSeriesSize();
-	TS ts = null;
-	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {
-		Message.printStatus ( 2, routine, "Deselecting all time series first." );
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);	// Will throw Exception
-			ts.setSelected ( false );
-		}
-	}
-	if ( (SelectAllFirst != null) && SelectAllFirst.equalsIgnoreCase("true") ) {
-		Message.printStatus ( 2, routine, "Selecting all time series first." );
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);	// Will throw Exception
-			ts.setSelected ( true );
-		}
-	}
-	// Search through all the time series in memory, selecting/deselecting
-	// those with identifiers that match the pattern...
-	int count = 0;
-	boolean match = false;	// Indicates whether a time series is matched.
-	for ( int its = 0; its < nts; its++ ) {
-		ts = getTimeSeries(its);	// Will throw Exception
-		if ( TSID != null ) {
-			if ( !ts.getIdentifier().matches(TSID) ) {
-				continue;
-			}
-		}
-		if ( Pos != null ) {
-			// Evaluate whether the position matches one of the requested...
-			match = false;
-			for ( int j = 0; j < npos; j++ ) {
-				if ( ((its + 1) >= start_pos[j]) && ((its + 1) <= end_pos[j]) ) {
-					match = true;
-					break;
-				}
-			}
-			if ( !match ) {
-				continue;
-			}
-		}
-		// Else select/deselect the time series...
-		++count;
-		if ( do_select ) {
-			ts.setSelected ( true );
-			Message.printStatus ( 2, routine, "Selecting [" + its + "]:" + ts.getIdentifierString() );
-		}
-		else {	ts.setSelected ( false );
-			Message.printStatus ( 2, routine, "Deselecting [" + its + "]:"+ts.getIdentifierString() );
-		}
-	}
-	if ( count == 0 ) {
-		// Probably an error.
-		String message = "No time series were matched for \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
 }
 
 /**
@@ -4521,6 +4400,10 @@ determined, with one of the following values (see TSListType):
 <li>	"SelectedTS" will return a list of time series that are selected.</li>
 <li>    "SpecifiedTSID" will return a list of time series that match the specified identifiers
         (no wildcards, just a comma-separated list of identifier).</li>
+<li>    "TSPosition" will return a list of time series matching the positions in the TSPosition
+        value, which has the syntax 1-2,4,5-7 (specify single values or range, values are 1+) -
+        internally the values are zero indexed.  In the future Python notation slices may
+        be enabled.</li>
 </ol>
 @param TSID A time series indentifier (pattern) when used with TSList=AllMatchingTSID and
 TSList=LastMatchingTSID, or a list of time series separated by commas when used with
@@ -4532,7 +4415,7 @@ to be used to update the time series.  Use the size of the Vector (in the first
 element) to determine the number of time series to process.  The order of the
 time series will be from first to last.  A non-null list is guaranteed to be returned.
 */
-protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID )
+protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID, String TSPosition )
 {	String routine = "TSEngine.getTimeSeriesToProcess";
     Vector tslist = new Vector();	// List of time series to process
 	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
@@ -4689,6 +4572,54 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
         Message.printStatus( 2, routine, "Matched " + count + " time series." );
+        if ( count == 0 ) {
+            v.setElementAt ( new int[0], 1 );
+        }
+        else {
+            int [] tspos2 = new int[count];
+            for ( int i = 0; i < count; i++ ) {
+                tspos2[i] = tspos[i];
+            }
+            v.setElementAt ( tspos2, 1 );
+        }
+        return v;
+    }
+    else if ( TSList.equalsIgnoreCase(TSListType.TSPOSITION.toString()) ) {
+        // Process the position string
+        Vector tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
+        int npos = 0;
+        if ( tokens != null ) {
+            npos = tokens.size();
+        }
+        int tsposStart, tsposEnd;
+        for ( int i = 0; i < npos; i++ ) {
+            String token = (String)tokens.elementAt(i);
+            if ( token.indexOf("-") >= 0 ) {
+                // Range...
+                String posString = StringUtil.getToken(token, "-",0,0).trim();
+                tsposStart = Integer.parseInt( posString ) - 1;
+                posString = StringUtil.getToken(token, "-",0,1).trim();
+                tsposEnd = Integer.parseInt( posString ) - 1;
+            }
+            else {
+                // Single value.  Treat as a range of 1.
+                tsposStart = Integer.parseInt(token) - 1;
+                tsposEnd = tsposStart;
+            }
+            for ( int itspos = tsposStart; itspos <= tsposEnd; itspos++ ) {
+                try {
+                    tslist.addElement ( getTimeSeries(itspos) );
+                }
+                catch ( Exception e ) {
+                    // Don't add
+                    // FIXME SAM 2008-07-07 Evaluate whether exception needs to be thrown
+                    // for out of range index.
+                }
+                tspos[count++] = itspos;
+            }
+        }
+        // Trim down the "tspos" array to only include matches so that other
+        // code does not mistakenly iterate through a longer array...
         if ( count == 0 ) {
             v.setElementAt ( new int[0], 1 );
         }
@@ -5696,11 +5627,6 @@ throws Exception
 			do_DateTime ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"deselectTimeSeries",0,18)){
-			// Deselect time series for output...
-			do_selectTimeSeries ( command_String, false );
-			ts_action = NONE;
-		}
 		else if ( command_String.regionMatches(true,0,"divide",0,6)) {
 			// Don't use space because TEMPTS will not parse right.
 			Vector v = StringUtil.breakStringList(command_String,
@@ -6046,11 +5972,6 @@ throws Exception
 			date2_string = null;
 			date1 = null;
 			date2 = null;
-		}
-		else if ( command_String.regionMatches( true,0,"selectTimeSeries",0,16)){
-			// Select time series for output...
-			do_selectTimeSeries ( command_String, true );
-			ts_action = NONE;
 		}
 		else if ( command_String.regionMatches(	true,0,"setAutoExtendPeriod",0,19) ) {
 			// Set the _auto_exend_period flag...

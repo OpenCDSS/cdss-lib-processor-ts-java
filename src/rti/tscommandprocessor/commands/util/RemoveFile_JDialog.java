@@ -1,18 +1,3 @@
-// ----------------------------------------------------------------------------
-// compareFiles_JDialog - editor for compareFiles()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2006-05-01	Steven A. Malers, RTi	Initial version (copy and modify
-//					compareTimeSeries_JDialog).
-// 2006-05-03	SAM, RTi		Add WarnIfSame parameter.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;

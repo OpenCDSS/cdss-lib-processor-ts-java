@@ -455,6 +455,16 @@ speed performance during initial testing.
 </tr>
 
 <tr>
+<td><b>DebugLevelLogFile</b></td>
+<td>The debug level for log file messages.</td>
+</tr>
+
+<tr>
+<td><b>DebugLevelScreen</b></td>
+<td>The debug level for screen messages.</td>
+</tr>
+
+<tr>
 <td><b>HaveOutputPeriod</b></td>
 <td>Indicate whether the output period has been specified, as a Boolean.
 </td>
@@ -585,6 +595,12 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("DataTestList") ) {
 		return getPropContents_DataTestList();
 	}
+    else if ( prop.equalsIgnoreCase("DebugLevelLogFile") ) {
+        return new Integer(Message.getDebugLevel(Message.LOG_OUTPUT));
+    }
+    else if ( prop.equalsIgnoreCase("DebugLevelScreen") ) {
+        return new Integer(Message.getDebugLevel(Message.TERM_OUTPUT));
+    }
     else if ( prop.equalsIgnoreCase("EnsembleResultsList") ) {
         return getPropContents_EnsembleResultsList();
     }
@@ -924,6 +940,8 @@ public Collection getPropertyNameList()
     v.addElement ( "AutoExtendPeriod" );
     v.addElement ( "AverageStart" );
     v.addElement ( "AverageEnd" );
+    v.addElement ( "DebugLevelLogFile" );
+    v.addElement ( "DebugLevelScreen" );
     v.addElement ( "HydroBaseDMIListSize" );
     v.addElement ( "IgnoreLEZero" );
     v.addElement ( "IncludeMissingTS" );

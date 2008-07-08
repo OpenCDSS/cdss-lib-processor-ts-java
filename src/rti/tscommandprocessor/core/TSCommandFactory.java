@@ -86,6 +86,7 @@ import rti.tscommandprocessor.commands.hydrobase.readHydroBase_Command;
 
 // Logging commands.
 
+import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
 import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;
 import rti.tscommandprocessor.commands.logging.startLog_Command;
 
@@ -143,6 +144,7 @@ import rti.tscommandprocessor.commands.ts.copy_Command;
 import rti.tscommandprocessor.commands.ts.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
+import rti.tscommandprocessor.commands.ts.DeselectTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
 import rti.tscommandprocessor.commands.ts.FillFromTS_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
@@ -249,7 +251,7 @@ throws UnknownCommandException
 		}
 	}
 
-	// "a" commands...
+	// "A" commands...
 
     // Put the following before "Add"
     if ( StringUtil.startsWithIgnoreCase(command_string,"AddConstant") ) {
@@ -262,13 +264,13 @@ throws UnknownCommandException
 		return new analyzePattern_Command ();
 	}
     
-    // "b" commands...
+    // "B" commands...
     
     else if ( StringUtil.startsWithIgnoreCase(command_string,"Blend") ) {
         return new Blend_Command ();
     }
 
-	// "c" commands...
+	// "C" commands...
 
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ChangePeriod") ) {
         return new ChangePeriod_Command ();
@@ -304,8 +306,14 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Cumulate") ) {
 		return new cumulate_Command ();
 	}
+    
+    // "D" commands...
+    
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"DeselectTimeSeries") ) {
+        return new DeselectTimeSeries_Command ();
+    }
 	
-	// "e" commands...
+	// "E" commands...
 	
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Exit") ) {
 		Command command = new GenericCommand();
@@ -313,7 +321,7 @@ throws UnknownCommandException
 		return command;
 	}
 
-	// "f" commands...
+	// "F" commands...
 
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillConstant") ) {
 		return new fillConstant_Command ();
@@ -356,19 +364,19 @@ throws UnknownCommandException
     }
     */
 	
-	// "l" commands...
+	// "L" commands...
 
 	else if ( isTScommand && TScommand.equalsIgnoreCase("LagK") ) {
 		return new lagK_Command ();
 	}
 	
-	// "m" commands...
+	// "M" commands...
 	
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"MergeListFileColumns") ) {
 		return new mergeListFileColumns_Command ();
 	}
 
-	// "n" commands...
+	// "N" commands...
 
 	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("NewDataTest") ) {
 		return new newDataTest_Command();
@@ -390,7 +398,7 @@ throws UnknownCommandException
 		return new newTimeSeries_Command ();
 	}
 
-	// "o" commands...
+	// "O" commands...
 
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"OpenHydroBase") ) {
 		return new openHydroBase_Command ();
@@ -399,13 +407,13 @@ throws UnknownCommandException
 		//return new openNDFD_Command ();
 	}
 
-	// "p" commands...
+	// "P" commands...
 
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ProcessTSProduct") ) {
 		return new processTSProduct_Command ();
 	}
 
-	// "r" commands...
+	// "R" commands...
 
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadDateValue") ) {
         return new ReadDateValue_Command ();
@@ -472,7 +480,7 @@ throws UnknownCommandException
         return new RunningAverage_Command ();
     }
 
-	// "s" commands...
+	// "S" commands...
 
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"Scale") ) {
 		return new scale_Command ();
@@ -487,6 +495,9 @@ throws UnknownCommandException
             !StringUtil.startsWithIgnoreCase(command_string,"SetConst ") &&
             !StringUtil.startsWithIgnoreCase(command_string,"SetConst(") ) {
         return new SetConstant_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetDebugLevel") ) {
+        return new SetDebugLevel_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetFromTS") ) {
         return new SetFromTS_Command ();
@@ -530,13 +541,13 @@ throws UnknownCommandException
         return new Subtract_Command ();
     }
 	
-	// "t" commands...
+	// "T" commands...
 
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"TestCommand") ) {
 		return new testCommand_Command ();
 	}
 
-	// "w" commands...
+	// "W" commands...
 
     else if ( isTScommand && TScommand.equalsIgnoreCase("WeightTraces") ) {
         return new WeightTraces_Command ();

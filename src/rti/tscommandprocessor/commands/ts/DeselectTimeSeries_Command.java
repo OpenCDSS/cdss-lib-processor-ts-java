@@ -28,10 +28,10 @@ import RTi.Util.String.StringUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the SelectTimeSeries() command.
+This class initializes, checks, and runs the DeselectTimeSeries() command.
 </p>
 */
-public class SelectTimeSeries_Command extends AbstractCommand implements Command
+public class DeselectTimeSeries_Command extends AbstractCommand implements Command
 {
     
 /**
@@ -49,9 +49,9 @@ int [] TSPositionEnd = new int[0];
 /**
 Constructor.
 */
-public SelectTimeSeries_Command ()
+public DeselectTimeSeries_Command ()
 {	super();
-	setCommandName ( "SelectTimeSeries" );
+	setCommandName ( "DeselectTimeSeries" );
 }
 
 /**
@@ -68,7 +68,7 @@ throws InvalidCommandParameterException
 {	//String TSList = parameters.getValue ( "TSList" );
     //String TSID = parameters.getValue ( "TSID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
-	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
+	String SelectAllFirst = parameters.getValue ( "SelectAllFirst" );
 	String warning = "";
     String message;
     
@@ -127,9 +127,9 @@ throws InvalidCommandParameterException
         }
 	}
 	
-	if ( (DeselectAllFirst != null) && !DeselectAllFirst.equals("") &&
-	        !DeselectAllFirst.equalsIgnoreCase(_True) && !DeselectAllFirst.equalsIgnoreCase(_False) ) {
-        message = "The DeselectAllFirst (" + DeselectAllFirst + ") parameter value is invalid.";
+	if ( (SelectAllFirst != null) && !SelectAllFirst.equals("") &&
+	        !SelectAllFirst.equalsIgnoreCase(_True) && !SelectAllFirst.equalsIgnoreCase(_False) ) {
+        message = "The SelectAllFirst (" + SelectAllFirst + ") parameter value is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -142,7 +142,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "TSPosition" );
-    valid_Vector.add ( "DeselectAllFirst" );
+    valid_Vector.add ( "SelectAllFirst" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -163,7 +163,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new SelectTimeSeries_JDialog ( parent, this )).ok();
+	return (new DeselectTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -214,7 +214,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SelectTimeSeries_Command.runCommand", message;
+{	String routine = "DeselectTimeSeries_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -232,31 +232,31 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String TSPosition = parameters.getValue ( "TSPosition" );
-	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
-	boolean DeselectAllFirst_boolean = false;  // Default
-	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {
-	    DeselectAllFirst_boolean = true;
+	String SelectAllFirst = parameters.getValue ( "SelectAllFirst" );
+	boolean SelectAllFirst_boolean = false;  // Default
+	if ( (SelectAllFirst != null) && SelectAllFirst.equalsIgnoreCase("true") ) {
+	    SelectAllFirst_boolean = true;
 	}
 	
 	// If necessary, get the list of all time series...
 	Vector tslistAll = new Vector();
-	if ( DeselectAllFirst_boolean ) {
-	    // Deselect all first
+	if ( SelectAllFirst_boolean ) {
+	    // Select all first
 	    try {
 	        tslistAll = (Vector)processor.getPropContents("TSResultsList");
-            Message.printStatus ( 2, routine, "Deselecting all time series first." );
+            Message.printStatus ( 2, routine, "Selecting all time series first." );
             int ntsAll = 0;
             if ( tslistAll != null ) {
                 ntsAll = tslistAll.size();
             }
             for ( int its = 0; its < ntsAll; its++ ) {
                 TS ts = (TS)tslistAll.get(its);    // Will throw Exception
-                ts.setSelected ( false );
+                ts.setSelected ( true );
             }
 	    }
 	    catch ( Exception e ) {
 	        // Should not happen.
-	        message = "Unexpected error deselecting all time series first.";
+	        message = "Unexpected error selecting all time series first.";
 	        Message.printWarning(log_level,
 	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	                routine, message );
@@ -321,7 +321,7 @@ CommandWarningException, CommandException
 	
 	int nts = tslist.size();
 	if ( nts == 0 ) {
-		message = "Unable to find time series to select using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+		message = "Unable to find time series to deselect using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
@@ -363,12 +363,12 @@ CommandWarningException, CommandException
 		ts = (TS)o_ts;
 		
 		try {
-		    // Do the selection...
-			Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier()+ "\"" );
-			ts.setSelected ( true );
+	        // Do the deselection...
+			Message.printStatus ( 2, routine, "Deselecting \"" + ts.getIdentifier()+ "\"" );
+			ts.setSelected ( false );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error selecting time series (" + e + ").";
+			message = "Unexpected error deselecting time series (" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
@@ -401,7 +401,7 @@ public String toString ( PropList props )
 	String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
 	String TSPosition = props.getValue("TSPosition");
-	String DeselectAllFirst = props.getValue("DeselectAllFirst");
+	String SelectAllFirst = props.getValue("SelectAllFirst");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -427,11 +427,11 @@ public String toString ( PropList props )
 		}
 		b.append ( "TSPosition=\"" + TSPosition + "\"" );
 	}
-	if ( (DeselectAllFirst != null) && (DeselectAllFirst.length() > 0) ) {
+	if ( (SelectAllFirst != null) && (SelectAllFirst.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "DeselectAllFirst=" + DeselectAllFirst );
+		b.append ( "SelectAllFirst=" + SelectAllFirst );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

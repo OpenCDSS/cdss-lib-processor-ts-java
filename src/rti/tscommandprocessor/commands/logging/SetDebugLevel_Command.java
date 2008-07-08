@@ -24,18 +24,18 @@ import RTi.Util.String.StringUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the SetWarningLevel() command.
+This class initializes, checks, and runs the SetDebugLevel() command.
 </p>
 */
-public class SetWarningLevel_Command extends AbstractCommand implements Command
+public class SetDebugLevel_Command extends AbstractCommand implements Command
 {
 
 /**
 Constructor.
 */
-public SetWarningLevel_Command ()
+public SetDebugLevel_Command ()
 {	super();
-	setCommandName ( "SetWarningLevel" );
+	setCommandName ( "SetDebugLevel" );
 }
 
 /**
@@ -98,7 +98,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new SetWarningLevel_JDialog ( parent, this )).ok();
+	return (new SetDebugLevel_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -162,7 +162,7 @@ not produce output).
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
-{	String routine = "SetWarningLevel_Command.runCommand", message;
+{	String routine = "SetDebugLevel_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -175,15 +175,16 @@ throws CommandWarningException, CommandException
 	try {
 		String ScreenLevel = parameters.getValue ( "ScreenLevel" );
 		String LogFileLevel = parameters.getValue ( "LogFileLevel" );
+		Message.printStatus( 2, routine, "levels are " + ScreenLevel + ", " + LogFileLevel );
 		if ( ScreenLevel != null ) {
-		    Message.setWarningLevel( Message.TERM_OUTPUT, Integer.parseInt(ScreenLevel) );
+		    Message.setDebugLevel( Message.TERM_OUTPUT, Integer.parseInt(ScreenLevel) );
 		}
 	    if ( LogFileLevel != null ) {
-	         Message.setWarningLevel( Message.LOG_OUTPUT, Integer.parseInt(LogFileLevel) );
+	         Message.setDebugLevel( Message.LOG_OUTPUT, Integer.parseInt(LogFileLevel) );
 	    }
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error setting warning level.";
+		message = "Unexpected error setting debug level.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );

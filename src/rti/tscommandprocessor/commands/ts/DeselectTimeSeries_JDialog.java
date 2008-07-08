@@ -35,15 +35,15 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Command editor dialog for the SelectTimeSeries() command.
+Command editor dialog for the DeselectTimeSeries() command.
 */
-public class SelectTimeSeries_JDialog extends JDialog
+public class DeselectTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,	// Cancel Button
 			__ok_JButton = null;		// Ok Button
-private SelectTimeSeries_Command __command = null;	// Command to edit
+private DeselectTimeSeries_Command __command = null;	// Command to edit
 private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -52,7 +52,7 @@ private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __TSPosition_JLabel = null;
 private JTextField	__TSPosition_JTextField=null;		// Field for TS positions
-private SimpleJComboBox	__DeselectAllFirst_JComboBox = null;
+private SimpleJComboBox	__SelectAllFirst_JComboBox = null;
 
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
@@ -64,7 +64,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SelectTimeSeries_JDialog ( JFrame parent, Command command )
+public DeselectTimeSeries_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -131,7 +131,7 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String TSPosition = __TSPosition_JTextField.getText().trim();
-    String DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
+    String SelectAllFirst = __SelectAllFirst_JComboBox.getSelected();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -146,8 +146,8 @@ private void checkInput ()
     if ( TSPosition.length() > 0 ) {
         parameters.set ( "TSPosition", TSPosition );
     }
-    if ( DeselectAllFirst.length() > 0 ) {
-        parameters.set ( "DeselectAllFirst", DeselectAllFirst );
+    if ( SelectAllFirst.length() > 0 ) {
+        parameters.set ( "SelectAllFirst", SelectAllFirst );
     }
     try {
         // This will warn the user...
@@ -168,12 +168,12 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String TSPosition = __TSPosition_JTextField.getText().trim();
-    String DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
+    String SelectAllFirst = __SelectAllFirst_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "TSPosition", TSPosition );
-    __command.setCommandParameter ( "DeselectAllFirst", DeselectAllFirst );
+    __command.setCommandParameter ( "SelectAllFirst", SelectAllFirst );
 }
 
 /**
@@ -194,7 +194,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (SelectTimeSeries_Command)command;
+{	__command = (DeselectTimeSeries_Command)command;
 
 	addWindowListener( this );
 
@@ -207,49 +207,42 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"This command selects time series, similar to how time series are interactively selected.  " +
-	"Selected time series may then be used by other commands."),
-	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"For example, output commands may allow selected time series" +
-	" to be output, rather than default to all time series."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This command deselects time series and is often used with the SelectTimeSeries() command." ),
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "When matching a time series identifier (TSID) pattern:"),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    The dot-delimited time series identifier parts are " +
-    "Location.DataSource.DataType.Interval.Scenario"),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    The pattern used to select/deselect time series will be " +
-    "matched against aliases and identifiers."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    Use * to match all time series."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    Use A* to match all time series with alias or location starting with A."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    Use *.*.XXXXX.*.* to match all time series with a data type XXXXX."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "When specifying time series positions:"),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    The first time series created is position 1."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    Separate numbers by a comma.  Specify a range, for example, as 1-3."),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    The dot-delimited time series identifier parts are " +
+		"Location.DataSource.DataType.Interval.Scenario"),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    The pattern used to select/deselect time series will be " +
+		"matched against aliases and identifiers."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    Use * to match all time series."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    Use A* to match all time series with alias or location starting with A."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    Use *.*.XXXXX.*.* to match all time series with a data type XXXXX."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "When specifying time series positions:"),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    The first time series created is position 1."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"    Separate numbers by a comma.  Specify a range, for " +
+		"example, as 1-3."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
-    // Remove SelectedTS from list since it would be redundant with this command
-    __TSList_JComboBox.remove ( TSListType.SELECTED_TS.toString() );
     // Add the non-standard choice
     __TSList_JComboBox.add( TSListType.TSPOSITION.toString());
 
@@ -273,21 +266,22 @@ private void initialize ( JFrame parent, Command command )
 	__TSPosition_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSPosition_JTextField,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example, 1,2,7-8 (positions are 1+)." ),
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"For example, 1,2,7-8 (positions are 1+)." ),
 		2, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	Vector select_all_first = new Vector ( 3 );
 	select_all_first.addElement ( "" );
 	select_all_first.addElement ( __command._False );
 	select_all_first.addElement ( __command._True );
-    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Deselect all first?:" ),
+    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Select all first?:" ),
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DeselectAllFirst_JComboBox = new SimpleJComboBox ( true );
-	__DeselectAllFirst_JComboBox.setData ( select_all_first );
-	__DeselectAllFirst_JComboBox.addItemListener ( this );
-    	JGUIUtil.addComponent(main_JPanel, __DeselectAllFirst_JComboBox,
+	__SelectAllFirst_JComboBox = new SimpleJComboBox ( true );
+	__SelectAllFirst_JComboBox.setData ( select_all_first );
+	__SelectAllFirst_JComboBox.addItemListener ( this );
+    	JGUIUtil.addComponent(main_JPanel, __SelectAllFirst_JComboBox,
 	1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Eliminates need for separate deselect."),
+    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Eliminates need for separate select."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -373,7 +367,7 @@ private void refresh ()
 	String TSID = "";
 	String EnsembleID = "";
 	String TSPosition = "";
-	String DeselectAllFirst = "";
+	String SelectAllFirst = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -382,7 +376,7 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		EnsembleID = props.getValue ( "EnsembleID" );
 		TSPosition = props.getValue ( "TSPosition" );
-		DeselectAllFirst = props.getValue ( "DeselectAllFirst" );
+		SelectAllFirst = props.getValue ( "SelectAllFirst" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -430,19 +424,19 @@ private void refresh ()
 		if ( TSPosition != null ) {
 			__TSPosition_JTextField.setText ( TSPosition );
 		}
-		if ( DeselectAllFirst == null ) {
+		if ( SelectAllFirst == null ) {
 			// Select blank...
-			__DeselectAllFirst_JComboBox.select ( 0 );
+			__SelectAllFirst_JComboBox.select ( 0 );
 		}
 		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__DeselectAllFirst_JComboBox,
-				DeselectAllFirst, JGUIUtil.NONE, null, null ) ){
-				__DeselectAllFirst_JComboBox.select (
-				DeselectAllFirst );
+				__SelectAllFirst_JComboBox,
+				SelectAllFirst, JGUIUtil.NONE, null, null ) ){
+				__SelectAllFirst_JComboBox.select (
+				SelectAllFirst );
 			}
 			else {	Message.printWarning ( 1, routine,
 				"Existing " + __command + "() references an " +
-				"invalid\nDeselectAllFirst \"" + DeselectAllFirst +
+				"invalid\nSelectAllFirst \"" + SelectAllFirst +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
@@ -453,13 +447,13 @@ private void refresh ()
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     TSPosition = __TSPosition_JTextField.getText().trim();
-	DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
+	SelectAllFirst = __SelectAllFirst_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "TSPosition=" + TSPosition );
-    props.add ( "DeselectAllFirst=" + DeselectAllFirst );
+    props.add ( "SelectAllFirst=" + SelectAllFirst );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

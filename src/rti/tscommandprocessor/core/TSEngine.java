@@ -901,7 +901,7 @@ private double	__missing = -999.0;
 /**
 Missing data value to use with StateMod output.
 */
-private double	__missing_range[] = null;
+//private double	__missing_range[] = null;
 
 /**
 Vector to save list of time series identifiers that are not found.
@@ -3169,73 +3169,6 @@ throws Exception
 }
 
 /**
-Execute the new setDebugLevel() or old -d command.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setDebugLevel ( String expression )
-throws Exception
-{	Vector	tokens = null;
-	if ( expression.regionMatches(true,0, "setDebugLevel", 0,13) ) {
-		// New style...
-		tokens = StringUtil.breakStringList ( expression, " (,)", StringUtil.DELIM_SKIP_BLANKS );
-	}
-	else if (expression.length() >= 2 ) {
-		// Old style -d#... or -d #...
-		if ( (expression.length() == 2) || ((expression.length() > 2) && (expression.charAt(2) == ' ')) ) {
-			// Parse the whole thing...
-			tokens = StringUtil.breakStringList ( expression, " ,", StringUtil.DELIM_SKIP_BLANKS );
-		}
-		else {
-		    // Parse from the 3rd character on and then insert a dummy command...
-			tokens = StringUtil.breakStringList ( expression.substring(2), " ,", StringUtil.DELIM_SKIP_BLANKS );
-			tokens.insertElementAt("-d",0);
-		}
-	}
-	// Now the same token structure...
-	if ( tokens == null ) {
-		throw new Exception ( "Bad command \"" + expression + "\"" );
-	}
-	int size = tokens.size();
-	if ( size == 1 ) {
-		// Set debug level to 1...
-		Message.isDebugOn = true;
-		Message.setDebugLevel( Message.TERM_OUTPUT, 1 );
-		Message.setDebugLevel( Message.LOG_OUTPUT, 1 );
-	}
-	else if ( size == 2 ) {
-		// Set debug level to same value for all...
-		int debug = StringUtil.atoi( ((String)tokens.elementAt(1)).trim());
-		if ( debug == 0 ) {
-			Message.isDebugOn = false;
-		}
-		else {
-		    Message.isDebugOn = true;
-		}
-		Message.setDebugLevel( Message.TERM_OUTPUT, debug );
-		Message.setDebugLevel( Message.LOG_OUTPUT, debug );
-	}
-	else if ( size == 3 ) {
-		// Set debug level to different values for log and display...
-		int debug1 = StringUtil.atoi( ((String)tokens.elementAt(1)).trim());
-		int debug2 = StringUtil.atoi( ((String)tokens.elementAt(2)).trim());
-		if ( (debug1 == 0) && (debug2 == 0) ) {
-			Message.isDebugOn = false;
-		}
-		else {
-		    Message.isDebugOn = true;
-		}
-		Message.setDebugLevel( Message.TERM_OUTPUT, debug1 );
-		Message.setDebugLevel( Message.LOG_OUTPUT, debug2 );
-	}
-	else {	tokens = null;
-		throw new Exception ( "Bad command \"" + expression + "\"" );
-	}
-	// Clean up...
-	tokens = null;
-}
-
-/**
 Execute the new setIgnoreLEZero() or old -ignorelezero command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -3378,32 +3311,6 @@ throws Exception
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-}
-
-/**
-Execute the new setMissingDataValue() or old -missing command.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setMissingDataValue ( String expression )
-throws Exception
-{	// Works for both....
-	Vector tokens = StringUtil.breakStringList ( expression,
-				"( ,)", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || (tokens.size() < 2) ) {
-		throw new Exception (
-		"Bad command \"" + expression + "\"" );
-	}
-	if ( tokens.size() == 2 ) {
-		__missing_range = new double[1];
-		__missing_range[0] =StringUtil.atod((String)tokens.elementAt(1));
-	}
-	else {
-        __missing_range = new double[2];
-		__missing_range[0] =StringUtil.atod((String)tokens.elementAt(1));
-		__missing_range[1] =StringUtil.atod((String)tokens.elementAt(2));
-	}
-	tokens = null;
 }
 
 /**
@@ -3881,7 +3788,6 @@ throws Throwable
 	__InputEnd_DateTime = null;
 	__fill_pattern_ts = null;
 	__hbdmi_Vector = null;
-	__missing_range = null;
 	__missing_ts = null;
 	// TODO SAM 2007-02-18 Need to enable NDFD
 	//__NDFDAdapter_Vector = null;
@@ -5989,10 +5895,6 @@ throws Exception
 			do_setDataValue ( command_String );
 			continue;
 		}
-		else if (command_String.regionMatches(true,0,"setDebugLevel",0,13)){
-			do_setDebugLevel ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"setIgnoreLEZero", 0,15) ) {
 			do_setIgnoreLEZero ( command_String );
 			continue;
@@ -6000,10 +5902,6 @@ throws Exception
 		else if ( command_String.regionMatches(true,0,"setMax",0,6)) {
 			// Don't use space because TEMPTS will not parse right.
 			do_setMax ( command_tag, command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setMissingDataValue",0,19) ) {
-			do_setMissingDataValue ( command_String );
 			continue;
 		}
 		else if ( command_String.regionMatches(true,0,"setToMin",0,8)) {
@@ -6719,9 +6617,8 @@ throws Exception
 		do_setOutputDetailedHeaders ( command_String );
 	}
 	else if ( command_String.regionMatches(true,0,"-d",0,2) ) {
-	    message = "-d is obsolete.  Automatically using SetDebugLevel().";
+	    message = "-d is obsolete..";
         suggest = "Use SetDebugLevel().";
-		do_setDebugLevel ( command_String );
 	}
     else if ( command_String.regionMatches(true,0,"day_to_month_reservoir",0,22) ) {
         message = "day_to_month_reservoir is obsolete.";
@@ -6764,8 +6661,8 @@ throws Exception
 	}
 	else if ( command_String.regionMatches( true,0,"-missing",0,8) ) {
 		message = "-missing is obsolete.  Automatically using SetMissingDataValue().";
-		suggest = "Use SetMissingDataValue().";
-		do_setMissingDataValue ( command_String );
+        suggest = "The missing value is specific to the time series and may " +
+            "be set when read/created or as a property.";
 	}
 	else if ( command_String.regionMatches( true,0,"-ostatemod",0,10) ){
 		message = "-ostatemod is obsolete.";
@@ -6821,6 +6718,11 @@ throws Exception
 		message = "setDataSource is obsolete.";
 		suggest = "Use OpenHydroBase().";
 	}
+    else if ( command_String.regionMatches(true,0,"setMissingDataValue",0,19) ) {
+        message = "setMissingDataValue is obsolete.";
+        suggest = "The missing value is specific to the time series and may " +
+        		"be set when read/created or as a property.";
+    }
 	else if ( command_String.regionMatches(true,0,"setUseDiversionComments", 0,23) ) {
 		message = "setUseDiversionComments() is obsolete.";
 		suggest = "Use FillUsingDiversionComments().";
@@ -6844,7 +6746,7 @@ throws Exception
 		suggest = "Use SetWarningLevel().";
 	}
 	else if ( command_String.regionMatches(true,0,"setRegressionPeriod",0,19) ) {
-		message = "SetRegressionPeriod() is used for backward-compatibility.  Ignoring.";
+		message = "SetRegressionPeriod() is obsolete.";
 		suggest = "Set dates in FillRegression() instead.";
 	}
 	else if ( TimeUtil.isDateTime ( StringUtil.getToken(command_String," \t", StringUtil.DELIM_SKIP_BLANKS,0) ) ) { 
@@ -8429,8 +8331,7 @@ throws Exception {
 }
 
 /**
-Perform common actions on time series after reading.  This method should
-be called after:
+Perform common actions on time series after reading.  This method should be called after:
 <ol>
 <li>	calling readTimeSeries()</li>
 <li>	bulk reads are done indepent of readTimeSeries() (e.g., when calling
@@ -8457,8 +8358,7 @@ This method does the following:
 	to be extended to include the output period.</li>
 </ol>
 @param ts Time series to process.
-@param tsident_string Time series identifier string.  If null, take from the
-time series.
+@param tsident_string Time series identifier string.  If null, take from the time series.
 @param full_period If true, indicates that the full period is to be queried.
 If false, the output period will be queried.
 @exception Exception if there is an error processing the time series.
@@ -8480,20 +8380,6 @@ throws Exception
 		ts.setDescription ( ts.getLocation() );
 	}
 
-	// If a missing data range has been set, indicate this to the time
-	// series now so that it can be used for filling, etc...
-	// TODO SAM 2005-09-02
-	// This is really a hold-over and might need to be phased out...
-
-	if ( __missing_range != null ) {
-		if ( __missing_range.length == 2 ) {
-			ts.setMissingRange ( __missing_range );
-		}
-		else {
-            ts.setMissing ( __missing_range[0] );
-		}
-	}
-
 	// Compute the historic average here rather than having to put this code
 	// in each clause in the processTimeSeriesCommands() method.  Currently
 	// needHistoricalAverages() always returns true...
@@ -8510,8 +8396,7 @@ throws Exception
 	}
 
 	// To ensure that new and old time series identifiers can be used, reset
-	// the identifier in the queried string to that which was specified in
-	// the input commands.
+	// the identifier in the queried string to that which was specified in the input commands.
 
 	if ( tsident_string != null ) {
 		ts.setIdentifier ( tsident_string );

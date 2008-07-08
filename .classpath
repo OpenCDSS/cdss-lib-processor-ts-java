@@ -9,5 +9,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/StateMod"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/RTi_Common"/>
 	<classpathentry kind="lib" path="lib/Jython/jython.jar"/>
+	<classpathentry kind="lib" path="lib/commons-net-1.2.2.jar"/>
+	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

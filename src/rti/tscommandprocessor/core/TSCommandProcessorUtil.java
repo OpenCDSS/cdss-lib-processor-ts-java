@@ -85,18 +85,28 @@ private static int regressionTestLineCount = 0;
 Add a record to the regression test results report.  The report is a simple text file
 that indicates whether a test passed.
 @param processor CommandProcessor that is being run.
-@param max_severity the maximum severity from the command that was run.
+@param testPassFail whether the test was a success or failure (it is possible for the test to
+be a successful even if the command file failed, if failure was expected)
+@param expectedStatus the expected status (as a string)
+@param maxSeverity the maximum severity from the command file that was run.
 @param InputFile_full the full path to the command file that was run. 
 */
-public static void appendToRegressionTestReport(CommandProcessor processor, CommandStatusType max_severity,
+public static void appendToRegressionTestReport(CommandProcessor processor, String testPassFail,
+        String expectedStatus, CommandStatusType maxSeverity,
         String InputFile_full )
 {
     ++regressionTestLineCount;
     if ( __regression_test_fp != null ) {
         // FIXME SAM 2008-02-19 Would be useful to have command run time.
+        String indicator = " ";
+        if ( testPassFail.equalsIgnoreCase("FAIL") ) {
+            indicator = "*";
+        }
         __regression_test_fp.println (
                 StringUtil.formatString(regressionTestLineCount,"%4d") + " " +
-                StringUtil.formatString(max_severity,"%-10.10s") + " " + InputFile_full);
+                indicator + StringUtil.formatString(testPassFail,"%-4.4s") + indicator + "  " +
+                StringUtil.formatString(expectedStatus,"%-10.10s") + " " +
+                StringUtil.formatString(maxSeverity,"%-10.10s") + " " + InputFile_full);
     }
 }
 
@@ -918,7 +928,14 @@ throws FileNotFoundException
 {
     __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
     IOUtil.printCreatorHeader ( __regression_test_fp, "#", 80, 0 );
-    __regression_test_fp.println ( "# Num Status     Command File" );
+    __regression_test_fp.println ( "#" );
+    __regression_test_fp.println ( "# The test status below may be PASS or FAIL." );
+    __regression_test_fp.println ( "# A test can pass even if the commands file actual status is FAILURE, " +
+    		"if failure is expected." );
+    __regression_test_fp.println ( "#     Test   Commands   Commands" );
+    __regression_test_fp.println ( "#     Pass/  Expected   Actual" );
+    __regression_test_fp.println ( "# Num Fail   Status     Status     Command File" );
+    __regression_test_fp.println ( "#---------------------------------------------------------------------" );
 }
 
 /**

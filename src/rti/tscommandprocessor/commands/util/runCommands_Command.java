@@ -15,6 +15,7 @@ import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
@@ -212,32 +213,49 @@ CommandWarningException, CommandException
 		
 		// Set the CommandStatus for this command to the most severe status of the
 		// commands file that was just run.
-		CommandStatusType max_severity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
-		if ( (ExpectedStatus != null) && max_severity.toString().equalsIgnoreCase(ExpectedStatus) ) {
+		CommandStatusType maxSeverity = TSCommandProcessorUtil.getCommandStatusMaxSeverity((TSCommandProcessor)runner.getProcessor());
+		String testPassFail = "????"; // Status for the test, which is not always the same as maxSeverity
+		String expectedStatus = CommandStatusType.SUCCESS.toString(); // Expected status of running command file
+		if ( ExpectedStatus != null ) {
+		    expectedStatus = ExpectedStatus;
+		}
+		if ( (ExpectedStatus != null) && maxSeverity.toString().equalsIgnoreCase(ExpectedStatus) ) {
             // User has indicated an expected status and they match so consider this a success.
             // This should generally be used only when running a test that we expect to fail (e.g., run
             // obsolete command).
             status.addToLog(CommandPhaseType.RUN,
                     new CommandLogRecord(
-                            max_severity,
+                            CommandStatusType.SUCCESS,
                             "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
-                            "See additional status messages and refer to log file if warning/failure."));
+                            "Additional status messages are omitted to allow test to be success - " +
+                            "refer to log file if warning/failure."));
+            // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
+            // have a successful status that shows in the displays.
+            // DO NOT append the messages from the command because their status will cause the
+            // error displays to show problem indicators.
+            testPassFail = "PASS";
         }
         else {
             status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(
-						max_severity,
+						maxSeverity,
 						"Severity is max of commands file that was run (may not be a problem).",
 						"See additional status messages and refer to log file if warning/failure."));
+            // Append the log records from the command file that was run.
+            CommandStatusUtil.appendLogRecords ( status, runner.getProcessor().getCommands() );
+            if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {
+                testPassFail = "FAIL";
+            }
+            else {
+                testPassFail = "PASS";
+            }
         }
-        // FIXME SAM 2007-11-24 Need to figure out how to pass on status log records from failing command files.
-        // Copy status logs below...
-        //CommandStatusUtil.copyLogRecords ( status, )
-        
+
         // Also add a record to the regression report...
-        
-        TSCommandProcessorUtil.appendToRegressionTestReport(processor,max_severity,InputFile_full);
-				
+        // TODO SAM 2008-07-09 Evaluate whether to print the expected status, the actual status and the
+        // test status.
+        TSCommandProcessorUtil.appendToRegressionTestReport(processor,testPassFail,expectedStatus,maxSeverity,InputFile_full);
+
 		// If it was requested to append the results to the calling processor, get
 		// the results from the runner and do so...
 		

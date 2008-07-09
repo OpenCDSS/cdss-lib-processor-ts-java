@@ -3043,6 +3043,15 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 	else if ( prop.equalsIgnoreCase("OutputStart") ) {
 		__tsengine.setOutputStart ( (DateTime)contents );
 	}
+    else if ( prop.equalsIgnoreCase("OutputYearType") ) {
+        String OutputYearType = (String)contents;
+        if ( OutputYearType.equalsIgnoreCase("Water") ) {
+            __tsengine.setOutputYearType ( __tsengine._WATER_YEAR );
+        }
+        else if ( OutputYearType.equalsIgnoreCase("Calendar") ) {
+            __tsengine.setOutputYearType ( __tsengine._CALENDAR_YEAR );
+        }
+    }
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (Vector)contents );
 	}

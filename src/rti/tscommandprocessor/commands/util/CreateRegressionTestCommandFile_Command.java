@@ -1,7 +1,10 @@
 package rti.tscommandprocessor.commands.util;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
@@ -63,11 +66,9 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String SearchFolder = parameters.getValue ( "SearchFolder" );
 	//String FilenamePattern = parameters.getValue ( "FilenamePattern" );
@@ -80,8 +81,7 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	// The existence of the parent directories or files is not checked
-	// because the files may be created dynamically after the command is
-	// edited.
+	// because the files may be created dynamically after the command is edited.
 
 	if ( (SearchFolder == null) || (SearchFolder.length() == 0) ) {
         message = "The search folder must be specified.";
@@ -116,6 +116,48 @@ throws InvalidCommandParameterException
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+Determine the expected status parameter by searching the command file for a
+"@expectedStatus" string.
+@param filename Name of file to open to scan.
+@return a string for the ExpectedStatus parameter or empty string if no expected status is known.
+*/
+private String determineExpectedStatusParameter ( String filename )
+throws FileNotFoundException
+{   String expectedStatusParameter = "";
+    BufferedReader in = new BufferedReader ( new FileReader( filename ) );
+    try {
+        String line;
+        int index;
+        while ( true ) {
+            line = in.readLine();
+            if ( line == null ) {
+                break;
+            }
+            index = line.indexOf("@expectedStatus");
+            if ( index >= 0 ) {
+                // Get the status as the next token after the tag
+                String expectedStatus = StringUtil.getToken(line.substring(index), " \t",
+                        StringUtil.DELIM_SKIP_BLANKS, 1);
+                expectedStatusParameter = ",ExpectedStatus=" + expectedStatus;
+                break;
+            }
+        }
+    }
+    catch ( IOException e ) {
+        // Ignore - just don't have the tag that is being searched for
+    }
+    finally {
+        try {
+            in.close();
+        }
+        catch ( IOException e ) {
+            // Not much to do but absorb - should not happen
+        }
+    }
+    return expectedStatusParameter;
 }
 
 /**
@@ -196,23 +238,21 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = getClass().getName() + ".parseCommand", message;
 
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command +
-			"\".  Not enough tokens.";
+		message = "Invalid syntax for \"" + command + "\".  Not enough tokens.";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+		try {
+		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
 				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
-			message = "Syntax error in \"" + command +
-				"\".  Not enough tokens.";
+			message = "Syntax error in \"" + command + "\".  Not enough tokens.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -224,8 +264,7 @@ Run the command.
 @param command_line Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -294,24 +333,32 @@ CommandWarningException, CommandException
 	}
 
 	try {
-		// FIXME SAM 2007-10-15 Need to write appropriate header to file.
+	    // Get the list of files to run as test cases...
+        Vector files = new Vector();
+        getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java );
+        int size = files.size();
 		// Open the output file...
 		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, Append_boolean));
 		File OutputFile_full_File = new File(OutputFile_full);
+		// Write a standard header to the file so that it is clear when the file was created
+		IOUtil.printCreatorHeader(out, "#", 120, 0 );
+		out.println ( "#" );
+		out.println ( "# The following " + size + " test cases will be run to compare results with expected results.");
+		out.println ( "# Individual log files are generally created for each test.");
         // FIXME SAM 2007-11-20 Disable this for now because it might interfere with the
         // individual logs for each command file regression test
 		// Open a log file for the runner...
 		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\")");
 		//out.println ( "StartLog(LogFile=\"" + OutputFile_full_File.getName() + ".log\")");
 		// Find the list of matching files...
-		Vector files = new Vector();
-		getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java );
-		int size = files.size();
 		String commands_file_to_run;
 		for ( int i = 0; i < size; i++ ) {
-			// The commands files to run are relative to the commands file being created.
+			// The command files to run are relative to the commands file being created.
 			commands_file_to_run = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.elementAt(i) );
-			out.println ( "RunCommands(InputFile=\"" + commands_file_to_run + "\")");
+			// Determine if the command file has @expectedStatus in it.  If so, define an ExpectedStatus
+			// parameter for the command.
+			out.println ( "RunCommands(InputFile=\"" + commands_file_to_run + "\"" +
+			        determineExpectedStatusParameter ( (String)files.elementAt(i) ) + ")");
 		}
 		out.close();
         // Save the output file name...

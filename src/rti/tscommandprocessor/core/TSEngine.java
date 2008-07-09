@@ -726,8 +726,6 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
-import RTi.Util.Message.MessageJDialog;
-import RTi.Util.Message.MessageJDialogListener;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
@@ -737,8 +735,7 @@ import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
-public class TSEngine implements MessageJDialogListener,
-TSSupplier, WindowListener
+public class TSEngine implements TSSupplier, WindowListener
 {
 	
 /**
@@ -754,8 +751,7 @@ public final static int
 
 /**
 Indicate that temporary time series should be retrieved within a command but not
-managed in the processor.  This may go away due to limited use and issues with
-design.
+managed in the processor.  This may go away due to limited use and issues with design.
 */
 public final String TEMPTS = "TEMPTS";
 public final String TEMPTS_SP="TEMPTS ";
@@ -768,7 +764,7 @@ public final int OUTPUT_LINELOGYGRAPH = 4;	// Could find a way to modify
 						// the graph but do like this
 						// for now.
 public final int OUTPUT_PORGRAPH = 5;		// Period of record graph.
-public final int OUTPUT_SUMMARY_NO_STATS = 8;	// Special output for Ayres
+//public final int OUTPUT_SUMMARY_NO_STATS = 8;	// Special output for Ayres
 						// software.  Just remove the
 						// statistics lines.
 public final int OUTPUT_PERCENT_EXCEED_GRAPH =9;// Percent exceedance curve.
@@ -783,19 +779,14 @@ public final int OUTPUT_NWSCARD_FILE = 17;	// Output in NWS Card format.
 public final int OUTPUT_DATA_LIMITS_REPORT = 18;// Data limits report
 public final int OUTPUT_DATA_COVERAGE_REPORT=19;// Data limits report
 public final int OUTPUT_MONTH_MEAN_SUMMARY_REPORT=20;
-public final int OUTPUT_MONTH_TOTAL_SUMMARY_REPORT=21;
-						// Monthly summary reports.
+public final int OUTPUT_MONTH_TOTAL_SUMMARY_REPORT=21; // Monthly summary reports.
 public final int OUTPUT_RIVERWARE_FILE = 22;	// Output in RiverWare format.
 public final int OUTPUT_SHEFA_FILE = 23;	// Output SHEF .A format.
-public final int OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE = 24;
-						// Output NWSRFS ESP Trace Ensemble file
+public final int OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE = 24; // Output NWSRFS ESP Trace Ensemble file
 public final int OUTPUT_TABLE = 25;		// Output a table (curently only for display).
 public final int OUTPUT_POINT_GRAPH = 26;	// Point graph
-public final int OUTPUT_PredictedValue_GRAPH = 27;	
-						// Predicted Value graph
-public final int OUTPUT_PredictedValueResidual_GRAPH = 28;
-						// Predicted Value Residual
-						// graph
+public final int OUTPUT_PredictedValue_GRAPH = 27;	// Predicted Value graph
+public final int OUTPUT_PredictedValueResidual_GRAPH = 28;  // Predicted Value Residual graph
 
 /**
 Filter indicating that output should be data (default).
@@ -809,12 +800,12 @@ public final int OUTPUT_FILTER_DATA_COVERAGE = 2;
 /**
 Output in water year, for use with setOutputYearType().
 */
-private final int __WATER_YEAR = 1;
+protected final int _WATER_YEAR = 1;
 
 /**
 Output in calendar year.
 */
-private final int __CALENDAR_YEAR = 2;
+protected final int _CALENDAR_YEAR = 2;
 
 // Data members...
 
@@ -892,17 +883,6 @@ End date for read.
 */
 private DateTime __InputEnd_DateTime = null;        
 
-// TODO SAM 2007-11-16 Move to local StateMod command parameter.
-/**
-Missing data value to use with StateMod output.
-*/
-private double	__missing = -999.0;
-
-/**
-Missing data value to use with StateMod output.
-*/
-//private double	__missing_range[] = null;
-
 /**
 Vector to save list of time series identifiers that are not found.
 */
@@ -915,14 +895,6 @@ private Vector	__missing_ts = new Vector();
 						// one database instance to
 						// be open at a time, only
 						// used with openNDFD().
-
-// TODO SAM 2007-11-16 Can this be removed now that InitialWorkingDir is specified at startup?
-/**
-The number of commands that are at the beginning of the __commands, which have been
-automatically added (e.g., a setWorkingDir() command to initialize the working
-directory).
-*/
-private int __num_prepended_commands = 0;
 
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
@@ -942,7 +914,7 @@ private boolean __OutputDetailedHeader_boolean = false;
 /**
 Year type for output (calendar year is the default).
 */
-private int __OutputYearType_int = __CALENDAR_YEAR;
+private int __OutputYearType_int = _CALENDAR_YEAR;
 
 /**
 Global output start date/time.
@@ -1009,14 +981,6 @@ Construct a TSEngine to work in parallel with a TSCommandProcessor.
 protected TSEngine ( TSCommandProcessor ts_processor )
 {
 	__ts_processor = ts_processor;
-	
-	// TODO SAM 2007-11-06
-	// The following is used to allow cancel during processing.  However, it may
-	// be phased out if the CommandStatus handling approach works.
-	// Put the code here so that the listener is not re-registered each time that the
-	// processor is run.
-	
-	MessageJDialog.addMessageJDialogListener ( this );
 }
 
 /**
@@ -1028,9 +992,7 @@ private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
 {	Vector ap_Vector = getTSProductAnnotationProviders();
 	int size = ap_Vector.size();
 	for ( int i = 0; i < size; i++ ) {
-		view.addTSProductAnnotationProvider(
-			(TSProductAnnotationProvider)ap_Vector.elementAt(i),
-			null );
+		view.addTSProductAnnotationProvider((TSProductAnnotationProvider)ap_Vector.elementAt(i), null );
 	}
 }
 
@@ -1505,7 +1467,7 @@ throws Exception
 	TSAnalyst analyst = new TSAnalyst();
 	// Start the data coverage report...
 	try {	PropList props = new PropList ( "tsanalyst" );
-		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			props.set( "CalendarType=WaterYear" );
 		}
 		else {
@@ -3348,47 +3310,6 @@ throws Exception
 }
 
 /**
-Execute the new setOutputYearType() or old -cy, -wy command.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setOutputYearType ( String expression )
-throws Exception
-{	String routine = "TSEngine.do_setOutputYearType";	
-	if ( expression.equalsIgnoreCase("-cy") ) {
-		Message.printStatus ( 2, routine, "Output will be in calendar year." );
-		setOutputYearType ( __CALENDAR_YEAR );
-	}
-	else if ( expression.equalsIgnoreCase("-wy") ) {
-		Message.printStatus ( 2, routine, "Output will be in water year." );
-		setOutputYearType ( __WATER_YEAR );
-	}
-	else if ( expression.regionMatches(true,0,"setOutputYearType", 0,17) ) {
-		// Check the second token for the year type.
-		Vector tokens = StringUtil.breakStringList ( expression,
-			" (,)", StringUtil.DELIM_SKIP_BLANKS );
-		if ( tokens.size() != 2 ) {
-			throw new Exception ("Bad command \"" + expression + "\"" );
-		}
-		// Parse the name and dates...
-		String year_type = (String)tokens.elementAt(1);
-		if ( year_type.equalsIgnoreCase("Water") ) {
-			setOutputYearType ( __WATER_YEAR );
-			Message.printStatus ( 2, routine, "Output will be in Water year" );
-		}
-		else if ( year_type.equalsIgnoreCase("Calendar") ) {
-			setOutputYearType ( __CALENDAR_YEAR );
-			Message.printStatus ( 2, routine, "Output will be in Calendar year" );
-		}
-		else {	throw new Exception (
-			"Unrecognized year type \"" + year_type + "\" for \"" +	expression + "\".");
-		}
-		tokens = null;
-		year_type = null;
-	}
-}
-
-/**
 Execute the new setPatternFile() or old -filldata.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -3542,7 +3463,8 @@ throws Exception
 			}
 			Message.printStatus ( 1, routine, "Setting working directory to \"" + dir + "\"" );
 		}
-		else {	String message = "Working directory \"" + dir +	"\" does not exist.  Not setting.";
+		else {
+		    String message = "Working directory \"" + dir +	"\" does not exist.  Not setting.";
 			Message.printWarning ( 2, routine, message );
 			throw new Exception ( message );
 		}
@@ -3736,15 +3658,13 @@ Execute the shift() command.
 private void do_shift ( String command )
 throws Exception
 {	String routine = "TSEngine.do_shift";
-	Vector tokens = StringUtil.breakStringList ( command,
-		" (,)", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
 	if ( tokens.size() != 4 ) {
 		throw new Exception ( "Bad command \"" + command + "\"" );
 	}
 	// Parse the name and dates...
 	String alias = (String)tokens.elementAt(1);
-	DateTime olddate = (DateTime)__datetime_Hashtable.get(
-		(String)tokens.elementAt(2));
+	DateTime olddate = (DateTime)__datetime_Hashtable.get( (String)tokens.elementAt(2));
 	if ( olddate == null ) {
 		Message.printStatus(1,routine, "Unable to look up date \"" +
 		(String)tokens.elementAt(2) + "\"" );
@@ -3762,12 +3682,11 @@ throws Exception
 	}
 	int ts_pos = indexOf ( alias );
 	if ( ts_pos >= 0 ) {
-		TS ts = TSUtil.shift ( getTimeSeries(ts_pos),
-			newdate, olddate ); //olddate, newdate );
+		TS ts = TSUtil.shift ( getTimeSeries(ts_pos), newdate, olddate ); //olddate, newdate );
 		processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
 	}
-	else {	String message = "Unable to find time series \"" +
-			alias + "\" for shift() command.";
+	else {
+	    String message = "Unable to find time series \"" + alias + "\" for shift() command.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
@@ -4133,10 +4052,10 @@ Return the output year type, to be used for commands that create output.
 */
 protected String getOutputYearType()
 {	int OutputYearType_int = getOutputYearTypeInt();
-	if ( OutputYearType_int == __CALENDAR_YEAR ) {
+	if ( OutputYearType_int == _CALENDAR_YEAR ) {
 		return "Calendar";
 	}
-	else if ( OutputYearType_int == __WATER_YEAR ) {
+	else if ( OutputYearType_int == _WATER_YEAR ) {
 		return "Water";
 	}
 	else {
@@ -4968,228 +4887,8 @@ throws Exception
 	return ts;
 }
 
-/**
-Process a list of commands.  This version supports the runCommands() command
-via the TSCommandsProcessor.
-@param commands Commands strings to process.
-@param app_PropList if not null, set properties as commands are processed:
-<table width=100% cellpadding=10 cellspacing=0 border=2>
-<tr>
-<td><b>Property</b></td>	<td><b>Description</b></td>
-</tr>
-
-<tr>
-<td><b>WorkingDir</b></td>
-<td>Will be set if a setWorkingDir() command is encountered.
-</td>
-<td>Working directory will not be set.</td>
-</tr>
-
-<tr>
-<td><b>Recursive</b></td>
-<td>If set to true, indicates that the commands string list being processed is
-from a recursive call (e.g., when processing runCommands()).  Consequently, the
-second commands list is processed, not the original one that started
-processing.
-</td>
-<td>False</td>
-</tr>
-</table>
-*/
-/* TODO SAM 2007-08-20 Evaluate how to integrate with new design.
-public void processCommands ( Vector commands, PropList app_PropList )
-throws Exception
-{	// Run in batch mode...
-	processCommands ( (HydroBaseDMI)null, commands, app_PropList );
-}
-*/
-
-/**
-Process a tstool commands file.  This routine parses the commands file
-and calls processCommands with the information found in that file.
-This is only called when running in batch mode or from the GUI when running
-a commands file without reading into the GUI.
-@param hbdmi Database connection.
-@param filename File name containing tstool commands.
-*/
-/* FIXME SAM 2007-08-20 Evaluate how to integrate with new design.
-protected void processCommands ( HydroBaseDMI hbdmi, String filename )
-throws Exception
-{	// Run in batch mode...
-	processCommands ( hbdmi, filename, true );
-}
-*/
-
-// FIXME SAM 2007-08-20 Evaluate how to integrate with new design.
-/**
-Process a tstool commands file.  This routine parses the commands file
-and calls processCommands with the information found in that file.
-This is only called when running in batch mode or from the GUI when running
-a commands file without reading into the GUI.
-@param hbdmi HydroBase connection.
-@param filename File name containing tstool commands.
-@param is_batch Indicates whether a batch mode is run.  True means no GUI.
-False means either a full (main GUI) or partial (plots only) GUI.
-*/
-/* FIXME SAM 2007-08-20 Need to enable in some form
-private void processCommands (	HydroBaseDMI hbdmi, String filename,
-				boolean is_batch )
-throws Exception
-{	String message, routine = "TSEngine.processCommands";
-	IOUtil.isBatch ( is_batch );
-
-	String iline;
-	BufferedReader in = null;
-	Vector cmdVec = null;
-	try {	in = new BufferedReader ( new FileReader ( filename ));
-		cmdVec = new Vector ( 10, 10 );
-	}
-	catch ( Exception e ) {
-		message = "Error opening commands file \"" + filename + "\"";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-
-	// add each line to the vector of commands
-	//
-	while (( iline = in.readLine()) != null ) {
-		try { // try around each line...
-		// If empty line, skip...
-
-		if ( iline.trim().length() == 0 ) {
-			// Blank line.  Do not add to list...
-			continue;
-		}
-
-		// first remove any () around the time series, if they exist
-		if ( iline.startsWith("(") && iline.endsWith(")"))
-			iline = iline.substring(1, iline.length()-1);
-
-		// next also remove any ' within the id
-		if ( iline.indexOf('\'') >= 0 ) {
-			StringBuffer sb = new StringBuffer();
-			StringTokenizer st = new StringTokenizer ( iline, "'" );
-			while ( st.hasMoreElements())
-				sb.append ( st.nextToken());
-			iline = "" + sb;
-		}
-
-		cmdVec.addElement ( iline );	
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error processing command \"" + iline + "\"" );
-		}
-	}
-
-	try {	processCommands ( cmdVec, null );
-	} catch ( Exception e ) {
-		message = "Error processing command strings.";
-		Message.printWarning ( 1, routine, message );
-		Message.printWarning ( 2, routine, e );
-		throw new Exception ( message );
-	}
-}
-
-/**
-Process a set of TSTool commands.
-@param commands Vector of Command instances to process.
-@param app_PropList if not null, set properties as commands are processed:
-<table width=100% cellpadding=10 cellspacing=0 border=2>
-<tr>
-<td><b>Property</b></td>	<td><b>Description</b></td>
-</tr>
-
-<tr>
-<td><b>WorkingDir</b></td>
-<td>Will be set if a setWorkingDir() command is encountered.
-</td>
-<td>Working directory will not be set.</td>
-</tr>
-
-<tr>
-<td><b>Recursive</b></td>
-<td>If set to true, indicates that the commands string list being processed is
-from a recursive call (e.g., when processing runCommands()).  Consequently, the
-second commands list is processed, not the original one that started
-processing.
-</td>
-<td>False</td>
-</tr>
-</table>
-@exception java.lang.Exception If there is an error in the commands file.
-*/
-/* FIXME SAM Need to reenable in some form
-protected void processCommands ( Vector commands,
-				PropList app_PropList )
-throws Exception
-{	String	routine = "TSEngine.processCommands";
-	int	dl = 10;
-
-	if ( commands == null ) {
-		// This is OK because the TSEngine may be acting as a
-		// TSSupplier...
-		return;
-	}
-	int size = commands.size ();
-	if ( Message.isDebugOn ) {
-		Message.printDebug ( dl, routine, 
-		"Processing commands of length " + size );
-	}
-
-	DateTime now = new DateTime (
-		DateTime.DATE_CURRENT|DateTime.PRECISION_SECOND );
-	Message.printStatus ( 1, routine,
-		"Start processing commands at: " + now.toString() );
-	/ * TODO SAM 2007-08-09 This should be unneeded as the commands
-	 * are stored in the TSCommandProcessor list now and can be
-	 * regenerated with toString().
-	 * Remove when confirmed.
-	if ( !IOUtil.isBatch() ) {
-		// Running in the GUI and we need to put together a list of
-		// commands as an array that will get saved in file output...
-		_commands_array = new String[size + 1];
-		_commands_array[0] = "# Commands from TSTool GUI:";
-		for ( int i = 0; i < size; i++ ) {
-			_commands_array[i + 1] = (String)commands.elementAt(i);
-		}
-	}
-	* /
-
-	// As of TSTool 05.xx.xx+, the time series expression list contains all
-	// commands...
-	boolean Recursive_boolean = false;
-	if ( app_PropList != null ) {
-		String Recursive = app_PropList.getValue ( "Recursive" );
-		if ( (Recursive != null) && Recursive.equalsIgnoreCase("True")){
-			Recursive_boolean = true;
-		}
-	}
-	/ * FIXME SAM 2007-08-10 Need to reenable processing
-	if ( Recursive_boolean ) {
-		// A recursive call to the processing is occurring.  Save the
-		// commands to process in a second list so that it won't step
-		// on the original list and cause confusion...
-		_tsexpression_list2 = commands;
-	}
-	else {	_tsexpression_list = commands;
-	}
-	* /
-
-	// Now process the time series expressions...
-
-	// FIXME SAM 2007-08-10 Need to enable in some form
-	// processTimeSeriesCommands ( app_PropList );
-
-	now = new DateTime ( DateTime.DATE_CURRENT|DateTime.PRECISION_SECOND );
-	Message.printStatus ( 1, routine,
-	"End processing commands at:   " + now.toString() );
-}
-*/
-
 //TODO SAM 2006-05-02
-//Need to phase out app_PropList or make the exchange of control information
-//more robust
+//Need to phase out app_PropList or make the exchange of control information more robust
 /**
 Process a list of time series commands, resulting in a vector of time series
 (and/or setting data members and properties in memory).  The resulting time series are
@@ -5303,19 +5002,6 @@ throws Exception
 	}
 	Message.printStatus(2, routine,"Recursive=" + __processor_PropList.getValue("Recursive") +
 			" => " + Recursive_boolean );
-	/* FIXME SAM 2007-08-10 Need to enable recursion.
-	 * For now the runCommands() command uses the TSCommandFileRunner, but this
-	 * is a separate processor and does not have the state of the current
-	 * processor in memory.  This is OK for now because it is being used mainly for
-	 * testing.
-	Vector tsexpression_list = null;	// Local copy of command strings
-						// to process.
-	if ( Recursive_boolean ) {
-		tsexpression_list = _tsexpression_list2;
-	}
-	else {	tsexpression_list = _tsexpression_list;
-	}
-	*/
 
 	int size = command_Vector.size();
 	Message.printStatus ( 1, routine, "Processing " + size + " commands..." );
@@ -5327,11 +5013,9 @@ throws Exception
 	TS ts = null;
 	Vector tokens = null;	// For parsing commands.
 	String method = null;	// Method to execute
-	String	alias = null,	// First (and often only) alias
-				// command(alias,...)
+	String	alias = null,	// First (and often only) alias command(alias,...)
 	alias2 = null,	// Second time series alias (if needed)
-	tsalias = null;	// TS xxx = alias
-				// Aliases for time series
+	tsalias = null;	// TS xxx = alias (aliases for time series)
 
 	// Go through the expressions up front one time and set some important
 	// flags to help performance, etc....
@@ -5418,13 +5102,9 @@ throws Exception
 	// Indicat the state of the processor...
 	__ts_processor.setIsRunning ( true );
 	for ( i = 0; i < size; i++ ) {
-		// For example, setWorkingDir() is often prepended automatically
-		// to start in the working directory.  In this case,
-		// the first user-defined command will have:
-		// i_for_message = 1 - 1 + 1 = 1
-		i_for_message = i - __num_prepended_commands + 1;
-		command_tag = ""+i_for_message;	// Command number as integer 1+,
-						// for message/log handler.
+		// 1-offset comand count for messages
+		i_for_message = i + 1;
+		command_tag = "" + i_for_message;	// Command number as integer 1+, for message/log handler.
 		// If for some reason the previous command did not notify listeners of its completion (e.g., due to
 		// continue in loop, do it now)...
 		if ( !prev_command_complete_notified && (command_prev != null) ) {
@@ -5436,8 +5116,7 @@ throws Exception
 			command_prev = command;
 		}
 		// Check for a cancel, which would have been set by pressing
-		// the cancel button on the warning dialog or by using the
-		// other TSTool menus...
+		// the cancel button on the warning dialog or by using the other TSTool menus...
 		if ( __ts_processor.getCancelProcessingRequested() ) {
 			// Set Warning dialog settings back to normal...
 			if ( popup_warning_dialog ) {
@@ -5473,8 +5152,7 @@ throws Exception
 		command_status = ((CommandStatusProvider)command).getCommandStatus();
 		// Clear the run status (internally will set to UNKNOWN).
 		command_status.clearLog(CommandPhaseType.RUN);
-		Message.printStatus ( 1, routine,
-			">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+		Message.printStatus ( 1, routine, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 		Message.printStatus ( 1, routine,
 			"Start processing command " + (i + 1) + " of " + size + ": \"" + command_String + "\" " );
 		// Notify any listeners that the command is running...
@@ -5550,8 +5228,7 @@ throws Exception
 			alias = ((String)v.elementAt(1)).trim();
 			String independent = null;
 
-			// Make sure there are time series available to
-			// operate on...
+			// Make sure there are time series available to operate on...
 
 			ts_pos = indexOf ( alias );
 			ts = getTimeSeries ( ts_pos );
@@ -5911,11 +5588,6 @@ throws Exception
 		}
 		else if ( command_String.regionMatches(true,0,"setOutputDetailedHeaders", 0,24) ) {
 			do_setOutputDetailedHeaders ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setOutputYearType",0,17) ) {
-			// Set the output year type.
-			do_setOutputYearType ( command_String );
 			continue;
 		}
 		else if(command_String.regionMatches(true,0,"setPatternFile",0,14)){
@@ -6529,13 +6201,14 @@ throws Exception
 					Message.printWarning ( ml, routine,"   "+(String)getMissingTS().elementAt(i2));
 				}
 			}
-			Message.printWarning ( ml, routine,
-			"There were warnings or failures processing commands.  The output may be incomplete." );
-			// FIXME SAM 2007-08-20 Need to figure out how to get the
-			// exit status out of the processor and allow calling code to exit.
-			//__gui.quitProgram ( 1 );
+			// The following should will be passed through TSCommandProcessor.runCommands() and should
+			// be caught when using TSCommandProcessorThreadRunner.runCommands().
+			message = "There were warnings or failures processing commands.  The output may be incomplete.";
+			Message.printWarning ( ml, routine, message );
+			throw new RuntimeException ( message );
 		}
-		else {	Message.printWarning ( ml, routine,
+		else {
+		    Message.printWarning ( ml, routine,
 			"There were warnings processing commands.  The output may be incomplete.\n" +
 			"See the log file for information." );
 		}
@@ -6595,9 +6268,8 @@ throws Exception
         suggest = "Use CreateEnsemble().";
     }
 	else if ( command_String.equalsIgnoreCase("-cy") ) {
-		message = "-cy is obsolete.  Automatically using SetOutputYearType().";
+		message = "-cy is obsolete.";
 		suggest = "Use SetOutputYearType().";
-		do_setOutputYearType ( command_String );
 	}
 	else if(command_String.regionMatches(true,0,"-data_interval",0,14)){
 		message = "-data_interval is obsolete.";
@@ -6736,9 +6408,8 @@ throws Exception
 		suggest = "Remove command because other commands now handle units.";
 	}
 	else if ( command_String.equalsIgnoreCase("-wy") ) {
-		message = "-wy is obsolete.  Automatically using setOutputYearType().";
+		message = "-wy is obsolete.";
 		suggest = "Use SetOutputYearType().";
-		do_setOutputYearType ( command_String );
 	}
 	// Put after -wy...
 	else if ( command_String.regionMatches(true,0,"-w",0,2) ) {
@@ -6790,7 +6461,7 @@ throws Exception
     setOutputDetailedHeader ( false );
     setOutputStart ( null );
     setOutputEnd ( null );
-    setOutputYearType ( __CALENDAR_YEAR );
+    setOutputYearType ( _CALENDAR_YEAR );
     setPreviewExportedOutput ( false );
     __reference_date = null;
     // Free all data from the previous run...
@@ -6804,8 +6475,7 @@ Process a list of time series to produce an output product.
 The time series are typically generated from a previous call to
 processCommands() or processTimeSeriesCommands().
 @param ts_indices List of time series indices to process from the internal
-time series list.  If null, all are processed.  The indices do not have to be
-in order.
+time series list.  If null, all are processed.  The indices do not have to be in order.
 @param proplist List of properties to define the output:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
@@ -6947,9 +6617,6 @@ throws IOException
 		}
 		else if ( prop_value.equalsIgnoreCase("-otable") ) {
 			output_format = OUTPUT_TABLE;
-		}
-		else if ( prop_value.equalsIgnoreCase("-osummarynostats") ) {
-			output_format = OUTPUT_SUMMARY_NO_STATS;
 		}
 
 		// Graph output...
@@ -7155,7 +6822,7 @@ throws IOException
 
 		PropList sumprops = new PropList ( "" );
 		sumprops.set ( "DayType", daytype );
-		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			sumprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {
@@ -7273,12 +6940,12 @@ throws IOException
 			throw new IOException ( message );
 		}
 	}
-	else if ( (output_format == OUTPUT_SUMMARY) || (output_format == OUTPUT_SUMMARY_NO_STATS) ) {
+	else if ( output_format == OUTPUT_SUMMARY ) {
 		try {
 		// First need to get the summary strings...
 		PropList sumprops = new PropList ( "Summary" );
 		sumprops.set ( "Format", "Summary" );
-		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			sumprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {
@@ -7311,14 +6978,6 @@ throws IOException
 			sumprops.set ( "PrintMaxStats", "true" );
 			sumprops.set ( "PrintMeanStats", "true" );
 			sumprops.set ( "PrintNotes", "true" );
-		}
-		else if ( output_format == OUTPUT_SUMMARY_NO_STATS ) {
-			// Don't want the statistics or the notes but do want
-			// a line at the bottom (kludge for Ayres software)...
-			sumprops.set ( "PrintMinStats", "false" );
-			sumprops.set ( "PrintMaxStats", "false" );
-			sumprops.set ( "PrintMeanStats", "false" );
-			sumprops.set ( "PrintNotes", "false" );
 		}
 
 		if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
@@ -7381,7 +7040,7 @@ throws IOException
 		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
 		graphprops.set ( "DataUnits", ((TS)tslist.elementAt(0)).getDataUnits() );
 		graphprops.set ( "YAxisLabelString", ((TS)tslist.elementAt(0)).getDataUnits() );
-		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			graphprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {
@@ -7478,7 +7137,7 @@ throws IOException
 		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
 		graphprops.set ( "DataUnits", ((TS)tslist.elementAt(0)).getDataUnits() );
 		graphprops.set ( "YAxisLabelString",((TS)tslist.elementAt(0)).getDataUnits() );
-		if ( getOutputYearTypeInt() == __WATER_YEAR ) {
+		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			graphprops.set ( "CalendarType", "WaterYear" );
 		}
 		else {
@@ -8490,37 +8149,6 @@ protected void removeTimeSeries ( int index )
 }
 
 /**
-Run the interpreter, parsing each line and then executing it.  This allows
-more flexibility but is currently somewhat specific.  Phase in all the old
-functionality as time allows.
-THIS CODE IS NOT CURRENTLY FUNCTIONAL.
-*/
-/* TODO SAM 2007-02-08
-Need to decide whether this should be supported.
-private void runInterpreter ( Vector commands )
-{	if ( commands == null ) {
-		return;
-	}
-	String command = null;
-	int size = commands.size();
-	for ( int i = 0; i < size; i++ ) {
-		command = (String)commands.elementAt(i);
-		if ( command == null ) {
-			continue;
-		}
-		command = command.trim();
-		if ( command.length() == 0 ) {
-			continue;
-		}
-		if ( command.regionMatches(true,0,"runInterpreter",0,14)) {
-			// We already know this because that command triggered a call to this method...
-			continue;
-		}
-	}
-}
-*/
-
-/**
 Search for a fill pattern TS.
 @return reference to found StringMonthTS instance.
 @param fill_pattern Fill pattern identifier to search for.
@@ -9042,7 +8670,7 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 {	String routine = "TSEngine.writeStateModTS";
 	// Type of calendar for output...
 	String calendar = "";
-	if ( getOutputYearTypeInt() == __WATER_YEAR ) {
+	if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 		calendar = "WaterYear";
 	}
 	else {
@@ -9109,8 +8737,9 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 			if ( __OutputEnd_DateTime != null ) {
 				smprops.set ( "OutputEnd=" + __OutputEnd_DateTime.toString());
 			}
+			double missing = -999.0;
 			smprops.set ( "CalendarType", calendar );
-			smprops.set ( "MissingDataValue", "" + __missing );
+			smprops.set ( "MissingDataValue", "" + missing );
 			smprops.set ( "OutputPrecision", "" + precision );
 			if ( getOutputDetailedHeader() ) {
 				smprops.set ( "PrintGenesis", "true" );

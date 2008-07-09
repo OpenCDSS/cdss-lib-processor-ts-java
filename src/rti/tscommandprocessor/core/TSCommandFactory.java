@@ -128,6 +128,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 
 import rti.tscommandprocessor.commands.time.SetInputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
+import rti.tscommandprocessor.commands.time.SetOutputYearType_Command;
 
 // Time series general commands.
 
@@ -508,6 +509,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputPeriod") ) {
 		return new SetOutputPeriod_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputYearType") ) {
+        return new SetOutputYearType_Command ();
+    }
     // Put this before the shorter SetProperty() to avoid ambiguity.
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetPropertyFromNwsrfsAppDefault") ) {
         return new SetPropertyFromNwsrfsAppDefault_Command ();

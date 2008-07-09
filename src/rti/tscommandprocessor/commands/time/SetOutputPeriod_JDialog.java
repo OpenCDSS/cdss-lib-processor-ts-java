@@ -33,12 +33,9 @@ private JTextField	__OutputStart_JTextField = null,// Dates for period.
 			__OutputEnd_JTextField = null;// Dates for period.
 private SetOutputPeriod_Command __command = null;	// Command to edit.
 private JTextArea	__command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error waiting to be cleared up?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button
-						// has been pressed.
+private boolean		__ok = false;		// Indicates whether OK button has been pressed.
 
 /**
 SetOutputPeriod_JDialog constructor.
@@ -243,9 +240,9 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**

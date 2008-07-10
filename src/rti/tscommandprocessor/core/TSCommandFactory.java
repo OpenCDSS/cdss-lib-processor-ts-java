@@ -168,6 +168,7 @@ import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.SelectTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.SetConstant_Command;
 import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
+import rti.tscommandprocessor.commands.ts.SetIgnoreLEZero_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
@@ -502,6 +503,9 @@ throws UnknownCommandException
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetFromTS") ) {
         return new SetFromTS_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetIgnoreLEZero") ) {
+        return new SetIgnoreLEZero_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetInputPeriod") ) {
 		return new SetInputPeriod_Command ();

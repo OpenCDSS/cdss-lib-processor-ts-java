@@ -3131,44 +3131,6 @@ throws Exception
 }
 
 /**
-Execute the new setIgnoreLEZero() or old -ignorelezero command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setIgnoreLEZero ( String command )
-throws Exception
-{	String routine = "TSEngine.doSetIgnoreLEZero";
-	if ( command.regionMatches(true,0,"-ignorelezero",0,13) ) {
-		setIgnoreLEZero ( true );
-		Message.printStatus ( 2, routine, "Values <= 0 will be treated as missing when computing historic averages." );
-	}
-	else if ( command.regionMatches(true,0, "setIgnoreLEZero", 0,15) ) {
-		// Check the second token for "true" or "false".
-		Vector tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() != 2) ) {
-			throw new Exception ( "Bad command \"" + command+"\"" );
-		}
-		// Parse the flag...
-		String toggle = (String)tokens.elementAt(1);
-		if ( toggle.equalsIgnoreCase("True") ) {
-			setIgnoreLEZero ( true );
-			Message.printStatus ( 2, routine,
-			"Values <= 0 WILL be treated as missing when computing historic averages." );
-		}
-		else if ( toggle.equalsIgnoreCase("False") ) {
-            setIgnoreLEZero ( false );
-			Message.printStatus ( 2, routine,
-			"Values <= 0 WILL NOT be treated as missing when computing historic averages." );
-		}
-		else {	throw new Exception (
-			"Unrecognized value \"" + toggle + "\" (expecting true or false)");
-		}
-		tokens = null;
-		toggle = null;
-	}
-}
-
-/**
 Execute the new setIncludeMissingTS() or old -include_missing_ts command.
 @param expression Expression to parse.
 @exception Exception if there is an error.
@@ -5572,10 +5534,6 @@ throws Exception
 			do_setDataValue ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"setIgnoreLEZero", 0,15) ) {
-			do_setIgnoreLEZero ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"setMax",0,6)) {
 			// Don't use space because TEMPTS will not parse right.
 			do_setMax ( command_tag, command_String );
@@ -6322,9 +6280,9 @@ throws Exception
 		suggest = "Use FillUsingDiversionComments().";
 	}
 	else if(command_String.regionMatches(true,0,"-ignorelezero",0,13) ){
-		message = "-ignorelezero is obsolete.  Automatically using SetIgnoreLEZero().";
+		message = "-ignorelezero is obsolete.  Automatically setting IgnoreLEZero = true.";
 		suggest = "Use SetIgnoreLEZero().";
-		do_setIgnoreLEZero ( command_String );
+		setIgnoreLEZero ( true );
 	}
 	else if ( command_String.regionMatches(true,0,"-include_missing_ts",0,19)) {
 		message = "-include_missing_ts is obsolete.  Automatically using SetIncludeMissingTS(true).";
@@ -8260,7 +8218,7 @@ protected void setHydroBaseDMIList ( Vector dmilist )
 Set the value of the IgnoreLEZero property.
 @param IgnoreLEZero_boolean Value of property.
 */
-private void setIgnoreLEZero ( boolean IgnoreLEZero_boolean )
+protected void setIgnoreLEZero ( boolean IgnoreLEZero_boolean )
 {
     __IgnoreLEZero_boolean = IgnoreLEZero_boolean;
 }

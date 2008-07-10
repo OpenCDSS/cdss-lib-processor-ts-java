@@ -3028,6 +3028,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList" ) ) {
 		__tsengine.setHydroBaseDMIList ( (Vector)contents );
 	}
+    else if ( prop.equalsIgnoreCase("IgnoreLEZero" ) ) {
+        __tsengine.setIgnoreLEZero ( ((Boolean)contents).booleanValue() );
+    }
 	else if ( prop.equalsIgnoreCase("InitialWorkingDir" ) ) {
 		setInitialWorkingDir ( (String)contents );
 	}

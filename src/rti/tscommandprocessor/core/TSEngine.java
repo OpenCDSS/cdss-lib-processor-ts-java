@@ -3131,41 +3131,6 @@ throws Exception
 }
 
 /**
-Execute the new setIncludeMissingTS() or old -include_missing_ts command.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setIncludeMissingTS ( String expression )
-throws Exception
-{	String routine = "TSEngine.do_setIncludeMissingTS";
-	if ( expression.regionMatches(true,0,"-include_missing_ts",0,19) ) {
-		setIncludeMissingTS ( true );
-		Message.printStatus ( 2, routine,"Missing time series will have default time series inserted." );
-	}
-	else if ( expression.regionMatches(true,0, "setIncludeMissingTS",0,19)){
-		// Check the second token for "true" or "false".
-		Vector tokens = StringUtil.breakStringList ( expression, " (,)", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() != 2) ) {
-			throw new Exception ( "Bad command \"" + expression + "\"" );
-		}
-		// Parse the flag...
-		String toggle = (String)tokens.elementAt(1);
-		if ( toggle.equalsIgnoreCase("True") ) {
-			setIncludeMissingTS ( true );
-			Message.printStatus ( 1, routine, "Missing time series will have default time series inserted." );
-		}
-		else if ( toggle.equalsIgnoreCase("False") ) {
-			setIncludeMissingTS ( false );
-			Message.printStatus ( 1, routine, "Missing time series will not have default time series inserted." );
-		}
-		else {	throw new Exception ("Unrecognized value \"" + toggle + "\" (expecting true or false)");
-		}
-		tokens = null;
-		toggle = null;
-	}
-}
-
-/**
 Execute the setMax() command.
 @param command_tag Command number used for messaging.
 @param command Command to parse.
@@ -4920,6 +4885,11 @@ throws Exception
 	// is the result of processing and the initial directory may never have
 	// been changed dynamically.
 	
+	// FIXME SAM 2008-07-09 Need to reset global properties to defaults before running
+	// This includes output period, etc.  Otherwise, the settings will be those of the
+	// previous run.  Probably need a parameter to control (do it by default) so that
+	// when running RunCommands() it is possible to retain previously set values or clear.
+	
 	/* TODO SAM 2007-10-13 Remove when test out.  The initial working dir is no
 	 * longer dynamic but is a data member on the processor.
 	String InitialWorkingDir = __processor_PropList.getValue ( "InitialWorkingDir" );
@@ -5319,10 +5289,6 @@ throws Exception
 			// Fill missing data in the time series by prorating
 			// one time series to another...
 			do_fillProrate ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setIncludeMissingTS",0,19)) {
-			do_setIncludeMissingTS ( command_String );
 			continue;
 		}
 		else if ( command_String.regionMatches(true,0,"multiply",0,8)) {
@@ -6285,9 +6251,8 @@ throws Exception
 		setIgnoreLEZero ( true );
 	}
 	else if ( command_String.regionMatches(true,0,"-include_missing_ts",0,19)) {
-		message = "-include_missing_ts is obsolete.  Automatically using SetIncludeMissingTS(true).";
+		message = "-include_missing_ts is obsolete.";
 		suggest = "Use SetIncludeMissingTS().";
-		do_setIncludeMissingTS ( command_String );
 	}
 	else if ( command_String.regionMatches( true,0,"-missing",0,8) ) {
 		message = "-missing is obsolete.  Automatically using SetMissingDataValue().";
@@ -8227,7 +8192,7 @@ protected void setIgnoreLEZero ( boolean IgnoreLEZero_boolean )
 Set the value of the IncludeMissingTS property.
 @param IncludeMissingTS_boolean Value of property.
 */
-private void setIncludeMissingTS ( boolean IncludeMissingTS_boolean )
+protected void setIncludeMissingTS ( boolean IncludeMissingTS_boolean )
 {
     __IncludeMissingTS_boolean = IncludeMissingTS_boolean;
 }

@@ -28,16 +28,17 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Editor dialog for the SetIgnoreLEZero() command.
+Editor dialog for the SetIncludeMissingTS() command.
 */
-public class SetIgnoreLEZero_JDialog extends JDialog
+public class SetIncludeMissingTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
+
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private SetIgnoreLEZero_Command __command = null;// Command to edit
-private JTextArea	__command_JTextArea = null;
-private SimpleJComboBox	__IgnoreLEZero_JComboBox = null;
+private SetIncludeMissingTS_Command __command = null; // Command to edit
+private JTextArea	__command_JTextArea=null;// Command as JTextField
+private SimpleJComboBox	__IncludeMissingTS_JComboBox = null;// Field for true/false
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
 private boolean     __ok = false;       // Indicates whether OK button has been pressed.
@@ -47,7 +48,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetIgnoreLEZero_JDialog ( JFrame parent, Command command )
+public SetIncludeMissingTS_JDialog(JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -78,11 +79,11 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
-    String IgnoreLEZero = __IgnoreLEZero_JComboBox.getSelected();
+    String IncludeMissingTS = __IncludeMissingTS_JComboBox.getSelected();
     __error_wait = false;
 
-    if ( IgnoreLEZero.length() > 0 ) {
-        props.set ( "IgnoreLEZero", IgnoreLEZero );
+    if ( IncludeMissingTS.length() > 0 ) {
+        props.set ( "IncludeMissingTS", IncludeMissingTS );
     }
     try {
         // This will warn the user...
@@ -99,8 +100,8 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{   String IgnoreLEZero = __IgnoreLEZero_JComboBox.getSelected();
-    __command.setCommandParameter ( "IgnoreLEZero", IgnoreLEZero );
+{   String IncludeMissingTS = __IncludeMissingTS_JComboBox.getSelected();
+    __command.setCommandParameter ( "IncludeMissingTS", IncludeMissingTS );
 }
 
 /**
@@ -112,17 +113,17 @@ throws Throwable
 	__command_JTextArea = null;
 	__command = null;
 	__ok_JButton = null;
-	__IgnoreLEZero_JComboBox = null;
+	__IncludeMissingTS_JComboBox = null;
 	super.finalize ();
 }
 
 /**
 Instantiates the GUI components.
-@param parent Frame class instantiating this class.
+@param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (SetIgnoreLEZero_Command)command;
+{	__command = (SetIncludeMissingTS_Command)command;
 
 	addWindowListener( this );
 
@@ -134,34 +135,30 @@ private void initialize ( JFrame parent, Command command )
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"This command can be used to treat values <= 0 as missing when computing historical averages," ),
-	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "which may be useful where data processing requires that only non-zero " +
-        "values be considered in averages." ),
+
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This command sets a global property indicating whether to automatically add empty time " +
+		"series if a time series is not read (because it is not in a database or file)." ),
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The time series will automatically be initialized with default values and missing data." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The default is to print a warning when a time series cannot be found." ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "This command is useful in early stages of development when there is a need to focus on the " +
+        "overall process and not data issues." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"The default if SetIgnoreLEZero() is not used is False, in " +
-	"which case all non-missing data are averaged." ),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"This command should be specified before time series read commands because averages " +
-	"are computed immediately after reading time series." ),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ignore <= 0 computing averages?:" ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically include missing time series?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__IgnoreLEZero_JComboBox = new SimpleJComboBox ( false );
-	__IgnoreLEZero_JComboBox.add ( __command._True );
-	__IgnoreLEZero_JComboBox.add ( __command._False );
-	__IgnoreLEZero_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __IgnoreLEZero_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	__IncludeMissingTS_JComboBox = new SimpleJComboBox ( false );
+	__IncludeMissingTS_JComboBox.add ( __command._False );
+	__IncludeMissingTS_JComboBox.add ( __command._True );
+	__IncludeMissingTS_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __IncludeMissingTS_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -187,6 +184,7 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add ( __ok_JButton );
 
     setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+	setResizable ( true );
     pack();
     JGUIUtil.center( this );
     super.setVisible( true );
@@ -233,33 +231,33 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = getClass().getName() + ".refresh";
-    String IgnoreLEZero = "";
+{   String routine = getClass().getName() + ".refresh";
+    String IncludeMissingTS = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
         // Get the parameters from the command...
-        IgnoreLEZero = props.getValue ( "IgnoreLEZero" );
-        if ( IgnoreLEZero == null ) {
+        IncludeMissingTS = props.getValue ( "IncludeMissingTS" );
+        if ( IncludeMissingTS == null ) {
             // Select default...
-            __IgnoreLEZero_JComboBox.select ( 0 );
+            __IncludeMissingTS_JComboBox.select ( 0 );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __IgnoreLEZero_JComboBox,IgnoreLEZero, JGUIUtil.NONE, null, null ) ) {
-                __IgnoreLEZero_JComboBox.select ( IgnoreLEZero );
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IncludeMissingTS_JComboBox,IncludeMissingTS, JGUIUtil.NONE, null, null ) ) {
+                __IncludeMissingTS_JComboBox.select ( IncludeMissingTS );
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nIgnoreLEZero value \"" + IgnoreLEZero +
+                "Existing command references an invalid\nIncludeMissingTS value \"" + IncludeMissingTS +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
         }
     }
     // Regardless, reset the command from the fields...
-    IgnoreLEZero = __IgnoreLEZero_JComboBox.getSelected();
+    IncludeMissingTS = __IncludeMissingTS_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
-    props.add ( "IgnoreLEZero=" + IgnoreLEZero );
+    props.add ( "IncludeMissingTS=" + IncludeMissingTS );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
@@ -291,28 +289,11 @@ public void windowClosing( WindowEvent event )
 {	response ( false );
 }
 
-public void windowActivated( WindowEvent evt )
-{
-}
+public void windowActivated( WindowEvent evt ){;}
+public void windowClosed( WindowEvent evt ){;}
+public void windowDeactivated( WindowEvent evt ){;}
+public void windowDeiconified( WindowEvent evt ){;}
+public void windowIconified( WindowEvent evt ){;}
+public void windowOpened( WindowEvent evt ){;}
 
-public void windowClosed( WindowEvent evt )
-{
-}
-
-public void windowDeactivated( WindowEvent evt )
-{
-}
-
-public void windowDeiconified( WindowEvent evt )
-{
-}
-
-public void windowIconified( WindowEvent evt )
-{
-}
-
-public void windowOpened( WindowEvent evt )
-{
-}
-
-}
+} // end setIncludeMissingTS_JDialog

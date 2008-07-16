@@ -38,6 +38,8 @@ public abstract class TSCommandProcessorUtil
 Used to handle regression test results during testing.
 */
 private static PrintWriter __regression_test_fp = null;
+private static int __regressionTestFailCount = 0;
+private static int __regressionTestPassCount = 0;
 
 /**
 Append a time series to the processor time series results list.
@@ -101,6 +103,10 @@ public static void appendToRegressionTestReport(CommandProcessor processor, Stri
         String indicator = " ";
         if ( testPassFail.equalsIgnoreCase("FAIL") ) {
             indicator = "*";
+            ++__regressionTestFailCount;
+        }
+        else {
+            ++__regressionTestPassCount;
         }
         __regression_test_fp.println (
                 StringUtil.formatString(regressionTestLineCount,"%4d") + " " +
@@ -174,10 +180,15 @@ Close the regression test report file.
 */
 public static void closeRegressionTestReportFile ()
 {
-    if ( __regression_test_fp != null ) {
-        __regression_test_fp.close();
-        __regression_test_fp = null;
+    if ( __regression_test_fp == null ) {
+        return;
     }
+    __regression_test_fp.println ( "#---------------------------------------------------------------------" );
+    __regression_test_fp.println ( "# FAIL count = " + getRegressionTestFailCount() );
+    __regression_test_fp.println ( "# PASS count = " + getRegressionTestPassCount() );
+    
+    __regression_test_fp.close();
+    __regression_test_fp = null;
 }
 
 /**
@@ -564,6 +575,24 @@ public static Collection getPropertyNameList( CommandProcessor processor )
 		return ((TSCommandProcessor)processor).getPropertyNameList();
 	}
 	return new Vector();
+}
+
+/**
+Return the regression test fail count.
+@return the regression test fail count.
+*/
+private static int getRegressionTestFailCount ()
+{
+    return __regressionTestFailCount;
+}
+
+/**
+Return the regression test pass count.
+@return the regression test pass count.
+*/
+private static int getRegressionTestPassCount ()
+{
+    return __regressionTestPassCount;
 }
 
 // FIXME SAM 2008-01-31 Need to sort the column names.

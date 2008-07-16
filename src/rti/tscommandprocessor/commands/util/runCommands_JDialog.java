@@ -52,12 +52,14 @@ private JTextArea	__command_JTextArea=null;
 private String		__working_dir = null;	// Working directory.
 private JTextField	__InputFile_JTextField = null;
 private SimpleJComboBox __ExpectedStatus_JComboBox =null;
+// FIXME SAM 2008-07-15 Need to add option to inherit the properties of the calling processor
+//private SimpleJComboBox __InheritParentWorkflowProperties_JComboBox =null;
 private boolean		__error_wait = false;	// Is there an error waiting to be cleared up
 private boolean		__first_time = true;
 private boolean		__ok = false; // Indicates whether OK was pressed when closing the dialog.
 
 /**
-runCommands_JDialog constructor.
+Command editor dialog constructor.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
@@ -135,6 +137,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
+    //String InheritParentWorkflowProperties = __InheritParentWorkflowProperties_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -142,6 +145,11 @@ private void checkInput ()
     if ( ExpectedStatus.length() > 0 ) {
         props.set ( "ExpectedStatus", ExpectedStatus );
     }
+    /*
+    if ( InheritParentWorkflowProperties.length() > 0 ) {
+        props.set ( "ResetWorkflowProperties", InheritParentWorkflowProperties );
+    }
+    */
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -158,8 +166,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
+    //String InheritParentWorkflowProperties = __InheritParentWorkflowProperties_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
     __command.setCommandParameter ( "ExpectedStatus", ExpectedStatus );
+    //__command.setCommandParameter ( "InheritParentWorkflowProperties", InheritParentWorkflowProperties );
 }
 
 /**
@@ -243,6 +253,22 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Use for testing (overall status=Success if matches this)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    /*
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Inherit parent workflow properties?:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InheritParentWorkflowProperties_JComboBox = new SimpleJComboBox ( false );
+    __InheritParentWorkflowProperties_JComboBox.addItem ( "" );   // Default
+    __InheritParentWorkflowProperties_JComboBox.addItem ( __command._False );
+    __InheritParentWorkflowProperties_JComboBox.addItem ( __command._True );
+    __InheritParentWorkflowProperties_JComboBox.select ( 0 );
+    __InheritParentWorkflowProperties_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InheritParentWorkflowProperties_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "False (default) uses properties set by previous commands."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -317,6 +343,7 @@ private void refresh ()
 {	String routine = "RunCommands_JDialog.refresh";
     String InputFile = "";
     String ExpectedStatus = "";
+    //String InheritParentWorkflowProperties = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -324,6 +351,7 @@ private void refresh ()
 		props = __command.getCommandParameters();
 		InputFile = props.getValue ( "InputFile" );
         ExpectedStatus = props.getValue ( "ExpectedStatus" );
+        //InheritParentWorkflowProperties = props.getValue ( "InheritParentWorkflowProperties" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
@@ -343,13 +371,33 @@ private void refresh ()
                 "\".  Select a\nMissing value or Cancel." );
             }
         }
+        /*
+        if ( JGUIUtil.isSimpleJComboBoxItem(__InheritParentWorkflowProperties_JComboBox, ExpectedStatus,JGUIUtil.NONE, null, null ) ) {
+            __InheritParentWorkflowProperties_JComboBox.select ( ExpectedStatus );
+        }
+        else {
+            if ( (ResetWorkflowProperties == null) || ResetWorkflowProperties.equals("") ) {
+                // New command...select the default...
+                __InheritParentWorkflowProperties_JComboBox.select ( 0 );
+            }
+            else {  // Bad user command...
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\n"+
+                "ResetWorkflowProperties parameter \"" +
+                ResetWorkflowProperties +
+                "\".  Select a\nMissing value or Cancel." );
+            }
+        }
+        */
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
     ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
+    //InheritParentWorkflowProperties = __InheritParentWorkflowProperties_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
     props.add ( "ExpectedStatus=" + ExpectedStatus );
+    //props.add ( "InheritParentWorkflowProperties=" + InheritParentWorkflowProperties );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

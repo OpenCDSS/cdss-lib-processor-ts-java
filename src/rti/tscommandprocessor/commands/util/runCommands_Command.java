@@ -26,6 +26,9 @@ import rti.tscommandprocessor.core.TSCommandFileRunner;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+// FIXME SAM 2008-07-15 Need to add ability to inherit the properties of the main
+// processor
+
 /**
 <p>
 This class initializes, checks, and runs the runCommands() command.
@@ -41,6 +44,12 @@ protected final String _Unknown = "Unknown";
 protected final String _Success = "Success";
 protected final String _Warning = "Warning";
 protected final String _Failure = "Failure";
+
+/**
+ResetWorkflowProperties parameter values.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 AppendResults parameter values.
@@ -68,6 +77,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
+    //String InheritParentWorkflowProperties = parameters.getValue ( "InheritParentWorkflowProperties" );
 	String warning = "";
     String message;
 	
@@ -120,6 +130,18 @@ throws InvalidCommandParameterException
                             message, "Verify that command file to run and working directory paths are compatible." ) );
 		}
 	}
+	/*
+    if ( (InheritParentWorkflowProperties != null) && (InheritParentWorkflowProperties.length() == 0) &&
+            !InheritParentWorkflowProperties.equalsIgnoreCase(_False) &&
+            !InheritParentWorkflowProperties.equalsIgnoreCase(_True) ) {
+        message = "The InheritParentWorkflowProperties parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an expected status of " + _False + " (default if blank), " +
+                        ", or " + _True) );
+    }
+    */
     
     if ( (ExpectedStatus != null) && (ExpectedStatus.length() == 0) &&
             !ExpectedStatus.equalsIgnoreCase(_Unknown) &&
@@ -137,6 +159,7 @@ throws InvalidCommandParameterException
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
+	//valid_Vector.add ( "InheritParentWorkflowProperties" );
     valid_Vector.add ( "ExpectedStatus" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -182,6 +205,7 @@ CommandWarningException, CommandException
 
 	String InputFile = parameters.getValue ( "InputFile" );
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
+    //String InheritParentWorkflowProperties = parameters.getValue ( "InheritParentWorkflowProperties" );
 	String AppendResults = parameters.getValue ( "AppendResults" );
 	
 	if ( warning_count > 0 ) {
@@ -208,6 +232,8 @@ CommandWarningException, CommandException
         // FIXME SAM 2007-11-25 This needs to be generic "DataSource" objects.
         TSCommandProcessor runner_processor = runner.getProcessor();
         runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
+        // FIXME SAM 2008-07-15 If inheriting properties from parent workflow, transfer here
+        // similar to how results will be appended after running.
         // Run the commands.
 		runner.runCommands();
 		
@@ -298,6 +324,7 @@ public String toString ( PropList props )
 	}
 	String InputFile = props.getValue("InputFile");
     String ExpectedStatus = props.getValue("ExpectedStatus");
+    //String InheritParentWorkflowProperties = props.getValue("InheritParentWorkflowProperties");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -305,6 +332,13 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
+	/*
+    if ( (InheritParentWorkflowProperties != null) && (InheritParentWorkflowProperties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InheritParentWorkflowProperties=" + InheritParentWorkflowProperties );
+    }*/
     if ( (ExpectedStatus != null) && (ExpectedStatus.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

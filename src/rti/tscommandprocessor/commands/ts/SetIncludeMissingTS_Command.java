@@ -1,0 +1,208 @@
+package rti.tscommandprocessor.commands.ts;
+
+import java.util.Vector;
+import javax.swing.JFrame;
+
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
+import RTi.Util.IO.AbstractCommand;
+import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandException;
+import RTi.Util.IO.CommandLogRecord;
+import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandStatusType;
+import RTi.Util.IO.CommandStatus;
+import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.Prop;
+import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
+
+/**
+This class initializes, checks, and runs the SetIncludeMissingTS() command.
+*/
+public class SetIncludeMissingTS_Command extends AbstractCommand
+implements Command
+{
+    
+protected final String _True = "True";
+protected final String _False = "False";
+
+/**
+Constructor.
+*/
+public SetIncludeMissingTS_Command ()
+{	super();
+	setCommandName ( "SetIncludeMissingTS" );
+}
+
+/**
+Check the command parameter for valid values, combination, etc.
+@param parameters The parameters for the command.
+@param command_tag an indicator to be used when printing messages, to allow a
+cross-reference to the original commands.
+@param warning_level The warning level to use when printing parse warnings
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
+*/
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
+throws InvalidCommandParameterException
+{	String IncludeMissingTS = parameters.getValue ( "IncludeMissingTS" );
+	String warning = "";
+	String message;
+
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.INITIALIZATION);
+	
+	// The existence of the file to remove is not checked during initialization
+	// because files may be created dynamically at runtime.
+
+	if ( (IncludeMissingTS != null) && !IncludeMissingTS.equals("") ) {
+		if ( !IncludeMissingTS.equalsIgnoreCase(_False) &&
+			!IncludeMissingTS.equalsIgnoreCase(_True) ) {
+			message = "The IncludeMissingTS parameter \"" + IncludeMissingTS + "\" must be " + _False +
+			" or " + _True + ".";
+			warning += "\n" + message;
+			status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Specify the parameter as " + _False + " or " + _True + "."));
+		}
+	}
+	// Check for invalid parameters...
+	Vector valid_Vector = new Vector();
+	valid_Vector.add ( "IncludeMissingTS" );
+	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+
+	if ( warning.length() > 0 ) {
+		Message.printWarning ( warning_level,
+		MessageUtil.formatMessageTag(command_tag,warning_level),warning );
+		throw new InvalidCommandParameterException ( warning );
+	}
+	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
+}
+
+/**
+Edit the command.
+@param parent The parent JFrame to which the command dialog will belong.
+@return true if the command was edited (e.g., "OK" was pressed), and false if
+not (e.g., "Cancel" was pressed.
+*/
+public boolean editCommand ( JFrame parent )
+{	// The command will be modified if changed...
+	return (new SetIncludeMissingTS_JDialog ( parent, this )).ok();
+}
+
+/**
+Parse the command string into a PropList of parameters.  This method currently
+supports old syntax and new parameter-based syntax.
+@param command_string A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is
+determined to have invalid syntax.
+syntax of the command are bad.
+@exception InvalidCommandParameterException if during parsing the command
+parameters are determined to be invalid.
+*/
+public void parseCommand ( String command_string )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+    if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
+        // Current syntax...
+        super.parseCommand( command_string);
+    }
+    else {
+        // TODO SAM 2008-07-08 This whole block of code needs to be
+        // removed as soon as commands have been migrated to the new syntax.
+        Vector v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+        int ntokens = 0;
+        if ( v != null ) {
+            ntokens = v.size();
+        }
+        String IncludeMissingTS = "";
+        if ( ntokens >= 2 ) {
+            // Output year type...
+            IncludeMissingTS = ((String)v.elementAt(1)).trim();
+        }
+
+        // Set parameters and new defaults...
+
+        PropList parameters = new PropList ( getCommandName() );
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        if ( IncludeMissingTS.length() > 0 ) {
+            parameters.set ( "IncludeMissingTS", IncludeMissingTS );
+        }
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
+        setCommandParameters ( parameters );
+    }
+}
+
+/**
+Run the command.
+@param command_line Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{	String routine = "SetIncludeMissingTS_Command.runCommand", message;
+	int warning_level = 2;
+	String command_tag = "" + command_number;
+	int warning_count = 0;
+	
+	PropList parameters = getCommandParameters();
+	
+    CommandProcessor processor = getCommandProcessor();
+	CommandStatus status = getCommandStatus();
+	status.clearLog(CommandPhaseType.RUN);
+	
+	String IncludeMissingTS = parameters.getValue ( "IncludeMissingTS" );
+	
+	try {
+        // Set the output year type...
+		Message.printStatus ( 2, routine, "Set IncludeMissingTS to \"" + IncludeMissingTS + "\".");
+		if ( IncludeMissingTS.equalsIgnoreCase(_True) ) {
+		    Message.printStatus ( 2, routine,
+		    "Missing time series will result in time series with missing data." );
+		    processor.setPropContents ( "IncludeMissingTS", new Boolean(true) );
+		}
+		else if ( IncludeMissingTS.equalsIgnoreCase(_False) ){
+		    Message.printStatus ( 2, routine,
+		    "Missing time series will result in time series with missing data." );
+		    processor.setPropContents ( "IncludeMissingTS", new Boolean(false) );
+		}
+	}
+	catch ( Exception e ) {
+		message = "Unexpected error setting IncludeMissingTS to \"" + IncludeMissingTS + "\" (" + e + ").";
+		Message.printWarning ( warning_level, 
+		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+		Message.printWarning ( 3, routine, e );
+		status.addToLog(CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "See the log file for details."));
+		throw new CommandException ( message );
+	}
+
+	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+}
+
+/**
+Return the string representation of the command.
+*/
+public String toString ( PropList parameters )
+{	if ( parameters == null ) {
+		return getCommandName() + "()";
+	}
+	String IncludeMissingTS = parameters.getValue("IncludeMissingTS");
+	StringBuffer b = new StringBuffer ();
+	if ( (IncludeMissingTS != null) && (IncludeMissingTS.length() > 0) ) {
+		b.append ( "IncludeMissingTS=" + IncludeMissingTS );
+	}
+	return getCommandName() + "(" + b.toString() + ")";
+}
+
+}

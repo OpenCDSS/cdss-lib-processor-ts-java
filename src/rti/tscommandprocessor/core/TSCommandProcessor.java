@@ -2889,13 +2889,61 @@ public void removeCommandListListener ( CommandListListener listener )
 }
 
 /**
+Reset the workflow global properties to defaults, necessary when a command processor is rerun.
+*/
+private void resetWorkflowProperties ()
+{   String routine = getClass().getName() + ".resetWorkflowProperties";
+    Message.printStatus(2, routine, "Resetting workflow properties." );
+    
+    // First clear user-defined properties.
+    __property_Hashtable.clear();
+    // Now make sure that specific controlling properties are cleared out.
+    // FIXME SAM 2008-07-15 Move data members to this class
+    __tsengine.setIgnoreLEZero ( false );
+    __tsengine.setIncludeMissingTS ( false );
+    __tsengine.setInputEnd ( null );
+    __tsengine.setInputStart ( null );
+    __tsengine.setOutputEnd ( null );
+    __tsengine.setOutputStart ( null );
+    __tsengine.setOutputYearType ( __tsengine._WATER_YEAR );
+}
+
+/**
 Run the specified commands.  If no commands are specified, run all that are being managed.
 @param commands Vector of Command to process.
-@param props Properties to control run, including:  InitialWorkingDir=PathToWorkingDir, CreateOutput=True|False.
+@param props Properties to control run.  See full list in TSEngine.processCommands.  This
+method only acts on the properties shown below.
+<td><b>Property</b></td>    <td><b>Description</b></td>
+</tr>
+
+<tr>
+<td><b>ResetWorkflowProperties</b></td>
+<td>If set to true (default), indicates that global properties like output period should be
+reset before runningThe default is false, to allow command files to be chained together.
+</td>
+<td>False</td>
+</tr>
+
+</table>
 */
 public void runCommands ( Vector commands, PropList props )
 throws Exception
 {
+    // Reset the global workflow properties if requested
+    String ResetWorkflowProperties = "True";   // default
+    if ( props != null ) {
+        String prop = props.getValue ( "ResetWorkflowProperties" );
+        if ( (prop != null) && prop.equalsIgnoreCase("False") ) {
+            ResetWorkflowProperties = "False";
+        }
+    }
+    if ( ResetWorkflowProperties.equalsIgnoreCase("True")) {
+        resetWorkflowProperties();
+    }
+    // Now call the TSEngine method to do the processing.
+    // FIXME SAM 2008-07-15 Need to merge TSEngine into TSCommandProcess when all commands
+    // have been converted to classes - then code size should be more manageable and can remove
+    // redundant code in the two classes.
 	__tsengine.processCommands ( commands, props );
 }
 
@@ -3031,6 +3079,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
     else if ( prop.equalsIgnoreCase("IgnoreLEZero" ) ) {
         __tsengine.setIgnoreLEZero ( ((Boolean)contents).booleanValue() );
     }
+    else if ( prop.equalsIgnoreCase("IncludeMissingTS" ) ) {
+        __tsengine.setIncludeMissingTS ( ((Boolean)contents).booleanValue() );
+    }
 	else if ( prop.equalsIgnoreCase("InitialWorkingDir" ) ) {
 		setInitialWorkingDir ( (String)contents );
 	}
@@ -3061,7 +3112,8 @@ public void setPropContents ( String prop, Object contents ) throws Exception
     else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
         __tsengine.addTSViewWindowListener((WindowListener)contents );
     }
-	else {// Not recognized...
+	else {
+	    // Not recognized...
 		String message = "Unable to set data for unknown property \"" + prop + "\".";
 		throw new UnrecognizedRequestException ( message );
 	}

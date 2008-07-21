@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.ts;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.Vector;
 
@@ -33,13 +34,6 @@ public class ChangePeriod_Command extends AbstractCommand implements Command
 {
 
 /**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-
-/**
 Constructor.
 */
 public ChangePeriod_Command ()
@@ -68,13 +62,14 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TSList != null) && !TSList.equalsIgnoreCase(_AllMatchingTSID) ) {
+	if ( (TSList != null) && !TSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ) {
 		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + _AllMatchingTSID + ".";
+            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID.toString() + ".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Do not specify the TSID parameter when TList=" + _AllMatchingTSID ) );
+                            message, "Do not specify the TSID parameter when TList=" +
+                            TSListType.ALL_MATCHING_TSID.toString() ) );
 		}
 	}
 	if ( TSList == null ) {
@@ -475,6 +470,7 @@ public String toString ( PropList props )
 	}
 	String TSList = props.getValue( "TSList" );
 	String TSID = props.getValue( "TSID" );
+	String EnsembleID = props.getValue( "EnsembleID" );
 	String NewStart = props.getValue("NewStart");
 	String NewEnd = props.getValue("NewEnd");
 	StringBuffer b = new StringBuffer ();
@@ -487,6 +483,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
 	if ( (NewStart != null) && (NewStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

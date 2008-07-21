@@ -67,13 +67,20 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
+	        !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
+	        !TSListType.LAST_MATCHING_TSID.equals(TSList)) {
 		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID.toString() + ".";
+            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID.toString() +
+            ", " + TSListType.FIRST_MATCHING_TSID.toString() + ", or " +
+            TSListType.LAST_MATCHING_TSID.toString()+ ".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Do not specify the TSID parameter when TList=" + TSListType.ALL_MATCHING_TSID.toString() ) );
+                    message, "Only specify the TSID parameter when TList=" +
+                    TSListType.ALL_MATCHING_TSID.toString() +
+                    ", " + TSListType.FIRST_MATCHING_TSID.toString() + ", or " +
+                    TSListType.LAST_MATCHING_TSID.toString()+ ".") );
 		}
 	}
     /*
@@ -549,13 +556,13 @@ CommandWarningException, CommandException
                 message,
                 "Verify that the IndependentTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
-
+    
 	// Set period...
 
 	String SetStart = parameters.getValue("SetStart");
 	String SetEnd = parameters.getValue("SetEnd");
 
-	// Figure out the dates to use for the analysis...
+	// Figure out the dates to use for the analysis (this only provides values if they ware set)...
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
 
@@ -568,7 +575,7 @@ CommandWarningException, CommandException
             bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "Error requesting SetStart DateTime(DateTime=" +	SetStart + ") from processor.";
+			message = "Error requesting SetStart DateTime(DateTime=" + SetStart + ") from processor.";
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -702,6 +709,22 @@ CommandWarningException, CommandException
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report the problem to software support." ) );
+            continue;
+        }
+        
+        // Make sure that independent and dependent time series are not the same
+        
+        if ( independent_ts == ts ) {
+            // Skip time series.
+            message = "Independent \"" + independent_ts.getIdentifierString() +
+            "\" and dependent time series \"" + ts.getIdentifierString() +
+            "\" are the same - skipping.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Verify selection of time series." ) );
             continue;
         }
         

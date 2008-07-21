@@ -43,8 +43,8 @@ protected final String _True = "True";
 /**
 TSPosition data, zero offset indices
 */
-int [] TSPositionStart = new int[0];
-int [] TSPositionEnd = new int[0];
+private int [] __TSPositionStart = new int[0];
+private int [] __TSPositionEnd = new int[0];
 
 /**
 Constructor.
@@ -81,8 +81,8 @@ throws InvalidCommandParameterException
         if ( tokens != null ) {
             npos = tokens.size();
         }
-        TSPositionStart = new int[npos];
-        TSPositionEnd = new int[npos];
+        __TSPositionStart = new int[npos];
+        __TSPositionEnd = new int[npos];
         for ( int i = 0; i < npos; i++ ) {
             String token = (String)tokens.elementAt(i);
             if ( token.indexOf("-") >= 0 ) {
@@ -96,7 +96,7 @@ throws InvalidCommandParameterException
                                     message, "Specify the range using integers with value 1+." ) );
                 }
                 else {
-                    TSPositionStart[i] = StringUtil.atoi( posString ) - 1;
+                    __TSPositionStart[i] = StringUtil.atoi( posString ) - 1;
                 }
                 posString = StringUtil.getToken(token, "-",0,1).trim();
                 if ( !StringUtil.isInteger(posString) ) {
@@ -107,7 +107,7 @@ throws InvalidCommandParameterException
                                     message, "Specify the range using integer with value 1+." ) );
                 }
                 else {
-                    TSPositionEnd[i] = StringUtil.atoi( posString ) - 1;
+                    __TSPositionEnd[i] = StringUtil.atoi( posString ) - 1;
                 }
             }
             else {
@@ -119,11 +119,11 @@ throws InvalidCommandParameterException
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Specify the position as an integer 1+." ) );
                 }
-                TSPositionStart[i] = StringUtil.atoi(token) - 1;
-                TSPositionEnd[i] = TSPositionStart[i];
+                __TSPositionStart[i] = StringUtil.atoi(token) - 1;
+                __TSPositionEnd[i] = __TSPositionStart[i];
             }
             Message.printStatus ( 1, "", "Range " + i + " from " + token + " is " +
-                    TSPositionStart[i] + "," + TSPositionEnd[i] );
+                    __TSPositionStart[i] + "," + __TSPositionEnd[i] );
         }
 	}
 	

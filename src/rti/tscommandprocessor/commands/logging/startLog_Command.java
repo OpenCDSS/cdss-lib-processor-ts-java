@@ -113,8 +113,7 @@ throws InvalidCommandParameterException
 	}
 
 	try {	
-		// A null logfile means that the current log file should
-		// be re-opened.
+		// A null logfile means that the current log file should be re-opened.
 		if ( (LogFile != null) && (working_dir != null) ) {
 			String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath(working_dir, LogFile));
 			File f = new File(adjusted_path);
@@ -269,6 +268,7 @@ throws CommandWarningException, CommandException
 			}
 			LogFile_full = IOUtil.verifyPathForOS(
                     IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LogFile) );
+			Message.printStatus(2, routine, "Logfile full path is \"" + LogFile_full + "\"");
 			Message.openNewLogFile ( LogFile_full );
 			setOutputFile ( new File(LogFile_full));
 		}

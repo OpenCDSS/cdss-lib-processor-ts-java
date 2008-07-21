@@ -259,7 +259,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new
 		// syntax.
 		//
-		// Old syntax where the paramters are TSID,IndependentTSID,SetStart,SetEnd,TransferHow
+		// Old syntax where the paramters are TSID,IndependentTSID,FillStart,FillEnd,TransferHow
 		Vector v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
@@ -743,8 +743,8 @@ public String toString ( PropList props )
     String IndependentTSList = props.getValue( "IndependentTSList" );
     String IndependentTSID = props.getValue( "IndependentTSID" );
     String IndependentEnsembleID = props.getValue( "IndependentEnsembleID" );
-	String SetStart = props.getValue("SetStart");
-	String SetEnd = props.getValue("SetEnd");
+	String FillStart = props.getValue("FillStart");
+	String FillEnd = props.getValue("FillEnd");
     String TransferHow = props.getValue( "TransferHow" );
 	//String FillFlag = props.getValue("FillFlag");
 	StringBuffer b = new StringBuffer ();
@@ -784,17 +784,17 @@ public String toString ( PropList props )
         }
         b.append ( "IndependentEnsembleID=\"" + IndependentEnsembleID + "\"" );
     }
-	if ( (SetStart != null) && (SetStart.length() > 0) ) {
+	if ( (FillStart != null) && (FillStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "SetStart=\"" + SetStart + "\"" );
+		b.append ( "FillStart=\"" + FillStart + "\"" );
 	}
-	if ( (SetEnd != null) && (SetEnd.length() > 0) ) {
+	if ( (FillEnd != null) && (FillEnd.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "SetEnd=\"" + SetEnd + "\"" );
+		b.append ( "FillEnd=\"" + FillEnd + "\"" );
 	}
     if ( (TransferHow != null) && (TransferHow.length() > 0) ) {
         if ( b.length() > 0 ) {

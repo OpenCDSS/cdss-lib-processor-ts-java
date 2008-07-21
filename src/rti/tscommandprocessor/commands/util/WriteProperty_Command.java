@@ -330,7 +330,7 @@ public String toString ( PropList parameters )
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Append=\"" + Append + "\"" );
+		b.append ( "Append=" + Append );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

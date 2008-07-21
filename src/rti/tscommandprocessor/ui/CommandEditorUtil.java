@@ -136,6 +136,10 @@ public static int addTSListNotesToEditorDialogPanel ( JPanel panel, int y )
             "  " + TSListType.ENSEMBLE_ID + " - add all time series for the ensemble."),
             0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(panel, new JLabel (
+            "  " + TSListType.FIRST_MATCHING_TSID +
+            " - add the first time series (before this command) with matching identifier."),
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(panel, new JLabel (
         "  " + TSListType.LAST_MATCHING_TSID +
         " - add the last time series (before this command) with matching identifier."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -198,6 +202,7 @@ public static int addTSListToEditorDialogPanel (
     TSList_Vector.addElement ( TSListType.ALL_MATCHING_TSID.toString() );
     TSList_Vector.addElement ( TSListType.ALL_TS.toString() );
     TSList_Vector.addElement ( TSListType.ENSEMBLE_ID.toString() );
+    TSList_Vector.addElement ( TSListType.FIRST_MATCHING_TSID.toString() );
     TSList_Vector.addElement ( TSListType.LAST_MATCHING_TSID.toString() );
     TSList_Vector.addElement ( TSListType.SELECTED_TS.toString() );
     

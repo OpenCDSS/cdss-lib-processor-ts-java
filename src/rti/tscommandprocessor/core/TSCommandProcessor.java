@@ -950,6 +950,7 @@ public Collection getPropertyNameList()
 	v.addElement ( "OutputStart" );
 	v.addElement ( "OutputEnd" );
     v.addElement ( "OutputYearType" );
+    v.addElement ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
     v.addElement ( "WarningLevelLogFile" );
     v.addElement ( "WarningLevelScreen" );
     v.addElement ( "WorkingDir" );

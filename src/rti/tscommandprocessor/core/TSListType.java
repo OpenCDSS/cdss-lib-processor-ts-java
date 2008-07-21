@@ -20,6 +20,11 @@ public class TSListType {
 	 * EnsembleID indicates that all time series in the ensemble should be in the list.
 	 */
 	public static TSListType ENSEMBLE_ID = new TSListType(2, "EnsembleID");
+	
+    /**
+     * FirstMatchingTSID indicates that only the first matching time series should be in the list. 
+     */
+    public static TSListType FIRST_MATCHING_TSID = new TSListType(3, "FirstMatchingTSID");
     
     /**
      * LastMatchingTSID indicates that only the last matching time series should be in the list. 

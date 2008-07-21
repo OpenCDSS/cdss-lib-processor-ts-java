@@ -4147,6 +4147,8 @@ determined, with one of the following values (see TSListType):
 <li>    "AllMatchingTSID" will use the TSID value to match time series.</li>
 <li>	"AllTS" will result in true being returned.</li>
 <li>    "EnsembleID" will return the list of time series associated with an ensemble.</li>
+<li>    "FirstMatchingTSID" will use the TSID value to match time series,
+        returning the first match.</li>
 <li>	"LastMatchingTSID" will use the TSID value to match time series,
 	    returning the last match.  This is necessary for backward compatibility.</li>
 <li>	"SelectedTS" will return a list of time series that are selected.</li>
@@ -4182,8 +4184,46 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
 	int count = 0;
 	TS ts = null;
 	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID +
-            "\", EnsembleID=\"" + EnsembleID + "\"" );
-	if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
+            "\", EnsembleID=\"" + EnsembleID + "\", TSPosition=\"" + TSPosition + "\"" );
+   if ( TSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ) {
+        // Search forwards for the first single matching time series...
+        for ( int its = 0; its < nts; its++ ) {
+            try {
+                ts = getTimeSeries ( its );
+            }
+            catch ( Exception e ) {
+                // Don't add...
+                continue;
+            }
+            if ( TSID.indexOf("~") > 0 ) {
+                // Include the input type...
+                if (ts.getIdentifier().matches(TSID,true,true)){
+                    tslist.addElement ( ts );
+                    tspos[count++] = its;
+                    // Only return the single index...
+                    int [] tspos2 = new int[1];
+                    tspos2[0] = tspos[0];
+                    v.setElementAt(tspos2,1);
+                    // Only want one match...
+                    return v;
+                }
+            }
+            else {
+                // Just check the main information...
+                if(ts.getIdentifier().matches(TSID,true,false)){
+                    tslist.addElement ( ts );
+                    tspos[count++] = its;
+                    // Only return the single index...
+                    int [] tspos2 = new int[1];
+                    tspos2[0] = tspos[0];
+                    v.setElementAt(tspos2,1);
+                    // Only want one match...
+                    return v;
+                }
+            }
+        }
+    }
+	else if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
 		// Search backwards for the last single matching time series...
 		for ( int its = (nts - 1); its >= 0; its-- ) {
 			try {

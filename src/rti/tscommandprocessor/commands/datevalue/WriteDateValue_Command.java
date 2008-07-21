@@ -67,6 +67,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
     String Delimiter = parameters.getValue("Delimiter" );
+    String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
@@ -134,6 +135,16 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the delimiter as blank or a comma." ) );
 	}
+	
+    if ( (Precision != null) && !Precision.equals("") ) {
+        if ( !StringUtil.isInteger(Precision) ) {
+            message = "The precision \"" + Precision + "\" is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the precision as an integer." ) );
+        }
+    }
 
 	if ( (OutputStart != null) && !OutputStart.equals("")) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
@@ -167,6 +178,7 @@ throws InvalidCommandParameterException
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Delimiter" );
+	valid_Vector.add ( "Precision" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "TSList" );
@@ -434,6 +446,10 @@ CommandWarningException, CommandException
 	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
 	    props.set("Delimiter=" + Delimiter);
 	}
+	String Precision = parameters.getValue ( "Precision" );
+    if ( (Precision != null) && (Precision.length() > 0) ) {
+        props.set("Precision=" + Precision);
+    }
     if ( (tslist != null) && (tslist.size() > 0) ) {
         String OutputFile_full = OutputFile;
         try {
@@ -480,6 +496,7 @@ public String toString ( PropList parameters )
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
+	String Precision = parameters.getValue("Precision");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String TSList = parameters.getValue ( "TSList" );
@@ -497,6 +514,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Delimiter=\"" + Delimiter + "\"" );
+    }
+    if ( (Precision != null) && (Precision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Precision=" + Precision );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

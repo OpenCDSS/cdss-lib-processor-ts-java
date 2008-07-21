@@ -60,6 +60,7 @@ private String __working_dir = null;	// Working directory.
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
+private JTextField __Precision_JTextField = null;// Precision for output
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox	__TSList_JComboBox = null;
@@ -89,15 +90,13 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select DateValue Time Series File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("txt", "DateValue Time Series File");
@@ -132,20 +131,18 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(__AddWorkingDirectory) ) {
+		if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
 			__OutputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__OutputFile_JTextField.getText() ) );
+			IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
 		}
 		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
-			try {	__OutputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__OutputFile_JTextField.getText() ) );
+			try {
+			    __OutputFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"WriteDateValue_JDialog",
-				"Error converting file to relative path." );
+				"WriteDateValue_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -185,6 +182,7 @@ private void checkInput ()
 	PropList parameters = new PropList ( "" );
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
+	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
@@ -207,6 +205,9 @@ private void checkInput ()
 	}
     if (Delimiter.length() > 0) {
         parameters.set("Delimiter", Delimiter);
+    }
+    if (Precision.length() > 0) {
+        parameters.set("Precision", Precision);
     }
 	if ( OutputStart.length() > 0 ) {
 		parameters.set ( "OutputStart", OutputStart );
@@ -234,6 +235,7 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Delimiter = __Delimiter_JTextField.getText().trim();
+	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
@@ -241,6 +243,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Delimiter", Delimiter );
+	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
@@ -319,6 +322,15 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Default is space.  Comma is only other allowed delimiter."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Precision_JTextField = new JTextField ( "", 20 );
+    __Precision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Digits after decimal (default=4)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -440,6 +452,7 @@ private void refresh ()
 {	String routine = "WriteDateValue_JDialog.refresh";
 	String OutputFile = "";
 	String Delimiter = "";
+	String Precision = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	String TSList = "";
@@ -453,6 +466,7 @@ private void refresh ()
 		parameters = __command.getCommandParameters();
 		OutputFile = parameters.getValue ( "OutputFile" );
 	    Delimiter = parameters.getValue("Delimiter");
+	    Precision = parameters.getValue("Precision");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		TSList = parameters.getValue ( "TSList" );
@@ -463,6 +477,9 @@ private void refresh ()
 		}
 	    if (Delimiter != null) {
 	         __Delimiter_JTextField.setText(Delimiter);
+	    }
+	    if ( Precision != null ) {
+	        __Precision_JTextField.setText ( Precision );
 	    }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
@@ -518,6 +535,7 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Delimiter = __Delimiter_JTextField.getText().trim();
+	Precision = __Precision_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected();
@@ -529,6 +547,7 @@ private void refresh ()
     parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "Delimiter=" + Delimiter );
+	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );

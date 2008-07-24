@@ -40,6 +40,13 @@ TSEnsemble created in discovery mode (basically to get the identifier for other 
 private TSEnsemble __tsensemble = null;
 
 /**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+//private Vector __discovery_TS_Vector = null;
+// TODO SAM 2008-07-18 Figure out whether/how to enable
+
+/**
 Constructor.
 */
 public CopyEnsemble_Command ()
@@ -107,6 +114,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "NewEnsembleID" );
     valid_Vector.add ( "NewEnsembleName" );
     valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "NewAlias" );
     valid_Vector.add ( "NewTSID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -214,6 +222,7 @@ CommandWarningException, CommandException
 	String NewEnsembleID = parameters.getValue ( "NewEnsembleID" );
     String NewEnsembleName = parameters.getValue ( "NewEnsembleName" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
+	String NewAlias = parameters.getValue ( "NewAlias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 
     if ( command_phase == CommandPhaseType.RUN ) {
@@ -311,6 +320,11 @@ CommandWarningException, CommandException
                          ts.getIdentifier().setScenario(NewTSID_TSIdent.getScenario());
                      }
                 }
+                if ( NewAlias != null ) {
+                    // Reset the time series alias
+                    ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                            processor, ts, NewAlias, status, command_phase) );
+                }
                 int wc2 = TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
                 if ( wc2 > 0 ) {
                     message = "Error adding time series [" + i + "] from new ensemble.";
@@ -339,6 +353,9 @@ CommandWarningException, CommandException
     	}
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        // Save the list of new time series...
+        // TODO SAM 2008-07-23 Figure out whether/how to enable
+        //setDiscoveryTSList ( tslist );
         // Just want the identifier...
         TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, null );
         setDiscoveryEnsemble ( ensemble );
@@ -374,6 +391,7 @@ public String toString ( PropList props )
 	String NewEnsembleID = props.getValue( "NewEnsembleID" );
     String NewEnsembleName = props.getValue( "NewEnsembleName" );
 	String EnsembleID = props.getValue( "EnsembleID" );
+	String NewAlias = props.getValue( "NewAlias" );
 	String NewTSID = props.getValue( "NewTSID" );
 	StringBuffer b = new StringBuffer ();
 	if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
@@ -387,6 +405,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
+    }
+    if ( (NewAlias != null) && (NewAlias.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewAlias=\"" + NewAlias + "\"" );
     }
     if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
         if ( b.length() > 0 ) {

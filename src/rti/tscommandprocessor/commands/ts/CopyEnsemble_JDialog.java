@@ -50,6 +50,7 @@ private CopyEnsemble_Command	__command = null;	// Command to edit.
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private JTextField	__NewEnsembleID_JTextField = null;
 private JTextField  __NewEnsembleName_JTextField;
+private JTextField  __NewAlias_JTextField = null;
 private SimpleJComboBox	__EnsembleID_JComboBox = null;
 private JTextArea	__NewTSID_JTextArea = null;
 private SimpleJButton	__edit_JButton = null;	// Edit button
@@ -130,6 +131,7 @@ private void checkInput ()
 	String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String NewAlias = __NewAlias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	__error_wait = false;
 
@@ -142,6 +144,9 @@ private void checkInput ()
 	if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
 		props.set ( "EnsembleID", EnsembleID );
 	}
+    if ( (NewAlias != null) && (NewAlias.length() > 0) ) {
+        props.set ( "NewAlias", NewAlias );
+    }
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		props.set ( "NewTSID", NewTSID );
 	}
@@ -163,10 +168,12 @@ private void commitEdits ()
 {	String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
     String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String EnsembleID = __EnsembleID_JComboBox.getSelected();
+	String NewAlias = __NewAlias_JTextField.getText().trim();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
 	__command.setCommandParameter ( "NewEnsembleID", NewEnsembleID );
     __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
 	__command.setCommandParameter ( "EnsembleID", EnsembleID );
+	__command.setCommandParameter ( "NewAlias", NewAlias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 }
 
@@ -177,6 +184,7 @@ protected void finalize ()
 throws Throwable
 {	__NewEnsembleID_JTextField = null;
 	__EnsembleID_JComboBox = null;
+	__NewAlias_JTextField = null;
 	__NewTSID_JTextArea = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
@@ -215,7 +223,7 @@ private void initialize ( JFrame parent, Command command )
         " the Ensemble ID should be used for processing time series." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optionally, specify new time series identifier (TSID)" +
+		"Optionally, specify new time series alias and identifier (TSID)" +
 		" information for the time series in the copy:  location, source, data type, and/or scenario." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -246,6 +254,16 @@ private void initialize ( JFrame parent, Command command )
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series alias:" ), 
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewAlias_JTextField = new JTextField ( "", 20 );
+    __NewAlias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __NewAlias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2008-07-23 Need editor for these format specifiers
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Can use % fields as per graph labels."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID parts:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -341,6 +359,7 @@ private void refresh ()
 {	String NewEnsembleID = "";
     String NewEnsembleName = "";
 	String EnsembleID = "";
+	String NewAlias = "";
 	String NewTSID = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -349,6 +368,7 @@ private void refresh ()
         NewEnsembleID = props.getValue ( "NewEnsembleID" );
         NewEnsembleName = props.getValue ( "NewEnsembleName" );
         EnsembleID = props.getValue ( "EnsembleID" );
+        NewAlias = props.getValue ( "NewAlias" );
 		NewTSID = props.getValue ( "NewTSID" );
 		if ( NewEnsembleID != null ) {
 			__NewEnsembleID_JTextField.setText ( NewEnsembleID );
@@ -373,6 +393,9 @@ private void refresh ()
 				}
 			}
 		}
+        if ( NewAlias != null ) {
+            __NewAlias_JTextField.setText ( NewAlias );
+        }
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
@@ -381,11 +404,13 @@ private void refresh ()
     NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
     NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
+    NewAlias = __NewAlias_JTextField.getText().trim();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "NewEnsembleID=" + NewEnsembleID );
     props.add ( "NewEnsembleName=" + NewEnsembleName );
 	props.add ( "EnsembleID=" + EnsembleID );
+	props.add ( "NewAlias=" + NewAlias );
 	props.add ( "NewTSID=" + NewTSID );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
@@ -425,4 +450,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end copy_JDialog
+}

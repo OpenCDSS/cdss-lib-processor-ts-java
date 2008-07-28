@@ -50,8 +50,12 @@ public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, 
         EnsembleIDs.addElement ( "" );
     }
     choices.setData ( EnsembleIDs );
-    choices.addItemListener ( itemlistener );
-    choices.addKeyListener ( keylistener );
+    if ( itemlistener != null ) {
+        choices.addItemListener ( itemlistener );
+    }
+    if ( keylistener != null ) {
+        choices.getEditor().getEditorComponent().addKeyListener ( keylistener );
+    }
         JGUIUtil.addComponent(panel, choices,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     return y;
@@ -108,8 +112,12 @@ public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyLis
         tsids.addElement ( "*" );
     }
     choices.setData ( tsids );
-    choices.addItemListener ( itemlistener );
-    choices.addKeyListener ( keylistener );
+    if ( itemlistener != null ) {
+        choices.addItemListener ( itemlistener );
+    }
+    if ( keylistener != null ) {
+        choices.getEditor().getEditorComponent().addKeyListener ( keylistener );
+    }
     JGUIUtil.addComponent(panel, choices,
     1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     return y;

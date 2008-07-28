@@ -646,6 +646,9 @@ public Object getPropContents ( String prop ) throws Exception
     else if ( prop.equalsIgnoreCase("TableResultsList") ) {
         return getPropContents_TableResultsList();
     }
+    else if ( prop.equalsIgnoreCase("TSEnsembleResultsListSize") ) {
+        return getPropContents_TSEnsembleResultsListSize();
+    }
 	else if ( prop.equalsIgnoreCase("TSProductAnnotationProviderList") ) {
 		return getPropContents_TSProductAnnotationProviderList();
 	}
@@ -878,6 +881,15 @@ private List getPropContents_TableResultsList()
 }
 
 /**
+Handle the TSEnsembleResultsListSize property request.
+@return Size of the time series ensemble results list, as an Integer.
+*/
+private Integer getPropContents_TSEnsembleResultsListSize()
+{
+    return new Integer( __TSEnsemble_Vector.size());
+}
+
+/**
 Handle the TSProductAnnotationProviderList property request.
 @return The time series product annotation provider list,
 as a Vector of TSProductAnnotationProvider.
@@ -950,6 +962,7 @@ public Collection getPropertyNameList()
 	v.addElement ( "OutputStart" );
 	v.addElement ( "OutputEnd" );
     v.addElement ( "OutputYearType" );
+    v.addElement ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
     v.addElement ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
     v.addElement ( "WarningLevelLogFile" );
     v.addElement ( "WarningLevelScreen" );
@@ -1924,7 +1937,7 @@ throws Exception
 	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
-	Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );
+	//Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );
 	results.setUsingObject("TSToProcessList", (Vector)(tslist.elementAt(0)) );
 	results.setUsingObject("Indices", (int [])(tslist.elementAt(1)) );
 	return bean;
@@ -2235,7 +2248,8 @@ Process the RemoveTimeSeriesFromResultsList request.
 private CommandProcessorRequestResultsBean processRequest_RemoveTimeSeriesFromResultsList (
         String request, PropList request_params )
 throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+{   String routine = "TSCommandProcessor.processRequest_RemoveTimeSeriesFromResultsList";
+    TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters...
     Object o = request_params.getContents ( "Index" );
     if ( o == null ) {
@@ -2245,7 +2259,27 @@ throws Exception
             throw new RequestParameterNotFoundException ( warning );
     }
     Integer Index = (Integer)o;
+    o = request_params.getContents ( "FreeEnsembleIfEmpty" );
+    Boolean FreeEnsembleIfEmpty_Boolean = null;
+    if ( o != null ) {
+        FreeEnsembleIfEmpty_Boolean = (Boolean)o;
+    }
+    // Get the time series that will be removed
+    TS ts = __tsengine.getTimeSeries(Index.intValue());
+    // Remove the time series.
     __tsengine.removeTimeSeries ( Index.intValue() );
+    // Remove the time series from ensembles and remove ensembles if empty.
+    for ( int i = 0; i < __TSEnsemble_Vector.size(); i++ ) {
+        TSEnsemble ensemble = (TSEnsemble)__TSEnsemble_Vector.elementAt(i);
+        if ( ensemble.remove ( ts ) ) {
+            // Time series was in the ensemble
+            // Also remove empty ensembles
+            if ( FreeEnsembleIfEmpty_Boolean.booleanValue() && (ensemble.size() == 0) ) {
+                Message.printStatus(2, routine, "Ensemble is empty, removing." );
+                __TSEnsemble_Vector.removeElementAt(i);
+            }
+        }
+    }
     return bean;
 }
 

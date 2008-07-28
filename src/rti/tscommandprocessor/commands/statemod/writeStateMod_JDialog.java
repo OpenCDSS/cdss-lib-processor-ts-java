@@ -428,9 +428,6 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-	refresh ();
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -438,8 +435,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
+		// Add the button to allow conversion to/from relative path...
 		__path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
 	}

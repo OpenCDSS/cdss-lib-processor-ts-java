@@ -363,9 +363,6 @@ private void initialize(JFrame parent, Command command) {
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-	refresh ();
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -388,13 +385,15 @@ private void initialize(JFrame parent, Command command) {
 	else {
 		setTitle("Edit ReadDateValue() Command");
 	}
+	
+	// Refresh the contents...
+    refresh ();
 
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-//	refresh();	// Sets the __path_JButton status
+    pack();
+    JGUIUtil.center( this );
 	refreshPathControl();	// Sets the __path_JButton status
-        super.setVisible( true );
+    super.setVisible( true );
 }
 
 /**

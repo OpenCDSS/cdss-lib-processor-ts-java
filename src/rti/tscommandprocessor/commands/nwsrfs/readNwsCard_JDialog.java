@@ -150,7 +150,7 @@ public void actionPerformed( ActionEvent event )
 		if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
 			__InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals( "Remove Working Directory") ) {
+		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
 			try {
                 __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,	__InputFile_JTextField.getText() ) );
 			}
@@ -439,7 +439,7 @@ private void initialize(JFrame parent, Command command) {
 
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( "Remove Working Directory", this);
+		__path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
 		button_JPanel.add ( __path_JButton );
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", this);

@@ -435,10 +435,6 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-    checkGUIState();
-	refresh ();
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -459,6 +455,8 @@ private void initialize ( JFrame parent, Command command )
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
+    // Refresh the contents...
+    checkGUIState();
 	refresh();	// Sets the __path_JButton status
     super.setVisible( true );
 }

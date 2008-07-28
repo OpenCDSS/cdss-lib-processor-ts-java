@@ -57,6 +57,9 @@ import RTi.Util.Message.Message;
 public class startLog_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
+private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+
 private SimpleJButton	__cancel_JButton = null,	// Cancel Button
 			__browse_JButton = null,	// Browse Button
 			__ok_JButton = null,		// Ok Button
@@ -136,11 +139,11 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if ( __path_JButton.getText().equals( "Add Working Directory") ) {
+		if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
 			__LogFile_JTextField.setText (
 			        IOUtil.toAbsolutePath(__working_dir, __LogFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals( "Remove Working Directory") ) {
+		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
 			try {
 			    __LogFile_JTextField.setText (
 				IOUtil.toRelativePath ( __working_dir, __LogFile_JTextField.getText() ) );
@@ -310,10 +313,7 @@ private void initialize ( JFrame parent, Command command )
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-	// Refresh the contents...
-	refresh ();
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -324,12 +324,15 @@ private void initialize ( JFrame parent, Command command )
 	if ( __working_dir != null ) {
 		// Add the button to allow conversion to/from relative path...
 		button_JPanel.add ( __path_JButton = new SimpleJButton(
-			"Remove Working Directory", "Remove Working Directory", this) );
+			__RemoveWorkingDirectory, __RemoveWorkingDirectory, this) );
 	}
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	
+	// Refresh the contents...
+    refresh ();
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
@@ -414,9 +417,10 @@ private void refresh ()
 		__path_JButton.setEnabled ( true );
 		File f = new File ( LogFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText ( "Remove Working Directory" );
+			__path_JButton.setText ( __RemoveWorkingDirectory );
 		}
-		else {	__path_JButton.setText ( "Add Working Directory" );
+		else {
+		    __path_JButton.setText ( __AddWorkingDirectory );
 		}
 	}
 }

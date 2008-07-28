@@ -4473,7 +4473,7 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
 		}
 		v.setElementAt ( tspos2, 1 );
 	}
-	Message.printStatus( 2, "", tslist.toString() );
+	//Message.printStatus( 2, routine, tslist.toString() );
 	return v;
 }
 

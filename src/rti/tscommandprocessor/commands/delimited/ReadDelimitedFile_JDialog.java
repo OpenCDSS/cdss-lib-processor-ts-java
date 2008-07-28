@@ -680,7 +680,6 @@ private void initialize(JFrame parent, Command command) {
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
-//	refresh();	// Sets the __path_JButton status
 	refreshPathControl();	// Sets the __path_JButton status
     super.setVisible( true );
 }

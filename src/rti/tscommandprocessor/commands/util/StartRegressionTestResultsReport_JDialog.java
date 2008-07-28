@@ -30,8 +30,6 @@ import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 //import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -199,30 +197,6 @@ throws Throwable
 }
 
 /**
-Get the working directory for a command (e.g., for editing).
-@param processor the TSCommandProcessor to use to get data.
-@param command Command for which to get the working directory.
-@return The working directory in effect for a command.
-*/
-private String getWorkingDirForCommand ( CommandProcessor processor, Command command )
-{	String routine = getClass().getName() + ".getWorkingDirForCommand";
-	PropList request_params = new PropList ( "" );
-	request_params.setUsingObject ( "Command", command );
-	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetWorkingDirForCommand", request_params );
-		return bean.getResultsPropList().getValue("WorkingDir");
-	}
-	catch ( Exception e ) {
-		String message = "Error requesting GetWorkingDirForCommand(Command=\"" + command +
-		"\" from processor).";
-		Message.printWarning(3, routine, e);
-		Message.printWarning(3, routine, message );
-	}
-	return null;
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -305,9 +279,6 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-	refresh ();
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -324,6 +295,9 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	
+	// Refresh the contents...
+    refresh ();
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
@@ -360,8 +334,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "StartRegressionTestResultsReport_JDialog.refresh";
-	String OutputFile = "";
+{	String OutputFile = "";
     //String Suffix = "";
     PropList parameters = null;
 	if ( __first_time ) {
@@ -395,7 +368,6 @@ private void refresh ()
 	// information that has not been committed in the command.
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	//Suffix = __Suffix_JComboBox.getSelected();
-	PropList props = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
 	//parameters.add ( "Suffix=" + Suffix );
 	__command_JTextArea.setText( __command.toString(parameters) );

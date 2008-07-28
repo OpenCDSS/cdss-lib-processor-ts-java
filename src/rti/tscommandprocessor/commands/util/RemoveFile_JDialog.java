@@ -247,9 +247,6 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-	refresh ();
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -265,6 +262,9 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() command" );
+	
+	// Refresh the contents...
+    refresh ();
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );

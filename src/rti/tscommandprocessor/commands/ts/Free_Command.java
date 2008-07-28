@@ -31,6 +31,12 @@ This class initializes, checks, and runs the Free() command.
 */
 public class Free_Command extends AbstractCommand implements Command
 {
+    
+/**
+ * Values for FreeEnsembleIfEmpty.
+ */
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 TSPosition data, zero offset indices
@@ -57,6 +63,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TSPosition = parameters.getValue ( "TSPosition" );
+    String FreeEnsembleIfEmpty = parameters.getValue ( "FreeEnsembleIfEmpty" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -115,6 +122,19 @@ throws InvalidCommandParameterException
                     __TSPositionStart[i] + "," + __TSPositionEnd[i] );
         }
     }
+    
+    if ( (FreeEnsembleIfEmpty != null) && !FreeEnsembleIfEmpty.equals("") ) {
+        if (    !FreeEnsembleIfEmpty.equals(_False) &&
+            !FreeEnsembleIfEmpty.equals(_True) ) {
+            message = "The FreeEnsembleIfEmpty parameter \"" + FreeEnsembleIfEmpty + "\" must be " +
+            _False + " or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify " + _False + " or " + _True + " (or use blank to use default of " +
+                            _True + ")." ) );
+        }
+    }
 	
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
@@ -122,6 +142,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "TSPosition" );
+    valid_Vector.add ( "FreeEnsembleIfEmpty" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -188,9 +209,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Remove a time series at the indicated index.
+@param FreeEnsembleIfEmpty Indicate whether ensembles should be freed if empty (True or False).
 */
 private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
-        Object o_Index, CommandStatus status,
+        Object o_Index, String FreeEnsembleIfEmpty, CommandStatus status,
         int warning_count, int warning_level, String command_tag )
 {   String message;
     String routine = getClass().getName() + ".removeTimeSeriesAtIndex";
@@ -233,14 +255,17 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
     // Now actually remove the time series...
     
     PropList request_params2 = new PropList ( "" );
-    request_params2.set ( "Index", "" + o_Index );
+    request_params2.setUsingObject ( "Index", o_Index );
+    // By here should be True or False
+    Boolean FreeEnsembleIfEmpty_Boolean = new Boolean(FreeEnsembleIfEmpty);
+    request_params2.setUsingObject ( "FreeEnsembleIfEmpty", FreeEnsembleIfEmpty_Boolean );
     try {
-        processor.processRequest( "RemoveTimeSeriesFromResultsList", request_params );
+        processor.processRequest( "RemoveTimeSeriesFromResultsList", request_params2 );
         if ( ts.getAlias().length() > 0 ) {
             // Print alias and identifier...
             Message.printStatus ( 2, routine,
-              "Freed time series resources for \"" + ts.getAlias() + "\" \"" +
-              ts.getIdentifierString() + "\" at [" + o_Index +"]");
+            "Freed time series resources for \"" + ts.getAlias() + "\" \"" +
+            ts.getIdentifierString() + "\" at [" + o_Index +"]");
         }
         else {  
             // Print only the identifier
@@ -284,6 +309,10 @@ CommandWarningException, CommandException
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
+    String FreeEnsembleIfEmpty = parameters.getValue ( "FreeEnsembleIfEmpty" );
+    if ( (FreeEnsembleIfEmpty == null) || FreeEnsembleIfEmpty.equals("")) {
+        FreeEnsembleIfEmpty = _True;    // Default
+    }
 	
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
@@ -419,8 +448,8 @@ CommandWarningException, CommandException
         // otherwise an infinite loop).
         tsposArray[iposMax] = -1;
         try {
-            int warning_count2 = removeTimeSeriesAtIndex ( processor, TSID, new Integer(tspos), status,
-                    0, warning_level, command_tag );
+            int warning_count2 = removeTimeSeriesAtIndex ( processor, TSID, new Integer(tspos),
+                    FreeEnsembleIfEmpty, status, 0, warning_level, command_tag );
             warning_count += warning_count2;
             if ( warning_count2 == 0 ) {
                 // Able to remove so increment the count of removed and decrement other
@@ -467,6 +496,7 @@ public String toString ( PropList parameters )
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
     String TSPosition = parameters.getValue("TSPosition");
+    String FreeEnsembleIfEmpty = parameters.getValue("FreeEnsembleIfEmpty");
     StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -491,6 +521,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TSPosition=\"" + TSPosition + "\"" );
+    }
+    if ( (FreeEnsembleIfEmpty != null) && (FreeEnsembleIfEmpty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FreeEnsembleIfEmpty=" + FreeEnsembleIfEmpty );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

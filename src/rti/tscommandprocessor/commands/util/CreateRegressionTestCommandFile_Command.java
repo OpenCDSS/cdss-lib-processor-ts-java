@@ -24,9 +24,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -113,6 +111,8 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "FilenamePattern" );
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Append" );
+	valid_Vector.add ( "IncludeTestSuite" );
+	valid_Vector.add ( "IncludeOS" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
@@ -183,35 +183,136 @@ public List getGeneratedFileList ()
     return list;
 }
 
+// FIXME SAM 2008-07-31 Should separate out this method from the checks for tags to simplify logic of each
 /**
 Visits all files and directories under the given directory and if
 the file matches a valid commands file it is added to the test list.
 All commands file that end with ".<product_name>" will be added to the list.
-@param dir Folder in which to start searching for command files.
+@param commandFileVector List of command files that are matched, to be appended to.
+@param path Folder in which to start searching for command files.
 @param pattern Pattern to match when searching files, for example "test*.TSTool".
+@param includedTestSuites the test suites for test cases that
+should be included, indicated by "@testSuite ABC" tags in the comments of command files.
+@param includedOS the operating systems for test cases that
+should be included, indicated by "@os Windows" and "@os UNIX" tags in the
+comments of command files.
 @throws IOException 
  */
-private void getMatchingFilenamesInTree ( Vector commands_file_Vector, File path, String pattern ) 
+private void getMatchingFilenamesInTree ( Vector commandFileVector, File path, String pattern,
+        String[] includedTestSuites, String[] includedOS ) 
 throws IOException
-{
+{   String routine = getClass().getName() + ".getMatchingFilenamesInTree";
+    // Determine if UNIX and Windows tests have been requested
+    // Check the OS only if the specific  
+    boolean needToCheckForUnixOS = false;
+    boolean needToCheckForWindowsOS = false;
+    for ( int i = 0; i < includedOS.length; i++ ) {
+        if ( includedOS[i].equalsIgnoreCase("UNIX") ) {
+            needToCheckForUnixOS = true;
+            Message.printStatus ( 2, routine, "Will only include tests that are for UNIX." );
+        }
+    }
+    for ( int i = 0; i < includedOS.length; i++ ) {
+        if ( includedOS[i].equalsIgnoreCase("Windows") ) {
+            needToCheckForWindowsOS = true;
+            Message.printStatus ( 2, routine, "Will only include tests that are for Windows." );
+        }
+    }
     if (path.isDirectory()) {
         String[] children = path.list();
         for (int i = 0; i < children.length; i++) 
         {
         	// Recursively call with full path using the directory and child name.
-        	getMatchingFilenamesInTree(commands_file_Vector,new File(path,children[i]), pattern);
+        	getMatchingFilenamesInTree(commandFileVector,new File(path,children[i]), pattern,
+        	        includedTestSuites, includedOS );
         }
     }
     else {
-        //add to list if commands file is valid
-    	Message.printStatus(2, "", "Checking path \"" + path.getName() + "\" against \"" + pattern + "\"" );
+        //add to list if command file is valid
+        String pathName = path.getName();
+    	Message.printStatus(2, "", "Checking path \"" + pathName + "\" against \"" + pattern + "\"" );
     	// Do comparison on file name without directory.
-        if( path.getName().matches( pattern )
+        if( pathName.matches( pattern )
         		// FIXME SAM 2007-10-15 Need to enable something like the following to make more robust
         		//&& isValidCommandsFile( dir )
         		) {
         	Message.printStatus(2, "", "File matched." );
-           commands_file_Vector.add(path.toString());
+        	// Exclude the command file if tag in the file indicates that it is not compatible with
+        	// this command's parameters.
+        	boolean doAddForOS = false;
+        	List tagValues = TSCommandProcessorUtil.getTagValues ( path.toString(), "os" );
+        	if ( !needToCheckForUnixOS && !needToCheckForWindowsOS ) {
+        	    // Not checking for OS so go ahead and add
+        	    doAddForOS = true;
+        	}
+        	if ( !doAddForOS && needToCheckForUnixOS ) {
+                boolean tagHasUNIX = false;
+        	    // os tag needs to be blank or include "UNIX"
+        	    for ( int ivalue = 0; ivalue < tagValues.size(); ivalue++ ) {
+        	        Object o = tagValues.get(ivalue);
+        	        if ( o instanceof String ) {
+        	            String s = (String)o;
+        	            if ( s.toUpperCase().matches("UNIX") ) {
+        	                tagHasUNIX = true;
+        	            }
+        	        }
+        	    }
+                if ( (tagValues.size() == 0) || tagHasUNIX ) {
+                    // Test is not OS-specific or test is for UNIX so include for UNIX
+                    doAddForOS = true;
+                }
+         	}
+        	if ( !doAddForOS && needToCheckForWindowsOS ) {
+                boolean tagHasWindows = false;
+                // os tag needs to be blank or include "Windows"
+                for ( int ivalue = 0; ivalue < tagValues.size(); ivalue++ ) {
+                    Object o = tagValues.get(ivalue);
+                    if ( o instanceof String ) {
+                        String s = (String)o;
+                        if ( s.toUpperCase().matches("WINDOWS") ) {
+                            tagHasWindows = true;
+                        }
+                    }
+                }
+                if ( (tagValues.size() == 0) || tagHasWindows ) {
+                    // Test is not OS-specific or test is for Windows so include for Windows
+                    doAddForOS = true;
+                }
+        	}
+        	// Check to see if the test suite has been specified and matches that in the file
+        	boolean doAddForTestSuite = false;
+        	if ( includedTestSuites.length == 0 ) {
+        	    doAddForTestSuite = true;
+        	}
+        	else {
+        	    // Check to see if the test suites in the test match the requested test suites
+        	    List tagValues2 = TSCommandProcessorUtil.getTagValues ( path.toString(), "testSuite" );
+        	    if ( tagValues2.size() == 0 ) {
+        	        // Test case is not specified to belong to a specific suite so it is always included
+        	        doAddForTestSuite = true;
+        	    }
+        	    else {
+        	        // Check each value in the file against requested test suites
+        	        for ( int i = 0; i < tagValues2.size(); i++ ) {
+        	            if ( !(tagValues2.get(i) instanceof String) ) {
+        	                continue;
+        	            }
+        	            for ( int j = 0; j < includedTestSuites.length; j++ ) {
+        	                if ( ((String)tagValues2.get(i)).toUpperCase().matches(includedTestSuites[j]) ) {
+        	                    doAddForTestSuite = true;
+        	                    break;
+        	                }
+        	            }
+        	            if ( doAddForTestSuite ) {
+        	                break;
+        	            }
+        	        }
+        	    }
+        	}
+        	if ( doAddForOS && doAddForTestSuite ) {
+        	    // Test is to be included for the OS and test suite.
+        	    commandFileVector.add(path.toString());
+        	}
         }
     }
 }
@@ -224,40 +325,7 @@ private File getOutputFile ()
     return __OutputFile_File;
 }
 
-/**
-Parse the command string into a PropList of parameters.
-@param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
-*/
-public void parseCommand ( String command )
-throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	int warning_level = 2;
-	String routine = getClass().getName() + ".parseCommand", message;
-
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
-
-	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
-		message = "Invalid syntax for \"" + command + "\".  Not enough tokens.";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	// Get the input needed to process the command...
-	if ( tokens.size() > 1 ) {
-		try {
-		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," ) );
-		}
-		catch ( Exception e ) {
-			message = "Syntax error in \"" + command + "\".  Not enough tokens.";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-	}
-}
+// Use the base class parse()
 
 /**
 Run the command.
@@ -297,6 +365,17 @@ CommandWarningException, CommandException
 	if ( (Append != null) && Append.equalsIgnoreCase(_False)){
 		Append_boolean = false;
 	}
+	String IncludeTestSuite = parameters.getValue ( "IncludeTestSuite" );
+	if ( (IncludeTestSuite == null) || IncludeTestSuite.equals("") ) {
+	    IncludeTestSuite = "*"; // Include all test suites
+	}
+	String IncludeOS = parameters.getValue ( "IncludeOS" );
+    if ( (IncludeOS == null) || IncludeOS.equals("") ) {
+        IncludeOS = "*"; // Include all OS
+    }
+    // Get Java regular expression pattern to match
+    String IncludeTestSuitePattern = StringUtil.replaceString(IncludeTestSuite,"*",".*");
+    String IncludeOSPattern = StringUtil.replaceString(IncludeOS,"*",".*");
 
 	String SearchFolder_full = IOUtil.verifyPathForOS ( IOUtil.toAbsolutePath(
             TSCommandProcessorUtil.getWorkingDir(processor), SearchFolder ) );
@@ -335,7 +414,12 @@ CommandWarningException, CommandException
 	try {
 	    // Get the list of files to run as test cases...
         Vector files = new Vector();
-        getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java );
+        String [] includedTestSuitePatterns = new String[0];
+        includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
+        String [] includedOSPatterns = new String[0];
+        includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",0));
+        getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java,
+                includedTestSuitePatterns, includedOSPatterns );
         int size = files.size();
 		// Open the output file...
 		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, Append_boolean));
@@ -345,19 +429,31 @@ CommandWarningException, CommandException
 		out.println ( "#" );
 		out.println ( "# The following " + size + " test cases will be run to compare results with expected results.");
 		out.println ( "# Individual log files are generally created for each test.");
+		if ( IncludeTestSuite.equals("") ) {
+		    out.println ( "# All test cases will be included.");
+		}
+		else {
+		    out.println ( "# The following test suites from @testSuite comments are included: " + IncludeTestSuite );
+		}
+        if ( IncludeOS.equals("") ) {
+            out.println ( "# Test cases for all operating systems will be included.");
+        }
+        else {
+            out.println ( "# Test cases for @os comments are included: " + IncludeOS );
+        }
         // FIXME SAM 2007-11-20 Disable this for now because it might interfere with the
         // individual logs for each command file regression test
 		// Open a log file for the runner...
 		out.println ( "StartRegressionTestResultsReport(OutputFile=\"" + OutputFile_full_File.getName() + ".out.txt\")");
 		//out.println ( "StartLog(LogFile=\"" + OutputFile_full_File.getName() + ".log\")");
 		// Find the list of matching files...
-		String commands_file_to_run;
+		String commandFileToRun;
 		for ( int i = 0; i < size; i++ ) {
 			// The command files to run are relative to the commands file being created.
-			commands_file_to_run = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.elementAt(i) );
+			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.elementAt(i) );
 			// Determine if the command file has @expectedStatus in it.  If so, define an ExpectedStatus
 			// parameter for the command.
-			out.println ( "RunCommands(InputFile=\"" + commands_file_to_run + "\"" +
+			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +
 			        determineExpectedStatusParameter ( (String)files.elementAt(i) ) + ")");
 		}
 		out.close();
@@ -365,14 +461,14 @@ CommandWarningException, CommandException
         setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
-		message = "Error creating regression commands file \"" + OutputFile_full + "\" (" + e + ").";
+		message = "Unexpected error creating regression command file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-					"Unknown error creating regression test commands file.", "See the log file for details."));
+					message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
     
@@ -398,6 +494,8 @@ public String toString ( PropList parameters )
 	String FilenamePattern = parameters.getValue("FilenamePattern");
 	String OutputFile = parameters.getValue("OutputFile");
 	String Append = parameters.getValue("Append");
+	String IncludeTestSuite = parameters.getValue("IncludeTestSuite");
+	String IncludeOS = parameters.getValue("IncludeOS");
 	StringBuffer b = new StringBuffer ();
 	if ( (SearchFolder != null) && (SearchFolder.length() > 0) ) {
 		b.append ( "SearchFolder=\"" + SearchFolder + "\"" );
@@ -420,6 +518,18 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "Append=" + Append );
 	}
+    if ( (IncludeTestSuite != null) && (IncludeTestSuite.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeTestSuite=\"" + IncludeTestSuite + "\"" );
+    }
+    if ( (IncludeOS != null) && (IncludeOS.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IncludeOS=\"" + IncludeOS + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

@@ -649,6 +649,7 @@ import java.io.PrintWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 // Code that will be used when service code is fully implemented...
@@ -2987,110 +2988,6 @@ throws Exception
 }
 
 /**
-Execute the setAutoExtendPeriod() command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setAutoExtendPeriod ( String command )
-throws Exception
-{	String routine = "TSEngine.do_setAutoExtendPeriod";
-	Vector tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || (tokens.size() != 2) ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	// Parse the flag...
-	String toggle = ((String)tokens.elementAt(1)).trim();
-	if ( toggle.equalsIgnoreCase("True") ) {
-		setAutoExtendPeriod ( true );
-		Message.printStatus ( 1, routine, "TS period will automatically be extended to the output period." );
-	}
-	else if ( toggle.equalsIgnoreCase("False") ) {
-		setAutoExtendPeriod ( false );
-		Message.printStatus ( 1, routine, "TS period will NOT automatically be extended to the output period." );
-	}
-	else {
-	    throw new Exception ( "Unrecognized value \"" +toggle+"\" (expecting true or false)");
-	}
-	tokens = null;
-	toggle = null;
-}
-
-/**
-Execute the new setAveragePeriod() or old -averageperiod command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setAveragePeriod ( String command )
-throws Exception
-{	Vector	tokens = null;
-	String	date1_string = null, date2_string = null;
-	DateTime	averaging_date1 = null, averaging_date2 = null;
-	if ( command.regionMatches( true,0,"setAveragePeriod",0,16) ) {
-		// New syntax...
-		tokens = StringUtil.breakStringList ( command, " (,)", StringUtil.DELIM_SKIP_BLANKS );
-	}
-	else if ( command.regionMatches(true,0,"-averageperiod",0,14) ) {
-		// Old syntax...
-		tokens = StringUtil.breakStringList ( command, " ", StringUtil.DELIM_SKIP_BLANKS );
-	}
-	if ( (tokens == null) || (tokens.size() != 3) ) {
-		tokens = null;
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	date1_string = ((String)tokens.elementAt(1)).trim();
-	date2_string = ((String)tokens.elementAt(2)).trim();
-	// Parse the dates.  They may be named dates......
-	// Need to figure out how this impacts averaging, etc.
-	if ( !date1_string.equals("*") && !date1_string.equals("")) {
-		// Try getting a named date/time...
-		averaging_date1=(DateTime)__datetime_Hashtable.get(date1_string);
-		if ( averaging_date1 == null ) {
-			// Need to parse the string...
-			try {
-			    averaging_date1 = DateTime.parse(date1_string);
-			}
-			catch ( Exception e ) {
-				throw new Exception ( "Error processing start date for \"" + command + "\"." );
-			}
-		}
-	}
-	if ( !date2_string.equals("*") && !date1_string.equals("") ) {
-		averaging_date2=(DateTime)__datetime_Hashtable.get(date2_string);
-		if ( averaging_date2 == null ) {
-			// Need to parse the string...
-			try {
-			    averaging_date2 = DateTime.parse(date2_string);
-			}
-			catch ( Exception e ) {
-				throw new Exception ( "Error processing end date for \"" + command+	"\"." );
-			}
-		}
-	}
-	// If we have gotten to here, then we have dates that can be set (using
-	// strings, which is a little awkward)...
-	if ( date1_string.equals("*") || date1_string.equals("") ) {
-		setAverageStart (null);
-	}
-	else {
-        setAverageStart ( new DateTime ( averaging_date1 ) );
-	}
-	if ( date2_string.equals("*") || date2_string.equals("") ) {
-		setAverageEnd ( null );
-	}
-	else {
-        setAverageEnd ( new DateTime ( averaging_date2 ) );
-	}
-	Message.printStatus ( 2, "TSEngine.do_SetAveragePeriod",
-		"Average period set to " + getAverageStart() + " to " + getAverageEnd() );
-	// Clean up...
-	tokens = null;
-	date1_string = null;
-	date2_string = null;
-	averaging_date1 = null;
-	averaging_date2 = null;
-}
-
-/**
 Execute the setDataValue() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -3344,64 +3241,6 @@ throws Exception
 }
 
 /**
-Execute the new setWorkingDir() command.
-@param command Command to parse.
-@param app_PropList properties from an application.  If not null, the working
-directory will be set in the "WorkingDir" property.
-@exception Exception if there is an error.
-*/
-private void do_setWorkingDir ( String command, PropList app_PropList )
-throws Exception
-{	Vector tokens = StringUtil.breakStringList ( command,
-			" (,)", StringUtil.DELIM_SKIP_BLANKS |
-			StringUtil.DELIM_ALLOW_STRINGS );
-	String routine = "TSEngine.setWorkingDir";
-	if ( tokens.size() < 2 ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	// Parse the directory and mode...
-	String dir = ((String)tokens.elementAt(1)).trim();
-	String type = "GUIAndBatch";
-	if ( tokens.size() == 3 ) {
-		// Type is specified ...
-		type = ((String)tokens.elementAt(2)).trim();
-	}
-	if (	!type.equalsIgnoreCase("BatchOnly") &&
-		!type.equalsIgnoreCase("GUIOnly") &&
-		!type.equalsIgnoreCase("GUIAndBatch") ) {
-		String message = "Unrecognized value \"" + type +
-		"\" (expecting GUIOnly or GUIAndBatch)";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if (	(!IOUtil.isBatch() && type.equalsIgnoreCase("GUIOnly")) ||
-		(IOUtil.isBatch() && type.equalsIgnoreCase("BatchOnly")) ||
-		type.equalsIgnoreCase("GUIAndBatch") ) {
-		// Set the working directory...
-		// TODO SAM 2007-08-22 Currently does not allow adjustments to the
-		// path - only absolute resets.
-		if ( IOUtil.fileExists(dir) ) {
-			// TODO SAM 2007-08-22 Evaluate the ramifications of this
-			// being application-wide vs. just the processor instance.
-			IOUtil.setProgramWorkingDir(dir);
-            __ts_processor.setWorkingDir(dir);
-			if ( app_PropList != null ) {
-				app_PropList.set ( "WorkingDir", dir );
-			}
-			Message.printStatus ( 1, routine, "Setting working directory to \"" + dir + "\"" );
-		}
-		else {
-		    String message = "Working directory \"" + dir +	"\" does not exist.  Not setting.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-	}
-	tokens = null;
-	dir = null;
-	type = null;
-}
-
-/**
 Execute the stateModMax() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -3652,7 +3491,7 @@ in the comments.  IOUtil.printCreatorHeader will automatically include the
 commands if a commands file has been set but is probably better to move
 to a case where the commands are passed to the write methods.
 */
-protected String [] formatOutputHeaderComments ( Vector commands )
+protected String [] formatOutputHeaderComments ( List commands )
 {	Vector comments = new Vector();
 	// Commands.  Show the file name but all commands may be in memory.
 	comments.addElement (
@@ -3667,7 +3506,7 @@ protected String [] formatOutputHeaderComments ( Vector commands )
 	comments.addElement ( "Commands: " );
 	int size_commands = commands.size();
 	for ( int i = 0; i < size_commands; i++ ) {
-		comments.addElement ( ((Command)commands.elementAt(i)).toString() );
+		comments.add ( ((Command)commands.get(i)).toString() );
 	}
 	// Save information about data sources.
 	HydroBaseDMI hbdmi = null;
@@ -4862,7 +4701,7 @@ Process a list of time series commands, resulting in a vector of time series
 saved in memory and can be output using the processTimeSeries() method).
 <b>Filling with historic averages is handled for monthly time series
 so that original data averages are used.</b>
-@param command_Vector The Vector of Command from the TSCommandProcessor,
+@param commandList The Vector of Command from the TSCommandProcessor,
 to be processed.  If null, process all.  Non-null is typically only used, for example,
 if a user has selected commands in a GUI.
 @param app_PropList if not null, then properties are set as the commands are
@@ -4900,15 +4739,15 @@ processing.
 
 </table>
 */
-protected void processCommands ( Vector command_Vector,	PropList app_PropList )
+protected void processCommands ( List commandList,	PropList app_PropList )
 throws Exception
 {	String	message, routine = "TSEngine.processTimeSeriesCommands";
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
-	if ( command_Vector == null ) {
+	if ( commandList == null ) {
 		// Process all commands if a subset has not been provided.
-		command_Vector = __ts_processor.getCommands();
+		commandList = __ts_processor.getCommands();
 	}
 	
 	// Save the passed in properties (formed in the TSCommandProcessor) request
@@ -4935,10 +4774,13 @@ throws Exception
 	String InitialWorkingDir = __processor_PropList.getValue ( "InitialWorkingDir" );
 	*/
 	String InitialWorkingDir = __ts_processor.getInitialWorkingDir();
+	// FIXME SAM 2008-07-31 Remove redundant location of properties
 	if ( InitialWorkingDir != null ) {
+	    __processor_PropList.set ( "InitialWorkingDir", InitialWorkingDir );
 		__processor_PropList.set ( "WorkingDir", InitialWorkingDir );
+	    __ts_processor.setPropContents ( "WorkingDir", InitialWorkingDir );
 	}
-	Message.printStatus(2, routine,"InitialWorkingDir=" + __processor_PropList.getValue("WorkingDir"));
+	Message.printStatus(2, routine,"InitialWorkingDir=" + __processor_PropList.getValue("InitialWorkingDir"));
 	
 	// Indicate whether output products/files should be created, or
 	// just time series (to allow interactive graphing).
@@ -4975,7 +4817,7 @@ throws Exception
 	Message.printStatus(2, routine,"Recursive=" + __processor_PropList.getValue("Recursive") +
 			" => " + Recursive_boolean );
 
-	int size = command_Vector.size();
+	int size = commandList.size();
 	Message.printStatus ( 1, routine, "Processing " + size + " commands..." );
 	StopWatch stopwatch = new StopWatch();
 	stopwatch.start();
@@ -4998,7 +4840,7 @@ throws Exception
 	for ( int i = 0; i < size; i++ ) {
 		ts = null;	// Initialize each time to allow for checks below.
 		tokens = null;
-		command = (Command)command_Vector.elementAt(i);
+		command = (Command)commandList.get(i);
 		command_String = command.toString();
 		if ( command_String == null ) {
 			continue;
@@ -5109,12 +4951,13 @@ throws Exception
 			__ts_processor.notifyCommandProcessorListenersOfCommandCancelled (	i, size, command );
 			return;
 		}
-		try {	// Catch errors in all the expressions.
+		try {
+		    // Catch errors in all the expressions.
 			// Do not indent the body inside the try!
 		ts = null;
 		ts_action = NONE;
 		//expression = (String)tsexpression_list.elementAt(i);
-		command = (Command)command_Vector.elementAt(i);
+		command = (Command)commandList.get(i);
 		command_String = command.toString();
 		if ( command_String == null ) {
 			continue;
@@ -5524,17 +5367,6 @@ throws Exception
 			date1 = null;
 			date2 = null;
 		}
-		else if ( command_String.regionMatches(	true,0,"setAutoExtendPeriod",0,19) ) {
-			// Set the _auto_exend_period flag...
-			do_setAutoExtendPeriod ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches( true,0,"setAveragePeriod",0,16) ) {
-			// Set the averaging period (_averaging_date1 and
-			// _averaging_date2)...
-			do_setAveragePeriod ( command_String );
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"setDataValue",0,12)){
 			// Set a single value in the time series...
 			do_setDataValue ( command_String );
@@ -5557,10 +5389,6 @@ throws Exception
 		else if(command_String.regionMatches(true,0,"setPatternFile",0,14)){
 			// Support old and new...
 			do_setPatternFile ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setWorkingDir", 0,13) ) {
-			do_setWorkingDir ( command_String, app_PropList );
 			continue;
 		}
         // FIXME SAM 2008-01-04 Is this command even supported/documented?
@@ -5841,7 +5669,7 @@ throws Exception
 				continue;
 			}
 			do_writeStateCU ( command_tag, command_String,
-					formatOutputHeaderComments(command_Vector), (GenericCommand)command );
+					formatOutputHeaderComments(commandList), (GenericCommand)command );
 			// No action needed at end...
 			continue;
 		}
@@ -6153,7 +5981,7 @@ throws Exception
 		Message.setPropValue ( "WarningDialogViewLogButton=true" );
 		ml = 1;
 	}
-	CommandStatusType max_severity = CommandStatusProviderUtil.getHighestSeverity ( command_Vector );
+	CommandStatusType max_severity = CommandStatusProviderUtil.getHighestSeverity ( commandList );
 	if ( (_fatal_error_count > 0) || (error_count > 0) || max_severity.greaterThan(CommandStatusType.WARNING)) {
 
 		if ( IOUtil.isBatch() ) {
@@ -6208,9 +6036,8 @@ throws Exception
 	// Print at level 1 or set in command status because these messages need to be addressed.
 	
 	if (command_String.regionMatches(true,0,"-averageperiod",0,14)){
-		message = "-averageperiod is obsolete.  Automatically using SetAveragePeriod().";
+		message = "-averageperiod is obsolete.";
 		suggest = "Use SetAveragePeriod()";
-		do_setAveragePeriod ( command_String );
 	}
 	else if ( command_String.regionMatches(true,0,"-batch",0,6)) {
 		// Old syntax command.  Leave around because this functionality has never really been implemented but
@@ -8141,10 +7968,11 @@ private StringMonthTS searchForFillPatternTS ( String fill_pattern )
 }
 
 /**
-Set the value of the AutoExtendPeriod property.
+Set the value of the AutoExtendPeriod property.  If true, the period for time series
+will automatically be extended to the output period at read.
 @param AutoExtendPeriod_boolean Value of property.
 */
-private void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean )
+protected void setAutoExtendPeriod ( boolean AutoExtendPeriod_boolean )
 {
     __AutoExtendPeriod_boolean = AutoExtendPeriod_boolean;
 }

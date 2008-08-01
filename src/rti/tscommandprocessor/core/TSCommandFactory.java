@@ -126,6 +126,7 @@ import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 
 // Time-related commands.
 
+import rti.tscommandprocessor.commands.time.SetAveragePeriod_Command;
 import rti.tscommandprocessor.commands.time.SetInputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputPeriod_Command;
 import rti.tscommandprocessor.commands.time.SetOutputYearType_Command;
@@ -166,6 +167,7 @@ import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.RunningAverage_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.SelectTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.SetAutoExtendPeriod_Command;
 import rti.tscommandprocessor.commands.ts.SetConstant_Command;
 import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIncludeMissingTS_Command;
@@ -187,6 +189,7 @@ import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
 import rti.tscommandprocessor.commands.util.SetProperty_Command;
+import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.testCommand_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
@@ -491,6 +494,12 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SelectTimeSeries") ) {
         return new SelectTimeSeries_Command ();
     }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetAutoExtendPeriod") ) {
+        return new SetAutoExtendPeriod_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetAveragePeriod") ) {
+        return new SetAveragePeriod_Command ();
+    }
     // Do a check for the obsolete SetConst() and SetConstantBefore().
     // If encountered, they will be handled as an unknown command.
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetConstant") &&
@@ -536,6 +545,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetWarningLevel") ) {
         return new SetWarningLevel_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetWorkingDir") ) {
+        return new SetWorkingDir_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ShiftTimeByInterval") ) {
         return new ShiftTimeByInterval_Command ();

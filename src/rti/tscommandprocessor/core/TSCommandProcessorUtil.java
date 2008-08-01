@@ -2,6 +2,7 @@ package rti.tscommandprocessor.core;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.StringBuffer;
 import java.util.Collection;
@@ -383,11 +384,11 @@ public static Vector getCommandsBeforeIndex (
 	String needed_command_string;
 	Vector found_commands = new Vector();
 	// Get the commands from the processor
-	Vector commands = processor.getCommands();
+	List commands = processor.getCommands();
 	Command command;
 	// Now loop up through the command list...
 	for ( int ic = (index - 1); ic >= 0; ic-- ) {
-		command = (Command)commands.elementAt(ic);
+		command = (Command)commands.get(ic);
 		for ( int i = 0; i < size; i++ ) {
 			needed_command_string = (String)needed_commands_String_Vector.elementAt(i);
 			//((String)_command_List.getItem(ic)).trim() );
@@ -729,6 +730,63 @@ public static Vector getTableIdentifiersFromCommandsBeforeCommand( TSCommandProc
 }
 
 /**
+Get values for a tag in command comments.  Tags are strings like "@tagName" or "@tagName value"
+(without the quotes).
+@param processor CommandProcessor to evaluate.
+@param tag Tag to search for, without the leading "@".
+@return a list of tag values, which are either Strings for the value or True if the tag has
+no value.  Return an empty list if the tag was not found.
+*/
+public static List getTagValues ( CommandProcessor processor, String tag )
+{
+    Vector tagValues = new Vector();
+    // Loop through the commands and check comments for the special string
+    List commandList = ((TSCommandProcessor)processor).getCommands();
+    int size = commandList.size();
+    Command c;
+    String searchTag = "@" + tag;
+    for ( int i = 0; i < size; i++ ) {
+        c = (Command)commandList.get(i);
+        String commandString = c.toString();
+        if ( !commandString.trim().startsWith("#") ) {
+            continue;
+        }
+        // Check the comment.
+        int pos = StringUtil.indexOfIgnoreCase(commandString,searchTag,0);
+        if ( pos >= 0 ) {
+            Vector parts = StringUtil.breakStringList(
+                commandString.substring(pos)," \t", StringUtil.DELIM_SKIP_BLANKS);
+            if ( parts.size() == 1 ) {
+                // No value to the tag so 
+                tagValues.add ( new Boolean(true) );
+            }
+            else {
+                // Add as a string - note that this value may contain multiple values separated by
+                // commas or some other encoding.  The calling code needs to handle.
+                tagValues.add ( (String)parts.elementAt(1) );
+            }
+        }
+    }
+    return tagValues;
+}
+
+/**
+Get values for a tag in command file comments.  Tags are strings like "@tagName" or "@tagName value"
+(without the quotes).
+@param processor CommandProcessor to evaluate.
+@param tag Tag to search for, without the leading "@".
+@return a list of tag values, which are either Strings for the value or True if the tag has
+no value.  Return an empty list if the tag was not found.
+*/
+public static List getTagValues ( String commandFile, String tag )
+throws IOException, FileNotFoundException
+{
+    TSCommandProcessor processor = new TSCommandProcessor();
+    processor.readCommandFile(commandFile, true, false);
+    return getTagValues ( processor, tag );
+}
+
+/**
 Get a list of identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted and does NOT contain the
 input type or name.
@@ -882,7 +940,8 @@ Get the current working directory for the processor.
 */
 public static String getWorkingDir ( CommandProcessor processor )
 {	String routine = "TSCommandProcessorUtil.getWorkingDir";
-	try {	Object o = processor.getPropContents ( "WorkingDir" );
+	try {
+	    Object o = processor.getPropContents ( "WorkingDir" );
 		if ( o != null ) {
 			return (String)o;
 		}

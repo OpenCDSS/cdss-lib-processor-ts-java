@@ -37,8 +37,7 @@ private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
 						// or Cancel?
 private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button
-						// has been pressed.
+private boolean		__ok = false; // Indicates whether OK button has been pressed.
 
 /**
 SetInputPeriod_JDialog constructor.
@@ -86,7 +85,8 @@ private void checkInput ()
 	if ( InputEnd.length() > 0 ) {
 		props.set ( "InputEnd", InputEnd );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -225,7 +225,7 @@ private void initialize ( JFrame parent, Command command )
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -243,9 +243,9 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**

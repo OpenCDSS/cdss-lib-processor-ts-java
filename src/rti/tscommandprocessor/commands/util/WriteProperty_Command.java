@@ -82,8 +82,12 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {	String working_dir = null;
-		try { Object o = processor.getPropContents ( "WorkingDir" );
+	/* Don't check because ${} properties may be used
+	 * TODO SAM 2008-07-31 Need to enable check in some form.
+	else {
+	    String working_dir = null;
+		try {
+		    Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
 			}
@@ -95,7 +99,8 @@ throws InvalidCommandParameterException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Software error - report problem to support." ) );
 		}
-
+		// Expand for ${} properties...
+		working_dir = TSCommandProcessorUtil.expandParameterValue(processor, this, working_dir);
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, OutputFile));
 			File f = new File ( adjusted_path );
@@ -122,6 +127,7 @@ throws InvalidCommandParameterException
 						message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
+	*/
 		
 	if ( (PropertyName == null) || (PropertyName.length() == 0) ) {
 		message = "A property name must be specified.";
@@ -271,7 +277,8 @@ CommandWarningException, CommandException
 		}
 		// Convert to an absolute path...
 		OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                        TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile) ) );
 		// Open the file...
 		PrintWriter fout = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
 		// Write the output (no output for now since it is mainly for testing)...

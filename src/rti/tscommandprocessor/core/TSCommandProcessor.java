@@ -67,6 +67,7 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.IO.UnrecognizedRequestException;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
 
@@ -350,7 +351,7 @@ public boolean getCancelProcessingRequested ()
 Return the list of commands.
 @return the list of commands.
 */
-public Vector getCommands ()
+public List getCommands ()
 {
 	return __Command_Vector;
 }
@@ -975,6 +976,28 @@ public Collection getPropertyNameList()
 }
 
 /**
+Determine if the commands are read-only.  In this case, applications may disable
+save features.  The special comment "#@readOnly" indicates that the commands are read-only.
+@return true if read-only, false if can be written.
+*/
+public boolean getReadOnly ()
+{   // String that indicates readOnly
+    String readOnlyString = "@readOnly";
+    // Loop through the commands and check comments for the special string
+    int size = size();
+    Command c;
+    for ( int i = 0; i < size; i++ ) {
+        c = (Command)__Command_Vector.elementAt(i);
+        String commandString = c.toString();
+        if ( commandString.trim().startsWith("#") &&
+                (StringUtil.indexOfIgnoreCase(commandString,readOnlyString,0) > 0) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
 Return the TSSupplier name.
 @return the TSSupplier name ("TSEngine").
 */
@@ -983,10 +1006,10 @@ public String getTSSupplierName()
 }
 
 /**
-Return the initial working directory for the processor.
-@return the initial working directory for the processor.
+Return the current working directory for the processor.
+@return the current working directory for the processor.
 */
-public String getWorkingDir ()
+protected String getWorkingDir ()
 {	return __WorkingDir_String;
 }
 
@@ -1991,7 +2014,7 @@ throws Exception
 	int index = indexOf ( command );
 	// Get the setWorkingDir() commands...
 	Vector needed_commands_String_Vector = new Vector();
-	needed_commands_String_Vector.addElement ( "setWorkingDir" );
+	needed_commands_String_Vector.addElement ( "SetWorkingDir" );
 	Vector setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
 			index,
 			this,
@@ -2997,7 +3020,7 @@ Set the name of the commands file where the commands are saved.
 @param filename Name of commands file (should be absolute since
 it will be used in output headers).
 */
-public void setCommandsFileName ( String filename )
+public void setCommandFileName ( String filename )
 {
 	__commands_filename = filename;
 }
@@ -3057,6 +3080,25 @@ interface.  The following properties are handled.
 </tr>
 
 <tr>
+<td><b>AutoExtendPeriod</b></td>
+<td>A Boolean indicating whether time series period should automatically be extended to the
+output period at read.
+</td>
+</tr>
+
+<tr>
+<td><b>AverageEnd</b></td>
+<td>The date/time for the end of the averaging period, as a DateTime.
+</td>
+</tr>
+
+<tr>
+<td><b>AverageStart</b></td>
+<td>The date/time for the start of averaging period, as a DateTime.
+</td>
+</tr>
+
+<tr>
 <td><b>DataTestList</b></td>
 <td>A Vector of DataTest, to be processed when evaluating data.
 </td>
@@ -3065,6 +3107,18 @@ interface.  The following properties are handled.
 <tr>
 <td><b>HydroBaseDMIList</b></td>
 <td>A Vector of open HydroBaseDMI, to be used by other code for reading data.
+</td>
+</tr>
+
+<tr>
+<td><b>IgnoreLEZero</b></td>
+<td>A Boolean indicating whether values <= zero should be included in historical averages.
+</td>
+</tr>
+
+<tr>
+<td><b>IncludeMissingTS</b></td>
+<td>A Boolean indicating whether reading missing time series should be return empty time series.
 </td>
 </tr>
 
@@ -3101,11 +3155,26 @@ This is used when processing a TSProduct in batch mode so that the main
 application can close when the TSView window is closed.</td>
 </tr>
 
+<tr>
+<td><b>WorkingDir</b></td>
+<td>The working directory for the processor (should be an absolute path).
+</td>
+</tr>
+
 </table>
 @exception Exception if there is an error setting the properties.
 */
 public void setPropContents ( String prop, Object contents ) throws Exception
-{	if ( prop.equalsIgnoreCase("DataTestList" ) ) {
+{	if ( prop.equalsIgnoreCase("AutoExtendPeriod" ) ) {
+        __tsengine.setAutoExtendPeriod ( ((Boolean)contents).booleanValue() );
+    }
+    else if ( prop.equalsIgnoreCase("AverageEnd") ) {
+        __tsengine.setAverageEnd ( (DateTime)contents );
+    }
+    else if ( prop.equalsIgnoreCase("AverageStart") ) {
+        __tsengine.setAverageStart ( (DateTime)contents );
+    }
+    else if ( prop.equalsIgnoreCase("DataTestList" ) ) {
 		__tsengine.setDataTestList ( (Vector)contents );
 	}
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList" ) ) {
@@ -3147,6 +3216,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
     else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
         __tsengine.addTSViewWindowListener((WindowListener)contents );
     }
+    else if ( prop.equalsIgnoreCase("WorkingDir") ) {
+        setWorkingDir ( (String)contents );
+    }
 	else {
 	    // Not recognized...
 		String message = "Unable to set data for unknown property \"" + prop + "\".";
@@ -3156,10 +3228,10 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 
 /**
 Set the working directory for the processor.  This is typically set by
-setInitialWorkingDir() and setWorkingDir() commands.
+setInitialWorkingDir() method when initializing the processor and SetWorkingDir() commands.
 @param WorkingDir The current working directory.
 */
-public void setWorkingDir ( String WorkingDir )
+protected void setWorkingDir ( String WorkingDir )
 {
 	__WorkingDir_String = WorkingDir;
 }

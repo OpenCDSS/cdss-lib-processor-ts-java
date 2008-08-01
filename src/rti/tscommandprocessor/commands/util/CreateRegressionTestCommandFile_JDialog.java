@@ -11,7 +11,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -31,7 +30,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -57,7 +55,9 @@ private SimpleJButton	__browseSearchFolder_JButton = null,
 private JTextField	__SearchFolder_JTextField = null;	// Top folder to start search
 private JTextField	__FilenamePattern_JTextField = null;	// Pattern for file names
 private JTextField	__OutputFile_JTextField = null;	// Resulting commands file
-private SimpleJComboBox	__Append_JComboBox =null;
+private SimpleJComboBox	__Append_JComboBox = null;
+private JTextField  __IncludeTestSuite_JTextField = null;
+private JTextField  __IncludeOS_JTextField = null;
 private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private String		__working_dir = null;	// Working directory.
 private boolean		__error_wait = false;
@@ -117,11 +117,10 @@ public void actionPerformed( ActionEvent event )
 		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle( "Select Command File to Create");
 		
@@ -152,13 +151,14 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __pathSearchFolder_JButton ) {
-		if (	__pathSearchFolder_JButton.getText().equals( __AddWorkingDirectorySearchFolder) ) {
+		if ( __pathSearchFolder_JButton.getText().equals( __AddWorkingDirectorySearchFolder) ) {
 			__SearchFolder_JTextField.setText (
 			IOUtil.toAbsolutePath(__working_dir,
 			__SearchFolder_JTextField.getText() ) );
 		}
 		else if ( __pathSearchFolder_JButton.getText().equals( __RemoveWorkingDirectorySearchFolder) ) {
-			try {	__SearchFolder_JTextField.setText (
+			try {
+			    __SearchFolder_JTextField.setText (
 				IOUtil.toRelativePath ( __working_dir,
 				__SearchFolder_JTextField.getText() ) );
 			}
@@ -201,6 +201,8 @@ private void checkInput ()
 	String FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String Append = __Append_JComboBox.getSelected();
+	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
+	String IncludeOS = __IncludeOS_JTextField.getText().trim();
 	__error_wait = false;
 	if ( SearchFolder.length() > 0 ) {
 		props.set ( "SearchFolder", SearchFolder );
@@ -214,6 +216,12 @@ private void checkInput ()
 	if ( Append.length() > 0 ) {
 		props.set ( "Append", Append );
 	}
+    if ( IncludeTestSuite.length() > 0 ) {
+        props.set ( "IncludeTestSuite", IncludeTestSuite );
+    }
+    if ( IncludeOS.length() > 0 ) {
+        props.set ( "IncludeOS", IncludeOS );
+    }
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -232,10 +240,14 @@ private void commitEdits ()
 	String FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText();
 	String Append = __Append_JComboBox.getSelected();
+	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
+	String IncludeOS = __IncludeOS_JTextField.getText().trim();
 	__command.setCommandParameter ( "SearchFolder", SearchFolder );
 	__command.setCommandParameter ( "FilenamePattern", FilenamePattern );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "Append", Append );
+	__command.setCommandParameter ( "IncludeTestSuite", IncludeTestSuite );
+	__command.setCommandParameter ( "IncludeOS", IncludeOS );
 }
 
 /**
@@ -277,17 +289,17 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command creates a regression test commands file, for use in software testing." ),
+		"This command creates a regression test command file, for use in software testing." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Test commands files should follow documented standards." ),
+		"Test command files should follow documented standards." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A top-level folder is specified and will be searched for commands files matching" +
+		"A top-level folder is specified and will be searched for command files matching" +
 		" the specified pattern."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"The resulting output commands file will include runCommands() commands for each matched file," +
+    	"The resulting output command file will include RunCommands() commands for each matched file," +
     	" and can be independently loaded and run."),
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
@@ -319,7 +331,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is \"Test_*.TSTool\""), 
     		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Commands file to create:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command file to create:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -340,8 +352,28 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Append commands to output file? (default=True)"), 
+		"Append to command file? (default=True)"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Test suites to include:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeTestSuite_JTextField = new JTextField ( "*", 50 );
+    __IncludeTestSuite_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeTestSuite_JTextField,
+    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+            new JLabel( "Check \"#@testSuite ABC\" (*=include all)"), 
+            3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Include tests for OS:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IncludeOS_JTextField = new JTextField ( "*", 50 );
+    __IncludeOS_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IncludeOS_JTextField,
+    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+            new JLabel( "Check \"#@os Windows|UNIX\" (*=include all)"), 
+            3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -364,11 +396,9 @@ private void initialize ( JFrame parent, Command command )
 
 	if ( __working_dir != null ) {
 		// Add the buttons to allow conversion to/from relative path...
-		__pathSearchFolder_JButton = new SimpleJButton(
-			__RemoveWorkingDirectorySearchFolder,this);
+		__pathSearchFolder_JButton = new SimpleJButton( __RemoveWorkingDirectorySearchFolder,this);
 		button_JPanel.add ( __pathSearchFolder_JButton );
-		__pathOutputFile_JButton = new SimpleJButton(
-			__RemoveWorkingDirectoryOutputFile,this);
+		__pathOutputFile_JButton = new SimpleJButton( __RemoveWorkingDirectoryOutputFile,this);
 		button_JPanel.add ( __pathOutputFile_JButton );
 	}
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
@@ -378,9 +408,9 @@ private void initialize ( JFrame parent, Command command )
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
@@ -416,6 +446,8 @@ private void refresh ()
 	String FilenamePattern = "";
 	String OutputFile = "";
 	String Append = "";
+	String IncludeTestSuite = "*";
+	String IncludeOS = "*";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -424,6 +456,8 @@ private void refresh ()
 		FilenamePattern = props.getValue ( "FilenamePattern" );
 		OutputFile = props.getValue ( "OutputFile" );
 		Append = props.getValue ( "Append" );
+		IncludeTestSuite = props.getValue ( "IncludeTestSuite" );
+		IncludeOS = props.getValue ( "IncludeOS" );
 		if ( SearchFolder != null ) {
 			__SearchFolder_JTextField.setText ( SearchFolder );
 		}
@@ -451,6 +485,12 @@ private void refresh ()
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
+        if ( IncludeTestSuite != null ) {
+            __IncludeTestSuite_JTextField.setText ( IncludeTestSuite );
+        }
+        if ( IncludeOS != null ) {
+            __IncludeOS_JTextField.setText ( IncludeOS );
+        }
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
@@ -458,11 +498,15 @@ private void refresh ()
 	FilenamePattern = __FilenamePattern_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Append = __Append_JComboBox.getSelected();
+	IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
+	IncludeOS = __IncludeOS_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "SearchFolder=" + SearchFolder );
 	props.add ( "FilenamePattern=" + FilenamePattern );
 	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "Append=" + Append );
+	props.add ( "IncludeTestSuite=" + IncludeTestSuite );
+	props.add ( "IncludeOS=" + IncludeOS );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __pathSearchFolder_JButton != null ) {
@@ -471,7 +515,8 @@ private void refresh ()
 		if ( f.isAbsolute() ) {
 			__pathSearchFolder_JButton.setText (__RemoveWorkingDirectorySearchFolder);
 		}
-		else {	__pathSearchFolder_JButton.setText (__AddWorkingDirectorySearchFolder );
+		else {
+		    __pathSearchFolder_JButton.setText (__AddWorkingDirectorySearchFolder );
 		}
 	}
 	if ( __pathOutputFile_JButton != null ) {
@@ -480,7 +525,8 @@ private void refresh ()
 		if ( f.isAbsolute() ) {
 			__pathOutputFile_JButton.setText (__RemoveWorkingDirectoryOutputFile);
 		}
-		else {	__pathOutputFile_JButton.setText (__AddWorkingDirectoryOutputFile );
+		else {
+		    __pathOutputFile_JButton.setText (__AddWorkingDirectoryOutputFile );
 		}
 	}
 }

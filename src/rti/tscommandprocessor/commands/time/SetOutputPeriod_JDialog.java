@@ -73,8 +73,8 @@ to true.  This should be called before response() is allowed to complete.
 private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
-	String OutputStart = __OutputStart_JTextField.getText();
-	String OutputEnd = __OutputEnd_JTextField.getText();
+	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__error_wait = false;
 
 	if ( OutputStart.length() > 0 ) {
@@ -97,8 +97,8 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String OutputStart = __OutputStart_JTextField.getText();
-	String OutputEnd = __OutputEnd_JTextField.getText();
+{	String OutputStart = __OutputStart_JTextField.getText().trim();
+	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }

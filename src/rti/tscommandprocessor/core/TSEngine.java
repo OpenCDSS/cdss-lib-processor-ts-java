@@ -1081,14 +1081,12 @@ throws Exception
 	TSLimits average_limits = null;
 
 	if ( ts == null ) {
-		message =
-		"Time series is null.  Can't calculate average limits.";
+		message = "Time series is null.  Can't calculate average limits.";
 		Message.printWarning ( 2, routine, message );
 		throw new Exception ( message );
 	}
 	if ( Message.isDebugOn ) {
-		Message.printDebug ( 1, routine,
-		"Trying to calculate limits for " + ts.getIdentifierString() );
+		Message.printDebug ( 1, routine, "Trying to calculate limits for " + ts.getIdentifierString() );
 	}
 	if ( ts.getDataIntervalBase() == TimeInterval.MONTH ) {
 		// Set the flag to pass to the limits code...
@@ -1096,7 +1094,8 @@ throws Exception
 		if ( getIgnoreLEZero() ) {
 			limits_flag = TSLimits.IGNORE_LESS_THAN_OR_EQUAL_ZERO;
 		}
-		try {	if ( haveAveragingPeriod() ) {
+		try {
+		    if ( haveAveragingPeriod() ) {
 				// Get the average values from the averaging period...
 				if ( i <= 0 ) {
 					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
@@ -1104,17 +1103,14 @@ throws Exception
 				}
 				average_limits = new MonthTSLimits( (MonthTS)ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
-			else {	// Get the average values from the available
-				// period...
+			else {
+			    // Get the average values from the available period...
 				if ( i <= 0 ) {
 					// Print the message once...
 					Message.printStatus ( 2, routine,
-					"No averaging period specified. " +
-					"Will use available period.");
+					"No averaging period specified.  Will use available period.");
 				}
-				average_limits = new MonthTSLimits( (MonthTS)ts,
-					ts.getDate1(), ts.getDate2(),
-					limits_flag );
+				average_limits = new MonthTSLimits( (MonthTS)ts, ts.getDate1(), ts.getDate2(), limits_flag );
 			}
 		}
 		catch ( Exception e ) {
@@ -1129,26 +1125,23 @@ throws Exception
 		if ( getIgnoreLEZero() ) {
 			limits_flag = TSLimits.IGNORE_LESS_THAN_OR_EQUAL_ZERO;
 		}
-		try {	if ( haveAveragingPeriod() ) {
-				// Get the average values from the averaging
-				// period...
+		try {
+		    if ( haveAveragingPeriod() ) {
+				// Get the average values from the averaging period...
 				if ( i <= 0 ) {
 					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
 					getAverageStart() + " to " + getAverageEnd().toString() );
 				}
 				average_limits = new TSLimits( ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
-			else {	// Get the average values from the available
-				// period...
+			else {
+			    // Get the average values from the available period...
 				if ( i <= 0 ) {
 					// Print the message once...
 					Message.printStatus ( 2, routine,
-					"No averaging period specified. " +
-					"Will use available period.");
+					"No averaging period specified.  Will use available period.");
 				}
-				average_limits = new TSLimits ( ts,
-					ts.getDate1(), ts.getDate2(),
-					limits_flag );
+				average_limits = new TSLimits ( ts,	ts.getDate1(), ts.getDate2(), limits_flag );
 			}
 		}
 		catch ( Exception e ) {
@@ -1157,10 +1150,12 @@ throws Exception
 			throw new Exception ( message );
 		}
 	}
-	else {	// For now we probably won't use average limits for other
+	else {
+	    // For now we probably won't use average limits for other
 		// time steps so to increase performance don't compute...
-		// If historical averages are used for filling daily, then add
-		// daily at some point.
+		// If historical averages are used for filling daily, then add daily at some point.
+	    // FIXME SAM 2008-08-18 Need to at least compute overall max, min, etc. for any period, as long
+	    // as it is not a performance hit.
 		if ( Message.isDebugOn ) {
 			Message.printStatus ( 2, routine,
 			"Calculation of historic average limits for other " +

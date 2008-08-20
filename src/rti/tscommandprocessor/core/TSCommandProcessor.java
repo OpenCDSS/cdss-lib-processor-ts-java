@@ -1681,11 +1681,9 @@ throws Exception
 	// Time series...
 	Object o_TS = request_params.getContents ( "TS" );
 	if ( o_TS == null ) {
-			String warning =
-				"Request ProcessTimeSeriesAction() does not provide a TS parameter.";
+			String warning = "Request ProcessTimeSeriesAction() does not provide a TS parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o_TS;

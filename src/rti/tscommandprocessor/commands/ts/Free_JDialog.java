@@ -89,7 +89,9 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }

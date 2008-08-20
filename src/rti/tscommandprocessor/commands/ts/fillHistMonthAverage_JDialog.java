@@ -41,6 +41,7 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -109,8 +110,10 @@ Check the state of the dialog, disabling/enabling components as appropriate.
 private void checkGUIState()
 {	// If "AllMatchingTSID", enable the list.
 	// Otherwise, clear and disable...
-	String selected = __TSList_JComboBox.getSelected();
-	if ( selected.equals(__command._AllMatchingTSID) ) {
+	String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
 		__TSID_JComboBox.setEnabled(true);
 	}
 	else {	__TSID_JComboBox.setEnabled(false);

@@ -75,6 +75,12 @@ protected final String _SelectedTS = "SelectedTS";
 protected final String _AllMatchingTSID = "AllMatchingTSID";
 
 /**
+Parameter values used with RecalcLimits.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
 Constructor.
 */
 public fillUsingDiversionComments_Command ()
@@ -100,10 +106,10 @@ throws InvalidCommandParameterException
 	String FillFlag = parameters.getValue ( "FillFlag" );
 	String FillUsingCIU = parameters.getValue ( "FillUsingCIU" );
 	String FillUsingCIUFlag = parameters.getValue ( "FillUsingCIUFlag" );
+	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 	String warning = "";
     String message = "";
     
-    CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 	
@@ -166,6 +172,15 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a 1-character fill flag or Auto." ) );
 	}
+    if ( (RecalcLimits != null) && !RecalcLimits.equals("") &&
+            !RecalcLimits.equalsIgnoreCase( "true" ) && 
+            !RecalcLimits.equalsIgnoreCase("false") ) {
+        message = "The RecalcLimits parameter must be blank, " + _False + " (default), or " + _True + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a 1-character fill flag or Auto." ) );
+    }
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -235,7 +250,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Calls TSCommandProcessor to re-calulate limits for this time series.
+Calls TSCommandProcessor to re-calculate limits for this time series.
 @param ts Time Series.
 @param TSCmdProc CommandProcessor that is using this command.
 @param warningLevel Warning level used for displaying warnings.

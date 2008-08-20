@@ -61,18 +61,13 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 						__ok_JButton = null;	// Ok Button
 private JTextArea	__command_JTextArea= null;// Command as JTextArea
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series alias
-private SimpleJComboBox	__RecalcLimits_JComboBox = null;
-						// Field for recalculation indicator
-private SimpleJComboBox __FillUsingCIU_JComboBox = null;
-						// Flag for using CIU value
-private JTextField	__FillStart_JTextField = null;
-						// Field for fill start
+private SimpleJComboBox	__RecalcLimits_JComboBox = null; // Field for recalculation indicator
+private SimpleJComboBox __FillUsingCIU_JComboBox = null; // Flag for using CIU value
+private JTextField	__FillStart_JTextField = null; // Field for fill start
 private JTextField	__FillEnd_JTextField = null;
 
-private JTextField	__FillFlag_JTextField = null;
-						// Flag for data filling
-private JTextField __FillUsingCIUFlag_JTextField = null;
-						// CIU value
+private JTextField	__FillFlag_JTextField = null; // Flag for data filling
+private JTextField __FillUsingCIUFlag_JTextField = null; // CIU value
 
 private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
@@ -330,8 +325,7 @@ private void initialize ( JFrame parent, Command command )
     "1-character (or \"Auto\") flag on values to indicate fill."), 
     3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Recalculate limits:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Recalculate limits:"), 
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RecalcLimits_JComboBox = new SimpleJComboBox ( false );
 	__RecalcLimits_JComboBox.addItem ( __TRUE );
@@ -411,11 +405,7 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents.  The command is
-of the form:
-<pre>
-fillUsingDiversionComments(TSID=xxx,FillStart=xxx,FillEnd=xxx,RecalcLimits=xxx)
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh()
 {	

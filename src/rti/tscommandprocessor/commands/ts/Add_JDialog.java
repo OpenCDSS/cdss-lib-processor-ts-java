@@ -105,6 +105,7 @@ private void checkGUIState ()
 {
     String TSList = __AddTSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
             TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __AddTSID_JComboBox.setEnabled(true);
         __AddTSID_JLabel.setEnabled ( true );

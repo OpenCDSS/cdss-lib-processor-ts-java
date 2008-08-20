@@ -49,6 +49,7 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.io.File;
 import java.util.Vector;
@@ -179,7 +180,9 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState()
 {
     String TSList = __TSList_JComboBox.getSelected();
-    if ( TSList.equalsIgnoreCase(__command._AllMatchingTSID)) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
     }
     else {

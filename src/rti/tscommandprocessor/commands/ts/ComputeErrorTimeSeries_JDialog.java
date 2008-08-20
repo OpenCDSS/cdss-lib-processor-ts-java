@@ -103,7 +103,9 @@ private void checkGUIState ()
     // Observed...
     
     String ObservedTSList = __ObservedTSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(ObservedTSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(ObservedTSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(ObservedTSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(ObservedTSList) ) {
         __ObservedTSID_JComboBox.setEnabled(true);
         __ObservedTSID_JLabel.setEnabled ( true );
     }
@@ -123,7 +125,9 @@ private void checkGUIState ()
     // Simulated...
     
     String SimulatedTSList = __SimulatedTSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(SimulatedTSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(SimulatedTSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(SimulatedTSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(SimulatedTSList) ) {
         __SimulatedTSID_JComboBox.setEnabled(true);
         __SimulatedTSID_JLabel.setEnabled ( true );
     }

@@ -177,6 +177,7 @@ import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Subtract_Command;
 import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
+import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
 // Utility commands.
 
@@ -588,6 +589,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteProperty") ) {
 		return new WriteProperty_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteTimeSeriesProperty") ) {
+        return new WriteTimeSeriesProperty_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteRiverWare") ) {
 		return new writeRiverWare_Command ();
 	}

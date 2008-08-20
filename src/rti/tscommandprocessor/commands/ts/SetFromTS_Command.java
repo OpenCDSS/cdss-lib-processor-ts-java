@@ -8,6 +8,7 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSLimits;
 import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
@@ -36,6 +37,18 @@ This class initializes, checks, and runs the SetFromTS() command.
 */
 public class SetFromTS_Command extends AbstractCommand implements Command
 {
+    
+/**
+Parameter values used with RecalcLimits.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
+Values for the HandleMissingHow parameter.
+*/
+protected final String _IgnoreMissing = "IgnoreMissing";
+protected final String _SetMissing = "SetMissing";
 
 /**
 Constructor.
@@ -61,6 +74,8 @@ throws InvalidCommandParameterException
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String TransferHow = parameters.getValue ( "TransferHow" );
+	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
+	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 	String warning = "";
     String message;
     
@@ -138,6 +153,27 @@ throws InvalidCommandParameterException
                 message, "Specify TransferHow as " + TSUtil.TRANSFER_SEQUENTIALLY + " or " +
                 TSUtil.TRANSFER_BYDATETIME ) );
     }
+
+    if ( (HandleMissingHow != null) && !HandleMissingHow.equals("") &&
+            !HandleMissingHow.equalsIgnoreCase(_IgnoreMissing) &&
+            !HandleMissingHow.equalsIgnoreCase(_SetMissing) ) {
+        message = "The HandleMissingHow parameter (" + HandleMissingHow + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify HandleMissingHow as " + _IgnoreMissing + ", or " +
+                _SetMissing + " (default if blank).") );
+    }
+
+    if ( (RecalcLimits != null) && !RecalcLimits.equals("") &&
+            !RecalcLimits.equalsIgnoreCase( "true" ) && 
+            !RecalcLimits.equalsIgnoreCase("false") ) {
+        message = "The RecalcLimits parameter must be blank, " + _False + " (default), or " + _True + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a 1-character fill flag or Auto." ) );
+    }
     
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -150,6 +186,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SetStart" );
     valid_Vector.add ( "SetEnd" );
     valid_Vector.add ( "TransferHow" );
+    valid_Vector.add ( "HandleMissingHow" );
+    valid_Vector.add ( "RecalcLimits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -325,6 +363,56 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
+Calls TSCommandProcessor to re-calculate limits for this time series.
+@param ts Time Series.
+@param TSCmdProc CommandProcessor that is using this command.
+@param warningLevel Warning level used for displaying warnings.
+@param warning_count Number of warnings found.
+@param command_tag Reference or identifier for this command.
+ */
+private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
+        int warningLevel, int warning_count, String command_tag )
+{
+    String routine = "SetFromTS_Command.recalculateLimits", message;
+    
+    CommandStatus status = getCommandStatus();
+    status.clearLog(CommandPhaseType.RUN);
+    
+    PropList request_params = new PropList ( "" );
+    request_params.setUsingObject ( "TS", ts );
+    CommandProcessorRequestResultsBean bean = null;
+    try {
+        bean = TSCmdProc.processRequest( "CalculateTSAverageLimits", request_params);
+    }
+    catch ( Exception e ) {
+        message = "Error recalculating original data limits for \"" + ts.getIdentifierString() + "\" (" + e + ")";
+        Message.printWarning(warningLevel,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message  );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
+        return warning_count;
+    }
+    // Get the calculated limits and set in the original data limits...
+    PropList bean_PropList = bean.getResultsPropList();
+    Object prop_contents = bean_PropList.getContents ( "TSLimits" );
+    if ( prop_contents == null ) {
+        message = "Null value from CalculateTSAverageLimits(" + ts.getIdentifierString() + ")";
+        Message.printWarning(warningLevel,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
+        return warning_count;
+    }
+    // Now set the limits.
+    ts.setDataLimitsOriginal ( (TSLimits)prop_contents );
+    return warning_count;
+}
+
+/**
 Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
@@ -339,9 +427,9 @@ throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "SetFromTS_Command.runCommand", message;
 	int warning_count = 0;
-	int warning_level = 2;
+	int warningLevel = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messgaes
+	int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
@@ -357,6 +445,15 @@ CommandWarningException, CommandException
     }
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String RecalcLimits = parameters.getValue ( "RecalcLimits" );
+    boolean RecalcLimits_boolean = false;   // Default
+    if ( (RecalcLimits != null) && RecalcLimits.equalsIgnoreCase("true") ) {
+        RecalcLimits_boolean = true;
+    }
+    String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
+    if ( (HandleMissingHow == null) || HandleMissingHow.equals("") ) {
+        HandleMissingHow = _SetMissing; // Default
+    }
 
 	// Get the time series to process...
 	
@@ -371,7 +468,7 @@ CommandWarningException, CommandException
 	catch ( Exception e ) {
         message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-		Message.printWarning(warning_level,
+		Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -384,7 +481,7 @@ CommandWarningException, CommandException
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-		Message.printWarning ( warning_level,
+		Message.printWarning ( warningLevel,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -397,7 +494,7 @@ CommandWarningException, CommandException
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-			Message.printWarning ( warning_level,
+			Message.printWarning ( warningLevel,
 				MessageUtil.formatMessageTag(
 					command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -411,7 +508,7 @@ CommandWarningException, CommandException
 	if ( o_Indices == null ) {
         message = "Unable to find indices for time series to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-		Message.printWarning ( warning_level,
+		Message.printWarning ( warningLevel,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -423,7 +520,7 @@ CommandWarningException, CommandException
 		if ( tspos.length == 0 ) {
             message = "Unable to find indices for time series to process using TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-			Message.printWarning ( warning_level,
+			Message.printWarning ( warningLevel,
 			    MessageUtil.formatMessageTag(
 			        command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -439,7 +536,7 @@ CommandWarningException, CommandException
 	if ( nts == 0 ) {
         message = "Unable to find any time series to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-		Message.printWarning ( warning_level,
+		Message.printWarning ( warningLevel,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -466,7 +563,7 @@ CommandWarningException, CommandException
     catch ( Exception e ) {
         message = "Error requesting GetTimeSeriesToProcess(IndependentTSList=\"" + IndependentTSList +
         "\", IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\") from processor.";
-        Message.printWarning(warning_level,
+        Message.printWarning(warningLevel,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -479,7 +576,7 @@ CommandWarningException, CommandException
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(IndependentTSList=\"" + IndependentTSList +
         "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\").";
-        Message.printWarning ( warning_level,
+        Message.printWarning ( warningLevel,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -492,7 +589,7 @@ CommandWarningException, CommandException
         if ( independent_tslist.size() == 0 ) {
             message = "No independent time series are available from processor GetTimeSeriesToProcess (IndependentTSList=\"" + IndependentTSList +
             "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\").";
-            Message.printWarning ( warning_level,
+            Message.printWarning ( warningLevel,
                 MessageUtil.formatMessageTag(
                     command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -506,7 +603,7 @@ CommandWarningException, CommandException
     if ( o_Indices2 == null ) {
         message = "Unable to find indices for independent time series to process using IndependentTSList=\"" + IndependentTSList +
         "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\".";
-        Message.printWarning ( warning_level,
+        Message.printWarning ( warningLevel,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -518,7 +615,7 @@ CommandWarningException, CommandException
         if ( independent_tspos.length == 0 ) {
             message = "Unable to find indices for independent time series to process using IndependentTSList=\"" + IndependentTSList +
             "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\".";
-            Message.printWarning ( warning_level,
+            Message.printWarning ( warningLevel,
                 MessageUtil.formatMessageTag(
                     command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -534,7 +631,7 @@ CommandWarningException, CommandException
     if ( n_independent_ts == 0 ) {
         message = "Unable to find any independent time series to process using IndependentTSList=\"" + IndependentTSList +
         "\" IndependentTSID=\"" + IndependentTSID + "\", IndependentEnsembleID=\"" + IndependentEnsembleID + "\".";
-        Message.printWarning ( warning_level,
+        Message.printWarning ( warningLevel,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -548,7 +645,7 @@ CommandWarningException, CommandException
     if ( (n_independent_ts > 1) && (n_independent_ts != nts) ) {
         message = "The number if independent time series (" + n_independent_ts +
             ") is > 1 but does not agree with the number of dependent time series (" + nts + ").";
-        Message.printWarning ( warning_level,
+        Message.printWarning ( warningLevel,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -603,7 +700,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "SetStart \"" + SetStart + "\" is invalid.";
-		Message.printWarning(warning_level,
+		Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -649,7 +746,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "SetEnd \"" + SetEnd + "\" is invalid.";
-		Message.printWarning(warning_level,
+		Message.printWarning(warningLevel,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
         status.addToLog ( CommandPhaseType.RUN,
@@ -661,7 +758,7 @@ CommandWarningException, CommandException
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
 		message = "Insufficient data to run command.";
-		Message.printWarning ( warning_level,
+		Message.printWarning ( warningLevel,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
 	}
@@ -673,6 +770,7 @@ CommandWarningException, CommandException
 	if ( (TransferHow != null) && !TransferHow.equals("") ) {
 		setprops.set ( "TransferHow", TransferHow );
 	}
+    setprops.set ( "HandleMissingHow", HandleMissingHow );
 
 	TS ts = null;
     TS independent_ts = null;
@@ -681,7 +779,7 @@ CommandWarningException, CommandException
 		if ( ts == null ) {
 			// Skip time series.
             message = "Unable to get time series at position " + tspos[its] + " - null time series.";
-			Message.printWarning(warning_level,
+			Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -703,7 +801,7 @@ CommandWarningException, CommandException
         if ( independent_ts == null ) {
             // Skip time series.
             message = "Unable to get independent time series at position " + tspos[its] + " - null time series.";
-            Message.printWarning(warning_level,
+            Message.printWarning(warningLevel,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -719,7 +817,7 @@ CommandWarningException, CommandException
             message = "Independent \"" + independent_ts.getIdentifierString() +
             "\" and dependent time series \"" + ts.getIdentifierString() +
             "\" are the same - skipping.";
-            Message.printWarning(warning_level,
+            Message.printWarning(warningLevel,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
             status.addToLog ( CommandPhaseType.RUN,
@@ -736,18 +834,33 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
 			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" from \"" +
                 independent_ts.getIdentifier() + "\" (" + e + ").";
-            Message.printWarning ( warning_level,
+            Message.printWarning ( warningLevel,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
 			Message.printWarning(3,routine,e);
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "See the log file for details - report the problem to software support." ) );
 		}
+        if ( RecalcLimits_boolean ) {
+            try {
+                recalculateLimits( ts, processor, warningLevel, warning_count, command_tag );
+            }
+            catch ( Exception e ) {
+                message = "Unexpected error recalculating limits for time series \"" +
+                ts.getIdentifier() + "\" (" + e + ").";
+                Message.printWarning ( warningLevel,
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
+                Message.printWarning(3,routine,e);
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "See the log file for details - report the problem to software support." ) );
+            }
+        }
 	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
-		Message.printWarning ( warning_level,
+		Message.printWarning ( warningLevel,
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count),
 			routine,message);
@@ -773,7 +886,9 @@ public String toString ( PropList props )
 	String SetStart = props.getValue("SetStart");
 	String SetEnd = props.getValue("SetEnd");
     String TransferHow = props.getValue( "TransferHow" );
+    String HandleMissingHow = props.getValue( "HandleMissingHow" );
 	//String FillFlag = props.getValue("FillFlag");
+    String RecalcLimits = props.getValue( "RecalcLimits" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -828,6 +943,18 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "TransferHow=" + TransferHow );
+    }
+    if ( (HandleMissingHow != null) && (HandleMissingHow.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "HandleMissingHow=\"" + HandleMissingHow + "\"" );
+    }
+    if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RecalcLimits=" + RecalcLimits );
     }
 
 	return getCommandName() + "(" + b.toString() + ")";

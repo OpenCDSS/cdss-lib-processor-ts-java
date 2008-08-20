@@ -63,6 +63,8 @@ private SimpleJComboBox __IndependentTSID_JComboBox = null;
 private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
 private SimpleJComboBox	__TransferHow_JComboBox =null;	// Indicates how to transfer data.
+private SimpleJComboBox __HandleMissingHow_JComboBox = null; // Indicates how to handle missing data.
+private SimpleJComboBox __RecalcLimits_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -102,7 +104,9 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList)) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -155,6 +159,8 @@ private void checkInput ()
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     String TransferHow = __TransferHow_JComboBox.getSelected();
+    String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -184,6 +190,12 @@ private void checkInput ()
     if ( TransferHow.length() > 0 ) {
         props.set ( "TransferHow", TransferHow );
     }
+    if ( HandleMissingHow.length() > 0 ) {
+        props.set ( "HandleMissingHow", HandleMissingHow );
+    }
+    if ( RecalcLimits.length() > 0 ) {
+        props.set( "RecalcLimits", RecalcLimits );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -208,6 +220,8 @@ private void commitEdits ()
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     String TransferHow = __TransferHow_JComboBox.getSelected();
+    String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -217,6 +231,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "SetStart", SetStart );
     __command.setCommandParameter ( "SetEnd", SetEnd );
     __command.setCommandParameter ( "TransferHow", TransferHow );
+    __command.setCommandParameter ( "HandleMissingHow", HandleMissingHow );
+    __command.setCommandParameter ( "RecalcLimits", RecalcLimits );
 }
 
 /**
@@ -229,6 +245,8 @@ throws Throwable
     __command_JTextArea = null;
     __command = null;
     __ok_JButton = null;
+    __HandleMissingHow_JComboBox = null;
+    __RecalcLimits_JComboBox = null;
     super.finalize ();
 }
 
@@ -259,7 +277,7 @@ private void initialize ( JFrame parent, Command command )
 		" series to replace values in the dependent time series." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"All data values (including missing data) in the analysis period will be copied."),
+		"All data values (by default including missing data) in the set period will be copied."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If one independent time series is specified, it will be used for all dependent time series."),
@@ -332,6 +350,33 @@ private void initialize ( JFrame parent, Command command )
 	__TransferHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TransferHow_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Handle missing data how?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HandleMissingHow_JComboBox = new SimpleJComboBox ( false );
+    __HandleMissingHow_JComboBox.addItem ( "" );
+    __HandleMissingHow_JComboBox.addItem ( __command._IgnoreMissing );
+    __HandleMissingHow_JComboBox.addItem ( __command._SetMissing );
+    __HandleMissingHow_JComboBox.select ( 0 );
+    __HandleMissingHow_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Missing in independent handled how? (default=" +
+            __command._SetMissing + ")."), 
+            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
+    __RecalcLimits_JComboBox.addItem ( "" );
+    __RecalcLimits_JComboBox.addItem ( __command._False );
+    __RecalcLimits_JComboBox.addItem ( __command._True );
+    __RecalcLimits_JComboBox.select ( 0 );
+    __RecalcLimits_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
+    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Recalculate original data limits after set (default=False)."), 
+    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -418,6 +463,8 @@ private void refresh ()
     String TransferHow = "";
     String SetStart = "";
     String SetEnd = "";
+    String HandleMissingHow = "";
+    String RecalcLimits = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -431,6 +478,8 @@ private void refresh ()
         SetStart = props.getValue ( "SetStart" );
         SetEnd = props.getValue ( "SetEnd" );
         TransferHow = props.getValue ( "TransferHow" );
+        HandleMissingHow = props.getValue ( "HandleMissingHow" );
+        RecalcLimits = props.getValue ( "RecalcLimits" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -540,6 +589,29 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( HandleMissingHow == null ) {
+            // Select default...
+            __HandleMissingHow_JComboBox.select ( 0 );
+        }
+        else {  if (    JGUIUtil.isSimpleJComboBoxItem(
+                __HandleMissingHow_JComboBox,
+                HandleMissingHow, JGUIUtil.NONE, null, null )) {
+                __HandleMissingHow_JComboBox.select (
+                HandleMissingHow );
+            }
+            else {  Message.printWarning ( 1, routine,
+                "Existing command " +
+                "references an invalid\n" +
+                "HandleMissingHow value \"" + HandleMissingHow +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( RecalcLimits != null &&
+            JGUIUtil.isSimpleJComboBoxItem( __RecalcLimits_JComboBox, 
+            RecalcLimits, JGUIUtil.NONE, null, null ) ) {
+            __RecalcLimits_JComboBox.select ( RecalcLimits );
+        }
 	}
     // Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -551,6 +623,8 @@ private void refresh ()
     SetStart = __SetStart_JTextField.getText().trim();
     SetEnd = __SetEnd_JTextField.getText().trim();
     TransferHow = __TransferHow_JComboBox.getSelected();
+    HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -561,6 +635,8 @@ private void refresh ()
     props.add ( "SetStart=" + SetStart );
     props.add ( "SetEnd=" + SetEnd );
     props.add ( "TransferHow=" + TransferHow );
+    props.add ( "HandleMissingHow=" + HandleMissingHow );
+    props.add ( "RecalcLimits=" + RecalcLimits);
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

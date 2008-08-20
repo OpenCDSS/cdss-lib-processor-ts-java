@@ -58,8 +58,9 @@ private JLabel __IndependentTSID_JLabel = null;
 private SimpleJComboBox __IndependentTSID_JComboBox = null;
 private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
-private JTextField __FillStart_JTextField,
-			__FillEnd_JTextField;
+private JTextField __FillStart_JTextField;
+private JTextField __FillEnd_JTextField;
+private SimpleJComboBox __RecalcLimits_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -100,7 +101,9 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
-    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+            TSListType.LAST_MATCHING_TSID.equals(TSList)) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -152,6 +155,7 @@ private void checkInput ()
     String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
     String FillStart = __FillStart_JTextField.getText().trim();
     String FillEnd = __FillEnd_JTextField.getText().trim();
+    String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
     __error_wait = false;
 
@@ -184,6 +188,9 @@ private void checkInput ()
         props.set ( "TransferHow", TransferHow );
     }
     */
+    if ( RecalcLimits.length() > 0 ) {
+        props.set( "RecalcLimits", RecalcLimits );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -207,6 +214,7 @@ private void commitEdits ()
     String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected(); 
     String FillStart = __FillStart_JTextField.getText().trim();
     String FillEnd = __FillEnd_JTextField.getText().trim();
+    String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -217,6 +225,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "FillStart", FillStart );
     __command.setCommandParameter ( "FillEnd", FillEnd );
     //__command.setCommandParameter ( "TransferHow", TransferHow );
+    __command.setCommandParameter ( "RecalcLimits", RecalcLimits );
 }
 
 /**
@@ -229,6 +238,7 @@ throws Throwable
 	__command_JTextArea = null;
 	__command = null;
 	__ok_JButton = null;
+	__RecalcLimits_JComboBox = null;
 	super.finalize ();
 }
 
@@ -318,6 +328,19 @@ private void initialize ( JFrame parent, Command command )
 	__FillEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RecalcLimits_JComboBox = new SimpleJComboBox ( false );
+    __RecalcLimits_JComboBox.addItem ( "" );
+    __RecalcLimits_JComboBox.addItem ( __command._False );
+    __RecalcLimits_JComboBox.addItem ( __command._True );
+    __RecalcLimits_JComboBox.select ( 0 );
+    __RecalcLimits_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
+    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Recalculate original data limits after fill (default=False)."), 
+    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -404,6 +427,7 @@ private void refresh ()
     //String TransferHow = "";
     String FillStart = "";
     String FillEnd = "";
+    String RecalcLimits = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -417,6 +441,7 @@ private void refresh ()
         FillStart = props.getValue ( "FillStart" );
         FillEnd = props.getValue ( "FillEnd" );
         //TransferHow = props.getValue ( "TransferHow" );
+        RecalcLimits = props.getValue ( "RecalcLimits" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -529,6 +554,11 @@ private void refresh ()
             }
         }
         */
+        if ( RecalcLimits != null &&
+            JGUIUtil.isSimpleJComboBoxItem( __RecalcLimits_JComboBox, 
+            RecalcLimits, JGUIUtil.NONE, null, null ) ) {
+            __RecalcLimits_JComboBox.select ( RecalcLimits );
+        }
     }
     // Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -539,6 +569,7 @@ private void refresh ()
     IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
     FillStart = __FillStart_JTextField.getText().trim();
     FillEnd = __FillEnd_JTextField.getText().trim();
+    RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     //TransferHow = __TransferHow_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -550,6 +581,7 @@ private void refresh ()
     props.add ( "FillStart=" + FillStart );
     props.add ( "FillEnd=" + FillEnd );
     //props.add ( "TransferHow=" + TransferHow );
+    props.add ( "RecalcLimits=" + RecalcLimits);
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

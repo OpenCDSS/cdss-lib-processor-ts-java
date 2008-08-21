@@ -51,6 +51,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.MissingObjectEvent;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
@@ -91,6 +92,12 @@ Data values for boolean parameters.
 */
 protected String _False = "False";
 protected String _True = "True";
+
+/**
+Data values for IfMissing parameter.
+*/
+protected String _Ignore = "Ignore";
+protected String _Warn = "Warn";
 
 /**
 List of time series read during discovery.  These are TS objects but with maintly the
@@ -311,6 +318,17 @@ throws InvalidCommandParameterException
                   new CommandLogRecord(CommandStatusType.FAILURE,
                           message, "Specify a 1-character flag, or blank to not use flag." ) );
 	}
+	String IfMissing = parameters.getValue ( "IfMissing" );
+    if ( (IfMissing != null) && !IfMissing.equals("") &&
+            !IfMissing.equalsIgnoreCase(_Warn) && !IfMissing.equalsIgnoreCase(_Ignore) ) {
+            message = "The IfMissing parameter \"" + IfMissing +
+            "\" must be blank, " + _Ignore + ", or " + _Warn;
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify " + _Ignore + ", " + _Warn +
+                            ", or blank for default of " + _Warn + "." ) );
+        }
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -333,6 +351,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "FillUsingDivComments" );
     valid_Vector.add ( "FillUsingDivCommentsFlag" );
+    valid_Vector.add ( "IfMissing" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -650,6 +669,12 @@ CommandWarningException, CommandException
 		FillUsingDivComments = _False;	// Default is NOT to fill
 	}
 	String FillUsingDivCommentsFlag = parameters.getValue ( "FillUsingDivCommentsFlag" );
+	
+    String IfMissing = parameters.getValue ("IfMissing" );
+    boolean IfMissingWarn = true;  // Default
+    if ( (IfMissing != null) && IfMissing.equalsIgnoreCase(_Ignore) ) {
+        IfMissingWarn = false;  // Ignore when time series are not found
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -701,7 +726,7 @@ CommandWarningException, CommandException
 			Vector hbdmi_Vector = (Vector)o;
 			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, tsident.getInputName() );
 			if ( hbdmi == null ) {
-				message ="Could not find HydroBase connection with input name \"" +
+				message = "Could not find HydroBase connection with input name \"" +
                 tsident.getInputName() + "\" to query data.";
 				Message.printWarning ( 2, routine, message );
                 status.addToLog ( command_phase,
@@ -710,16 +735,33 @@ CommandWarningException, CommandException
 				throw new Exception ( message );
 			}
 			try {
+			    ts = null;
                 ts = hbdmi.readTimeSeries (	TSID, InputStart_DateTime,InputEnd_DateTime, null,read_data, HydroBase_props );
 			}
 			catch ( Exception e ) {
-				message = "Unexpected error reading HydroBase time series \"" + TSID + "\".";
+			    ts = null;
+				message = "Unexpected error reading HydroBase time series \"" + TSID + "\" (" + e + ").";
 				Message.printWarning ( 2, routine, message );
 				Message.printWarning ( 2, routine, e );
+				if ( IfMissingWarn ) {
                    status.addToLog ( command_phase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Report problem to software support." ) );
-				throw new Exception ( message );
+                               message, "Verify the time series identifier." ) );
+                   throw new Exception ( message );
+				}
+				else {
+				    // Just show for info purposes
+	                   status.addToLog ( command_phase,
+	                            new CommandLogRecord(CommandStatusType.INFO,
+	                               message, "Verify the time series identifier." ) );
+				}
+			}
+			finally {
+			    if ( ts == null ) {
+			        // Generate an event for listeners
+			        notifyCommandProcessorEventListeners(
+				        new MissingObjectEvent(TSID,Class.forName("RTi.TS.TS"),"Time Series", this));
+			    }
 			}
 			if ( ts != null ) {
 				// Set the alias...
@@ -883,7 +925,25 @@ CommandWarningException, CommandException
 		
        		if ( (tslist0 == null) || (size == 0) ) {
 				Message.printStatus ( 2, routine,"No HydroBase time series were found." );
-                status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+		        // Warn if nothing was retrieved (can be overridden to ignore).
+	            if ( IfMissingWarn ) {
+	                message = "No time series were read from HydroBase.";
+	                Message.printWarning ( warning_level, 
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                    status.addToLog ( command_phase,
+	                            new CommandLogRecord(CommandStatusType.FAILURE,
+	                                    message, "Data may not be in database." +
+	                                    		"  Previous messages may provide more information." ) );
+	            }
+	            else {
+	                // Ignore the problem.  Call it a success if no other problems occurred.
+	                status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+	            }
+	            // Generate an event for listeners
+	            // FIXME SAM 2008-08-20 Need to put together a more readable id for reporting
+                notifyCommandProcessorEventListeners(
+                        new MissingObjectEvent(DataType + ", " + Interval + ", see command for user-specified criteria",
+                                Class.forName("RTi.TS.TS"),"Time Series", this));
 				return;
        		}
 		
@@ -993,7 +1053,7 @@ CommandWarningException, CommandException
 					tslist.addElement ( ts );
 				}
 				catch ( Exception e ) {
-					message = "Unexpected error reading HydroBase time series \"" + tsident_string + "\".";
+					message = "Unexpected error reading HydroBase time series \"" + tsident_string + "\" (" + e + ").";
 					Message.printWarning ( 2, routine, message );
 					Message.printWarning ( 2, routine, e );
 					++warning_count;
@@ -1044,6 +1104,20 @@ CommandWarningException, CommandException
         }
         else if ( command_phase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
+        }
+        // Warn if nothing was retrieved (can be overridden to ignore).
+        if ( (tslist == null) || (size == 0) ) {
+            if ( IfMissingWarn ) {
+                message = "No time series were read from HydroBase.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                    status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Data may not be in database.  See previous messages." ) );
+            }
+            // Generate an event for listeners
+            // TOD SAM 2008-08-20 Evaluate whether need here
+            //notifyCommandProcessorEventListeners(new MissingObjectEvent(DataType + ", " + Interval + filter_panel,this));
         }
 	}
 	catch ( Exception e ) {
@@ -1227,6 +1301,13 @@ public String toString ( PropList props )
 		}
 		b.append ( "FillUsingDivCommentsFlag=\"" + FillUsingDivCommentsFlag + "\"" );
 	}
+    String IfMissing = props.getValue("IfMissing");
+    if ( (IfMissing != null) && (IfMissing.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IfMissing=" + IfMissing );
+    }
 	if ( _use_alias ) {
 		String Alias = props.getValue ( "Alias" );
 		return "TS " + Alias + " = " + getCommandName() + "(" + b.toString() + ")";

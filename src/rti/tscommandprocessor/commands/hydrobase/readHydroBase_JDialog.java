@@ -121,6 +121,7 @@ private SimpleJComboBox	__FillUsingDivComments_JComboBox;
 						// Indicate whether to fill
 						// diversion time series with
 						// diversion comments.
+private SimpleJComboBox __IfMissing_JComboBox;
 			
 private JTextArea	__command_JTextArea = null;
 						// Command as JTextArea
@@ -280,7 +281,8 @@ private void checkInput ()
 			props.set ( "TSID", TSID );
 		}
 	}
-	else {	String DataType = __DataType_JTextField.getText().trim();
+	else {
+	    String DataType = __DataType_JTextField.getText().trim();
 		if ( DataType.length() > 0 ) {
 			props.set ( "DataType", DataType );
 		}
@@ -338,16 +340,18 @@ private void checkInput ()
 		props.set ( "FillDailyDivFlag", FillDailyDivFlag );
 	}
 	*/
-	String FillUsingDivComments =
-		__FillUsingDivComments_JComboBox.getSelected();
+	String FillUsingDivComments = __FillUsingDivComments_JComboBox.getSelected();
 	if ( FillUsingDivComments.length() > 0 ) {
 		props.set ( "FillUsingDivComments", FillUsingDivComments );
 	}
-	String FillUsingDivCommentsFlag =
-		__FillUsingDivCommentsFlag_JTextField.getText().trim();
+	String FillUsingDivCommentsFlag = __FillUsingDivCommentsFlag_JTextField.getText().trim();
 	if ( FillUsingDivCommentsFlag.length() > 0 ) {
 		props.set ("FillUsingDivCommentsFlag",FillUsingDivCommentsFlag);
 	}
+    String IfMissing = __IfMissing_JComboBox.getSelected();
+    if ( IfMissing.length() > 0 ) {
+        props.set ("IfMissing",IfMissing);
+    }
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -422,6 +426,8 @@ private void commitEdits ()
 	__command.setCommandParameter (	"FillUsingDivComments", FillUsingDivComments );
 	String FillUsingDivCommentsFlag = __FillUsingDivCommentsFlag_JTextField.getText().trim();
 	__command.setCommandParameter (	"FillUsingDivCommentsFlag", FillUsingDivCommentsFlag );
+    String IfMissing = __IfMissing_JComboBox.getSelected();
+    __command.setCommandParameter ( "IfMissing", IfMissing );
 }
 
 /**
@@ -554,81 +560,71 @@ private void initialize ( JFrame parent, Command command )
 		"(e.g., DivTotal, DivClass, RelTotal, RelClass)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to the HydroBase Input Type documentation for " +
-		"possible values." ), 
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Refer to the HydroBase Input Type documentation for possible values." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
 		"for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the period defaults to the query period."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Filling with diversion comments applies only to diversion " +
-		"and reservoir release time series."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Filling with diversion comments applies only to diversion and reservoir release time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	if ( __use_alias ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series alias:"),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Alias_JTextField = new JTextField ( 30 );
 		__Alias_JTextField.addKeyListener ( this );
 		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Location:"),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Location:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Location_JTextField = new JTextField ( "" );
 		__Location_JTextField.addKeyListener ( this );
-        	JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
+        JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example, station or structure ID."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example, station or structure ID."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Data source:"),
+        JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data source:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__DataSource_JTextField = new JTextField ( "" );
 		__DataSource_JTextField.addKeyListener ( this );
-        	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
+       	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example: USGS, NWS."),
+       	JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: USGS, NWS."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DataType_JTextField = new JTextField ( "" );
 	__DataType_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example: Streamflow."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: Streamflow."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Interval_JTextField = new JTextField ( "" );
 	__Interval_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example: 6Hour, Day, Month."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: 6Hour, Day, Month."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Input name:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input name:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputName_JTextField = new JTextField ( "" );
 	__InputName_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"HydroBase connection name (blank for default)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -697,15 +693,13 @@ private void initialize ( JFrame parent, Command command )
 				__input_filter_HydroBase_structure_sfut_JPanel,
 				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_structure_sfut_JPanel);
+			__input_filter_JPanel_Vector.addElement ( __input_filter_HydroBase_structure_sfut_JPanel);
 			__input_filter_HydroBase_structure_sfut_JPanel.
 				addEventListeners ( this );
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" structures with SFUT." );
+			"Unable to initialize input filter for HydroBase structures with SFUT." );
 			Message.printWarning ( 2, routine, e );
 		}
 
@@ -862,8 +856,7 @@ private void initialize ( JFrame parent, Command command )
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	*/
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Fill using diversion comments:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using diversion comments:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	Vector FillUsingDivComments_Vector = new Vector ( 3 );
 	FillUsingDivComments_Vector.addElement ( "" );
@@ -873,28 +866,40 @@ private void initialize ( JFrame parent, Command command )
 	__FillUsingDivComments_JComboBox.setData ( FillUsingDivComments_Vector);
 	__FillUsingDivComments_JComboBox.select ( 0 );
 	__FillUsingDivComments_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __FillUsingDivComments_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __FillUsingDivComments_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Whether to use diversion comments to fill more zero values " +
-		"(blank=False)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Whether to use diversion comments to fill more zero values (blank=False)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Fill using diversion comments flag:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using diversion comments flag:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillUsingDivCommentsFlag_JTextField = new JTextField ( "" );
 	__FillUsingDivCommentsFlag_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel,
+    JGUIUtil.addComponent(main_JPanel,
 		__FillUsingDivCommentsFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"1-character flag to indicate filled diversion comment " +
-		"values."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"1-character flag to indicate filled diversion comment values."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    Vector IfMissing_Vector = new Vector ( 3 );
+    IfMissing_Vector.addElement ( "" );
+    IfMissing_Vector.addElement ( __command._Ignore );
+    IfMissing_Vector.addElement ( __command._Warn );
+    __IfMissing_JComboBox = new SimpleJComboBox ( false );
+    __IfMissing_JComboBox.setData ( IfMissing_Vector);
+    __IfMissing_JComboBox.select ( 0 );
+    __IfMissing_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IfMissing_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "How to handle missing time series (blank=Warn)."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,50);
 	__command_JTextArea.setLineWrap ( true );
@@ -978,6 +983,7 @@ private void refresh ()
 	*/
 	String FillUsingDivComments = "";
 	String FillUsingDivCommentsFlag = "";
+	String IfMissing = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -997,6 +1003,7 @@ private void refresh ()
 		*/
 		FillUsingDivComments = props.getValue ( "FillUsingDivComments" );
 		FillUsingDivCommentsFlag = props.getValue ( "FillUsingDivCommentsFlag" );
+		IfMissing = props.getValue ( "IfMissing" );
 		if ( __use_alias && (Alias != null) ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -1099,6 +1106,23 @@ private void refresh ()
 		if ( FillUsingDivCommentsFlag != null ) {
 			__FillUsingDivCommentsFlag_JTextField.setText(FillUsingDivCommentsFlag);
 		}
+        if ( IfMissing == null ) {
+            // Select default...
+            __IfMissing_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(
+                __IfMissing_JComboBox, IfMissing, JGUIUtil.NONE, null, null ) ) {
+                __IfMissing_JComboBox.select ( IfMissing);
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\n" +
+                "IfMissing value \"" + IfMissing +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputName = __InputName_JTextField.getText().trim();
@@ -1121,7 +1145,8 @@ private void refresh ()
 		}
 		__TSID_JTextField.setText ( TSID );
 	}
-	else {	DataType = __DataType_JTextField.getText().trim();
+	else {
+	    DataType = __DataType_JTextField.getText().trim();
 		Interval = __Interval_JTextField.getText().trim();
 	}
 	// Regardless, reset the command from the fields...
@@ -1130,25 +1155,22 @@ private void refresh ()
 		props.add ( "Alias=" + Alias );
 		props.add ( "TSID=" + TSID );
 	}
-	else {	props.add ( "DataType=" + DataType );
+	else {
+	    props.add ( "DataType=" + DataType );
 		props.add ( "Interval=" + Interval );
 		props.add ( "InputName=" + InputName );
 		// Add the where clause...
 		// TODO SAM 2004-08-26 eventually allow filter panels similar
 		// to main GUI - right now only do water class...
-		InputFilter_JPanel filter_panel =
-			__input_filter_HydroBase_structure_sfut_JPanel;
+		InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
 		int nfg = filter_panel.getNumFilterGroups();
 		String where;
 		String delim = ";";	// To separate input filter parts
 		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
 			where = filter_panel.toString(ifg,delim).trim();
-			// Make sure there is a field that is being checked in
-			// a where clause...
-			if (	(where.length() > 0) &&
-				!where.startsWith(delim) ) {
-				props.add ( "Where" + (ifg + 1) +
-					"=" + where );
+			// Make sure there is a field that is being checked in a where clause...
+			if ( (where.length() > 0) && !where.startsWith(delim) ) {
+				props.add ( "Where" + (ifg + 1) + "=" + where );
 			}
 		}
 	}
@@ -1167,6 +1189,8 @@ private void refresh ()
 	props.add ( "FillUsingDivComments=" + FillUsingDivComments );
 	FillUsingDivCommentsFlag =__FillUsingDivCommentsFlag_JTextField.getText().trim();
 	props.add ( "FillUsingDivCommentsFlag=" + FillUsingDivCommentsFlag );
+	IfMissing = __IfMissing_JComboBox.getSelected();
+    props.add ( "IfMissing=" + IfMissing );
 	__command_JTextArea.setText( __command.toString ( props ) );
 
 	// Check the GUI state to determine whether some controls should be disabled.

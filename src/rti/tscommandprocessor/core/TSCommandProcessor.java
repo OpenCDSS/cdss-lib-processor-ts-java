@@ -50,6 +50,9 @@ import RTi.Util.IO.CommandListListener;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.CommandProcessorEvent;
+import RTi.Util.IO.CommandProcessorEventListener;
+import RTi.Util.IO.CommandProcessorEventProvider;
 import RTi.Util.IO.CommandProcessorListener;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
@@ -77,6 +80,10 @@ import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
 
+// Check commands
+
+import rti.tscommandprocessor.commands.check.CheckFileCommandProcessorEventListener;
+
 // HydroBase commands.
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
@@ -92,7 +99,7 @@ import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 /**
 This class processes time series commands and manages the relevant data.
 */
-public class TSCommandProcessor implements CommandProcessor, TSSupplier
+public class TSCommandProcessor implements CommandProcessor, TSSupplier, CommandProcessorEventListener
 {
 
 /**
@@ -121,7 +128,7 @@ private Vector __Command_Vector = new Vector();
 The name of the file to which the commands are saved, or null if not saved.
 Note that the in-memory commands should always be used for printing file headers.
 */
-private String __commands_filename = null;
+private String __commandFilename = null;
 
 /**
 The array of CommandListListeners to be called when the command list changes.
@@ -133,6 +140,13 @@ The array of CommandProcessorListeners to be called when the commands are
 running, to indicate progress.
 */
 private CommandProcessorListener [] __CommandProcessorListener_array = null;
+
+/**
+The list of CommandProcessorEventListener managed by this command processor,
+which is currently used only by the check file.  See the
+OpenCheckFile command for creation of the instances.
+*/
+private CommandProcessorEventListener[] __CommandProcessorEventListener_array = null;
 
 /**
 Indicate whether output should be created.  If true, then output files will be created.
@@ -212,9 +226,13 @@ be notified.
 public void addCommand ( Command command, boolean notifyCommandListListeners )
 {	String routine = "TSCommandProcessor.addCommand";
 	__Command_Vector.addElement( command );
+	// Also add this processor as a listener for events
+	if ( command instanceof CommandProcessorEventProvider ) {
+	    CommandProcessorEventProvider ep = (CommandProcessorEventProvider)command;
+	    ep.addCommandProcessorEventListener(this);
+	}
 	if ( notifyCommandListListeners ) {
-		notifyCommandListListenersOfAdd ( __Command_Vector.size() - 1,
-			__Command_Vector.size() - 1 );
+		notifyCommandListListenersOfAdd ( __Command_Vector.size() - 1, __Command_Vector.size() - 1 );
 	}
 	Message.printStatus(2, routine, "Added command object \"" +	command + "\"." );
 }
@@ -273,6 +291,48 @@ public void addCommandListListener ( CommandListListener listener )
 			__CommandListListener_array[size] = listener;
 			newlisteners = null;
 		}
+}
+
+/**
+Add a CommandProcessorEventListener, to be notified when commands generate CommandProcessorEvents.
+This is currently utilized by the check file capability, which queues events and generates a report file.
+If the listener has already been added, the listener will remain in
+the list in the original order.
+TODO SAM 2008-08-21 Make this private for now but may need to rethink if other than the check file use
+the events.
+*/
+private void addCommandProcessorEventListener ( CommandProcessorEventListener listener )
+{
+    // Use arrays to make a little simpler than Vectors to use later...
+    if ( listener == null ) {
+        return;
+    }
+    // See if the listener has already been added...
+    // Resize the listener array...
+    int size = 0;
+    if ( __CommandProcessorEventListener_array != null ) {
+        size = __CommandProcessorEventListener_array.length;
+    }
+    for ( int i = 0; i < size; i++ ) {
+        if ( __CommandProcessorEventListener_array[i] == listener ) {
+            return;
+        }
+    }
+    if ( __CommandProcessorEventListener_array == null ) {
+        __CommandProcessorEventListener_array = new CommandProcessorEventListener[1];
+        __CommandProcessorEventListener_array[0] = listener;
+    }
+    else {
+        // Need to resize and transfer the list...
+        size = __CommandProcessorEventListener_array.length;
+        CommandProcessorEventListener [] newlisteners = new CommandProcessorEventListener[size + 1];
+        for ( int i = 0; i < size; i++ ) {
+                newlisteners[i] = __CommandProcessorEventListener_array[i];
+        }
+        __CommandProcessorEventListener_array = newlisteners;
+        __CommandProcessorEventListener_array[size] = listener;
+        newlisteners = null;
+    }
 }
 
 /**
@@ -361,7 +421,7 @@ Get the name of the commands file associated with the processor.
 */
 public String getCommandsFileName ()
 {
-	return __commands_filename;
+	return __commandFilename;
 }
 
 /**
@@ -1014,6 +1074,20 @@ protected String getWorkingDir ()
 }
 
 /**
+Handle the CommandProcessorEvent events generated during processing and format for output.
+Currently this method passes on the events to listeners registered on this processor.
+@param event CommandProcessorEvent to handle.
+*/
+public void handleCommandProcessorEvent ( CommandProcessorEvent event )
+{
+    if ( __CommandProcessorEventListener_array != null ) {
+        for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
+            __CommandProcessorEventListener_array[i].handleCommandProcessorEvent(event);
+        }
+    }
+}
+
+/**
 Determine the index of a command in the processor.  A reference comparison occurs.
 @param command A command to search for in the processor.
 @return the index (0+) of the matching command, or -1 if not found.
@@ -1044,17 +1118,20 @@ Add a command using the Command instance.
 public void insertCommandAt ( Command command, int index )
 {	String routine = "TSCommandProcessor.insertCommandAt";
 	__Command_Vector.insertElementAt( command, index);
+	// Also add this processor as a listener for events
+    if ( command instanceof CommandProcessorEventProvider ) {
+        CommandProcessorEventProvider ep = (CommandProcessorEventProvider)command;
+        ep.addCommandProcessorEventListener(this);
+    }
 	notifyCommandListListenersOfAdd ( index, index );
-	Message.printStatus(2, routine, "Inserted command object \"" +
-			command + "\" at [" + index + "]" );
+	Message.printStatus(2, routine, "Inserted command object \"" + command + "\" at [" + index + "]" );
 }
 
 /**
 Add a command using the string text.  This should currently only be
 used for commands that do not have command classes, which perform
 additional validation on the commands.  A GenericCommand instance will
-be instantiated to maintain the string and allow command status to be
-set.
+be instantiated to maintain the string and allow command status to be set.
 @param command_string Command string for command.
 @param index Index (0+) at which to insert the command.
 */
@@ -1063,8 +1140,12 @@ public void insertCommandAt ( String command_string, int index )
 	Command command = new GenericCommand ();
 	command.setCommandString ( command_string );
 	insertCommandAt ( command, index );
-	Message.printStatus(2, routine, "Creating generic command from string \"" +
-			command_string + "\"." );
+	// Also add this processor as a listener for events
+    if ( command instanceof CommandProcessorEventProvider ) {
+        CommandProcessorEventProvider ep = (CommandProcessorEventProvider)command;
+        ep.addCommandProcessorEventListener(this);
+    }
+	Message.printStatus(2, routine, "Creating generic command from string \"" + command_string + "\"." );
 }
 
 /**
@@ -1184,6 +1265,24 @@ Currently the following requests are handled:
 </tr>
 
 <tr>
+<td><b>AddCommandProcessorEventListener</b></td>
+<td>Add a CommandProcessorEventListener to the processor, which will pass on events from
+commands to these listeners.  It is expected that the listener will be added before each
+run (via commands) and will be removed at the end of the run.  This design may need to
+change as testing occurs.  Parameters to this request are:
+<ol>
+<li>    <b>TS</b> Monthly time series to process, as TS (MonthTS) object.</li>
+<li>    <b>Index</b> The index (0+) of the time series identifier being processed,
+        as an Integer.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    <b>CommandProcessorEventListener</b>the listener to add.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>CalculateTSAverageLimits</b></td>
 <td>Calculate the average data limits for a time series using the averaging period
 	if specified (otherwise use the available period).
@@ -1192,7 +1291,7 @@ Currently the following requests are handled:
 <ol>
 <li>	<b>TS</b> Monthly time series to process, as TS (MonthTS) object.</li>
 <li>	<b>Index</b> The index (0+) of the time series identifier being processed,
-		as an Integer.</l>
+		as an Integer.</li>
 </ol>
 Returned values from this request are:
 <ol>
@@ -1525,7 +1624,10 @@ Returned values from this request are:
 public CommandProcessorRequestResultsBean processRequest ( String request, PropList request_params )
 throws Exception
 {	//return __tsengine.getPropContents ( prop );
-	if ( request.equalsIgnoreCase("AppendTimeSeries") ) {
+    if ( request.equalsIgnoreCase("AddCommandProcessorEventListener") ) {
+        return processRequest_AddCommandProcessorEventListener ( request, request_params );
+    }
+    else if ( request.equalsIgnoreCase("AppendTimeSeries") ) {
 		return processRequest_AppendTimeSeries ( request, request_params );
 	}
     else if ( request.equalsIgnoreCase("AppendEnsemble") ) {
@@ -1623,6 +1725,28 @@ throws Exception
 		// an error and pass back useful information.
 		throw new UnrecognizedRequestException ( warning );
 	}
+}
+
+/**
+Process the AddCommandProcessorEventListener request.
+*/
+private CommandProcessorRequestResultsBean processRequest_AddCommandProcessorEventListener (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "CommandProcessorEventListener" );
+    if ( o == null ) {
+            String warning = "Request AddCommandProcessorEventListener() does not " +
+            		"provide a CommandProcessorEventListener parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    CommandProcessorEventListener listener = (CommandProcessorEventListener)o;
+    addCommandProcessorEventListener ( listener );
+    // No data are returned in the bean.
+    return bean;
 }
 
 /**
@@ -2882,6 +3006,14 @@ throws Exception {
 }
 
 /**
+Remove all CommandProcessorEventListener.
+*/
+public void removeAllCommandProcessorEventListeners ( )
+{   // Just reset the array to null
+    __CommandProcessorEventListener_array = null;
+}
+
+/**
 Remove all commands.
 */
 public void removeAllCommands ()
@@ -2996,11 +3128,31 @@ throws Exception
     if ( ResetWorkflowProperties.equalsIgnoreCase("True")) {
         resetWorkflowProperties();
     }
+    // Remove all registered CommandProcessorEventListener, so that listeners don't get added
+    // more than once if the processor is rerun.  Currently this will require that an OpenCheckFile()
+    // command is always run since it is the only thing that handles events at this time.
+    removeAllCommandProcessorEventListeners();
+    
     // Now call the TSEngine method to do the processing.
     // FIXME SAM 2008-07-15 Need to merge TSEngine into TSCommandProcess when all commands
     // have been converted to classes - then code size should be more manageable and can remove
     // redundant code in the two classes.
 	__tsengine.processCommands ( commands, props );
+	
+	// Now finalize the results by processing the check files, if any
+	
+	for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
+	    CommandProcessorEventListener listener =
+	        (CommandProcessorEventListener)__CommandProcessorEventListener_array[i];
+	    if ( listener instanceof CheckFileCommandProcessorEventListener ) {
+	        CheckFileCommandProcessorEventListener cflistener = (CheckFileCommandProcessorEventListener)listener;
+	        cflistener.finalizeOutput();
+	    }
+	}
+	
+    // Remove all registered CommandProcessorEventListener again so that if by chance editing, etc. generates
+	// events don't want to deal with...
+    removeAllCommandProcessorEventListeners();
 }
 
 /**
@@ -3020,7 +3172,7 @@ it will be used in output headers).
 */
 public void setCommandFileName ( String filename )
 {
-	__commands_filename = filename;
+	__commandFilename = filename;
 }
 
 /**

@@ -59,6 +59,9 @@ import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
+// Data checks (for now keep separate from logging and data tests)
+import rti.tscommandprocessor.commands.check.OpenCheckFile_Command;
+
 // DataTest commands
 // FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
 
@@ -407,6 +410,9 @@ throws UnknownCommandException
 
 	// "O" commands...
 
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"OpenCheckFile") ) {
+        return new OpenCheckFile_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"OpenHydroBase") ) {
 		return new openHydroBase_Command ();
 	}

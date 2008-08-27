@@ -665,6 +665,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
+import DWR.StateCU.StateCU_BTS;
 import DWR.StateCU.StateCU_CropPatternTS;
 import DWR.StateCU.StateCU_IrrigationPracticeTS;
 import DWR.StateCU.StateCU_TS;
@@ -7511,6 +7512,18 @@ throws Exception
 			ts = null;
 		}
 	}
+    else if ((input_type != null) && input_type.equalsIgnoreCase("StateCUB") ) {
+        // New style TSID~input_type~input_name for StateCUB...
+        try {
+            ts = StateCU_BTS.readTimeSeries ( tsident_string2,
+                input_name_full, query_date1, query_date2, units, true );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateCU binary file." );
+            Message.printWarning ( 2, routine, te );
+            ts = null;
+        }
+    }
 	else if ((input_type != null) && input_type.equalsIgnoreCase("StateMod") ) {
 		// New style TSID~input_type~input_name for StateMod...
 		try {

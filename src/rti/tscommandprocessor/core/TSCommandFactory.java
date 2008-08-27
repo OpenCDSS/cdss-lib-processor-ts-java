@@ -112,6 +112,7 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 // StateCU commands.
 
 import rti.tscommandprocessor.commands.statecu.readStateCU_Command;
+import rti.tscommandprocessor.commands.statecu.ReadStateCUB_Command;
 
 // StateMod commands.
 
@@ -455,17 +456,22 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsrfsEspTraceEnsemble") ) {
         return new ReadNwsrfsEspTraceEnsemble_Command ();
     }
-	// Put before shorter command name...
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateModB") ) {
-		return new readStateModB_Command ();
-	}
+
+    // Put before shorter command name...
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateCUB") ) {
+        return new ReadStateCUB_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateCU") ) {
 		return new readStateCU_Command ();
 	}
+    // Put before shorter command name...
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateModB") ) {
+        return new readStateModB_Command ();
+    }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadStateMod") ) {
+        return new readStateMod_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateMod") ) {
-		return new readStateMod_Command ();
-	}
-	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadStateMod") ) {
 		return new readStateMod_Command ();
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadTableFromDelimitedFile") ) {

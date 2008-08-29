@@ -176,11 +176,22 @@ throws CommandWarningException, CommandException
 		String ScreenLevel = parameters.getValue ( "ScreenLevel" );
 		String LogFileLevel = parameters.getValue ( "LogFileLevel" );
 		Message.printStatus( 2, routine, "levels are " + ScreenLevel + ", " + LogFileLevel );
+		int screenLevelInt = -1;
+		int logLevelInt = -1;
 		if ( ScreenLevel != null ) {
-		    Message.setDebugLevel( Message.TERM_OUTPUT, Integer.parseInt(ScreenLevel) );
+		    screenLevelInt = Integer.parseInt(ScreenLevel);
+		    Message.setDebugLevel( Message.TERM_OUTPUT, screenLevelInt );
 		}
 	    if ( LogFileLevel != null ) {
-	         Message.setDebugLevel( Message.LOG_OUTPUT, Integer.parseInt(LogFileLevel) );
+	         logLevelInt = Integer.parseInt(LogFileLevel);
+	         Message.setDebugLevel( Message.LOG_OUTPUT, logLevelInt );
+	    }
+	    if ( (screenLevelInt > 0) || (logLevelInt > 0) ) {
+	        Message.setDebug ( true );
+	    }
+	    else if ( (screenLevelInt == 0) && (logLevelInt == 0) ) {
+	        // Since both are specified as zero, turn debug off
+	        Message.setDebug ( false );
 	    }
 	}
 	catch ( Exception e ) {

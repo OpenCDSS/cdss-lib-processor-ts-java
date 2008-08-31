@@ -3140,14 +3140,16 @@ throws Exception
 	__tsengine.processCommands ( commands, props );
 	
 	// Now finalize the results by processing the check files, if any
-	
-	for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
-	    CommandProcessorEventListener listener =
-	        (CommandProcessorEventListener)__CommandProcessorEventListener_array[i];
-	    if ( listener instanceof CheckFileCommandProcessorEventListener ) {
-	        CheckFileCommandProcessorEventListener cflistener = (CheckFileCommandProcessorEventListener)listener;
-	        cflistener.finalizeOutput();
-	    }
+
+	if ( __CommandProcessorEventListener_array != null ) {
+    	for ( int i = 0; i < __CommandProcessorEventListener_array.length; i++ ) {
+    	    CommandProcessorEventListener listener =
+    	        (CommandProcessorEventListener)__CommandProcessorEventListener_array[i];
+    	    if ( listener instanceof CheckFileCommandProcessorEventListener ) {
+    	        CheckFileCommandProcessorEventListener cflistener = (CheckFileCommandProcessorEventListener)listener;
+    	        cflistener.finalizeOutput();
+    	    }
+    	}
 	}
 	
     // Remove all registered CommandProcessorEventListener again so that if by chance editing, etc. generates

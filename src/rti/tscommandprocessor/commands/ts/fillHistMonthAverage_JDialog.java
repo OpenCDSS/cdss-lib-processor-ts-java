@@ -337,7 +337,8 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	refresh();
+{	checkGUIState();
+    refresh();
 }
 
 /**

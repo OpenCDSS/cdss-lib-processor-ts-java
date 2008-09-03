@@ -5111,56 +5111,6 @@ throws Exception
 			ts_action = UPDATE_TS;
 			tokens = null;
 		}
-		else if ( command_String.regionMatches(true,0,"fillInterpolate",0,15) ) {
-			// Fill missing data in the time series using
-			// interpolation...
-			tokens = StringUtil.breakStringList ( command_String,
-				"(,) ", StringUtil.DELIM_SKIP_BLANKS |
-				StringUtil.DELIM_ALLOW_STRINGS );
-			if ( tokens.size() != 4 ) {
-				message = "Bad command \"" + command_String + "\"";
-				Message.printWarning ( 1, routine, message );
-				++error_count;
-				continue;
-			}
-
-			// Parse the identifier...
-			alias = (String)tokens.elementAt(1);
-			int maxint = StringUtil.atoi(
-				(String)tokens.elementAt(2) );
-			// Currently don't care about method - it is always
-			// linear.
-			if ( alias.equals("*") ) {
-				// Fill everything in memory...
-				int nts = getTimeSeriesSize();
-				// Set first in case there is an exception...
-				ts_action = NONE;
-				for ( int its = 0; its < nts; its++ ) {
-					ts = getTimeSeries(its);
-					TSUtil.fillInterpolate ( ts,
-					(DateTime)null,
-					(DateTime)null, maxint, 0 );
-					// Update...
-					setTimeSeries ( ts, its );
-				}
-			}
-			else {	// Fill one time series...
-				ts_pos = indexOf ( alias );
-				if ( ts_pos >= 0 ) {
-					ts = getTimeSeries ( ts_pos );
-					TSUtil.fillInterpolate ( ts,
-					(DateTime)null,
-					(DateTime)null, maxint, 0 );
-					ts_action = UPDATE_TS;
-				}
-				else {	Message.printWarning ( 1, routine,
-					"Unable to find TS referenced in \"" +
-					command_String + "\"" );
-					ts_action = NONE;
-				}
-			}
-			tokens = null;
-		}
 		else if ( command_String.regionMatches( true,0,"fillPattern",0,11)){
 			// Fill a monthly time series using historical monthly
 			// pattern averages.

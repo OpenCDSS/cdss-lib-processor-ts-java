@@ -155,6 +155,7 @@ import rti.tscommandprocessor.commands.ts.fillConstant_Command;
 import rti.tscommandprocessor.commands.ts.FillFromTS_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
+import rti.tscommandprocessor.commands.ts.FillInterpolate_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
 import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
@@ -346,6 +347,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillHistYearAverage") ) {
 		return new fillHistYearAverage_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FillInterpolate") ) {
+        return new FillInterpolate_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillMixedStation") ) {
 		return new fillMixedStation_Command ();
 	}

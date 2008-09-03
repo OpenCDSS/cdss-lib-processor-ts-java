@@ -663,6 +663,8 @@ import java.util.Vector;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
+import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
 import DWR.StateCU.StateCU_BTS;
@@ -7345,6 +7347,16 @@ throws Exception
 			}
 		}
 	}
+    else if ( source.equalsIgnoreCase("HEC-DSS") ) {
+        // Old style (scenario may or may not be used to find the file)...
+        try {
+            ts = HecDssAPI.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 2, routine, e );
+            ts = null;
+        }
+    }
 	else if ((input_type != null) && input_type.equalsIgnoreCase("HydroBase") ) {
 		if ( Message.isDebugOn ) {
 			Message.printDebug ( 10, routine, "Reading time series..." +

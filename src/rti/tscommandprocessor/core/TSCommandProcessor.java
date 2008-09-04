@@ -2654,6 +2654,7 @@ throws IOException, FileNotFoundException
 {	String routine = getClass().getName() + ".readCommandFile";
 	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
+	setCommandFileName ( path );   // This is used in headers, etc.
 	// Set the working directory because this may be used by other commands.
 	File path_File = new File(path);
 	setInitialWorkingDir ( path_File.getParent() );

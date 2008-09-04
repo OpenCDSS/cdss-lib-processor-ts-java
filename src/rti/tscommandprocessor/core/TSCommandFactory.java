@@ -113,6 +113,7 @@ import rti.tscommandprocessor.commands.shef.WriteSHEF_Command;
 
 import rti.tscommandprocessor.commands.statecu.readStateCU_Command;
 import rti.tscommandprocessor.commands.statecu.ReadStateCUB_Command;
+import rti.tscommandprocessor.commands.statecu.WriteStateCU_Command;
 
 // StateMod commands.
 
@@ -613,6 +614,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteSHEF") ) {
         return new WriteSHEF_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteStateCU") ) {
+        return new WriteStateCU_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteStateMod") ) {
 		return new writeStateMod_Command ();

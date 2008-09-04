@@ -3371,50 +3371,6 @@ throws Exception
 }
 
 /**
-Execute the writeStateCU() command.
-@param command Command to parse.
-@param comments Comments for output header.
-@exception Exception if there is an error.
-*/
-private void do_writeStateCU ( String command_tag, String command_string, String[] comments, GenericCommand command )
-throws Exception
-{	String routine = "TSEngine.do_writeStateCU";
-    int warning_count = 0;
-    int warning_level = 2;
-    String message;
-
-    CommandStatus status = command.getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
-
-	Vector tokens = StringUtil.breakStringList ( command_string,
-		" (,)", StringUtil.DELIM_SKIP_BLANKS|
-		StringUtil.DELIM_ALLOW_STRINGS );
-	if ( (tokens.size() != 2) && (tokens.size() != 3) ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	String outfile = ((String)tokens.elementAt(1)).trim();
-    String outfile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),outfile) );
-	
-	try {
-        StateCU_TS.writeFrostDatesFile ( __tslist, outfile_full,
-			comments, __OutputStart_DateTime, __OutputEnd_DateTime);
-	}
-	catch ( Exception e ) {
-        message = "Unexpected error writing StateCU file \"" + outfile_full + "\".";
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-        Message.printWarning(3, routine, e);
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Check the log file." ) );
-        throw new CommandException ( message );
-	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-}
-
-/**
 Execute the shift() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -3492,14 +3448,13 @@ to a case where the commands are passed to the write methods.
 protected String [] formatOutputHeaderComments ( List commands )
 {	Vector comments = new Vector();
 	// Commands.  Show the file name but all commands may be in memory.
-	comments.addElement (
-		"--------------------------------------------------" +
-			"---------------------" );
+	comments.addElement ( "-----------------------------------------------------------------------" );
 	String commands_filename = __ts_processor.getCommandsFileName();
 	if ( commands_filename == null ) {
-		comments.addElement ( "Commands file name:  COMMANDS NOT SAVED TO FILE" );
+		comments.addElement ( "Command file name:  COMMANDS NOT SAVED TO FILE" );
 	}
-	else { comments.addElement ( "Commands file name: \"" + commands_filename + "\"" );
+	else {
+	    comments.addElement ( "Command file name: \"" + commands_filename + "\"" );
 	}
 	comments.addElement ( "Commands: " );
 	int size_commands = commands.size();
@@ -3513,7 +3468,8 @@ protected String [] formatOutputHeaderComments ( List commands )
 	for ( int ih = 0; ih < hsize; ih++ ) {
 		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
 		if ( hbdmi != null ) {
-			try {	db_comments = hbdmi.getVersionComments ();
+			try {
+			    db_comments = hbdmi.getVersionComments ();
 			}
 			catch ( Exception e ) {
 				db_comments = null;
@@ -3525,13 +3481,7 @@ protected String [] formatOutputHeaderComments ( List commands )
 			}
 		}
 	}
-	// Convert to an array...
-	int size = comments.size();
-	String [] comments_array = new String[size];
-	for ( int i = 0; i < size; i++ ) {
-		comments_array[i] = (String)comments.elementAt(i);
-	}
-	return comments_array;
+	return StringUtil.toArray(comments);
 }
 
 /**
@@ -5609,17 +5559,6 @@ throws Exception
                 ts.setAlias ( tsalias );
             }
             tokens = null;
-		}
-		else if(command_String.regionMatches(true,0,"writeStateCU",0,12) ){
-			// Write the time series in memory to a StateCU time series file...
-			if ( !CreateOutput_boolean ) {
-				Message.printStatus ( 1, routine, "Skipping \"" + command_String + "\" because output is to be ignored." );
-				continue;
-			}
-			do_writeStateCU ( command_tag, command_String,
-					formatOutputHeaderComments(commandList), (GenericCommand)command );
-			// No action needed at end...
-			continue;
 		}
 
 		// Detect a time series identifier, which needs to be processed to read the time series...

@@ -397,7 +397,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\" from processor.";
+		"\", TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -525,6 +525,22 @@ CommandWarningException, CommandException
 		routine, message );
 		throw new CommandException ( message );
 	}
+	
+    // Get the comments to add to the top of the file.
+
+    Vector OutputComments_Vector = null;
+    try { Object o = processor.getPropContents ( "OutputComments" );
+        // Comments are available so use them...
+        if ( o != null ) {
+            OutputComments_Vector = (Vector)o;
+            parameters.setUsingObject("OutputComments",OutputComments_Vector);
+        }
+    }
+    catch ( Exception e ) {
+        // Not fatal, but of use to developers.
+        message = "Error requesting OutputComments from processor - not using.";
+        Message.printDebug(10, routine, message );
+    }
 
 	// Now try to write...
 

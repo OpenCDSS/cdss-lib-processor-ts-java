@@ -450,6 +450,23 @@ CommandWarningException, CommandException
     if ( (Precision != null) && (Precision.length() > 0) ) {
         props.set("Precision=" + Precision);
     }
+    
+    // Get the comments to add to the top of the file.
+
+    Vector OutputComments_Vector = null;
+    try { Object o = processor.getPropContents ( "OutputComments" );
+        // Comments are available so use them...
+        if ( o != null ) {
+            OutputComments_Vector = (Vector)o;
+            props.setUsingObject("OutputComments",OutputComments_Vector);
+        }
+    }
+    catch ( Exception e ) {
+        // Not fatal, but of use to developers.
+        message = "Error requesting OutputComments from processor - not using.";
+        Message.printDebug(10, routine, message );
+    }
+    
     if ( (tslist != null) && (tslist.size() > 0) ) {
         String OutputFile_full = OutputFile;
         try {

@@ -2898,94 +2898,6 @@ throws Exception
 }
 
 /**
-Execute the readUsgsNwis() command:
-<pre>
-TS Alias = readUsgsNwis(file,start,end)
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private TS do_readUsgsNwis ( String command_tag, String command_string, GenericCommand command )
-throws Exception
-{	String routine = "TSEngine.do_readUsgsNwis";
-    int warning_level = 2;
-    int warning_count = 0;
-    String message;
-    
-    CommandStatus status = command.getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
-    
-	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
-	String infile = ((String)tokens.elementAt(2)).trim();
-	String date1_string = ((String)tokens.elementAt(3)).trim();
-	String date2_string = ((String)tokens.elementAt(4)).trim();
-	DateTime query_date1 = null;
-	DateTime query_date2 = null;
-	if ( date1_string.equals("*") || date1_string.equals("") ) {
-		query_date1 = null;
-	}
-	else if ( date1_string.equalsIgnoreCase("OutputStart") ) {
-		query_date1 = __OutputStart_DateTime;
-	}
-	else {
-	    try {
-	        query_date1 = DateTime.parse ( date1_string);
-		}
-		catch ( Exception e ) {
-			query_date1 = null;
-		}
-	}
-	if ( date2_string.equals("*") || date2_string.equals("") ) {
-		query_date2 = null;
-	}
-	else if ( date2_string.equalsIgnoreCase("OutputEnd") ) {
-		query_date2 = __OutputEnd_DateTime;
-	}
-	else {
-	    try {
-	        query_date2 = DateTime.parse ( date2_string);
-		}
-		catch ( Exception e ) {
-			query_date2 = null;
-		}
-	}
-    String infile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
-	Message.printStatus ( 2, routine, "Reading USGS NWIS file \"" + infile_full + "\"" );
-	TS ts = null;
-	try {
-        ts = UsgsNwisTS.readTimeSeries ( infile_full, query_date1, query_date2, null, true );
-		// Now post-process...
-		readTimeSeries2 ( ts, null, true );
-	}
-	catch ( Exception e ) {
-        message = "Unexpected error reading USGS NWIS file \"" + infile_full + "\".";
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-        Message.printWarning ( 3, routine, e );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file format is daily USGS NWIS flow from the web site." ) );
-	}
-	if ( ts != null ) {
-		// Set the alias...
-		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
-	}
-    if ( warning_count > 0 ) {
-        message = "There were " + warning_count + " warnings processing the command.";
-        Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag, ++warning_count),
-            routine,message);
-        throw new CommandWarningException ( message );
-    }
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-	return ts;
-}
-
-/**
 Execute the setDataValue() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -5319,6 +5231,7 @@ throws Exception
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNDFD") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNwsCard") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
+		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadUsgsNwis") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "WeightTraces")) {
 			// All these cases are time series to be inserted.
 			// Declare a time series and set it to some function
@@ -5503,19 +5416,6 @@ throws Exception
 				// Read the time series...
 				ts = readTimeSeries( popup_warning_level, command_tag,
 					((String)tokens.elementAt(2)).trim());
-			}
-			else if ( method.equalsIgnoreCase("readUsgsNwis") ) {
-				// TS Alias = readUsgsNwis(file,start,end)
-				tokens = StringUtil.breakStringList (
-						command_String, "=(),",
-					StringUtil.DELIM_ALLOW_STRINGS);
-				if ( tokens.size() != 5 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
-					++error_count;
-					continue;
-				}
-				ts = do_readUsgsNwis ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if ( method.equalsIgnoreCase("relativeDiff") ) {
 				// Relative diff of time series...

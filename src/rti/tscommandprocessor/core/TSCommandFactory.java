@@ -185,6 +185,10 @@ import rti.tscommandprocessor.commands.ts.Subtract_Command;
 import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
+// USGS commands
+
+import rti.tscommandprocessor.commands.usgs.ReadUsgsNwis_Command;
+
 // Utility commands.
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
@@ -481,6 +485,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();
+    }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadUsgsNwis") ) {
+        return new ReadUsgsNwis_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"RemoveFile") ) {
         return new RemoveFile_Command ();

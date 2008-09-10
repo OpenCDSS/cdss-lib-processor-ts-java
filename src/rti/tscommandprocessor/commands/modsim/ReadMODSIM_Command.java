@@ -93,9 +93,9 @@ throws InvalidCommandParameterException
 	
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
-	String NewUnits  = parameters.getValue("NewUnits");
+	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
-	String InputEnd   = parameters.getValue("InputEnd");
+	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
 	String TSID = parameters.getValue("TSID");
     
@@ -133,12 +133,18 @@ throws InvalidCommandParameterException
                 String NodeName = tsident.getLocation();
                 String DataType = tsident.getType();
                 if ( NodeName.equals("") ) {
-                    warning +=
-                        "Node/Link name must be set, or press Cancel";
+                    message = "Node/Link name must be set in TSID.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                             message, "Verify that the node/link name is specified." ) );
                 }
                 if ( DataType.equals("") ) {
-                    warning +=
-                        "Data type must be set, or press Cancel";
+                    message = "Data type must be set in TSID.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                             message, "Verify that the data type is specified." ) );
                 }
             }
             catch ( Exception e ) {
@@ -146,7 +152,7 @@ throws InvalidCommandParameterException
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that node/link name and data type are specified." ) );
+                                message, "Verify that the node/link name and data type are specified." ) );
             }
         }
     }
@@ -372,7 +378,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // Remainder containing the command name and parameters (old or new style) parse below...
         command_string = str.substring(index+1).trim();
     }
-    Message.printStatus(2,routine,"useAlias=" + _useAlias + " command string=\"" + command_string + "\"");
     // In any case parse the command parameters
     if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
         // Current syntax...
@@ -415,7 +420,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                 InputFile = ((String)v.elementAt(1)).trim();
             }
         }
-        Message.printStatus (2,routine,"TSID="+TSID);
 
         // Set parameters and new defaults...
 

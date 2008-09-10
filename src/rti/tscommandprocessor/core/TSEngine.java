@@ -2659,62 +2659,6 @@ throws Exception
 }
 
 /**
-Execute the TS Alias = readMODSIM() command:
-<pre>
-TS Alias = readMODSIM(file,TSID,units,start,end)
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private TS do_readMODSIM ( String command_tag, String command_string, GenericCommand command )
-throws Exception
-{	String routine = "TSEngine.do_readMODSIM";
-    String message;
-    int warning_level = 2;
-    int warning_count = 0;
-
-    CommandStatus status = command.getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
-
-	// Reparse to strip quotes from file name...
-    Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
-	String infile = ((String)tokens.elementAt(2)).trim();
-    String infile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
-	String tsid = ((String)tokens.elementAt(3)).trim();
-	//String units = ((String)tokens.elementAt(4)).trim();
-	String date1_string = ((String)tokens.elementAt(5)).trim();
-	String date2_string = ((String)tokens.elementAt(6)).trim();
-	DateTime query_date1 = getDateTime ( date1_string );
-	DateTime query_date2 = getDateTime ( date2_string );
-	Message.printStatus ( 1, routine, "Reading MODSIM file \"" + infile_full + "\"" );
-	TS ts = null;
-	try {
-        ts = ModsimTS.readTimeSeries ( tsid, infile_full, query_date1, query_date2, null, true );
-		// Now post-process...
-		readTimeSeries2 ( ts, null, true );
-	}
-	catch ( Exception e ) {
-		message = "Error reading MODSIM file \"" + infile_full + "\".";
-		Message.printWarning ( 3, routine, e );
-           Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-            Message.printWarning(3, routine, e);
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the file is a valid MODSIM time series file." ) );
-            throw new CommandException ( message );
-	}
-	if ( ts != null ) {
-		// Set the alias...
-		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
-	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-	return ts;
-}
-
-/**
 Execute the readNWSRFSFS5Files() commands:
 <pre>
 readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
@@ -5033,61 +4977,6 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-     	else if (command_String.regionMatches(true,0,"readMODSIM",0,10)){
-			// Read the MODSIM file, putting all the time series into memory...
-            CommandStatus status = ((GenericCommand)command).getCommandStatus();
-            int warning_level = 2;
-            int warning_count = 0;
-            status.clearLog(CommandPhaseType.RUN);
-			tokens = StringUtil.breakStringList ( command_String,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS|
-				StringUtil.DELIM_ALLOW_STRINGS );
-			if ( tokens.size() != 2 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + command_String + "\"" );
-				continue;
-			}
-			String infile = ((String)tokens.elementAt(1)).trim();
-            String infile_full = IOUtil.verifyPathForOS(
-                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile));
-			Vector tslist = null;
-			Message.printStatus ( 1, routine, "Reading MODSIM file \"" + infile_full + "\"" );
-			try {	tslist = ModsimTS.readTimeSeriesList (
-					infile_full, __InputStart_DateTime, __InputEnd_DateTime,
-					null, true );
-			}
-			catch ( Exception e ) {
-				message = "Unexpected error reading MODSIM file \"" + infile_full + "\".";
-
-                   Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag(command_tag,
-                            ++warning_count), routine, message );
-                    Message.printWarning(3, routine, e);
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Verify that the file is a valid MODSIM time series file." ) );
-                    Message.printWarning ( 3, routine, e );
-                    throw new CommandException ( message );
-			}
-			// Add the time series to the end of the normal list...
-			if ( tslist != null ) {
-				// Further process the time series.  This makes sure the period is at least that
-				// of the output period...
-				int vsize = tslist.size();
-				Message.printStatus ( 1, routine, "Read " + vsize + " MODSIM time series" );
-				readTimeSeries2 ( tslist, true );
-				ts_pos = getTimeSeriesSize();
-				for ( int iv = 0; iv < vsize; iv++ ) {
-					setTimeSeries (	(TS)tslist.elementAt(iv), (ts_pos + iv) );
-				}
-			}
-			// Free resources from StateMod list...
-			tslist = null;
-			// Force a garbage collect because this is an intensive task...
-			System.gc();
-			// No action needed at end...
-			continue;
-		}
 		else if (command_String.regionMatches(true,0,"readNWSRFSFS5Files",0,13)){
 			// Read 1+ time series from NWSRFS FS5Files, putting all
 			// the time series traces into memory...
@@ -5228,6 +5117,7 @@ throws Exception
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewTimeSeries") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadDateValue") &&
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadHydroBase") &&
+            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadMODSIM") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNDFD") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNwsCard") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
@@ -5371,20 +5261,6 @@ throws Exception
 				}
 				else {	ts = null;
 				}
-			}
-			else if ( method.equalsIgnoreCase("readMODSIM") ) {
-				// TS Alias =
-				// readMODSIM(file,TSID,Units,start,end)
-				// Reparse to allow spaces in the dates...
-				tokens = StringUtil.breakStringList (
-						command_String, "=(,)",
-					StringUtil.DELIM_ALLOW_STRINGS);
-				if ( tokens.size() != 7 ) {
-					Message.printWarning ( 1, routine,"Bad command \"" + command_String +"\"");
-					++error_count;
-					continue;
-				}
-				ts = do_readMODSIM ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if (method.equalsIgnoreCase("readNWSRFSFS5Files")){
 				ts = do_TS_readNWSRFSFS5Files ( command_String );

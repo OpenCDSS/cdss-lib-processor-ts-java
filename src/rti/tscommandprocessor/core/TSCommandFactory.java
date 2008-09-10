@@ -93,6 +93,10 @@ import rti.tscommandprocessor.commands.logging.SetDebugLevel_Command;
 import rti.tscommandprocessor.commands.logging.SetWarningLevel_Command;
 import rti.tscommandprocessor.commands.logging.startLog_Command;
 
+// MODSIM commands
+
+import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
+
 // NWSRFS commands.
 
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
@@ -453,6 +457,12 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadHydroBase") ) {
 		return new readHydroBase_Command();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadMODSIM") ) {
+        return new ReadMODSIM_Command ();
+    }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadMODSIM") ) {
+        return new ReadMODSIM_Command();
+    }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadNDFD") ) {
 		//return new readNDFD_Command ();
 	}

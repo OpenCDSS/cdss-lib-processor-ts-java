@@ -61,7 +61,6 @@ private Command __command = null;
 private String __working_dir = null;	// Working directory.
 private JTextField __Alias_JTextField = null,// Alias for time series.
 			__NodeName_JTextField,	// Node name to read.
-			__DataType_JTextField,	// Node data type to read.
 			__TSID_JTextField,
 			__InputStart_JTextField,
 			__InputEnd_JTextField,
@@ -185,7 +184,7 @@ private void checkInput () {
     String TSID = null;
     if (__isAliasVersion) { 
         Alias = __Alias_JTextField.getText().trim();
-        TSID = __Alias_JTextField.getText().trim();
+        TSID = __TSID_JTextField.getText().trim();
     }
     
     __error_wait = false;
@@ -344,15 +343,13 @@ private void initialize ( JFrame parent, Command command )
 
         JGUIUtil.addComponent(main_JPanel, new JLabel("Data type to read:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        __DataType_JTextField = new JTextField ( "", 30 );
-        __DataType_JTextField.addKeyListener ( this );
-	    JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	    __DataType_JComboBox = new SimpleJComboBox ( false );
-	    __DataType_JComboBox.addItem ( "Unavailable" );
-	    __DataType_JComboBox.addItemListener ( this );
+        __DataType_JComboBox = new SimpleJComboBox ( false );
+        __DataType_JComboBox.addItem ( "Unavailable" );
+        __DataType_JComboBox.addItemListener ( this );
 	    JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	    JGUIUtil.addComponent(main_JPanel, new JLabel( "Determined from file extension."), 
+	            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	    
 	    if ( __isAliasVersion ) {
 	        // Show full TSID, formed from above data (but not directly editable)
@@ -418,10 +415,10 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add ( __ok_JButton );
 
     if (__isAliasVersion) {
-        setTitle("Edit TS Alias = " + __command.getCommandName() + " Command");
+        setTitle("Edit TS Alias = " + __command.getCommandName() + "() Command");
     }
     else {
-        setTitle("Edit " + __command.getCommandName() + " Command");
+        setTitle("Edit " + __command.getCommandName() + "() Command");
     }
 	setResizable ( true );
     pack();
@@ -500,21 +497,38 @@ private void refresh() {
         if (Alias != null && __isAliasVersion) {
             __Alias_JTextField.setText(Alias.trim());
         }
+        if (InputFile != null) {
+            // This needs to be before the TSID code below.
+            __InputFile_JTextField.setText(InputFile);
+            // Also initialize the data type choices
+            updateDataTypeChoices();
+        }
         if (TSID != null && __isAliasVersion) {
             // Parse and set the parts, since that is what the user can edit.
             try {
                 TSIdent tsident = new TSIdent ( TSID );
                 __NodeName_JTextField.setText(tsident.getLocation());
-                __DataType_JTextField.setText(tsident.getType());
+                String DataType = tsident.getType();
+                if (    JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox, DataType,
+                        JGUIUtil.NONE, null, null ) ) {
+                        __DataType_JComboBox.select ( DataType );
+                }
+                else {
+                    // Automatically add to the list after the blank...
+                    if ( (DataType != null) && (DataType.length() > 0) ) {
+                        __DataType_JComboBox.insertItemAt ( DataType, 1 );
+                        // Select...
+                        __DataType_JComboBox.select ( DataType );
+                    }
+                    else {
+                        // Select the blank...
+                        __DataType_JComboBox.select ( 0 );
+                    }
+                }
             }
             catch ( Exception e ) {
                 // Unlikely but let the user fill in the parts to reform the TSID
             }
-        }
-        if (InputFile != null) {
-            __InputFile_JTextField.setText(InputFile);
-            // Also initialize the data type choices
-            updateDataTypeChoices();
         }
         if (InputStart != null) {
             __InputStart_JTextField.setText(InputStart);
@@ -537,8 +551,8 @@ private void refresh() {
     //NewUnits = __NewUnits_JTextField.getText().trim();
     if (__isAliasVersion) {
         Alias = __Alias_JTextField.getText().trim();
-        TSID =  __NodeName_JTextField.getText().trim() + ".." +
-        __DataType_JTextField.getText().trim() + "..";
+        TSID = __NodeName_JTextField.getText().trim() + ".." +
+        __DataType_JComboBox.getSelected() + "..";
         __TSID_JTextField.setText ( TSID );
     }
 

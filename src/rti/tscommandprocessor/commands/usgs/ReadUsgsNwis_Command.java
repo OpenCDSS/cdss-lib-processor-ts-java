@@ -124,20 +124,21 @@ throws InvalidCommandParameterException
     }
     else {
         String working_dir = null;
-        try { Object o = processor.getPropContents ( "WorkingDir" );
-                // Working directory is available so use it...
-                if ( o != null ) {
-                    working_dir = (String)o;
-                }
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
+            // Working directory is available so use it...
+            if ( o != null ) {
+                working_dir = (String)o;
             }
-            catch ( Exception e ) {
-                message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                Message.printWarning(3, routine, message );
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify an existing input file." ) );
-            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            Message.printWarning(3, routine, message );
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an existing input file." ) );
+        }
     
         try {
             //String adjusted_path = 

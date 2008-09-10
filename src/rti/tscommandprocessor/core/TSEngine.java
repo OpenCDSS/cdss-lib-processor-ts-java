@@ -2659,51 +2659,6 @@ throws Exception
 }
 
 /**
-Execute the readNWSRFSFS5Files() commands:
-<pre>
-readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_readNWSRFSFS5Files ( String command )
-throws Exception
-{	//String routine = "TSEngine.do_readNWSRFSFS5Files";
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (tokens == null) || (tokens.size() < 2) ) {
-		// Should never happen because the command name was parsed before...
-		throw new Exception ( "Bad command: \"" + command + "\"" );
-	}
-	// Get the input needed to process the file...
-	//PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
-	//String TSID = props.getValue ( "TSList" );
-	//String QueryStart = props.getValue ( "QueryStart" );
-	//String QueryEnd = props.getValue ( "QueryEnd" );
-	//String Units = props.getValue ( "Units" );
-
-	/* TODO SAM 2004-09-11 need to enable
-	DateTime QueryStart_DateTime = getDateTime ( QueryStart );
-	if ( QueryStart_DateTime == null ) {
-		QueryStart_DateTime = __query_date1;
-	}
-	DateTime QueryEnd_DateTime = getDateTime ( QueryEnd );
-	if ( QueryEnd_DateTime == null ) {
-		QueryEnd_DateTime = __query_date2;
-	}
-	Message.printStatus ( 2, routine, "Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
-	TS ts = null;
-	ts = __nwsrfs_dmi.readTimeSeries ( TSID, QueryStart_DateTime, QueryEnd_DateTime, Units, true );
-	// Now post-process...
-	readTimeSeries2 ( ts, null, true );
-	if ( ts != null ) {
-		// Set the alias...
-		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
-	}
-	return ts;
-	*/
-}
-
-/**
 Execute the readRiverWare() command:
 <pre>
 TS Alias = readRiverWare(file,units,start,end)
@@ -2761,83 +2716,6 @@ throws Exception
 		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
 	}
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-	return ts;
-}
-
-/**
-Execute the TS Alias = readNWSRFSFS5Files() command:
-<pre>
-TS Alias = readNWSRFSFS5Files(TSID="x",QueryStart="X",QueryEnd="X",Units="X")
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private TS do_TS_readNWSRFSFS5Files ( String command )
-throws Exception
-{	String message, routine = "TSEngine.do_TS_readNWSRFSFS5Files";
-	// Get the alias as the second token...
-	String Alias = StringUtil.getToken(command," ", StringUtil.DELIM_SKIP_BLANKS,1);
-	// Split out the command...
-	int pos = command.indexOf('=');
-	Vector tokens = StringUtil.breakStringList (
-			command.substring(pos + 1).trim(), "()", StringUtil.DELIM_SKIP_BLANKS );
-	PropList props = PropList.parse( (String)tokens.elementAt(1),routine,",");
-	String TSID = props.getValue ( "TSID" );
-	String QueryStart = props.getValue ( "QueryStart" );
-	String QueryEnd = props.getValue ( "QueryEnd" );
-	String Units = props.getValue ( "Units" );
-
-	if ( TSID == null ) {
-		message = "TSID is null - must be specified.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	DateTime query_date1 = null, query_date2 = null;
-	if ( QueryStart != null ) {
-		query_date1 = DateTime.parse ( QueryStart );
-	}
-	else {
-	    query_date1 = __InputStart_DateTime;
-	}
-	if ( QueryEnd != null ) {
-		query_date2 = DateTime.parse ( QueryEnd );
-	}
-	else {
-	    query_date2 = __InputEnd_DateTime;
-	}
-	Message.printStatus ( 2, routine, "Reading NWSRFS FS5Files time series \"" + TSID + "\"" );
-	// Get the TSIdent for the TSID string.  The input name is checked to see if it is a directory.
-	// Default to the DMI instance from the calling code, which will
-	// be used if a path is not specified in the input name.  In this case,
-	// the user has possibly indicated that files should be found using the Apps Defaults.
-
-	TSIdent tsident = new TSIdent ( TSID );
-	String input_name = tsident.getInputName();
-	// Convert to a full path because this what will be stored in the __nwsrfs_dmi.
-	String input_name_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name) );
-	NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI( input_name_full, true );
-	if ( nwsrfs_dmi == null ) {
-		Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
-					input_name_full + "\"" );
-		nwsrfs_dmi = new NWSRFS_DMI( input_name_full );
-	}
-	TS ts = null;
-	try {
-        ts = nwsrfs_dmi.readTimeSeries ( TSID, query_date1, query_date2, Units, true );
-		// Now post-process...
-		readTimeSeries2 ( ts, null, true );
-	}
-	catch ( Exception e ) {
-		message = "Error reading NWSRFS FS5Files time series \"" + TSID + "\".";
-		Message.printWarning ( 2, routine, message );
-		Message.printWarning ( 2, routine, e );
-		throw new Exception ( message );
-	}
-	if ( ts != null ) {
-		// Set the alias...
-		ts.setAlias ( Alias );
-	}
 	return ts;
 }
 
@@ -3543,10 +3421,8 @@ public Adapter getNDFDAdapter (String input_name )
 */
 
 /**
-Return the NWSRFS_DMI that is being used.  Use a blank input name to get
-the default.
-@param input_name Input name for the DMI, can be blank.  Typically is the
-path to the FS5Files.
+Return the NWSRFS_DMI that is being used.  Use a blank input name to get the default.
+@param input_name Input name for the DMI, can be blank.  Typically is the path to the FS5Files.
 @return the NWSRFS_DMI that is being used (may return null).
 */
 protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_not_found )
@@ -3561,21 +3437,18 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 		if ( nwsrfs_dmi.getInputName().equalsIgnoreCase(input_name) ) {
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, routine,
-				"Returning NWSRFS_DMI[" + i +"] InputName=\""+
-				nwsrfs_dmi.getInputName() + "\"" );
+				"Returning NWSRFS_DMI[" + i +"] InputName=\""+ nwsrfs_dmi.getInputName() + "\"" );
 			}
 			return nwsrfs_dmi;
 		}
 	}
 	if ( Message.isDebugOn ) {
-		Message.printDebug ( 1, "",
-		"Could not find a matching NWSRFS FS5Files DMI for InputName=\""+
-		input_name + "\"" );
+		Message.printDebug ( 1, routine,
+		"Could not find a matching NWSRFS FS5Files DMI for InputName=\""+ input_name + "\"" );
 	}
 	if ( open_if_not_found ) {
 			try {	Message.printStatus( 2, routine,
-					"Opening new NWSRFS FS5Files DMI using path \"" +
-					input_name + "\"" );
+					"Opening new NWSRFS FS5Files DMI using path \"" + input_name + "\"" );
 					nwsrfs_dmi = new NWSRFS_DMI( input_name );
 					nwsrfs_dmi.open();
 					// Save so we can get to it again when we need it...
@@ -3583,8 +3456,7 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 					return nwsrfs_dmi;
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 3, routine,
-						"Could not open NWSRFS FS5Files." );
+				Message.printWarning ( 3, routine, "Could not open NWSRFS FS5Files." );
 				Message.printWarning(3, routine, e);
 			}
 	}
@@ -4977,13 +4849,6 @@ throws Exception
 			independentTS = null;
 			ts_action = UPDATE_TS;
 		}
-		else if (command_String.regionMatches(true,0,"readNWSRFSFS5Files",0,13)){
-			// Read 1+ time series from NWSRFS FS5Files, putting all
-			// the time series traces into memory...
-			do_readNWSRFSFS5Files ( command_String );
-			// No action needed at end...
-			continue;
-		}
 		else if ( command_String.regionMatches(true,0,"replaceValue",0,12)){
 			// Replace values in the time series with a constant value.
 			tokens = StringUtil.breakStringList ( command_String,"(,)", StringUtil.DELIM_SKIP_BLANKS );
@@ -5120,6 +4985,7 @@ throws Exception
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadMODSIM") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNDFD") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNwsCard") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNWSRFSFS5Files") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
 		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadUsgsNwis") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "WeightTraces")) {
@@ -5261,9 +5127,6 @@ throws Exception
 				}
 				else {	ts = null;
 				}
-			}
-			else if (method.equalsIgnoreCase("readNWSRFSFS5Files")){
-				ts = do_TS_readNWSRFSFS5Files ( command_String );
 			}
 			else if ( method.equalsIgnoreCase("readRiverWare") ) {
 				// TS Alias= readRiverWare(file,Units,start,end)

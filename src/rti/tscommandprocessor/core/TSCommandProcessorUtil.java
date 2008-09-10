@@ -981,9 +981,8 @@ public static String getWorkingDirForCommand ( CommandProcessor processor, Comma
 /**
 Evaluate whether a command appears to be a pure time series identifier (not a
 command that uses a time series identifier).  The string is checked to see if
-it has three "." and that any parentheses are after the first ".".  If this
-method is called after checking for TS TSID = command() syntax, it should
-correctly evaluate the identifier.  Some of these checks are needed for TSIDs
+it has three "." and that any parentheses are after the first ".".
+Some of these checks are needed for TSIDs
 that have data types with () - this is the case with some input types (e.g.,
 HydroBase agricultural statistics that have "(Dry)".
 @param command Command to evaluate.
@@ -994,6 +993,10 @@ protected static boolean isTSID ( String command )
 	int right_paren_pos = command.indexOf(')');
 	int period_pos = command.indexOf('.');
 
+	if ( command.startsWith( "TS " ) ) {
+	    // TS Alias command
+	    return false;
+	}
 	if ((StringUtil.patternCount(command,".") >= 3) &&
 			(((left_paren_pos < 0) &&	// Definitely not a
 			(right_paren_pos < 0)) ||	// command.
@@ -1002,7 +1005,8 @@ protected static boolean isTSID ( String command )
 			(left_paren_pos > period_pos))) ) {
 		return true;
 	}
-	else {	return false;
+	else {
+	    return false;
 	}
 }
 

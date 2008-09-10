@@ -101,6 +101,7 @@ import rti.tscommandprocessor.commands.modsim.ReadMODSIM_Command;
 
 import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsEspTraceEnsemble_Command;
+import rti.tscommandprocessor.commands.nwsrfs.ReadNwsrfsFS5Files_Command;
 import rti.tscommandprocessor.commands.nwsrfs.SetPropertyFromNwsrfsAppDefault_Command;
 import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Command;
@@ -472,6 +473,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ReadNwsCard") ) {
 		return new readNwsCard_Command();
 	}
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadNwsrfsFS5Files") ) {
+        return new ReadNwsrfsFS5Files_Command();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsrfsEspTraceEnsemble") ) {
         return new ReadNwsrfsEspTraceEnsemble_Command ();
     }

@@ -218,8 +218,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	String token0 = command.substring ( 0, pos ).trim();	// TS Alias
 	String token1 = command.substring ( pos + 1 ).trim();	// command(...)
 	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = newTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -228,8 +227,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	
 	Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = newTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -240,7 +238,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	Vector tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || (tokens.size() < 2) ) {
 		// Must have at least the command name and its parameters...
-		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = newTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}

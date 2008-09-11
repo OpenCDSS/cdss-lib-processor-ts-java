@@ -316,10 +316,10 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add ( __ok_JButton );
 
     if (__isAliasVersion) {
-        setTitle("Edit TS Alias = " + __command.getCommandName() + " Command");
+        setTitle("Edit TS Alias = " + __command.getCommandName() + "() Command");
     }
     else {
-        setTitle("Edit " + __command.getCommandName() + " Command");
+        setTitle("Edit " + __command.getCommandName() + "() Command");
     }
 	setResizable ( true );
     pack();

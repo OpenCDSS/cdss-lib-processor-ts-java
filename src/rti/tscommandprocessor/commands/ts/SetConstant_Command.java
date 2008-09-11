@@ -75,18 +75,20 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
-	        !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
-		if ( TSID != null ) {
+    if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
+            !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
+            !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        if ( TSID != null ) {
             message = "TSID should only be specified when TSList=" +
             TSListType.ALL_MATCHING_TSID.toString() + " or " +
+            TSListType.FIRST_MATCHING_TSID.toString() + " or " +
             TSListType.LAST_MATCHING_TSID.toString() + ".";
-			warning += "\n" + message;
+            warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Do not specify the TSID parameter." ) );
-		}
-	}
+        }
+    }
     /*
 	if ( TSList == null ) {
 		// Probably legacy command...
@@ -297,7 +299,7 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messgaes
+	int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	

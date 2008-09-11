@@ -2659,67 +2659,6 @@ throws Exception
 }
 
 /**
-Execute the readRiverWare() command:
-<pre>
-TS Alias = readRiverWare(file,units,start,end)
-</pre>
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private TS do_readRiverWare ( String command_tag, String command_string, GenericCommand command )
-throws Exception
-{	String routine = "TSEngine.do_readRiverWare";
-    int warning_count = 0;
-    int warning_level = 2;
-    String message;
-
-    CommandStatus status = command.getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
-
-	// Reparse to strip quotes from file name...
-	Vector tokens = StringUtil.breakStringList ( command_string, "=(,)", StringUtil.DELIM_ALLOW_STRINGS);
-	String infile = ((String)tokens.elementAt(2)).trim();
-	//String tsid = ((String)tokens.elementAt(3)).trim();
-	//String units = ((String)tokens.elementAt(3)).trim();
-	String date1_string = ((String)tokens.elementAt(4)).trim();
-	String date2_string = ((String)tokens.elementAt(5)).trim();
-	DateTime query_date1 = getDateTime ( date1_string );
-	if ( query_date1 == null ) {
-		query_date1 = __InputStart_DateTime;
-	}
-	DateTime query_date2 = getDateTime ( date2_string );
-	if ( query_date2 == null ) {
-		query_date2 = __InputEnd_DateTime;
-	}
-    String infile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile) );
-	Message.printStatus ( 1, routine, "Reading RiverWare file \"" + infile_full + "\"" );
-	TS ts = null;
-	try {
-        ts = RiverWareTS.readTimeSeries ( infile_full, query_date1, query_date2, null, true );
-		// Now post-process...
-		readTimeSeries2 ( ts, null, true );
-	}
-	catch ( Exception e ) {
-		message = "Unexpected error reading RiverWare file \"" + infile_full + "\".";
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-        Message.printWarning(3, routine, e);
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file is a valid RiverWare time series file." ) );
-        throw new CommandException ( message );
-	}
-	if ( ts != null ) {
-		// Set the alias...
-		ts.setAlias ( ((String)tokens.elementAt(2)).trim() );
-	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-	return ts;
-}
-
-/**
 Execute the setDataValue() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -4986,6 +4925,7 @@ throws Exception
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNDFD") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNwsCard") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNWSRFSFS5Files") &&
+	        !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadRiverWare") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
 		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadUsgsNwis") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "WeightTraces")) {
@@ -5127,19 +5067,6 @@ throws Exception
 				}
 				else {	ts = null;
 				}
-			}
-			else if ( method.equalsIgnoreCase("readRiverWare") ) {
-				// TS Alias= readRiverWare(file,Units,start,end)
-				// Reparse to allow spaces in the dates...
-				tokens = StringUtil.breakStringList (
-					command_String, "=(,)",
-					StringUtil.DELIM_ALLOW_STRINGS);
-				if ( tokens.size() != 6 ) {
-					Message.printWarning ( 1, routine, "Bad command \"" + command_String +"\"");
-					++error_count;
-					continue;
-				}
-				ts = do_readRiverWare ( command_tag, command_String, (GenericCommand)command );
 			}
 			else if ( method.equalsIgnoreCase("readTimeSeries") ) {
 				// Reparse to strip quotes from file name...

@@ -109,6 +109,7 @@ import rti.tscommandprocessor.commands.nwsrfs.writeNWSRFSESPTraceEnsemble_Comman
 // RiverWare commands
 
 import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
+import rti.tscommandprocessor.commands.riverware.ReadRiverWare_Command;
 
 // SHEF commands.
 
@@ -479,7 +480,9 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsrfsEspTraceEnsemble") ) {
         return new ReadNwsrfsEspTraceEnsemble_Command ();
     }
-
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadRiverWare") ) {
+        return new ReadRiverWare_Command ();
+    }
     // Put before shorter command name...
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadStateCUB") ) {
         return new ReadStateCUB_Command ();

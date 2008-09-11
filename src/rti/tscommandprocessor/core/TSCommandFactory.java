@@ -175,6 +175,7 @@ import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Com
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.ReplaceValue_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.RunningAverage_Command;
 import rti.tscommandprocessor.commands.ts.scale_Command;
@@ -508,6 +509,9 @@ throws UnknownCommandException
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"RemoveFile") ) {
         return new RemoveFile_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReplaceValue") ) {
+        return new ReplaceValue_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ResequenceTimeSeriesData") ) {
         return new ResequenceTimeSeriesData_Command ();

@@ -182,6 +182,7 @@ import rti.tscommandprocessor.commands.ts.scale_Command;
 import rti.tscommandprocessor.commands.ts.SelectTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.SetAutoExtendPeriod_Command;
 import rti.tscommandprocessor.commands.ts.SetConstant_Command;
+import rti.tscommandprocessor.commands.ts.SetDataValue_Command;
 import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIncludeMissingTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIgnoreLEZero_Command;
@@ -553,6 +554,9 @@ throws UnknownCommandException
             !StringUtil.startsWithIgnoreCase(command_string,"SetConst ") &&
             !StringUtil.startsWithIgnoreCase(command_string,"SetConst(") ) {
         return new SetConstant_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetDataValue") ) {
+        return new SetDataValue_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetDebugLevel") ) {
         return new SetDebugLevel_Command ();

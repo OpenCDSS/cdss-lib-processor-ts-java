@@ -2659,46 +2659,6 @@ throws Exception
 }
 
 /**
-Execute the setDataValue() command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setDataValue ( String command )
-throws Exception
-{	String routine = "TSEngine.do_setDataValue";
-	Vector tokens = StringUtil.breakStringList ( command, "(, )\t", StringUtil.DELIM_SKIP_BLANKS );
-	if ( tokens.size() != 4 ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	// Parse the identifier...
-	String alias = ((String)tokens.elementAt(1)).trim();
-	String datestring =((String)tokens.elementAt(2)).trim();
-	DateTime setdate = DateTime.parse ( datestring );
-	String constant_string = ((String)tokens.elementAt(3)).trim();
-	double constant = StringUtil.atod(constant_string);
-	if ( (setdate == null) || (setdate.getYear() == 0) ) {
-		String message = "Set date \"" + datestring + "\" is not a valid date";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	int ts_pos = indexOf ( alias );
-	if ( ts_pos >= 0 ) {
-		TS ts = getTimeSeries ( ts_pos );
-		ts.setDataValue ( setdate, constant );
-		ts.addToGenesis ( "Set " + constant_string + " on " + datestring );
-		processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-	}
-	else {
-	    String message = "Unable to find time series \"" + alias + "\" for setDataValue() command.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	tokens = null;
-	setdate = null;
-	datestring = null;
-}
-
-/**
 Execute the setMax() command.
 @param command_tag Command number used for messaging.
 @param command Command to parse.
@@ -4787,11 +4747,6 @@ throws Exception
 			v = null;
 			independentTS = null;
 			ts_action = UPDATE_TS;
-		}
-		else if ( command_String.regionMatches(true,0,"setDataValue",0,12)){
-			// Set a single value in the time series...
-			do_setDataValue ( command_String );
-			continue;
 		}
 		else if ( command_String.regionMatches(true,0,"setMax",0,6)) {
 			// Don't use space because TEMPTS will not parse right.

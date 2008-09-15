@@ -1514,68 +1514,6 @@ throws Exception
 }
 
 /**
-Helper method for ARMA() command.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private TS do_ARMA ( String command )
-throws Exception
-{	// Don't parse with spaces because a TEMPTS may be present.
-	Vector v = StringUtil.breakStringList(command, "(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-	String message, routine = "TSEngine.do_ARMA";
-	if ( (v == null) || (v.size() < 5) ) {
-		message = "Syntax error in \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the individual tokens of the expression...
-	String dependent = ((String)v.elementAt(1)).trim();
-	// Make sure there are time series available to operate on...
-	int ts_pos = indexOf ( dependent );
-	TS dependentTS = getTimeSeries ( ts_pos );
-	if ( dependentTS == null ) {
-		message = "Unable to find time series \"" + dependent + "\" for ARMA().";
-		Message.printWarning ( 1, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the ARMA interval...
-	String ARMA_interval = ((String)v.elementAt(2)).trim();
-	// Get the a and b coefficients...
-	double [] a = null, b = null;
-	String token;
-	boolean in_p = false;
-	boolean in_q = false;
-	int n_a = 0, n_b = 0;
-	for ( int i = 3; i < v.size(); i++ ) {
-		token = ((String)v.elementAt(i)).trim();
-		if ( token.regionMatches(true,0,"p",0,1) ) {
-			// Start A coefficients...
-			a = new double[StringUtil.atoi (token.substring(1))];
-			in_p = true;
-			in_q = false;
-			continue;
-		}
-		else if ( token.regionMatches(true,0,"q",0,1) ) {
-			// Start B coefficients...
-			b = new double[StringUtil.atoi(token.substring(1)) + 1];
-			in_p = false;
-			in_q = true;
-			continue;
-		}
-		if ( in_p ) {
-			a[n_a++] = StringUtil.atod ( ((String)v.elementAt(i)).trim() );
-		}
-		else if ( in_q ) {
-			b[n_b++] = StringUtil.atod ( ((String)v.elementAt(i)).trim() );
-		}
-	}
-	// Apply ARMA...
-	TS ts = TSUtil.ARMA ( dependentTS, ARMA_interval, a, b );
-	processTimeSeriesAction ( UPDATE_TS, dependentTS, ts_pos );
-	return ts;
-}
-
-/**
 Execute the CreateFromList() command.
 @param wl Warning level for important warnings (1=popup, 2=to log only).
 @param command_tag Command number used for messaging.
@@ -4516,11 +4454,6 @@ throws Exception
 		if ( in_comment ) {
 			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-			continue;
-		}
-		else if ( command_String.regionMatches( true,0,"ARMA",0,4) ) {
-			// Apply ARMA algorithm...
-			do_ARMA ( command_String );
 			continue;
 		}
 		else if(command_String.regionMatches(true,0,"createFromList",0,14)){

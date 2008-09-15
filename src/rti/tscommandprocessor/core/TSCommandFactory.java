@@ -148,6 +148,7 @@ import rti.tscommandprocessor.commands.ts.Add_Command;
 import rti.tscommandprocessor.commands.ts.AddConstant_Command;
 import rti.tscommandprocessor.commands.ts.AdjustExtremes_Command;
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
+import rti.tscommandprocessor.commands.ts.ARMA_Command;
 import rti.tscommandprocessor.commands.ts.Blend_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
@@ -292,6 +293,9 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
 		return new analyzePattern_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ARMA") ) {
+        return new ARMA_Command ();
+    }
     
     // "B" commands...
     

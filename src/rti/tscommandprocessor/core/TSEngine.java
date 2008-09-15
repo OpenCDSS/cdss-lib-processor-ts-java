@@ -1514,65 +1514,6 @@ throws Exception
 }
 
 /**
-Helper method for adjustExtremes() command.
-@param command Command being evaluated.
-@exception Exception if there is an error processing the time series.
-*/
-private void do_adjustExtremes ( String command )
-throws Exception
-{	// Don't parse with spaces because a TEMPTS or dates with hours may be
-	// present.
-	Vector v = StringUtil.breakStringList(command,
-		"(),", StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS ); 
-	String message, routine = "TSEngine.do_adjustExtremes";
-	if ( (v == null) || (v.size() < 8) ) {
-		message = "Syntax error in \"" + command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Get the individual tokens of the expression...
-	String tsident = ((String)v.elementAt(1)).trim();
-	// Adjust method...
-	String adjust_method = ((String)v.elementAt(2)).trim();
-	// Extreme to adjust...
-	String extreme_flag = ((String)v.elementAt(3)).trim();
-	// Extreme value...
-	String extreme_value = ((String)v.elementAt(4)).trim();
-	// Max intervals...
-	String max_intervals = ((String)v.elementAt(5)).trim();
-	// Analysis period...
-	String analysis_period_start = ((String)v.elementAt(6)).trim();
-	DateTime start = getDateTime ( analysis_period_start );
-	String analysis_period_end = ((String)v.elementAt(7)).trim();
-	DateTime end = getDateTime ( analysis_period_end );
-	// Apply adjustExtremes()...  If the identifier is "*", apply to all the time series...
-	TS ts;
-	if ( tsident.equals("*") ) {
-		// Fill everything in memory...
-		int nts = getTimeSeriesSize();
-		// Set first in case there is an exception...
-		for ( int its = 0; its < nts; its++ ) {
-			ts = getTimeSeries(its);
-			TSUtil.adjustExtremes ( ts, adjust_method, extreme_flag, StringUtil.atod(extreme_value),
-				StringUtil.atoi(max_intervals), start, end );
-			processTimeSeriesAction ( UPDATE_TS, ts, its );
-		}
-	}
-	else {	// Operate on a single time series...
-		int ts_pos = indexOf ( tsident );
-		ts = getTimeSeries ( ts_pos );
-		if ( ts == null ) {
-			message = "Unable to find time series \"" + tsident + "\" for adjustExtremes().";
-			Message.printWarning ( 1, routine, message );
-			throw new Exception ( message );
-		}
-		TSUtil.adjustExtremes ( ts, adjust_method, extreme_flag,
-			StringUtil.atod(extreme_value),	StringUtil.atoi(max_intervals), start, end );
-		processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-	}
-}
-
-/**
 Helper method for ARMA() command.
 @param command Command being evaluated.
 @exception Exception if there is an error processing the time series.
@@ -4575,11 +4516,6 @@ throws Exception
 		if ( in_comment ) {
 			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-			continue;
-		}
-		else if(command_String.regionMatches(true,0,"adjustExtremes",0,14)){
-			// Adjust extreme values...
-			do_adjustExtremes ( command_String );
 			continue;
 		}
 		else if ( command_String.regionMatches( true,0,"ARMA",0,4) ) {

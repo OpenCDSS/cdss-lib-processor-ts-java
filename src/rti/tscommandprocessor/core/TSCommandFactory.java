@@ -146,6 +146,7 @@ import rti.tscommandprocessor.commands.time.SetOutputYearType_Command;
 
 import rti.tscommandprocessor.commands.ts.Add_Command;
 import rti.tscommandprocessor.commands.ts.AddConstant_Command;
+import rti.tscommandprocessor.commands.ts.AdjustExtremes_Command;
 import rti.tscommandprocessor.commands.ts.analyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.Blend_Command;
 import rti.tscommandprocessor.commands.ts.changeInterval_Command;
@@ -284,6 +285,9 @@ throws UnknownCommandException
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"Add") ) {
         return new Add_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"AdjustExtremes") ) {
+        return new AdjustExtremes_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"AnalyzePattern") ) {
 		return new analyzePattern_Command ();

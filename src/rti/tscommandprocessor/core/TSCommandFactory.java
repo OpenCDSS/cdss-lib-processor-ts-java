@@ -158,6 +158,7 @@ import rti.tscommandprocessor.commands.ts.ConvertDataUnits_Command;
 import rti.tscommandprocessor.commands.ts.copy_Command;
 import rti.tscommandprocessor.commands.ts.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
+import rti.tscommandprocessor.commands.ts.CreateFromList_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
 import rti.tscommandprocessor.commands.ts.DeselectTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
@@ -332,6 +333,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateEnsemble") ) {
         return new CreateEnsemble_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateFromList") ) {
+        return new CreateFromList_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"CreateRegressionTestCommandFile") ) {
 		return new CreateRegressionTestCommandFile_Command ();

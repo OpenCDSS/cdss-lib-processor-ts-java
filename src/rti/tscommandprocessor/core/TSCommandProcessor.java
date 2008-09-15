@@ -1508,6 +1508,23 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>ReadTimeSeries</b></td>
+<td>Read a time series given its identifier.
+    Parameters to this request are:
+<ol>
+<li>    <b>TSID</b> Full time series identifier with input type and name (if needed).</li>
+<li>    <b>HandleMissingTSHow</b> Indicate how to handle missing time series.  Use <code>IgnoreMissingTS</code>
+        to ignore the time series (return null) or <code>DefaultMissingTS</code> to return an empty time
+        series.</li>
+        </ol>
+Returned values from this request are:
+<ol>
+<li>    <b>TS</b>  The time series that was read.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>ReadTimeSeries2</b></td>
 <td> Process a list of time series after the initial read.  This does NOT add the
 time series to the list (use setTimeSeries() or other commands to do this).
@@ -1684,6 +1701,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("ProcessTimeSeriesResultsList") ) {
 		return processRequest_ProcessTimeSeriesResultsList ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("ReadTimeSeries") ) {
+        return processRequest_ReadTimeSeries ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("ReadTimeSeries2") ) {
 		return processRequest_ReadTimeSeries2 ( request, request_params );
 	}
@@ -1802,8 +1822,7 @@ Process the CalculateTSAverageLimits request.
 private CommandProcessorRequestResultsBean processRequest_CalculateTSAverageLimits (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	// Time series...
 	Object o_TS = request_params.getContents ( "TS" );
@@ -2360,6 +2379,87 @@ throws Exception
 	__tsengine.processTimeSeries( Indices_array, Properties );
 	// No results need to be set in the bean.
 	return bean;
+}
+
+/**
+Process the ReadTimeSeries request.
+This request is used with the CreateFromList() and ReadTimeSeries() commands.  Because this
+method performs fundamental tasks, some of the error handling is different than other requests, 
+in particular passing in the WarningLevel and CommandTag request parameters.
+This only reads the time series but does not post-process.  To do that, request ReadTimeSeries2.
+*/
+private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "TSID" );
+    if ( o == null ) {
+            String warning = "Request ReadTimeSeries() does not provide a TSID parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String TSID = "";
+    if ( o instanceof TSIdent ) {
+        TSID = ((TSIdent)o).toString(true);
+    }
+    else {
+        TSID = (String)o;
+    }
+    Object o_WarningLevel = request_params.getContents ( "WarningLevel" );
+    if ( o_WarningLevel == null ) {
+            String warning = "Request ReadTimeSeries() does not provide a WarningLevel parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    int warningLevel = 2;
+    Integer WarningLevel = (Integer)o_WarningLevel;
+    warningLevel = WarningLevel.intValue();
+    Object o_CommandTag = request_params.getValue ( "CommandTag" );
+    if ( o_CommandTag == null ) {
+            String warning = "Request ReadTimeSeries() does not provide a CommandTag parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String commandTag = (String)o_CommandTag;
+    Object o_HandleMissingTSHow = request_params.getValue ( "HandleMissingTSHow" );
+    if ( o_HandleMissingTSHow == null ) {
+            String warning = "Request ReadTimeSeries() does not provide a HandleMissingTSHow parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    String HandleMissingTSHow = (String)o_HandleMissingTSHow;
+    boolean includeMissingTS = false;
+    if ( HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS") ) {
+        includeMissingTS = true;
+    }
+    Object o_ReadData = request_params.getContents ( "ReadData" );
+    if ( o_ReadData == null ) {
+            String warning = "Request ReadTimeSeries() does not provide a ReadData parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    boolean readData = ((Boolean)o_ReadData).booleanValue();
+    // Save the current IgnoreMissingTS global flag, set to the value for this command, and then
+    // reset to the global value
+    TS ts = null;
+    boolean includeMissingTsOld = __tsengine.getIncludeMissingTS();
+    try {
+        __tsengine.setIncludeMissingTS ( includeMissingTS );
+        ts = __tsengine.readTimeSeries ( warningLevel, commandTag, TSID, readData );
+    }
+    finally {
+        __tsengine.setIncludeMissingTS ( includeMissingTsOld );
+    }
+    PropList results = bean.getResultsPropList();
+    // Return the time series.
+    results.setUsingObject ( "TS", ts );
+    return bean;
 }
 
 /**

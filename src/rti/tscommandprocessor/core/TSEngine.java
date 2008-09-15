@@ -732,8 +732,6 @@ import RTi.Util.Math.MathUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
@@ -1511,198 +1509,6 @@ throws Exception
 	analyst = null;
 	newts = null;
 	return report;
-}
-
-/**
-Execute the CreateFromList() command.
-@param wl Warning level for important warnings (1=popup, 2=to log only).
-@param command_tag Command number used for messaging.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_createFromList ( int wl, String command_tag, String command )
-throws Exception
-{	String routine = "TSEngine.do_createFromList";
-	String message;
-
-	String ListFile = null;
-	String IDCol =  null;
-	String Delim =  null;
-	String ID =  null;
-	String DataSource = null;
-	String DataType = null;
-	String Interval = null;
-	String Scenario = null;
-	String InputType = null;
-	String InputName = null;
-	String HandleMissingTSHow = null;
-	String DefaultUnits = null;
-	if ( command.indexOf('=') < 0 ) {
-		// Old syntax...
-		Vector tokens = StringUtil.breakStringList ( command,
-			" \t(),", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
-		if ( (tokens == null) || (tokens.size() != 6) ) {
-			throw new Exception ( "Bad command: \"" + command+"\"");
-		}
-		// Get the input needed to process the file...
-		ListFile = (String)tokens.elementAt(1);
-		DataSource = (String)tokens.elementAt(2);
-		DataType = (String)tokens.elementAt(3);
-		Interval = (String)tokens.elementAt(4);
-		InputType = "HydroBase";	// old default
-		HandleMissingTSHow = (String)tokens.elementAt(5);
-	}
-	else {
-	    // New syntax...
-		Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was parsed before...
-			throw new Exception ( "Bad command: \"" + command + "\"" );
-		}
-		// Get the input needed to process the file...
-		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
-		ListFile = props.getValue ( "ListFile" );
-		IDCol = props.getValue ( "IDCol" );
-		Delim = props.getValue ( "Delim" );
-		ID = props.getValue ( "ID" );
-		DataSource = props.getValue ( "DataSource" );
-		DataType = props.getValue ( "DataType" );
-		Interval = props.getValue ( "Interval" );
-		Scenario = props.getValue ( "Scenario" );
-		InputType = props.getValue ( "InputType" );
-		InputName = props.getValue ( "InputName" );
-		HandleMissingTSHow=props.getValue("HandleMissingTSHow");
-		DefaultUnits=props.getValue("DefaultUnits");
-	}
-
-	if ( ListFile == null ) {
-		message = "List file must be specified.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-
-	if ( Delim == null ) {
-		Delim = " ,";
-	}
-
-	if ( ID == null ) {
-		ID = "*";
-	}
-	String idpattern_Java = StringUtil.replaceString(ID,"*",".*");
-
-	int IDCol_int = 0;
-	if ( IDCol != null ) {
-		if ( !StringUtil.isInteger(IDCol) ) {
-			message = "IDCol \"" + IDCol + "\" is not an integer.";
-			Message.printWarning ( 2, routine, message );
-			throw new Exception ( message );
-		}
-		IDCol_int = StringUtil.atoi ( IDCol ) - 1;
-	}
-
-	if ( DataSource == null ) {
-		DataSource = "";
-	}
-
-	if ( DataType == null ) {
-		DataType = "";
-	}
-
-	if ( Interval == null ) {
-		Interval = "";
-	}
-
-	if ( Scenario == null ) {
-		Scenario = "";
-	}
-
-	if ( InputType == null ) {
-		message = "Input type must be specified.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if ( InputName == null ) {
-		// Set to empty string so check to facilitate processing...
-		InputName = "";
-	}
-
-	boolean	include_missing_ts = false;
-	if (	!HandleMissingTSHow.equalsIgnoreCase("IgnoreMissingTS") &&
-		!HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS") ) {
-		message = "Unknown HandleMissingTSHow flag \"" + HandleMissingTSHow + "\" for \""+ command + "\"";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if ( HandleMissingTSHow.equalsIgnoreCase("IgnoreMissingTS") ) {
-		include_missing_ts = false;
-	}
-	else if ( HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS") ) {
-		include_missing_ts = true;
-	}
-
-	// Read using the table...
-
-	PropList props = new PropList ("");
-	props.set ( "Delimiter=" + Delim );	// see existing prototype
-	props.set ( "CommentLineIndicator=#" );	// New - skip lines that start
-						// with this
-	props.set ( "TrimStrings=True" );	// If true, trim strings after reading.
-    String ListFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),ListFile));
-	DataTable table = DataTable.parseFile (	IOUtil.getPathUsingWorkingDir(ListFile_full), props );
-	
-	int tsize = 0;
-	if ( table != null ) {
-		tsize = table.getNumberOfRecords();
-	}
-
-	Message.printStatus ( 2, "", "List file has " + tsize + " records and " + table.getNumberOfFields() + " fields" );
-
-	// Loop through the records in the table and match the identifiers...
-
-	StringBuffer tsident_string = new StringBuffer();
-	TableRecord rec = null;
-	String id;
-	boolean include_missing_ts_old;
-	TS ts = null;
-	for ( int i = 0; i < tsize; i++ ) {
-		rec = table.getRecord ( i );
-		id = (String)rec.getFieldValue ( IDCol_int );
-		if ( !StringUtil.matchesIgnoreCase(id,idpattern_Java) ) {
-			// Does not match...
-			continue;
-		}
-
-		tsident_string.setLength(0);
-		tsident_string.append ( id + "." + DataSource + "." + DataType + "." + Interval + "~" + InputType );
-		if ( InputName.length() > 0 ) {
-			tsident_string.append ( "~" + InputName );
-		}
-		// Now read the time series (the following will create an empty time series if requested).
-		// Temporarily reset the __include_missing_ts flag based
-		// on this command because the global flag is used in the readTimeSeries method.
-		// TODO SAM 2007-03-12 Need to avoid global flag.
-		include_missing_ts_old = getIncludeMissingTS();
-		try {
-            setIncludeMissingTS ( include_missing_ts );
-			ts = readTimeSeries ( wl, command_tag, tsident_string.toString() );
-			setIncludeMissingTS ( include_missing_ts_old );
-			if ( ts != null ) {
-				if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
-					// Time series has no units so assign default.
-					ts.setDataUnits ( DefaultUnits );
-				}
-				processTimeSeriesAction ( INSERT_TS, ts, getTimeSeriesSize());
-			}
-		}
-		catch ( Exception e ) {
-			setIncludeMissingTS ( include_missing_ts_old );
-		}
-		// Cancel processing if the user has indicated to do so...
-		if ( __ts_processor.getCancelProcessingRequested() ) {
-			return;
-		}
-	}
 }
 
 // TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
@@ -3358,7 +3164,7 @@ throws Exception
 	if ( tsident.regionMatches(true,0,TEMPTS,0,6) ) {
 		// Temporary time series.  Read it, mark as temporary, and return...
 		Message.printStatus ( 1, "TSEngine.getTimeSeries", "Reading temporary time series \"" +	tsident.substring(6).trim() );
-		TS ts = readTimeSeries ( 2, command_tag, tsident.substring(6).trim() );
+		TS ts = readTimeSeries ( 2, command_tag, tsident.substring(6).trim(), true );
 		if ( ts != null ) {
 			ts.setStatus ( TEMPTS );
 		}
@@ -4456,10 +4262,6 @@ throws Exception
 			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 			continue;
 		}
-		else if(command_String.regionMatches(true,0,"createFromList",0,14)){
-			do_createFromList ( popup_warning_level, command_tag, command_String );
-			continue;
-		}
 		// TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
 		else if ( command_String.regionMatches(true,0,"createYearStatisticsReport",0,26)){
 			do_createYearStatisticsReport ( command_String );
@@ -4823,7 +4625,7 @@ throws Exception
 				}
 				// Read the time series...
 				ts = readTimeSeries( popup_warning_level, command_tag,
-					((String)tokens.elementAt(2)).trim());
+					((String)tokens.elementAt(2)).trim(), true );
 			}
 			else if ( method.equalsIgnoreCase("relativeDiff") ) {
 				// Relative diff of time series...
@@ -4875,7 +4677,7 @@ throws Exception
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, routine, "Reading time series now..." );
 			}
-			ts = readTimeSeries ( popup_warning_level, command_tag, command_String );
+			ts = readTimeSeries ( popup_warning_level, command_tag, command_String, true );
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, routine, "...read TS" );
 			}
@@ -6308,12 +6110,13 @@ Get a time series from the database/file using current date and units settings.
 @param wl Warning level if the time series is not found.  Typically this will be 1 if
 mimicing the old processing, and 2+ during transition to the new command status approach.
 @param tsident_string Time series identifier.
+@param readData indicate whether all the data should be read or false for only the header.
 @return the time series.
 @exception Exception if there is an error reading the time series.
 */
-protected TS readTimeSeries ( int wl, String command_tag, String tsident_string )
+protected TS readTimeSeries ( int wl, String command_tag, String tsident_string, boolean readData )
 throws Exception
-{	return readTimeSeries ( wl, command_tag, tsident_string, false );
+{	return readTimeSeries ( wl, command_tag, tsident_string, false, readData );
 }
 
 /**
@@ -6323,11 +6126,13 @@ mimicing the old processing, and 2+ during transition to the new command status 
 @param tsident_string Time series identifier.
 @param full_period Indicates whether the full period should be queried.
 @return the time series.
+@param readData Indicate whether all the data should be read (or false for header only).
 @exception Exception if there is an error reading the time series.
 */
-protected TS readTimeSeries ( int wl, String command_tag, String tsident_string, boolean full_period )
+protected TS readTimeSeries ( int wl, String command_tag, String tsident_string, boolean full_period,
+        boolean readData )
 throws Exception
-{	return readTimeSeries ( wl, command_tag, tsident_string, full_period, false);
+{	return readTimeSeries ( wl, command_tag, tsident_string, full_period, readData, false);
 }
 
 /**
@@ -6346,18 +6151,18 @@ Read a time series from a database or file.  The following occur related to peri
 	shortened).</li>
 </ol>
 @param wl Warning level if the time series is not found.  Typically this will be 1 if
-mimicing the old processing, and 2+ during transition to the new command status
-approach.
+mimicing the old processing, and 2+ during transition to the new command status approach.
 @param tsident_string Time series identifier for time series.
 @param full_period If true, indicates that the full period is to be queried.
 If false, the output period will be queried.
+@param readData if true, read all the data.  If false, read only the header information.
 @param ignore_errors If true, ignore errors and return a null time series.
 If false, return a zero-filled time series.
 SAMX - need to phase out "full_period".
 @exception Exception if there is an error reading the time series.
 */
 private TS readTimeSeries (	int wl, String command_tag, String tsident_string,
-		boolean full_period, boolean ignore_errors )
+		boolean full_period, boolean readData, boolean ignore_errors )
 throws Exception
 {	TS	ts = null;
 	String	routine = "TSEngine.readTimeSeries";
@@ -6376,7 +6181,7 @@ throws Exception
 
 	ts = readTimeSeries0 ( tsident_string, query_date1, query_date2,
 				null,		// units
-				true );		// read data
+				readData );		// read data
 
 	if ( ts == null ) {
 		// Not able to retrieve the time series.  Print a warning...
@@ -6393,7 +6198,9 @@ throws Exception
 				ts.setDate1 ( __OutputStart_DateTime );
 				ts.setDate2 ( __OutputEnd_DateTime );
 				// Leave original dates as is.  The following will fill with missing...
-				ts.allocateDataSpace();
+				if ( readData ) {
+				    ts.allocateDataSpace();
+				}
 				Vector v = StringUtil.breakStringList (	tsident_string, "~", 0 );
 				// Version without the input...
 				String tsident_string2;

@@ -98,7 +98,14 @@ throws InvalidCommandParameterException
 		}
 	}
     */
-	if ( !NewValue.equals("") && !StringUtil.isDouble(NewValue) ) {
+	if ( (NewValue == null) || NewValue.equals("") ) {
+        message = "The new value is not specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the new value as a number." ) );
+	}
+	else if ( !StringUtil.isDouble(NewValue) ) {
         message = "The new value " + NewValue + " is not a number.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,

@@ -3,6 +3,7 @@ package rti.tscommandprocessor.commands.ts;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 
 import java.util.List;
 import java.util.Vector;
@@ -21,6 +22,7 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -86,7 +88,7 @@ throws InvalidCommandParameterException
 	String IDCol = parameters.getValue("IDCol");
 	String InputType = parameters.getValue("InputType");
 	String Interval = parameters.getValue("Interval");
-	String HandleMissingTSHow = parameters.getValue("HandleMissingTSHow");
+	String IfNotFound = parameters.getValue("IfNotFound");
     
     if ( (ListFile == null) || (ListFile.length() == 0) ) {
         message = "The list file must be specified.";
@@ -167,15 +169,15 @@ throws InvalidCommandParameterException
                         message, "Specify a valid input type (e.g., HydroBase)." ) );
     }
 	
-	if ( (HandleMissingTSHow != null) && !HandleMissingTSHow.equals("") &&
-	        !HandleMissingTSHow.equalsIgnoreCase(_IgnoreMissingTS) &&
-            !HandleMissingTSHow.equalsIgnoreCase(_DefaultMissingTS) &&
-            !HandleMissingTSHow.equalsIgnoreCase(_WarnIfMissingTS) ) {
-            message = "Invalid HandleMissingTSHow flag \"" + HandleMissingTSHow + "\".";
+	if ( (IfNotFound != null) && !IfNotFound.equals("") &&
+	        !IfNotFound.equalsIgnoreCase(_IgnoreMissingTS) &&
+            !IfNotFound.equalsIgnoreCase(_DefaultMissingTS) &&
+            !IfNotFound.equalsIgnoreCase(_WarnIfMissingTS) ) {
+            message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the HandleMissingTSHow as " + _DefaultMissingTS + ", " +
+                            message, "Specify the IfNotFound as " + _DefaultMissingTS + ", " +
                             _DefaultMissingTS + ", or (default) " + _WarnIfMissingTS + "." ) );
                             
 	}
@@ -192,7 +194,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Scenario" );
     valid_Vector.add ( "InputType" );
     valid_Vector.add ( "InputName" );
-    valid_Vector.add ( "HandleMissingTSHow" );
+    valid_Vector.add ( "IfNotFound" );
     valid_Vector.add ( "DefaultUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -258,6 +260,30 @@ public List getObjectList ( Class c )
 }
 
 /**
+Parse the command string into a PropList of parameters.
+@param command_string A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is
+determined to have invalid syntax.
+syntax of the command are bad.
+@exception InvalidCommandParameterException if during parsing the command
+parameters are determined to be invalid.
+*/
+public void parseCommand ( String command_string )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+    // Call the base class method for basic parsing.
+    super.parseCommand( command_string );
+    // Update syntax for new parameter name...
+    PropList parameters = getCommandParameters();
+    String HandleMissingTSHow = parameters.getValue("HandleMissingTSHow");
+    if ( HandleMissingTSHow != null ) {
+        // Convert to IfNotFound
+        parameters.unSet( "HandleMissingTSHow" );
+        parameters.set( "IfNotFound", HandleMissingTSHow );
+    }
+}
+
+/**
 Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
@@ -315,17 +341,17 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	String ListFile = parameters.getValue("ListFile");
     String IDCol = parameters.getValue ( "IDCol" );
+    if ( (IDCol == null) || IDCol.equals("") ) {
+        IDCol = "1";    // Default
+    }
+    int IDCol_int = StringUtil.atoi ( IDCol ) - 1;  // 0+ internally
     String Delim = parameters.getValue ( "Delim" );
     if ( Delim == null ) {
-        Delim = " ,"; // Default
+        Delim = ","; // Default
     }
     String ID = parameters.getValue ( "ID" );
     if ( ID == null ) {
         ID = "*"; // Default
-    }
-    int IDCol_int = 0;
-    if ( IDCol != null ) {
-        IDCol_int = StringUtil.atoi ( IDCol ) - 1;
     }
     String idpattern_Java = StringUtil.replaceString(ID,"*",".*");
     String DataSource = parameters.getValue ( "DataSource" );
@@ -350,9 +376,9 @@ throws InvalidCommandParameterException,
         // Set to empty string so check to facilitate processing...
         InputName = "";
     }
-    String HandleMissingTSHow = parameters.getValue("HandleMissingTSHow");
-    if ( (HandleMissingTSHow == null) || HandleMissingTSHow.equals("")) {
-        HandleMissingTSHow = _IgnoreMissingTS; // default
+    String IfNotFound = parameters.getValue("IfNotFound");
+    if ( (IfNotFound == null) || IfNotFound.equals("")) {
+        IfNotFound = _WarnIfMissingTS; // default
     }
     String DefaultUnits = parameters.getValue("DefaultUnits");
     
@@ -402,6 +428,7 @@ throws InvalidCommandParameterException,
             if ( InputName.length() > 0 ) {
                 tsident_string.append ( "~" + InputName );
             }
+            boolean notFoundLogged = false;
             try {
                 // Make a request to the processor...
                 String TSID = tsident_string.toString();
@@ -409,7 +436,7 @@ throws InvalidCommandParameterException,
                 request_params.set ( "TSID", tsident_string.toString() );
                 request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
                 request_params.set ( "CommandTag", command_tag );
-                request_params.set ( "HandleMissingTSHow", HandleMissingTSHow );
+                request_params.set ( "IfNotFound", IfNotFound );
                 request_params.setUsingObject ( "ReadData", new Boolean(read_data) );
                 CommandProcessorRequestResultsBean bean = null;
                 try {
@@ -420,19 +447,67 @@ throws InvalidCommandParameterException,
                         ts = (TS)o_TS;
                     }
                 }
+                catch ( TimeSeriesNotFoundException e ) {
+                    message = "Time series could not be found using identifier \"" + TSID + "\".";
+                    if ( IfNotFound.equalsIgnoreCase(_WarnIfMissingTS) ) {
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the identifier information is correct." ) );
+                    }
+                    else {
+                        // Non-fatal - ignoring or defaulting time series.
+                        message += "  Non-fatal because IfNotFound=" + IfNotFound;
+                        status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                        message, "Verify that the identifier information is correct." ) );
+                    }
+                    ts = null;
+                    notFoundLogged = true;
+                }
                 catch ( Exception e ) {
-                    message = "Error requesting ReadTimeSeries(TSID=\"" + TSID + "\") from processor + (" +
+                    message = "Error requesting ReadTimeSeries(TSID=\"" + TSID + "\") from processor + (exception: " +
                     e + ").";
                     //Message.printWarning(3, routine, e );
                     Message.printWarning(warning_level,
-                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                            routine, message );
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
                     status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Check the log file.  Report the problem to software support." ) );
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that the identifier information is correct.  Check the log file." +
+                            		"  If still a problem, report the problem to software support." ) );
                     ts = null;
                 }
-                if ( ts != null ) {
+                if ( ts == null ) {
+                    if ( !notFoundLogged ) {
+                        // Only want to include a warning once.
+                        // This is kind of ugly because currently there is not consistency between all
+                        // time series readers in error handling, which is difficult to handle in this
+                        // generic command.
+                        message = "Time series could not be found using identifier \"" + TSID + "\".";
+                        if ( IfNotFound.equalsIgnoreCase(_WarnIfMissingTS) ) {
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the identifier information is correct." ) );
+                        }
+                        else {
+                            // Non-fatal - ignoring or defaulting time series.
+                            message += "  Non-fatal because IfNotFound=" + IfNotFound;
+                            status.addToLog ( commandPhase,
+                                    new CommandLogRecord(CommandStatusType.WARNING,
+                                            message, "Verify that the identifier information is correct." ) );
+                        }
+                    }
+                    // Always check for output period because required for default time series.
+                    if ( IfNotFound.equalsIgnoreCase(_DefaultMissingTS) &&
+                            ((processor.getPropContents("OutputStart") == null) ||
+                            (processor.getPropContents("OutputEnd") == null)) ) {
+                        message = "Time series could not be found using identifier \"" + TSID + "\"." +
+                        		"  Requesting default time series but no output period is defined.";
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Set the output period before calling this command." ) );
+                    }
+                }
+                else {
                     if ( (DefaultUnits != null) && (ts.getDataUnits().length() == 0) ) {
                         // Time series has no units so assign default.
                         ts.setDataUnits ( DefaultUnits );
@@ -544,7 +619,7 @@ public String toString ( PropList props )
     String Scenario = props.getValue ( "Scenario" );
     String InputType = props.getValue ( "InputType" );
     String InputName = props.getValue ( "InputName" );
-    String HandleMissingTSHow = props.getValue ( "HandleMissingTSHow" );
+    String IfNotFound = props.getValue ( "IfNotFound" );
     String DefaultUnits = props.getValue ( "DefaultUnits" );
 
 	StringBuffer b = new StringBuffer ();
@@ -606,11 +681,11 @@ public String toString ( PropList props )
         }
         b.append("InputName=\"" + InputName + "\"");
     }
-    if ((HandleMissingTSHow != null) && (HandleMissingTSHow.length() > 0)) {
+    if ((IfNotFound != null) && (IfNotFound.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");
         }
-        b.append("HandleMissingTSHow=" + HandleMissingTSHow );
+        b.append("IfNotFound=" + IfNotFound );
     }
     if ((DefaultUnits != null) && (DefaultUnits.length() > 0)) {
         if (b.length() > 0) {

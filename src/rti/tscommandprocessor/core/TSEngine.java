@@ -6120,22 +6120,6 @@ throws Exception
 }
 
 /**
-Get a time series from the database/file using current date and units settings.
-@param wl Warning level if the time series is not found.  Typically this will be 1 if
-mimicing the old processing, and 2+ during transition to the new command status approach.
-@param tsident_string Time series identifier.
-@param full_period Indicates whether the full period should be queried.
-@return the time series.
-@param readData Indicate whether all the data should be read (or false for header only).
-@exception Exception if there is an error reading the time series.
-*/
-protected TS readTimeSeries ( int wl, String command_tag, String tsident_string, boolean full_period,
-        boolean readData )
-throws Exception
-{	return readTimeSeries ( wl, command_tag, tsident_string, full_period, readData, false);
-}
-
-/**
 Read a time series from a database or file.  The following occur related to periods:
 <ol>
 <li>	If the query period has been specified, then it is used to limit the
@@ -6156,13 +6140,11 @@ mimicing the old processing, and 2+ during transition to the new command status 
 @param full_period If true, indicates that the full period is to be queried.
 If false, the output period will be queried.
 @param readData if true, read all the data.  If false, read only the header information.
-@param ignore_errors If true, ignore errors and return a null time series.
-If false, return a zero-filled time series.
 SAMX - need to phase out "full_period".
 @exception Exception if there is an error reading the time series.
 */
 private TS readTimeSeries (	int wl, String command_tag, String tsident_string,
-		boolean full_period, boolean readData, boolean ignore_errors )
+		boolean full_period, boolean readData )
 throws Exception
 {	TS	ts = null;
 	String	routine = "TSEngine.readTimeSeries";
@@ -6177,19 +6159,11 @@ throws Exception
 		query_date2 = __InputEnd_DateTime;
 	}
 
-	// Read the time series using the generic code...
+	// Read the time series using the generic code.  The units are not specified.
 
-	ts = readTimeSeries0 ( tsident_string, query_date1, query_date2,
-				null,		// units
-				readData );		// read data
+    ts = readTimeSeries0 ( tsident_string, query_date1, query_date2, null, readData );
 
 	if ( ts == null ) {
-		// Not able to retrieve the time series.  Print a warning...
-		if ( ignore_errors ) {
-			// Return null...
-			return ts;
-		}
-		// Else do not ignore errors...
 		if ( getIncludeMissingTS() && haveOutputPeriod() ) {
 			// Even if time series is missing, create an empty one for output.
 			ts = TSUtil.newTimeSeries ( tsident_string, true );
@@ -6215,8 +6189,7 @@ throws Exception
 			String message = 
 				"Null TS from read and not creating blank - unable to" +
 				" process command:\n\""+ tsident_string +"\".\nYou must correct the command.  " +
-				"Make sure that the data are in the database or\ninput file" +
-				" or use time series creation commands.";
+				"Make sure that the data are in the database or\ninput file.";
 			Message.printWarning ( wl,
 			MessageUtil.formatMessageTag(command_tag,++_fatal_error_count), routine, message );
 			getMissingTS().addElement(tsident_string);
@@ -6240,14 +6213,11 @@ Read a time series.  This method is called internally by TSEngine code and when
 TSEngine serves as a TSSupplier when processing TSProducts.  It actually tries
 to read a time series from a file or database.
 @param tsident_string Time series identifier to read.
-@param query_date1 First date to query.  If specified as null the entire period
-will be read.
-@param query_date2 Last date to query.  If specified as null the entire period
-will be read.
+@param query_date1 First date to query.  If specified as null the entire period will be read.
+@param query_date2 Last date to query.  If specified as null the entire period will be read.
 @param units Requested units to return data.  If specified as null or an
 empty string the units will not be converted.
-@param read_data if true, the data will be read.  If false, only the time series
-header will be read.
+@param read_data if true, the data will be read.  If false, only the time series header will be read.
 @return the requested time series or null if an error.
 @exception Exception if there is an error reading the time series.
 */

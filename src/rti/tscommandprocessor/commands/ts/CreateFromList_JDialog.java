@@ -60,7 +60,7 @@ private JTextField __Scenario_JTextField = null; // Scenario.
 private JTextField __InputType_JTextField = null; // Input type.
 private JTextField __InputName_JTextField = null; // Input name.
 private JTextField __Delim_JTextField = null; // Delimiter character(s).
-private SimpleJComboBox	__HandleMissingTSHow_JComboBox = null;
+private SimpleJComboBox	__IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null; // Default units when blank time series is created.
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -163,7 +163,7 @@ private void checkInput ()
     String Scenario = __Scenario_JTextField.getText().trim();
     String InputType = __InputType_JTextField.getText().trim();
     String InputName = __InputName_JTextField.getText().trim();
-    String HandleMissingTSHow = __HandleMissingTSHow_JComboBox.getSelected();
+    String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     
     __error_wait = false;
@@ -198,8 +198,8 @@ private void checkInput ()
     if ( InputName.length() > 0 ) {
         parameters.set ( "InputName", InputName );
     }
-    if ( HandleMissingTSHow.length() > 0 ) {
-        parameters.set ( "HandleMissingTSHow", HandleMissingTSHow );
+    if ( IfNotFound.length() > 0 ) {
+        parameters.set ( "IfNotFound", IfNotFound );
     }
     if ( DefaultUnits.length() > 0 ) {
         parameters.set ( "DefaultUnits", DefaultUnits );
@@ -228,7 +228,7 @@ private void commitEdits ()
     String Scenario = __Scenario_JTextField.getText().trim();
     String InputType = __InputType_JTextField.getText().trim();
     String InputName = __InputName_JTextField.getText().trim();
-    String HandleMissingTSHow = __HandleMissingTSHow_JComboBox.getSelected();
+    String IfNotFound = __IfNotFound_JComboBox.getSelected();
     String DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     __command.setCommandParameter ( "ListFile", ListFile );
     __command.setCommandParameter ( "IDCol", IDCol );
@@ -240,7 +240,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Scenario", Scenario );
     __command.setCommandParameter ( "InputType", InputType );
     __command.setCommandParameter ( "InputName", InputName );
-    __command.setCommandParameter ( "HandleMissingTSHow", HandleMissingTSHow );
+    __command.setCommandParameter ( "IfNotFound", IfNotFound );
     __command.setCommandParameter ( "DefaultUnits", DefaultUnits );
 }
 
@@ -253,7 +253,7 @@ throws Throwable
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__command = null;
-	__HandleMissingTSHow_JComboBox = null;
+	__IfNotFound_JComboBox = null;
 	__DataType_JTextField = null;
 	__Interval_JTextField = null;
 	__DefaultUnits_JTextField = null;
@@ -299,7 +299,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is useful for automating time series creation " +
-		"where there is a one-to-one relationship between data."),
+		"where lists of identifiers are being processed."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The list file can contain comment lines starting with #." ), 
@@ -335,7 +335,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __IDCol_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicate the ID column in the list file."),
+		"Required - the ID column in the list file (1+)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Delimiter:" ), 
@@ -345,7 +345,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __Delim_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Delimiter(s) between data columns (default is \" ,\")."),
+		"Optional - delimiter(s) between data columns (default is \" ,\")."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "ID filter pattern:" ), 
@@ -355,7 +355,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __ID_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"IDs to use (default is all). For example, use X*."),
+		"Optional - IDs to use from list file (default is all). For example, use X*."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data source:" ), 
@@ -364,7 +364,7 @@ private void initialize ( JFrame parent, Command command )
 	__DataSource_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "May be optional or required for input type."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional or required depending on input type."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:" ), 
@@ -373,7 +373,7 @@ private void initialize ( JFrame parent, Command command )
 	__DataType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "As available for the input type."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional or required depending on input type."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data interval:" ), 
@@ -383,7 +383,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example, 5Minute, 6Hour, Day, Month, Year, or Irregular."),
+		"Required - for example, 5Minute, 6Hour, Day, Month, Year, or Irregular."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Scenario:" ), 
@@ -401,7 +401,7 @@ private void initialize ( JFrame parent, Command command )
 	__InputType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __InputType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Needed to identify format of input."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - needed to identify format of input (e.g., HydroBase)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input name:" ), 
@@ -411,19 +411,21 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Required (e.g., HydroBase, DateValue)."),
+		"Optional (e.g., use for file name for input type)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel,new JLabel("Handle missing TS how?:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__HandleMissingTSHow_JComboBox = new SimpleJComboBox ( false );
-	__HandleMissingTSHow_JComboBox.addItem ( __command._DefaultMissingTS );
-	__HandleMissingTSHow_JComboBox.addItem ( __command._IgnoreMissingTS );
-	__HandleMissingTSHow_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __HandleMissingTSHow_JComboBox,
+	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
+	__IfNotFound_JComboBox.addItem ( __command._DefaultMissingTS );
+	__IfNotFound_JComboBox.addItem ( __command._IgnoreMissingTS );
+	__IfNotFound_JComboBox.addItem ( __command._WarnIfMissingTS );
+	__IfNotFound_JComboBox.select ( __command._WarnIfMissingTS );
+	__IfNotFound_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Should empty TS be created (requires output period)?"),
+		"Required - how to handle time series that are not found."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default units:" ), 
@@ -433,7 +435,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __DefaultUnits_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "Default units when missing time series are created (default is from InputType)."),
+    "Optional - units when IfNotFound=" + __command._DefaultMissingTS + "."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -521,7 +523,7 @@ private void refresh ()
     String Scenario = "";
     String InputType = "";
     String InputName = "";
-    String HandleMissingTSHow = "";
+    String IfNotFound = "";
     String DefaultUnits = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -537,7 +539,7 @@ private void refresh ()
         Scenario = props.getValue ( "Scenario" );
         InputType = props.getValue ( "InputType" );
         InputName = props.getValue ( "InputName" );
-        HandleMissingTSHow = props.getValue ( "HandleMissingTSHow" );
+        IfNotFound = props.getValue ( "IfNotFound" );
         DefaultUnits = props.getValue ( "DefaultUnits" );
         if ( ListFile != null ) {
             __ListFile_JTextField.setText ( ListFile );
@@ -581,26 +583,19 @@ private void refresh ()
         if ( InputName != null ) {
             __InputName_JTextField.setText ( InputName );
         }
-        if ( __HandleMissingTSHow_JComboBox != null ) {
-            if ( HandleMissingTSHow == null ) {
+        if ( __IfNotFound_JComboBox != null ) {
+            if ( IfNotFound == null ) {
                 // Select default...
-                __HandleMissingTSHow_JComboBox.select (
-                __command._IgnoreMissingTS );
+                __IfNotFound_JComboBox.select ( __command._WarnIfMissingTS );
             }
             else {  if (    JGUIUtil.isSimpleJComboBoxItem(
-                    __HandleMissingTSHow_JComboBox,
-                    HandleMissingTSHow, JGUIUtil.NONE, null,
-                    null ) ) {
-                    __HandleMissingTSHow_JComboBox.select (
-                    HandleMissingTSHow );
+                    __IfNotFound_JComboBox,
+                    IfNotFound, JGUIUtil.NONE, null, null ) ) {
+                    __IfNotFound_JComboBox.select ( IfNotFound );
                 }
                 else {  Message.printWarning ( 1, routine,
-                    "Existing CreateFromList() references" +
-                    " an invalid\n"+
-                    "HandleMissingTSHow \"" +
-                    HandleMissingTSHow +
-                    "\".  Select a\ndifferent value " +
-                    "or Cancel." );
+                    "Existing command references an invalid\n"+
+                    "IfNotFound \"" + IfNotFound + "\".  Select a\ndifferent value or Cancel." );
                 }
             }
         }
@@ -619,7 +614,7 @@ private void refresh ()
     Scenario = __Scenario_JTextField.getText().trim();
     InputType = __InputType_JTextField.getText().trim();
     InputName = __InputName_JTextField.getText().trim();
-    HandleMissingTSHow = __HandleMissingTSHow_JComboBox.getSelected();
+    IfNotFound = __IfNotFound_JComboBox.getSelected();
     DefaultUnits = __DefaultUnits_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "ListFile=" + ListFile );
@@ -632,7 +627,7 @@ private void refresh ()
     props.add ( "Scenario=" + Scenario );
     props.add ( "InputType=" + InputType );
     props.add ( "InputName=" + InputName );
-    props.add ( "HandleMissingTSHow=" + HandleMissingTSHow );
+    props.add ( "IfNotFound=" + IfNotFound );
     props.add ( "DefaultUnits=" + DefaultUnits );
     __command_JTextArea.setText( __command.toString ( props ) );
 }

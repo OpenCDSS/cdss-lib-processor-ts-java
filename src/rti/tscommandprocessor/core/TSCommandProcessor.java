@@ -2393,6 +2393,7 @@ private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries (
 throws Exception
 {   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters...
+    // Identifier for time series to read
     Object o = request_params.getContents ( "TSID" );
     if ( o == null ) {
             String warning = "Request ReadTimeSeries() does not provide a TSID parameter.";
@@ -2407,6 +2408,7 @@ throws Exception
     else {
         TSID = (String)o;
     }
+    // Warning level to use for command logging.
     Object o_WarningLevel = request_params.getContents ( "WarningLevel" );
     if ( o_WarningLevel == null ) {
             String warning = "Request ReadTimeSeries() does not provide a WarningLevel parameter.";
@@ -2417,6 +2419,7 @@ throws Exception
     int warningLevel = 2;
     Integer WarningLevel = (Integer)o_WarningLevel;
     warningLevel = WarningLevel.intValue();
+    // Command tag to use for command logging
     Object o_CommandTag = request_params.getValue ( "CommandTag" );
     if ( o_CommandTag == null ) {
             String warning = "Request ReadTimeSeries() does not provide a CommandTag parameter.";
@@ -2425,16 +2428,23 @@ throws Exception
             throw new RequestParameterNotFoundException ( warning );
     }
     String commandTag = (String)o_CommandTag;
-    Object o_HandleMissingTSHow = request_params.getValue ( "HandleMissingTSHow" );
-    if ( o_HandleMissingTSHow == null ) {
-            String warning = "Request ReadTimeSeries() does not provide a HandleMissingTSHow parameter.";
+    // IfMissing parameter to indicate how to handle missing time series
+    // The WarnIfMissing value will generate warnings in the main command.
+    //
+    // For the low level code, WarnIfMissing and IgnoreMissingTS result in no default
+    // time series (includeMissingTS=false in low level code).
+    // DefaultMissingTS results in default time series being added
+    // (includeMissingTS=true in low level code).
+    Object o_IfNotFound = request_params.getValue ( "IfNotFound" );
+    if ( o_IfNotFound == null ) {
+            String warning = "Request ReadTimeSeries() does not provide a IfNotFound parameter.";
             bean.setWarningText ( warning );
             bean.setWarningRecommendationText ( "This is likely a software code error.");
             throw new RequestParameterNotFoundException ( warning );
     }
-    String HandleMissingTSHow = (String)o_HandleMissingTSHow;
-    boolean includeMissingTS = false;
-    if ( HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS") ) {
+    String IfNotFound = (String)o_IfNotFound;
+    boolean includeMissingTS = false; // Default
+    if ( IfNotFound.equalsIgnoreCase("DefaultMissingTS") ) {
         includeMissingTS = true;
     }
     Object o_ReadData = request_params.getContents ( "ReadData" );

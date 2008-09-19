@@ -62,16 +62,21 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
-	if ( (TSList != null) && !TSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ) {
-		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + TSListType.ALL_MATCHING_TSID.toString() + ".";
-			warning += "\n" + message;
+    if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
+            !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
+            !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        if ( TSID != null ) {
+            message = "TSID should only be specified when TSList=" +
+            TSListType.ALL_MATCHING_TSID.toString() + " or " +
+            TSListType.FIRST_MATCHING_TSID.toString() + " or " +
+            TSListType.LAST_MATCHING_TSID.toString() + ".";
+            warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Do not specify the TSID parameter when TList=" +
-                            TSListType.ALL_MATCHING_TSID.toString() ) );
-		}
-	}
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Do not specify the TSID parameter." ) );
+        }
+    }
+    
 	if ( TSList == null ) {
 		// Probably legacy command...
 		// TODO SAM 2005-05-17 Need to require TSList when legacy

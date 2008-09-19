@@ -1757,115 +1757,6 @@ throws Exception
 */
 
 /**
-Helper method to execute the fillPattern() command:
-<pre>
-New:
-
-fillpattern(TSList=X,TSID="X",PatternID="X")
-
-Old:
-
-fillpattern(TSID,pattern)
-fillpattern(*,pattern)
-</pre>
-@param command Command to process.
-@exception Exception if there is an error processing the command.
-*/
-private void do_fillPattern ( String command )
-throws Exception
-{	String routine = "TSEngine.do_fillPattern", message;
-	TS ts;			// Time series to fill
-	String TSList = TSListType.ALL_MATCHING_TSID.toString();	// Defaults..
-	String TSID = "*";
-	String PatternID = null;
-	if ( command.indexOf('=') < 0 ) {
-		// Old command syntax...
-		Vector tokens = StringUtil.breakStringList ( command, "() ,", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() != 3) ) {
-			throw new Exception ( "Bad command: \"" + command+"\"");
-		}
-		TSID = ((String)tokens.elementAt(1)).trim();
-		PatternID = ((String)tokens.elementAt(2)).trim();
-		if ( TSID.indexOf("*") >= 0 ) {	// Default in new syntax
-			TSList = TSListType.ALL_MATCHING_TSID.toString();
-		}
-		else {
-            TSList = TSListType.LAST_MATCHING_TSID.toString();
-		}
-	}
-	else {	// New syntax...
-		Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() < 2) ) {
-			// Should never happen because the command name was parsed before...
-			throw new Exception("Bad command: \"" + command + "\"");
-		}
-		// Get the input needed to process the file...
-		PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
-		TSList = props.getValue ( "TSList" );
-		TSID = props.getValue ( "TSID" );
-		PatternID = props.getValue ( "PatternID" );
-	}
-	if ( !isParameterValid("TSList",TSList) ) {
-		message = "TSList value \"" + TSList + "\" is not valid.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception("Invalid TSList parameter: \"" + command + "\"");
-	}
-	Message.printStatus ( 2, routine, "Filling with pattern \"" + PatternID
-	+ "\" for TSList=\"" + TSList + "\" TSID=\"" + TSID + "\"" );
-	int warning_count = 0;
-	// Get the pattern time series to use...
-	StringMonthTS patternts = searchForFillPatternTS ( PatternID );
-	if ( patternts == null ) {
-		++warning_count;
-		message = "Unable to find fill pattern time series \"" + PatternID + "\" to fill time series.";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	// Properties used when filling the time series...
-	PropList fillprops = new PropList ( "fillprops" );
-	if ( getIgnoreLEZero() ) {
-		fillprops.set ( "IgnoreLessThanOrEqualZero", "true" );
-	}
-	// Get the time series to process...
-	Vector v = getTimeSeriesToProcess ( TSList, TSID, null, null );
-	Vector tslist = (Vector)v.elementAt(0);
-	int [] tspos = (int [])v.elementAt(1);
-	int nts = tslist.size();
-	if ( nts == 0 ) {
-		++warning_count;
-		message = "Unable to find time series to fill using TSID \"" + TSID + "\".";
-		Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	int pos = 0;
-	for ( int its = 0; its < nts; its++ ) {
-		try {
-		    ts = getTimeSeries(pos = tspos[its]);
-		}
-		catch ( Exception e ) {
-			continue;
-		}
-		// Do the filling...
-		Message.printStatus ( 2, routine, "Filling \"" +
-		ts.getIdentifier()+"\" with pattern \"" + PatternID + "\"" );
-		try {
-		    TSUtil.fillPattern ( ts, patternts, fillprops );
-			processTimeSeriesAction ( UPDATE_TS, ts, pos );
-		}
-		catch ( Exception e ) {
-			message = "Unable to fill time series \""+ ts.getIdentifier() + "\" with "+"pattern ID \""+ PatternID + "\".";
-			++warning_count;
-			Message.printWarning(2,routine,message);
-		}
-	}
-	patternts = null;
-	fillprops = null;
-	if ( warning_count > 0 ) {
-		throw new Exception ( "One or more warnings ocurred processing command \"" + command + "\"" );
-	}
-}
-
-/**
 Helper method to execute the fillProrate() command.
 @param command Command to process.
 @exception Exception if there is an error processing the command.
@@ -4028,6 +3919,7 @@ throws Exception
 	// This includes output period, etc.  Otherwise, the settings will be those of the
 	// previous run.  Probably need a parameter to control (do it by default) so that
 	// when running RunCommands() it is possible to retain previously set values or clear.
+	// This is done in the TSCommandProcessor instance before calling this method.
 	
 	/* TODO SAM 2007-10-13 Remove when test out.  The initial working dir is no
 	 * longer dynamic but is a data member on the processor.
@@ -4359,11 +4251,6 @@ throws Exception
 			ts_action = UPDATE_TS;
 			tokens = null;
 		}
-		else if ( command_String.regionMatches( true,0,"fillPattern",0,11)){
-			// Fill a monthly time series using historical monthly
-			// pattern averages.
-			do_fillPattern ( command_String );
-		}
 		else if ( command_String.regionMatches( true,0,"fillProrate",0,11)){
 			// Fill missing data in the time series by prorating
 			// one time series to another...
@@ -4431,11 +4318,6 @@ throws Exception
 		}
 		else if ( command_String.regionMatches(true,0,"setOutputDetailedHeaders", 0,24) ) {
 			do_setOutputDetailedHeaders ( command_String );
-			continue;
-		}
-		else if(command_String.regionMatches(true,0,"setPatternFile",0,14)){
-			// Support old and new...
-			do_setPatternFile ( command_String );
 			continue;
 		}
         // FIXME SAM 2008-01-04 Is this command even supported/documented?
@@ -5093,9 +4975,8 @@ throws Exception
 		suggest = "Use FillConstant().";
 	}
 	else if ( command_String.regionMatches(	true,0,"-filldata",0,9) ) {
-		message = "-filldata is obsolete.  Automatically using SetPatternFile().";
-		suggest = "Use SetPatternFile()";
-		do_setPatternFile ( command_String );
+		message = "-filldata is obsolete.";
+		suggest = "Use ReadPatternFile()";
 	}
 	else if ( command_String.regionMatches(true,0,"-fillhistave",0,12)){
 		message = "-fillhistave is obsolete.  Automatically using appropriate new command.";
@@ -6930,35 +6811,6 @@ Remove the time series at the specified index.
 protected void removeTimeSeries ( int index )
 {
     __tslist.removeElementAt ( index );
-}
-
-/**
-Search for a fill pattern TS.
-@return reference to found StringMonthTS instance.
-@param fill_pattern Fill pattern identifier to search for.
-*/
-private StringMonthTS searchForFillPatternTS ( String fill_pattern )
-{	if ( fill_pattern == null ) {
-		return null;
-	}
-	if ( __fill_pattern_ts == null ) {
-		return null;
-	}
-	
-	int nfill_pattern_ts = __fill_pattern_ts.size();
-
-	StringMonthTS fill_pattern_ts_i = null;
-	for ( int i = 0; i < nfill_pattern_ts; i++ ) {
-		fill_pattern_ts_i =(StringMonthTS)__fill_pattern_ts.elementAt(i);
-		if ( fill_pattern_ts_i == null ) {
-			continue;
-		}
-		if ( fill_pattern.equalsIgnoreCase(	fill_pattern_ts_i.getLocation()) ) {
-			return fill_pattern_ts_i;
-		}
-	}
-	fill_pattern_ts_i = null;
-	return null;
 }
 
 /**

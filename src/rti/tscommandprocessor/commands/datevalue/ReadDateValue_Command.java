@@ -56,7 +56,7 @@ private DateTime __InputStart = null;
 private DateTime __InputEnd   = null;
 
 /**
-List of time series read during discovery.  These are TS objects but with maintly the
+List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
 private Vector __discovery_TS_Vector = null;

@@ -168,6 +168,7 @@ import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
 import rti.tscommandprocessor.commands.ts.FillInterpolate_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
 import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
+import rti.tscommandprocessor.commands.ts.FillPattern_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.FillRepeat_Command;
 import rti.tscommandprocessor.commands.ts.Free_Command;
@@ -178,6 +179,7 @@ import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Com
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.ReadPatternFile_Command;
 import rti.tscommandprocessor.commands.ts.ReplaceValue_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.RunningAverage_Command;
@@ -381,6 +383,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillMOVE2") ) {
 		return new fillMOVE2_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FillPattern") ) {
+        return new FillPattern_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillRegression") ) {
 		return new fillRegression_Command ();
 	}
@@ -494,6 +499,9 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadNwsrfsEspTraceEnsemble") ) {
         return new ReadNwsrfsEspTraceEnsemble_Command ();
     }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadPatternFile") ) {
+        return new ReadPatternFile_Command ();
+    }
     else if ( isTScommand && TScommand.equalsIgnoreCase("ReadRiverWare") ) {
         return new ReadRiverWare_Command ();
     }
@@ -590,6 +598,10 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetOutputYearType") ) {
         return new SetOutputYearType_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetPatternFile") ) {
+        // Automatically convert to ReadPatternFile
+        return new ReadPatternFile_Command ();
     }
     // Put this before the shorter SetProperty() to avoid ambiguity.
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetPropertyFromNwsrfsAppDefault") ) {

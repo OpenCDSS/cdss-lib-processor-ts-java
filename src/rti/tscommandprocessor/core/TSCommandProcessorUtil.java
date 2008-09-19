@@ -11,6 +11,7 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
+import RTi.TS.TSUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -562,6 +563,70 @@ public static Vector getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandP
     Vector commands = getCommandsBeforeIndex ( processor, pos );
     // Get the time series identifiers from the commands...
     return getEnsembleIdentifiersFromCommands ( commands );
+}
+
+/**
+Return the pattern time series for commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of
+time identifiers to editor dialogs, using information determined during discovery.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series are needed.
+@return a List of pattern time series.
+*/
+public static List getPatternTSListFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+{   //String routine = "TSCommandProcessorUtil.getPatternTSFromCommandsBeforeCommand";
+    // Get the position of the command in the list...
+    int pos = processor.indexOf(command);
+    //Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( pos < 0 ) {
+        // Just return a blank list...
+        return new Vector();
+    }
+    // Find the commands above the position...
+    Vector commands = getCommandsBeforeIndex ( processor, pos );
+    // Get the time series identifiers from the commands...
+    return getPatternTSListFromCommands ( commands );
+}
+
+/**
+Get a list of pattern time series from a list of commands.  The time series can be used to
+extract identifiers for drop-down lists, etc.
+Time series are determined as follows:
+<ol>
+<li>    Commands that implement ObjectListProvider have their getObjectList(TS) method called.
+        The time series identifiers from the time series list are examined and those with alias
+        will have the alias returned.  Otherwise, the full time series identifier is returned with or
+        with input path as requested.</li>
+</ol>
+@param commands Commands to search.
+@param List of pattern time series provided by commands.
+*/
+protected static List getPatternTSListFromCommands ( Vector commands )
+{   if ( commands == null ) {
+        return new Vector();
+    }
+    Vector v = new Vector ( 10, 10 );
+    int size = commands.size();
+    Object command_o = null;    // Command as object
+    for ( int i = 0; i < size; i++ ) {
+        command_o = commands.elementAt(i);
+        if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
+            // Try to get the list of identifiers using the interface method.
+            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
+            List list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+            if ( list != null ) {
+                int tssize = list.size();
+                TS ts;
+                for ( int its = 0; its < tssize; its++ ) {
+                    ts = (TS)list.get(its);
+                    v.add( ts );
+                }
+            }
+        }
+    }
+    // Sort the time series by identifier...
+    TSUtil.sort(v);
+    return v;
 }
 
 /**

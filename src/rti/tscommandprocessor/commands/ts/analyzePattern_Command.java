@@ -29,6 +29,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import DWR.StateMod.StateMod_TS;
 
@@ -129,16 +130,20 @@ throws InvalidCommandParameterException
                         message, "Software error - report problem to support." ) );
 	}
 	
-	// Make sure TSID is specified only when the TSList=_AllMatchingTSID.
-	if ( (TSList != null) && !TSList.equalsIgnoreCase(_AllMatchingTSID) ) {
-		if ( TSID != null ) {
-            message = "TSID should only be specified when TSList=" + _AllMatchingTSID + ".";
-			warning += "\n" + message;
+    if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
+            !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
+            !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        if ( TSID != null ) {
+            message = "TSID should only be specified when TSList=" +
+            TSListType.ALL_MATCHING_TSID.toString() + " or " +
+            TSListType.FIRST_MATCHING_TSID.toString() + " or " +
+            TSListType.LAST_MATCHING_TSID.toString() + ".";
+            warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Change the TSID to blank." ) );
-		}
-	}
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Do not specify the TSID parameter." ) );
+        }
+    }
 	
 	// Make sure one or more time series are selected when AllMatchingTSID is selected.
 	if ( TSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {

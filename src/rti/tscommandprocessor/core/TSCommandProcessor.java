@@ -156,6 +156,11 @@ during troubleshooting to increase performance.
 private Boolean __CreateOutput_Boolean = new Boolean(true);
 
 /**
+The list of StringMonthTS, currently only read by ReadPatternFile() and used with FillPattern().
+*/
+private Vector __patternTS_Vector = new Vector();
+
+/**
 The list of TSEnsemble managed by this command processor, guaranteed to be non-null.
 */
 private Vector __TSEnsemble_Vector = new Vector();
@@ -377,6 +382,8 @@ public void addCommandProcessorListener ( CommandProcessorListener listener )
 
 /**
 Clear the results of processing.  This resets the list of time series, tables, and ensembles to empty.
+Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRun()
+method, which calls this method.
 */
 public void clearResults()
 {
@@ -384,9 +391,8 @@ public void clearResults()
     if ( __Table_Vector != null ) {
         __Table_Vector.removeAllElements();
     }
-    if ( __TSEnsemble_Vector != null ) {
-        __TSEnsemble_Vector.removeAllElements();
-    }
+    removeAllEnsembles();
+    removeAllPatternTS();
 }
 
 /**
@@ -591,6 +597,11 @@ THIS HAS NOT BEEN IMPLEMENTED.
 </tr>
 
 <tr>
+<td><b>PatternTSList</b></td>
+<td>The pattern time series as a List.</td>
+</tr>
+
+<tr>
 <td><b>TableResultsList</b></td>
 <td>The table results list as a List.</td>
 </tr>
@@ -701,9 +712,9 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("OutputYearType") ) {
 		return getPropContents_OutputYearType();
 	}
-	else if ( prop.equalsIgnoreCase("HydroBaseDMIList") ) {
-		return getPropContents_HydroBaseDMIList();
-	}
+    else if ( prop.equalsIgnoreCase("PatternTSList") ) {
+        return getPropContents_PatternTSList();
+    }
     else if ( prop.equalsIgnoreCase("TableResultsList") ) {
         return getPropContents_TableResultsList();
     }
@@ -933,8 +944,17 @@ private String getPropContents_OutputYearType()
 }
 
 /**
+Handle the PatternTSList property request.
+@return The pattern time series results list, as a List of StringMonthTS.
+*/
+private List getPropContents_PatternTSList()
+{
+    return __patternTS_Vector;
+}
+
+/**
 Handle the TableResultsList property request.
-@return The time series results list, as a List of DataTable.
+@return The table results list, as a List of DataTable.
 */
 private List getPropContents_TableResultsList()
 {
@@ -1588,6 +1608,21 @@ Returned values from this request are:
 </tr>
 
 <tr>
+<td><b>SetPatternTSList</b></td>
+<td>Set the list of pattern time series, to be used with FillPattern() commands.
+    Parameters to this request are:
+<ol>
+<li>    <b>TSList</b> A list of pattern time series to save for later use.
+        Matching identifiers are overwritten.</li>
+</ol>
+Returned values from this request are:
+<ol>
+<li>    None.</li>
+</ol>
+</td>
+</tr>
+
+<tr>
 <td><b>SetProperty</b></td>
 <td>Set a processor property.  Parameters to this request are:
 <ol>
@@ -1725,6 +1760,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetNWSRFSFS5FilesDMI") ) {
 		return processRequest_SetNWSRFSFS5FilesDMI ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetPatternTSList") ) {
+        return processRequest_SetPatternTSList ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("SetProperty") ) {
         return processRequest_SetProperty ( request, request_params );
     }
@@ -2576,22 +2614,18 @@ throws Exception
 	// Command list.
 	Object o = request_params.getContents ( "CommandList" );
 	if ( o == null ) {
-			String warning =
-				"Request RunCommands() does not provide a CommandList parameter.";
+			String warning = "Request RunCommands() does not provide a CommandList parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Vector commands = (Vector)o;
 	// Whether commands should create output...
 	Object o3 = request_params.getContents ( "CreateOutput" );
 	if ( o3 == null ) {
-			String warning =
-				"Request RunCommands() does not provide a CreateOutput parameter.";
+			String warning = "Request RunCommands() does not provide a CreateOutput parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Boolean CreateOutput_Boolean = (Boolean)o3;
@@ -2656,6 +2690,44 @@ throws Exception
 	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
+}
+
+/**
+Process the SetPatternTSList request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetPatternTSList (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "TSList" );
+    if ( o == null ) {
+            String warning = "Request SetPatternTSList() does not provide a TSList parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    Vector tslist = (Vector)o;
+    int size = tslist.size();
+    TS tsi, tsj;
+    for ( int i = 0; i < size; i++ ) {
+        // See if the item is already in the list.  If so, replace it.  If not, add at the end.
+        boolean found = false;
+        tsi = (TS)tslist.get(i);
+        for ( int j = 0; j < __patternTS_Vector.size(); j++ ) {
+            tsj = (TS)tslist.get(j);
+            if ( tsi.getIdentifier().toString().equalsIgnoreCase(tsj.getIdentifier().toString()) ) {
+                __patternTS_Vector.set(j, tsi);
+                found = true;
+                break;
+            }
+        }
+        if ( !found ) {
+            __patternTS_Vector.add ( tsi );
+        }
+    }
+    // No data are returned in the bean.
+    return bean;
 }
 
 /**
@@ -3166,7 +3238,19 @@ Remove all ensembles.
 */
 private void removeAllEnsembles ()
 {
-    __TSEnsemble_Vector.removeAllElements();
+    if ( __TSEnsemble_Vector != null ) {
+        __TSEnsemble_Vector.removeAllElements();
+    }
+}
+
+/**
+Remove all pattern time series, for example at the start of a run.
+*/
+private void removeAllPatternTS ()
+{
+    if ( __patternTS_Vector != null ) {
+        __patternTS_Vector.removeAllElements();
+    }
 }
 
 /**

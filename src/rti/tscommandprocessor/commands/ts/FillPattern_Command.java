@@ -5,8 +5,10 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
+import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
@@ -27,34 +29,22 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
+//import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the FillInterpolate() command.
+This class initializes, checks, and runs the FillPattern() command.
 </p>
 */
-public class FillInterpolate_Command extends AbstractCommand implements Command
+public class FillPattern_Command extends AbstractCommand implements Command
 {
-
-/**
-Values for the Transformation parameter.  "Linear" is being phased out in favor of "None".
-*/
-protected final String _Linear = "Linear";
-protected final String _None = "None";
-    
-/**
-Values for the FillDirection parameter.
-*/
-//protected String _Forward = "Forward";
-//protected String _Backward = "Backward";
 
 /**
 Constructor.
 */
-public FillInterpolate_Command ()
+public FillPattern_Command ()
 {	super();
-	setCommandName ( "FillInterpolate" );
+	setCommandName ( "FillPattern" );
 }
 
 /**
@@ -70,12 +60,10 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
-	//String FillDirection = parameters.getValue ( "FillDirection" );
-    String MaxIntervals = parameters.getValue ( "MaxIntervals" );
-    String Transformation = parameters.getValue ( "Transformation" );
-	String FillStart = parameters.getValue ( "FillStart" );
-	String FillEnd = parameters.getValue ( "FillEnd" );
-	String FillFlag = parameters.getValue ( "FillFlag" );
+	String PatternID = parameters.getValue ( "PatternID" );
+	//String FillStart = parameters.getValue ( "FillStart" );
+	//String FillEnd = parameters.getValue ( "FillEnd" );
+	//String FillFlag = parameters.getValue ( "FillFlag" );
 	String warning = "";
     String message;
     
@@ -112,23 +100,14 @@ throws InvalidCommandParameterException
 		}
 	}
     */
-	/*
-	if ( (FillDirection != null) && !FillDirection.equals("") &&
-            !FillDirection.equals(_Forward) && !FillDirection.equals(_Backward)) {
-        message = "The fill direction is invalid.";
+	if ( (PatternID == null) || PatternID.equals("") ) {
+        message = "The pattern ID has not been specified.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the fill direction as " + _Forward + " or " + _Backward + "." ) );
+                        message, "Specify the pattern ID." ) );
 	}
-	*/
-    if ( (MaxIntervals != null) && (MaxIntervals.length() > 0) && !StringUtil.isInteger(MaxIntervals) ) {
-        message = "The maximum intervals \"" + MaxIntervals + "\" is not an integer.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the maximum number of intervals as an integer." ) );
-    }
+	/*
 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
 		try {
             DateTime.parse(FillStart);
@@ -159,26 +138,17 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a 1-character fill flag or blank to not use a flag." ) );
 	}
-	if ( (Transformation != null) && !Transformation.equals("") &&
-	        !Transformation.equalsIgnoreCase(_None)) {
-        message = "The Transformation parameter is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify as blank or " + _None + "." ) );
-	}
+	*/
     
 	// Check for invalid parameters...
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "FillStart" );
-    valid_Vector.add ( "FillEnd" );
-    //valid_Vector.add ( "FillDirection" );
-    valid_Vector.add ( "MaxIntervals" );
-    valid_Vector.add ( "Transformation" );
-    valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "PatternID" );
+    //valid_Vector.add ( "FillStart" );
+    //valid_Vector.add ( "FillEnd" );
+    //valid_Vector.add ( "FillFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -199,7 +169,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new FillInterpolate_JDialog ( parent, this )).ok();
+	return (new FillPattern_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -215,27 +185,27 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "FillInterpolate_Command.parseCommand", message;
+	String routine = "FillPattern_Command.parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
         // Current syntax...
         super.parseCommand( command_string);
     }
     else {
-		// TODO SAM 2008-09-03 This whole block of code needs to be
+		// TODO SAM 2005-09-08 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
 		Vector v = StringUtil.breakStringList(command_string,
-			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
+			"(),\t", StringUtil.DELIM_SKIP_BLANKS |
+			StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
 			ntokens = v.size();
 		}
-		if ( ntokens != 4 ) {
-			// Command name, TSID, max intervals, transformation...
-			message = "Syntax error in \"" + command_string +
-			"\".  Expecting FillInterpolate(TSID,MaxIntervals,Transformation).";
+		if ( ntokens != 3 ) {
+			// Command name, TSID, and PatternID...
+			message = "Syntax error in \"" + command_string + "\".  Expecting FillPattern(TSID,PatternID)";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -243,11 +213,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// Get the individual tokens of the expression...
 
 		String TSID = ((String)v.elementAt(1)).trim();
-		String MaxIntervals = ((String)v.elementAt(2)).trim();
-		String Transformation = ((String)v.elementAt(3)).trim();
-		if ( Transformation.equalsIgnoreCase(_Linear) ) {
-		    Transformation = _None;
-		}
+		String PatternID = ((String)v.elementAt(2)).trim();
 
 		// Set parameters and new defaults...
 
@@ -258,8 +224,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
             parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
 		}
-		parameters.set ( "MaxIntervals", MaxIntervals );
-		parameters.set ( "Transformation", Transformation );
+		parameters.set ( "PatternID", PatternID );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}
@@ -278,11 +243,11 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "FillInterpolate_Command.runCommand", message;
+{	String routine = "FillPattern_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messgaes
+	int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
@@ -387,13 +352,18 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
-	// Fill period...
+	// Pattern ID...
 
-	String FillStart = parameters.getValue("FillStart");
-	String FillEnd = parameters.getValue("FillEnd");
-	String FillFlag = parameters.getValue("FillFlag");
+	String PatternID = parameters.getValue("PatternID");
+
+	// Fill period...
+	
+	//String FillStart = parameters.getValue("FillStart");
+	//String FillEnd = parameters.getValue("FillEnd");
+	//String FillFlag = parameters.getValue("FillFlag");
 
 	// Figure out the dates to use for the analysis...
+	/*
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
 
@@ -488,6 +458,54 @@ CommandWarningException, CommandException
                         message, "Specify a valid date/time or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
+	*/
+	
+    PropList fillprops = new PropList ( "FillPattern" );
+    //if ( FillFlag != null ) {
+    //  props.set ( "FillFlag", FillFlag );
+    //}
+    // Global property indicating how to handle values <= zero when computing averages.
+    Boolean IgnoreLEZero_Boolean = null;
+    try {
+        IgnoreLEZero_Boolean = (Boolean)processor.getPropContents("IgnoreLEZero");
+    }
+    catch ( Exception e ) {
+        Message.printWarning ( 3, routine, e );
+        IgnoreLEZero_Boolean = null;
+    }
+    if ( IgnoreLEZero_Boolean == null ) {
+        message = "Unable to get global value for IgnoreLEZero.";
+        Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
+    }
+    else if ( IgnoreLEZero_Boolean.booleanValue() ) {
+        fillprops.set ( "IgnoreLessThanOrEqualZero", "true" );
+    }
+    
+    // Get the pattern time series to use...
+    StringMonthTS patternts = null;
+    try {
+        patternts = searchForFillPatternTS ( PatternID );
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, e);
+        patternts = null;
+    }
+    if ( patternts == null ) {
+        message = "Unable to find pattern time series matching \"" + PatternID + "\" - cannot fill.";
+        Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the pattern ID is correct and that pattern " +
+                                "time series have been read with ReadPatternFile()." ) );
+        throw new CommandWarningException ( message );
+    }
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
@@ -499,23 +517,6 @@ CommandWarningException, CommandException
 
 	// Now process the time series...
 
-	PropList props = new PropList ( "FillInterpolate" );
-	if ( FillFlag != null ) {
-		props.set ( "FillFlag", FillFlag );
-	}
-  /*
-    String FillDirection = parameters.getValue("FillDirection");
-    int FillDirection_int = 1;   // Forward
-    if ( (FillDirection != null) && FillDirection.equalsIgnoreCase(_Backward) ) {
-        FillDirection_int = -1;
-    }
-    */
-    
-    String MaxIntervals = parameters.getValue("MaxIntervals");
-    if ( MaxIntervals != null ) {
-        props.set ( "MaxIntervals", MaxIntervals );
-    }
-    
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		ts = null;
@@ -550,7 +551,7 @@ CommandWarningException, CommandException
 		
 		if ( ts == null ) {
 			// Skip time series.
-            message = "Null time series at position " + tspos[its];
+            message = "Unable to fill time series at position " + tspos[its];
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
@@ -561,12 +562,14 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the filling...
-		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" by interpolating." );
-		try {
-            TSUtil.fillInterpolate ( ts, FillStart_DateTime, FillEnd_DateTime, props );
+		Message.printStatus ( 2, routine, "Filling \"" +
+		ts.getIdentifier()+ "\" using pattern " + PatternID + "." );        
+        try {
+            TSUtil.fillPattern ( ts, patternts, fillprops );
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error filling by interpolation for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
+			message = "Unexpected error filling time series \"" + ts.getIdentifier() +
+			"\" using pattern \"" + PatternID + "\" (" + e + ").";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                     command_tag, ++warning_count),
@@ -591,6 +594,41 @@ CommandWarningException, CommandException
 }
 
 /**
+Search for a fill pattern TS.
+@return reference to found StringMonthTS instance or null if not found.
+@param patternID Fill pattern identifier to search for.
+*/
+private StringMonthTS searchForFillPatternTS ( String patternID )
+throws Exception
+{   String routine = "FillPattern_Command.searchForFillPatternTS";
+    if ( patternID == null ) {
+        return null;
+    }
+    // Get the list of pattern time series from the processor
+    Object o = getCommandProcessor().getPropContents("PatternTSList");
+    if ( o == null ) {
+        Message.printWarning ( 3, routine, "No pattern time series available from processor." );
+        return null;
+    }
+    List patternTSList = (List)o;
+    
+    int patternTSListSize = patternTSList.size();
+    //Message.printStatus(2, routine, "Have " + patternTSListSize + " pattern time series.");
+
+    StringMonthTS fill_pattern_ts_i = null;
+    for ( int i = 0; i < patternTSListSize; i++ ) {
+        fill_pattern_ts_i =(StringMonthTS)patternTSList.get(i);
+        if ( fill_pattern_ts_i == null ) {
+            continue;
+        }
+        if ( patternID.equalsIgnoreCase( fill_pattern_ts_i.getLocation()) ) {
+            return fill_pattern_ts_i;
+        }
+    }
+    return null;
+}
+
+/**
 Return the string representation of the command.
 */
 public String toString ( PropList props )
@@ -600,12 +638,10 @@ public String toString ( PropList props )
 	String TSList = props.getValue( "TSList" );
 	String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
-	//String FillDirection = props.getValue( "FillDirection" );
-    String MaxIntervals = props.getValue( "MaxIntervals" );
-    String Transformation = props.getValue( "Transformation" );
-	String FillStart = props.getValue("FillStart");
-	String FillEnd = props.getValue("FillEnd");
-	String FillFlag = props.getValue("FillFlag");
+	String PatternID = props.getValue( "PatternID" );
+	//String FillStart = props.getValue("FillStart");
+	//String FillEnd = props.getValue("FillEnd");
+	//String FillFlag = props.getValue("FillFlag");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -622,25 +658,13 @@ public String toString ( PropList props )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    /*
-	if ( (FillDirection != null) && (FillDirection.length() > 0) ) {
+	if ( (PatternID != null) && (PatternID.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "FillDirection=" + FillDirection );
-	}*/
-    if ( (MaxIntervals != null) && (MaxIntervals.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "MaxIntervals=" + MaxIntervals );
-    }
-    if ( (Transformation != null) && (Transformation.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Transformation=" + Transformation );
-    }
+		b.append ( "PatternID=\"" + PatternID + "\"" );
+	}
+	/*
 	if ( (FillStart != null) && (FillStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -659,6 +683,7 @@ public String toString ( PropList props )
 		}
 		b.append ( "FillFlag=\"" + FillFlag + "\"" );
 	}
+	*/
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

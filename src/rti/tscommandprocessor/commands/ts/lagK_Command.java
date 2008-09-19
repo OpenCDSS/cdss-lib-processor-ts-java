@@ -160,7 +160,7 @@ throws InvalidCommandParameterException
                         message, "Specify the identifier for the time series to process." ) );
 	}
 	else if ( TSID.equalsIgnoreCase( ObsTSID) ) {
-		// The observed TS must be diffferent from in input TS
+		// The observed TS must be different from in input TS
         message = "The observed time series must be different from the input time series.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,

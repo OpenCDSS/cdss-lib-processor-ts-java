@@ -696,7 +696,6 @@ import RTi.TS.MonthTS;
 import RTi.TS.MonthTSLimits;
 import RTi.TS.RiverWareTS;
 import RTi.TS.ShefATS;
-import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSAnalyst;
 import RTi.TS.TSEnsemble;
@@ -2338,42 +2337,6 @@ throws Exception
 		tokens = null;
 		toggle = null;
 	}
-}
-
-/**
-Execute the new setPatternFile() or old -filldata.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setPatternFile ( String command )
-throws Exception
-{	String routine = "TSEngine.do_setPatternFile";
-	// The following works with old and new...
-	Vector tokens = StringUtil.breakStringList ( command, " (,)",
-		StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS);
-	if ( (tokens == null) || (tokens.size() != 2) ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	String fillpatternfile = ((String)tokens.elementAt(1)).trim();
-    String fillpatternfile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),fillpatternfile) );
-	Message.printStatus ( 1, routine, "Using \"" + fillpatternfile_full + "\" for fill pattern file." );
-	// Read the fill pattern file.  Since multiple options are allowed,
-	// create a temporary Vector and then append to the main vector...
-	Vector fill_pattern_ts = StateMod_TS.readPatternTimeSeriesList(	fillpatternfile_full, true );
-	if ( fill_pattern_ts == null ) {
-		throw new Exception ("No pattern time series read from \"" + fillpatternfile_full + "\"");
-	}
-	else {	int listsize = fill_pattern_ts.size();
-		Message.printStatus ( 2, routine,
-		"Read "+listsize+" pattern time series from \""+ fillpatternfile_full + "\"" );
-		for ( int j = 0; j < listsize; j++ ) {
-			__fill_pattern_ts.addElement (fill_pattern_ts.elementAt(j) );
-		}
-	}
-	fill_pattern_ts = null;
-	tokens = null;
-	fillpatternfile = null;
 }
 
 /**
@@ -4217,39 +4180,6 @@ throws Exception
 			Message.printStatus ( 1, routine, "Exit - stop processing time series." );
 			ts_action = EXIT;
 			break;
-		}
-		else if ( command_String.regionMatches(	true,0,"fillDayTSFrom2MonthTSAnd1DayTS",0,30) ) {
-			// Fill missing data in the time series using D1 = D2*M1/M2
-			tokens = StringUtil.breakStringList ( command_String,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
-			if ( tokens.size() != 5 ) {
-				Message.printStatus ( 1, routine,
-				"Bad command \"" + command_String + "\"" );
-				continue;
-			}
-			// Parse the identifier...
-			alias = ((String)tokens.elementAt(1)).trim();
-			String monthts1 = ((String)tokens.elementAt(2)).trim();
-			String monthts2 = ((String)tokens.elementAt(3)).trim();
-			String dayts2 = ((String)tokens.elementAt(4)).trim();
-			ts_pos = indexOf ( alias );
-			int ts_pos_monthts1 = indexOf ( monthts1 );
-			int ts_pos_monthts2 = indexOf ( monthts2 );
-			int ts_pos_dayts2 = indexOf ( dayts2 );
-			if (	(ts_pos >= 0) && (ts_pos_monthts1 >=0) &&
-				(ts_pos_dayts2 >= 0) && (ts_pos_monthts2 >=0)) {
-				ts = getTimeSeries ( ts_pos );
-				TSUtil.fillDayTSFrom2MonthTSAnd1DayTS (
-					(DayTS)ts,
-					(MonthTS)(getTimeSeries(
-						ts_pos_monthts1)),
-					(DayTS)(getTimeSeries(ts_pos_dayts2)),
-					(MonthTS)(getTimeSeries(
-						ts_pos_monthts2)),
-					(DateTime)null, (DateTime)null );
-			}
-			ts_action = UPDATE_TS;
-			tokens = null;
 		}
 		else if ( command_String.regionMatches( true,0,"fillProrate",0,11)){
 			// Fill missing data in the time series by prorating

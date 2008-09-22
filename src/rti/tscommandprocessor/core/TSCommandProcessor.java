@@ -2096,17 +2096,16 @@ throws Exception
 
 /**
 Process the GetTimeSeriesForTSID request.
+The time series is located by processing backwards in the list.
 */
 private CommandProcessorRequestResultsBean processRequest_GetTimeSeriesForTSID (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TSID" );
 	if ( o == null ) {
-			String warning =
-				"Request GetTimeSeriesForTSID() does not provide a TSID parameter.";
+			String warning = "Request GetTimeSeriesForTSID() does not provide a TSID parameter.";
 			bean.setWarningText ( warning );
 			bean.setWarningRecommendationText (	"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );

@@ -162,6 +162,7 @@ import rti.tscommandprocessor.commands.ts.CreateFromList_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
 import rti.tscommandprocessor.commands.ts.DeselectTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
+import rti.tscommandprocessor.commands.ts.FillDayTSFrom2MonthTSAnd1DayTS_Command;
 import rti.tscommandprocessor.commands.ts.FillFromTS_Command;
 import rti.tscommandprocessor.commands.ts.fillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.fillHistYearAverage_Command;
@@ -365,6 +366,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillConstant") ) {
 		return new fillConstant_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FillDayTSFrom2MonthTSAnd1DayTS") ) {
+        return new FillDayTSFrom2MonthTSAnd1DayTS_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"FillFromTS") ) {
         return new FillFromTS_Command ();
     }

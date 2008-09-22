@@ -4269,6 +4269,7 @@ throws Exception
 		else if ( command_String.regionMatches(true,0,"TS ",0,3) &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ChangeInterval") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Copy") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Disaggregate") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "LagK") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
@@ -4311,41 +4312,7 @@ throws Exception
 				}
 				ts = do_newEndOfMonthTSFromDayTS ( command_String );
 			}
-			else if ( method.equalsIgnoreCase("disaggregate") ) {
-				// Can't use " " as delimiter because of
-				// TEMPTS...
-				tokens = StringUtil.breakStringList (command_String,
-				"=(,)", StringUtil.DELIM_SKIP_BLANKS );
-				if ( tokens.size() < 7 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String + "\"" );
-					++error_count;
-					continue;
-				}
-				// Change time series interval by disaggregating...
-				alias = ((String)tokens.elementAt(2)).trim();
-				TS its = getTimeSeries ( command_tag, alias );
-				if ( its != null ) {
-					String dmethod = ((String)tokens.elementAt(3)).trim();
-					String interval_string = (String)tokens.elementAt(4);
-					// TODO - catch exception
-					TimeInterval interval = TimeInterval.parseInterval(interval_string );
-					String datatype_string =(String)tokens.elementAt(5);
-					String units_string =(String)tokens.elementAt(6);
-					ts = TSUtil.disaggregate (
-						its, dmethod, datatype_string,
-						units_string,
-						interval.getBase(),
-						interval.getMultiplier() );
-					its = null;
-				}
-				else {	Message.printWarning ( 1, routine,
-					"Unable to find time series \"" + alias + "\" to disaggregate." );
-					++error_count;
-					ts = null;
-				}
-			}
-			else if ( method.equalsIgnoreCase("newDayTSFromMonthAndDayTS") ) {
+		    else if ( method.equalsIgnoreCase("newDayTSFromMonthAndDayTS") ) {
 				if ( tokens.size() < 3 ) {
 					Message.printWarning ( 1, routine,
 					"Bad command \"" + command_String + "\"" );

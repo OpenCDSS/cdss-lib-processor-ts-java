@@ -161,6 +161,7 @@ import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.CreateFromList_Command;
 import rti.tscommandprocessor.commands.ts.cumulate_Command;
 import rti.tscommandprocessor.commands.ts.DeselectTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.Disaggregate_Command;
 import rti.tscommandprocessor.commands.ts.fillConstant_Command;
 import rti.tscommandprocessor.commands.ts.FillDayTSFrom2MonthTSAnd1DayTS_Command;
 import rti.tscommandprocessor.commands.ts.FillFromTS_Command;
@@ -351,6 +352,9 @@ throws UnknownCommandException
     
     else if ( StringUtil.startsWithIgnoreCase(command_string,"DeselectTimeSeries") ) {
         return new DeselectTimeSeries_Command ();
+    }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("Disaggregate") ) {
+        return new Disaggregate_Command ();
     }
 	
 	// "E" commands...

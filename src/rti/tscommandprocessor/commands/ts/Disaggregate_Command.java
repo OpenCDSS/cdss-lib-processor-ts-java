@@ -285,6 +285,9 @@ CommandWarningException, CommandException
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
 	String Method = parameters.getValue ( "Method" );
+	if ( (Method == null) || Method.equals("") ) {
+	    Method = _SameValue; // Default
+	}
 	String NewInterval = parameters.getValue ( "NewInterval" );
 	String NewDataType = parameters.getValue ( "NewDataType" );
 	String NewUnits = parameters.getValue ( "NewUnits" );

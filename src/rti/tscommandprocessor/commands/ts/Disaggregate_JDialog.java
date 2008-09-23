@@ -30,6 +30,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 
 public class Disaggregate_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -320,7 +321,8 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String Alias = "";
+{   String routine = "Disaggregate_JDialog.refresh";
+    String Alias = "";
     String TSID = "";
     String Method = "";
     String NewInterval = "";
@@ -357,21 +359,19 @@ private void refresh ()
                 }
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem( __Method_JComboBox, Method, JGUIUtil.NONE, null, null ) ) {
-            __Method_JComboBox.select ( Method );
+        if ( Method == null ) {
+            // Select default...
+            __Method_JComboBox.select ( 0 );
         }
         else {
-            // Automatically add to the list...
-            if ( (Method != null) && (Method.length() > 0) ) {
-                __Method_JComboBox.insertItemAt ( Method, 0 );
-                // Select...
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Method_JComboBox, Method, JGUIUtil.NONE, null, null ) ) {
                 __Method_JComboBox.select ( Method );
             }
             else {
-                // Select the default...
-                if ( __Method_JComboBox.getItemCount() > 0 ) {
-                    __Method_JComboBox.select ( 1 );
-                }
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nMethod value \"" +
+                Method + "\".  Select a different value or Cancel.");
+                __error_wait = true;
             }
         }
         if ( NewInterval != null ) {

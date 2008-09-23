@@ -4276,6 +4276,7 @@ throws Exception
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticYearTS") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewTimeSeries") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Normalize") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadDateValue") &&
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadHydroBase") &&
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadMODSIM") &&
@@ -4363,33 +4364,6 @@ throws Exception
 				setUsingMonthAndDay ( (DayTS)ts,
 						(MonthTS)monthTS,
 						(DayTS)dayTS );
-			}
-			else if ( method.equalsIgnoreCase("normalize") ) {
-				if ( tokens.size() != 7 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
-					++error_count;
-					continue;
-				}
-				// Normalize the time series interval
-				alias = ((String)tokens.elementAt(3)).trim();
-				int pos = indexOf ( alias );
-				if ( pos >= 0 ) {
-					String minval =
-						(String)tokens.elementAt(5);
-					String maxval =
-						(String)tokens.elementAt(6);
-					// Make a copy of the found time
-					// series...
-					ts = (TS)(getTimeSeries(pos).clone());
-					// Now normalize...
-					TSUtil.normalize (
-						ts, true,
-						StringUtil.atod(minval),
-						StringUtil.atod(maxval) );
-				}
-				else {	ts = null;
-				}
 			}
 			else if ( method.equalsIgnoreCase("readTimeSeries") ) {
 				// Reparse to strip quotes from file name...

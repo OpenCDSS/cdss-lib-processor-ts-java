@@ -181,6 +181,7 @@ import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Com
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
+import rti.tscommandprocessor.commands.ts.Normalize_Command;
 import rti.tscommandprocessor.commands.ts.ReadPatternFile_Command;
 import rti.tscommandprocessor.commands.ts.ReplaceValue_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
@@ -450,6 +451,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("NewTimeSeries") ) {
 		return new newTimeSeries_Command ();
 	}
+    else if ( isTScommand && TScommand.equalsIgnoreCase("Normalize") ) {
+        return new Normalize_Command ();
+    }
 
 	// "O" commands...
 

@@ -4271,6 +4271,7 @@ throws Exception
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Copy") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Disaggregate") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "LagK") &&
+			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewDayTSFromMonthAndDayTS") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
             !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
@@ -4313,58 +4314,6 @@ throws Exception
 					continue;
 				}
 				ts = do_newEndOfMonthTSFromDayTS ( command_String );
-			}
-		    else if ( method.equalsIgnoreCase("newDayTSFromMonthAndDayTS") ) {
-				if ( tokens.size() < 3 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String + "\"" );
-					++error_count;
-					continue;
-				}
-				// Create a new time series...
-				alias = (String)tokens.elementAt(3);
-				ts = TSUtil.newTimeSeries(alias,true);
-				if ( (__OutputStart_DateTime == null) || (__OutputEnd_DateTime == null) ) {
-					Message.printWarning ( 1, routine,
-					"You must specify the output period "+
-					"when using newDayTSFromMonthAnd" +
-					"DayTScreateDayTS()." );
-					++error_count;
-					continue;
-				}
-				// Make sure the date has a day precision...
-				DateTime date1 = new DateTime ( __OutputStart_DateTime );
-				date1.setPrecision(DateTime.PRECISION_DAY);
-				date1.setDay ( 1 );
-				ts.setDate1 ( date1 );
-				DateTime date2 = new DateTime ( __OutputEnd_DateTime);
-				date2.setPrecision(DateTime.PRECISION_DAY);
-				date2.setDay ( TimeUtil.numDaysInMonth(	date2.getMonth(), date2.getYear()) );
-				ts.setDate2 ( date2 );
-				ts.allocateDataSpace ();
-				ts.setIdentifier ( (String)
-					tokens.elementAt(3) );
-				TS monthTS = getTimeSeries ( command_tag,
-					(String)tokens.elementAt(4));
-				if ( monthTS == null ) {
-					Message.printWarning ( 1, routine,
-					"Unable to find monthly time series \""+
-					alias + "\" for createDayTS()." );
-					++error_count;
-					continue;
-				}
-				TS dayTS = getTimeSeries ( command_tag,
-					(String)tokens.elementAt(5));
-				if ( dayTS == null ) {
-					Message.printWarning ( 1, routine,
-					"Unable to find daily time series \"" +
-					dayTS + "\" for createDayTS()." );
-					++error_count;
-					continue;
-				}
-				setUsingMonthAndDay ( (DayTS)ts,
-						(MonthTS)monthTS,
-						(DayTS)dayTS );
 			}
 			else if ( method.equalsIgnoreCase("readTimeSeries") ) {
 				// Reparse to strip quotes from file name...
@@ -6998,96 +6947,6 @@ TSCommandsProcessor.
 */
 protected void setTimeSeriesList ( Vector tslist )
 {	__tslist = tslist;
-}
-
-/**
-Set the contents of a daily time series using a monthly time series for the
-total and a daily time series for the pattern.
-*/
-protected void setUsingMonthAndDay ( DayTS ts, MonthTS monthts, DayTS dayts )
-{	if ( (ts == null) || (monthts == null) || (dayts == null) ) {
-		return;
-	}
-	if ( !((ts.getDataIntervalBase() == TimeInterval.DAY) && (ts.getDataIntervalMult() == 1)) ) {
-		return;
-	}
-	if ( !((dayts.getDataIntervalBase() == TimeInterval.DAY) &&	(dayts.getDataIntervalMult() == 1)) ) {
-		return;
-	}
-	if ( !((monthts.getDataIntervalBase() == TimeInterval.MONTH) && (monthts.getDataIntervalMult() == 1)) ) {
-		return;
-	}
-
-	// Loop through the time series to set...
-
-	DateTime daydate = new DateTime ( ts.getDate1() );
-	// Make sure the day is 1...
-	daydate.setDay(1);
-	DateTime monthdate = new DateTime ( daydate );
-	monthdate.setPrecision ( DateTime.PRECISION_MONTH );
-	DateTime monthend = new DateTime ( ts.getDate2() );
-	monthend.setPrecision ( DateTime.PRECISION_MONTH );
-	double dayvalue = 0.0;
-	double daytotal = 0.0;
-	double monthvalue = 0.0;
-	int num_days_in_month = 0;
-	int i = 0;
-    boolean found_missing_day = false;
-    
-	// Loop on the months for the time series being filled...
-	for ( ; monthdate.lessThanOrEqualTo ( monthend ); monthdate.addInterval(TimeInterval.MONTH, 1) ) {
-		// Get the monthly value...
-		monthvalue = monthts.getDataValue(monthdate);
-		if ( monthts.isDataMissing(monthvalue) ) {
-			// Don't do anything for the month...
-			continue;
-		}
-		num_days_in_month = TimeUtil.numDaysInMonth( monthdate.getMonth(), monthdate.getYear() );
-		// Set the starting date for the daily date to the first of the month...
-		daydate.setYear(monthdate.getYear());
-		daydate.setMonth(monthdate.getMonth());
-		daydate.setDay(1);
-		// Get the total of the values in daily time series being used for the distribution...
-		daytotal = 0.0;
-        
-        // reset the found missing data flag
-        found_missing_day = false;
-        
-		for ( i = 1; i <= num_days_in_month; i++, daydate.addInterval(TimeInterval.DAY,1) ) {
-			dayvalue = dayts.getDataValue ( daydate );
-           
-            if ( dayts.isDataMissing( dayvalue )) {    
-               found_missing_day = true;
-               break;
-            }
-            daytotal += dayvalue;
-		}
-        
-        // If data is missing for the day, skip to next month
-        if ( found_missing_day ) {
-           continue;
-        }
-        //Message.printStatus ( 1, "", "Day total for " + monthdate.toString() + " is " + daytotal );
-		// Now loop through again and fill in the time series to be
-		// created by taking the monthly total value and multiplying it
-		// by the ratio of the specific day to the total of the days...
-		if ( daytotal > 0.0 ) {
-			daydate.setYear(monthdate.getYear());
-			daydate.setMonth(monthdate.getMonth());
-			daydate.setDay(1);
-			for ( i = 1; i <= num_days_in_month; i++, daydate.addInterval(TimeInterval.DAY,1) ) {
-				dayvalue = dayts.getDataValue ( daydate );
-                  
-				// For now hard-code the conversion factor from ACFT to CFS...
-				if ( !dayts.isDataMissing(dayvalue) ) {
-					dayvalue = (monthvalue * (1 / 1.9835)) * (dayvalue/daytotal);
-					// Message.printStatus ( 1, "", "Setting " + daydate.toString() + " to " + daytotal );
-					ts.setDataValue(daydate,dayvalue);
-				}
-			}
-		}
-	}
-	ts.setDataUnits ( "CFS" );
 }
 
 /**

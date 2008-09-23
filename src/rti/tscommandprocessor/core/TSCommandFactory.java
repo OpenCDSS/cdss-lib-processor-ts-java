@@ -176,6 +176,7 @@ import rti.tscommandprocessor.commands.ts.FillRepeat_Command;
 import rti.tscommandprocessor.commands.ts.Free_Command;
 //import rti.tscommandprocessor.commands.ts.FreeEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
+import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.newStatisticYearTS_Command;
@@ -436,6 +437,9 @@ throws UnknownCommandException
 	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("NewDataTest") ) {
 		return new newDataTest_Command();
 	}
+    else if ( isTScommand && TScommand.equalsIgnoreCase("NewDayTSFromMonthAndDayTS") ) {
+        return new NewDayTSFromMonthAndDayTS_Command ();
+    }
     // Put the following before the shorter NewStatisticTimeSeries() command.
     else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticTimeSeriesFromEnsemble") ) {
         return new NewStatisticTimeSeriesFromEnsemble_Command ();

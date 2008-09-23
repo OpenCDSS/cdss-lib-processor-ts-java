@@ -183,6 +183,7 @@ import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Normalize_Command;
 import rti.tscommandprocessor.commands.ts.ReadPatternFile_Command;
+import rti.tscommandprocessor.commands.ts.RelativeDiff_Command;
 import rti.tscommandprocessor.commands.ts.ReplaceValue_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
 import rti.tscommandprocessor.commands.ts.RunningAverage_Command;
@@ -539,6 +540,9 @@ throws UnknownCommandException
     }
     else if ( isTScommand && TScommand.equalsIgnoreCase("ReadUsgsNwis") ) {
         return new ReadUsgsNwis_Command ();
+    }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("RelativeDiff") ) {
+        return new RelativeDiff_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"RemoveFile") ) {
         return new RemoveFile_Command ();

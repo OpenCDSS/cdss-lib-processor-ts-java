@@ -4286,6 +4286,7 @@ throws Exception
 	        !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadRiverWare") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
 		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadUsgsNwis") &&
+		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "RelativeDiff") &&
 			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "WeightTraces")) {
 			// All these cases are time series to be inserted.
 			// Declare a time series and set it to some function
@@ -4380,44 +4381,7 @@ throws Exception
 				ts = readTimeSeries( popup_warning_level, command_tag,
 					((String)tokens.elementAt(2)).trim(), true );
 			}
-			else if ( method.equalsIgnoreCase("relativeDiff") ) {
-				// Relative diff of time series...
-				if ( tokens.size() != 6 ) {
-					Message.printWarning ( 1, routine, "Bad command \"" + command_String + "\"");
-					++error_count;
-					continue;
-				}
-				alias = ((String)tokens.elementAt(3)).trim();
-				int pos1 = indexOf ( alias );
-				alias2 = ((String)tokens.elementAt(4)).trim();
-				int pos2 = indexOf ( alias2 );
-				if ( (pos1 >= 0) && (pos2 >= 0) ) {
-					// Make a copy of the found time
-					// series...
-					ts = (TS)(getTimeSeries(pos1).clone());
-					TS ts2 = (TS)(getTimeSeries(pos2));
-					String divisor =
-						(String)tokens.elementAt(5);
-					// Now do relativeDiff()...
-					if (	divisor.equalsIgnoreCase(
-						"DivideByTS1") ) {
-						TSUtil.relativeDiff (
-						ts, ts2, ts );
-					}
-					else {	TSUtil.relativeDiff (
-						ts, ts2, ts2 );
-					}
-					divisor = null;
-					ts2 = null;
-				}
-				else {	ts = null;
-					Message.printWarning ( 1, routine,
-					"Bad command (TS not found) \"" +
-					command_String +"\"");
-					++error_count;
-				}
-			}
-	        // Set the alias for the new time series to the value originally read after the TS...
+			// Set the alias for the new time series to the value originally read after the TS...
             if ( ts != null ) {
                 ts.setAlias ( tsalias );
             }

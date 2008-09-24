@@ -2362,138 +2362,6 @@ throws Exception
 }
 
 /**
-Execute the stateModMax() command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_stateModMax ( String command_tag, String command_string, GenericCommand command )
-throws Exception
-{	String routine = "TSEngine.do_StateModMax";
-    int warning_count = 0;
-    int warning_level = 2;
-    String message;
-    
-    CommandStatus status = command.getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
-    
-	Vector tokens = StringUtil.breakStringList ( command_string,
-		" (,)", StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
-	if ( tokens.size() != 3 ) {
-		throw new Exception ( "Bad command \"" + command_string + "\"" );
-	}
-	String infile1 = ((String)tokens.elementAt(1)).trim();
-    String infile1_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile1));
-	int interval1 = StateMod_TS.getFileDataInterval ( infile1_full );
-	Vector tslist1 = null;
-	String infile2 = ((String)tokens.elementAt(2)).trim();
-    String infile2_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),infile2));
-	int interval2 = StateMod_TS.getFileDataInterval ( infile2_full );
-	Vector tslist2 = null;
-	// Intervals must be the same...
-	if ( interval1 != interval2 ) {
-        message = "Data intervals for files are not the same:\n" + "\"" + command_string + "\"";
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the StateMod data files have the same interval for data." ) );
-        throw new CommandException ( message );
-	}
-	Message.printStatus ( 1, routine, "Reading StateMod file \"" + infile1_full + "\"" );
-	try {	tslist1 = StateMod_TS.readTimeSeriesList ( infile1_full,
-			__InputStart_DateTime, __InputEnd_DateTime, null, true );
-	}
-	catch ( Exception e ) {
-		message = "Error reading StateMod file \"" + infile1_full + "\".";
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-        Message.printWarning(3, routine, e);
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file is a valid StateMod time series file." ) );
-        throw new CommandException ( message );
-	}
-	Message.printStatus ( 2, routine, "Reading StateMod file \"" + infile2_full + "\"" );
-	try {	tslist2 = StateMod_TS.readTimeSeriesList ( infile2_full,
-			__InputStart_DateTime, __InputEnd_DateTime, null, true );
-	}
-	catch ( Exception e ) {
-		message = "Error reading StateMod file \"" + infile2_full + "\".";
-        Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-        Message.printWarning(3, routine, e);
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file is a valid StateMod time series file." ) );
-        throw new CommandException ( message );
-	}
-	// Process the time series to clean up.  This extends the periods to the
-	// output period if necessary...
-	readTimeSeries2 ( tslist1, true );
-	// Now loop through the time series in the first list and compare with
-	// the matching time series in the second list, saving the maximum at
-	// each time step...
-	int vsize = 0;
-	if ( tslist1 != null ) {
-		vsize = tslist1.size();
-	}
-	TS ts1 = null;
-	int pos = 0;
-	for ( int iv = 0; iv < vsize; iv++ ) {
-		// Get a time series...
-		ts1 = (TS)tslist1.elementAt(iv);
-		if ( ts1 == null ) {
-			continue;
-		}
-		// Find the same time series in the second list...
-		pos = TSUtil.indexOf (	tslist2, ts1.getLocation(),	"Location", 1 );
-		if ( pos < 0 ) {
-			message = "Cannot find matching 2nd time series for \"" +
-			ts1.getLocation() + "\" in \"" + infile2 + "\"";
-            Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the files contain matching time series identifiers." ) );
-		}
-		else {	// The "ts1" instance will be modified..
-			TSUtil.max ( ts1, (TS)tslist2.elementAt(pos) );
-		}
-	}
-	// Now add the time series to the end of the normal list...
-	Message.printStatus ( 2, routine, "Created " + vsize + " StateModMax() time series" );
-	readTimeSeries2 ( tslist1, true );
-	int ts_pos = getTimeSeriesSize();
-	for ( int iv = 0; iv < vsize; iv++ ) {
-		setTimeSeries ( (TS)tslist1.elementAt(iv), (ts_pos + iv) );
-	}
-	// Free resources from StateMod list...
-	ts1 = null;
-	tokens = null;
-	infile1 = null;
-	infile2 = null;
-	tslist1 = null;
-	tslist2 = null;
-	// Force a garbage collect because this is an intensive task...
-	System.gc();
-    if ( warning_count > 0 ) {
-        message = "There were " + warning_count + " warnings processing the command.";
-        Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag, ++warning_count),
-            routine,message);
-        throw new CommandWarningException ( message );
-    }
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
-}
-
-/**
 Execute the shift() command.
 @param command Command to parse.
 @exception Exception if there is an error.
@@ -3871,20 +3739,16 @@ throws Exception
 	String command_String = null;
 
 	TS ts = null;
-	Vector tokens = null;	// For parsing commands.
-	String method = null;	// Method to execute
-	String	alias = null,	// First (and often only) alias command(alias,...)
-	tsalias = null;	// TS xxx = alias (aliases for time series)
+	String	alias = null;	// First (and often only) alias command(alias,...)
 
 	// Go through the expressions up front one time and set some important
 	// flags to help performance, etc....
 
 	boolean in_comment = false;
 	Command command = null;	// The command to process
-	CommandStatus command_status = null;	// Put outside of may try to be able to use in catch.
+	CommandStatus command_status = null; // Put outside of main try to be able to use in catch.
 	for ( int i = 0; i < size; i++ ) {
 		ts = null;	// Initialize each time to allow for checks below.
-		tokens = null;
 		command = (Command)commandList.get(i);
 		command_String = command.toString();
 		if ( command_String == null ) {
@@ -4185,13 +4049,6 @@ throws Exception
                 command_String.regionMatches( true,0,"shift (",0,7) ) {
 			// Shift the time series from one date to another...
 			do_shift ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"StateModMax",0,11) ){
-			// Read two StateMod files and create a new list of
-			// time series that has the maximum of each time series
-			do_stateModMax ( command_tag, command_String, (GenericCommand)command );
-			// No action needed at end...
 			continue;
 		}
 		// Detect a time series identifier, which needs to be processed to read the time series...

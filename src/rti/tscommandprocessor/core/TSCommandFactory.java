@@ -126,6 +126,7 @@ import rti.tscommandprocessor.commands.statecu.WriteStateCU_Command;
 import rti.tscommandprocessor.commands.statemod.writeStateMod_Command;
 import rti.tscommandprocessor.commands.statemod.readStateMod_Command;
 import rti.tscommandprocessor.commands.statemod.readStateModB_Command;
+import rti.tscommandprocessor.commands.statemod.StateModMax_Command;
 
 // Summary commands.
 
@@ -662,6 +663,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase( command_string,"StartRegressionTestResultsReport") ){
         return new StartRegressionTestResultsReport_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase( command_string,"StateModMax") ){
+        return new StateModMax_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"Subtract") ) {
         return new Subtract_Command ();

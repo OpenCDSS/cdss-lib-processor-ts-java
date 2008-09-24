@@ -328,7 +328,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             super.parseCommand ( command_string2 );
         }
         else {
-            // Old format
+            // Old format TS Alias = ReadDateValue(InputFile,TSID,NewUnits,InputStart,InputEnd)
+            // Where TSID and later arguments are * if defaults
             Message.printStatus(2, routine, "Parsing old format for " + command_string2);
             PropList parameters = getCommandParameters();
             parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -344,9 +345,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         parameters.set ( "Alias", Alias );
         // If the dates are old-style "*", convert to blanks.
+        // Note that TSID is not currently used
+        String TSID = parameters.getValue("TSID");
         String InputStart = parameters.getValue("InputStart");
         String InputEnd = parameters.getValue("InputEnd");
         String NewUnits = parameters.getValue("NewUnits");
+        if ( TSID != null ) {
+            // Unset unused parameter
+            parameters.unSet( "TSID" );
+        }
         if ( (InputStart != null) && InputStart.equals("*") ) {
             parameters.set("InputStart","");
         }

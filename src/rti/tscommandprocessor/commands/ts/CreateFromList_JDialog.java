@@ -417,10 +417,10 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
-	__IfNotFound_JComboBox.addItem ( __command._DefaultMissingTS );
-	__IfNotFound_JComboBox.addItem ( __command._IgnoreMissingTS );
-	__IfNotFound_JComboBox.addItem ( __command._WarnIfMissingTS );
-	__IfNotFound_JComboBox.select ( __command._WarnIfMissingTS );
+	__IfNotFound_JComboBox.addItem ( __command._Default );
+	__IfNotFound_JComboBox.addItem ( __command._Ignore );
+	__IfNotFound_JComboBox.addItem ( __command._Warn );
+	__IfNotFound_JComboBox.select ( __command._Warn );
 	__IfNotFound_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -435,7 +435,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __DefaultUnits_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "Optional - units when IfNotFound=" + __command._DefaultMissingTS + "."),
+    "Optional - units when IfNotFound=" + __command._Default + "."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -586,7 +586,7 @@ private void refresh ()
         if ( __IfNotFound_JComboBox != null ) {
             if ( IfNotFound == null ) {
                 // Select default...
-                __IfNotFound_JComboBox.select ( __command._WarnIfMissingTS );
+                __IfNotFound_JComboBox.select ( __command._Warn );
             }
             else {  if (    JGUIUtil.isSimpleJComboBoxItem(
                     __IfNotFound_JComboBox,
@@ -600,7 +600,7 @@ private void refresh ()
             }
         }
         if ( DefaultUnits != null ) {
-            __DefaultUnits_JTextField.setText ( ID );
+            __DefaultUnits_JTextField.setText ( DefaultUnits );
         }
     }
     // Regardless, reset the command from the fields...

@@ -218,7 +218,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		//
 		// Old syntax without named parameters.
 
-		v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
+		v = StringUtil.breakStringList ( token1,"(),",
+		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
 		if ( (v == null) || v.size() != 5 ) {
 			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = " +
 					"Normalize(TSID,MinValueMethod,MinValue,MaxValue";

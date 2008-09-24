@@ -17,6 +17,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -31,8 +32,8 @@ implements Command
 /**
 Data members used for parameter values.
 */
-protected final String _False = "False";
-protected final String _True = "True";
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
 
 /**
 Constructor.
@@ -54,7 +55,7 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
-	String WarnIfMissing = parameters.getValue ( "WarnIfMissing" );
+	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
 	String message;
 
@@ -71,20 +72,19 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the file to remove."));
 	}
-	if ( (WarnIfMissing != null) && !WarnIfMissing.equals("") ) {
-		if (	!WarnIfMissing.equalsIgnoreCase(_False) &&
-			!WarnIfMissing.equalsIgnoreCase(_True) ) {
-			message = "The WarnIfMissing parameter \"" + WarnIfMissing + "\" must be False or True.";
+	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
+		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
+			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the parameter as False or True."));
+						message, "Specify the parameter as " + _Ignore + " or (default) " + _Warn + "."));
 		}
 	}
 	// Check for invalid parameters...
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "WarnIfMissing" );
+	valid_Vector.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -106,7 +106,33 @@ public boolean editCommand ( JFrame parent )
 	return (new RemoveFile_JDialog ( parent, this )).ok();
 }
 
-// Use base class parseCommand
+/**
+Parse the command string into a PropList of parameters.
+@param command_string A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is
+determined to have invalid syntax.
+syntax of the command are bad.
+@exception InvalidCommandParameterException if during parsing the command
+parameters are determined to be invalid.
+*/
+public void parseCommand ( String command_string )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{
+    // Call the base class method for basic parsing.
+    super.parseCommand( command_string );
+    // Update syntax for new parameter name...
+    PropList parameters = getCommandParameters();
+    String WarnIfMissing = parameters.getValue("WarnIfMissing");
+    if ( WarnIfMissing != null ) {
+        // Convert to IfNotFound
+        parameters.unSet( "WarnIfMissing" );
+        String IfNotFound = _Ignore;
+        if ( WarnIfMissing.equalsIgnoreCase("True") ) {
+            IfNotFound = _Warn; 
+        }
+        parameters.set( "IfNotFound", IfNotFound );
+    }
+}
 
 /**
 Run the command.
@@ -131,10 +157,10 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	String InputFile = parameters.getValue ( "InputFile" );
-	String WarnIfMissing = parameters.getValue ( "WarnIfMissing" );
-	boolean WarnIfMissing_boolean = false;	// Default
-	if ( (WarnIfMissing != null) && WarnIfMissing.equalsIgnoreCase(_True)){
-		WarnIfMissing_boolean = true;
+	String IfNotFound = parameters.getValue ( "IfNotFound" );
+	boolean IfNotFound_Warn_boolean = false;	// Default
+	if ( (IfNotFound != null) && IfNotFound.equalsIgnoreCase(_Warn)){
+		IfNotFound_Warn_boolean = true;
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
@@ -142,7 +168,7 @@ CommandWarningException, CommandException
     File file = new File ( InputFile_full );
 	if ( !file.exists() ) {
         message = "File to remove \"" + InputFile_full + "\" does not exist.";
-        if ( WarnIfMissing_boolean ) {
+        if ( IfNotFound_Warn_boolean ) {
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                             command_tag,++warning_count), routine, message );
@@ -188,16 +214,16 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String InputFile = parameters.getValue("InputFile");
-	String WarnIfMissing = parameters.getValue("WarnIfMissing");
+	String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
-	if ( (WarnIfMissing != null) && (WarnIfMissing.length() > 0) ) {
+	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "WarnIfMissing=" + WarnIfMissing );
+		b.append ( "IfNotFound=" + IfNotFound );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

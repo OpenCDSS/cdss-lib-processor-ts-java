@@ -182,7 +182,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		//
 		// Old syntax without named parameters.
 
-		v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
+		v = StringUtil.breakStringList ( token1,"(),",
+		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
 		if ( (v == null) || (v.size() != 3) ) {
 			message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";
@@ -308,7 +309,7 @@ CommandWarningException, CommandException
 		monthts.setAlias ( Alias );
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error setting the new time series identifier \"" + Bracket + "\" (" + e + ").";
+		message = "Unexpected processing daily time series \"" + ts.getIdentifier() + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

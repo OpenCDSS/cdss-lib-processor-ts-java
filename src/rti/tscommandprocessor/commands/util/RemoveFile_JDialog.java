@@ -46,7 +46,7 @@ private SimpleJButton
 			__cancel_JButton = null,	// Cancel Button
 			__ok_JButton = null;		// Ok Button
 private JTextField	__InputFile_JTextField = null;	// File to remove
-private SimpleJComboBox	__WarnIfMissing_JComboBox =null;
+private SimpleJComboBox	__IfNotFound_JComboBox =null;
 private JTextArea	__command_JTextArea = null;
 private String		__working_dir = null;	// Working directory.
 private boolean		__error_wait = false;
@@ -137,13 +137,13 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
-	String WarnIfMissing = __WarnIfMissing_JComboBox.getSelected();
+	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
-	if ( WarnIfMissing.length() > 0 ) {
-		props.set ( "WarnIfMissing", WarnIfMissing );
+	if ( IfNotFound.length() > 0 ) {
+		props.set ( "IfNotFound", IfNotFound );
 	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -160,9 +160,9 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
-	String WarnIfMissing = __WarnIfMissing_JComboBox.getSelected();
+	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
-	__command.setCommandParameter ( "WarnIfMissing", WarnIfMissing );
+	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
 /**
@@ -174,7 +174,7 @@ throws Throwable
 	__command_JTextArea = null;
 	__command = null;
 	__InputFile_JTextField = null;
-	__WarnIfMissing_JComboBox = null;
+	__IfNotFound_JComboBox = null;
 	__ok_JButton = null;
 	super.finalize ();
 }
@@ -223,18 +223,18 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-   JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if missing?:"),
+   JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__WarnIfMissing_JComboBox = new SimpleJComboBox ( false );
-	__WarnIfMissing_JComboBox.addItem ( "" );	// Default
-	__WarnIfMissing_JComboBox.addItem ( __command._False );
-	__WarnIfMissing_JComboBox.addItem ( __command._True );
-	__WarnIfMissing_JComboBox.select ( 0 );
-	__WarnIfMissing_JComboBox.addActionListener ( this );
-   JGUIUtil.addComponent(main_JPanel, __WarnIfMissing_JComboBox,
+	__IfNotFound_JComboBox = new SimpleJComboBox ( false );
+	__IfNotFound_JComboBox.addItem ( "" );	// Default
+	__IfNotFound_JComboBox.addItem ( __command._Ignore );
+	__IfNotFound_JComboBox.addItem ( __command._Warn );
+	__IfNotFound_JComboBox.select ( 0 );
+	__IfNotFound_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Generate a warning if missing? (default=false)"), 
+		"Optional - action if file not found (default=" + __command._Ignore + ")"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -303,40 +303,39 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String routine = "RemoveFile_JDialog.refresh";
 	String InputFile = "";
-	String WarnIfMissing = "";
+	String IfNotFound = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
-		WarnIfMissing = parameters.getValue ( "WarnIfMissing" );
+		IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
-		if ( JGUIUtil.isSimpleJComboBoxItem(__WarnIfMissing_JComboBox, WarnIfMissing,JGUIUtil.NONE, null, null ) ) {
-			__WarnIfMissing_JComboBox.select ( WarnIfMissing );
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
+			__IfNotFound_JComboBox.select ( IfNotFound );
 		}
 		else {
-            if ( (WarnIfMissing == null) ||	WarnIfMissing.equals("") ) {
+            if ( (IfNotFound == null) ||	IfNotFound.equals("") ) {
 				// New command...select the default...
-				__WarnIfMissing_JComboBox.select ( 0 );
+				__IfNotFound_JComboBox.select ( 0 );
 			}
 			else {	// Bad user command...
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
-				"WarnIfMissing parameter \"" +
-				WarnIfMissing +
-				"\".  Select a\nMissing value or Cancel." );
+				"IfNotFound parameter \"" +	IfNotFound +
+				"\".  Select a\n value or Cancel." );
 			}
 		}
 	}
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
-	WarnIfMissing = __WarnIfMissing_JComboBox.getSelected();
+	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
-	props.add ( "WarnIfMissing=" + WarnIfMissing );
+	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

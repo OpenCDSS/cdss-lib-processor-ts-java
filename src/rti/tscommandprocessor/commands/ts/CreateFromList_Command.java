@@ -40,9 +40,9 @@ This class initializes, checks, and runs the CreateFromList() command.
 public class CreateFromList_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-protected final String _DefaultMissingTS = "DefaultMissingTS";
-protected final String _IgnoreMissingTS = "IgnoreMissingTS";
-protected final String _WarnIfMissingTS = "WarnIfMissingTS";
+protected final String _Default = "Default";
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
 
 /**
 List of time series read during discovery.  These are TS objects but with mainly the
@@ -170,15 +170,15 @@ throws InvalidCommandParameterException
     }
 	
 	if ( (IfNotFound != null) && !IfNotFound.equals("") &&
-	        !IfNotFound.equalsIgnoreCase(_IgnoreMissingTS) &&
-            !IfNotFound.equalsIgnoreCase(_DefaultMissingTS) &&
-            !IfNotFound.equalsIgnoreCase(_WarnIfMissingTS) ) {
+	        !IfNotFound.equalsIgnoreCase(_Ignore) &&
+            !IfNotFound.equalsIgnoreCase(_Default) &&
+            !IfNotFound.equalsIgnoreCase(_Warn) ) {
             message = "Invalid IfNotFound flag \"" + IfNotFound + "\".";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the IfNotFound as " + _DefaultMissingTS + ", " +
-                            _DefaultMissingTS + ", or (default) " + _WarnIfMissingTS + "." ) );
+                            message, "Specify the IfNotFound as " + _Default + ", " +
+                            _Ignore + ", or (default) " + _Warn + "." ) );
                             
 	}
 
@@ -276,10 +276,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     // Update syntax for new parameter name...
     PropList parameters = getCommandParameters();
     String HandleMissingTSHow = parameters.getValue("HandleMissingTSHow");
+    String IfNotFound = _Warn; // Default
     if ( HandleMissingTSHow != null ) {
         // Convert to IfNotFound
         parameters.unSet( "HandleMissingTSHow" );
-        parameters.set( "IfNotFound", HandleMissingTSHow );
+        if ( HandleMissingTSHow.equalsIgnoreCase("DefaultMissingTS")) {
+            IfNotFound = _Default;
+        }
+        else if ( HandleMissingTSHow.equalsIgnoreCase("IgnoreMissingTS")) {
+            IfNotFound = _Ignore;
+        }
+        parameters.set( "IfNotFound", IfNotFound );
     }
 }
 
@@ -378,7 +385,7 @@ throws InvalidCommandParameterException,
     }
     String IfNotFound = parameters.getValue("IfNotFound");
     if ( (IfNotFound == null) || IfNotFound.equals("")) {
-        IfNotFound = _WarnIfMissingTS; // default
+        IfNotFound = _Warn; // default
     }
     String DefaultUnits = parameters.getValue("DefaultUnits");
     
@@ -449,7 +456,7 @@ throws InvalidCommandParameterException,
                 }
                 catch ( TimeSeriesNotFoundException e ) {
                     message = "Time series could not be found using identifier \"" + TSID + "\".";
-                    if ( IfNotFound.equalsIgnoreCase(_WarnIfMissingTS) ) {
+                    if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                         status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the identifier information is correct." ) );
@@ -483,7 +490,7 @@ throws InvalidCommandParameterException,
                         // time series readers in error handling, which is difficult to handle in this
                         // generic command.
                         message = "Time series could not be found using identifier \"" + TSID + "\".";
-                        if ( IfNotFound.equalsIgnoreCase(_WarnIfMissingTS) ) {
+                        if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                             status.addToLog ( commandPhase,
                                 new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Verify that the identifier information is correct." ) );
@@ -497,7 +504,7 @@ throws InvalidCommandParameterException,
                         }
                     }
                     // Always check for output period because required for default time series.
-                    if ( IfNotFound.equalsIgnoreCase(_DefaultMissingTS) &&
+                    if ( IfNotFound.equalsIgnoreCase(_Default) &&
                             ((processor.getPropContents("OutputStart") == null) ||
                             (processor.getPropContents("OutputEnd") == null)) ) {
                         message = "Time series could not be found using identifier \"" + TSID + "\"." +
@@ -548,20 +555,6 @@ throws InvalidCommandParameterException,
     
     if ( commandPhase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
-            // Further process the time series...
-            // This makes sure the period is at least as long as the output period...
-            int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
-            if ( wc > 0 ) {
-                message = "Error post-processing series after read.";
-                Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report the problem to software support." ) );
-                throw new CommandException ( message );
-            }
-    
             // Now add the list in the processor...
             
             int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );

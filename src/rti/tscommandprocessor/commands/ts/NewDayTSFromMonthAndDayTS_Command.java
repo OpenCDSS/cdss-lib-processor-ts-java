@@ -205,7 +205,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		//
 		// Old syntax without named parameters.
 
-		v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
+		v = StringUtil.breakStringList ( token1,"(),",
+		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
 		if ( (v == null) || (v.size() != 4) ) {
 			message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewDayTSFromMonthAndDayTS(NewTSID,MonthTSID,DayTSID)";

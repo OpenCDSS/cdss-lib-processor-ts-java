@@ -4194,67 +4194,6 @@ throws Exception
 			// No action needed at end...
 			continue;
 		}
-		// The following are TS Alias = commands.  Only handle below what has not been converted to
-		// new command classes.
-		else if ( command_String.regionMatches(true,0,"TS ",0,3) &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ChangeInterval") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Copy") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Disaggregate") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "LagK") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewDayTSFromMonthAndDayTS") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewEndOfMonthTSFromDayTS") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewPatternTimeSeries") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeries") &&
-            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticTimeSeriesFromEnsemble") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewStatisticYearTS") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "NewTimeSeries") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "Normalize") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadDateValue") &&
-            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadHydroBase") &&
-            !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadMODSIM") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNDFD") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNwsCard") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadNWSRFSFS5Files") &&
-	        !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadRiverWare") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadStateMod") &&
-		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "ReadUsgsNwis") &&
-		    !StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "RelativeDiff") &&
-			!StringUtil.getToken(command_String," =(",StringUtil.DELIM_SKIP_BLANKS,2).equalsIgnoreCase( "WeightTraces")) {
-			// All these cases are time series to be inserted.
-			// Declare a time series and set it to some function
-			// Do not handle because they are handled in the TSCommandFactory.
-			tokens = StringUtil.breakStringList ( command_String," =(,)", StringUtil.DELIM_SKIP_BLANKS );
-			// Position to add is the next in the list...
-			ts_pos = getTimeSeriesSize();
-			// Parse the tokens...
-			// Alias for new time series TS tsalias = ...
-			tsalias = ((String)tokens.elementAt(1)).trim();
-			// The command used to create the new time series...
-			method = ((String)tokens.elementAt(2)).trim();
-			// All TS methods result in a new time series being inserted...
-			ts_action = INSERT_TS;
-			if ( method.equalsIgnoreCase("readTimeSeries") ) {
-				// Reparse to strip quotes from file name...
-				tokens = StringUtil.breakStringList (
-						command_String, "=()",
-					StringUtil.DELIM_ALLOW_STRINGS);
-				if ( tokens.size() != 3 ) {
-					Message.printWarning ( 1, routine,
-					"Bad command \"" + command_String +"\"");
-					++error_count;
-					continue;
-				}
-				// Read the time series...
-				ts = readTimeSeries( popup_warning_level, command_tag,
-					((String)tokens.elementAt(2)).trim(), true );
-			}
-			// Set the alias for the new time series to the value originally read after the TS...
-            if ( ts != null ) {
-                ts.setAlias ( tsalias );
-            }
-            tokens = null;
-		}
-
 		// Detect a time series identifier, which needs to be processed to read the time series...
 		else if ( TSCommandProcessorUtil.isTSID(command_String) ) {
 			// Probably a raw time series identifier.  Try to read it...

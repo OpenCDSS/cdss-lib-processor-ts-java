@@ -185,6 +185,7 @@ import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.newTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Normalize_Command;
 import rti.tscommandprocessor.commands.ts.ReadPatternFile_Command;
+import rti.tscommandprocessor.commands.ts.ReadTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.RelativeDiff_Command;
 import rti.tscommandprocessor.commands.ts.ReplaceValue_Command;
 import rti.tscommandprocessor.commands.ts.ResequenceTimeSeriesData_Command;
@@ -545,6 +546,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();
+    }
+    else if ( isTScommand && TScommand.equalsIgnoreCase("ReadTimeSeries") ) {
+        return new ReadTimeSeries_Command ();
     }
     else if ( isTScommand && TScommand.equalsIgnoreCase("ReadUsgsNwis") ) {
         return new ReadUsgsNwis_Command ();

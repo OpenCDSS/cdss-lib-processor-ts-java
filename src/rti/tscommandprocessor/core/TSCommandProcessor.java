@@ -2423,7 +2423,7 @@ Process the ReadTimeSeries request.
 This request is used with the CreateFromList() and ReadTimeSeries() commands.  Because this
 method performs fundamental tasks, some of the error handling is different than other requests, 
 in particular passing in the WarningLevel and CommandTag request parameters.
-This only reads the time series but does not post-process.  To do that, request ReadTimeSeries2.
+This reads the time series and post-processes.  To only post-process, request ReadTimeSeries2.
 */
 private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries (
         String request, PropList request_params )
@@ -2466,30 +2466,24 @@ throws Exception
     }
     String commandTag = (String)o_CommandTag;
     // IfMissing parameter to indicate how to handle missing time series
-    // The WarnIfMissing value will generate warnings in the main command.
+    // The Warn value will generate warnings in the main command.
     //
-    // For the low level code, WarnIfMissing and IgnoreMissingTS result in no default
+    // For the low level code, Warn and Ignore result in no default
     // time series (includeMissingTS=false in low level code).
-    // DefaultMissingTS results in default time series being added
+    // Default results in default time series being added
     // (includeMissingTS=true in low level code).
     Object o_IfNotFound = request_params.getValue ( "IfNotFound" );
     if ( o_IfNotFound == null ) {
-            String warning = "Request ReadTimeSeries() does not provide a IfNotFound parameter.";
-            bean.setWarningText ( warning );
-            bean.setWarningRecommendationText ( "This is likely a software code error.");
-            throw new RequestParameterNotFoundException ( warning );
+            o_IfNotFound = "Warn";  // Default
     }
     String IfNotFound = (String)o_IfNotFound;
     boolean includeMissingTS = false; // Default
-    if ( IfNotFound.equalsIgnoreCase("DefaultMissingTS") ) {
+    if ( IfNotFound.equalsIgnoreCase("Default") ) {
         includeMissingTS = true;
     }
     Object o_ReadData = request_params.getContents ( "ReadData" );
     if ( o_ReadData == null ) {
-            String warning = "Request ReadTimeSeries() does not provide a ReadData parameter.";
-            bean.setWarningText ( warning );
-            bean.setWarningRecommendationText ( "This is likely a software code error.");
-            throw new RequestParameterNotFoundException ( warning );
+           o_ReadData = new Boolean(true); // Default
     }
     boolean readData = ((Boolean)o_ReadData).booleanValue();
     // Save the current IgnoreMissingTS global flag, set to the value for this command, and then

@@ -10,8 +10,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -47,7 +45,7 @@ import RTi.Util.String.StringUtil;
 Editor dialog for the Add() command.
 */
 public class Add_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, ListSelectionListener, MouseListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
@@ -149,7 +147,7 @@ private void checkInput ()
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
     __error_wait = false;
     
-    // TSID is used for several variations of AddTSList
+    // AddTSID is used for several variations of AddTSList
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
         AddTSID = AddSpecifiedTSID;
     }
@@ -206,7 +204,7 @@ private void commitEdits ()
     //String SetEnd = __SetEnd_JTextField.getText().trim();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
     
-    // TSID is used for several variations of AddTSList
+    // AddTSID is used for several variations of AddTSList
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
         AddTSID = AddSpecifiedTSID;
     }
@@ -340,7 +338,6 @@ private void initialize ( JFrame parent, Command command )
     __AddSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
 	__AddSpecifiedTSID_JList.addListSelectionListener ( this );
 	__AddSpecifiedTSID_JList.addKeyListener ( this );
-	__AddSpecifiedTSID_JList.addMouseListener ( this );
 	__AddSpecifiedTSID_JList.clearSelection();
 	DefaultListSelectionModel sm = new DefaultListSelectionModel();
 	sm.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
@@ -422,45 +419,6 @@ public void keyReleased ( KeyEvent event )
 public void keyTyped ( KeyEvent event ) {;}
 
 /**
-Handle mouse clicked event.
-*/
-public void mouseClicked ( MouseEvent event )
-{
-}
-
-/**
-Handle mouse entered event.
-*/
-public void mouseEntered ( MouseEvent event )
-{
-}
-
-/**
-Handle mouse exited event.
-*/
-public void mouseExited ( MouseEvent event )
-{
-}
-
-/**
-Handle mouse pressed event.
-*/
-public void mousePressed ( MouseEvent event )
-{	int mods = event.getModifiers();
-	if ( (mods & MouseEvent.BUTTON3_MASK) != 0 ) {
-		//__ts_JPopupMenu.show (
-		//event.getComponent(), event.getX(), event.getY() );
-	}
-}
-
-/**
-Handle mouse released event.
-*/
-public void mouseReleased ( MouseEvent event )
-{
-}
-
-/**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
@@ -478,7 +436,6 @@ private void refresh ()
 	String AddTSList = "";
 	String AddTSID = "";
     String AddEnsembleID = "";
-    //String AddSpecifiedTSID = "";
     String HandleMissingHow = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -488,7 +445,6 @@ private void refresh ()
         EnsembleID = props.getValue ( "EnsembleID" );
         AddTSList = props.getValue ( "AddTSList" );
         AddTSID = props.getValue ( "AddTSID" );
-        //AddSpecifiedTSID = props.getValue ( "AddSpecifiedTSID" );
         AddEnsembleID = props.getValue ( "AddEnsembleID" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {

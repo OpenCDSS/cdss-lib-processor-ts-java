@@ -178,6 +178,7 @@ import rti.tscommandprocessor.commands.ts.FillRepeat_Command;
 import rti.tscommandprocessor.commands.ts.Free_Command;
 //import rti.tscommandprocessor.commands.ts.FreeEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.lagK_Command;
+import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewEndOfMonthTSFromDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
@@ -438,6 +439,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"MergeListFileColumns") ) {
 		return new mergeListFileColumns_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"Multiply") ) {
+        return new Multiply_Command ();
+    }
 
 	// "N" commands...
 

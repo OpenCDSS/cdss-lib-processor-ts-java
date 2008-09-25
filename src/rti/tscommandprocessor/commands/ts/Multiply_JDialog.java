@@ -33,16 +33,16 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 
-public class Divide_JDialog extends JDialog
+public class Multiply_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private Divide_Command __command = null;
+private SimpleJButton   __cancel_JButton = null,// Cancel Button
+            __ok_JButton = null;    // Ok Button
+private Multiply_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox	__TSID_JComboBox = null;
-private SimpleJComboBox __DivisorTSID_JComboBox = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private SimpleJComboBox __MultiplierTSID_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -52,9 +52,9 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Divide_JDialog ( JFrame parent, Command command )
-{	super(parent, true);
-	initialize ( parent, command );
+public Multiply_JDialog ( JFrame parent, Command command )
+{   super(parent, true);
+    initialize ( parent, command );
 }
 
 /**
@@ -62,19 +62,19 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+{   Object o = event.getSource();
 
-	if ( o == __cancel_JButton ) {
-		__command = null;
-		response ( false );
-	}
-	else if ( o == __ok_JButton ) {
-		refresh();
-		checkInput();
-		if ( !__error_wait ) {
-			response ( true );
-		}
-	}
+    if ( o == __cancel_JButton ) {
+        __command = null;
+        response ( false );
+    }
+    else if ( o == __ok_JButton ) {
+        refresh();
+        checkInput();
+        if ( !__error_wait ) {
+            response ( true );
+        }
+    }
 }
 
 /**
@@ -85,14 +85,14 @@ private void checkInput ()
 {   // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
     String TSID = __TSID_JComboBox.getSelected();
-    String DivisorTSID = __DivisorTSID_JComboBox.getSelected();
+    String MultiplierTSID = __MultiplierTSID_JComboBox.getSelected();
     __error_wait = false;
 
     if ( (TSID != null) && (TSID.length() > 0) ) {
         props.set ( "TSID", TSID );
     }
-    if ( (DivisorTSID != null) && (DivisorTSID.length() > 0) ) {
-        props.set ( "DivisorTSID", DivisorTSID );
+    if ( (MultiplierTSID != null) && (MultiplierTSID.length() > 0) ) {
+        props.set ( "MultiplierTSID", MultiplierTSID );
     }
     try {
         // This will warn the user...
@@ -110,9 +110,9 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {   String TSID = __TSID_JComboBox.getSelected();
-    String DivisorTSID = __DivisorTSID_JComboBox.getSelected();
+    String MultiplierTSID = __MultiplierTSID_JComboBox.getSelected();
     __command.setCommandParameter ( "TSID", TSID );
-    __command.setCommandParameter ( "DivisorTSID", DivisorTSID );
+    __command.setCommandParameter ( "MultiplierTSID", MultiplierTSID );
 }
 
 /**
@@ -120,12 +120,12 @@ Free memory for garbage collection.
 */
 protected void finalize ()
 throws Throwable
-{	__TSID_JComboBox = null;
-	__cancel_JButton = null;
-	__command_JTextArea = null;
-	__command = null;
-	__ok_JButton = null;
-	super.finalize ();
+{   __TSID_JComboBox = null;
+    __cancel_JButton = null;
+    __command_JTextArea = null;
+    __command = null;
+    __ok_JButton = null;
+    super.finalize ();
 }
 
 /**
@@ -134,26 +134,26 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (Divide_Command)command;
+{   __command = (Multiply_Command)command;
 
-	addWindowListener( this );
+    addWindowListener( this );
 
     Insets insetsTLBR = new Insets(2,2,2,2);
 
-	JPanel main_JPanel = new JPanel();
-	main_JPanel.setLayout( new GridBagLayout() );
-	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+    JPanel main_JPanel = new JPanel();
+    main_JPanel.setLayout( new GridBagLayout() );
+    getContentPane().add ( "North", main_JPanel );
+    int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Divide one time series by another (the first time series is modified)"),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Multiply one time series by another (the first time series is modified)"),
+        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Missing data in either time series or a zero denominator sets the result to missing."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Missing data in either time series sets the result to missing."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to modify:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -162,12 +162,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to divide by (divisor):" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DivisorTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    __DivisorTSID_JComboBox.setData ( tsids );
-    __DivisorTSID_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DivisorTSID_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to multiply by:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MultiplierTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __MultiplierTSID_JComboBox.setData ( tsids );
+    __MultiplierTSID_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MultiplierTSID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -179,22 +179,22 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// Refresh the contents...
-	refresh();
+    // Refresh the contents...
+    refresh();
 
-	// South Panel: North
-	JPanel button_JPanel = new JPanel();
-	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    // South Panel: North
+    JPanel button_JPanel = new JPanel();
+    button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
-		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	__cancel_JButton = new SimpleJButton("Cancel", this);
-	button_JPanel.add ( __cancel_JButton );
-	__ok_JButton = new SimpleJButton("OK", this);
-	button_JPanel.add ( __ok_JButton );
+    __cancel_JButton = new SimpleJButton("Cancel", this);
+    button_JPanel.add ( __cancel_JButton );
+    __ok_JButton = new SimpleJButton("OK", this);
+    button_JPanel.add ( __ok_JButton );
 
-	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	setResizable ( true );
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+    setResizable ( true );
     pack();
     JGUIUtil.center( this );
     super.setVisible( true );
@@ -205,26 +205,26 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	refresh();
+{   refresh();
 }
 
 /**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+{   int code = event.getKeyCode();
 
-	if ( code == KeyEvent.VK_ENTER ) {
-		refresh ();
-		checkInput();
-		if ( !__error_wait ) {
-			response ( true );
-		}
-	}
+    if ( code == KeyEvent.VK_ENTER ) {
+        refresh ();
+        checkInput();
+        if ( !__error_wait ) {
+            response ( true );
+        }
+    }
 }
 
 public void keyReleased ( KeyEvent event )
-{	refresh();
+{   refresh();
 }
 
 public void keyTyped ( KeyEvent event ) {;}
@@ -242,13 +242,13 @@ Refresh the command from the other text field contents.
 */
 private void refresh()
 {   String TSID = "";
-    String DivisorTSID = "";
+    String MultiplierTSID = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
         // Get the parameters from the command...
         TSID = props.getValue ( "TSID" );
-        DivisorTSID = props.getValue ( "DivisorTSID" );
+        MultiplierTSID = props.getValue ( "MultiplierTSID" );
         // Now select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
             __TSID_JComboBox.select ( TSID );
@@ -267,30 +267,30 @@ private void refresh()
                 }
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem( __DivisorTSID_JComboBox, DivisorTSID, JGUIUtil.NONE, null, null ) ) {
-            __DivisorTSID_JComboBox.select ( DivisorTSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __MultiplierTSID_JComboBox, MultiplierTSID, JGUIUtil.NONE, null, null ) ) {
+            __MultiplierTSID_JComboBox.select ( MultiplierTSID );
         }
         else {
             // Automatically add to the list...
-            if ( (DivisorTSID != null) && (DivisorTSID.length() > 0) ) {
-                __DivisorTSID_JComboBox.insertItemAt ( DivisorTSID, 0 );
+            if ( (MultiplierTSID != null) && (MultiplierTSID.length() > 0) ) {
+                __MultiplierTSID_JComboBox.insertItemAt ( MultiplierTSID, 0 );
                 // Select...
-                __DivisorTSID_JComboBox.select ( DivisorTSID );
+                __MultiplierTSID_JComboBox.select ( MultiplierTSID );
             }
             else {
                 // Select the first choice...
-                if ( __DivisorTSID_JComboBox.getItemCount() > 0 ) {
-                    __DivisorTSID_JComboBox.select ( 0 );
+                if ( __MultiplierTSID_JComboBox.getItemCount() > 0 ) {
+                    __MultiplierTSID_JComboBox.select ( 0 );
                 }
             }
         }
     }
     // Regardless, reset the command from the fields...
     TSID = __TSID_JComboBox.getSelected();
-    DivisorTSID = __DivisorTSID_JComboBox.getSelected();
+    MultiplierTSID = __MultiplierTSID_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSID=" + TSID );
-    props.add ( "DivisorTSID=" + DivisorTSID );
+    props.add ( "MultiplierTSID=" + MultiplierTSID );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
@@ -318,7 +318,7 @@ private void response ( boolean ok )
 Handle ListSelectionListener events.
 */
 public void valueChanged ( ListSelectionEvent e )
-{	refresh ();
+{   refresh ();
 }
 
 /**
@@ -326,7 +326,7 @@ Responds to WindowEvents.
 @param event WindowEvent object
 */
 public void windowClosing( WindowEvent event )
-{	response ( false );
+{   response ( false );
 }
 
 public void windowActivated( WindowEvent evt ){;}

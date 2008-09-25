@@ -852,11 +852,6 @@ Count of errors.
 private int	_fatal_error_count = 0;
 
 /**
-Vector of StringMonthTS fill patterns used with fillPattern().
-*/
-private Vector	__fill_pattern_ts = new Vector (20,10);
-
-/**
 HydroBase DMI instance Vector, to allow more than one database instance to
 be open at a time.
 */
@@ -905,11 +900,6 @@ private Vector __nwsrfs_dmi_Vector = new Vector();
 Default output file name.
 */
 private String	__output_file = "tstool.out";
-
-/**
-Indicates whether detailed header should be added to output.
-*/
-private boolean __OutputDetailedHeader_boolean = false; 
 
 /**
 Year type for output (calendar year is the default).
@@ -2257,40 +2247,6 @@ throws Exception
 }
 
 /**
-Execute the new setOutputDetailedHeaders() or old -detailedheader command.
-@param expression Expression to parse.
-@exception Exception if there is an error.
-*/
-private void do_setOutputDetailedHeaders ( String expression )
-throws Exception
-{	if ( expression.regionMatches( true,0,"-detailedheader",0,15) ) {
-		setOutputDetailedHeader ( true );
-	}
-	else if ( expression.regionMatches(true,0,"setOutputDetailedHeaders", 0,24) ) {
-		// Check the second token for "true" or "false".
-		Vector tokens = StringUtil.breakStringList ( expression,
-				" (,)", StringUtil.DELIM_SKIP_BLANKS );
-		if ( (tokens == null) || (tokens.size() != 2) ) {
-			throw new Exception ( "Bad command \"" + expression + "\"" );
-		}
-		// Parse the name and dates...
-		String toggle = (String)tokens.elementAt(1);
-		if ( toggle.equalsIgnoreCase("True") ) {
-			setOutputDetailedHeader ( true );
-		}
-		else if ( toggle.equalsIgnoreCase("False") ) {
-			setOutputDetailedHeader ( false );
-		}
-		else {	throw new Exception (
-			"Unrecognized value \"" + toggle +
-			"\" (expecting true or false) for \"" + expression + "\"" );
-		}
-		tokens = null;
-		toggle = null;
-	}
-}
-
-/**
 Execute the setToMin() command.
 @param command_tag Command number used for messaging.
 @param command Command to parse.
@@ -2416,7 +2372,6 @@ throws Throwable
 	__OutputEnd_DateTime = null;
 	__InputStart_DateTime = null;
 	__InputEnd_DateTime = null;
-	__fill_pattern_ts = null;
 	__hbdmi_Vector = null;
 	__missing_ts = null;
 	// TODO SAM 2007-02-18 Need to enable NDFD
@@ -2718,15 +2673,6 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 			}
 	}
 	return null;
-}
-
-
-/**
-Indicate whether output should include detailed time series information in headers.
-@return True if the output should include detailed headers.
-*/
-protected boolean getOutputDetailedHeader()
-{   return __OutputDetailedHeader_boolean;
 }
 
 /**
@@ -3739,7 +3685,6 @@ throws Exception
 	String command_String = null;
 
 	TS ts = null;
-	String	alias = null;	// First (and often only) alias command(alias,...)
 
 	// Go through the expressions up front one time and set some important
 	// flags to help performance, etc....
@@ -3934,55 +3879,6 @@ throws Exception
 			do_fillProrate ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"multiply",0,8)) {
-			// Don't use space because TEMPTS will not parse right.
-			Vector v = StringUtil.breakStringList(command_String,
-				"(),\t", StringUtil.DELIM_SKIP_BLANKS); 
-			if ( (v == null) || (v.size() < 3) ) {
-				Message.printWarning ( 2, routine,
-				"Syntax error in \"" + command_String + "\"" );
-				++error_count;
-				v = null;
-				continue;
-			}
-
-			// Get the individual tokens of the expression...
-
-			alias = ((String)v.elementAt(1)).trim();
-			String independent = null;
-
-			// Make sure there are time series available to
-			// operate on...
-
-			ts_pos = indexOf ( alias );
-			ts = getTimeSeries ( ts_pos );
-			if ( ts == null ) {
-				Message.printWarning ( 1, routine,
-				"Unable to find time series \"" + alias +
-				"\" for\n" + command_String + "\"." );
-				++error_count;
-				v = null;
-				continue;
-			}
-			independent = ((String)v.elementAt(2)).trim();
-			TS independentTS = null;
-			// The following may or may not have
-			// TEMPTS at the front but is handled
-			// transparently by getTimeSeries.
-			independentTS = getTimeSeries ( command_tag,
-				independent );
-			if ( independentTS == null ) {
-				Message.printWarning ( 1, routine,
-				"Unable to find time series \"" + independent +
-				"\" for \"" + command_String + "\"." );
-				++error_count;
-			}
-			else {	TSUtil.multiply ( ts, independentTS );
-			}
-			v = null;
-			independentTS = null;
-			ts_action = UPDATE_TS;
-		}
 		else if ( command_String.regionMatches(true,0,"setMax",0,6)) {
 			// Don't use space because TEMPTS will not parse right.
 			do_setMax ( command_tag, command_String );
@@ -3991,10 +3887,6 @@ throws Exception
 		else if ( command_String.regionMatches(true,0,"setToMin",0,8)) {
 			// Don't use space because TEMPTS will not parse right.
 			do_setToMin ( command_tag, command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setOutputDetailedHeaders", 0,24) ) {
-			do_setOutputDetailedHeaders ( command_String );
 			continue;
 		}
         // FIXME SAM 2008-01-04 Is this command even supported/documented?
@@ -4405,9 +4297,8 @@ throws Exception
 		suggest = "Use CreateFromList().";
 	}
 	else if ( command_String.regionMatches(true,0,"-detailedheader",0,15) ) {
-		message = "-detailedheader is obsolete.  Automatically using SetOutputDetailedHeaders().";
-		suggest = "Use SetOutputDetailedHeaders().";
-		do_setOutputDetailedHeaders ( command_String );
+		message = "-detailedheader is obsolete.";
+		suggest = "If this feature is needed, it can be added to output commands.";
 	}
 	else if ( command_String.regionMatches(true,0,"-d",0,2) ) {
 	    message = "-d is obsolete..";
@@ -4571,13 +4462,11 @@ throws Exception
     setAutoExtendPeriod ( true );
     __datatestlist = null;
     __datetime_Hashtable.clear();
-    __fill_pattern_ts.removeAllElements();
     setIncludeMissingTS ( false );
     setIgnoreLEZero ( false );
     setInputStart ( null );
     setInputEnd ( null );
     getMissingTS().removeAllElements();
-    setOutputDetailedHeader ( false );
     setOutputStart ( null );
     setOutputEnd ( null );
     setOutputYearType ( _CALENDAR_YEAR );
@@ -5069,12 +4958,6 @@ throws IOException
 		}
 		else {
             sumprops.set ( "CalendarType", "CalendarYear" );
-		}
-		if ( getOutputDetailedHeader() ) {
-			sumprops.set("PrintGenesis","true");
-		}
-		else {
-            sumprops.set("PrintGenesis","false");
 		}
 		// Check the first time series.  If NWSCARD or DateValue, don't
 		// use comments for header...
@@ -6471,15 +6354,6 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 }
 
 /**
-Set the value of the OutputDetailedHeader property.
-@param OutputDetailedHeader_boolean Value of property.
-*/
-private void setOutputDetailedHeader ( boolean OutputDetailedHeader_boolean )
-{
-    __OutputDetailedHeader_boolean = OutputDetailedHeader_boolean;
-}
-
-/**
 Set the output period end.
 @param end Output period end.
 */
@@ -6736,12 +6610,6 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 			smprops.set ( "CalendarType", calendar );
 			smprops.set ( "MissingDataValue", "" + missing );
 			smprops.set ( "OutputPrecision", "" + precision );
-			if ( getOutputDetailedHeader() ) {
-				smprops.set ( "PrintGenesis", "true" );
-			}
-			else {
-                smprops.set ( "PrintGenesis", "false" );
-			}
 			try {
                 StateMod_TS.writeTimeSeriesList ( tslist,smprops );
 			}

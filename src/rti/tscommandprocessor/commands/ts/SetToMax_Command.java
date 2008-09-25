@@ -33,17 +33,17 @@ import RTi.Util.String.StringUtil;
 // TODO SAM 2008-09-23 Leave in some code in case ensembles and other parameters are
 // enabled.  For now match the legacy features.
 /**
-This class initializes, checks, and runs the SetToMin() command.
+This class initializes, checks, and runs the SetToMax() command.
 */
-public class SetToMin_Command extends AbstractCommand implements Command
+public class SetToMax_Command extends AbstractCommand implements Command
 {
     
 /**
 Constructor.
 */
-public SetToMin_Command ()
+public SetToMax_Command ()
 {	super();
-	setCommandName ( "SetToMin" );
+	setCommandName ( "SetToMax" );
 }
 
 /**
@@ -128,7 +128,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new SetToMin_JDialog ( parent, this )).ok();
+	return (new SetToMax_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -137,7 +137,7 @@ Get the time series to process.
 @param tspos Positions in time series processor time series array.
 */
 private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, int warning_count )
-{   String routine = "SetToMin_Command.getTimeSeriesToProcess";
+{   String routine = "SetToMax_Command.getTimeSeriesToProcess";
     TS ts = null;
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
@@ -202,7 +202,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "SetToMin_Command.parseCommand", message;
+	String routine = "SetToMax_Command.parseCommand", message;
 
 	if ( ((command_string.indexOf('=') > 0) || command_string.endsWith("()")) ) {
 	    // Current syntax...
@@ -275,7 +275,7 @@ Calls TSCommandProcessor to re-calculate limits for this time series.
 private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
         int warningLevel, int warning_count, String command_tag )
 {
-    String routine = "SetToMin_Command.recalculateLimits", message;
+    String routine = "SetToMax_Command.recalculateLimits", message;
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
@@ -328,7 +328,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "SetToMin_Command.runCommand", message;
+{	String routine = "SetToMax_Command.runCommand", message;
 	int warning_count = 0;
 	int warningLevel = 2;
 	String command_tag = "" + command_number;
@@ -654,7 +654,7 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
 	/*
-    PropList setprops = new PropList ( "SetToMin" );
+    PropList setprops = new PropList ( "SetToMax" );
 	if ( (TransferHow != null) && !TransferHow.equals("") ) {
 		setprops.set ( "TransferHow", TransferHow );
 	}
@@ -678,13 +678,13 @@ CommandWarningException, CommandException
 			continue;
 		}
      
-		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" to minimum." );
+		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" to maximum." );
 		try {
-            TSUtil.min ( ts, independent_tslist );
+            TSUtil.max ( ts, independent_tslist );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error setting time series \"" + ts.getIdentifier() +
-			"\" to minimum (" + e + ").";
+			"\" to maximum (" + e + ").";
             Message.printWarning ( warningLevel,
                 MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message);
 			Message.printWarning(3,routine,e);

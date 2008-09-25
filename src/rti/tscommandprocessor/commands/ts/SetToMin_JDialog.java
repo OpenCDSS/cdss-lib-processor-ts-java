@@ -13,12 +13,18 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.DefaultListModel;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.ListSelectionModel;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -33,9 +39,10 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.String.StringUtil;
 
 public class SetToMin_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
@@ -48,6 +55,9 @@ private JLabel __IndependentTSID_JLabel = null;
 private SimpleJComboBox __IndependentTSID_JComboBox = null;
 private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
+private JLabel __IndependentSpecifiedTSID_JLabel = null;
+private DefaultListModel __IndependentSpecifiedTSID_JListModel = null;
+private JList __IndependentSpecifiedTSID_JList= null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -106,6 +116,14 @@ private void checkGUIState ()
         __IndependentEnsembleID_JComboBox.setEnabled(false);
         __IndependentEnsembleID_JLabel.setEnabled ( false );
     }
+    if ( TSListType.SPECIFIED_TSID.equals(IndependentTSList)) {
+        __IndependentSpecifiedTSID_JList.setEnabled(true);
+        __IndependentSpecifiedTSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __IndependentSpecifiedTSID_JList.setEnabled(false);
+        __IndependentSpecifiedTSID_JLabel.setEnabled ( false );
+    }
 }
 
 /**
@@ -119,9 +137,15 @@ private void checkInput ()
     String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
     String IndependentTSID = __IndependentTSID_JComboBox.getSelected();
     String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
+    String IndependentSpecifiedTSID = getIndependentSpecifiedTSIDFromList();
     //String SetStart = __SetStart_JTextField.getText().trim();
     //String SetEnd = __SetEnd_JTextField.getText().trim();
     __error_wait = false;
+    
+    // IndependentTSID is used for several variations of IndependentTSList
+    if ( TSListType.SPECIFIED_TSID.equals(IndependentTSList) ) {
+        IndependentTSID = IndependentSpecifiedTSID;
+    }
 
     if ( TSID.length() > 0 ) {
         props.set ( "TSID", TSID );
@@ -166,9 +190,16 @@ private void commitEdits ()
     //String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
     String IndependentTSID = __IndependentTSID_JComboBox.getSelected();
-    String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected(); 
+    String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
+    String IndependentSpecifiedTSID = getIndependentSpecifiedTSIDFromList();
     //String SetStart = __SetStart_JTextField.getText().trim();
     //String SetEnd = __SetEnd_JTextField.getText().trim();
+    
+    // IndependentTSID is used for several variations of IndependentTSList
+    if ( TSListType.SPECIFIED_TSID.equals(IndependentTSList) ) {
+        IndependentTSID = IndependentSpecifiedTSID;
+    }
+    
     __command.setCommandParameter ( "TSID", TSID );
     //__command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "IndependentTSList", IndependentTSList );
@@ -192,6 +223,26 @@ throws Throwable
 }
 
 /**
+Get the AddSpecifiedTSID parameter from the JList and put into a string.
+@return a String containing the selected specified time series, separated by commas.
+*/
+private String getIndependentSpecifiedTSIDFromList()
+{   StringBuffer buffer = new StringBuffer();
+    if ( JGUIUtil.selectedSize(__IndependentSpecifiedTSID_JList) > 0 ) {
+        // Get the selected and format...
+        int selected[] = __IndependentSpecifiedTSID_JList.getSelectedIndices();
+        int size = JGUIUtil.selectedSize(__IndependentSpecifiedTSID_JList);
+        for ( int i = 0; i < size; i++ ) {
+            if ( i > 0 ) {
+                buffer.append ( ",");
+            }
+            buffer.append ( __IndependentSpecifiedTSID_JListModel.elementAt( selected[i]) );
+        }
+    }
+    return buffer.toString();
+}
+
+/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
@@ -209,7 +260,8 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel,
-		new JLabel ( "Set the time series data values to the minimum of itself and one or more time series."),
+		new JLabel ( "Set the time series data values to the minimum of itself and one or " +
+				"more (independent) time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         		
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to receive results:"),
@@ -225,6 +277,8 @@ private void initialize ( JFrame parent, Command command )
     __IndependentTSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel (
             this, main_JPanel, new JLabel ("Independent TS List:"), __IndependentTSList_JComboBox, y );
+    // Default is not to add SpecifiedTSID so add it here...
+    __IndependentTSList_JComboBox.add(TSListType.SPECIFIED_TSID.toString());
 
     __IndependentTSID_JLabel = new JLabel (
             "Independent TSID (for Independent TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
@@ -239,6 +293,29 @@ private void initialize ( JFrame parent, Command command )
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __IndependentEnsembleID_JLabel, __IndependentEnsembleID_JComboBox, EnsembleIDs, y );
 
+    __IndependentSpecifiedTSID_JLabel =
+        new JLabel ("Independent specified TSID (for IndependentTSList=" + TSListType.SPECIFIED_TSID.toString() + "):");
+    JGUIUtil.addComponent(main_JPanel, __IndependentSpecifiedTSID_JLabel,
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IndependentSpecifiedTSID_JListModel = new DefaultListModel();
+    // Get the list again because above list will have "*" which we don't want
+    Vector tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    int size = tsids2.size();
+    for ( int i = 0; i < size; i++ ) {
+        __IndependentSpecifiedTSID_JListModel.addElement( (String)tsids2.elementAt(i));
+    }
+    __IndependentSpecifiedTSID_JList = new JList ( __IndependentSpecifiedTSID_JListModel );
+    __IndependentSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
+    __IndependentSpecifiedTSID_JList.addListSelectionListener ( this );
+    __IndependentSpecifiedTSID_JList.addKeyListener ( this );
+    __IndependentSpecifiedTSID_JList.clearSelection();
+    DefaultListSelectionModel sm = new DefaultListSelectionModel();
+    sm.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
+    __IndependentSpecifiedTSID_JList.setSelectionModel ( sm );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__IndependentSpecifiedTSID_JList),
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
@@ -407,7 +484,9 @@ private void refresh ()
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
-        }/*
+        }
+        setupIndependentSpecifiedTSID ( IndependentTSList, IndependentTSID );
+        /*
         if ( SetStart != null ) {
             __SetStart_JTextField.setText ( SetStart );
         }
@@ -422,6 +501,11 @@ private void refresh ()
     IndependentTSList = __IndependentTSList_JComboBox.getSelected();
     IndependentTSID = __IndependentTSID_JComboBox.getSelected();
     IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
+    String IndependentSpecifiedTSID = getIndependentSpecifiedTSIDFromList();
+    // Use the list of specified TSID instead of the __IndependentTSID_JComboBox above
+    if ( TSListType.SPECIFIED_TSID.equals(IndependentTSList) ) {
+        IndependentTSID = IndependentSpecifiedTSID;
+    }
     //SetStart = __SetStart_JTextField.getText().trim();
     //SetEnd = __SetEnd_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
@@ -453,6 +537,53 @@ private void response ( boolean ok )
     // Now close out...
     setVisible( false );
     dispose();
+}
+
+/**
+Setup the IndependentSpecifiedTSID list at initialization,
+selecting items in the list that match the IndependentSpecifiedTSID parameter.
+@param IndependentSpecifiedTSID The value of the parameter, of form "TSID,TSID,TSID,...".
+*/
+private void setupIndependentSpecifiedTSID ( String IndependentTSList, String IndependentSpecifiedTSID )
+{   String routine = "Add_JDialog.setupAddSelectedTSID";
+    // Check all the items in the list and highlight the ones that match the command being edited...
+    if ( (IndependentTSList != null) &&
+            TSListType.SPECIFIED_TSID.equals(IndependentTSList) && (IndependentSpecifiedTSID != null) ) {
+        // Break list by commas since identifiers may have spaces and other "special" characters (but no commas)
+        Vector v = StringUtil.breakStringList ( IndependentSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+        int size = v.size();
+        int pos = 0;
+        Vector selected = new Vector();
+        String independent = "";
+        for ( int i = 0; i < size; i++ ) {
+            independent = (String)v.elementAt(i);
+            if ( (pos = JGUIUtil.indexOf( __IndependentSpecifiedTSID_JList, independent, false, true))>= 0 ) {
+                // Select it because it is in the command and the list...
+                selected.addElement ( "" + pos );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references a non-existent\n"+
+                "specified time series \"" + independent +
+                "\".  Select a\n" + "different time series or Cancel." );
+            }
+        }
+        // Select the matched time series...
+        if ( selected.size() > 0  ) {
+            int [] iselected = new int[selected.size()];
+            for ( int is = 0; is < iselected.length; is++ ){
+                iselected[is] = StringUtil.atoi ( (String)selected.elementAt(is));
+            }
+            __IndependentSpecifiedTSID_JList.setSelectedIndices( iselected );
+        }
+    }
+}
+
+/**
+Handle ListSelectionListener events.
+*/
+public void valueChanged ( ListSelectionEvent e )
+{   refresh ();
 }
 
 /**

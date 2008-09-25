@@ -1630,28 +1630,6 @@ throws Exception
 }
 
 /**
-Execute the DateTime x = xxxxx command.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_DateTime ( String command )
-throws Exception
-{	String routine = "TSEngine.doDateTime";
-	Vector tokens = StringUtil.breakStringList ( command, " =\t", StringUtil.DELIM_SKIP_BLANKS );
-	if ( tokens.size() < 3 ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	// Set the date...
-	try {
-	    __datetime_Hashtable.put ( (String)tokens.elementAt(1), (Object)DateTime.parse((String)tokens.elementAt(2)));
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 1, routine, "Unable to set date using \"" + command + "\"" );
-		Message.printWarning ( 2, routine, e );
-	}
-}
-
-/**
 Helper method to execute the fillMixedStation() command.
 @param command_tag Command number used for messaging.
 @param command Command to process.
@@ -2173,149 +2151,6 @@ throws Exception
 	return null;
 }
 */
-
-/**
-Execute the setMax() command.
-@param command_tag Command number used for messaging.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setMax ( String command_tag, String command )
-throws Exception
-{	String routine = "TSEngine.do_setMax", message;
-	int warning_level = 2;
-	int warning_count = 0;
-	Vector v = StringUtil.breakStringList ( command,
-		"(),\t", StringUtil.DELIM_SKIP_BLANKS |
-		StringUtil.DELIM_ALLOW_STRINGS ); 
-	if ( (v == null) || (v.size() < 3) ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	String alias = ((String)v.elementAt(1)).trim();
-	String independent = null;
-
-	// Make sure there are time series available to operate on...
-
-	int ts_pos = indexOf ( alias );
-	TS ts = getTimeSeries ( ts_pos );
-	if ( ts == null ) {
-		message = "Unable to find time series \""
-		+ alias + "\" for\n" + command + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,
-		++warning_count), routine, message );
-		throw new CommandException ( message );
-	}
-	// Now loop through the remaining time series and put into a Vector for
-	// processing...
-	int vsize = v.size();
-	Vector vTS = new Vector ( vsize - 1 );
-	TS independentTS = null;
-	for ( int its = 2; its < vsize; its++ ) {
-		independent = ((String)v.elementAt(its)).trim();
-		// The following may or may not have TEMPTS at the front but is
-		// handled transparently by getTimeSeries.
-		independentTS = getTimeSeries ( command_tag, independent );
-		if ( independentTS == null ) {
-			message = "Unable to find time series \"" + independent+
-			"\" for \"" + command + "\".";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(command_tag,
-			++warning_count), routine, message );
-			v = null;
-			vTS = null;
-			independentTS = null;
-			continue;
-		}
-		else {	vTS.addElement ( independentTS );
-		}
-	}
-	ts = TSUtil.max ( ts, vTS );
-	v = null;
-	vTS = null;
-	independentTS = null;
-	processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings processing the command.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag, ++warning_count),
-			routine,message);
-		throw new CommandWarningException ( message );
-	}
-}
-
-/**
-Execute the setToMin() command.
-@param command_tag Command number used for messaging.
-@param command Command to parse.
-@exception Exception if there is an error.
-*/
-private void do_setToMin ( String command_tag, String command )
-throws Exception
-{	String routine = "TSEngine.do_setToMin", message;
-	int warning_level = 2;
-	int warning_count = 0;
-	Vector v = StringUtil.breakStringList ( command,
-		"(),\t", StringUtil.DELIM_SKIP_BLANKS |
-		StringUtil.DELIM_ALLOW_STRINGS ); 
-	if ( (v == null) || (v.size() < 3) ) {
-		throw new Exception ( "Bad command \"" + command + "\"" );
-	}
-	String alias = ((String)v.elementAt(1)).trim();
-	String independent = null;
-
-	// Make sure there are time series available to operate on...
-
-	int ts_pos = indexOf ( alias );
-	TS ts = getTimeSeries ( ts_pos );
-	if ( ts == null ) {
-		message = "Unable to find time series \""
-		+ alias + "\" for\n" + command + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,
-		++warning_count), routine, message );
-		throw new CommandException ( message );
-	}
-	// Now loop through the remaining time series and put into a Vector for
-	// processing...
-	int vsize = v.size();
-	Vector vTS = new Vector ( vsize - 1 );
-	TS independentTS = null;
-	for ( int its = 2; its < vsize; its++ ) {
-		independent = ((String)v.elementAt(its)).trim();
-		// The following may or may not have TEMPTS at the front but is
-		// handled transparently by getTimeSeries.
-		independentTS = getTimeSeries ( command_tag, independent );
-		if ( independentTS == null ) {
-			message = "Unable to find time series \"" + independent+
-			"\" for \"" + command + "\".";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(command_tag,
-			++warning_count), routine, message );
-			v = null;
-			vTS = null;
-			independentTS = null;
-			continue;
-		}
-		else {	vTS.addElement ( independentTS );
-		}
-	}
-	ts = TSUtil.min ( ts, vTS );
-	v = null;
-	vTS = null;
-	independentTS = null;
-	processTimeSeriesAction ( UPDATE_TS, ts, ts_pos );
-	if ( warning_count > 0 ) {
-		message = "There were " + warning_count + " warnings processing the command.";
-		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag, ++warning_count),
-			routine,message);
-		throw new CommandWarningException ( message );
-	}
-}
 
 /**
 Execute the shift() command.
@@ -3861,11 +3696,6 @@ throws Exception
 			do_createYearStatisticsReport ( command_String );
 			continue;
 		}
-		else if ( command_String.regionMatches(true,0,"DateTime ",0,9) ) {
-			// Declare a DateTime and set to a literal
-			do_DateTime ( command_String );
-			continue;
-		}
 		else if ( command_String.equalsIgnoreCase("end") ||	command_String.equalsIgnoreCase("exit") ||
                 command_String.equalsIgnoreCase("exit()") ) {
 			// Exit the processing, but do historic average filling...
@@ -3877,16 +3707,6 @@ throws Exception
 			// Fill missing data in the time series by prorating
 			// one time series to another...
 			do_fillProrate ( command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setMax",0,6)) {
-			// Don't use space because TEMPTS will not parse right.
-			do_setMax ( command_tag, command_String );
-			continue;
-		}
-		else if ( command_String.regionMatches(true,0,"setToMin",0,8)) {
-			// Don't use space because TEMPTS will not parse right.
-			do_setToMin ( command_tag, command_String );
 			continue;
 		}
         // FIXME SAM 2008-01-04 Is this command even supported/documented?

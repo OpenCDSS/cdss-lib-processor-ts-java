@@ -202,6 +202,8 @@ import rti.tscommandprocessor.commands.ts.SetFromTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIncludeMissingTS_Command;
 import rti.tscommandprocessor.commands.ts.SetIgnoreLEZero_Command;
 import rti.tscommandprocessor.commands.ts.SetTimeSeriesProperty_Command;
+import rti.tscommandprocessor.commands.ts.SetToMax_Command;
+import rti.tscommandprocessor.commands.ts.SetToMin_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Subtract_Command;
@@ -654,6 +656,14 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"SetTimeSeriesProperty") ) {
 		return new SetTimeSeriesProperty_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetMax") ||
+            StringUtil.startsWithIgnoreCase(command_string,"SetToMax") ) {
+        // Legacy is "SetMax" so translate on the fly.
+        return new SetToMax_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"SetToMin") ) {
+        return new SetToMin_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"SetWarningLevel") ) {
         return new SetWarningLevel_Command ();
     }

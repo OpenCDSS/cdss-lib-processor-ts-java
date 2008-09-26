@@ -218,9 +218,10 @@ import rti.tscommandprocessor.commands.usgs.ReadUsgsNwis_Command;
 
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
+import rti.tscommandprocessor.commands.util.Exit_Command;
+import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.mergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
-import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.runCommands_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
@@ -372,10 +373,9 @@ throws UnknownCommandException
 	
 	// "E" commands...
 	
-	else if ( StringUtil.startsWithIgnoreCase(command_string,"Exit") ) {
-		Command command = new GenericCommand();
-		command.setCommandString("Exit");
-		return command;
+	else if ( StringUtil.startsWithIgnoreCase(command_string,"Exit") ||
+	    StringUtil.startsWithIgnoreCase(command_string,"Exit")) {
+		return new Exit_Command ();
 	}
 
 	// "F" commands...

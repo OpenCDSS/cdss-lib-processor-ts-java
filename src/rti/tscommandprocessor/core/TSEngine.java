@@ -664,6 +664,7 @@ import java.util.Vector;
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.util.Exit_Command;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
@@ -3696,8 +3697,7 @@ throws Exception
 			do_createYearStatisticsReport ( command_String );
 			continue;
 		}
-		else if ( command_String.equalsIgnoreCase("end") ||	command_String.equalsIgnoreCase("exit") ||
-                command_String.equalsIgnoreCase("exit()") ) {
+		else if ( command instanceof Exit_Command ) {
 			// Exit the processing, but do historic average filling...
 			Message.printStatus ( 1, routine, "Exit - stop processing time series." );
 			ts_action = EXIT;

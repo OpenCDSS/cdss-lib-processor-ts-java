@@ -54,7 +54,7 @@ package rti.tscommandprocessor.core;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandFactory;
-import RTi.Util.IO.GenericCommand;
+import RTi.Util.IO.UnknownCommand;
 import RTi.Util.IO.UnknownCommandException;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -173,6 +173,7 @@ import rti.tscommandprocessor.commands.ts.FillInterpolate_Command;
 import rti.tscommandprocessor.commands.ts.fillMixedStation_Command;
 import rti.tscommandprocessor.commands.ts.fillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.FillPattern_Command;
+import rti.tscommandprocessor.commands.ts.FillProrate_Command;
 import rti.tscommandprocessor.commands.ts.fillRegression_Command;
 import rti.tscommandprocessor.commands.ts.FillRepeat_Command;
 import rti.tscommandprocessor.commands.ts.Free_Command;
@@ -406,6 +407,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(command_string,"FillPattern") ) {
         return new FillPattern_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"FillProrate") ) {
+        return new FillProrate_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"FillRegression") ) {
 		return new fillRegression_Command ();
@@ -735,9 +739,9 @@ throws UnknownCommandException
 
 	if ( create_generic_command_if_not_recognized ) {
 		// Create a generic command...
-		Command c = new GenericCommand ();
+		Command c = new UnknownCommand ();
 		c.setCommandString( command_string );
-        Message.printStatus ( 2, routine, "Creating GenericCommand for unknown command \"" +
+        Message.printStatus ( 2, routine, "Creating UnknownCommand for unknown command \"" +
                 command_string + "\"" );
 		return c;
 	}

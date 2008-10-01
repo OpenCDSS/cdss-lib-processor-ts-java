@@ -139,6 +139,7 @@ private void initialize ( JFrame parent, Vector comments )
 
     Insets insetsTLBR = new Insets(7,2,7,2);
     Insets insetsXLXX = new Insets(0,2,0,0);
+    Insets insets2 = new Insets(2,2,2,2);
     Insets insetsXLBR = new Insets(0,2,7,2);
 
 	// Main panel...
@@ -154,14 +155,17 @@ private void initialize ( JFrame parent, Vector comments )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Enter one or more comments (leading # will be added automatically if not shown)." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "See also the /* and */ commands for multi-line comments, which are useful for commenting out " +
+        "multiple commands." ), 
+        0, ++y, 7, 1, 0, 0, insets2, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JTextArea ref_JTextArea = new JTextArea (2, 80);
     // Add a string buffer with reference positions (similar to UltraEdit Editor)
     //0        10        20
     //12345678901234567890...
-    int n10 = 8; // number to repeat.  Want to make 20 but this causes
-    			// layout issues.
+    int n10 = 8; // number to repeat.  Want to make 20 but this causes layout issues.
     // TODO SAM 2007-04-22 REVISIT layout for n10=20
     StringBuffer b = new StringBuffer();
     b.append ( StringUtil.formatString(0,"%-9d"));

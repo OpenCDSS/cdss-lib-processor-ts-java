@@ -127,11 +127,14 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command starts a comment block, and is used to comment out multiple commands."),
+		"This command starts a multi-line comment block, which is useful for commenting out multiple commands."),
 		0, y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the */ command to end the block of comments."),
+		"Use the */ command to end the comment block."),
 		0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "See also the # command for commenting single lines."),
+        0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

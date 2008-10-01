@@ -664,6 +664,7 @@ import java.util.Vector;
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
@@ -3046,7 +3047,7 @@ throws Exception
     		// Notify any listeners that the command is running...
     		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
     
-    		if ( command_String.startsWith("#") ) {
+    		if ( command instanceof Comment_Command ) {
     			// Comment.  Mark as processing successful.
     			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);

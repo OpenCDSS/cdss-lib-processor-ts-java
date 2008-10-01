@@ -218,6 +218,7 @@ import rti.tscommandprocessor.commands.usgs.ReadUsgsNwis_Command;
 
 // Utility commands.
 
+import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
@@ -300,10 +301,13 @@ throws UnknownCommandException
 	
 	// Comment commands...
 	
-    if ( StringUtil.startsWithIgnoreCase(command_string,"/*") ) {
+    if ( command_string.trim().startsWith("#") ) {
+        return new Comment_Command ();
+    }
+    else if ( command_string.startsWith("/*") ) {
         return new CommentBlockStart_Command ();
     }
-    else if ( StringUtil.startsWithIgnoreCase(command_string,"*/") ) {
+    else if ( command_string.startsWith("*/") ) {
         return new CommentBlockEnd_Command ();
     }
 

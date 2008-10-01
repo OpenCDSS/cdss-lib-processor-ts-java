@@ -1,22 +1,3 @@
-// ----------------------------------------------------------------------------
-// comment_JDialog - editor for comments
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 19 Dec 2000	Steven A. Malers, RTi	Initial version.
-// 2002-03-30	SAM, RTi		Add instructions to help user.
-// 2003-12-03	SAM, RTi		Update to Swing.
-// 2004-02-22	SAM, RTi		* Fix bug where new comments were
-//					  resulting in an extra line.
-//					* Fix bug where cancel was returning
-//					  non-null comments.
-// 2007-04-22	SAM, RTi		Fix bug where CTRL-M were getting inserted into
-//					comments.
-// 2007-04-25	SAM, RTi		Add comment column position information.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.FlowLayout;
@@ -43,25 +24,27 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.String.StringUtil;
 
+/**
+Editor for # comments.
+*/
 public class comment_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private Vector		__command_Vector = null;// Command(s) as Vector of
-						// String
-private JTextArea	__command_JTextArea = null;// Command as JTextArea
-private boolean		__first_time = true;
+private Vector __command_Vector = null;// Command(s) as Vector of String
+private JTextArea __command_JTextArea = null;// Command as JTextArea
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
-comment_JDialog constructor.
+Comment editor constructor.
 @param parent JFrame class instantiating this class.
-@param command Command to parse.
-@param tsids Time series identifiers for time series available (ignored).
+@param comments Comments to parse (Vector of String)
 */
-public comment_JDialog ( JFrame parent, Vector command, Vector tsids )
+public comment_JDialog ( JFrame parent, Vector comments )
 {	super(parent, true);
-	initialize ( parent, "Edit # Comments", command, tsids );
+	initialize ( parent, comments );
 }
 
 /**
@@ -147,20 +130,16 @@ public Vector getText ()
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param title Dialog title.
-@param command Vector of String containing the command.
-@param tsids Time series identifiers from
-TSEngine.getTSIdentifiersFromCommands() - ignored.
+@param comments Comments to parse (Vector of String)
 */
-private void initialize ( JFrame parent, String title, Vector command,
-			Vector tsids )
-{	__command_Vector = command;
+private void initialize ( JFrame parent, Vector comments )
+{	__command_Vector = comments;
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(7,2,7,2);
-        Insets insetsXLXX = new Insets(0,2,0,0);
-        Insets insetsXLBR = new Insets(0,2,7,2);
+    Insets insetsTLBR = new Insets(7,2,7,2);
+    Insets insetsXLXX = new Insets(0,2,0,0);
+    Insets insetsXLBR = new Insets(0,2,7,2);
 
 	// Main panel...
 
@@ -173,38 +152,36 @@ private void initialize ( JFrame parent, String title, Vector command,
 
 	// Now add the buttons...
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Enter one or more comments (leading # will be added" +
-		" automatically if not shown)." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Enter one or more comments (leading # will be added automatically if not shown)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JTextArea ref_JTextArea = new JTextArea (2, 80);
-        // Add a string buffer with reference positions (similar to UltraEdit Editor)
-        //0        10        20
-        //12345678901234567890...
-        int n10 = 8; // number to repeat.  Want to make 20 but this causes
-        			// layout issues.
-        // TODO SAM 2007-04-22 REVISIT layout for n10=20
-        StringBuffer b = new StringBuffer();
-        b.append ( StringUtil.formatString(0,"%-9d"));
-        for ( int i = 1; i < n10; i++ ) {
-        	b.append( StringUtil.formatString(i*10,"%-10d"));
-        }
-        b.append ( "\n");
-        b.append ( "1234567890");
-        for ( int i = 1; i < n10; i++ ) {
-        	b.append( "1234567890");
-        }
-        ref_JTextArea.setText( b.toString() );
-    	ref_JTextArea.setEditable (false);
-    	ref_JTextArea.setEnabled ( false );
-    	JGUIUtil.addComponent(main_JPanel, ref_JTextArea,
-    		1, ++y, 6, 1, 1, 1, insetsXLXX, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+    JTextArea ref_JTextArea = new JTextArea (2, 80);
+    // Add a string buffer with reference positions (similar to UltraEdit Editor)
+    //0        10        20
+    //12345678901234567890...
+    int n10 = 8; // number to repeat.  Want to make 20 but this causes
+    			// layout issues.
+    // TODO SAM 2007-04-22 REVISIT layout for n10=20
+    StringBuffer b = new StringBuffer();
+    b.append ( StringUtil.formatString(0,"%-9d"));
+    for ( int i = 1; i < n10; i++ ) {
+    	b.append( StringUtil.formatString(i*10,"%-10d"));
+    }
+    b.append ( "\n");
+    b.append ( "1234567890");
+    for ( int i = 1; i < n10; i++ ) {
+    	b.append( "1234567890");
+    }
+    ref_JTextArea.setText( b.toString() );
+	ref_JTextArea.setEditable (false);
+	ref_JTextArea.setEnabled ( false );
+	JGUIUtil.addComponent(main_JPanel, ref_JTextArea,
+		1, ++y, 6, 1, 1, 1, insetsXLXX, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Comments:" ), 
-        		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    	
-	__command_JTextArea = new JTextArea ( 10, 80 );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Comments:" ), 
+    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __command_JTextArea = new JTextArea ( 10, 80 );
 	__command_JTextArea.setEditable ( true );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
 		1, y, 6, 1, 1, 1, insetsXLBR, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -223,21 +200,18 @@ private void initialize ( JFrame parent, String title, Vector command,
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	if ( title != null ) {
-		setTitle ( title );
-	}
+	setTitle ( "Edit # Comments" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	// Want user to press OK to continue (not enter because newlines
-	// may be allowed).
+{	// Want user to press OK to continue (not enter because newlines may be allowed).
 }
 
 public void keyReleased ( KeyEvent event )
@@ -246,6 +220,13 @@ public void keyReleased ( KeyEvent event )
 
 public void keyTyped ( KeyEvent event )
 {
+}
+
+/**
+Indicate if the user pressed OK (cancel otherwise).
+*/
+public boolean ok ()
+{   return __ok;
 }
 
 /**
@@ -260,8 +241,7 @@ private void refresh ()
 		if (	(__command_Vector != null) &&
 			(__command_Vector.size() > 0) &&
 			(((String)__command_Vector.elementAt(0)).length() > 0)){
-			String text = StringUtil.toString(__command_Vector,
-				System.getProperty("line.separator") );
+			String text = StringUtil.toString(__command_Vector,	System.getProperty("line.separator") );
 			if ( text.length() > 0 ) {
 				__command_JTextArea.setText ( text );
 			}
@@ -282,10 +262,11 @@ public Vector response ( int status )
 		__command_Vector = null;
 		return null;
 	}
-	else {	refresh();
+	else {
+	    __ok = true;
+	    refresh();
 		checkComments ();
-		if (	(__command_Vector.size() == 0) ||
-			((String)__command_Vector.elementAt(0)).equals("") ) {
+		if ( (__command_Vector.size() == 0) || ((String)__command_Vector.elementAt(0)).equals("") ) {
 			return null;
 		}
 		return __command_Vector;
@@ -307,4 +288,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end comment_JDialog
+}

@@ -145,7 +145,7 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
+	if ( (FillFlag != null) && !FillFlag.equals("") && (FillFlag.length() != 1) ) {
         message = "The fill flag must be 1 character long.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,

@@ -2319,28 +2319,23 @@ Process the ProcessTimeSeriesAction request.
 private CommandProcessorRequestResultsBean processRequest_ProcessTimeSeriesAction (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean =	new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	// Time series...
 	Object o_TS = request_params.getContents ( "TS" );
 	if ( o_TS == null ) {
-			String warning =
-				"Request ProcessTimeSeriesAction() does not provide a TS parameter.";
+			String warning = "Request ProcessTimeSeriesAction() does not provide a TS parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o_TS;
 	// Action...
 	Object o_Action = request_params.getContents ( "Action" );
 	if ( o_Action == null ) {
-			String warning =
-				"Request ProcessTimeSeriesAction() does not provide an Action parameter.";
+			String warning = "Request ProcessTimeSeriesAction() does not provide an Action parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	String Action = (String)o_Action;
@@ -2352,22 +2347,28 @@ throws Exception
 	else if ( Action.equalsIgnoreCase("Update") ) {
 		Action_int = UPDATE_TS;
 	}
-	else { String warning = "Request ProcessTimeSeriesAction() Action value \"" +
-			Action + "\" is invalid.";
+	else {
+	    String warning = "Request ProcessTimeSeriesAction() Action value \"" + Action + "\" is invalid.";
 			throw new RequestParameterInvalidException ( warning );
 	}
 	// Index...
 	Object o_Index = request_params.getContents ( "Index" );
 	if ( o_Index == null ) {
-			String warning =
-				"Request ProcessTimeSeriesAction() does not provide an Index parameter.";
+			String warning = "Request ProcessTimeSeriesAction() does not provide an Index parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Integer Index = (Integer)o_Index;
-	__tsengine.processTimeSeriesAction( Action_int, ts, Index.intValue() );
+	int ts_pos = Index.intValue();
+    if ( Action_int == INSERT_TS ) {
+        // Add new time series to the list...
+        __tsengine.setTimeSeries ( ts, ts_pos );
+    }
+    else if ( Action_int == UPDATE_TS ) {
+        // Update in the time series list...
+        __tsengine.setTimeSeries ( ts, ts_pos );
+    }
 	// No results need to be set in the bean.
 	return bean;
 }

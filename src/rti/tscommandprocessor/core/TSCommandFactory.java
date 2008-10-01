@@ -208,6 +208,7 @@ import rti.tscommandprocessor.commands.ts.SetToMin_Command;
 import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.sortTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Subtract_Command;
+import rti.tscommandprocessor.commands.ts.TSID_Command;
 import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
@@ -217,6 +218,8 @@ import rti.tscommandprocessor.commands.usgs.ReadUsgsNwis_Command;
 
 // Utility commands.
 
+import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
+import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.compareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
@@ -294,11 +297,20 @@ throws UnknownCommandException
 			DataTest_command = "";
 		}
 	}
+	
+	// Comment commands...
+	
+    if ( StringUtil.startsWithIgnoreCase(command_string,"/*") ) {
+        return new CommentBlockStart_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"*/") ) {
+        return new CommentBlockEnd_Command ();
+    }
 
 	// "A" commands...
 
     // Put the following before "Add"
-    if ( StringUtil.startsWithIgnoreCase(command_string,"AddConstant") ) {
+    else if ( StringUtil.startsWithIgnoreCase(command_string,"AddConstant") ) {
         return new AddConstant_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(command_string,"Add") ) {
@@ -733,6 +745,12 @@ throws UnknownCommandException
 	}
 	else if ( StringUtil.startsWithIgnoreCase(command_string,"WriteSummary") ) {
 		return new WriteSummary_Command ();
+	}
+    
+    // Check for time series identifier.
+    
+	else if ( TSCommandProcessorUtil.isTSID(command_string) ) {
+	    return new TSID_Command ();
 	}
 
 	// Did not match a command...

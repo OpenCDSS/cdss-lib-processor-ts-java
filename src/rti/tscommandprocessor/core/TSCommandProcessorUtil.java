@@ -1062,6 +1062,10 @@ protected static boolean isTSID ( String command )
 	    // TS Alias command
 	    return false;
 	}
+    if ( command.trim().startsWith( "#" ) ) {
+        // Comment
+        return false;
+    }
 	if ((StringUtil.patternCount(command,".") >= 3) &&
 			(((left_paren_pos < 0) &&	// Definitely not a
 			(right_paren_pos < 0)) ||	// command.

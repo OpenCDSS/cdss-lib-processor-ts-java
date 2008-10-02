@@ -269,7 +269,7 @@ private void initialize ( JFrame parent, Command command )
 	__TSID_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Specify a TSID pattern to match."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - specify a TSID pattern to match."), 
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
@@ -278,7 +278,7 @@ private void initialize ( JFrame parent, Command command )
 	__InputStart_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Overrides the global input start."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is global input start or all data."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
@@ -287,7 +287,7 @@ private void initialize ( JFrame parent, Command command )
 	__InputEnd_JTextField.addKeyListener (this);
         JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Overrides the global input end."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is global input end or all data."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),

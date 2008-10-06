@@ -26,7 +26,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -46,7 +45,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -67,16 +65,16 @@ private SimpleJButton	__browse1_JButton = null,
 			__ok_JButton = null;		// Ok Button
 private JTextField	__InputFile1_JTextField = null;	// First file
 private JTextField	__InputFile2_JTextField = null;	// Second file
+private JTextField  __CommentLineChar_JTextField = null;
 private SimpleJComboBox	__WarnIfDifferent_JComboBox =null;
 private SimpleJComboBox	__WarnIfSame_JComboBox =null;
 private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private String		__working_dir = null;	// Working directory.
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
-private compareFiles_Command __command = null;	// Command to edit
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private compareFiles_Command __command = null; // Command to edit
+private boolean __ok = false; // Indicates whether the user pressed OK to close the dialog.
+
 /**
 compareFiles_JDialog constructor.
 @param parent JFrame class instantiating this class.
@@ -95,15 +93,13 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse1_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select First File to Compare");
 		
@@ -124,15 +120,13 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __browse2_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select Second File to Compare");
 		
@@ -163,48 +157,41 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path1_JButton ) {
-		if (	__path1_JButton.getText().equals(
-			__AddWorkingDirectoryFile1) ) {
+		if ( __path1_JButton.getText().equals(__AddWorkingDirectoryFile1) ) {
 			__InputFile1_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__InputFile1_JTextField.getText() ) );
+			IOUtil.toAbsolutePath(__working_dir,__InputFile1_JTextField.getText() ) );
 		}
-		else if ( __path1_JButton.getText().equals(
-			__RemoveWorkingDirectoryFile1) ) {
-			try {	__InputFile1_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__InputFile1_JTextField.getText() ) );
+		else if ( __path1_JButton.getText().equals(__RemoveWorkingDirectoryFile1) ) {
+			try {
+			    __InputFile1_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __InputFile1_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,"compareFiles_JDialog",
-				"Error converting first file name to " +
-				"relative path." );
+				"Error converting first file name to relative path." );
 			}
 		}
 		refresh ();
 	}
 	else if ( o == __path2_JButton ) {
-		if (	__path2_JButton.getText().equals(
-			__AddWorkingDirectoryFile2) ) {
+		if ( __path2_JButton.getText().equals( __AddWorkingDirectoryFile2) ) {
 			__InputFile2_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__InputFile2_JTextField.getText() ) );
+			IOUtil.toAbsolutePath(__working_dir, __InputFile2_JTextField.getText() ) );
 		}
-		else if ( __path2_JButton.getText().equals(
-			__RemoveWorkingDirectoryFile2) ) {
-			try {	__InputFile2_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__InputFile2_JTextField.getText() ) );
+		else if ( __path2_JButton.getText().equals(__RemoveWorkingDirectoryFile2) ) {
+			try {
+			    __InputFile2_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __InputFile2_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,"compareFiles_JDialog",
-				"Error converting first file name to " +
-				"relative path." );
+				"Error converting first file name to relative path." );
 			}
 		}
 		refresh ();
 	}
-	else {	// Choices...
+	else {
+	    // Choices...
 		refresh();
 	}
 }
@@ -218,6 +205,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
+	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__error_wait = false;
@@ -227,6 +215,9 @@ private void checkInput ()
 	if ( InputFile2.length() > 0 ) {
 		props.set ( "InputFile2", InputFile2 );
 	}
+    if ( CommentLineChar.length() > 0 ) {
+        props.set ( "CommentLineChar", CommentLineChar );
+    }
 	if ( WarnIfDifferent.length() > 0 ) {
 		props.set ( "WarnIfDifferent", WarnIfDifferent );
 	}
@@ -249,10 +240,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
+	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile1", InputFile1 );
 	__command.setCommandParameter ( "InputFile2", InputFile2 );
+	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
 	__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
 	__command.setCommandParameter ( "WarnIfSame", WarnIfSame );
 }
@@ -310,8 +303,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"First file to compare:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "First file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile1_JTextField = new JTextField ( 50 );
 	__InputFile1_JTextField.addKeyListener ( this );
@@ -320,9 +312,8 @@ private void initialize ( JFrame parent, Command command )
 	__browse1_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse1_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Second file to compare:" ), 
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Second file to compare:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile2_JTextField = new JTextField ( 50 );
 	__InputFile2_JTextField.addKeyListener ( this );
@@ -331,6 +322,15 @@ private void initialize ( JFrame parent, Command command )
 	__browse2_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Comment line character:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CommentLineChar_JTextField = new JTextField ( 20 );
+    __CommentLineChar_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __CommentLineChar_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=#)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -340,13 +340,13 @@ private void initialize ( JFrame parent, Command command )
 	__WarnIfDifferent_JComboBox.addItem ( __command._True );
 	__WarnIfDifferent_JComboBox.select ( 0 );
 	__WarnIfDifferent_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __WarnIfDifferent_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __WarnIfDifferent_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Generate a warning if different? (default=false)"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if same?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if same?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfSame_JComboBox = new SimpleJComboBox ( false );
 	__WarnIfSame_JComboBox.addItem ( "" );	// Default
@@ -354,13 +354,13 @@ private void initialize ( JFrame parent, Command command )
 	__WarnIfSame_JComboBox.addItem ( __command._True );
 	__WarnIfSame_JComboBox.select ( 0 );
 	__WarnIfSame_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __WarnIfSame_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __WarnIfSame_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Generate a warning if same? (default=false)"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );
@@ -381,11 +381,9 @@ private void initialize ( JFrame parent, Command command )
 
 	if ( __working_dir != null ) {
 		// Add the buttons to allow conversion to/from relative path...
-		__path1_JButton = new SimpleJButton(
-			__RemoveWorkingDirectoryFile1,this);
+		__path1_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile1,this);
 		button_JPanel.add ( __path1_JButton );
-		__path2_JButton = new SimpleJButton(
-			__RemoveWorkingDirectoryFile2,this);
+		__path2_JButton = new SimpleJButton(__RemoveWorkingDirectoryFile2,this);
 		button_JPanel.add ( __path2_JButton );
 	}
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
@@ -395,9 +393,9 @@ private void initialize ( JFrame parent, Command command )
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
@@ -425,16 +423,13 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents.  The command is
-of the form:
-<pre>
-compareFiles(InputFile1="X",InputFile2="X",WarnIfDifferent=X,WarnIfSame=X)
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	String routine = "compareFiles_JDialog.refresh";
 	String InputFile1 = "";
 	String InputFile2 = "";
+	String CommentLineChar = "";
 	String WarnIfDifferent = "";
 	String WarnIfSame = "";
     PropList parameters = null;
@@ -443,6 +438,7 @@ private void refresh ()
 		parameters = __command.getCommandParameters();
 		InputFile1 = parameters.getValue ( "InputFile1" );
 		InputFile2 = parameters.getValue ( "InputFile2" );
+		CommentLineChar = parameters.getValue ( "CommentLineChar" );
 		WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
 		WarnIfSame = parameters.getValue ( "WarnIfSame" );
 		if ( InputFile1 != null ) {
@@ -451,17 +447,21 @@ private void refresh ()
 		if ( InputFile2 != null ) {
 			__InputFile2_JTextField.setText ( InputFile2 );
 		}
+        if ( CommentLineChar != null ) {
+            __CommentLineChar_JTextField.setText ( CommentLineChar );
+        }
 		if (	JGUIUtil.isSimpleJComboBoxItem(
 			__WarnIfDifferent_JComboBox, WarnIfDifferent,
 			JGUIUtil.NONE, null, null ) ) {
 			__WarnIfDifferent_JComboBox.select ( WarnIfDifferent );
 		}
-		else {	if (	(WarnIfDifferent == null) ||
-				WarnIfDifferent.equals("") ) {
+		else {
+		    if ( (WarnIfDifferent == null) || WarnIfDifferent.equals("") ) {
 				// New command...select the default...
 				__WarnIfDifferent_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+			    // Bad user command...
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"WarnIfDifferent parameter \"" +
@@ -492,23 +492,25 @@ private void refresh ()
 	// information that has not been committed in the command.
 	InputFile1 = __InputFile1_JTextField.getText().trim();
 	InputFile2 = __InputFile2_JTextField.getText().trim();
+	CommentLineChar = __CommentLineChar_JTextField.getText().trim();
 	WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	WarnIfSame = __WarnIfSame_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile1=" + InputFile1 );
 	props.add ( "InputFile2=" + InputFile2 );
+	props.add ( "CommentLineChar=" + CommentLineChar );
 	props.add ( "WarnIfDifferent=" + WarnIfDifferent );
 	props.add ( "WarnIfSame=" + WarnIfSame );
 	__command_JTextArea.setText( __command.toString(props) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path1_JButton != null ) {
 		__path1_JButton.setEnabled ( true );
 		File f = new File ( InputFile1 );
 		if ( f.isAbsolute() ) {
 			__path1_JButton.setText (__RemoveWorkingDirectoryFile1);
 		}
-		else {	__path1_JButton.setText (__AddWorkingDirectoryFile1 );
+		else {
+		    __path1_JButton.setText (__AddWorkingDirectoryFile1 );
 		}
 	}
 	if ( __path2_JButton != null ) {
@@ -517,7 +519,8 @@ private void refresh ()
 		if ( f.isAbsolute() ) {
 			__path2_JButton.setText (__RemoveWorkingDirectoryFile2);
 		}
-		else {	__path2_JButton.setText (__AddWorkingDirectoryFile2 );
+		else {
+		    __path2_JButton.setText (__AddWorkingDirectoryFile2 );
 		}
 	}
 }
@@ -557,4 +560,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end compareFiles_JDialog
+}

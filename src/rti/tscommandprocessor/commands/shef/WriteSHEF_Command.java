@@ -1,23 +1,7 @@
-//------------------------------------------------------------------------------
-// writeStateMod_Command - handle the writeStateMod() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-08-30	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					writeRiverWare().
-// 2005-11-22	SAM, RTi		Fix so that a negative precision is
-//					allowed, since it is used for special
-//					formatting.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.shef;
 
 import java.io.File;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -27,7 +11,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.ShefATS;
 import RTi.TS.TS;
-import RTi.TS.TSUtil;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -43,13 +26,10 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 <p>
@@ -60,16 +40,14 @@ public class WriteSHEF_Command extends AbstractCommand implements Command, FileG
 {
 
 /**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-
-/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
+
+/**
+The lookup information for data types.
+*/
+Hashtable __DataTypePELookup = new Hashtable();
 
 /**
 Constructor.
@@ -85,14 +63,13 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters (	PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSList = parameters.getValue ( "TSList" );
-	String TSID = parameters.getValue ( "TSID" );
+{	//String TSList = parameters.getValue ( "TSList" );
+	//String TSID = parameters.getValue ( "TSID" );
+    String DataTypePELookup = parameters.getValue ( "DataTypePELookup" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -105,16 +82,36 @@ throws InvalidCommandParameterException
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
-
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		if (	TSList.equalsIgnoreCase(_AllMatchingTSID) &&
-			((TSID == null) || (TSID.length() == 0)) ) {
-			message = "TSList=AllMatchingID requires a TSID value.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a TSID (pattern) to match." ) );
-		}
+	
+	// Parse and check the data type to PE lookup.  Save the results for use later.
+	__DataTypePELookup.clear();
+	if ( (DataTypePELookup != null) && !DataTypePELookup.equals("") ) {
+	    Vector pairs = StringUtil.breakStringList(DataTypePELookup,";",0);
+	    int pairsSize = 0;
+	    if ( pairs != null ) {
+	        pairsSize = pairs.size();
+	    }
+	    for ( int i = 0; i < pairsSize; i++ ) {
+	        // Further break the pairs..
+	        String onePair = ((String)pairs.get(i)).trim();
+	        Vector pairParts = StringUtil.breakStringList(onePair,",",StringUtil.DELIM_SKIP_BLANKS);
+	        int pairPartsSize = 0;
+	        if ( pairParts != null ) {
+	            pairPartsSize = pairParts.size();
+	        }
+	        if ( pairPartsSize != 2 ) {
+	            message = "DataType/PE lookup pair \"" + onePair + "\" is not a comma-separated pair.";
+	            warning += "\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Specify data type/PE lookup pairs as DataType,PE." ) );
+	        }
+	        else {
+	            String dataType = ((String)pairParts.get(0)).trim();
+	            String pe = ((String)pairParts.get(1)).trim();
+	            __DataTypePELookup.put(dataType, pe);
+	        }
+	    } 
 	}
 
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
@@ -124,7 +121,8 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {	String working_dir = null;		
+	else {
+	    String working_dir = null;		
 			try { Object o = processor.getPropContents ( "WorkingDir" );
 				// Working directory is available so use it...
 				if ( o != null ) {
@@ -144,8 +142,7 @@ throws InvalidCommandParameterException
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
-				message = "The output file parent directory does " +
-				"not exist: \"" + f2 + "\".";
+				message = "The output file parent directory does not exist: \"" + f2 + "\".";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -166,10 +163,11 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	if (	(OutputStart != null) && !OutputStart.equals("") &&
+	if ( (OutputStart != null) && !OutputStart.equals("") &&
 		!OutputStart.equalsIgnoreCase("OutputStart") &&
 		!OutputStart.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse(OutputStart);
+		try {
+		    DateTime.parse(OutputStart);
 		}
 		catch ( Exception e ) {
 			message = "Output start date/time \"" + OutputStart + "\" is not a valid date/time.";
@@ -179,10 +177,11 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output start date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
-	if (	(OutputEnd != null) && !OutputEnd.equals("") &&
+	if ( (OutputEnd != null) && !OutputEnd.equals("") &&
 		!OutputEnd.equalsIgnoreCase("OutputStart") &&
 		!OutputEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( OutputEnd );
+		try {
+		    DateTime.parse( OutputEnd );
 		}
 		catch ( Exception e ) {
 				message = "Output end date/time \"" + OutputEnd + "\" is not a valid date/time.";
@@ -219,6 +218,7 @@ throws InvalidCommandParameterException
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
+	valid_Vector.add ( "DataTypePELookup" );
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
@@ -253,6 +253,30 @@ Return the output file generated by this file.  This method is used internally.
 private File getOutputFile ()
 {
 	return __OutputFile_File;
+}
+
+/**
+Get the PE code for the data type, for all time series, from the DataTypePELookup parameter.
+This defines new PE types if specified in the __DataTypePELookup parameter data, and leaves
+the contents as is otherwise.
+@param tslist List of time series, from which to extract data types.
+@param peList list of PE values (strings) corresponding to the time series data types.
+ */
+private void getPEForTimeSeries ( Vector tslist, Vector peList )
+{   String routine = "WriteSHEF_Command.getPEForTimeSeries";
+    int size = 0;
+    if ( tslist != null ) {
+        size = tslist.size();
+    }
+    for ( int i = 0; i < size; i++ ) {
+        TS ts = (TS)tslist.get(i);
+        Object pe = __DataTypePELookup.get( ts.getDataType() );
+        if ( pe != null ) {
+            Message.printStatus(2, routine, "Using user-specified PE code \"" + pe +
+                    "\" for data type \"" + ts.getDataType() + "\"" );
+            peList.setElementAt(pe, i);
+        }
+    }
 }
 
 /**
@@ -516,7 +540,23 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 		try {	
             Vector units_Vector = null;
+            // Get PE code from global information...
             Vector PE_Vector = ShefATS.getPEForTimeSeries ( tslist );
+            // Get PE code from parameter
+            getPEForTimeSeries ( tslist, PE_Vector );
+            for ( int i = 0; i < tslist.size(); i++ ) {
+                TS ts = (TS)tslist.get(i);
+                if ( ((String)PE_Vector.get(i)).equals("") ) {
+                    message = "Unable to determine SHEF PE code for \"" + ts.getIdentifier() +
+                    "\" - not writing time series.";
+                    Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(
+                    command_tag, ++warning_count), routine, message );
+                    status.addToLog ( CommandPhaseType.RUN,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Check log file for details." ) );
+                }
+            }
             Vector Duration_Vector = null;
             Vector AltID_Vector = null;
             PropList shef_props = new PropList ( "SHEF" );
@@ -529,7 +569,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 3, routine, e );
-			message = "Error writing SHEF file \"" + OutputFile_full + "\"";
+			message = "Unexpected error writing SHEF file \"" + OutputFile_full + "\"";
 			Message.printWarning ( warning_level, 
 			MessageUtil.formatMessageTag(
 			command_tag, ++warning_count), routine, message );
@@ -569,6 +609,7 @@ public String toString ( PropList parameters )
 	}
 	String TSList = parameters.getValue("TSList");
 	String TSID = parameters.getValue("TSID");
+	String DataTypePELookup = parameters.getValue("DataTypePELookup");
 	String OutputFile = parameters.getValue("OutputFile");
 	String OutputStart = parameters.getValue("OutputStart");
 	String OutputEnd = parameters.getValue("OutputEnd");
@@ -584,6 +625,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
+    if ( (DataTypePELookup != null) && (DataTypePELookup.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataTypePELookup=\"" + DataTypePELookup + "\"" );
+    }
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

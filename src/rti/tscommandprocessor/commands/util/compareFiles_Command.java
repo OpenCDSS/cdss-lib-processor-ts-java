@@ -124,6 +124,7 @@ throws InvalidCommandParameterException
 	Vector valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile1" );
 	valid_Vector.add ( "InputFile2" );
+	valid_Vector.add ( "CommentLineChar" );
 	valid_Vector.add ( "WarnIfDifferent" );
 	valid_Vector.add ( "WarnIfSame" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -161,8 +162,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "CompareFiles_Command.parseCommand", message;
 
-	Vector tokens = StringUtil.breakStringList ( command,
-		"()", StringUtil.DELIM_SKIP_BLANKS );
+	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	CommandStatus status = getCommandStatus();
 	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
@@ -175,7 +175,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
-		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+		try {
+		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
 				(String)tokens.elementAt(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
@@ -192,12 +193,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Read a line from a file.  Skip over comments.
 @param in BufferedReader for open file to read.
+@param CommentLineChar character at start of line that indicates comment line.
 @return the next line from the file, or null if at the end.
 */
-private String readLine ( BufferedReader in )
+private String readLine ( BufferedReader in, String CommentLineChar )
 {	String iline;
 	while ( true ) {
-		try {	iline = in.readLine ();
+		try {
+		    iline = in.readLine ();
 		}
 		catch ( Exception e ) {
 			return null;
@@ -206,10 +209,11 @@ private String readLine ( BufferedReader in )
 			return null;
 		}
 		// check for comments
-		else if ( iline.startsWith("#") ) {
+		else if ( (iline.length() > 0) && (CommentLineChar.indexOf(iline.charAt(0)) >= 0) ) {
 			continue;
 		}
-		else {	return iline;
+		else {
+		    return iline;
 		}
 	}
 }
@@ -238,12 +242,15 @@ CommandWarningException, CommandException
 	
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
+	String CommentLineChar = parameters.getValue ( "CommentLineChar" );
+	if ( (CommentLineChar == null) || CommentLineChar.equals("") ) {
+	    CommentLineChar = "#";
+	}
 	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
 	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
 	boolean WarnIfDifferent_boolean = false;	// Default
 	boolean WarnIfSame_boolean = false;		// Default
-	int diff_count = 0;				// Number of lines that
-							// are different
+	int diff_count = 0; // Number of lines that are different
 	if ( (WarnIfDifferent != null) && WarnIfDifferent.equalsIgnoreCase(_True)){
 		WarnIfDifferent_boolean = true;
 	}
@@ -276,22 +283,22 @@ CommandWarningException, CommandException
 					message, "Verify that the file exists at the time the command is run."));
 	}
 	if ( warning_count > 0 ) {
-		message = "There were " + warning_count +
-			" warnings about command parameters.";
+		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	try {	// Open the files...
+	try {
+	    // Open the files...
 		BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
 		BufferedReader in2 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile2_full)));
 		// Loop through the files, comparing non-comment lines...
 		String iline1, iline2;
 		while ( true ) {
-			iline1 = readLine ( in1 );
-			iline2 = readLine ( in2 );
+			iline1 = readLine ( in1, CommentLineChar );
+			iline2 = readLine ( in2, CommentLineChar );
 			if ( (iline1 == null) && (iline2 == null) ) {
 				// both are done at the same time...
 				break;
@@ -358,6 +365,7 @@ public String toString ( PropList parameters )
 	}
 	String InputFile1 = parameters.getValue("InputFile1");
 	String InputFile2 = parameters.getValue("InputFile2");
+	String CommentLineChar = parameters.getValue("CommentLineChar");
 	String WarnIfDifferent = parameters.getValue("WarnIfDifferent");
 	String WarnIfSame = parameters.getValue("WarnIfSame");
 	StringBuffer b = new StringBuffer ();
@@ -370,6 +378,12 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "InputFile2=\"" + InputFile2 + "\"" );
 	}
+    if ( (CommentLineChar != null) && (CommentLineChar.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CommentLineChar=\"" + CommentLineChar + "\"" );
+    }
 	if ( (WarnIfDifferent != null) && (WarnIfDifferent.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

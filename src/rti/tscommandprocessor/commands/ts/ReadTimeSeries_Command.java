@@ -348,16 +348,21 @@ throws InvalidCommandParameterException,
             notFoundLogged = true;
         }
         catch ( Exception e ) {
-            message = "Error requesting ReadTimeSeries(TSID=\"" + TSID + "\") from processor + (exception: " +
-            e + ").";
-            //Message.printWarning(3, routine, e );
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "Verify that the identifier information is correct.  Check the log file." +
-                            "  If still a problem, report the problem to software support." ) );
+            message = "Error reading time series using identifier \"" + TSID + "\" (" + e + ").";
+            if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the identifier information is correct." ) );
+            }
+            else {
+                // Non-fatal - ignoring or defaulting time series.
+                message += "  Non-fatal because IfNotFound=" + IfNotFound;
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that the identifier information is correct." ) );
+            }
             ts = null;
+            notFoundLogged = true;
         }
         if ( ts == null ) {
             if ( !notFoundLogged ) {

@@ -33,8 +33,6 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
 /**
 Editor for the AdjustExtremes() command.

@@ -52,6 +52,12 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+ResetWorkflowProperties parameter values.
+*/
+private final String __FAIL = "FAIL";
+private final String __PASS = "PASS";
+
+/**
 AppendResults parameter values.
 */
 // FIXME SAM 2007-12-13 Need to enable AppendResults
@@ -245,21 +251,36 @@ CommandWarningException, CommandException
 		if ( ExpectedStatus != null ) {
 		    expectedStatus = ExpectedStatus;
 		}
-		if ( (ExpectedStatus != null) && maxSeverity.toString().equalsIgnoreCase(ExpectedStatus) ) {
-            // User has indicated an expected status and they match so consider this a success.
-            // This should generally be used only when running a test that we expect to fail (e.g., run
-            // obsolete command).
-            status.addToLog(CommandPhaseType.RUN,
+		if ( ExpectedStatus != null ) {
+		    if ( maxSeverity.toString().equalsIgnoreCase(ExpectedStatus) ) {
+                // User has indicated an expected status and it matches the actual so consider this a success.
+                // This should generally be used only when running a test that we expect to fail (e.g., run
+                // obsolete command or testing handling of errors).
+                status.addToLog(CommandPhaseType.RUN,
+                        new CommandLogRecord(
+                                CommandStatusType.SUCCESS,
+                                "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
+                                "Additional status messages are omitted to allow test to be success - " +
+                                "refer to log file if warning/failure."));
+                // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
+                // have a successful status that shows in the displays.
+                // DO NOT append the messages from the command because their status will cause the
+                // error displays to show problem indicators.
+                testPassFail = __PASS;
+		    }
+		    else {
+		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
+                status.addToLog(CommandPhaseType.RUN,
                     new CommandLogRecord(
-                            CommandStatusType.SUCCESS,
-                            "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
-                            "Additional status messages are omitted to allow test to be success - " +
-                            "refer to log file if warning/failure."));
-            // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
-            // have a successful status that shows in the displays.
-            // DO NOT append the messages from the command because their status will cause the
-            // error displays to show problem indicators.
-            testPassFail = "PASS";
+                        CommandStatusType.SUCCESS,
+                        "Severity is max of commands file that was run (may not be a problem) - does not match expected so considered Failure.",
+                        "Check the command to confirm the expected status."));
+                // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
+                // have a successful status that shows in the displays.
+                // DO NOT append the messages from the command because their status will cause the
+                // error displays to show problem indicators.
+                testPassFail = __FAIL;
+		    }
         }
         else {
             status.addToLog(CommandPhaseType.RUN,
@@ -270,10 +291,10 @@ CommandWarningException, CommandException
             // Append the log records from the command file that was run.
             CommandStatusUtil.appendLogRecords ( status, runner.getProcessor().getCommands() );
             if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {
-                testPassFail = "FAIL";
+                testPassFail = __FAIL;
             }
             else {
-                testPassFail = "PASS";
+                testPassFail = __PASS;
             }
         }
 

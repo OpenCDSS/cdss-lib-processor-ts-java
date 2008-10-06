@@ -84,7 +84,7 @@ public static int appendEnsembleToResultsEnsembleList ( CommandProcessor process
 /**
 Count of output lines in regression output report.
 */
-private static int regressionTestLineCount = 0;
+private static int __regressionTestLineCount = 0;
 /**
 Add a record to the regression test results report.  The report is a simple text file
 that indicates whether a test passed.
@@ -99,7 +99,7 @@ public static void appendToRegressionTestReport(CommandProcessor processor, Stri
         String expectedStatus, CommandStatusType maxSeverity,
         String InputFile_full )
 {
-    ++regressionTestLineCount;
+    ++__regressionTestLineCount;
     if ( __regression_test_fp != null ) {
         // FIXME SAM 2008-02-19 Would be useful to have command run time.
         String indicator = " ";
@@ -111,7 +111,7 @@ public static void appendToRegressionTestReport(CommandProcessor processor, Stri
             ++__regressionTestPassCount;
         }
         __regression_test_fp.println (
-                StringUtil.formatString(regressionTestLineCount,"%4d") + " " +
+                StringUtil.formatString(__regressionTestLineCount,"%4d") + " " +
                 indicator + StringUtil.formatString(testPassFail,"%-4.4s") + indicator + "  " +
                 StringUtil.formatString(expectedStatus,"%-10.10s") + " " +
                 StringUtil.formatString(maxSeverity,"%-10.10s") + " " + InputFile_full);
@@ -1086,7 +1086,11 @@ Open a new regression test report file.
 */
 public static void openNewRegressionTestReportFile ( String OutputFile_full, boolean Append_boolean )
 throws FileNotFoundException
-{
+{   // Initialize the report counts.
+    __regressionTestLineCount = 0;
+    __regressionTestFailCount = 0;
+    __regressionTestPassCount = 0;
+    // Print the report headers.
     __regression_test_fp = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
     IOUtil.printCreatorHeader ( __regression_test_fp, "#", 80, 0 );
     __regression_test_fp.println ( "#" );

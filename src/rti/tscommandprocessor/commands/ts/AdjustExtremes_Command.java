@@ -2,8 +2,6 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
-import org.python.modules._weakref;
-
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 

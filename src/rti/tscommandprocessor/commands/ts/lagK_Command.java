@@ -59,7 +59,6 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.GenericCommand_JDialog;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
@@ -74,6 +73,12 @@ import RTi.Util.Time.TimeUtil;
 
 public class lagK_Command extends AbstractCommand implements Command
 {
+
+/**
+Possible values for FillNearest parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 	
 private boolean  __param_FillNearest = false;	// Flag indicating that missing
 						// data points are filled with
@@ -140,12 +145,14 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	// Get the properties from the PropList parameters.
-	String TSID = parameters.getValue( "TSID"  );
-	String ObsTSID = parameters.getValue( "ObsTSID"  );
-	String DefaultFlow = parameters.getValue( "DefaultFlow"  );
-	String FillNearest = parameters.getValue( "FillNearest"  );
-	String K = parameters.getValue( "K"  );
-	String Lag = parameters.getValue( "Lag"  );
+	String TSID = parameters.getValue( "TSID" );
+	String ObsTSID = parameters.getValue( "ObsTSID" );
+	String DefaultFlow = parameters.getValue( "DefaultFlow" );
+	String FillNearest = parameters.getValue( "FillNearest" );
+	String K = parameters.getValue( "K" );
+	String Lag = parameters.getValue( "Lag" );
+	String InflowStates = parameters.getValue( "InflowStates" );
+	String OutflowStates = parameters.getValue( "OutflowStates" );
 	
 	// TSID - TSID will always be set from the lagK_JDialog when
 	// the OK button is pressed, but the user may edit the command without
@@ -183,18 +190,19 @@ throws InvalidCommandParameterException
 	}
 	
 	// Set the FillNearest boolean
-	if( FillNearest != null && FillNearest.equalsIgnoreCase("TRUE") ) {
+	if( FillNearest != null && FillNearest.equalsIgnoreCase(_True) ) {
 		__param_FillNearest = true;
 	}
-	else if ( FillNearest != null && FillNearest.equalsIgnoreCase("FALSE")){
+	else if ( FillNearest != null && FillNearest.equalsIgnoreCase(_False)){
 		__param_FillNearest = false;
 	}
 	else if( FillNearest != null ) {
-        message = "The value for FillNearest \"" + FillNearest + "\" must be either \"True\" or \"False\".";
+        message = "The value for FillNearest \"" + FillNearest + "\" must be either \"" + _True +
+        "\" or \"" + _False + "\".";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the as True or False." ) );
+                        message, "Specify as " + _True + " or " + _False + "." ) );
 	}
 	
 	// The Lag must be specified and a double precision value
@@ -205,7 +213,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the lag." ) );
 	}
-	else if ( ! StringUtil.isDouble( Lag ) ) {
+	else if ( !StringUtil.isDouble( Lag ) ) {
         message = "The value for Lag \"" + Lag + "\" must be a number.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -235,9 +243,39 @@ throws InvalidCommandParameterException
 		__param_k = StringUtil.atod( K );
 	}	
 
-	// NOTE: Check the states in the 'runCommand' method. At this time, only
+	// TODO SAM 2008-10-06 Do more checks for the states in the 'runCommand' method. At this time, only
 	// the TS Aliases are known, and the data interval (needed to compute
-	// the number of required states) canniot be computed from an Alias.
+	// the number of required states) cannot be computed from an Alias.
+	
+	if ( (InflowStates != null) && !InflowStates.equals("") ) {
+	    Vector v = StringUtil.breakStringList ( InflowStates, ",", 0 );
+	    int size = v.size();
+	    for ( int i = 0; i < size; i++ ) {
+	        String state = (String)v.get(i);
+	        if ( !StringUtil.isDouble(state) ) {
+	            message = "The value for InflowStates \"" + state + "\" is invalid.";
+	            warning +="\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Specify the inflow state value as a number." ) );
+	        }
+	    }
+	}
+	
+    if ( (OutflowStates != null) && !OutflowStates.equals("") ) {
+        Vector v = StringUtil.breakStringList ( OutflowStates, ",", 0 );
+        int size = v.size();
+        for ( int i = 0; i < size; i++ ) {
+            String state = (String)v.get(i);
+            if ( !StringUtil.isDouble(state) ) {
+                message = "The value for OutflowStates \"" + state + "\" is invalid.";
+                warning +="\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the outflow state value as a number." ) );
+            }
+        }
+    }
 
 	// Throw an InvalidCommandParameterException in case of errors.
     
@@ -274,11 +312,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	
-	// The command will be modified if changed...
-	// REVISIT SAM 2005-07-11 Need to implement a special dialog but use the
-	// generic dialog for now...
-	//return ( new lagK_JDialog ( parent, this ) ).ok();
-	return ( new GenericCommand_JDialog ( parent, this ) ).ok();
+	return ( new LagK_JDialog ( parent, this ) ).ok();
 }
 
 /**

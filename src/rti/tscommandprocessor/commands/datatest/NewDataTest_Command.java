@@ -44,7 +44,7 @@ This class initializes, checks, and runs the newDataTest() command.
 TSResultsList and WorkingDir.
 </p>
 */
-public class newDataTest_Command 
+public class NewDataTest_Command 
 extends AbstractCommand
 implements Command {
 
@@ -55,10 +55,10 @@ protected static final String
 /**
 Constructor.
 */
-public newDataTest_Command ()
+public NewDataTest_Command ()
 {
 	super();
-	setCommandName ( "newDataTest" );
+	setCommandName ( "NewDataTest" );
 }
 
 /**
@@ -115,7 +115,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new newDataTest_JDialog ( parent, this ) ).ok();
+	return ( new NewDataTest_JDialog ( parent, this ) ).ok();
 }
 
 /**

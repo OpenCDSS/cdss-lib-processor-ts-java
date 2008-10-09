@@ -73,7 +73,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.TS.TS;
 
-public class fillMixedStation_JDialog extends JDialog
+public class FillMixedStation_JDialog extends JDialog
 	implements ActionListener,
 	 	   ItemListener,
 	 	   KeyListener,
@@ -91,7 +91,7 @@ private String __DESELECT_ALL_INDEPENDENT = "Independent - Deselect all";
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
 
-private fillMixedStation_Command __command = null; // Command object.
+private FillMixedStation_Command __command = null; // Command object.
 private String	__working_dir		   = null; // Working directory.
 
 // Members controlling the execution mode. This class can run as a command or
@@ -214,12 +214,12 @@ private boolean	__first_time = true;
 private boolean	__ok         = false;
 
 /**
-fillMixedStation_JDialog constructor when calling as a TSTool command.
+Constructor when calling as a TSTool command.
 In this case the Dialog is modal: super( parent, true ).
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public fillMixedStation_JDialog ( JFrame parent, Command command )
+public FillMixedStation_JDialog ( JFrame parent, Command command )
 {
 	super( parent, true );
 
@@ -228,18 +228,18 @@ public fillMixedStation_JDialog ( JFrame parent, Command command )
 }
 
 /**
-fillMixedStation_JDialog constructor when calling as a TSTool tool.
+Constructor when calling as a TSTool tool.
 In this case the Dialog is no-modal: super( (JFrame) null, false );
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 @param dummy used to differentiate between constructors.
 */
-public fillMixedStation_JDialog ( JFrame parent, Command command, int dummy )
+public FillMixedStation_JDialog ( JFrame parent, Command command, int dummy )
 {
 	// In this case the Dialog should be no-modal. The View button will be
 	// available for the user to inspect the results from the analysis.
 	// Make sure the parent is not passed here. Since this is a no-modal
-	// dialog, if the perent is passed the dialog will always be on top.
+	// dialog, if the parent is passed the dialog will always be on top.
 	// The alternative are, either to pass a new JFrame as parent or a
 	// (JFrame) null parent.
 	// super( new JFrame(), false );
@@ -792,7 +792,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, Command command )
 {	String mthd = "fillMixedStation_JDialog.initialize", mssg;
 
-	__command = (fillMixedStation_Command) command;
+	__command = (FillMixedStation_Command) command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
 	// GUI Title

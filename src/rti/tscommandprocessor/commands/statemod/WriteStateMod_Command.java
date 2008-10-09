@@ -54,10 +54,10 @@ import DWR.StateMod.StateMod_TS;
 
 /**
 <p>
-This class initializes, checks, and runs the writeStateMod() command.
+This class initializes, checks, and runs the WriteStateMod() command.
 </p>
 */
-public class writeStateMod_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteStateMod_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -75,7 +75,7 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public writeStateMod_Command ()
+public WriteStateMod_Command ()
 {	super();
 	setCommandName ( "WriteStateMod" );
 }
@@ -86,11 +86,9 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TSList = parameters.getValue ( "TSList" );
 	String TSID = parameters.getValue ( "TSID" );
@@ -261,7 +259,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new writeStateMod_JDialog ( parent, this )).ok();
+	return (new WriteStateMod_JDialog ( parent, this )).ok();
 }
 
 /**

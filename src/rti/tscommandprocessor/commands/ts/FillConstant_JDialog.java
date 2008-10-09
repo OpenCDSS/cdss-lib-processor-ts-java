@@ -34,12 +34,12 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class fillConstant_JDialog extends JDialog
+public class FillConstant_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private fillConstant_Command __command = null;// Command to edit
+private FillConstant_Command __command = null;// Command to edit
 private JTextArea	__command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -59,7 +59,7 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public fillConstant_JDialog ( JFrame parent, Command command )
+public FillConstant_JDialog ( JFrame parent, Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -203,7 +203,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (fillConstant_Command)command;
+{	__command = (FillConstant_Command)command;
 
 	try {
 	addWindowListener( this );

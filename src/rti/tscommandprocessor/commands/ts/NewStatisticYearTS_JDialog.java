@@ -54,14 +54,14 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTime_JPanel;
 import RTi.Util.Time.TimeInterval;
 
-public class newStatisticYearTS_JDialog extends JDialog
+public class NewStatisticYearTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton __cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
 private JFrame __parent_JFrame = null;	// parent JFrame
-private newStatisticYearTS_Command __command = null;	// Command to edit.
+private NewStatisticYearTS_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;
 private JTextField __Alias_JTextField = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate
@@ -82,11 +82,11 @@ private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
 
 /**
-newStatisticYearTS_JDialog constructor.
+NewStatisticYearTS_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public newStatisticYearTS_JDialog ( JFrame parent, Command command )
+public NewStatisticYearTS_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -281,7 +281,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	__parent_JFrame = parent;
-	__command = (newStatisticYearTS_Command)command;
+	__command = (NewStatisticYearTS_Command)command;
 
 	addWindowListener( this );
 

@@ -48,7 +48,7 @@ import RTi.Util.Time.DateTime;
 This class initializes, checks, and runs the Cumulate() command.
 </p>
 */
-public class cumulate_Command extends AbstractCommand implements Command
+public class Cumulate_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -60,7 +60,7 @@ protected final String _SetMissingIfMissing = "SetMissingIfMissing";
 /**
 Constructor.
 */
-public cumulate_Command ()
+public Cumulate_Command ()
 {	super();
 	setCommandName ( "Cumulate" );
 }
@@ -76,7 +76,7 @@ dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSID = parameters.getValue ( "TSID" );
+{	//String TSID = parameters.getValue ( "TSID" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
     String Reset = parameters.getValue ( "Reset" );
 	String warning = "";
@@ -144,7 +144,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new cumulate_JDialog ( parent, this )).ok();
+	return (new Cumulate_JDialog ( parent, this )).ok();
 }
 
 /**

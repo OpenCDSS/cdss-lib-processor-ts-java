@@ -105,16 +105,12 @@ private String   __OutputFile        = null;
 
 // Member used to store a reference to the caller object. It will be used to
 // update the caller status field with information related to the processing
-private fillMixedStation_JDialog __parent;
+private FillMixedStation_JDialog __parent;
 
-// Members used to create diferent sections of the report.
+// Members used to create different sections of the report.
 private StringBuffer __sHeader;		// Created by createReportStatistics
 private StringBuffer __sStatistics;	// Created by createReportStatistics
 private StringBuffer __sSummary;	// Created by createReportSummary
-
-// Vector used to store the fillCommands created by the createFillCommand()
-// method.
-private Vector 	__command_Vector = null;
 
 private String __nl;
 String __format12p2f = "%12.2f";
@@ -281,14 +277,13 @@ throws Exception
 
 /**
 Same as the default constructor, except that this overload
-enable the cabability of this object to update the status bar of
-the calling object.
+enable the capability of this object to update the status bar of the calling object.
 The list of parameters are the same as the default construction
-plus the following extra paramater:
+plus the following extra parameter:
 @param parent Reference to the parent calling object.
 @throws Exception if an invalid results passed in.
 */
-public MixedStationAnalysis ( 	fillMixedStation_JDialog parent,
+public MixedStationAnalysis ( FillMixedStation_JDialog parent,
 				Vector dependentTSList,
 				Vector independentTSList,
 				PropList props )
@@ -1685,8 +1680,6 @@ protected void finalize ()
 	__sHeader     = null;
 	__sStatistics = null;
 	__sSummary    = null;
-
-	__command_Vector = null;
 
 	__nl = null;
 }

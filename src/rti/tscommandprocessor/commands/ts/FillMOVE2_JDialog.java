@@ -60,7 +60,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class fillMOVE2_JDialog extends JDialog
+public class FillMOVE2_JDialog extends JDialog
 implements ActionListener, KeyListener, ListSelectionListener, WindowListener
 {
 
@@ -101,14 +101,14 @@ private boolean		__error_wait = false;	// True if there is an error
 private boolean		__first_time = true;
 private boolean		__ok = false;		// Was OK pressed last (false=
 						// cancel)?
-private fillMOVE2_Command __command = null;	// Command to edit
+private FillMOVE2_Command __command = null;	// Command to edit
 
 /**
 fillMOVE2_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public fillMOVE2_JDialog ( JFrame parent, Command command )
+public FillMOVE2_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -324,11 +324,11 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (fillMOVE2_Command)command;
+{	__command = (FillMOVE2_Command)command;
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -337,38 +337,24 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"See the TSTool documentation for a description of the MOVE2" +
-		" procedure." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"See the TSTool documentation for a description of the MOVE2 procedure." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The analysis period(s) will be used to determine the " +
-		"relationships used for filling." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The analysis period(s) will be used to determine the relationships used for filling." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use a setOutputPeriod() command if the dependent time series" +
-		" period will be extended." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Use a setOutputPeriod() command if the dependent time series period will be extended." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data, " +
 		"use * for all available data, OutputStart, or OutputEnd." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series to fill (dependent):" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to fill (dependent):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );
-	/* REVISIT SAM 2005-04-27 see if a blank is needed for zero size...
-	int size = 0;
-	if ( tsids != null ) {
-		size = tsids.size();
-	}
-	Vector ind_tsids = new Vector ();
-	for ( int i = 0; i < size; i++ ) {
-		ind_tsids.addElement ( (String)tsids.elementAt(i) );
-	}
-	__TSID_JComboBox.setData ( ind_tsids );
-	*/
+
 	// Get the time series identifiers from the processor...
 	
 	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -404,7 +390,7 @@ private void initialize ( JFrame parent, Command command )
 		"Number of equations to use (blank=one equation)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	/* REVISIT SAM 2006-04-16
+	/* TODO SAM 2006-04-16
 		Evaluate whether this can be supported
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis month:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -437,7 +423,7 @@ private void initialize ( JFrame parent, Command command )
 		"How to transform data before analysis (blank=None)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	/* REVISIT SAM 2006-04-16
+	/* TODO SAM 2006-04-16
 	Evaluate whether this can be supported
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

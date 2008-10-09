@@ -70,7 +70,7 @@ public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
     Vector v = new Vector();
     v.addElement( getCommandString() );
-	return (new comment_JDialog ( parent, v )).ok();
+	return (new Comment_JDialog ( parent, v )).ok();
 }
 
 /**

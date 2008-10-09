@@ -59,7 +59,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class writeRiverWare_JDialog extends JDialog
+public class WriteRiverWare_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 	
@@ -92,17 +92,17 @@ private boolean		__error_wait = false;	// Is there an error that we
 						// are waiting to be cleared up
 						// or Cancel?
 private boolean		__first_time = true;
-private writeRiverWare_Command __command = null;// Command to edit
+private WriteRiverWare_Command __command = null;// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
 						// dialog.
 
 /**
-writeRiverWare_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public writeRiverWare_JDialog (	JFrame parent, Command command )
+public WriteRiverWare_JDialog (	JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -300,7 +300,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (writeRiverWare_Command)command;
+{	__command = (WriteRiverWare_Command)command;
     CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 	

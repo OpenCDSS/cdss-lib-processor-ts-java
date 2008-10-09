@@ -40,7 +40,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
-public class sortTimeSeries_JDialog extends JDialog
+public class SortTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,	// Cancel Button
@@ -50,17 +50,17 @@ private JTextArea	__command_JTextArea = null;	// Command as JTextField
 //private SimpleJComboBox	__SortField_JComboBox = null;
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
-private Command		__command = null;	// Command to edit
+private SortTimeSeries_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
 						// dialog.
 
 /**
-sortTimeSeries_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public sortTimeSeries_JDialog ( JFrame parent, Command command )
+public SortTimeSeries_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -136,11 +136,11 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = command;
+{	__command = (SortTimeSeries_Command)command;
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 

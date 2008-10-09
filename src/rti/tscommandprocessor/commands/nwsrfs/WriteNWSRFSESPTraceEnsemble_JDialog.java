@@ -46,7 +46,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for WriteNwsrfsEspTraceEnsemble() command.
 */
-public class writeNWSRFSESPTraceEnsemble_JDialog extends JDialog
+public class WriteNWSRFSESPTraceEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -57,7 +57,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__browse_JButton = null,// Browse Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Button to add/remove path
-private writeNWSRFSESPTraceEnsemble_Command	__command = null;
+private WriteNWSRFSESPTraceEnsemble_Command	__command = null;
 private String __working_dir = null;	// Working directory.
 private JTextArea __Command_JTextArea=null;// Command as TextField
 private JTextField __OutputFile_JTextField = null;
@@ -80,7 +80,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public writeNWSRFSESPTraceEnsemble_JDialog ( JFrame parent, Command command )
+public WriteNWSRFSESPTraceEnsemble_JDialog ( JFrame parent, Command command )
 {
 	super(parent, true);
 	initialize ( parent, command );
@@ -281,7 +281,7 @@ Instantiates the GUI components.
 @param command command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (writeNWSRFSESPTraceEnsemble_Command)command;
+{	__command = (WriteNWSRFSESPTraceEnsemble_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

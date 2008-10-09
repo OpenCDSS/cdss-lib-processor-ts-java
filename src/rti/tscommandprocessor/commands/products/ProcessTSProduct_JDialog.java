@@ -71,7 +71,7 @@ import RTi.Util.Message.Message;
 /**
 Command editor dialog for the ProcessTSProduct() command.
 */
-public class processTSProduct_JDialog extends JDialog
+public class ProcessTSProduct_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
     
@@ -82,7 +82,7 @@ private SimpleJButton	__browse_JButton = null,// Browse for file.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and absolute paths
-private processTSProduct_Command __command = null;// Command to edit
+private ProcessTSProduct_Command __command = null;// Command to edit
 private String		__working_dir = null;	// Working directory.
 private JTextArea	__command_JTextArea=null;
 private JTextField	__TSProductFile_JTextField=null;
@@ -99,7 +99,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public processTSProduct_JDialog ( JFrame parent, Command command )
+public ProcessTSProduct_JDialog ( JFrame parent, Command command )
 {	super ( parent, true );
 	initialize ( parent, command );
 }
@@ -253,7 +253,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (processTSProduct_Command)command;
+{	__command = (ProcessTSProduct_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

@@ -56,10 +56,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the processTSProduct() command.
+This class initializes, checks, and runs the ProcessTSProduct() command.
 </p>
 */
-public class processTSProduct_Command extends AbstractCommand implements Command, FileGenerator
+public class ProcessTSProduct_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -80,7 +80,7 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public processTSProduct_Command ()
+public ProcessTSProduct_Command ()
 {	super();
 	setCommandName ( "ProcessTSProduct" );
 }
@@ -249,7 +249,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new processTSProduct_JDialog ( parent, this )).ok();
+	return (new ProcessTSProduct_JDialog ( parent, this )).ok();
 }
 
 /**

@@ -34,13 +34,13 @@ import RTi.Util.Time.DateTime;
 This class initializes, checks, and runs the FillConstant() command.
 </p>
 */
-public class fillConstant_Command extends AbstractCommand implements Command
+public class FillConstant_Command extends AbstractCommand implements Command
 {
 
 /**
 Constructor.
 */
-public fillConstant_Command ()
+public FillConstant_Command ()
 {	super();
 	setCommandName ( "FillConstant" );
 }
@@ -172,7 +172,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillConstant_JDialog ( parent, this )).ok();
+	return (new FillConstant_JDialog ( parent, this )).ok();
 }
 
 /**

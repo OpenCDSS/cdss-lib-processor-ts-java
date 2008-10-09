@@ -39,10 +39,10 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-The readNwsCard_JDialog edits the TS Alias = ReadNwsCard() and non-TS Alias
+The ReadNwsCard_JDialog edits the TS Alias = ReadNwsCard() and non-TS Alias
 ReadNWSCard() commands.
 */
-public class readNwsCard_JDialog extends JDialog
+public class ReadNwsCard_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
@@ -76,7 +76,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public readNwsCard_JDialog ( JFrame parent, Command command )
+public ReadNwsCard_JDialog ( JFrame parent, Command command )
 {
 	super(parent, true);
 
@@ -84,7 +84,7 @@ public readNwsCard_JDialog ( JFrame parent, Command command )
 	String alias = props.getValue("Alias");
 	Message.printStatus(1, "", "Props: " + props.toString("\n"));
 	if (alias == null || alias.trim().equalsIgnoreCase("")) {
-		if (((readNwsCard_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
+		if (((ReadNwsCard_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
 		   __isAliasVersion = true;
 		}
 		else {
@@ -395,8 +395,8 @@ private void initialize(JFrame parent, Command command) {
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	Vector v = new Vector();
 	v.add("");
-	v.add(readNwsCard_Command._TRUE);
-	v.add(readNwsCard_Command._FALSE);
+	v.add(ReadNwsCard_Command._TRUE);
+	v.add(ReadNwsCard_Command._FALSE);
 	__Read24HourAsDay_JComboBox = new SimpleJComboBox(v);
 	__Read24HourAsDay_JComboBox.select(0);
 	__Read24HourAsDay_JComboBox.addActionListener(this);
@@ -548,12 +548,10 @@ private void refresh() {
 		}
 		if (Read24HourAsDay != null) {
 			if (Read24HourAsDay.equalsIgnoreCase("true")) {
-				__Read24HourAsDay_JComboBox.select(
-					readNwsCard_Command._TRUE);
+				__Read24HourAsDay_JComboBox.select(	ReadNwsCard_Command._TRUE);
 			}
 			else if (Read24HourAsDay.equalsIgnoreCase("false")) {
-				__Read24HourAsDay_JComboBox.select(
-					readNwsCard_Command._FALSE);
+				__Read24HourAsDay_JComboBox.select(	ReadNwsCard_Command._FALSE);
 			}
 			else {
 				__Read24HourAsDay_JComboBox.select(0);

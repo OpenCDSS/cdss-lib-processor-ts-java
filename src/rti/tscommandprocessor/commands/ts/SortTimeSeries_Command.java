@@ -44,13 +44,13 @@ import RTi.Util.IO.PropList;
 This class initializes, checks, and runs the SortTimeSeries() command.
 </p>
 */
-public class sortTimeSeries_Command extends AbstractCommand implements Command
+public class SortTimeSeries_Command extends AbstractCommand implements Command
 {
 
 /**
 Constructor.
 */
-public sortTimeSeries_Command ()
+public SortTimeSeries_Command ()
 {	super();
 	setCommandName ( "SortTimeSeries" );
 }
@@ -82,7 +82,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new sortTimeSeries_JDialog ( parent, this )).ok();
+	return (new SortTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**

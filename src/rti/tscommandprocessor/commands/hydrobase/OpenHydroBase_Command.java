@@ -52,7 +52,7 @@ This class initializes, checks, and runs the OpenHydroBase() command.
 <p>The CommandProcessor must return the following properties:  HydroBaseDMIList.
 </p>
 */
-public class openHydroBase_Command extends AbstractCommand implements Command
+public class OpenHydroBase_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -68,7 +68,7 @@ protected final String _False = "False";
 /**
 Constructor.
 */
-public openHydroBase_Command ()
+public OpenHydroBase_Command ()
 {	super();
 	setCommandName ( "OpenHydroBase" );
 }
@@ -152,7 +152,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new openHydroBase_JDialog ( parent, this )).ok();
+	return (new OpenHydroBase_JDialog ( parent, this )).ok();
 }
 
 /**

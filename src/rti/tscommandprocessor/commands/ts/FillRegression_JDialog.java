@@ -72,7 +72,7 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class fillRegression_JDialog extends JDialog
+public class FillRegression_JDialog extends JDialog
 implements ActionListener, KeyListener, ListSelectionListener, WindowListener
 {
 
@@ -93,14 +93,14 @@ private SimpleJComboBox	__Transformation_JComboBox=null;// None or log transform
 private boolean		__error_wait = false;	// True if there is an error in the input.
 private boolean		__first_time = true;
 private boolean		__ok = false;		// Was OK pressed last (false=cancel)?
-private fillRegression_Command __command = null;// Command to edit
+private FillRegression_Command __command = null;// Command to edit
 
 /**
-fillRegression_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public fillRegression_JDialog ( JFrame parent, Command command )
+public FillRegression_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -255,7 +255,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (fillRegression_Command)command;
+{	__command = (FillRegression_Command)command;
 
 	addWindowListener( this );
 

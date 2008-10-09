@@ -21,16 +21,16 @@ import RTi.Util.Message.MessageUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the testCommand() command.
+This class initializes, checks, and runs the TestCommand() command.
 */
-public class testCommand_Command extends AbstractCommand
+public class TestCommand_Command extends AbstractCommand
 implements Command
 {
 
 /**
 Constructor.
 */
-public testCommand_Command ()
+public TestCommand_Command ()
 {	super();
 	setCommandName ( "TestCommand" );
 }
@@ -105,7 +105,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new testCommand_JDialog ( parent, this )).ok();
+	return (new TestCommand_JDialog ( parent, this )).ok();
 }
 
 // Use base class parseCommand()

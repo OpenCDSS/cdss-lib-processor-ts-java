@@ -52,10 +52,10 @@ import RTi.Util.Time.TimeInterval;
 
 /**
 <p>
-This class initializes, checks, and runs the fillHistMonthAverage() command.
+This class initializes, checks, and runs the FillHistMonthAverage() command.
 </p>
 */
-public class fillHistMonthAverage_Command extends AbstractCommand implements Command
+public class FillHistMonthAverage_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -68,7 +68,7 @@ protected final String _AllMatchingTSID = "AllMatchingTSID";
 /**
 Constructor.
 */
-public fillHistMonthAverage_Command ()
+public FillHistMonthAverage_Command ()
 {	super();
 	setCommandName ( "FillHistMonthAverage" );
 }
@@ -180,7 +180,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillHistMonthAverage_JDialog ( parent, this )).ok();
+	return (new FillHistMonthAverage_JDialog ( parent, this )).ok();
 }
 
 /**

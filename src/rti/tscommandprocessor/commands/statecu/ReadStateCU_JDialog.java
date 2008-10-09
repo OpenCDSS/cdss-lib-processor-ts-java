@@ -56,7 +56,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class readStateCU_JDialog extends JDialog
+public class ReadStateCU_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 	
@@ -65,7 +65,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and
 						// absolute paths.
-private readStateCU_Command		__command = null;// Command to edit
+private ReadStateCU_Command		__command = null;// Command to edit
 private JTextArea	__command_JTextArea=null;// Command as TextArea
 private String		__working_dir = null;	// Working directory.
 private JTextField	__InputFile_JTextField = null;// Field for input file.
@@ -89,7 +89,7 @@ readStateCU_JDialog constructor.
 @param parent Frame class instantiating this class.
 @param command Time series command to edit.
 */
-public readStateCU_JDialog ( JFrame parent, Command command )
+public ReadStateCU_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -277,7 +277,7 @@ Instantiates the GUI components.
 TSEngine.getTSIdentifiersFromCommands().
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (readStateCU_Command)command;
+{	__command = (ReadStateCU_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

@@ -84,7 +84,7 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
 This class initializes, checks, and runs the ReadHydroBase() and Alias = ReadHydroBase() commands.
 </p>
 */
-public class readHydroBase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadHydroBase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -113,7 +113,7 @@ protected boolean _use_alias = false;
 /**
 Constructor.
 */
-public readHydroBase_Command ()
+public ReadHydroBase_Command ()
 {	super();
 	setCommandName ( "ReadHydroBase" );
 }
@@ -400,7 +400,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new readHydroBase_JDialog ( parent, this )).ok();
+	return (new ReadHydroBase_JDialog ( parent, this )).ok();
 }
 
 /**

@@ -74,7 +74,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
-public class openHydroBase_JDialog extends JDialog
+public class OpenHydroBase_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
@@ -139,17 +139,17 @@ private boolean		__error_wait = false;
 private boolean		__first_time = true;
 
 private Vector		__available_OdbcDsn = null;	// Available ODBC DSN to list.
-private openHydroBase_Command __command = null;	// Command to edit
+private OpenHydroBase_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
 						// dialog.
 
 /**
-openHydroBase_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public openHydroBase_JDialog ( JFrame parent, Command command )
+public OpenHydroBase_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -338,7 +338,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (openHydroBase_Command)command;
+{	__command = (OpenHydroBase_Command)command;
 
 	readConfigurationFile();
 

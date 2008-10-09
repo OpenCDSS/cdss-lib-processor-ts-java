@@ -51,12 +51,12 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class fillHistYearAverage_JDialog extends JDialog
+public class FillHistYearAverage_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private fillHistYearAverage_Command __command = null;
+private FillHistYearAverage_Command __command = null;
 						// Command to edit
 private JTextArea	__command_JTextArea=null;// Command as JTextArea
 private SimpleJComboBox	__TSList_JComboBox = null;
@@ -71,12 +71,11 @@ private boolean		__error_wait = false;
 private boolean		__ok = false;
 
 /**
-fillHistYearAverage_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public fillHistYearAverage_JDialog ( JFrame parent,
-					Command command )
+public FillHistYearAverage_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -199,11 +198,11 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (fillHistYearAverage_Command)command;
+{	__command = (FillHistYearAverage_Command)command;
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );

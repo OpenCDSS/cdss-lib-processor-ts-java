@@ -60,10 +60,10 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 
 /**
 <p>
-This class initializes, checks, and runs the fillUsingDiversionComments() command.
+This class initializes, checks, and runs the FillUsingDiversionComments() command.
 </p>
 */
-public class fillUsingDiversionComments_Command extends AbstractCommand
+public class FillUsingDiversionComments_Command extends AbstractCommand
 implements Command
 {
 
@@ -83,7 +83,7 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public fillUsingDiversionComments_Command ()
+public FillUsingDiversionComments_Command ()
 {	super();
 	setCommandName ( "FillUsingDiversionComments" );
 }
@@ -210,7 +210,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillUsingDiversionComments_JDialog ( parent, this )).ok();
+	return (new FillUsingDiversionComments_JDialog ( parent, this )).ok();
 }
 
 /**

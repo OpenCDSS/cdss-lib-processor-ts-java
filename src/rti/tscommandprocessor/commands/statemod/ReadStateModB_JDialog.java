@@ -57,7 +57,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class readStateModB_JDialog extends JDialog
+public class ReadStateModB_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
@@ -65,7 +65,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and
 						// absolute paths.
-private readStateModB_Command __command = null; // Command to edit
+private ReadStateModB_Command __command = null; // Command to edit
 private JTextArea	__command_JTextArea=null;// Command as TextField
 private String		__working_dir = null;	// Working directory.
 private JTextField	__InputFile_JTextField = null;// Field for input file. 
@@ -91,11 +91,11 @@ private boolean		__ok = false;		// Indicates whether OK was
 						// dialog.
 
 /**
-readStateModB_JDialog constructor.
+Command editor constructor.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-public readStateModB_JDialog ( JFrame parent, Command command )
+public ReadStateModB_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -108,32 +108,23 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle( "Select StateMod Time Series File");
-		// REVISIT - maybe need to list all recognized StateMod file
-		// extensions for data sets.
-		SimpleFileFilter sff = new SimpleFileFilter("b43",
-			"Diversion, Stream, Instream stations (Monthly)");
+		// TODO - maybe need to list all recognized StateMod file extensions for data sets.
+		SimpleFileFilter sff = new SimpleFileFilter("b43", "Diversion, Stream, Instream stations (Monthly)");
 		fc.addChoosableFileFilter( sff );
-		fc.addChoosableFileFilter( new SimpleFileFilter("b49",
-			"Diversion, Stream, Instream stations (Daily)") );
-		fc.addChoosableFileFilter( new SimpleFileFilter("b44",
-			"Reservoir stations (Monthly)") );
-		fc.addChoosableFileFilter( new SimpleFileFilter("b50",
-			"Reservoir stations (Daily)") );
-		fc.addChoosableFileFilter( new SimpleFileFilter("b42",
-			"Well stations (Monthly)") );
-		fc.addChoosableFileFilter( new SimpleFileFilter("b65",
-			"Well stations (Daily)") );
+		fc.addChoosableFileFilter( new SimpleFileFilter("b49", "Diversion, Stream, Instream stations (Daily)") );
+		fc.addChoosableFileFilter( new SimpleFileFilter("b44", "Reservoir stations (Monthly)") );
+		fc.addChoosableFileFilter( new SimpleFileFilter("b50", "Reservoir stations (Daily)") );
+		fc.addChoosableFileFilter( new SimpleFileFilter("b42", "Well stations (Monthly)") );
+		fc.addChoosableFileFilter( new SimpleFileFilter("b65", "Well stations (Daily)") );
 		fc.setFileFilter(sff);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -163,22 +154,18 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory") ) {
+		if ( __path_JButton.getText().equals( "Add Working Directory") ) {
 			__InputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__InputFile_JTextField.getText() ) );
+			IOUtil.toAbsolutePath(__working_dir, __InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory") ) {
-			try {	__InputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__InputFile_JTextField.getText() ) );
+		else if ( __path_JButton.getText().equals( "Remove Working Directory") ) {
+			try {
+			    __InputFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 1,
-				"readStateModB_JDialog",
-				"Error converting file to relative path." );
+				"readStateModB_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -265,7 +252,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (readStateModB_Command)command;
+{	__command = (ReadStateModB_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

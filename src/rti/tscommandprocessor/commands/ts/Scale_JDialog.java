@@ -61,12 +61,12 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class scale_JDialog extends JDialog
+public class Scale_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private scale_Command	__command = null;	// Command to edit
+private Scale_Command	__command = null;	// Command to edit
 private JTextArea	__command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -86,7 +86,7 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public scale_JDialog ( JFrame parent, Command command )
+public Scale_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -228,7 +228,7 @@ Instantiates the GUI components.
 @param command The command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (scale_Command)command;
+{	__command = (Scale_Command)command;
 
 	addWindowListener( this );
 

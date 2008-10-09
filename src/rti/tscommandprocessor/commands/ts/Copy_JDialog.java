@@ -57,14 +57,14 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class copy_JDialog extends JDialog
+public class Copy_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
 private JFrame __parent_JFrame = null;	// parent JFrame
-private copy_Command __command = null;	// Command to edit.
+private Copy_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;
 private JTextField	__Alias_JTextField = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Time series available to operate on.
@@ -80,7 +80,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public copy_JDialog ( JFrame parent, Command command )
+public Copy_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -200,7 +200,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	__parent_JFrame = parent;
-	__command = (copy_Command)command;
+	__command = (Copy_Command)command;
 
 	addWindowListener( this );
 

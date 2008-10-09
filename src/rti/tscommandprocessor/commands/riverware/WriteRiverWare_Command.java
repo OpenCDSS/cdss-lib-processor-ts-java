@@ -55,10 +55,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the writeRiverWare() command.
+This class initializes, checks, and runs the WriteRiverWare() command.
 </p>
 */
-public class writeRiverWare_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteRiverWare_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -76,7 +76,7 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public writeRiverWare_Command ()
+public WriteRiverWare_Command ()
 {	super();
 	setCommandName ( "WriteRiverWare" );
 }
@@ -263,7 +263,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new writeRiverWare_JDialog ( parent, this )).ok();
+	return (new WriteRiverWare_JDialog ( parent, this )).ok();
 }
 
 /**

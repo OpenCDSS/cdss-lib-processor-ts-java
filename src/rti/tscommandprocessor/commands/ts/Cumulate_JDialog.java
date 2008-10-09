@@ -34,12 +34,12 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
-public class cumulate_JDialog extends JDialog
+public class Cumulate_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private cumulate_Command __command = null;	// Command to edit
+private Cumulate_Command __command = null;	// Command to edit
 private JTextArea	__command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -57,7 +57,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public cumulate_JDialog ( JFrame parent, Command command )
+public Cumulate_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -187,7 +187,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (cumulate_Command)command;
+{	__command = (Cumulate_Command)command;
 
 	addWindowListener( this );
 

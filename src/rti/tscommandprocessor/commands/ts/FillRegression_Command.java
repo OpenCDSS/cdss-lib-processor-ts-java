@@ -65,7 +65,7 @@ import RTi.Util.Time.TimeUtil;
 This class initializes, checks, and runs the FillRegression() command.
 </p>
 */
-public class fillRegression_Command extends AbstractCommand implements Command
+public class FillRegression_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -81,7 +81,7 @@ protected final String _OneEquation = "OneEquation";
 /**
 Constructor.
 */
-public fillRegression_Command ()
+public FillRegression_Command ()
 {	super();
 	setCommandName ( "FillRegression" );
 }
@@ -291,7 +291,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillRegression_JDialog ( parent, this )).ok();
+	return (new FillRegression_JDialog ( parent, this )).ok();
 }
 
 /**

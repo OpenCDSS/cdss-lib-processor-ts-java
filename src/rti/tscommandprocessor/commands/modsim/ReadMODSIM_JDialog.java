@@ -23,7 +23,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import rti.tscommandprocessor.commands.nwsrfs.readNwsCard_Command;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -87,7 +86,7 @@ public ReadMODSIM_JDialog (	JFrame parent, Command command )
     String alias = props.getValue("Alias");
     Message.printStatus(1, "", "Props: " + props.toString("\n"));
     if (alias == null || alias.trim().equalsIgnoreCase("")) {
-        if (((readNwsCard_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
+        if (((ReadMODSIM_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
            __isAliasVersion = true;
         }
         else {

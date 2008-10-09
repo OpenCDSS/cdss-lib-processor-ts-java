@@ -48,10 +48,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the startLog() command.
+This class initializes, checks, and runs the tartLog() command.
 </p>
 */
-public class startLog_Command extends AbstractCommand implements Command, FileGenerator
+public class StartLog_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 /**
@@ -68,7 +68,7 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public startLog_Command ()
+public StartLog_Command ()
 {	super();
 	setCommandName ( "StartLog" );
 }
@@ -178,7 +178,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new startLog_JDialog ( parent, this )).ok();
+	return (new StartLog_JDialog ( parent, this )).ok();
 }
 
 /**

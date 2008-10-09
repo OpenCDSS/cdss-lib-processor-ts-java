@@ -51,7 +51,7 @@ import RTi.Util.Time.TimeInterval;
 This class initializes, checks, and runs the FillHistYearAverage() command.
 </p>
 */
-public class fillHistYearAverage_Command extends AbstractCommand
+public class FillHistYearAverage_Command extends AbstractCommand
 implements Command
 {
 
@@ -65,7 +65,7 @@ protected final String _AllMatchingTSID = "AllMatchingTSID";
 /**
 Constructor.
 */
-public fillHistYearAverage_Command ()
+public FillHistYearAverage_Command ()
 {	super();
 	setCommandName ( "FillHistYearAverage" );
 }
@@ -177,7 +177,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillHistYearAverage_JDialog ( parent, this )).ok();
+	return (new FillHistYearAverage_JDialog ( parent, this )).ok();
 }
 
 /**

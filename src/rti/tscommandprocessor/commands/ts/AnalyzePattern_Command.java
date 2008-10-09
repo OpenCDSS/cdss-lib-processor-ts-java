@@ -1,25 +1,3 @@
-// -----------------------------------------------------------------------------
-// analyzePattern_Command - Handle the analyzePattern() command
-// -----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// -----------------------------------------------------------------------------
-// History:
-// 2004-04-30	Luiz Teixeira, RTi	Derived from the fillMixedStation class
-// 2005-05-23	Luiz Teixeira, RTi	Copied the original class 
-//					analyzePattern_JDialog() from TSTool and
-//					split the code into the new
-//					analyzePattern_JDialog() and
-//					analyzePattern_Command().
-// 2005-05-24	Luiz Teixeira, RTi	Clean up and documentation.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-02-27	SAM, RTi		Add check to make sure percentiles are in the
-//					range 0 to 1 (not 0 to 100) since analysis code expects 0 to 1.
-//					Clarify the check messages.
-// 2007-03-02	SAM, RTi		Fix so that the resulting pattern time series
-//					DOES NOT have the identifier changed but instead has the
-//					data type set to "Pattern".
-// -----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.io.File;
@@ -61,7 +39,7 @@ import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
-public class analyzePattern_Command extends AbstractCommand	implements Command, FileGenerator
+public class AnalyzePattern_Command extends AbstractCommand	implements Command, FileGenerator
 {
 
 // Defines used by this class and its analyzePattern_Dialog counterpart.
@@ -79,9 +57,9 @@ Output file that is created by this command.
 private File __OutputFile_File = null;
 
 /**
-analyzePattern_Command constructor.
+Command constructor.
 */
-public analyzePattern_Command ()
+public AnalyzePattern_Command ()
 {
 	super ();
 	setCommandName ( "AnalyzePattern" );
@@ -337,7 +315,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new analyzePattern_JDialog ( parent, this ) ).ok();
+	return ( new AnalyzePattern_JDialog ( parent, this ) ).ok();
 }
 
 /**

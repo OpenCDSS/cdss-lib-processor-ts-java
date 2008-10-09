@@ -59,12 +59,11 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.MeasTimeScale;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.TimeInterval;
 
-public class changeInterval_JDialog extends JDialog
+public class ChangeInterval_JDialog extends JDialog
 	implements ActionListener,
 		   ItemListener, 
 		   KeyListener, 
@@ -72,7 +71,7 @@ public class changeInterval_JDialog extends JDialog
 {
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
-private changeInterval_Command __command = null;// Command object.
+private ChangeInterval_Command __command = null;// Command object.
 
 private JTextField	__Alias_JTextField = null;
 						// Field for time series alias
@@ -122,7 +121,7 @@ changeInterval_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public changeInterval_JDialog ( JFrame parent, Command command )
+public ChangeInterval_JDialog ( JFrame parent, Command command )
 {	
 	super(parent, true);
 	
@@ -297,7 +296,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {		
-	__command 	= (changeInterval_Command) command;
+	__command = (ChangeInterval_Command) command;
 	
 	// GUI Title
 	String title = "Edit " + __command.getCommandName() + "() Command";

@@ -38,7 +38,7 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
-private lagK_Command __command = null;	// Command to edit.
+private LagK_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;// Command as JTextField
 private JTextField __Alias_JTextField = null;// Field for time series alias
 private SimpleJComboBox __TSID_JComboBox = null;// Time series available to operate on.
@@ -199,7 +199,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (lagK_Command)command;
+{	__command = (LagK_Command)command;
 
 	addWindowListener( this );
 

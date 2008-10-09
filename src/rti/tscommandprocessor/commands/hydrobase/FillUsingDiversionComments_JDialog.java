@@ -46,17 +46,16 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class fillUsingDiversionComments_JDialog extends JDialog
+public class FillUsingDiversionComments_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private String __TRUE = "True";
 private String __FALSE = "False";
 
-private fillUsingDiversionComments_Command __command = null;
+private FillUsingDiversionComments_Command __command = null;
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 						__ok_JButton = null;	// Ok Button
 private JTextArea	__command_JTextArea= null;// Command as JTextArea
@@ -77,12 +76,12 @@ private boolean		__ok = false;		// Indicates whether OK button
 										// has been pressed.
 
 /**
-fillUsingDiversionComments_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 @param tsids Time series identifiers for time series available to fill.
 */
-public fillUsingDiversionComments_JDialog (	JFrame parent, Command command )
+public FillUsingDiversionComments_JDialog (	JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -201,8 +200,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (fillUsingDiversionComments_Command)command;
-	CommandProcessor processor = __command.getCommandProcessor();
+{	__command = (FillUsingDiversionComments_Command)command;
 
 	addWindowListener( this );
 

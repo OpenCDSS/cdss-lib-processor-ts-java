@@ -46,11 +46,10 @@ import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 
 /**
 <p>
-This class initializes, checks, and runs the writeNWSRFSESPTraceEnsemble() 
-command.
+This class initializes, checks, and runs the WriteNWSRFSESPTraceEnsemble() command.
 </p>
 */
-public class writeNWSRFSESPTraceEnsemble_Command extends AbstractCommand implements Command, FileGenerator
+public class WriteNWSRFSESPTraceEnsemble_Command extends AbstractCommand implements Command, FileGenerator
 {
 
 protected static final String
@@ -65,7 +64,7 @@ private File __OutputFile_File = null;
 /**
 Constructor.
 */
-public writeNWSRFSESPTraceEnsemble_Command ()
+public WriteNWSRFSESPTraceEnsemble_Command ()
 {
 	super();
 	setCommandName ( "WriteNwsrfsEspTraceEnsemble" );
@@ -213,7 +212,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand(JFrame parent) {
 	// The command will be modified if changed...
-	return ( new writeNWSRFSESPTraceEnsemble_JDialog(parent, this)).ok();
+	return ( new WriteNWSRFSESPTraceEnsemble_JDialog(parent, this)).ok();
 }
 
 /**

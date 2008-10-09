@@ -40,10 +40,10 @@ import RTi.Util.Time.TimeUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the runDataTest() command.
+This class initializes, checks, and runs the RunDataTest() command.
 </p>
 */
-public class runDataTest_Command 
+public class RunDataTest_Command 
 extends AbstractCommand
 implements Command {
 
@@ -54,10 +54,10 @@ protected static final String
 /**
 Constructor.
 */
-public runDataTest_Command ()
+public RunDataTest_Command ()
 {
 	super();
-	setCommandName ( "runDataTest" );
+	setCommandName ( "RunDataTest" );
 }
 
 /**
@@ -142,7 +142,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new runDataTest_JDialog ( parent, this ) ).ok();
+	return ( new RunDataTest_JDialog ( parent, this ) ).ok();
 }
 
 /**

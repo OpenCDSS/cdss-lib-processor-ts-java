@@ -10,7 +10,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -23,17 +22,14 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatusType;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 /**
 Editor dialog for the testCommand() command.
 */
-public class testCommand_JDialog extends JDialog
+public class TestCommand_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 
@@ -45,16 +41,16 @@ private SimpleJComboBox	__RunStatus_JComboBox = null;
 private JTextArea	__command_JTextArea = null;	// Command as JTextArea
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
-private testCommand_Command __command = null;	// Command to edit
+private TestCommand_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
 						// dialog.
 /**
-testCommand_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public testCommand_JDialog ( JFrame parent, Command command )
+public TestCommand_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -153,8 +149,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (testCommand_Command)command;
-	CommandProcessor processor =__command.getCommandProcessor();
+{	__command = (TestCommand_Command)command;
 
 	addWindowListener( this );
 

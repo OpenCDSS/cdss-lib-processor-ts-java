@@ -32,10 +32,9 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 
 /**
-The newDataTest_JDialog edits the TS Alias = newDataTest() and non-TS Alias
-readNWSCard() commands.
+The NewDataTest_JDialog edits the NewDataTest() command.
 */
-public class newDataTest_JDialog extends JDialog
+public class NewDataTest_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 	// TODO SAM 2007-05-08 Need to enable dialog for command
@@ -45,7 +44,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private JFrame		__parent_JFrame = null;	// parent JFrame
-private Command		__command = null;
+private NewDataTest_Command		__command = null;
 private String		__working_dir = null;	// Working directory.
 private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputStart_JTextField,
@@ -72,11 +71,11 @@ private final String
 	__ADD_WORKING_DIRECTORY = "Add Working Directory";
 
 /**
-newDataTest_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public newDataTest_JDialog ( JFrame parent, Command command )
+public NewDataTest_JDialog ( JFrame parent, Command command )
 {
 	super(parent, true);
 /*

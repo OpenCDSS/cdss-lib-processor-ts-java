@@ -27,7 +27,7 @@ import RTi.Util.String.StringUtil;
 /**
 Editor for # comments.
 */
-public class comment_JDialog extends JDialog
+public class Comment_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
@@ -42,7 +42,7 @@ Comment editor constructor.
 @param parent JFrame class instantiating this class.
 @param comments Comments to parse (Vector of String)
 */
-public comment_JDialog ( JFrame parent, Vector comments )
+public Comment_JDialog ( JFrame parent, Vector comments )
 {	super(parent, true);
 	initialize ( parent, comments );
 }

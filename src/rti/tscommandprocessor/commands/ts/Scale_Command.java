@@ -48,10 +48,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the scale() command.
+This class initializes, checks, and runs the Scale() command.
 </p>
 */
-public class scale_Command extends AbstractCommand implements Command
+public class Scale_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -63,7 +63,7 @@ protected final String _DaysInMonthInverse = "DaysInMonthInverse";
 /**
 Constructor.
 */
-public scale_Command ()
+public Scale_Command ()
 {	super();
 	setCommandName ( "Scale" );
 }
@@ -79,7 +79,7 @@ dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSID = parameters.getValue ( "TSID" );
+{	//String TSID = parameters.getValue ( "TSID" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
@@ -175,7 +175,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new scale_JDialog ( parent, this )).ok();
+	return (new Scale_JDialog ( parent, this )).ok();
 }
 
 /**

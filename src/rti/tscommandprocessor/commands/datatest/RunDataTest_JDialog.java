@@ -52,10 +52,9 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-The runDataTest_JDialog edits the TS Alias = runDataTest() and non-TS Alias
-readNWSCard() commands.
+The RunDataTest_JDialog edits the RunDataTest() command.
 */
-public class runDataTest_JDialog extends JDialog
+public class RunDataTest_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 	// TODO SAM 2007-05-08 Need to enable command dialog
@@ -65,7 +64,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private JFrame		__parent_JFrame = null;	// parent JFrame
-private Command		__command = null;
+private RunDataTest_Command		__command = null;
 private String		__working_dir = null;	// Working directory.
 private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputStart_JTextField,
@@ -92,11 +91,11 @@ private final String
 	__ADD_WORKING_DIRECTORY = "Add Working Directory";
 
 /**
-runDataTest_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public runDataTest_JDialog ( JFrame parent, Command command )
+public RunDataTest_JDialog ( JFrame parent, Command command )
 {
 	super(parent, true);
 /*

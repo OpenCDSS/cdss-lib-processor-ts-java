@@ -56,7 +56,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 
-public class changeInterval_Command extends AbstractCommand implements Command
+public class ChangeInterval_Command extends AbstractCommand implements Command
 {
 
 // Defines used by this class and its changeInterval_Dialog counterpart.
@@ -69,7 +69,7 @@ private final boolean  __read_one    = true;	// For now only enable the TS Alias
 /**
 changeInterval_Command constructor.
 */
-public changeInterval_Command ()
+public ChangeInterval_Command ()
 {	
 	super();
 	setCommandName ( "ChangeInterval" );
@@ -306,7 +306,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new changeInterval_JDialog ( parent, this ) ).ok();
+	return ( new ChangeInterval_JDialog ( parent, this ) ).ok();
 }
 
 /**

@@ -45,16 +45,16 @@ import RTi.Util.Time.TimeInterval;
 
 /**
 <p>
-This class initializes, checks, and runs the copy() command.
+This class initializes, checks, and runs the Copy() command.
 </p>
 */
-public class copy_Command extends AbstractCommand implements Command
+public class Copy_Command extends AbstractCommand implements Command
 {
 
 /**
 Constructor.
 */
-public copy_Command ()
+public Copy_Command ()
 {	super();
 	setCommandName ( "Copy" );
 }
@@ -157,7 +157,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new copy_JDialog ( parent, this )).ok();
+	return (new Copy_JDialog ( parent, this )).ok();
 }
 
 /**

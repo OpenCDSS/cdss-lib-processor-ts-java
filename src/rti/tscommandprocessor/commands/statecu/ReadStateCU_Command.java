@@ -55,7 +55,7 @@ import DWR.StateCU.StateCU_TS;
 This class initializes, checks, and runs the ReadStateCU() command.
 </p>
 */
-public class readStateCU_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadStateCU_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -80,7 +80,7 @@ private String __working_dir = null;	// Application working directory
 /**
 Constructor.
 */
-public readStateCU_Command ()
+public ReadStateCU_Command ()
 {	super();
 	setCommandName ( "ReadStateCU" );
 }
@@ -308,7 +308,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new readStateCU_JDialog ( parent, this )).ok();
+	return (new ReadStateCU_JDialog ( parent, this )).ok();
 }
 
 /**

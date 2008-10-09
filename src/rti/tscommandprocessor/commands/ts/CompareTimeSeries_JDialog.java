@@ -55,7 +55,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
-public class compareTimeSeries_JDialog extends JDialog
+public class CompareTimeSeries_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,	// Cancel Button
@@ -76,16 +76,16 @@ private SimpleJComboBox	__WarnIfSame_JComboBox =null;
 private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
-private compareTimeSeries_Command __command = null;	// Command to edit
+private CompareTimeSeries_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
 						// dialog.
 /**
-compareTimeSeries_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public compareTimeSeries_JDialog ( JFrame parent, Command command )
+public CompareTimeSeries_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -224,11 +224,11 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (compareTimeSeries_Command)command;
+{	__command = (CompareTimeSeries_Command)command;
 
 	addWindowListener( this );
 
-        Insets insetsTLBR = new Insets(2,2,2,2);
+    Insets insetsTLBR = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -237,20 +237,18 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command compares time series.  Currently all available " +
-		"time series are evaluated," ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"This command compares time series.  Currently all available time series are evaluated," ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"comparing time series that have the same time series " +
-		"identifier location and/or data type." ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"comparing time series that have the same time series identifier location and/or data type." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify one or more tolerances, separated by commas.  " +
 		"Differences greater than these values will be noted." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match location:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match location:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchLocation_JComboBox = new SimpleJComboBox ( false );
 	__MatchLocation_JComboBox.addItem ( "" );	// Default

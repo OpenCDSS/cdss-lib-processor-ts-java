@@ -80,15 +80,15 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
 
 /**
-The readHydroBase_JDialog edits the readHydroBase() and
-TS Alias = readHydroBase() command.
+The ReadHydroBase_JDialog edits the ReadHydroBase() and
+TS Alias = ReadHydroBase() command.
 */
-public class readHydroBase_JDialog extends JDialog
+public class ReadHydroBase_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private readHydroBase_Command __command = null; // Command to edit
+private ReadHydroBase_Command __command = null; // Command to edit
 private JTextField	__Alias_JTextField=null,// Alias for time series, alias version
 			__Location_JTextField,	// Location part of TSID, non-alias version
 			__DataSource_JTextField,// Data source part of TSID, non-alias version
@@ -179,7 +179,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public readHydroBase_JDialog ( JFrame parent, Command command )
+public ReadHydroBase_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 
 	initialize ( parent, command );
@@ -481,7 +481,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	String routine = "readHydroBase_JDialog.initialize";
-	__command = (readHydroBase_Command)command;
+	__command = (ReadHydroBase_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
 	// Determine whether this is the "TS Alias =" version of the command.
@@ -489,7 +489,7 @@ private void initialize ( JFrame parent, Command command )
 	String Alias = props.getValue("Alias");
 	__use_alias = false;
 	if (Alias == null || Alias.trim().equalsIgnoreCase("")) {
-		if (((readHydroBase_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
+		if (((ReadHydroBase_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
 			// This indicates that a new command is being edited
 			// and the properties have not been defined yet.  The
 			// command string will have been set at initialization

@@ -1,17 +1,3 @@
-//------------------------------------------------------------------------------
-// mergeListFileColumns_Command - handle the mergeListFileColumns() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-11-23	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					mergeListFileColumns().
-// 2007-02-16	SAM, RTi				Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.util;
 
 import javax.swing.JFrame;
@@ -42,10 +28,10 @@ import RTi.Util.Table.TableRecord;
 
 /**
 <p>
-This class initializes, checks, and runs the mergeListFileColumns() command.
+This class initializes, checks, and runs the MergeListFileColumns() command.
 </p>
 */
-public class mergeListFileColumns_Command extends AbstractCommand implements Command
+public class MergeListFileColumns_Command extends AbstractCommand implements Command
 {
 
 // Columns as integer array, filled in checkCommandParameters() and used in
@@ -55,7 +41,7 @@ private int [] __Columns_intArray = null;
 /**
 Constructor.
 */
-public mergeListFileColumns_Command ()
+public MergeListFileColumns_Command ()
 {	super();
 	setCommandName ( "MergeListFileColumns" );
 }
@@ -244,7 +230,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new mergeListFileColumns_JDialog (
+	return (new MergeListFileColumns_JDialog (
 		parent, this,
 		false	// Not runnable
 		)).ok();
@@ -258,7 +244,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editRunnableCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new mergeListFileColumns_JDialog (
+	return (new MergeListFileColumns_JDialog (
 		parent, this,
 		true	// Runnable
 		)).ok();

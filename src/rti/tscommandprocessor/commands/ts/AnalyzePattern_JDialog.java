@@ -61,7 +61,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class analyzePattern_JDialog extends JDialog
+public class AnalyzePattern_JDialog extends JDialog
 	implements ActionListener,
 	 	   ItemListener,
 	 	   KeyListener,
@@ -71,7 +71,7 @@ public class analyzePattern_JDialog extends JDialog
 {
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
-private analyzePattern_Command __command = null; // Command object.
+private AnalyzePattern_Command __command = null; // Command object.
 private String	__working_dir   = null;	// Working directory.
 
 private SimpleJComboBox	__TSList_JComboBox = null;
@@ -118,8 +118,7 @@ analyzePattern_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public analyzePattern_JDialog ( JFrame parent,
-				Command command )
+public AnalyzePattern_JDialog ( JFrame parent, Command command )
 {
 	super( parent, true );
 	
@@ -251,7 +250,8 @@ private void checkInput ()
 	}		
 	
 	// Check the list of Command Parameters.
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 		__error_wait = false;
 	} catch ( Exception e ) {
@@ -315,9 +315,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent,
 			  Command command )
 {
-	String mthd = "analyzePattern_JDialog.initialize";
-	
-	__command 	= (analyzePattern_Command) command;
+	__command = (AnalyzePattern_Command) command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	
 	// GUI Title

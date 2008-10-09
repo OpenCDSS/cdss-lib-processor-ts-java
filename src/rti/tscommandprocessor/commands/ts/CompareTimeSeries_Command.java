@@ -94,10 +94,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the compareTimeSeries() command.
+This class initializes, checks, and runs the CompareTimeSeries() command.
 </p>
 */
-public class compareTimeSeries_Command extends AbstractCommand
+public class CompareTimeSeries_Command extends AbstractCommand
 implements Command
 {
 
@@ -110,7 +110,7 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public compareTimeSeries_Command ()
+public CompareTimeSeries_Command ()
 {	super();
 	setCommandName ( "CompareTimeSeries" );
 }
@@ -140,7 +140,6 @@ throws InvalidCommandParameterException
 	String warning = "";
     String message;
     
-    CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
@@ -299,7 +298,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new compareTimeSeries_JDialog ( parent, this )).ok();
+	return (new CompareTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**

@@ -36,7 +36,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class runCommands_JDialog extends JDialog
+public class RunCommands_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
     
@@ -47,7 +47,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and absolute paths.
-private runCommands_Command __command = null;	// Command to edit
+private RunCommands_Command __command = null;	// Command to edit
 private JTextArea	__command_JTextArea=null;
 private String		__working_dir = null;	// Working directory.
 private JTextField	__InputFile_JTextField = null;
@@ -63,7 +63,7 @@ Command editor dialog constructor.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-public runCommands_JDialog ( JFrame parent, Command command )
+public RunCommands_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -194,7 +194,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (runCommands_Command)command;
+{	__command = (RunCommands_Command)command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );

@@ -50,10 +50,10 @@ import RTi.Util.Time.DateTime;
 
 
 /**
-Implment the FillMixedStation() command.
+Implement the FillMixedStation() command.
 This command can run in command "batch" mode or in tool menu.
 */
-public class fillMixedStation_Command extends AbstractCommand implements Command
+public class FillMixedStation_Command extends AbstractCommand implements Command
 {
 
 // Defines used by this class and its fillMixedStation_JDialog counterpart.
@@ -84,9 +84,9 @@ private boolean __commandMode = true;
 protected MixedStationAnalysis __MixedStationAnalysis = null; 
 
 /**
-fillMixedStation_Command constructor.
+Command editor constructor.
 */
-public fillMixedStation_Command ()
+public FillMixedStation_Command ()
 {	
 	super();
 	__commandMode = true;
@@ -98,7 +98,7 @@ fillMixedStation_Command constructor.
 @param commandMode - Indicating the running mode: true for command mode, false
 for tool mode.
 */
-public fillMixedStation_Command ( boolean runMode )
+public FillMixedStation_Command ( boolean runMode )
 {	
 	super();
 
@@ -118,7 +118,6 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {
-	String routine = getCommandName() + ".checkCommandParameters";
 	String warning = "";
     String message;
     
@@ -404,9 +403,9 @@ public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
 	if ( isCommandMode() ) {
-		return ( new fillMixedStation_JDialog ( parent, this ) ).ok();
+		return ( new FillMixedStation_JDialog ( parent, this ) ).ok();
 	} else {
-		return ( new fillMixedStation_JDialog ( parent, this, 0 ) ).ok();
+		return ( new FillMixedStation_JDialog ( parent, this, 0 ) ).ok();
 	}	
 }
 

@@ -46,10 +46,10 @@ import RTi.Util.Time.TimeUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the fillMOVE2() command.
+This class initializes, checks, and runs the FillMOVE2() command.
 </p>
 */
-public class fillMOVE2_Command extends AbstractCommand implements Command
+public class FillMOVE2_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -65,7 +65,7 @@ protected final String _OneEquation = "OneEquation";
 /**
 Constructor.
 */
-public fillMOVE2_Command ()
+public FillMOVE2_Command ()
 {	super();
 	setCommandName ( "FillMOVE2" );
 }
@@ -299,7 +299,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new fillMOVE2_JDialog ( parent, this )).ok();
+	return (new FillMOVE2_JDialog ( parent, this )).ok();
 }
 
 /**

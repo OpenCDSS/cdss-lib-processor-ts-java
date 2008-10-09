@@ -1,18 +1,3 @@
-//------------------------------------------------------------------------------
-// compareFiles_Command - handle the compareFiles() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2006-04-19	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					compareTimeSeries_Command.
-// 2006-05-03	SAM, RTi		Update to include WarnIfSame parameter.
-// 2007-03-02	SAM, RTi		Allow booleans to be any case.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.util;
 
 import java.io.FileReader;
@@ -43,7 +28,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class initializes, checks, and runs the compareFiles() command.
 */
-public class compareFiles_Command extends AbstractCommand
+public class CompareFiles_Command extends AbstractCommand
 implements Command
 {
 
@@ -56,7 +41,7 @@ protected final String _True = "True";
 /**
 Constructor.
 */
-public compareFiles_Command ()
+public CompareFiles_Command ()
 {	super();
 	setCommandName ( "CompareFiles" );
 }
@@ -145,7 +130,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new compareFiles_JDialog ( parent, this )).ok();
+	return (new CompareFiles_JDialog ( parent, this )).ok();
 }
 
 /**

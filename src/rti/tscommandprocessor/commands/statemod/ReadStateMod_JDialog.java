@@ -63,7 +63,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class readStateMod_JDialog extends JDialog
+public class ReadStateMod_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
@@ -71,7 +71,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and
 						// absolute paths.
-private readStateMod_Command __command = null;	// Command to edit
+private ReadStateMod_Command __command = null;	// Command to edit
 private JTextArea	__command_JTextArea=null;// Command as TextField
 private String		__working_dir = null;	// Working directory.
 private JTextField	__InputFile_JTextField = null;// Field for time series
@@ -100,11 +100,11 @@ private boolean		__ok = false;		// Indicates whether OK was
 						// dialog.
 
 /**
-readStateMod_JDialog constructor.
+Command editor constructor.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-public readStateMod_JDialog ( JFrame parent, Command command )
+public ReadStateMod_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -274,7 +274,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (readStateMod_Command)command;
+{	__command = (ReadStateMod_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	// TODO SAM 2007-02-18 Evaluate whether to support
 	//__use_alias = false;

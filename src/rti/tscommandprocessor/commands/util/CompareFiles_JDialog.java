@@ -49,7 +49,7 @@ import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-public class compareFiles_JDialog extends JDialog
+public class CompareFiles_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private final String __AddWorkingDirectoryFile1 = "Add Working Directory (File 1)";
@@ -72,15 +72,15 @@ private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private String		__working_dir = null;	// Working directory.
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
-private compareFiles_Command __command = null; // Command to edit
+private CompareFiles_Command __command = null; // Command to edit
 private boolean __ok = false; // Indicates whether the user pressed OK to close the dialog.
 
 /**
-compareFiles_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public compareFiles_JDialog ( JFrame parent, Command command )
+public CompareFiles_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -184,7 +184,7 @@ public void actionPerformed( ActionEvent event )
 				IOUtil.toRelativePath ( __working_dir, __InputFile2_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"compareFiles_JDialog",
+				Message.printWarning ( 1,"CompareFiles_JDialog",
 				"Error converting first file name to relative path." );
 			}
 		}
@@ -272,7 +272,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (compareFiles_Command)command;
+{	__command = (CompareFiles_Command)command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -426,7 +426,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "compareFiles_JDialog.refresh";
+{	String routine = "CompareFiles_JDialog.refresh";
 	String InputFile1 = "";
 	String InputFile2 = "";
 	String CommentLineChar = "";

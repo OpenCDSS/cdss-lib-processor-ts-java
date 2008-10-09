@@ -51,13 +51,13 @@ import RTi.Util.Time.TimeUtil;
 This class initializes, checks, and runs the NewStatisticYearTS() command.
 </p>
 */
-public class newStatisticYearTS_Command extends AbstractCommand implements Command
+public class NewStatisticYearTS_Command extends AbstractCommand implements Command
 {
 
 /**
 Constructor.
 */
-public newStatisticYearTS_Command ()
+public NewStatisticYearTS_Command ()
 {	super();
 	setCommandName ( "NewStatisticYearTS" );
 }
@@ -247,7 +247,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new newStatisticYearTS_JDialog ( parent, this )).ok();
+	return (new NewStatisticYearTS_JDialog ( parent, this )).ok();
 }
 
 /**

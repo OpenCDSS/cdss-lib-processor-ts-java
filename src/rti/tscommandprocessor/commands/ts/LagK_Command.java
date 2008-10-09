@@ -71,7 +71,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
-public class lagK_Command extends AbstractCommand implements Command
+public class LagK_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -121,7 +121,7 @@ private int	 __searchWindowIntervals = 0;	// Number of intervals to search
 /**
 Constructor.
 */
-public lagK_Command ()
+public LagK_Command ()
 {	super();
 	setCommandName ( "LagK" );
 }

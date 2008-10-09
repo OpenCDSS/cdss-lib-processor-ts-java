@@ -65,7 +65,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class writeStateMod_JDialog extends JDialog
+public class WriteStateMod_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private final String __AddWorkingDirectory = "Add Working Directory";
@@ -76,7 +76,7 @@ private SimpleJButton	__browse_JButton = null,// Button to browse for file
 			__ok_JButton = null,	// Ok Button
 			__path_JButton = null;	// Convert between relative and
 						// absolute paths
-private writeStateMod_Command __command = null;	// Command to edit
+private WriteStateMod_Command __command = null;	// Command to edit
 private SimpleJComboBox	__TSList_JComboBox = null;
 						// Indicate how to get time
 						// series list.
@@ -97,7 +97,7 @@ WriteStateMod_JDialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public writeStateMod_JDialog ( JFrame parent, Command command )
+public WriteStateMod_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -110,15 +110,13 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select StateMod Time Series File to Write");
 		SimpleFileFilter sff = new SimpleFileFilter("stm", "StateMod Time Series File");
@@ -279,7 +277,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (writeStateMod_Command)command;
+{	__command = (WriteStateMod_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

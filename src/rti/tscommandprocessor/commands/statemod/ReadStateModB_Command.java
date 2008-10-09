@@ -47,10 +47,10 @@ import DWR.StateMod.StateMod_BTS;
 
 /**
 <p>
-This class initializes, checks, and runs the readStateModB() command.
+This class initializes, checks, and runs the ReadStateModB() command.
 </p>
 */
-public class readStateModB_Command extends AbstractCommand implements Command
+public class ReadStateModB_Command extends AbstractCommand implements Command
 {
 
 // Indicates whether the TS Alias version of the command is being used...
@@ -60,7 +60,7 @@ protected boolean _use_alias = false;
 /**
 Constructor.
 */
-public readStateModB_Command ()
+public ReadStateModB_Command ()
 {	super();
 	setCommandName ( "ReadStateModB" );
 }
@@ -77,7 +77,7 @@ dialogs).
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
-	String TSID = parameters.getValue ( "TSID" );
+	//String TSID = parameters.getValue ( "TSID" );
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
 	String Version = parameters.getValue ( "Version" );
@@ -190,7 +190,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new readStateModB_JDialog ( parent, this )).ok();
+	return (new ReadStateModB_JDialog ( parent, this )).ok();
 }
 
 /**

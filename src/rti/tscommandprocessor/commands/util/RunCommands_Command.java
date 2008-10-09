@@ -26,15 +26,14 @@ import rti.tscommandprocessor.core.TSCommandFileRunner;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-// FIXME SAM 2008-07-15 Need to add ability to inherit the properties of the main
-// processor
+// FIXME SAM 2008-07-15 Need to add ability to inherit the properties of the main processor
 
 /**
 <p>
 This class initializes, checks, and runs the runCommands() command.
 </p>
 */
-public class runCommands_Command extends AbstractCommand implements Command
+public class RunCommands_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -65,7 +64,7 @@ AppendResults parameter values.
 /**
 Constructor.
 */
-public runCommands_Command ()
+public RunCommands_Command ()
 {	super();
 	setCommandName ( "RunCommands" );
 }
@@ -185,7 +184,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new runCommands_JDialog ( parent, this )).ok();
+	return (new RunCommands_JDialog ( parent, this )).ok();
 }
 
 /**

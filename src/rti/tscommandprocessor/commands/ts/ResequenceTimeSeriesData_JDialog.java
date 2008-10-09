@@ -13,7 +13,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import javax.swing.JFileChooser;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -22,27 +21,19 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import java.io.File;
 import java.util.Vector;
 
-import rti.tscommandprocessor.commands.riverware.writeRiverWare_Command;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
-import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
-import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
 /**
 Command editor dialog for the ResequenceTimeSeriesData() command.
@@ -239,7 +230,6 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	__command = (ResequenceTimeSeriesData_Command)command;
-	CommandProcessor processor = __command.getCommandProcessor();
 
 	addWindowListener( this );
 

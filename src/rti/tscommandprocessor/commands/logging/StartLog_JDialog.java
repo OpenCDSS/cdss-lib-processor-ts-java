@@ -54,7 +54,7 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class startLog_JDialog extends JDialog
+public class StartLog_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private final String __AddWorkingDirectory = "Add Working Directory";
@@ -71,16 +71,16 @@ private SimpleJComboBox	__Suffix_JComboBox = null;	// Choice for file
 private JTextArea	__command_JTextArea = null;	// Command as JTextField
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
-private startLog_Command __command = null;	// Command to edit
+private StartLog_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether user pressed OK to close the dialog.
 private String		__working_dir = null;	// The working directory.
 
 /**
-startLog_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public startLog_JDialog ( JFrame parent, Command command )
+public StartLog_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -240,7 +240,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
-{	__command = (startLog_Command)command;
+{	__command = (StartLog_Command)command;
 	__working_dir = null;
 	// Because this command is shared by StateDMI_Processor, do it the generic way, NOT as commented -
 	// basically paste in the code from the method indicated below.

@@ -49,14 +49,14 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class newTimeSeries_JDialog extends JDialog
+public class NewTimeSeries_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private JFrame		__parent_JFrame = null;	// parent JFrame
-private newTimeSeries_Command __command = null;	// Command to edit
+private NewTimeSeries_Command __command = null;	// Command to edit
 private JTextArea	__command_JTextArea=null;// Command as JTextField
 private JTextField	__Alias_JTextField = null;// Field for time series alias
 private JTextArea	__NewTSID_JTextArea=null;// NewTSID as JTextArea
@@ -77,11 +77,11 @@ private boolean		__first_time = true;
 private boolean		__ok = false;		// Whether OK has been pressed.
 
 /**
-newTimeSeries_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public newTimeSeries_JDialog ( JFrame parent, Command command )
+public NewTimeSeries_JDialog ( JFrame parent, Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -91,7 +91,7 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	String routine = "newTimeSeries_JDialog.actionPerformed";
+{	String routine = "NewTimeSeries_JDialog.actionPerformed";
 	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
@@ -229,7 +229,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	__parent_JFrame = parent;
-	__command = (newTimeSeries_Command)command;
+	__command = (NewTimeSeries_Command)command;
 
 	addWindowListener( this );
 
@@ -241,8 +241,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a new time series, which can be referenced using the "+
-		"alias or TSID."),
+		"Create a new time series, which can be referenced using the alias or TSID."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify period start and end date/times using a precision consistent with the data interval."),

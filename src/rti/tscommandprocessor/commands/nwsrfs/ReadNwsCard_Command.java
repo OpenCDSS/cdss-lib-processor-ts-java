@@ -56,10 +56,10 @@ import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 /**
 <p>
 This class initializes, checks, and runs the TS Alias and non-TS Alias 
-readNwsCard() commands.
+ReadNwsCard() commands.
 </p>
 */
-public class readNwsCard_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadNwsCard_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 protected static final String
@@ -92,7 +92,7 @@ protected boolean _use_alias = false;
 /**
 Constructor.
 */
-public readNwsCard_Command ()
+public ReadNwsCard_Command ()
 {
 	super();
 	setCommandName ( "ReadNwsCard" );
@@ -366,7 +366,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new readNwsCard_JDialog ( parent, this ) ).ok();
+	return ( new ReadNwsCard_JDialog ( parent, this ) ).ok();
 }
 
 /**

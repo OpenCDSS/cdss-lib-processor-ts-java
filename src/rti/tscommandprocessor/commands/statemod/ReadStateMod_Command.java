@@ -57,13 +57,10 @@ import DWR.StateMod.StateMod_WellRight;
 
 /**
 <p>
-This class initializes, checks, and runs the readStateMod() command.
-</p>
-<p>The CommandProcessor must return the following properties:
-TSResultsList, WorkingDir.
+This class initializes, checks, and runs the ReadStateMod() command.
 </p>
 */
-public class readStateMod_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadStateMod_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 /**
 Flags used when setting the interval.
@@ -94,7 +91,7 @@ private Vector __discovery_TS_Vector = null;
 /**
 Constructor.
 */
-public readStateMod_Command ()
+public ReadStateMod_Command ()
 {	super();
 	setCommandName ( "ReadStateMod" );
 }
@@ -257,7 +254,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new readStateMod_JDialog ( parent, this )).ok();
+	return (new ReadStateMod_JDialog ( parent, this )).ok();
 }
 
 /**

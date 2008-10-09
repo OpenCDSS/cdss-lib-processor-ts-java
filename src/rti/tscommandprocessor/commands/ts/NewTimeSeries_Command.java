@@ -49,17 +49,17 @@ import RTi.Util.Time.TimeInterval;
 
 /**
 <p>
-This class initializes, checks, and runs the newTimeSeries() command.
+This class initializes, checks, and runs the NewTimeSeries() command.
 </p>
 */
-public class newTimeSeries_Command extends AbstractCommand
+public class NewTimeSeries_Command extends AbstractCommand
 implements Command
 {
 
 /**
 Constructor.
 */
-public newTimeSeries_Command ()
+public NewTimeSeries_Command ()
 {	super();
 	setCommandName ( "NewTimeSeries" );
 }
@@ -189,7 +189,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new newTimeSeries_JDialog ( parent, this )).ok();
+	return (new NewTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**

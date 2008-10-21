@@ -20,7 +20,7 @@ private TSCommandProcessor __processor = null;
 /**
 The run request parameters used to run commands, when specifying run parameters.
 */
-private PropList __request_params = null;
+private PropList __requestParams = null;
 
 /**
 Construct a TSCommandProcessorThreadRunner using a TSCommandProcessor instance.
@@ -47,7 +47,7 @@ request_params.setUsingObject ( "CreateOutput", new Boolean(create_output) );
 public TSCommandProcessorThreadRunner ( TSCommandProcessor processor, PropList request_params )
 {
 	__processor = processor;
-	__request_params = request_params;
+	__requestParams = request_params;
 }
 
 /**
@@ -56,19 +56,19 @@ Run the commands in the current command processor.
 public void run ()
 {
 	try {
-		if ( __request_params == null ) {
+		if ( __requestParams == null ) {
 			__processor.runCommands(
 					null,		// Subset of Command instances to run - just run all
 					null );		// Properties to control run
 		}
 		else {
-			__processor.processRequest( "RunCommands", __request_params );
+			__processor.processRequest( "RunCommands", __requestParams );
 		}
 		__processor = null;
-		__request_params = null;
+		__requestParams = null;
 	}
 	catch ( Exception e ) {
-		// FIXME SAM 2007-10-10 Need to handle exception in 
+		// FIXME SAM 2007-10-10 Need to handle exception in run
 	}
 }
 

@@ -276,7 +276,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
     }
     else {
@@ -314,7 +319,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            // Legacy behavior was to match last matching TSID if no wildcard
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
 		}
         if ( IndependentTSID.length() > 0 ) {
             parameters.set ( "IndependentTSID", IndependentTSID );

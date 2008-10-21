@@ -157,13 +157,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
     }
     else {
 		//TODO SAM 2005-08-24 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
 		Vector v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
@@ -189,8 +193,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
-			// Old style was to match the TSID
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            // Legacy behavior was to match last matching TSID if no wildcard
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
 		}
 		if ( AverageMethod.length() > 0 ) {
 			parameters.set ( "AverageMethod", AverageMethod);
@@ -231,10 +240,13 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     String TSList = parameters.getValue ( "TSList" );
+    String TSID = parameters.getValue ( "TSID" );
     if ( (TSList == null) || TSList.equals("") ) {
         TSList = TSListType.ALL_MATCHING_TSID.toString();
+        if ( (TSID == null) || TSID.equals("") ) {
+            TSID = "*";
+        }
     }
-    String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String AverageMethod = parameters.getValue ( "AverageMethod" );
     String Bracket = parameters.getValue ( "Bracket" );
@@ -246,8 +258,8 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+	    bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
         message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +

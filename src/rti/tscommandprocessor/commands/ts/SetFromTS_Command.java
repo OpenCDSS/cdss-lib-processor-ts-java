@@ -295,13 +295,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
     }
     else {
 		// TODO SAM 2005-09-08 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the paramters are TSID,IndependentTSID,SetStart,SetEnd,TransferHow
 		Vector v = StringUtil.breakStringList(command_string,
@@ -340,7 +344,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
 		}
         if ( IndependentTSID.length() > 0 ) {
             parameters.set ( "IndependentTSID", IndependentTSID );

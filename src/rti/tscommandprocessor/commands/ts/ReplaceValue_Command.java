@@ -234,8 +234,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
 		// TODO SAM 2005-09-08 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
 		Vector v = StringUtil.breakStringList(command_string,
@@ -268,7 +267,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            // Legacy behavior was to match last matching TSID if no wildcard
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
 		}
 		if ( MinValue.length() > 0 ) {
 		    parameters.set ( "MinValue", MinValue );

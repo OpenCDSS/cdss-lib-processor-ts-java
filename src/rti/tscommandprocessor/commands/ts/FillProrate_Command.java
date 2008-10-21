@@ -285,11 +285,9 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
 }
 
 /**
-Parse the command string into a PropList of parameters.  This method currently
-supports old syntax and new parameter-based syntax.
+Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
@@ -299,7 +297,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	// Parse using base class method...
     super.parseCommand( command_string);
     PropList parameters = getCommandParameters();
-    parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+    // Legacy is either one ID or a pattern.
+    if ( parameters.getValue("TSList") == null ) {
+        parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+    }
     // Reset some values that have changed...
     String CalculateFactorHow = parameters.getValue ( "CalculateFactorHow" );
     if ( CalculateFactorHow != null ) {

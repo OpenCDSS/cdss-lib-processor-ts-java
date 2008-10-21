@@ -200,19 +200,21 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_TS.toString() );
+            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
     }
     else {
 		// TODO SAM 2005-09-08 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
-		// Old syntax where the only parameter is a single TSID or *
-		// to fill all.
+		// Old syntax where the only parameter is a single TSID or * to fill all.
 		Vector v = StringUtil.breakStringList(command_string,
-			"(),\t", StringUtil.DELIM_SKIP_BLANKS |
-			StringUtil.DELIM_ALLOW_STRINGS );
+			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
 			ntokens = v.size();
@@ -236,7 +238,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            // Legacy behavior was to match last matching TSID if no wildcard
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
 		}
 		parameters.set ( "ConstantValue", ConstantValue );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );

@@ -201,13 +201,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( ((TSList == null) || (TSList.length() == 0)) && // TSList not specified
                 ((TSID != null) && (TSID.length() != 0)) ) { // but TSID is specified
             // Assume old-style where TSList was not specified but TSID was...
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
     }
     else {
 		// TODO SAM 2005-08-24 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
 		Vector v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
@@ -243,8 +247,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
-			// Old style was to match the TSID
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
 		}
 		if ( ScaleValue.length() > 0 ) {
 			parameters.set ( "ScaleValue", ScaleValue );

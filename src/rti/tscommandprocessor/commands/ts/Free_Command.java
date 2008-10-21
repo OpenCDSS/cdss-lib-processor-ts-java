@@ -167,11 +167,8 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
@@ -180,11 +177,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     if ( (command_string.indexOf("=") > 0) || command_string.endsWith("()") ) {
         // New syntax, can be blank parameter list for new command...
         super.parseCommand ( command_string );
-        // Support legacy where only TSID was specified
+        // Support legacy (but newer than oldest version below) where only TSID= was specified (no TSList)
         PropList parameters = getCommandParameters();
         String TSList = parameters.getValue ( "TSList" );
+        String TSID = parameters.getValue ( "TSID" );
         if ( TSList == null ) {
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
     }
     else {
@@ -199,7 +202,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         PropList parameters = new PropList ( getCommandName() );
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         if ( TSID.length() > 0 ) {
-            parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            // Legacy behavior was to match last matching TSID if no wildcard
+            if ( TSID.indexOf("*") >= 0 ) {
+                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
             parameters.set ( "TSID", TSID );
         }
         parameters.setHowSet ( Prop.SET_UNKNOWN );

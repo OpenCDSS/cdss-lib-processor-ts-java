@@ -2819,17 +2819,17 @@ public void messageJDialogAction ( String command )
 //TODO SAM 2006-05-02
 //Need to phase out app_PropList or make the exchange of control information more robust
 /**
-Process a list of time series commands, resulting in a vector of time series
-(and/or setting data members and properties in memory).  The resulting time series are
-saved in memory and can be output using the processTimeSeries() method).
-<b>Filling with historic averages is handled for monthly time series
+Process a list of commands, resulting in a list of time series, ensembles, tables, and
+and properties in memory.  The resulting time series are
+saved in memory and can be output using the processTimeSeries() method.
+<b>Filling with historical averages is handled for monthly time series
 so that original data averages are used.</b>
 @param commandList The Vector of Command from the TSCommandProcessor,
 to be processed.  If null, process all.  Non-null is typically only used, for example,
 if a user has selected commands in a GUI.
 @param app_PropList if not null, then properties are set as the commands are
 run.  This is typically used when running commands prior to using an edit
-dialog in the TSTool GUI, as follows:
+dialog in the TSTool GUI.  Properties can have the following values:
 <table width=100% cellpadding=10 cellspacing=0 border=2>
 <tr>
 <td><b>Property</b></td>	<td><b>Description</b></td>
@@ -2868,6 +2868,7 @@ throws Exception
 	String message_tag = "ProcessCommands"; // Tag used with messages generated in this method.
 	int error_count = 0;	// For errors during time series retrieval
 	int update_count = 0;	// For warnings about command updates
+	int popup_warning_level = 2;  // For serious warning levels - currently go to log and not popup
 	if ( commandList == null ) {
 		// Process all commands if a subset has not been provided.
 		commandList = __ts_processor.getCommands();
@@ -2893,10 +2894,6 @@ throws Exception
 	// when running RunCommands() it is possible to retain previously set values or clear.
 	// This is done in the TSCommandProcessor instance before calling this method.
 	
-	/* TODO SAM 2007-10-13 Remove when test out.  The initial working dir is no
-	 * longer dynamic but is a data member on the processor.
-	String InitialWorkingDir = __processor_PropList.getValue ( "InitialWorkingDir" );
-	*/
 	String InitialWorkingDir = __ts_processor.getInitialWorkingDir();
 	// FIXME SAM 2008-07-31 Remove redundant location of properties
 	if ( InitialWorkingDir != null ) {
@@ -2927,8 +2924,7 @@ throws Exception
 	// calls.  This is somewhat experimental to evaluate a master
 	// commands file that runs other commands files.
 	boolean AppendResults_boolean = false;
-	// Indicate whether a recursive run of the processor is
-	// being made (e.g., because runCommands() is used).
+	// Indicate whether a recursive run of the processor is being made (e.g., because RunCommands() is used).
 	boolean Recursive_boolean = false;
 	if ( __processor_PropList != null ) {
 		String Recursive = app_PropList.getValue ( "Recursive" );
@@ -2947,28 +2943,12 @@ throws Exception
 	stopwatch.start();
 	String command_String = null;
 
-	// Go through the commands up front one time and set some important
-	// flags to help performance, etc....
-
-	boolean in_comment = false;
+	boolean inComment = false;
 	Command command = null;	// The command to process
 	CommandStatus command_status = null; // Put outside of main try to be able to use in catch.
 
-	// Change setting to allow warning messages to be turned off during the main loop.
-    // This capability should not be needed if a command uses the new command status processing.
-
-	int popup_warning_level = 2;		// Do not popup warnings (only to log)
-	boolean popup_warning_dialog = false;// Do not popup warnings (handle in command status)
-	if ( popup_warning_dialog ) {
-		popup_warning_level = 1;
-		Message.setPropValue ( "WarningDialogOKNoMoreButton=true" );
-		Message.setPropValue ( "WarningDialogCancelButton=true" );
-		Message.setPropValue ( "WarningDialogViewLogButton=true" );
-	}
-    else {
-        // Turn off interactive warnings to pretent overload on user in loops.
-        Message.setPropValue ( "ShowWarningDialog=false" );
-    }
+    // Turn off interactive warnings to pretent overload on user in loops.
+    Message.setPropValue ( "ShowWarningDialog=false" );
     
     // Clear any settings that may have been left over from the previous run and which
     // can impact the current run.
@@ -2978,7 +2958,7 @@ throws Exception
 	// Now loop through the commands, query time series, and manipulate
 	// to produce a list of final time series.  The following loop does the initial queries.
 
-	in_comment = false;
+	inComment = false;
 	int i_for_message;	// This will be adjusted by
 				// __num_prepended_commands - the user will
 				// see command numbers in messages like (12),
@@ -3011,16 +2991,7 @@ throws Exception
 		// the cancel button on the warning dialog or by using the other TSTool menus...
 		if ( __ts_processor.getCancelProcessingRequested() ) {
 			// Set Warning dialog settings back to normal...
-			if ( popup_warning_dialog ) {
-				Message.setPropValue ( "WarningDialogViewLogButton=false" );
-				Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
-				Message.setPropValue ( "WarningDialogCancelButton=false" );
-				Message.setPropValue ( "ShowWarningDialog=true" );
-			}
-            else {
-                // Turn on interactive warnings again.
-                Message.setPropValue ( "ShowWarningDialog=true" );
-            }
+            Message.setPropValue ( "ShowWarningDialog=true" );
 			// Set flag so code interested in processor knows it is not running...
 			__ts_processor.setIsRunning ( false );
 			// Reset the cancel processing request and let interested code know that
@@ -3054,18 +3025,18 @@ throws Exception
     			continue;
     		}
     		else if ( command instanceof CommentBlockStart_Command ) {
-    			in_comment = true;
+    			inComment = true;
     			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
     			continue;
     		}
     		else if ( command instanceof CommentBlockEnd_Command ) {
-    			in_comment = false;
+    			inComment = false;
     			command_status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
     			command_status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
     			continue;
     		}
-    		if ( in_comment ) {
+    		if ( inComment ) {
     		    // Commands won't know themselves that they are in a comment so set the status for them
     		    // and continue.
     		    // TODO SAM 2008-09-30 Do the logs need to be cleared?
@@ -3080,7 +3051,7 @@ throws Exception
     		}
     		else if ( command instanceof Exit_Command ) {
     			// Exit the processing...
-    			Message.printStatus ( 1, routine, "Exit - stop processing time series." );
+    			Message.printStatus ( 1, routine, "Exit - stop processing commands." );
     			break;
     		}
     	
@@ -3098,8 +3069,7 @@ throws Exception
     			try {
                     // Make sure the command is valid...
     				// Initialize the command (parse)...
-    				// TODO SAM 2007-09-05 Need to evaluate where the
-    				// initialization occurs (probably the initial edit or load)?
+    				// TODO SAM 2007-09-05 Need to evaluate where the initialization occurs (probably the initial edit or load)?
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "Initializing the Command for \"" +	command_String + "\"" );
     				}
@@ -3110,8 +3080,7 @@ throws Exception
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.DISCOVERY);
     				}
     				command.initializeCommand ( command_String, __ts_processor, true );
-    				// TODO SAM 2005-05-11 Is this the best place for this or should it be in the
-    				// runCommand()?...
+    				// TODO SAM 2005-05-11 Is this the best place for this or should it be in RunCommand()?
     				// Check the command parameters...
     				if ( Message.isDebugOn ) {
     					Message.printDebug ( 1, routine, "Checking the parameters for command \"" + command_String + "\"" );
@@ -3294,12 +3263,6 @@ throws Exception
 	}
 	__ts_processor.setCancelProcessingRequested ( false );
 	
-	if ( popup_warning_dialog ) {
-		// Change so from this point user always has to acknowledge the warnings...
-		Message.setPropValue ( "WarningDialogOKNoMoreButton=false" );
-		Message.setPropValue ( "WarningDialogCancelButton=false" );
-		Message.setPropValue ( "WarningDialogViewLogButton=false" );
-	}
     // Make sure that important warnings are shown to the user...
     Message.setPropValue ( "ShowWarningDialog=true" );
 
@@ -3317,10 +3280,7 @@ throws Exception
 	// others are likely not a problem)...
 
 	int ml = 2;	// Message level for cleanup warnings
-	if ( popup_warning_dialog ) {
-		Message.setPropValue ( "WarningDialogViewLogButton=true" );
-		ml = 1;
-	}
+
 	CommandStatusType max_severity = CommandStatusProviderUtil.getHighestSeverity ( commandList );
 	if ( (_fatal_error_count > 0) || (error_count > 0) || max_severity.greaterThan(CommandStatusType.WARNING)) {
 
@@ -3349,9 +3309,6 @@ throws Exception
 		Message.printWarning ( ml, routine,
 		"There were warnings printed for obsolete commands.\n" +
 		"See the log file for information.  The output may be incomplete." );
-	}
-	if ( popup_warning_dialog ) {
-		Message.setPropValue ( "WarningDialogViewLogButton=false" );
 	}
 }
 

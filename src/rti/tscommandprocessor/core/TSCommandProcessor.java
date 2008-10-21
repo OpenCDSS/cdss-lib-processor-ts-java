@@ -332,7 +332,7 @@ private void addCommandProcessorEventListener ( CommandProcessorEventListener li
         size = __CommandProcessorEventListener_array.length;
         CommandProcessorEventListener [] newlisteners = new CommandProcessorEventListener[size + 1];
         for ( int i = 0; i < size; i++ ) {
-                newlisteners[i] = __CommandProcessorEventListener_array[i];
+            newlisteners[i] = __CommandProcessorEventListener_array[i];
         }
         __CommandProcessorEventListener_array = newlisteners;
         __CommandProcessorEventListener_array[size] = listener;
@@ -2602,8 +2602,7 @@ Process the RunCommands request.
 private CommandProcessorRequestResultsBean processRequest_RunCommands (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	// Command list.
 	Object o = request_params.getContents ( "CommandList" );
@@ -2628,7 +2627,6 @@ throws Exception
 	props.set ( "CreateOutput", "" + CreateOutput_Boolean );
 	// TODO SAM 2007-08-22 Need to evaluate recursion for complex workflow and testing
 	// Call the TSEngine method.
-	// TODO SAM 2007-08-22 Consider threading to improve perforamance and interaction
 	runCommands ( commands, props );
 	// No results need to be returned.
 	return bean;
@@ -2640,21 +2638,17 @@ Process the SetHydroBaseDMI request.
 private CommandProcessorRequestResultsBean processRequest_SetHydroBaseDMI (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "HydroBaseDMI" );
 	if ( o == null ) {
-			String warning =
-				"Request SetHydroBaseDMI() does not provide a HydroBaseDMI parameter.";
+			String warning = "Request SetHydroBaseDMI() does not provide a HydroBaseDMI parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText (	"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	HydroBaseDMI dmi = (HydroBaseDMI)o;
-	// Add an open HydroBaseDMI instance, closing a previous connection
-	// of the same name if it exists.
+	// Add an open HydroBaseDMI instance, closing a previous connection of the same name if it exists.
 	__tsengine.setHydroBaseDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
@@ -2666,21 +2660,17 @@ Process the SetNWSRFSFS5FilesDMI request.
 private CommandProcessorRequestResultsBean processRequest_SetNWSRFSFS5FilesDMI (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "NWSRFSFS5FilesDMI" );
 	if ( o == null ) {
-			String warning =
-				"Request SetNWSRFSFS5FilesDMI() does not provide a NWSRFSFS5FilesDMI parameter.";
+			String warning = "Request SetNWSRFSFS5FilesDMI() does not provide a NWSRFSFS5FilesDMI parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText (	"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	NWSRFS_DMI dmi = (NWSRFS_DMI)o;
-	// Add an open NWSRFS_DMI instance, closing a previous connection
-	// of the same name if it exists.
+	// Add an open NWSRFS_DMI instance, closing a previous connection of the same name if it exists.
 	__tsengine.setNWSRFSFS5FilesDMI( dmi, true );
 	// No results need to be returned.
 	return bean;
@@ -2790,8 +2780,7 @@ throws Exception
             throw new RequestParameterNotFoundException ( warning );
     }
     DataTable o_DataTable = (DataTable)o;
-    // Loop through the tables.  If a matching table ID is found, reset.  Otherwise,
-    // add at the end.
+    // Loop through the tables.  If a matching table ID is found, reset.  Otherwise, add at the end.
     int size = __Table_Vector.size();
     DataTable table;
     boolean found = false;
@@ -3322,7 +3311,7 @@ method only acts on the properties shown below.
 <tr>
 <td><b>ResetWorkflowProperties</b></td>
 <td>If set to true (default), indicates that global properties like output period should be
-reset before runningThe default is false, to allow command files to be chained together.
+reset before running.
 </td>
 <td>False</td>
 </tr>

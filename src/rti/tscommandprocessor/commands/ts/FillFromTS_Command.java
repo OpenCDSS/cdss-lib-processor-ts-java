@@ -286,8 +286,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
 		// TODO SAM 2005-09-08 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the paramters are TSID,IndependentTSID,FillStart,FillEnd,TransferHow
 		Vector v = StringUtil.breakStringList(command_string,
@@ -330,7 +329,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( IndependentTSID.length() > 0 ) {
             parameters.set ( "IndependentTSID", IndependentTSID );
             parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-            parameters.set ( "IndependentTSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( IndependentTSID.indexOf("*") >= 0 ) {
+                parameters.set ( "IndependentTSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "IndependentTSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
         // Phase out * as default, blank is current default.
         if ( !FillStart.equals("*")) {

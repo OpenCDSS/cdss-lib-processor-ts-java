@@ -354,7 +354,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         if ( IndependentTSID.length() > 0 ) {
             parameters.set ( "IndependentTSID", IndependentTSID );
             parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-            parameters.set ( "IndependentTSList", TSListType.ALL_MATCHING_TSID.toString() );
+            if ( IndependentTSID.indexOf("*") >= 0 ) {
+                parameters.set ( "IndependentTSList", TSListType.ALL_MATCHING_TSID.toString() );
+            }
+            else {
+                parameters.set ( "IndependentTSList", TSListType.LAST_MATCHING_TSID.toString() );
+            }
         }
         // Phase out * as default, blank is current default.
         if ( !SetStart.equals("*")) {

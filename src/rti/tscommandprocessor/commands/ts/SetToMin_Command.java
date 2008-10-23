@@ -249,7 +249,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
         parameters.set ( "IndependentTSID", IndependentTSID.toString() );
         parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-        parameters.set ( "IndependentTSList", TSListType.SPECIFIED_TSID.toString() );
+        if ( IndependentTSID.indexOf("*") >= 0 ) {
+            parameters.set ( "IndependentTSList", TSListType.ALL_MATCHING_TSID.toString() );
+        }
+        else {
+            parameters.set ( "IndependentTSList", TSListType.LAST_MATCHING_TSID.toString() );
+        }
         /*
         if ( !SetStart.equals("*")) {
             parameters.set ( "SetStart", SetStart );

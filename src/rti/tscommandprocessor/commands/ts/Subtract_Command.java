@@ -24,6 +24,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
@@ -298,10 +299,46 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
     }
     else {
-		message = "Old-style Subtract() syntax is obsolete.  Edit the command to convert to new syntax.";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
+        // TODO SAM 2008-10-23 This whole block of code needs to be
+        // removed as soon as commands have been migrated to the new syntax.
+        //
+        // Old syntax without named parameters.
+        Vector v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
+        if ( (v == null) || (v.size() < 4) ) {
+            message = "Syntax error in legacy command \"" + command_string +
+                "Expecting Subract(TSID,HandleMissingHow,SubtractTSID,...";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
+        }
+        String TSID = ((String)v.elementAt(1)).trim();
+        String HandleMissingHow = ((String)v.elementAt(2)).trim();
+        StringBuffer SubtractTSID = new StringBuffer();
+        for ( int i = 3; i < v.size(); i++ ) {
+            // Fourth and fifth fields optionally have analysis period...
+            if ( i > 3 ) {
+                SubtractTSID.append(",");
+            }
+            SubtractTSID.append(((String)v.elementAt(i)).trim());
+        }
+
+        // Set parameters and new defaults...
+
+        PropList parameters = new PropList ( getCommandName() );
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        parameters.set ( "TSID", TSID );
+        parameters.set ( "TSList", TSListType.SPECIFIED_TSID.toString() );
+        if ( HandleMissingHow.length() > 0 ) {
+            parameters.set ( "HandleMissingHow", HandleMissingHow );
+        }
+        parameters.set ( "SubtractTSID", SubtractTSID.toString() );
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
+        setCommandParameters ( parameters );
+        
+        message = "Automatically updated to current syntax from old command \"" + command_string + "\".";
+        CommandStatus status = getCommandStatus();
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.INFO, message, "" ) ); 
+    }
 }
 
 /**

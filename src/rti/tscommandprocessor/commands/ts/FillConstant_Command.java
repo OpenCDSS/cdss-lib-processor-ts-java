@@ -221,7 +221,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		}
 		if ( ntokens != 3 ) {
 			// Command name, TSID, and constant...
-			message = "Syntax error in \"" + command_string + "\".  Two tokens expected.";
+			message = "Syntax error in legacy command \"" + command_string +
+			    "\".  Expecting FillConstant(TSID,Constant).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}

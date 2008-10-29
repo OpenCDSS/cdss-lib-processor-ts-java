@@ -234,8 +234,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     if ( (NewTSID == null) || (NewTSID.length() == 0) ) {
         // NewTSID is not specified.  The requirement that this be specified was added to
         // avoid confusion between copies and the original.  However, this has caused a lot
-        // of migration issues.  Therefore, if TSID is specified, copy it to NewTSID and use
-        // "copy" for the scenario.  This can't be done with aliases.
+        // of migration issues.  Therefore, if TSID is specified and NewTSID is not, copy it to NewTSID and use
+        // "copy" for the scenario.  This can't be done with aliases because the interval is unknown.
         if ( (TSID != null) && (TSID.length() > 0) ) {
             // Try to evaluate whether it is an alias..
             if ( StringUtil.patternCount(TSID, ".") >= 3 ) {
@@ -247,13 +247,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                     parameters.set ( "NewTSID", ident.toString(false) );
                 }
                 catch ( Exception e ) {
-                    // Don't set the NewTSID and force the user to set it when command
-                    // validation occurs.
-                    // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
-                    Message.printWarning( 3, routine, "Unable to parse the TSID to use for NewTSID.");
+                    // Don't set the NewTSID and force the user to set it when command validation occurs.
+                    message = "Unable to parse the TSID to use for NewTSID.";
                     Message.printWarning( 3, routine, e);
+                    Message.printWarning ( warning_level, routine, message);
+                    throw new InvalidCommandSyntaxException ( message );
                 }
             } 
+        }
+        else {
+            message = "NewTSID cannot be defaulted when the TSID to copy is an alias.";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
         }
     }
     else {
@@ -275,26 +280,28 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                         parameters.set ( "NewTSID", newident.toString(false) );
                     }
                     catch ( Exception e3 ) {
-                        // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
-                        Message.printWarning ( 3, routine, "Invalid TSID interval \"" + ident.getInterval() +
-                                "\" to fill in NewTSID interval.");
-                        Message.printWarning( 3, routine, e3 );
+                        message = "Invalid TSID interval \"" + ident.getInterval() +
+                        "\" to fill in default NewTSID interval.";
+                        Message.printWarning( 3, routine, e3);
+                        Message.printWarning ( warning_level, routine, message);
+                        throw new InvalidCommandSyntaxException ( message );
                     }
                 }
                 catch ( Exception e2 ) {
                     // Not able to parse the TSID so user will need to fix manually.
-                    // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
-                    Message.printWarning ( 3, routine, "Unable to parse TSID to fill in NewTSID interval.");
-                    Message.printWarning( 3, routine, e2 );
+                    message = "Unable to parse TSID to fill in the default NewTSID interval.";
+                    Message.printWarning( 3, routine, e2);
+                    Message.printWarning ( warning_level, routine, message);
+                    throw new InvalidCommandSyntaxException ( message );
                 }
             }
         }
         catch ( Exception e ) {
-            // Don't set the NewTSID and force the user to set it when command
-            // validation occurs.
-            // FIXME SAM 2008-05-29 Need to evaluate how serious this is.
-            Message.printWarning ( 3, routine, "Unable to parse NewTSID to check its interval." );
+            // Don't set the NewTSID and force the user to set it when command validation occurs.
+            message = "Unable to parse NewTSID to check its interval.";
             Message.printWarning( 3, routine, e);
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
         }
     }
     parameters.setHowSet ( Prop.SET_UNKNOWN );

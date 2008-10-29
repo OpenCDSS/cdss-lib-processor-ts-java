@@ -71,8 +71,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -80,7 +79,7 @@ throws InvalidCommandParameterException
 	//String TSID = parameters.getValue ( "TSID" );
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
-	String Version = parameters.getValue ( "Version" );
+	//String Version = parameters.getValue ( "Version" );
 	String warning = "";
     String message;
 
@@ -95,41 +94,42 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an existing input file." ) );
 	}
-	else {	String working_dir = null;
-			try { Object o = processor.getPropContents ( "WorkingDir" );
-				// Working directory is available so use it...
-				if ( o != null ) {
-					working_dir = (String)o;
-				}
+	else {
+	    String working_dir = null;
+		try { Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				working_dir = (String)o;
 			}
-			catch ( Exception e ) {
-                message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-			}
-            try {
-                String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile) );
-                    File f = new File ( adjusted_path );
-                    if ( !f.exists() ) {
-                        message = "The input file does not exist:  \"" + adjusted_path + "\".";
-                        warning += "\n" + message;
-                        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Verify that the input file exists - may be OK if created at run time." ) );
-                    }
-            }
-            catch ( Exception e ) {
-                message = "The input file \"" + InputFile +
-                "\" cannot be adjusted using the working directory \"" + working_dir + "\".";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
+		}
+		catch ( Exception e ) {
+            message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that input file and working directory paths are compatible." ) );
-            }
+                            message, "Report the problem to software support." ) );
+		}
+        try {
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile) );
+                File f = new File ( adjusted_path );
+                if ( !f.exists() ) {
+                    message = "The input file does not exist:  \"" + adjusted_path + "\".";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that the input file exists - may be OK if created at run time." ) );
+                }
+        }
+        catch ( Exception e ) {
+            message = "The input file \"" + InputFile +
+            "\" cannot be adjusted using the working directory \"" + working_dir + "\".";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that input file and working directory paths are compatible." ) );
+        }
     }
-	if (	(InputStart != null) && !InputStart.equals("") &&
+	if ( (InputStart != null) && !InputStart.equals("") &&
 		!InputStart.equalsIgnoreCase("InputStart") &&
 		!InputStart.equalsIgnoreCase("InputEnd") ) {
 		try {	DateTime.parse(InputStart);
@@ -155,6 +155,8 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
+	/*
+	Newer versions use NN.NN.NN format so might need to check more
 	if ( (Version != null) && !StringUtil.isDouble(Version) ) {
         message = "The StateMod version must be a number.";
 		warning += "\n" + message;
@@ -162,6 +164,7 @@ throws InvalidCommandParameterException
                  new CommandLogRecord(CommandStatusType.FAILURE,
                          message, "Specify a number Major.Minor for the StateMod version." ) );
 	}
+	*/
     
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
@@ -391,14 +394,14 @@ CommandWarningException, CommandException
 	try {
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
-        Message.printStatus ( 2, routine,
-		"Reading StateMod binary file \"" + InputFile_full + "\"" );
+        Message.printStatus ( 2, routine, "Reading StateMod binary file \"" + InputFile_full + "\"" );
 
 		StateMod_BTS bts = null;
 		if ( (Version != null) && StringUtil.isDouble(Version) ) {
-			bts = new StateMod_BTS ( InputFile_full, StringUtil.atod(Version) );
+			bts = new StateMod_BTS ( InputFile_full, Version );
 		}
-		else {	bts = new StateMod_BTS ( InputFile_full );
+		else {
+		    bts = new StateMod_BTS ( InputFile_full );
 		}
 		Vector tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
 		bts.close();
@@ -408,8 +411,9 @@ CommandWarningException, CommandException
 
 		if ( tslist != null ) {
 			Vector TSResultsList_Vector = null;
-			try { Object o = processor.getPropContents( "TSResultsList" );
-					TSResultsList_Vector = (Vector)o;
+			try {
+			    Object o = processor.getPropContents( "TSResultsList" );
+				TSResultsList_Vector = (Vector)o;
 			}
 			catch ( Exception e ){
 				message = "Cannot get time series list to add read time series.  Starting new list.";

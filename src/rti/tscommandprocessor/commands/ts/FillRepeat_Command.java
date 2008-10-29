@@ -192,14 +192,13 @@ supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "fillRepeat_Command.parseCommand", message;
+	String routine = "FillRepeat_Command.parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
         // Current syntax...
@@ -232,7 +231,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		}
 		if ( ntokens != 3 ) {
 			// Command name, TSID, and max intervals...
-			message = "Syntax error in \"" + command_string + "\".  Two tokens expected.";
+			message = "Syntax error in \"" + command_string + "\".  Expecting FillRepeat(TSID,MaxIntervals).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}

@@ -4524,7 +4524,7 @@ throws Exception
 		// New style TSID~input_type~input_name
 		try {
 		    ts = DateValueTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units, true );
+				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, te );
@@ -4534,7 +4534,7 @@ throws Exception
 	else if ( source.equalsIgnoreCase("DateValue") ) {
 		// Old style (scenario may or may not be used to find the file)...
 		try {
-		    ts = DateValueTS.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
+		    ts = DateValueTS.readTimeSeries ( tsident_string, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine, e );
@@ -4564,7 +4564,7 @@ throws Exception
 	else if ( (input_type != null) && input_type.equalsIgnoreCase("DIADvisor") ) {
 		// New style TSID~input_type~input_name for DIADvisor...
 		try {
-		    ts = __DIADvisor_dmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, true );
+		    ts = __DIADvisor_dmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine,
@@ -4586,7 +4586,7 @@ throws Exception
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
         // Old style (scenario may or may not be used to find the file)...
         try {
-            ts = HecDssAPI.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
+            ts = HecDssAPI.readTimeSeries ( tsident_string, query_date1, query_date2, units, read_data );
         }
         catch ( Exception e ) {
             Message.printWarning ( 2, routine, e );
@@ -4606,7 +4606,7 @@ throws Exception
 				ts = null;
 			}
 			else {
-                ts = hbdmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true,
+                ts = hbdmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, read_data,
                     null );	// HydroBaseDMI read props Use defaults here
 			}
 			if ( Message.isDebugOn ) {
@@ -4628,7 +4628,7 @@ throws Exception
 		// Pass the front TSID as the first argument and the input_name file as the second...
 		try {
             ts = MexicoCsmnTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units, true );
+				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			ts = null;
@@ -4638,7 +4638,7 @@ throws Exception
 		// New style TSID~input_type~input_name
 		try {
             ts = ModsimTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units, true );
+				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			ts = null;
@@ -4648,7 +4648,7 @@ throws Exception
 		// New style TSID~input_type~input_name for NWSCardTS...
 		//Message.printStatus ( 1, routine, "Trying to read \"" +
 		//		tsident_string2 + "\" \"" + input_name + "\"" );
-		ts = NWSCardTS.readTimeSeries ( tsident_string2, input_name_full, query_date1, query_date2, units, true );
+		ts = NWSCardTS.readTimeSeries ( tsident_string2, input_name_full, query_date1, query_date2, units, read_data );
 		//Message.printStatus ( 1, "", "SAMX TSEngine TS id = \"" +
 			//ts.getIdentifier().toString(true) + "\"" );
 	}
@@ -4657,7 +4657,7 @@ throws Exception
 		try {
             // For now read the file for each trace...
 			// TODO SAM 2004-11-29 need to optimize so the file does not need to get reread...
-			NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( input_name_full, true );
+			NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( input_name_full, read_data );
 			Vector tslist = ensemble.getTimeSeriesVector ();
 			// Loop through and find a matching time series...
 			int size = 0;
@@ -4689,7 +4689,7 @@ throws Exception
 	}
 	else if ((input_type != null) && input_type.equalsIgnoreCase("NWSRFS_FS5Files") ) {
 		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( input_name_full, true );
-		ts = nwsrfs_dmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, true );
+		ts = nwsrfs_dmi.readTimeSeries ( tsident_string, query_date1, query_date2, units, read_data );
 	}
 	else if ((input_type != null) && input_type.equalsIgnoreCase("RiversideDB") ) {
 		// New style TSID~input_type~input_name for RiversideDB...
@@ -4701,7 +4701,7 @@ throws Exception
         }
         else {
             try {
-                ts = rdmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, true );
+                ts = rdmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, read_data );
             }
 			catch ( Exception te ) {
 				Message.printWarning ( 2, routine,
@@ -4724,7 +4724,7 @@ throws Exception
 		// New style TSID~input_type~input_name for RiverWare...
 		try {
             ts = RiverWareTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units, true );
+				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			ts = null;
@@ -4744,18 +4744,18 @@ throws Exception
             }
             if ( is_ipy_type ) {
 				ts = StateCU_IrrigationPracticeTS.readTimeSeries (
-					tsident_string2, input_name_full, query_date1, query_date2, units, true );
+					tsident_string2, input_name_full, query_date1, query_date2, units, read_data );
 			}
 			else if(StringUtil.startsWithIgnoreCase(tsident.getType(), "CropArea-") &&
 				!StringUtil.startsWithIgnoreCase(tsident.getType(), "CropArea-AllCrops") ) {
 				// The second is in the StateCU_TS code.
 				ts = StateCU_CropPatternTS.readTimeSeries (
-					tsident_string2, input_name_full,query_date1, query_date2, units, true );
+					tsident_string2, input_name_full,query_date1, query_date2, units, read_data );
 			}
 			else {
                 // Funnel through one class - the following will read StateCU output report and frost dates
 				// input files...
-				ts = StateCU_TS.readTimeSeries ( tsident_string2, input_name_full, query_date1, query_date2, units, true );
+				ts = StateCU_TS.readTimeSeries ( tsident_string2, input_name_full, query_date1, query_date2, units, read_data );
 			}
 		}
 		catch ( Exception te ) {
@@ -4768,7 +4768,7 @@ throws Exception
         // New style TSID~input_type~input_name for StateCUB...
         try {
             ts = StateCU_BTS.readTimeSeries ( tsident_string2,
-                input_name_full, query_date1, query_date2, units, true );
+                input_name_full, query_date1, query_date2, units, read_data );
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateCU binary file." );
@@ -4780,7 +4780,7 @@ throws Exception
 		// New style TSID~input_type~input_name for StateMod...
 		try {
             ts = StateMod_TS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units, true );
+				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateMod file." );
@@ -4792,7 +4792,7 @@ throws Exception
 		// New style TSID~input_type~input_name for StateModB...
 		try {
             ts = StateMod_BTS.readTimeSeries ( tsident_string2,
-				input_name_full, query_date1, query_date2, units, true );
+				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateMod binary file." );
@@ -4804,7 +4804,7 @@ throws Exception
 		input_type.equalsIgnoreCase("USGSNWIS") ) {
 		// New style TSID~input_type
 		try {
-            ts = UsgsNwisTS.readTimeSeries ( tsident_string2, input_name, query_date1, query_date2, units, true );
+            ts = UsgsNwisTS.readTimeSeries ( tsident_string2, input_name, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
 			ts = null;
@@ -5092,13 +5092,15 @@ throws Exception
 	// Compute the historical average here rather than having to put this code
 	// in each clause in the processTimeSeriesCommands() method.
 
-	try {
-        ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 2, routine,
-		"Error getting original data limits for \"" + ts.getIdentifierString() + "\""  );
-		Message.printWarning ( 3, routine, e );
+	if ( ts.hasData() ) {
+    	try {
+            ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
+    	}
+    	catch ( Exception e ) {
+    		Message.printWarning ( 2, routine,
+    		"Error getting original data limits for \"" + ts.getIdentifierString() + "\""  );
+    		Message.printWarning ( 3, routine, e );
+    	}
 	}
 
 	// To ensure that new and old time series identifiers can be used, reset

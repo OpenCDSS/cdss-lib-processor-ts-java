@@ -273,9 +273,7 @@ private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, in
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -307,7 +305,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// TODO SAM 2005-09-08 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new syntax.
 		//
-		// Old syntax where the paramters are TSID,IndependentTSID,SetStart,SetEnd,TransferHow
+		// Old syntax where the parameters are TSID,IndependentTSID,SetStart,SetEnd,TransferHow
 		Vector v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
@@ -333,6 +331,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String SetEnd = ((String)v.elementAt(4)).trim();
         String TransferHow = null;
         if ( n_expected == 6 ) {
+            // Old TransferData is now TransferHow
             // This parameter is of the format TransferData=...
             TransferHow = StringUtil.getToken(((String)v.elementAt(5)).trim(),"=",0,1);
         }

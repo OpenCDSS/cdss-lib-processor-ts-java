@@ -2831,7 +2831,7 @@ throws Exception
 /**
 Read the commands file and initialize new commands.
 @param path Path to the commands file - this should be an absolute path.
-@param create_generic_command_if_not_recognized If true, create a GenericCommand
+@param createUnknownCommandIfNotRecognized If true, create a GenericCommand
 if the command is not recognized or has a syntax problem.
 This is being used during transition of old string commands to full Command classes and
 may be needed in any case to preserve commands that were manually edited.  Commands with
@@ -2840,7 +2840,7 @@ problems will in any case be flagged at run-time as unrecognized or problematic.
 @exception IOException if there is a problem reading the file.
 @exception FileNotFoundException if the specified commands file does not exist.
 */
-public void readCommandFile ( String path, boolean create_generic_command_if_not_recognized, boolean append )
+public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append )
 throws IOException, FileNotFoundException
 {	String routine = getClass().getName() + ".readCommandFile";
 	BufferedReader br = null;
@@ -2869,11 +2869,13 @@ throws IOException, FileNotFoundException
 		if ( line == null ) {
 			break;
 		}
+		// Trim spaces from the end of the line.  These can really cause problems with time series identifiers
+		line = line.trim();
 		// Create a command from the line.
 		// Normally will create the command even if not recognized.
-		if ( create_generic_command_if_not_recognized ) {
+		if ( createUnknownCommandIfNotRecognized ) {
 			try {
-			    command = cf.newCommand ( line, create_generic_command_if_not_recognized );
+			    command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
 			}
 			catch ( UnknownCommandException e ) {
 				// Should not happen because of parameter passed above
@@ -2881,15 +2883,14 @@ throws IOException, FileNotFoundException
 		}
 		else {
 			try {
-			    command = cf.newCommand ( line, create_generic_command_if_not_recognized );
+			    command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
 			}
 			catch ( UnknownCommandException e ) {
 				// TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load
 				// In this case skip the command, although the above case may always be needed?
 			}
 		}
-		// Have a command instance.  Initialize the command (parse the command string) and
-		// check its arguments.
+		// Have a command instance.  Initialize the command (parse the command string) and check its arguments.
 		String fixme = "FIXME! ";  // String for inserted messages
 		try {
 			command.initializeCommand(

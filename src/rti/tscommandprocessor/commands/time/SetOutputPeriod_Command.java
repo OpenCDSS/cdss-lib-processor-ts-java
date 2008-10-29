@@ -74,7 +74,7 @@ throws InvalidCommandParameterException
 	if ( (OutputStart != null) && !OutputStart.equals("") ) {
 		try {	// This handles special syntax like "NowToHour" and
 			// "NowToHour - 6Hour"
-			DateTime.parse(OutputStart, dateprops );
+			OutputStart_DateTime = DateTime.parse(OutputStart, dateprops );
 		}
 		catch ( Exception e ) {
 			message = "The output start date/time \"" + OutputStart +	"\" is not a valid date/time string.";
@@ -88,7 +88,7 @@ throws InvalidCommandParameterException
 	if ( (OutputEnd != null) && !OutputEnd.equals("") ) {
 		try {	// This handles special syntax like "NowToHour" and
 			// "NowToHour - 6Hour"
-			DateTime.parse(OutputEnd, dateprops );
+			OutputEnd_DateTime = DateTime.parse(OutputEnd, dateprops );
 		}
 		catch ( Exception e ) {
 			message = "The output end date/time \"" + OutputEnd +	"\" is not a valid date/time string.";

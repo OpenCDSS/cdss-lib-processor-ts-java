@@ -72,9 +72,9 @@ throws InvalidCommandParameterException
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	if ( (InputStart != null) && !InputStart.equals("") ) {
-		try {	// This handles special syntax like "NowToHour" and
-			// "NowToHour - 6Hour"
-			DateTime.parse(InputStart, dateprops );
+		try {
+		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+			InputStart_DateTime = DateTime.parse(InputStart, dateprops );
 		}
 		catch ( Exception e ) {
 			message = "The input start date/time \"" + InputStart +	"\" is not a valid date/time string.";
@@ -88,7 +88,7 @@ throws InvalidCommandParameterException
 	if ( (InputEnd != null) && !InputEnd.equals("") ) {
 		try {	// This handles special syntax like "NowToHour" and
 			// "NowToHour - 6Hour"
-			DateTime.parse(InputEnd, dateprops );
+			InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
 		}
 		catch ( Exception e ) {
 			message = "The input end date/time \"" + InputEnd +	"\" is not a valid date/time string.";

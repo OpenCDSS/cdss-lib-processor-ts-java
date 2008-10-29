@@ -67,11 +67,11 @@ throws InvalidCommandParameterException
 	DateTime now = new DateTime(DateTime.DATE_CURRENT);
 	dateprops.set ( new Prop ("AverageStart", now, now.toString()) );
 	DateTime AverageStart_DateTime = null;
-	DateTime AvergeEnd_DateTime = null;
+	DateTime AverageEnd_DateTime = null;
 	if ( (AverageStart != null) && !AverageStart.equals("") ) {
 		try {
 		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
-			DateTime.parse(AverageStart, dateprops );
+			AverageStart_DateTime = DateTime.parse(AverageStart, dateprops );
 		}
 		catch ( Exception e ) {
 			message = "The average start date/time \"" + AverageStart +	"\" is not a valid date/time string.";
@@ -85,7 +85,7 @@ throws InvalidCommandParameterException
 	if ( (AverageEnd != null) && !AverageEnd.equals("") ) {
 		try {
 		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
-			DateTime.parse(AverageEnd, dateprops );
+			AverageEnd_DateTime = DateTime.parse(AverageEnd, dateprops );
 		}
 		catch ( Exception e ) {
 			message = "The average end date/time \"" + AverageEnd +	"\" is not a valid date/time string.";
@@ -97,14 +97,14 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (AverageStart_DateTime != null) && (AverageStart_DateTime != null) ) {
-		if ( AverageStart_DateTime.greaterThan(AvergeEnd_DateTime) ) {
+		if ( AverageStart_DateTime.greaterThan(AverageEnd_DateTime) ) {
 			message = "The start date/time is later than the end date/time.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Correct so that the end time is >= the start time." ) );
 		}
-		if ( AverageStart_DateTime.getPrecision() != AvergeEnd_DateTime.getPrecision() ) {
+		if ( AverageStart_DateTime.getPrecision() != AverageEnd_DateTime.getPrecision() ) {
 			message = "The precision of the start and end date/times are different.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,

@@ -45,32 +45,24 @@ private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
 private JFrame		__parent_JFrame = null;	// parent JFrame
 private NewStatisticTimeSeries_Command __command = null;	// Command to edit.
-private JTextArea	__command_JTextArea=null;// Command as JTextField
-private JTextField	__Alias_JTextField = null;// Field for time series alias
-private SimpleJComboBox	__TSID_JComboBox = null;// Time series available to
-						// operate on.
+private JTextArea	__command_JTextArea=null;
+private JTextField	__Alias_JTextField = null;
+private SimpleJComboBox	__TSID_JComboBox = null;
 private JTextArea	__NewTSID_JTextArea = null;
-						// New TSID.
 private SimpleJComboBox	__Statistic_JComboBox = null;
-						// Statistic to analyze.
 /* TODO SAM 2007-11-05 Enable later
 private JTextField	__TestValue_JTextField = null;
 						// Test value for the statistic.
 						 */
 private JTextField	__AllowMissingCount_JTextField = null;
-						// Missing data count allowed
-						// in analysis interval.
 private JTextField	__AnalysisStart_JTextField = null;
 private JTextField	__AnalysisEnd_JTextField = null;
-						// Fields for analysis period
 /* TODO SAM 2007-11-05 Probably don't need
 private JTextField	__SearchStart_JTextField = null;
 */
 private SimpleJButton	__edit_JButton = null;	// Edit button
 private SimpleJButton	__clear_JButton = null;	// Clear NewTSID button
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
 private boolean		__ok = false;		// Whether OK has been pressed.
 
@@ -266,7 +258,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"<HTML><B>THIS IS AN EXPERIMENTAL COMMAND NOT YET TESTED FOR PRODUCTION WORK.</B></HTML>" ),
+		"<HTML><B>THIS IS AN EXPERIMENTAL COMMAND NOT FULLY TESTED FOR PRODUCTION WORK.</B></HTML>" ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a time series as a repeating statistic determined from " +
@@ -281,8 +273,7 @@ private void initialize ( JFrame parent, Command command )
     	"the mean of all January 1 data on each January 1 in the result."),
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optionally, specify a new time series identifier (TSID)" +
-		" information for the new time series." ), 
+		"Optionally, specify a new time series identifier (TSID) information for the new time series." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This is highly recommended if there is any chance that the " +
@@ -299,8 +290,7 @@ private void initialize ( JFrame parent, Command command )
 		"Often the location from the TSID, or a short string."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Time series to analyze (TSID):"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
 	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
@@ -329,8 +319,7 @@ private void initialize ( JFrame parent, Command command )
 		"Specify to avoid confusion with TSID from original TS."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
-    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
-		new SimpleJButton ( "Edit", "Edit", this ) ),
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
@@ -340,6 +329,8 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
 	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoicesForSimpleSample ( TimeInterval.YEAR, null ) );
+	// FIXME SAM 2008-10-30 For now only support Mean...
+	__Statistic_JComboBox.remove("Median");
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
 	JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,

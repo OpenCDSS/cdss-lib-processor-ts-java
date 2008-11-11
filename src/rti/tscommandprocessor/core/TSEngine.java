@@ -645,9 +645,10 @@ package rti.tscommandprocessor.core;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.String;
-import java.io.PrintWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
@@ -4586,7 +4587,7 @@ throws Exception
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
         // Old style (scenario may or may not be used to find the file)...
         try {
-            ts = HecDssAPI.readTimeSeries ( tsident_string, query_date1, query_date2, units, read_data );
+            ts = HecDssAPI.readTimeSeries ( new File(input_name), tsident_string, query_date1, query_date2, units, read_data );
         }
         catch ( Exception e ) {
             Message.printWarning ( 2, routine, e );

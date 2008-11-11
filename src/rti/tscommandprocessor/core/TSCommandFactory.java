@@ -34,6 +34,10 @@ import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
 
+//HEC-DSS commands.
+
+import rti.tscommandprocessor.commands.hecdss.ReadHecDss_Command;
+
 // HydroBase commands.
 
 import rti.tscommandprocessor.commands.hydrobase.FillUsingDiversionComments_Command;
@@ -481,6 +485,9 @@ throws UnknownCommandException
     }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadDelimitedFile") ) {
         return new ReadDelimitedFile_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadHecDss") ) {
+        return new ReadHecDss_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadHydroBase") ) {
 		return new ReadHydroBase_Command ();

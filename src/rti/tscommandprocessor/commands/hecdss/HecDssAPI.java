@@ -6,7 +6,7 @@ import java.util.Vector;
 
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSFileAccess;
-import hec.heclib.dss.HecDataManager;
+//import hec.heclib.dss.HecDataManager;
 import hec.heclib.dss.HecTimeSeries;
 import hec.heclib.util.Heclib;
 import hec.heclib.util.HecTime;
@@ -34,8 +34,7 @@ public class HecDssAPI
 
 // TODO SAM Evaluate where to put this load call.
 /**
-Load the javaHeclib.dll library, which is used via JNI to run native code that
-reads the DSS files.
+Load the javaHeclib.dll library, which is used via JNI to run native code that reads the DSS files.
 */
 static 
 {   String routine = "HECDSS.static";
@@ -73,6 +72,8 @@ static
         }
         Message.printWarning ( 2, routine, "HEC-DSS features will not be functional." );
         Message.printWarning( 3, routine, e);
+        // Rethrow the error so it can be indicated as a command error
+        throw ( e );
     }
 }
 
@@ -95,7 +96,7 @@ private static List createCondensedCatalog ( List pathnameList )
     String dPart, dPartPrev = null; // Period
     String ePart, ePartPrev = null; // Interval
     String fPart, fPartPrev = null; // Scenario
-    DSSPathname dssPathName, dssPathNamePrev;
+    DSSPathname dssPathName;
     String pathname;
     for ( int i = 0; i < size; i++ ) {
         pathname = (String)pathnameList.get(i);
@@ -130,7 +131,6 @@ private static List createCondensedCatalog ( List pathnameList )
             --size;
             continue;
         }
-        dssPathNamePrev = dssPathName;
         aPartPrev = aPart;
         bPartPrev = bPart;
         cPartPrev = cPart;

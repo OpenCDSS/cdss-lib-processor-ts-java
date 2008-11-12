@@ -274,7 +274,7 @@ private void initialize(JFrame parent, Command command) {
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Read the time series from a HEC-DSS file."),
+        "<HTML>Read the time series from a HEC-DSS file.  <B>THIS COMMAND IS UNDER DEVELOPMENT</B></HTML>."),
         0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use * in the A, B, C, E, and F parts to filter the time series that are read." ), 
@@ -312,7 +312,6 @@ private void initialize(JFrame parent, Command command) {
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __A_JTextField = new JTextField ( "", 30 );
     __A_JTextField.addKeyListener ( this );
-    __A_JTextField.setEnabled ( false );
     JGUIUtil.addComponent(main_JPanel, __A_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - A part to match (default=match all)."),
@@ -322,7 +321,6 @@ private void initialize(JFrame parent, Command command) {
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __B_JTextField = new JTextField ( "", 30 );
     __B_JTextField.addKeyListener ( this );
-    __B_JTextField.setEnabled ( false );
     JGUIUtil.addComponent(main_JPanel, __B_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - B part to match (default=match all)."),
@@ -332,7 +330,6 @@ private void initialize(JFrame parent, Command command) {
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __C_JTextField = new JTextField ( "", 30 );
     __C_JTextField.addKeyListener ( this );
-    __C_JTextField.setEnabled ( false );
     JGUIUtil.addComponent(main_JPanel, __C_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - C part to match (default=match all)."),
@@ -342,7 +339,6 @@ private void initialize(JFrame parent, Command command) {
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __E_JTextField = new JTextField ( "", 30 );
     __E_JTextField.addKeyListener ( this );
-    __E_JTextField.setEnabled ( false );
     JGUIUtil.addComponent(main_JPanel, __E_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - E part to match (default=match all)."),
@@ -352,7 +348,6 @@ private void initialize(JFrame parent, Command command) {
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __F_JTextField = new JTextField ( "", 30 );
     __F_JTextField.addKeyListener ( this );
-    __F_JTextField.setEnabled ( false );
     JGUIUtil.addComponent(main_JPanel, __F_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - F part to match (default=match all)."),
@@ -483,6 +478,11 @@ private void refresh()
 		// Get the properties from the command
 		props = __command.getCommandParameters();
 		InputFile = props.getValue("InputFile");
+		A = props.getValue("A");
+		B = props.getValue("B");
+		C = props.getValue("C");
+		E = props.getValue("E");
+		F = props.getValue("F");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");

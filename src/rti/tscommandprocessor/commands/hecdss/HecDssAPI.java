@@ -385,16 +385,21 @@ throws Exception
             //dssPathName.setDPart("");
             Message.printStatus(2, routine, "Reading data using path \"" + dssPathName + "\"" );
             rts.setPathname(dssPathName.toString());
+            // This appears to be equivalent to negative Float.MAX_VALUE
             ts.setMissing( Heclib.UNDEFINED_DOUBLE );
 
             //int status = rts.read(tsc, false); // false indicates whether to remove missing
             // Is there any way to read time series metadata without reading the records?
             // This would improve performance when data are not requested.
             
-            Message.printStatus(2, routine, "Before rts.read()" );
+            if ( Message.isDebugOn ) {
+                Message.printDebug(2, routine, "Before rts.read()" );
+            }
             int status = rts.read ();
             // Some time series don't have a period so can't set dates in RTi TS from HecTimeSeries
-            Message.printStatus(2, routine, "Before setDataPeriod()" );
+            if ( Message.isDebugOn ) {
+                Message.printDebug(2, routine, "Before setDataPeriod()" );
+            }
             readData2 = setDataPeriod ( ts, rts, readStart, readEnd );
 
             ts.setDataUnits ( rts.units() );
@@ -404,7 +409,9 @@ throws Exception
             }
             else if ( readData2 ) {
                 // Transfer to the time series.
-                Message.printStatus(2, routine, "Start transferring data." );
+                if ( Message.isDebugOn ) {
+                    Message.printStatus(2, routine, "Start transferring data." );
+                }
                 ts.allocateDataSpace();
                 // Get the data values
                 doubleArrayContainer values = new doubleArrayContainer();
@@ -417,8 +424,10 @@ throws Exception
                 for ( int idata = 0; idata < values.length; idata++ ) {
                     // Assume that access is direct on the arrays for performance reasons
                     hecTime.set ( times.array[idata] );
-                    Message.printStatus ( 2, routine, "Setting value " + values.array[idata] + " at " +
+                    if ( Message.isDebugOn ) { 
+                        Message.printDebug ( 10, routine, "Setting value " + values.array[idata] + " at " +
                             times.array[idata] + " (" + hecTime + ")");
+                    }
                     if ( !hecTime.isDefined() || ts.isDataMissing(values.array[idata])) {
                         // Don't try to set because this may cause exceptions in some cases.
                         continue;
@@ -552,9 +561,13 @@ private static boolean setDataPeriod ( TS ts, HecTimeSeries hects, DateTime read
     // The precision of the dates will be handled based on the time series interval.
     HecTime hecStart = new HecTime();
     HecTime hecEnd = new HecTime();
-    Message.printStatus(2, routine, "Before hects.getSeriesTimeRange()" );
+    if ( Message.isDebugOn ) {
+        Message.printDebug(2, routine, "Before hects.getSeriesTimeRange()" );
+    }
     hects.getSeriesTimeRange ( hecStart, hecEnd, 0 );
-    Message.printStatus(2, routine, "Hec start = " + hecStart + " end = " + hecEnd );
+    if ( Message.isDebugOn ) {
+        Message.printStatus(2, routine, "Hec start = " + hecStart + " end = " + hecEnd );
+    }
     if ( !hecStart.isDefined() ) {
         Message.printStatus(2, routine, "Hec start is not defined - not setting period for time series." );
         return false;

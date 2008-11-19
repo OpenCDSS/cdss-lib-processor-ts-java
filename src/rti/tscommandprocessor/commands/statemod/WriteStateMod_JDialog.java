@@ -77,20 +77,18 @@ private SimpleJButton	__browse_JButton = null,// Button to browse for file
 			__path_JButton = null;	// Convert between relative and
 						// absolute paths
 private WriteStateMod_Command __command = null;	// Command to edit
-private SimpleJComboBox	__TSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
+private SimpleJComboBox	__TSList_JComboBox = null; // Indicate how to get time series list.
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private JTextField	__OutputFile_JTextField = null;// Field for time series identifier
-private JTextField	__OutputStart_JTextField = null;// Start of period for output
-private JTextField	__OutputEnd_JTextField = null;// End of period for output
-private JTextField	__MissingValue_JTextField = null;// Missing value for output
-private JTextField	__Precision_JTextField = null;// Precision for output
-private JTextArea	__command_JTextArea=null;// Command as JTextField
-private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-private boolean		__ok = false; // Has the user pressed OK to close the dialog?
+private JTextField __OutputFile_JTextField = null;// Field for time series identifier
+private JTextField __OutputStart_JTextField = null;// Start of period for output
+private JTextField __OutputEnd_JTextField = null;// End of period for output
+private JTextField __MissingValue_JTextField = null;// Missing value for output
+private JTextField __Precision_JTextField = null;// Precision for output
+private JTextArea __command_JTextArea=null;// Command as JTextField
+private String __working_dir = null;	// Working directory.
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Has the user pressed OK to close the dialog?
 
 /**
 WriteStateMod_JDialog constructor.
@@ -224,7 +222,8 @@ private void checkInput ()
 	if ( Precision.length() > 0 ) {
 		props.set ( "Precision", Precision );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -399,18 +398,17 @@ private void initialize ( JFrame parent, Command command )
 		"Overrides the global output end."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MissingValue_JTextField = new JTextField ( "", 20 );
 	__MissingValue_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Value to write for missing data (default=-999)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Output precision:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output precision:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( "", 20 );
 	__Precision_JTextField.addKeyListener ( this );

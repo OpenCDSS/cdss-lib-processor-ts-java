@@ -46,11 +46,9 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
@@ -61,12 +59,10 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// When checking InputStart and InputEnd, all we care about is that the
-	// syntax is correct.  In runCommand() the parameter will be reparsed
-	// with runtime data...
+	// syntax is correct.  In runCommand() the parameter will be reparsed with runtime data...
 
 	PropList dateprops = new PropList ( "SetInputPeriod" );
-	// The instance is not needed when checking syntax but will be checked
-	// at runtime.
+	// The instance is not needed when checking syntax but will be checked at runtime.
 	DateTime now = new DateTime(DateTime.DATE_CURRENT);
 	dateprops.set ( new Prop ("InputStart", now, now.toString()) );
 	DateTime InputStart_DateTime = null;
@@ -86,8 +82,8 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (InputEnd != null) && !InputEnd.equals("") ) {
-		try {	// This handles special syntax like "NowToHour" and
-			// "NowToHour - 6Hour"
+		try {
+		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
 			InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
 		}
 		catch ( Exception e ) {
@@ -99,7 +95,7 @@ throws InvalidCommandParameterException
 			Message.printWarning ( 3, "", e );
 		}
 	}
-	if ( (InputStart_DateTime != null) && (InputStart_DateTime != null) ) {
+	if ( (InputStart_DateTime != null) && (InputEnd_DateTime != null) ) {
 		if ( InputStart_DateTime.greaterThan(InputEnd_DateTime) ) {
 			message = "The start date/time is later than the end date/time.";
 			warning += "\n" + message;
@@ -146,58 +142,40 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "SetInputPeriod_Command.parseCommand", message;
-	int warning_level = 2;
-	
-	CommandStatus status = getCommandStatus();
+{	String routine = "SetInputPeriod_Command.parseCommand";
 
 	String InputStart = null;
 	String InputEnd = null;
 	if ( (command.indexOf('=') > 0) || command.endsWith("()") ) {
 		// Current syntax...
-		Vector tokens = StringUtil.breakStringList ( command,"()", 0 );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			message = "Invalid syntax for \"" + command + "\".  Expecting SetInputPeriod(...).";
-			Message.printWarning ( warning_level, routine, message);
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify command syntax (use command editor)." ) );
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		// Get the input needed to process the file...
-		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine,"," ) );
+	    super.parseCommand(command);
 	}
 	else {
 		// TODO SAM 2005-04-29 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
-		// Old syntax where the only parameter is a single TSID or *
-		// to fill all.
+		// Old syntax where the only parameter is a single TSID or * to fill all.
 		Vector tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 3) ) {
 			throw new InvalidCommandSyntaxException ("Bad command \"" + command + "\"" );
 		}
 		if ( StringUtil.startsWithIgnoreCase(command,"setQueryPeriod")){
 			Message.printStatus ( 3, routine,
-			"Automatically converting setQueryPeriod() to " +
-			"SetInputPeriod()" );
+			"Automatically converting setQueryPeriod() to SetInputPeriod()" );
 		}
 		InputStart = ((String)tokens.elementAt(1)).trim();
-		if ( InputStart.equals("*") ) {	// Phase out old style
+		if ( InputStart.equals("*") ) {
+		    // Phase out old style
 			InputStart = "";
 		}
 		InputEnd = ((String)tokens.elementAt(2)).trim();
-		if ( InputEnd.equals("*") ) {	// Phase out old style
+		if ( InputEnd.equals("*") ) {
+		    // Phase out old style
 			InputEnd = "";
 		}
 
@@ -221,8 +199,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException
@@ -241,13 +218,12 @@ throws CommandWarningException, CommandException
 	DateTime InputStart_DateTime = null;
 	DateTime InputEnd_DateTime = null;
 	PropList dateprops = new PropList ( "SetInputPeriod" );
-	try {	// Reparse the date/times to take advantage of run-time data
-		// values...
+	try {
+	    // Reparse the date/times to take advantage of run-time data values...
 		if ( (InputStart != null) && !InputStart.equals("") ) {
-			try {	// This handles special syntax like "NowToHour"
-				// and "NowToHour - 6Hour"
-				InputStart_DateTime =
-				DateTime.parse(InputStart, dateprops );
+			try {
+			    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+				InputStart_DateTime = DateTime.parse(InputStart, dateprops );
 			}
 			catch ( Exception e ) {
 				message = "The input start date/time \"" + InputStart +	"\" is not a valid date/time.";
@@ -266,8 +242,8 @@ throws CommandWarningException, CommandException
 			dateprops.set ( prop );
 		}
 		if ( (InputEnd != null) && !InputEnd.equals("") ) {
-			try {	InputEnd_DateTime =
-				DateTime.parse(InputEnd, dateprops );
+			try {
+			    InputEnd_DateTime = DateTime.parse(InputEnd, dateprops );
 			}
 			catch ( Exception e ) {
 				message = "The input end date/time \"" + InputEnd +	"\" is not a valid date/time.";

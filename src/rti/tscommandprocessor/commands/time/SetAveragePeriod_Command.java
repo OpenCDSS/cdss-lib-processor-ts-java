@@ -145,33 +145,16 @@ Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
-{	String routine = "SetAveragePeriod_Command.parseCommand", message;
-	int warning_level = 2;
-	
-	CommandStatus status = getCommandStatus();
-
-	String AverageStart = null;
+{	String AverageStart = null;
 	String AverageEnd = null;
 	if ( (command.indexOf('=') > 0) || command.endsWith("()") ) {
 		// Current syntax...
-		Vector tokens = StringUtil.breakStringList ( command,"()", 0 );
-		if ( (tokens == null) || tokens.size() < 2 ) {
-			message = "Invalid syntax for \"" + command + "\".  Expecting SetAveragePeriod(...).";
-			Message.printWarning ( warning_level, routine, message);
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify command syntax (use command editor)." ) );
-			throw new InvalidCommandSyntaxException ( message );
-		}
-		// Get the input needed to process the file...
-		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine,"," ) );
+	    super.parseCommand(command);
 	}
 	else {
 		// TODO SAM 2005-04-29 This whole block of code needs to be
@@ -209,8 +192,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws CommandWarningException, CommandException

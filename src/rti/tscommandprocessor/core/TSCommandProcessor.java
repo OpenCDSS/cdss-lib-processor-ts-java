@@ -423,9 +423,10 @@ public List getCommands ()
 }
 
 /**
-Get the name of the commands file associated with the processor.
+Get the name of the command file associated with the processor.
+@return the name of the command file associated with the processor.
 */
-public String getCommandsFileName ()
+public String getCommandFileName ()
 {
 	return __commandFilename;
 }
@@ -2829,8 +2830,8 @@ throws Exception
 }
 
 /**
-Read the commands file and initialize new commands.
-@param path Path to the commands file - this should be an absolute path.
+Read the command file and initialize new commands.
+@param path Path to the command file - this should be an absolute path.
 @param createUnknownCommandIfNotRecognized If true, create a GenericCommand
 if the command is not recognized or has a syntax problem.
 This is being used during transition of old string commands to full Command classes and
@@ -2857,13 +2858,13 @@ throws IOException, FileNotFoundException
 	// the progress in reading/initializing the commands.
 	//
 	// Why would this not be done?  Because of performance issues.
-	boolean notify_listeners_for_each_add = true;
+	boolean notifyListenersForEachAdd = true;
 	// If not appending, remove all...
 	if ( !append ) {
 		removeAllCommands();
 	}
 	// Now process each line in the file and turn into a command...
-	int num_added = 0;
+	int numAdded = 0;
 	while ( true ) {
 		line = br.readLine();
 		if ( line == null ) {
@@ -2921,8 +2922,8 @@ throws IOException, FileNotFoundException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             "There was an error loading the following command.",
                             "Correct the command below (typically a parameter error due to manual edit)." ) );
-            addCommand ( command2, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
             command2 = new GenericCommand ();
             command2.setCommandString ( "#" + fixme + line );
             status = ((CommandStatusProvider)command2).getCommandStatus();
@@ -2930,8 +2931,8 @@ throws IOException, FileNotFoundException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             "There was an error loading this command.",
                             "Correct the command below (typically a parameter error due to manual edit)." ) );
-            addCommand ( command2, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
             // Allow the bad command to be loaded below.  It may have no arguments or partial
             // parameters that need corrected.
 		}
@@ -2958,8 +2959,8 @@ throws IOException, FileNotFoundException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             "There was an error loading the following command.",
                             "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
             command2 = new GenericCommand ();
             command2.setCommandString ( "#" + line );
             status = ((CommandStatusProvider)command2).getCommandStatus();
@@ -2967,8 +2968,8 @@ throws IOException, FileNotFoundException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             "There was an error loading this command.",
                             "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
             // Allow the bad command to be loaded below.  It may have no arguments or partial
             // parameters that need corrected.
 		}
@@ -2995,8 +2996,8 @@ throws IOException, FileNotFoundException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             "There was an error loading the following command.",
                             "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
             command2 = new GenericCommand ();
             command2.setCommandString ( "#" + fixme + line );
             status = ((CommandStatusProvider)command2).getCommandStatus();
@@ -3004,8 +3005,8 @@ throws IOException, FileNotFoundException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             "There was an error loading this command.",
                             "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
             // Allow the bad command to be loaded below.  It may have no arguments or partial
             // parameters that need corrected.
         }
@@ -3014,7 +3015,7 @@ throws IOException, FileNotFoundException
         // For now, add the command, without notifying listeners of changes...
         if ( command != null ) {
             // Check the command parameters
-            String command_tag = "" + num_added + 1;  // Command number, for messaging
+            String command_tag = "" + numAdded + 1;  // Command number, for messaging
             int error_count = 0;
             try {  
                 command.checkCommandParameters(command.getCommandParameters(), command_tag, 2 );
@@ -3073,8 +3074,8 @@ throws IOException, FileNotFoundException
                 }
             }
             // Now finally add the command to the list
-            addCommand ( command, notify_listeners_for_each_add );
-            ++num_added;
+            addCommand ( command, notifyListenersForEachAdd );
+            ++numAdded;
             // Run discovery on the command so that the identifiers are available to other commands.
             // Do up front and then only when commands are edited.
             if ( command instanceof CommandDiscoverable ) {
@@ -3086,8 +3087,8 @@ throws IOException, FileNotFoundException
 	br.close();
 	// Now notify listeners about the add one time (only need to do if it
 	// was not getting done for each add)...
-	if ( !notify_listeners_for_each_add ) {
-		notifyCommandListListenersOfAdd ( 0, (num_added - 1) );
+	if ( !notifyListenersForEachAdd ) {
+		notifyCommandListListenersOfAdd ( 0, (numAdded - 1) );
 	}
 }
 

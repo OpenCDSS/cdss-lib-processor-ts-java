@@ -1788,7 +1788,7 @@ protected String [] formatOutputHeaderComments ( List commands )
 {	Vector comments = new Vector();
 	// Commands.  Show the file name but all commands may be in memory.
 	comments.addElement ( "-----------------------------------------------------------------------" );
-	String commands_filename = __ts_processor.getCommandsFileName();
+	String commands_filename = __ts_processor.getCommandFileName();
 	if ( commands_filename == null ) {
 		comments.addElement ( "Command file name:  COMMANDS NOT SAVED TO FILE" );
 	}

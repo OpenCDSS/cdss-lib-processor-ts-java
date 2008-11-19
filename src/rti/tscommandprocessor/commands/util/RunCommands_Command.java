@@ -30,7 +30,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 /**
 <p>
-This class initializes, checks, and runs the runCommands() command.
+This class initializes, checks, and runs the RunCommands() command.
 </p>
 */
 public class RunCommands_Command extends AbstractCommand implements Command
@@ -75,8 +75,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -192,8 +191,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,

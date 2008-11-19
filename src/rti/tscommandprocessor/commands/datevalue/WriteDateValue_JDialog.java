@@ -68,6 +68,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextField __MissingValue_JTextField = null;// Missing value for output
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
@@ -189,7 +190,8 @@ private void checkInput ()
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
-    String EnsembleID = __EnsembleID_JComboBox.getSelected(); 
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String MissingValue = __MissingValue_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -217,7 +219,11 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
-	try {	// This will warn the user...
+    if ( MissingValue.length() > 0 ) {
+        parameters.set ( "MissingValue", MissingValue );
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -240,6 +246,7 @@ private void commitEdits ()
 	String Precision = __Precision_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -248,6 +255,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "MissingValue", MissingValue );
 }
 
 /**
@@ -301,7 +309,7 @@ private void initialize ( JFrame parent, Command command )
 		"The Browse button can be used to select an existing file " +
 		"to overwrite (or edit the file name after selection)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to a "+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to a "+
 		"precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -309,20 +317,20 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Delimiter:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Delimiter_JTextField = new JTextField (10);
     __Delimiter_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Default is space.  Comma is only other allowed delimiter."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - delimiter between values (default=space, comma is only other allowed delimiter)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output precision:" ),
@@ -331,7 +339,17 @@ private void initialize ( JFrame parent, Command command )
     __Precision_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Digits after decimal (default=4)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - digits after decimal (default=4)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 20 );
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - value to write for missing data (default=initial missing value)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
@@ -341,7 +359,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output start (default=write all data)."),
+		"Optional - override the global output start (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
@@ -351,7 +369,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output end (default=write all data)."),
+		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -360,15 +378,15 @@ private void initialize ( JFrame parent, Command command )
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -455,6 +473,7 @@ private void refresh ()
 	String OutputFile = "";
 	String Delimiter = "";
 	String Precision = "";
+	String MissingValue = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	String TSList = "";
@@ -469,6 +488,7 @@ private void refresh ()
 		OutputFile = parameters.getValue ( "OutputFile" );
 	    Delimiter = parameters.getValue("Delimiter");
 	    Precision = parameters.getValue("Precision");
+	    MissingValue = parameters.getValue("MissingValue");
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		TSList = parameters.getValue ( "TSList" );
@@ -483,6 +503,9 @@ private void refresh ()
 	    if ( Precision != null ) {
 	        __Precision_JTextField.setText ( Precision );
 	    }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText ( MissingValue );
+        }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
 		}
@@ -538,6 +561,7 @@ private void refresh ()
 	OutputFile = __OutputFile_JTextField.getText().trim();
 	Delimiter = __Delimiter_JTextField.getText().trim();
 	Precision = __Precision_JTextField.getText().trim();
+	MissingValue = __MissingValue_JTextField.getText().trim();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	TSList = __TSList_JComboBox.getSelected();
@@ -550,6 +574,7 @@ private void refresh ()
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "Delimiter=" + Delimiter );
 	parameters.add ( "Precision=" + Precision );
+	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
@@ -605,5 +630,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end WriteDateValue_JDialog
-
+}

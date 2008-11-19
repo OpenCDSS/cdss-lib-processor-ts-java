@@ -67,6 +67,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
     String Delimiter = parameters.getValue("Delimiter" );
+    String MissingValue = parameters.getValue("MissingValue" );
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -145,6 +146,16 @@ throws InvalidCommandParameterException
                             message, "Specify the precision as an integer." ) );
         }
     }
+    
+    if ( (MissingValue != null) && !MissingValue.equals("") ) {
+        if ( !StringUtil.isDouble(MissingValue) ) {
+            message = "The missing value \"" + MissingValue + "\" is not a number.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the missing value as a number." ) );
+        }
+    }
 
 	if ( (OutputStart != null) && !OutputStart.equals("")) {
 		try {	DateTime datetime1 = DateTime.parse(OutputStart);
@@ -179,6 +190,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Delimiter" );
 	valid_Vector.add ( "Precision" );
+	valid_Vector.add ( "MissingValue" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "TSList" );
@@ -450,6 +462,10 @@ CommandWarningException, CommandException
     if ( (Precision != null) && (Precision.length() > 0) ) {
         props.set("Precision=" + Precision);
     }
+    String MissingValue = parameters.getValue ( "MissingValue" );
+    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+        props.set("MissingValue=" + MissingValue);
+    }
     
     // Get the comments to add to the top of the file.
 
@@ -514,6 +530,7 @@ public String toString ( PropList parameters )
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Delimiter = parameters.getValue ( "Delimiter" );
 	String Precision = parameters.getValue("Precision");
+	String MissingValue = parameters.getValue("MissingValue");
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String TSList = parameters.getValue ( "TSList" );
@@ -537,6 +554,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Precision=" + Precision );
+    }
+    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MissingValue=" + MissingValue );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

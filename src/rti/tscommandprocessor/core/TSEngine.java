@@ -4452,7 +4452,7 @@ throws Exception
 			String message = 
 				"Null TS from read and not creating blank - unable to" +
 				" process command:\n\""+ tsident_string +"\".\nYou must correct the command.  " +
-				"Make sure that the data are in the database or\ninput file.";
+				"Make sure that the data are in the database or input file.";
 			Message.printWarning ( wl,
 			MessageUtil.formatMessageTag(command_tag,++_fatal_error_count), routine, message );
 			getMissingTS().addElement(tsident_string);
@@ -4696,7 +4696,7 @@ throws Exception
 		// New style TSID~input_type~input_name for RiversideDB...
         RiversideDB_DMI rdmi = getRiversideDB_DMI ( input_name );
         if ( rdmi == null ) {
-            Message.printWarning ( 2, routine, "Unable to get RiversideDB connection for " +
+            Message.printWarning ( 3, routine, "Unable to get RiversideDB connection for " +
             "input name \"" + input_name +  "\".  Unable to read time series." );
             ts = null;
         }
@@ -4707,12 +4707,12 @@ throws Exception
 			catch ( Exception te ) {
 				Message.printWarning ( 2, routine,
 				"Error reading time series \""+tsident_string2 + "\" from RiversideDB" );
-				Message.printWarning ( 2, routine, te );
+				Message.printWarning ( 3, routine, te );
 				ts = null;
 			}
 		}
-		// Because there are other issues to resolve, for now, if the
-		// time series does not have data, set it to null...
+		// Because there are other issues to resolve, for now, if the time series does not have data, set it to null...
+		/* TODO SAM 2008-11-19 commen this out - should be able to handle no data, in particular if readData = false
 		if ( ts != null ) {
 			if ( !ts.hasData() ) {
 				Message.printWarning ( 2, routine,
@@ -4720,6 +4720,7 @@ throws Exception
 				ts = null;
 			}
 		}
+		*/
 	}
 	else if ((input_type != null) && input_type.equalsIgnoreCase("RiverWare") ) {
 		// New style TSID~input_type~input_name for RiverWare...

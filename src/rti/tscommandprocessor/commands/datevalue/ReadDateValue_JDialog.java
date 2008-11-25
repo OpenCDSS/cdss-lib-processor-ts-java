@@ -42,11 +42,10 @@ public class ReadDateValue_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and
-						// absolute path.
+			__path_JButton = null,	// Convert between relative and absolute path.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private Command		__command = null;
+private ReadDateValue_Command __command = null;
 private String		__working_dir = null;	// Working directory.
 private JTextField	__Alias_JTextField = null,// Alias for time series.
             __TSID_JTextField = null,
@@ -55,9 +54,7 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputFile_JTextField = null, // Field for input file
 			__NewUnits_JTextField = null; // Units to convert to at read
 private JTextArea	 __Command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
+private boolean		__error_wait = false;	// Is there an error to be cleared up?
 private boolean		__first_time = true;
 
 private boolean 	__isAliasVersion = false;	
@@ -258,7 +255,7 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize(JFrame parent, Command command) {
-	__command = command;
+	__command = (ReadDateValue_Command)command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -489,7 +486,6 @@ private void refresh() {
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
-
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	props.add("NewUnits=" + NewUnits);
@@ -499,7 +495,6 @@ private void refresh() {
     if (TSID != null) {
         props.add("TSID=" + TSID);
     }
-	
 	__Command_JTextArea.setText( __command.toString(props) );
 
 	// Refresh the Path Control text.

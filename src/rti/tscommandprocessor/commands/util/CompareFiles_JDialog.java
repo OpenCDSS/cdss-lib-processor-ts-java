@@ -275,7 +275,7 @@ private void initialize ( JFrame parent, Command command )
 {	__command = (CompareFiles_Command)command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
-	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 

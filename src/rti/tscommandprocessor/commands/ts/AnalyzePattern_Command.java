@@ -126,7 +126,7 @@ throws InvalidCommandParameterException
 	// Make sure one or more time series are selected when AllMatchingTSID is selected.
 	if ( TSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
 		if ( TSID != null ) {
-			Vector selectedV = StringUtil.breakStringList (TSID, ",",StringUtil.DELIM_SKIP_BLANKS );
+			List selectedV = StringUtil.breakStringList (TSID, ",",StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
                 message = "TSID should should not be empty when TSList=" + _AllMatchingTSID + " is specified.";
 				warning += "\n" + message;
@@ -163,7 +163,7 @@ throws InvalidCommandParameterException
         
 	}
     else {
-		Vector percentileV = StringUtil.breakStringList ( Percentile, ",",StringUtil.DELIM_SKIP_BLANKS );
+    	List percentileV = StringUtil.breakStringList ( Percentile, ",",StringUtil.DELIM_SKIP_BLANKS );
 		if ( percentileV == null || percentileV.size()<= 0 ) {
             message = "Error parsing Percentile list \"" + Percentile + "\".";
 			warning += "\n" + message;
@@ -179,7 +179,7 @@ throws InvalidCommandParameterException
 			String percentileStr;
 			double previousP = 0, currentP;
 			for ( int n = 0; n < percentileCount; n++ ) {
-				percentileStr =(String)percentileV.elementAt(n);
+				percentileStr =(String)percentileV.get(n);
 				if ( !StringUtil.isDouble( percentileStr ) ) {
                     message = "Percentile \"" + percentileStr + "\" is not a number.";
 					warning += "\n" + message;
@@ -225,7 +225,7 @@ throws InvalidCommandParameterException
                         message, "Specify a list of pattern values." ) );
 	}
     else {
-		Vector patternV = StringUtil.breakStringList ( PatternID, ",",StringUtil.DELIM_SKIP_BLANKS );
+    	List patternV = StringUtil.breakStringList ( PatternID, ",",StringUtil.DELIM_SKIP_BLANKS );
 		if ( patternV == null || patternV.size() <= 0 ) {
             message = "Error parsing PatternID list \"" + PatternID + "\".";
 			warning += "\n" + message;
@@ -249,7 +249,7 @@ throws InvalidCommandParameterException
 		}
 		__patternIDArray = new String [ patternCount ];
 		for ( int n = 0; n < patternCount; n++ ) {
-			String pattern = (String) patternV.elementAt(n);
+			String pattern = (String) patternV.get(n);
 			__patternIDArray[n] = pattern;
 		}
 	}
@@ -287,7 +287,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "Method" );
@@ -332,9 +332,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-    Vector list = new Vector();
+	List list = new Vector();
     if ( getOutputFile() != null ) {
-        list.addElement ( getOutputFile() );
+        list.add ( getOutputFile() );
     }
     return list;
 }
@@ -403,7 +403,7 @@ throws InvalidCommandParameterException,
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to process using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -415,7 +415,7 @@ throws InvalidCommandParameterException,
                         message, "Report the problem to software support." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to process using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -509,7 +509,7 @@ throws InvalidCommandParameterException,
 	try {
 		// Looping through each time series creating a new StringMonthTS
 		// And keep the StringMonthTS in a vector of time series
-		Vector StringMonthTS_List = new Vector(tsCount);
+		List StringMonthTS_List = new Vector(tsCount);
 		StringMonthTS stringMonthTS = null;
 		for ( int nTS = 0; nTS < tsCount; nTS++ ) {
 			
@@ -684,7 +684,7 @@ throws InvalidCommandParameterException,
 				}
 			}
 			// Add this time series to the list.
-			StringMonthTS_List.addElement( stringMonthTS );
+			StringMonthTS_List.add( stringMonthTS );
 		}
 
 		// Saving results in the output file.

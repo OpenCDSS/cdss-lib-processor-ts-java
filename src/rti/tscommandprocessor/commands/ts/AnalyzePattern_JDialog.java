@@ -32,6 +32,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.event.ListSelectionListener;
@@ -357,10 +358,10 @@ private void initialize ( JFrame parent,
 	}
 
 	// Vector of options for the TSList (set below)
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( __command._AllTS );
-	tslist_Vector.addElement ( __command._SelectedTS );
-	tslist_Vector.addElement ( __command._AllMatchingTSID );
+	List tslist_Vector = new Vector();
+	tslist_Vector.add ( __command._AllTS );
+	tslist_Vector.add ( __command._SelectedTS );
+	tslist_Vector.add ( __command._AllMatchingTSID );
 
 	// How to get the time series list to fill.
         JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
@@ -382,7 +383,7 @@ private void initialize ( JFrame parent,
 	// Allow edits...
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 	
-	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	int size = 0;
@@ -392,12 +393,12 @@ private void initialize ( JFrame parent,
 	size = tsids.size();
 	// Blank for default
 	if ( size > 0 ) {
-		tsids.insertElementAt ( "", 0 );
+		tsids.add ( 0, "" );
 	}
-	else {	tsids.addElement ( "" );
+	else {	tsids.add ( "" );
 	}
 	// Always allow a "*" to let all time series be filled (put at end)...
-	tsids.addElement ( "*" );
+	tsids.add ( "*" );
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
 	__TSID_JComboBox.addKeyListener ( this );
@@ -407,8 +408,8 @@ private void initialize ( JFrame parent,
 	// Method
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Method:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector av = new Vector();
-	av.addElement( __command._ANALYSIS_PERCENTILE  );
+	List av = new Vector();
+	av.add( __command._ANALYSIS_PERCENTILE  );
 	__Method_SimpleJList = new SimpleJList (av);
 	av = null;
 	__Method_SimpleJList.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );

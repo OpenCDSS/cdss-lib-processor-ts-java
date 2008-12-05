@@ -28,7 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
-import java.util.Vector;
+import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -297,13 +297,13 @@ private void initialize ( JFrame parent, Command command )
 
     __ObservedTSID_JLabel = new JLabel ("Observed TSID (for ObservedTSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __ObservedTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __ObservedTSID_JLabel, __ObservedTSID_JComboBox, tsids, y );
     
     __ObservedEnsembleID_JLabel = new JLabel ("Observed ensembleID (for ObservedTSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __ObservedEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __ObservedEnsembleID_JLabel, __ObservedEnsembleID_JComboBox, EnsembleIDs, y );

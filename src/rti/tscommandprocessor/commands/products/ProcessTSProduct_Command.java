@@ -225,7 +225,7 @@ throws InvalidCommandParameterException
 		}
 	}
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSProductFile" );
     valid_Vector.add ( "RunMode" );
     valid_Vector.add ( "View" );
@@ -257,9 +257,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-    Vector list = new Vector();
+	List list = new Vector();
     if ( getOutputFile() != null ) {
-        list.addElement ( getOutputFile() );
+        list.add ( getOutputFile() );
     }
     return list;
 }
@@ -291,7 +291,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,
+		List tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( (tokens.size() != 4) && (tokens.size() != 5) ) {
 			message =
@@ -299,10 +299,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String TSProductFile = ((String)tokens.elementAt(1)).trim();
-		String RunMode = ((String)tokens.elementAt(2)).trim();
-		String View = ((String)tokens.elementAt(3)).trim();
-		String OutputFile = ((String)tokens.elementAt(4)).trim();
+		String TSProductFile = ((String)tokens.get(1)).trim();
+		String RunMode = ((String)tokens.get(2)).trim();
+		String View = ((String)tokens.get(3)).trim();
+		String OutputFile = ((String)tokens.get(4)).trim();
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSProductFile.length() > 0 ) {
@@ -432,11 +432,11 @@ CommandWarningException, CommandException
             TSProductFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),TSProductFile);
 			TSProduct tsp = new TSProduct ( TSProductFile_full, override_props );
 			// Specify annotation providers if available...
-			Vector ap_Vector = null;			
+			List ap_Vector = null;			
 			try {
                 Object o = processor.getPropContents ("TSProductAnnotationProviderList" );
 					if ( o != null ) {
-							ap_Vector = (Vector)o;
+							ap_Vector = (List)o;
 					}
 			}
 			catch ( Exception e ) {
@@ -451,7 +451,7 @@ CommandWarningException, CommandException
 				int size = ap_Vector.size();
 				TSProductAnnotationProvider ap;
 				for ( int i = 0; i < size; i++ ) {
-					ap = (TSProductAnnotationProvider)ap_Vector.elementAt(i);
+					ap = (TSProductAnnotationProvider)ap_Vector.get(i);
 					tsp.addTSProductAnnotationProvider(	ap, null);
 				}
 			}

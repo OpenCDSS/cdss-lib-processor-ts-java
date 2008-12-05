@@ -50,6 +50,7 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -345,11 +346,11 @@ private void initialize ( JFrame parent, Command command )
         
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Interval:"),
       	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-       	Vector Interval_Vector = new Vector();
-       	Interval_Vector.addElement ( "" );
-       	Interval_Vector.addElement ( __command._Day );
-       	Interval_Vector.addElement ( __command._Month );
-       	Interval_Vector.addElement ( __command._Year );
+     List Interval_Vector = new Vector();
+       	Interval_Vector.add ( "" );
+       	Interval_Vector.add ( __command._Day );
+       	Interval_Vector.add ( __command._Month );
+       	Interval_Vector.add ( __command._Year );
     	// TODO SAM 2007-05-16 Evaluate whether needed
        	//Interval_Vector.addElement ( __command._Irregular );
        	__Interval_JComboBox = new SimpleJComboBox(false);
@@ -364,11 +365,11 @@ private void initialize ( JFrame parent, Command command )
         
         JGUIUtil.addComponent(main_JPanel, new JLabel ("Spatial aggregation:"),
               	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-               	Vector SpatialAggregation_Vector = new Vector();
-               	SpatialAggregation_Vector.addElement ( "" );
-               	SpatialAggregation_Vector.addElement ( __command._Location );
-               	SpatialAggregation_Vector.addElement ( __command._Parcel );
-               	SpatialAggregation_Vector.addElement ( __command._None );
+        List SpatialAggregation_Vector = new Vector();
+               	SpatialAggregation_Vector.add ( "" );
+               	SpatialAggregation_Vector.add ( __command._Location );
+               	SpatialAggregation_Vector.add ( __command._Parcel );
+               	SpatialAggregation_Vector.add ( __command._None );
                	__SpatialAggregation_JComboBox = new SimpleJComboBox(false);
                	__SpatialAggregation_JComboBox.setData ( SpatialAggregation_Vector );
                	__SpatialAggregation_JComboBox.select ( 0 );

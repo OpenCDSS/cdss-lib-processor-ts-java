@@ -20,6 +20,7 @@
 
 package rti.tscommandprocessor.commands.hydrobase;
 
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -125,7 +126,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "OdbcDsn" );
     valid_Vector.add ( "DatabaseServer" );
     valid_Vector.add ( "DatabaseName" );
@@ -170,7 +171,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     
     CommandStatus status = getCommandStatus();
 	
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+    List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	if ( (tokens == null) ) {
 		message = "Invalid syntax for \"" + command + "\".  Expecting OpenHydroBase(...).";
@@ -184,7 +185,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( tokens.size() > 1 ) {
 		try {
 		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," ) );
+				(String)tokens.get(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command + "\".  Expecting OpenHydroBase(...).";
@@ -356,10 +357,10 @@ throws CommandException
 	// Get the DMI instances from the processor...
 
 	CommandProcessor processor = getCommandProcessor();
-	Vector dmilist = null;
+	List dmilist = null;
 	try { Object o = processor.getPropContents ( "HydroBaseDMIList" );
 			if ( o != null ) {
-				dmilist = (Vector)o;
+				dmilist = (List)o;
 			}
 	}
 	catch ( Exception e ) {
@@ -380,7 +381,7 @@ throws CommandException
 	HydroBaseDMI hbdmi2 = null;
 	String input_name = hbdmi.getInputName();
 	for ( int i = 0; i < size; i++ ) {
-		hbdmi2 = (HydroBaseDMI)dmilist.elementAt(i);
+		hbdmi2 = (HydroBaseDMI)dmilist.get(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the Vector.
 			// Replace the instance in the Vector by the new instance...
@@ -391,7 +392,7 @@ throws CommandException
 					// Probably can ignore.
 				}
 			}
-			dmilist.setElementAt ( hbdmi, i );
+			dmilist.set ( i, hbdmi );
 			try {
 			    processor.setPropContents ( "HydroBaseDMIList",dmilist );
 			}
@@ -410,7 +411,7 @@ throws CommandException
 		}
 	}
 	// Add a new instance to the Vector...
-	dmilist.addElement ( hbdmi );
+	dmilist.add ( hbdmi );
 	// Set back in the processor...
 	try { processor.setPropContents ( "HydroBaseDMIList", dmilist );
 	}

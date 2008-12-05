@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -161,7 +162,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
 	//valid_Vector.add ( "InheritParentWorkflowProperties" );
     valid_Vector.add ( "ExpectedStatus" );
@@ -308,11 +309,11 @@ CommandWarningException, CommandException
 			Object o_tslist = processor2.getPropContents("TSResultsList");
 			PropList request_params = new PropList ( "" );
 			if ( o_tslist != null ) {
-				Vector tslist = (Vector)o_tslist;
+				List tslist = (List)o_tslist;
 				int size = tslist.size();
 				TS ts;
 				for ( int i = 0; i < size; i++ ) {
-					ts = (TS)tslist.elementAt(i);
+					ts = (TS)tslist.get(i);
 					request_params.setUsingObject( "TS", ts );
 					processor.processRequest( "AppendTimeSeries", request_params );
 				}

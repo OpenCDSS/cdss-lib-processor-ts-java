@@ -23,9 +23,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -38,7 +38,6 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 public class WriteSummary_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -290,10 +289,10 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    	Vector tslist_Vector = new Vector();
-    	tslist_Vector.addElement ( "" );
-    	tslist_Vector.addElement ( __command._SelectedTS );
-    	tslist_Vector.addElement ( __command._AllTS );
+    List tslist_Vector = new Vector();
+    	tslist_Vector.add ( "" );
+    	tslist_Vector.add ( __command._SelectedTS );
+    	tslist_Vector.add ( __command._AllTS );
     	__TSList_JComboBox = new SimpleJComboBox(false);
     	__TSList_JComboBox.setData ( tslist_Vector );
     	__TSList_JComboBox.addItemListener (this);

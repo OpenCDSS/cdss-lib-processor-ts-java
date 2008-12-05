@@ -86,7 +86,7 @@ protected boolean _use_alias = false;
 List of time series read during discovery.  These are TS objects but with maintly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -228,7 +228,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -260,7 +260,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -270,11 +270,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     // Check for TS request or class that matches the data...
@@ -316,7 +316,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			super.parseCommand ( command_string );
 		}
 		else {	// Parse the old command...
-			Vector tokens = StringUtil.breakStringList (command_string,
+			List tokens = StringUtil.breakStringList (command_string,
 				"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 			if ( tokens.size() != 2 ) {
 				message = "Invalid syntax for command.  Expecting 1 parameter.";
@@ -326,7 +326,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                                 message, "Use the command editor to correct the command." ) );
 				throw new InvalidCommandSyntaxException ( message );
 			}
-			String InputFile = ((String)tokens.elementAt(1)).trim();
+			String InputFile = ((String)tokens.get(1)).trim();
 			PropList parameters = new PropList ( getCommandName() );
 			parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 			if ( InputFile.length() > 0 ) {
@@ -559,7 +559,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile_full + "\"" );
     
-        Vector tslist = null;
+        List tslist = null;
         if ( !IOUtil.fileReadable(InputFile_full) || !IOUtil.fileExists(InputFile_full)) {
             message = "StateMod file \"" + InputFile_full + "\" is not found or accessible.";
             Message.printWarning ( warning_level,
@@ -576,7 +576,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the diversion rights file and convert to time series
             // (default is to sum time series at a location).
-            Vector ddr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List ddr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     ddr_Vector,        // raw water rights
@@ -598,7 +598,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the instream flow rights file and convert to time series
             // (default is to sum time series at a location).
-            Vector ifr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List ifr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     ifr_Vector,        // raw water rights
@@ -620,7 +620,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the reservoir rights file and convert to time series
             // (default is to sum time series at a location).
-            Vector rer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List rer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     rer_Vector,        // raw water rights
@@ -642,7 +642,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the well rights file and convert to time series
             // (default is to sum time series at a location).
-            Vector wer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List wer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     wer_Vector,        // raw water rights
@@ -753,7 +753,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

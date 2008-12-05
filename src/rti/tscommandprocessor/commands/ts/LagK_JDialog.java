@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -236,7 +237,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Time series to lag (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
-	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	if ( tsids == null ) {
 		// User will not be able to select anything.
@@ -251,7 +252,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Observed time series for filling:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ObsTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    Vector tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids2 == null ) {
         // User will not be able to select anything.
@@ -262,7 +263,7 @@ private void initialize ( JFrame parent, Command command )
     }
     else {
         // Add a blank at the start
-        tsids2.insertElementAt("", 0);
+        tsids2.add(0,"");
     }
     __ObsTSID_JComboBox.setData ( tsids2 );
     __ObsTSID_JComboBox.addItemListener ( this );

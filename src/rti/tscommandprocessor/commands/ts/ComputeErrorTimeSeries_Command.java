@@ -146,7 +146,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "ObservedTSList" );
     valid_Vector.add ( "ObservedTSID" );
     valid_Vector.add ( "ObservedEnsembleID" );
@@ -350,7 +350,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + ObservedTSList +
         "\" TSID=\"" + ObservedTSID + "\", EnsembleID=\"" + ObservedEnsembleID + "\").";
@@ -363,7 +363,7 @@ CommandWarningException, CommandException
                 "Verify that the ObservedTSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + ObservedTSList +
             "\" TSID=\"" + ObservedTSID + "\", EnsembleID=\"" + ObservedEnsembleID + "\").";
@@ -458,7 +458,7 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    Vector independent_tslist = null;
+    List independent_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + SimulatedTSList +
         "\" TSID=\"" + SimulatedTSID + "\", EnsembleID=\"" + SimulatedEnsembleID + "\").";
@@ -471,7 +471,7 @@ CommandWarningException, CommandException
                 "Verify that the SimulatedTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        independent_tslist = (Vector)o_TSList2;
+        independent_tslist = (List)o_TSList2;
         if ( independent_tslist.size() == 0 ) {
             message = "No simulated time series are available from processor GetTimeSeriesToProcess (TSList=\"" + SimulatedTSList +
             "\" TSID=\"" + SimulatedTSID + "\", EnsembleID=\"" + SimulatedEnsembleID + "\").";

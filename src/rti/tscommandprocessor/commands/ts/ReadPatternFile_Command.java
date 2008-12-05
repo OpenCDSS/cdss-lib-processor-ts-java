@@ -43,7 +43,7 @@ public class ReadPatternFile_Command extends AbstractCommand implements Command,
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -124,7 +124,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2008-09-17 Check the format.
     
 	//  Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "PatternFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
@@ -151,7 +151,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -161,11 +161,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
@@ -200,7 +200,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // removed as soon as commands have been migrated to the new syntax.
         //
         // Old syntax where the only parameter is a single filename to read.
-        Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
             "(),\t", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
@@ -216,7 +216,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
         // Get the individual tokens of the expression...
 
-        String PatternFile = ((String)v.elementAt(1)).trim();
+        String PatternFile = ((String)v.get(1)).trim();
 
         // Set parameters and new defaults...
 
@@ -309,7 +309,7 @@ CommandWarningException, CommandException
 
 	// Now process the file...
 
-	Vector tslist = null;
+	List tslist = null;
 	try {
 	    Message.printStatus ( 2, routine, "Using \"" + PatternFile_full + "\" for fill pattern file." );
 	    // Read the fill pattern file.  Since multiple files may be read with multiple commands,
@@ -380,7 +380,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

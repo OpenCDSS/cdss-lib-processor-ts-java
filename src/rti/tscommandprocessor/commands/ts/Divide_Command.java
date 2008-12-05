@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -79,7 +80,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "DivisorTSID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -129,7 +130,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // removed as soon as commands have been migrated to the new syntax.
         //
         // Old syntax where the only parameter is a single TSID or * to fill all.
-        Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
             "(),\t", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
@@ -144,8 +145,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
         // Get the individual tokens of the expression...
 
-        String TSID = ((String)v.elementAt(1)).trim();
-        String DivisorTSID = ((String)v.elementAt(2)).trim();
+        String TSID = ((String)v.get(1)).trim();
+        String DivisorTSID = ((String)v.get(2)).trim();
 
         // Set parameters and new defaults...
 

@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.DayTS;
@@ -110,7 +111,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "DayTSID" );
     valid_Vector.add ( "Bracket" );
@@ -165,14 +166,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     if ( v == null ) {
         message = "Syntax error in \"" + command +
         "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";
         Message.printWarning ( warning_level, routine, message);
         throw new InvalidCommandSyntaxException ( message );
     }
-    String Alias = (String)v.elementAt(1);
+    String Alias = (String)v.get(1);
     String DayTSID = null;
     String Bracket = null;
 	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
@@ -190,8 +191,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-        DayTSID = (String)v.elementAt(1);
-        Bracket = (String)v.elementAt(2);
+        DayTSID = (String)v.get(1);
+        Bracket = (String)v.get(2);
 	}
 	else {
         // Current syntax...
@@ -321,7 +322,7 @@ CommandWarningException, CommandException
 	
     // Further process the time series...
     // This makes sure the period is at least as long as the output period...
-	Vector tslist = new Vector(1);
+	List tslist = new Vector(1);
 	tslist.add ( monthts );
     int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
     if ( wc > 0 ) {

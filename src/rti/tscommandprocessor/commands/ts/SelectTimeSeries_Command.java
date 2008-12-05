@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -76,7 +77,7 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (TSPosition != null) && !TSPosition.equals("") ) {
-        Vector tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
+		List tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
         int npos = 0;
         if ( tokens != null ) {
             npos = tokens.size();
@@ -84,7 +85,7 @@ throws InvalidCommandParameterException
         __TSPositionStart = new int[npos];
         __TSPositionEnd = new int[npos];
         for ( int i = 0; i < npos; i++ ) {
-            String token = (String)tokens.elementAt(i);
+            String token = (String)tokens.get(i);
             if ( token.indexOf("-") >= 0 ) {
                 // Range...
                 String posString = StringUtil.getToken(token, "-",0,0).trim();
@@ -137,7 +138,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -239,11 +240,11 @@ CommandWarningException, CommandException
 	}
 	
 	// If necessary, get the list of all time series...
-	Vector tslistAll = new Vector();
+	List tslistAll = new Vector();
 	if ( DeselectAllFirst_boolean ) {
 	    // Deselect all first
 	    try {
-	        tslistAll = (Vector)processor.getPropContents("TSResultsList");
+	        tslistAll = (List)processor.getPropContents("TSResultsList");
             Message.printStatus ( 2, routine, "Deselecting all time series first." );
             int ntsAll = 0;
             if ( tslistAll != null ) {
@@ -292,7 +293,7 @@ CommandWarningException, CommandException
     }
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -305,7 +306,7 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -347,7 +348,7 @@ CommandWarningException, CommandException
 	Object o_ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		// The the time series to process, from the list that was returned above.
-		o_ts = tslist.elementAt(its);
+		o_ts = tslist.get(its);
 		if ( o_ts == null ) {
 			message = "Time series to process is null.";
 			Message.printWarning(warning_level,

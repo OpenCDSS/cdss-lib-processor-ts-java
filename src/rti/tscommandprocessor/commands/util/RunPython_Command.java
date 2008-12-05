@@ -6,6 +6,7 @@ import java.lang.ClassLoader;
 import java.net.URL;
 import java.util.Properties;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -148,7 +149,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
 	valid_Vector.add ( "Arguments" );
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "Interpreter" );
@@ -385,13 +386,13 @@ throws PyException
                     		"line before running in TSTool."));
     }
     // Echo the output to the log file.
-    Vector output = pm.getOutputVector();
+    List output = pm.getOutputList();
     int size = 0;
     if ( output != null ) {
         size = output.size();
     }
     for ( int i = 0; i < size; i++ ) {
-        Message.printStatus(2, routine, "Program output:  " + output.elementAt(i));
+        Message.printStatus(2, routine, "Program output:  " + output.get(i));
     }
     return warning_count;
 }

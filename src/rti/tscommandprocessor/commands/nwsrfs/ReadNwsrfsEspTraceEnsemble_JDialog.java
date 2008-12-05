@@ -11,7 +11,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-//import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -25,11 +24,9 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-import RTi.TS.TSEnsemble;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-//import RTi.Util.GUI.SimpleJComboBox;
 
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
@@ -81,7 +78,7 @@ public ReadNwsrfsEspTraceEnsemble_JDialog ( JFrame parent, Command command )
 {
 	super(parent, true);
 
-	PropList props = command.getCommandParameters();
+	//PropList props = command.getCommandParameters();
 	//String alias = props.getValue("Alias");
 	//Message.printStatus(2, "", "Props: " + props.toString("\n"));
 	//if (alias == null || alias.trim().equalsIgnoreCase("")) {

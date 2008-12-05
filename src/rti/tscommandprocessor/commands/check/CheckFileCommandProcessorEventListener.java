@@ -97,7 +97,7 @@ throws Exception
  */
 private List getMissingObjectEventList ()
 {
-    Vector eventList = new Vector();
+    List eventList = new Vector();
     Object event;
     for ( int i = 0; i < __eventList.size(); i++ ) {
        event = __eventList.get(i);

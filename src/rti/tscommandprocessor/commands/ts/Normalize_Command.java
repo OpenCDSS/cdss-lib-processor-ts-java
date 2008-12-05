@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -142,7 +143,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "MinValue" );
@@ -199,14 +200,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     if ( v == null ) {
         message = "Syntax error in \"" + command +
         "\".  Expecting:  TS Alias = Normalize(TSID,MinValueMethod,MinValue,MaxValue)";
         Message.printWarning ( warning_level, routine, message);
         throw new InvalidCommandSyntaxException ( message );
     }
-    String Alias = (String)v.elementAt(1);
+    String Alias = (String)v.get(1);
     String TSID = null;
     String MinValue = null;
     String MaxValue = null;
@@ -227,10 +228,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
         // TSID is the only parameter
-        TSID = (String)v.elementAt(1);
-        MinValueMethod = (String)v.elementAt(2);
-        MinValue = (String)v.elementAt(3);
-        MaxValue = (String)v.elementAt(4);
+        TSID = (String)v.get(1);
+        MinValueMethod = (String)v.get(2);
+        MinValue = (String)v.get(3);
+        MaxValue = (String)v.get(4);
  	}
 	else {
         // Current syntax...

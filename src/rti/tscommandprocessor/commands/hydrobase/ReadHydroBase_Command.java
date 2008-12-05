@@ -103,7 +103,7 @@ protected String _Warn = "Warn";
 List of time series read during discovery.  These are TS objects but with maintly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -331,7 +331,7 @@ throws InvalidCommandParameterException
         }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     if ( _use_alias ) {
         valid_Vector.add ( "Alias" );
         valid_Vector.add ( "TSID" );
@@ -367,7 +367,7 @@ throws InvalidCommandParameterException
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -377,11 +377,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
@@ -420,7 +420,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     
     CommandStatus status = getCommandStatus();
 	
-	Vector tokens = StringUtil.breakStringList ( command_string, "()", 0 );
+    List tokens = StringUtil.breakStringList ( command_string, "()", 0 );
 	if ( tokens == null ) {
 		// Must have at least the command name and something to indicate the read...
 		message = "Syntax error in \"" + command_string + "\".";
@@ -436,7 +436,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	
 	try {
         setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," ) );
+			(String)tokens.get(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command_string + "\".";
@@ -701,7 +701,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	Vector tslist = new Vector();	// Vector for time series results.
+	List tslist = new Vector();	// Vector for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -723,7 +723,7 @@ CommandWarningException, CommandException
                                message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
-			Vector hbdmi_Vector = (Vector)o;
+			List hbdmi_Vector = (List)o;
 			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, tsident.getInputName() );
 			if ( hbdmi == null ) {
 				message = "Could not find HydroBase connection with input name \"" +
@@ -766,7 +766,7 @@ CommandWarningException, CommandException
 			if ( ts != null ) {
 				// Set the alias...
 				ts.setAlias ( Alias );
-				tslist.addElement ( ts );
+				tslist.add ( ts );
 			}
 		}
 		else {
@@ -778,7 +778,7 @@ CommandWarningException, CommandException
 			if ( InputName == null ) {
 				InputName = "";
 			}
-			Vector WhereN_Vector = new Vector ( 6 );
+			List WhereN_Vector = new Vector ( 6 );
 			String WhereN;
 			int nfg = 0;	// Used below.
 			for ( nfg = 0; nfg < 1000; nfg++ ) {
@@ -787,7 +787,7 @@ CommandWarningException, CommandException
 				if ( WhereN == null ) {
 					break;	// No more where clauses
 				}
-				WhereN_Vector.addElement ( WhereN );
+				WhereN_Vector.add ( WhereN );
 			}
 		
 			// Find the HydroBaseDMI to use...
@@ -800,7 +800,7 @@ CommandWarningException, CommandException
                             message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
-			Vector hbdmi_Vector = (Vector)o;
+			List hbdmi_Vector = (List)o;
 			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, InputName );
 			if ( hbdmi == null ) {
 				message ="Could not find HydroBase connection with input name \"" + InputName + "\" to query data.";
@@ -890,7 +890,7 @@ CommandWarningException, CommandException
 
 			String filter_delim = ";";
 			for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-				WhereN = (String)WhereN_Vector.elementAt(ifg);
+				WhereN = (String)WhereN_Vector.get(ifg);
                 if ( WhereN.length() == 0 ) {
                     continue;
                 }
@@ -915,7 +915,7 @@ CommandWarningException, CommandException
 		
 			Message.printStatus ( 2, "", "Getting the list of time series..." );
 		
-			Vector tslist0 = HydroBase_Util.readTimeSeriesHeaderObjects ( hbdmi,
+			List tslist0 = HydroBase_Util.readTimeSeriesHeaderObjects ( hbdmi,
 					DataType, Interval, filter_panel );
 			// Make sure that size is set...
 			int size = 0;
@@ -973,7 +973,7 @@ CommandWarningException, CommandException
 				// List in order of likelihood...
 				if ( is_Station ) {
 					// Station TS...
-					sta = (HydroBase_StationGeolocMeasType)tslist0.elementAt(i);
+					sta = (HydroBase_StationGeolocMeasType)tslist0.get(i);
 					tsident_string = 
 						sta.getStation_id()
 						+ "." + sta.getData_source()
@@ -981,7 +981,7 @@ CommandWarningException, CommandException
 						+ "~HydroBase" + input_name;
 				}
 				else if ( is_Structure ) {
-					str = (HydroBase_StructureGeolocStructMeasType)tslist0.elementAt(i);
+					str = (HydroBase_StructureGeolocStructMeasType)tslist0.get(i);
 					tsident_string =
 						HydroBase_WaterDistrict.
 						formWDID( wdid_length,
@@ -991,7 +991,7 @@ CommandWarningException, CommandException
 						+ "~HydroBase" + input_name;
 				}
 				else if ( is_StructureSFUT ) {
-					str = (HydroBase_StructureGeolocStructMeasType)tslist0.elementAt(i);
+					str = (HydroBase_StructureGeolocStructMeasType)tslist0.get(i);
 					tsident_string =
 						HydroBase_WaterDistrict.
 						formWDID( wdid_length,
@@ -1004,7 +1004,7 @@ CommandWarningException, CommandException
 				}
 				else if ( is_StructureIrrigSummaryTS ) {
 					// Irrig summary TS...
-					irrigts = (HydroBase_StructureIrrigSummaryTS)tslist0.elementAt(i);
+					irrigts = (HydroBase_StructureIrrigSummaryTS)tslist0.get(i);
 					tsident_string =HydroBase_WaterDistrict.
 						formWDID( wdid_length,
 						irrigts.getWD(),irrigts.getID())
@@ -1015,7 +1015,7 @@ CommandWarningException, CommandException
 						+ "~HydroBase" + input_name;
 				}
 				else if ( is_CASS ) {
-					cass = (HydroBase_AgriculturalCASSCropStats)tslist0.elementAt(i);
+					cass = (HydroBase_AgriculturalCASSCropStats)tslist0.get(i);
 					tsident_string = cass.getCounty()
 						+ ".CASS" 
 						+ "." + DataType + "-"
@@ -1025,7 +1025,7 @@ CommandWarningException, CommandException
 						+ "~HydroBase" + input_name;
 				}
 				else if ( is_NASS ) {
-					nass = (HydroBase_AgriculturalNASSCropStats)tslist0.elementAt(i);
+					nass = (HydroBase_AgriculturalNASSCropStats)tslist0.get(i);
 					tsident_string = nass.getCounty()
 						+ ".NASS" 
 						+ "." + DataType + "-"
@@ -1035,7 +1035,7 @@ CommandWarningException, CommandException
 				}
 				else if ( is_SheetName ) {
 					// WIS TS...
-					wis = (HydroBase_WISSheetNameWISFormat)tslist0.elementAt(i);
+					wis = (HydroBase_WISSheetNameWISFormat)tslist0.get(i);
 					tsident_string = wis.getIdentifier()
 						+ ".DWR" 
 						+ "." + DataType
@@ -1050,7 +1050,7 @@ CommandWarningException, CommandException
 						InputEnd_DateTime, null, read_data,
 						HydroBase_props );
 					// Add the time series to the temporary list.  It will be further processed below...
-					tslist.addElement ( ts );
+					tslist.add ( ts );
 				}
 				catch ( Exception e ) {
 					message = "Unexpected error reading HydroBase time series \"" + tsident_string + "\" (" + e + ").";
@@ -1148,7 +1148,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

@@ -180,7 +180,7 @@ throws InvalidCommandParameterException
                 message, "Specify the output file name similar to: SEGID.TSID.TSTYPE.06.CS" ) );
     }
     
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "OutputFile" );
     valid_Vector.add ( "CarryoverGroup" );
     valid_Vector.add ( "ForecastGroup" );
@@ -228,9 +228,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-    Vector list = new Vector();
+	List list = new Vector();
     if ( getOutputFile() != null ) {
-        list.addElement ( getOutputFile() );
+        list.add ( getOutputFile() );
     }
     return list;
 }
@@ -261,7 +261,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	int warning_level = 2;
 	int warning_count = 0;
 
-	Vector tokens = StringUtil.breakStringList(command, "()", 0);
+	List tokens = StringUtil.breakStringList(command, "()", 0);
 	if ((tokens == null) || tokens.size() < 2) {
 		// Must have at least the command name and the InputFile
 		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
@@ -273,7 +273,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	// Get the input needed to process the file...
 	try {
 		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," ) );
+			(String)tokens.get(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command + "\".  Expecting " + getCommandName() + "().";
@@ -332,7 +332,7 @@ throws InvalidCommandParameterException,
         }
 	}
 		
-	Vector tslist = null;
+	List tslist = null;
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	//request_params.set ( "TSID", TSID );
@@ -366,7 +366,7 @@ throws InvalidCommandParameterException,
                 CommandStatusType.FAILURE, message,
                 "Report the problem to software support."));
 	}
-	else {	tslist = (Vector)o_TSList;
+	else {	tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList + "\", EnsembleID=\"" +
 			EnsembleID + "\"";

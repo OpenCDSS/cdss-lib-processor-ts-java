@@ -40,6 +40,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -339,7 +340,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to convert:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
     			(TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids == null ) {
         tsids = new Vector();
@@ -369,7 +370,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Old time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OldTimeScale_JComboBox = new SimpleJComboBox ( false );
-	Vector scale_Vector = MeasTimeScale.getTimeScaleChoices(true);
+	List scale_Vector = MeasTimeScale.getTimeScaleChoices(true);
 	//scale_Vector.insertElementAt("",0);	// Blank to not select.
 	__OldTimeScale_JComboBox.setData ( scale_Vector );
 	__OldTimeScale_JComboBox.select ( 0 );	// Default
@@ -436,10 +437,10 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel( "Output fill method:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFillMethod_JComboBox = new SimpleJComboBox ( false );
-	Vector fill_Vector = new Vector(3);
-	fill_Vector.addElement ( "" );	// Blank is default
-	fill_Vector.addElement ( __command._Interpolate );
-	fill_Vector.addElement ( __command._Repeat );
+	List fill_Vector = new Vector(3);
+	fill_Vector.add ( "" );	// Blank is default
+	fill_Vector.add ( __command._Interpolate );
+	fill_Vector.add ( __command._Repeat );
 	__OutputFillMethod_JComboBox.setData ( fill_Vector );
 	__OutputFillMethod_JComboBox.select ( 0 );	// Default
 	__OutputFillMethod_JComboBox.addItemListener ( this );
@@ -454,11 +455,11 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Handle missing input how?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingInputHow_JComboBox = new SimpleJComboBox ( false );
-	Vector missing_Vector = new Vector(4);
-	missing_Vector.addElement ( "" );	// Blank is default
-	missing_Vector.addElement ( __command._KeepMissing );
-	missing_Vector.addElement ( __command._Repeat );
-	missing_Vector.addElement ( __command._SetToZero );
+	List missing_Vector = new Vector(4);
+	missing_Vector.add ( "" );	// Blank is default
+	missing_Vector.add ( __command._KeepMissing );
+	missing_Vector.add ( __command._Repeat );
+	missing_Vector.add ( __command._SetToZero );
 	__HandleMissingInputHow_JComboBox.setData ( missing_Vector );
 	__HandleMissingInputHow_JComboBox.select ( 0 );	// Default
 	__HandleMissingInputHow_JComboBox.addItemListener ( this );

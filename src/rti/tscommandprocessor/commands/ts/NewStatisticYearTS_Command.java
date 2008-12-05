@@ -20,6 +20,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -213,7 +214,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "NewTSID" );
@@ -281,15 +282,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
-	Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	String Alias = (String)v.elementAt(1);
-	Vector tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	String Alias = (String)v.get(1);
+	List tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and its parameters...
 		message = "Syntax error in \"" + command + "\".  Not enough tokens.";
@@ -298,7 +299,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	// Get the input needed to process the file...
 	try {	 PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," );
+			(String)tokens.get(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );

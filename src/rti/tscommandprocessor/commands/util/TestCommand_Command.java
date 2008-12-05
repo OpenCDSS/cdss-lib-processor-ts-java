@@ -1,6 +1,7 @@
 
 package rti.tscommandprocessor.commands.util;
 
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -81,7 +82,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "InitializeStatus" );
 	valid_Vector.add ( "DiscoveryStatus" );
 	valid_Vector.add ( "RunStatus" );

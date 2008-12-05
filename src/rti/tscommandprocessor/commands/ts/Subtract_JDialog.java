@@ -33,6 +33,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -299,14 +300,14 @@ private void initialize ( JFrame parent, Command command )
     
     JLabel TSID_JLabel = new JLabel ("Time series to receive results:");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
             this, this, main_JPanel, TSID_JLabel, __TSID_JComboBox, tsids, y, false );
    
    JLabel EnsembleID_JLabel = new JLabel ("Ensemble to receive results:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -328,7 +329,7 @@ private void initialize ( JFrame parent, Command command )
     
     __SubtractEnsembleID_JLabel = new JLabel ("Add EnsembleID (for SubtractTSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __SubtractEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector SubtractEnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List SubtractEnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __SubtractEnsembleID_JLabel, __SubtractEnsembleID_JComboBox, SubtractEnsembleIDs, y );
@@ -339,11 +340,11 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SubtractSpecifiedTSID_JListModel = new DefaultListModel();
     // Get the list again because above list will have "*" which we don't want
-    Vector tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+	List tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     int size = tsids2.size();
 	for ( int i = 0; i < size; i++ ) {
-		__SubtractSpecifiedTSID_JListModel.addElement( (String)tsids2.elementAt(i));
+		__SubtractSpecifiedTSID_JListModel.addElement( (String)tsids2.get(i));
 	}
 	__SubtractSpecifiedTSID_JList = new JList ( __SubtractSpecifiedTSID_JListModel );
     __SubtractSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
@@ -660,16 +661,16 @@ private void setupSubtractSpecifiedTSID ( String SubtractTSList, String Subtract
     // Check all the items in the list and highlight the ones that match the command being edited...
     if ( (SubtractTSList != null) && TSListType.SPECIFIED_TSID.equals(SubtractTSList) && (SubtractSpecifiedTSID != null) ) {
         // Break list by commas since identifiers may have spaces and other "special" characters (but no commas)
-        Vector v = StringUtil.breakStringList ( SubtractSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+    	List v = StringUtil.breakStringList ( SubtractSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size = v.size();
         int pos = 0;
-        Vector selected = new Vector();
+        List selected = new Vector();
         String independent = "";
         for ( int i = 0; i < size; i++ ) {
-            independent = (String)v.elementAt(i);
+            independent = (String)v.get(i);
             if ( (pos = JGUIUtil.indexOf( __SubtractSpecifiedTSID_JList, independent, false, true))>= 0 ) {
                 // Select it because it is in the command and the list...
-                selected.addElement ( "" + pos );
+                selected.add ( "" + pos );
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -682,7 +683,7 @@ private void setupSubtractSpecifiedTSID ( String SubtractTSList, String Subtract
         if ( selected.size() > 0  ) {
             int [] iselected = new int[selected.size()];
             for ( int is = 0; is < iselected.length; is++ ){
-                iselected[is] = StringUtil.atoi ( (String)selected.elementAt(is));
+                iselected[is] = StringUtil.atoi ( (String)selected.get(is));
             }
             __SubtractSpecifiedTSID_JList.setSelectedIndices( iselected );
         }

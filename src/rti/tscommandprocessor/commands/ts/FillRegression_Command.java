@@ -34,6 +34,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -259,7 +260,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "NumberOfEquations" );
@@ -324,7 +325,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// the Intercept= syntax)...
 		// Parse up front.  Don't parse with spaces because a
 		// TEMPTS may be present.
-		Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |
 			StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
@@ -351,18 +352,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String FillStart = "";
 		String FillEnd = "";
 		int ic = 1;		// Position 0 is the command name
-		TSID = ((String)v.elementAt(ic++)).trim();
-		IndependentTSID = ((String)v.elementAt(ic++)).trim();
-		NumberOfEquations=((String)v.elementAt(ic++)).trim();
-		Transformation = ((String)v.elementAt(ic++)).trim();
+		TSID = ((String)v.get(ic++)).trim();
+		IndependentTSID = ((String)v.get(ic++)).trim();
+		NumberOfEquations=((String)v.get(ic++)).trim();
+		Transformation = ((String)v.get(ic++)).trim();
 		int icmax = ic + 1;
 		if ( ntokens >= icmax ) {
-			AnalysisStart = ((String)v.elementAt(ic++)).trim();
+			AnalysisStart = ((String)v.get(ic++)).trim();
 			if ( AnalysisStart.equals("*") ) {
 				AnalysisStart = "";// Current default
 			}
 			if ( ntokens >= (icmax + 1) ) {
-				AnalysisEnd =((String)v.elementAt(ic++)).trim();
+				AnalysisEnd =((String)v.get(ic++)).trim();
 			}
 			if ( AnalysisEnd.equals("*") ) {
 				AnalysisEnd = "";// Current default
@@ -370,13 +371,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		}
 		// All others have the fill period...
 		if ( ntokens >= icmax ) {
-			FillStart = ((String)v.elementAt(ic++)).trim();
+			FillStart = ((String)v.get(ic++)).trim();
 		}
 		if ( FillStart.equals("*") ) {
 			FillStart = "";	// Current default.
 		}
 		if ( ntokens >= (icmax + 1) ) {
-			FillEnd = ((String)v.elementAt(ic++)).trim();
+			FillEnd = ((String)v.get(ic++)).trim();
 		}
 		if ( FillEnd.equals("*") ) {
 			FillEnd = "";	// Current default.
@@ -385,10 +386,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// Check for new-style properties (only Intercept=)...
 
 		String token, token0;
-		Vector v2;
+		List v2;
 		for ( ic = 0; ic < ntokens; ic++ ) {
 			// Check for an '=' in the token...
-			token = (String)v.elementAt(ic);
+			token = (String)v.get(ic);
 			if ( token.indexOf('=') < 0 ) {
 				continue;
 			}
@@ -396,9 +397,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			if ( v2.size() < 2 ) {
 				continue;
 			}
-			token0 = ((String)v2.elementAt(0)).trim();
+			token0 = ((String)v2.get(0)).trim();
 			if ( token0.equalsIgnoreCase("Intercept") ) {
-				Intercept = ((String)v2.elementAt(1)).trim();
+				Intercept = ((String)v2.get(1)).trim();
 			}
 		}
 		v = null;

@@ -55,6 +55,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -125,7 +126,7 @@ private SimpleJComboBox __IfMissing_JComboBox;
 			
 private JTextArea	__command_JTextArea = null;
 						// Command as JTextArea
-private Vector __input_filter_JPanel_Vector = new Vector();
+private List __input_filter_JPanel_Vector = new Vector();
 //TODO SAM 2007-02-17 Need to enable CASS when resources allow
 //private InputFilter_JPanel __input_filter_HydroBase_CASS_JPanel = null;
 						// InputFilter_JPanel for
@@ -514,9 +515,9 @@ private void initialize ( JFrame parent, Command command )
 		if ( o != null ) {
 			// Use the first HydroBaseDMI instance, since input filter
 			// information should be relatively consistent...
-			Vector v = (Vector)o;
+			List v = (List)o;
 			if ( v.size() > 0 ) {
-				__hbdmi = (HydroBaseDMI)v.elementAt(0);
+				__hbdmi = (HydroBaseDMI)v.get(0);
 			}
 			else {
 				String message =
@@ -693,7 +694,7 @@ private void initialize ( JFrame parent, Command command )
 				__input_filter_HydroBase_structure_sfut_JPanel,
 				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement ( __input_filter_HydroBase_structure_sfut_JPanel);
+			__input_filter_JPanel_Vector.add ( __input_filter_HydroBase_structure_sfut_JPanel);
 			__input_filter_HydroBase_structure_sfut_JPanel.
 				addEventListeners ( this );
 		}
@@ -858,10 +859,10 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using diversion comments:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector FillUsingDivComments_Vector = new Vector ( 3 );
-	FillUsingDivComments_Vector.addElement ( "" );
-	FillUsingDivComments_Vector.addElement ( __command._False );
-	FillUsingDivComments_Vector.addElement ( __command._True );
+    List FillUsingDivComments_Vector = new Vector ( 3 );
+	FillUsingDivComments_Vector.add ( "" );
+	FillUsingDivComments_Vector.add ( __command._False );
+	FillUsingDivComments_Vector.add ( __command._True );
 	__FillUsingDivComments_JComboBox = new SimpleJComboBox ( false );
 	__FillUsingDivComments_JComboBox.setData ( FillUsingDivComments_Vector);
 	__FillUsingDivComments_JComboBox.select ( 0 );
@@ -885,10 +886,10 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    Vector IfMissing_Vector = new Vector ( 3 );
-    IfMissing_Vector.addElement ( "" );
-    IfMissing_Vector.addElement ( __command._Ignore );
-    IfMissing_Vector.addElement ( __command._Warn );
+    List IfMissing_Vector = new Vector ( 3 );
+    IfMissing_Vector.add ( "" );
+    IfMissing_Vector.add ( __command._Ignore );
+    IfMissing_Vector.add ( __command._Warn );
     __IfMissing_JComboBox = new SimpleJComboBox ( false );
     __IfMissing_JComboBox.setData ( IfMissing_Vector);
     __IfMissing_JComboBox.select ( 0 );

@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -27,7 +28,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
 /**
 <p>
@@ -105,7 +105,7 @@ throws InvalidCommandParameterException
 	}
     else {
         // Verify that ShiftData are pairs of interval, weight
-        Vector intervals_Vector = StringUtil.breakStringList ( ShiftData, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    	List intervals_Vector = StringUtil.breakStringList ( ShiftData, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int size = 0;
         if ( intervals_Vector != null ) {
             size = intervals_Vector.size();
@@ -119,7 +119,7 @@ throws InvalidCommandParameterException
         }
         String token;
         for ( int i = 0; i < size; i++ ) {
-            token = ((String)intervals_Vector.elementAt(i)).trim();
+            token = ((String)intervals_Vector.get(i)).trim();
             if ( (i%2) == 0 ) {
                 // Interval...
                 if ( !StringUtil.isInteger(token) ) {
@@ -144,7 +144,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -211,7 +211,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
-		Vector v = StringUtil.breakStringList(command_string, "(),\t",
+    	List v = StringUtil.breakStringList(command_string, "(),\t",
                 StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -226,14 +226,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Get the individual tokens of the expression...
 
-		String TSID = ((String)v.elementAt(1)).trim();
+		String TSID = ((String)v.get(1)).trim();
         // Do this because old syntax did not treat the ShiftData as one parameter...
         StringBuffer b = new StringBuffer();
         for ( int ib = 2; ib < ntokens; ib++ ) {
             if ( ib > 2 ) {
                 b.append(",");
             }
-            b.append ( v.elementAt(ib) );
+            b.append ( v.get(ib) );
         }
 		String ShiftData = b.toString();
 
@@ -313,7 +313,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -326,7 +326,7 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -384,17 +384,17 @@ CommandWarningException, CommandException
 	// Offset/weight values...
     
     String ShiftData = parameters.getValue ( "ShiftData" );
-    Vector v = StringUtil.breakStringList ( ShiftData,", \t", StringUtil.DELIM_SKIP_BLANKS );
+    List v = StringUtil.breakStringList ( ShiftData,", \t", StringUtil.DELIM_SKIP_BLANKS );
     int npairs2 = v.size()/2;
     int intervals[] = new int[npairs2];
     double weights[] = new double[npairs2];
     int npairs = 0;
     for ( int i = 0; i < v.size(); i++ ) {
         if ( (i%2) == 0 ) {
-            intervals[npairs] = StringUtil.atoi ( (String)v.elementAt(i) );
+            intervals[npairs] = StringUtil.atoi ( (String)v.get(i) );
         }
         else {
-            weights[npairs++] = StringUtil.atod ( (String)v.elementAt(i) );
+            weights[npairs++] = StringUtil.atod ( (String)v.get(i) );
             Message.printStatus ( 2, routine, "Offset=" + intervals[npairs - 1] + " weight=" + weights[npairs - 1] );
         }
     }

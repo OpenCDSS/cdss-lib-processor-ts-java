@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.util;
 
 import java.io.FileReader;
 import java.io.BufferedReader;
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -106,7 +107,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile1" );
 	valid_Vector.add ( "InputFile2" );
 	valid_Vector.add ( "CommentLineChar" );
@@ -147,7 +148,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "CompareFiles_Command.parseCommand", message;
 
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+	List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	CommandStatus status = getCommandStatus();
 	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
@@ -162,7 +163,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	if ( tokens.size() > 1 ) {
 		try {
 		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," ) );
+				(String)tokens.get(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
 			message = "Invalid syntax for \"" + command + "\".  Expecting CompareFiles(...).";

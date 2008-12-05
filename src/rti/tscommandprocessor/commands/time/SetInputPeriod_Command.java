@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.time;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -113,7 +114,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "InputStart" );
 	valid_Vector.add ( "InputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -160,7 +161,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
-		Vector tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
+		List tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 3) ) {
 			throw new InvalidCommandSyntaxException ("Bad command \"" + command + "\"" );
 		}
@@ -168,12 +169,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printStatus ( 3, routine,
 			"Automatically converting setQueryPeriod() to SetInputPeriod()" );
 		}
-		InputStart = ((String)tokens.elementAt(1)).trim();
+		InputStart = ((String)tokens.get(1)).trim();
 		if ( InputStart.equals("*") ) {
 		    // Phase out old style
 			InputStart = "";
 		}
-		InputEnd = ((String)tokens.elementAt(2)).trim();
+		InputEnd = ((String)tokens.get(2)).trim();
 		if ( InputEnd.equals("*") ) {
 		    // Phase out old style
 			InputEnd = "";

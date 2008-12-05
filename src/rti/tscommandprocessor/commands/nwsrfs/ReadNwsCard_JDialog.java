@@ -12,6 +12,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -393,7 +394,7 @@ private void initialize(JFrame parent, Command command) {
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel("Read 24 hour as day:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector v = new Vector();
+	List v = new Vector();
 	v.add("");
 	v.add(ReadNwsCard_Command._TRUE);
 	v.add(ReadNwsCard_Command._FALSE);

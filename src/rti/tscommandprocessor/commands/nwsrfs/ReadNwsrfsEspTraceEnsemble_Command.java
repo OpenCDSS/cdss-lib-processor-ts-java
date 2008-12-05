@@ -62,7 +62,7 @@ private TSEnsemble __tsensemble = null;
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -322,7 +322,7 @@ throws InvalidCommandParameterException
         */
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "EnsembleID" );
@@ -379,7 +379,7 @@ private TSEnsemble getDiscoveryEnsemble()
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -388,10 +388,10 @@ private Vector getDiscoveryTSList ()
 Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
-{   Vector discovery_TS_Vector = getDiscoveryTSList ();
+{   List discovery_TS_Vector = getDiscoveryTSList ();
     TS datats = null;
     if ( (discovery_TS_Vector != null) && (discovery_TS_Vector.size() > 0) ) {
-        datats = (TS)discovery_TS_Vector.elementAt(0);
+        datats = (TS)discovery_TS_Vector.get(0);
     }
     // Use the most generic for the base class...
     if ( (c == TS.class) || ((datats != null) && (c == datats.getClass())) ) {
@@ -409,8 +409,8 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-            Vector v = new Vector();
-            v.addElement ( ensemble );
+        	List v = new Vector();
+            v.add ( ensemble );
             return v;
         }
     }
@@ -546,7 +546,7 @@ throws InvalidCommandParameterException,
 	//props.set("Read24HourAsDay=" + Read24HourAsDay);
 
 	// Read the ensemble file.
-    Vector tslist = null;   // Keep the list of time series
+    List tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
         boolean read_data = true;
@@ -566,7 +566,7 @@ throws InvalidCommandParameterException,
 		}
 		if ( (Alias != null) && (Alias.length() > 0) ) {
     		for ( int i = 0; i < tscount; i++ ) {
-    		    TS ts = (TS)tslist.elementAt(i);
+    		    TS ts = (TS)tslist.get(i);
     		    if ( ts == null ) {
     		        continue;
     		    }
@@ -664,7 +664,7 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

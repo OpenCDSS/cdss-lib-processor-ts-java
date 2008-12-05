@@ -31,6 +31,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -267,7 +268,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to receive results:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TSID_JComboBox.setData ( tsids );
     __TSID_JComboBox.addItemListener ( this );
@@ -285,7 +286,7 @@ private void initialize ( JFrame parent, Command command )
     __IndependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids, y );
     
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __IndependentEnsembleID_JLabel = new JLabel (
             "Independent EnsembleID (for Independent TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
@@ -299,11 +300,11 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IndependentSpecifiedTSID_JListModel = new DefaultListModel();
     // Get the list again because above list will have "*" which we don't want
-    Vector tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     int size = tsids2.size();
     for ( int i = 0; i < size; i++ ) {
-        __IndependentSpecifiedTSID_JListModel.addElement( (String)tsids2.elementAt(i));
+        __IndependentSpecifiedTSID_JListModel.addElement( (String)tsids2.get(i));
     }
     __IndependentSpecifiedTSID_JList = new JList ( __IndependentSpecifiedTSID_JListModel );
     __IndependentSpecifiedTSID_JList.setVisibleRowCount(Math.min(5,size));
@@ -550,16 +551,16 @@ private void setupIndependentSpecifiedTSID ( String IndependentTSList, String In
     if ( (IndependentTSList != null) &&
             TSListType.SPECIFIED_TSID.equals(IndependentTSList) && (IndependentSpecifiedTSID != null) ) {
         // Break list by commas since identifiers may have spaces and other "special" characters (but no commas)
-        Vector v = StringUtil.breakStringList ( IndependentSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+    	List v = StringUtil.breakStringList ( IndependentSpecifiedTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size = v.size();
         int pos = 0;
-        Vector selected = new Vector();
+        List selected = new Vector();
         String independent = "";
         for ( int i = 0; i < size; i++ ) {
-            independent = (String)v.elementAt(i);
+            independent = (String)v.get(i);
             if ( (pos = JGUIUtil.indexOf( __IndependentSpecifiedTSID_JList, independent, false, true))>= 0 ) {
                 // Select it because it is in the command and the list...
-                selected.addElement ( "" + pos );
+                selected.add ( "" + pos );
             }
             else {
                 Message.printWarning ( 1, routine,
@@ -572,7 +573,7 @@ private void setupIndependentSpecifiedTSID ( String IndependentTSList, String In
         if ( selected.size() > 0  ) {
             int [] iselected = new int[selected.size()];
             for ( int is = 0; is < iselected.length; is++ ){
-                iselected[is] = StringUtil.atoi ( (String)selected.elementAt(is));
+                iselected[is] = StringUtil.atoi ( (String)selected.get(is));
             }
             __IndependentSpecifiedTSID_JList.setSelectedIndices( iselected );
         }

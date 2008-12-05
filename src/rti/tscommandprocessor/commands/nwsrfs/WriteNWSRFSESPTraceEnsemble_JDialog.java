@@ -29,6 +29,7 @@ import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.io.File;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -405,11 +406,11 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( "" );
-	tslist_Vector.addElement ( TSListType.SELECTED_TS.toString() );
-	tslist_Vector.addElement ( TSListType.ALL_TS.toString() );
-    tslist_Vector.addElement ( TSListType.ENSEMBLE_ID.toString() );
+    List tslist_Vector = new Vector();
+	tslist_Vector.add ( "" );
+	tslist_Vector.add ( TSListType.SELECTED_TS.toString() );
+	tslist_Vector.add ( TSListType.ALL_TS.toString() );
+    tslist_Vector.add ( TSListType.ENSEMBLE_ID.toString() );
 	__TSList_JComboBox = new SimpleJComboBox(false);
 	__TSList_JComboBox.setData ( tslist_Vector );
 	__TSList_JComboBox.addItemListener (this);
@@ -421,7 +422,7 @@ private void initialize ( JFrame parent, Command command )
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );

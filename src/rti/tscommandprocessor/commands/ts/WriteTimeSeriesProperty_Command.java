@@ -75,7 +75,6 @@ throws InvalidCommandParameterException
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
 
-	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
@@ -143,7 +142,7 @@ throws InvalidCommandParameterException
 	else {
 		//Vector valid_properties = new Vector(
 		        //TSCommandProcessorUtil.getPropertyNameList(processor));
-	    Vector valid_properties = new Vector(1);
+		List valid_properties = new Vector(1);
 	    // FIXME SAM 2008-08-18 Need to not hard-code property names.
 	    valid_properties.add( "DataLimitsOriginal" );
 		int size = 0;
@@ -152,7 +151,7 @@ throws InvalidCommandParameterException
 		}
 		boolean found = false;
 		for ( int i = 0; i < size; i++ ) {
-			if ( PropertyName.equalsIgnoreCase((String)valid_properties.elementAt(i))) {
+			if ( PropertyName.equalsIgnoreCase((String)valid_properties.get(i))) {
 				found = true;
 				break;
 			}
@@ -176,7 +175,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "PropertyName" );
 	valid_Vector.add ( "Append" );
@@ -206,9 +205,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -291,7 +290,7 @@ CommandWarningException, CommandException
     }
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    Vector tslist = null;
+    List tslist = null;
     if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -304,7 +303,7 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
         if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

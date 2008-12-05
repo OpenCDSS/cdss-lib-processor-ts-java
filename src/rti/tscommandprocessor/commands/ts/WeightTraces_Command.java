@@ -48,7 +48,7 @@ protected String _AbsoluteWeights = "AbsoluteWeights";
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Years as array of integers (populated during data check).
@@ -115,7 +115,7 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message,
                 "Provide an identifier for the ensemble to copy."));
 	}
-	Vector Weights_Vector = StringUtil.breakStringList ( Weights, ", ", StringUtil.DELIM_SKIP_BLANKS );
+	List Weights_Vector = StringUtil.breakStringList ( Weights, ", ", StringUtil.DELIM_SKIP_BLANKS );
     int Weights_size = 0;
     if ( Weights_Vector != null ) {
         Weights_size = Weights_Vector.size();
@@ -140,11 +140,11 @@ throws InvalidCommandParameterException
         __Year_int = new int[Weights_size/2];
         __Weight_double = new double[Weights_size/2];
         for ( int i = 0; i < Weights_size; i++ ) {
-            String value = (String)Weights_Vector.elementAt(i);
+            String value = (String)Weights_Vector.get(i);
             if ( (i%2) == 0 ) {
                 // Year...
                 if ( !StringUtil.isInteger(value) ) {
-                    message = "Trace year \"" + Weights_Vector.elementAt(i) + "\" is not an integer.";
+                    message = "Trace year \"" + Weights_Vector.get(i) + "\" is not an integer.";
                     warning += "\n" + message;
                     status.addToLog(CommandPhaseType.INITIALIZATION,
                             new CommandLogRecord(
@@ -157,7 +157,7 @@ throws InvalidCommandParameterException
             else {
                 // Weights
                 if ( !StringUtil.isDouble(value) ) {
-                    message = "Weight \"" + Weights_Vector.elementAt(i) + "\" is not a number.";
+                    message = "Weight \"" + Weights_Vector.get(i) + "\" is not a number.";
                     warning += "\n" + message;
                     status.addToLog(CommandPhaseType.INITIALIZATION,
                             new CommandLogRecord(
@@ -194,7 +194,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "SpecifyWeightsHow" );
@@ -226,7 +226,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -236,11 +236,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     // Check for TS request or class that matches the data...
@@ -467,7 +467,7 @@ CommandWarningException, CommandException
                 }
                 // Add the time series to the new time series.  This will add to the description for each
                 // added/scaled value.
-                Vector v = new Vector();
+                List v = new Vector();
                 v.add ( ts );
                 double [] factor = new double[1];
                 factor[0] = __Weight_double[iyear];
@@ -510,8 +510,8 @@ CommandWarningException, CommandException
         catch ( Exception e ) {
             // Should not happen since identifier was previously checked.
         }
-        Vector tslist = new Vector();
-        tslist.addElement ( ts );
+        List tslist = new Vector();
+        tslist.add ( ts );
         setDiscoveryTSList ( tslist );
     }
 
@@ -530,7 +530,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

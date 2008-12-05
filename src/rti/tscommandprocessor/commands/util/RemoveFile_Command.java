@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -82,7 +83,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );

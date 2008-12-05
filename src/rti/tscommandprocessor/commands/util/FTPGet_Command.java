@@ -12,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import javax.swing.JFrame;
@@ -167,7 +168,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "RemoteSite" );
 	valid_Vector.add ( "Login" );
 	valid_Vector.add ( "Password" );

@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -157,7 +158,7 @@ throws InvalidCommandParameterException
 	if ( (PatternValues != null) && !PatternValues.equals("") ) {
 		// If pattern values are specified, make sure they are a sequence of numbers...
 		// Allow blanks if they want to allow missing to remain
-		Vector tokens = StringUtil.breakStringList(PatternValues, " ,", 0);
+		List tokens = StringUtil.breakStringList(PatternValues, " ,", 0);
 		int size = 0;
 		if ( tokens != null ) {
 			size = tokens.size();
@@ -167,7 +168,7 @@ throws InvalidCommandParameterException
 			__PatternValues_double = new double[size];
 		}
 		for ( int i = 0; i < size; i++ ) {
-			token = (String)tokens.elementAt(i);
+			token = (String)tokens.get(i);
 			if ( !StringUtil.isDouble(token) ) {
                 message = "Pattern value (" + (i + 1) + "): " + token + " is not a number.";
 				warning += "\n" + message;
@@ -237,7 +238,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "Alias" );
 	valid_Vector.add ( "NewTSID" );
 	valid_Vector.add ( "IrregularInterval" );
@@ -301,18 +302,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	// Get the alias from the first token before the equal sign...
 	
-	Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	String Alias = (String)v.elementAt(1);
+	String Alias = (String)v.get(1);
 
 	// Get the command parameters from the token on the right of the =...
 
-	Vector tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	List tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || (tokens.size() < 2) ) {
 		// Must have at least the command name and its parameters...
 		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewPatternTimeSeries(...)";
@@ -322,7 +323,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	try {
         PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," );
+			(String)tokens.get(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -576,8 +577,8 @@ CommandWarningException, CommandException
 
 		// Further process the time series...
         // This makes sure the period is at least as long as the output period, and computes the historical averages.
-		Vector tslist = new Vector();
-        tslist.addElement ( ts );
+        List tslist = new Vector();
+        tslist.add ( ts );
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "TSList", tslist );
         try {

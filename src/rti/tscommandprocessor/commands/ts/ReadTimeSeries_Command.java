@@ -49,7 +49,7 @@ protected final String _Warn = "Warn";
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -109,7 +109,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IfNotFound" );
@@ -140,7 +140,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -150,11 +150,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
@@ -193,14 +193,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     if ( v == null ) {
         message = "Syntax error in \"" + command +
         "\".  Expecting:  TS Alias = ReadTimeSeries(TSID)";
         Message.printWarning ( warning_level, routine, message);
         throw new InvalidCommandSyntaxException ( message );
     }
-    String Alias = (String)v.elementAt(1);
+    String Alias = (String)v.get(1);
     String TSID = null;
     String IfNotFound = null;
 	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
@@ -217,7 +217,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-        TSID = (String)v.elementAt(1);
+        TSID = (String)v.get(1);
         IfNotFound = _Warn; // Default required parameter
 	}
 	else {
@@ -416,7 +416,7 @@ throws InvalidCommandParameterException,
                         message, "Check the log file - report the problem to software support." ) );
 	}
 	
-    Vector tslist = new Vector(1);
+	List tslist = new Vector(1);
     if ( ts != null ) {
         tslist.add ( ts );
     }
@@ -454,7 +454,7 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

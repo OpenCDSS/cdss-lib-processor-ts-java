@@ -145,9 +145,9 @@ private static List createCondensedCatalog ( List pathnameList )
 /**
  * Read the available data types from the DSS file.
  */
-public static Vector getDataTypes ( String filename )
+public static List getDataTypes ( String filename )
 {
-    Vector dataTypes = new Vector();
+	List dataTypes = new Vector();
     return dataTypes;
 }
 
@@ -158,7 +158,7 @@ public static TS readTimeSeries ( File file, String tsident, DateTime readStart,
         String unitsReq, boolean readData )
 throws Exception
 {
-    Vector tslist = readTimeSeriesList ( file, tsident, readStart, readEnd, unitsReq, readData );
+	List tslist = readTimeSeriesList ( file, tsident, readStart, readEnd, unitsReq, readData );
     if ( (tslist == null) || (tslist.size() == 0) ) {
         throw new RuntimeException ( "No time series were found matching \"" + tsident + "\"" );
     }
@@ -187,11 +187,11 @@ If null, read all available data.
 @return a list of time series that were read.
 @throws Exception if there is an error reading the time series
 */
-public static Vector readTimeSeriesList ( File file, String tsidentPattern,
+public static List readTimeSeriesList ( File file, String tsidentPattern,
         DateTime readStart, DateTime readEnd, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDssAPI.readTimeSeriesList";
-    Vector tslist = new Vector();
+	List tslist = new Vector();
     TSIdent tsident = new TSIdent ( tsidentPattern );
     String filename = file.getCanonicalPath();
     HecDSSFileAccess dssFile = new HecDSSFileAccess ( filename );

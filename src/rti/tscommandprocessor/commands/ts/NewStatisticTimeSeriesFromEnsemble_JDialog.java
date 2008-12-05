@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -296,7 +297,7 @@ private void initialize ( JFrame parent, Command command )
 		"Ensemble to analyze (EnsembleID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__EnsembleID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
-	Vector tsensembleids = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+	List tsensembleids = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	if ( tsensembleids == null ) {
 		// User will not be able to select anything.

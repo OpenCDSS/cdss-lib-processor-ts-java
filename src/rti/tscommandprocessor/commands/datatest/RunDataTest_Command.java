@@ -12,7 +12,7 @@
 
 package rti.tscommandprocessor.commands.datatest;
 
-import java.util.Vector;
+import java.util.List;
 
 import javax.swing.JFrame;
 
@@ -173,7 +173,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	int warning_level = 2;
 	int warning_count = 0;
 
-	Vector tokens = StringUtil.breakStringList ( command,
+	List tokens = StringUtil.breakStringList ( command,
 		"()", StringUtil.DELIM_SKIP_BLANKS |
 		StringUtil.DELIM_ALLOW_STRINGS);
 	if ( (tokens == null) || tokens.size() < 1 ) {
@@ -187,7 +187,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	
 	try {
 		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," ) );
+			(String)tokens.get(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
@@ -234,10 +234,10 @@ throws InvalidCommandParameterException,
 	String NumberPositiveResultsBeforeHit 
 		= parameters.getValue("NumberPositiveResultsBeforeHit");
 	
-	Vector dataTestList = null;
+	List dataTestList = null;
 	try { Object o = processor.getPropContents ( "DataTestList" );
 		if ( o != null ) {
-			dataTestList = (Vector)o;
+			dataTestList = (List)o;
 		}
 	}
 	catch ( Exception e ) {
@@ -255,7 +255,7 @@ throws InvalidCommandParameterException,
 	DataTest test = null;
 	boolean found = false;
 	for (int i = 0; i < size; i++) {
-		test = (DataTest)dataTestList.elementAt(i);
+		test = (DataTest)dataTestList.get(i);
 		if (test.getID().equals(TestID)) {
 			found = true;
 			break;
@@ -303,11 +303,11 @@ throws InvalidCommandParameterException,
 	else {
 		try {
 			if (test.isMaster()) {
-				Vector tests = test.getDataTests();
+				List tests = test.getDataTests();
 				size = tests.size();
 				DataTest dt = null;
 				for (int i = 0; i < size; i++) {
-					dt = (DataTest)tests.elementAt(i);
+					dt = (DataTest)tests.get(i);
 					runDataTest(dt, start, end, 
 						numBeforeHit);
 				}

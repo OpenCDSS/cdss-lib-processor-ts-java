@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -128,7 +129,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID1" );
     valid_Vector.add ( "TSID2" );
@@ -184,14 +185,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     if ( (v == null) ) {
         message = "Syntax error in \"" + command +
         "\".  Expecting:  TS Alias = RelativeDiff(TSID1,TSID2,Divisor)";
         Message.printWarning ( warning_level, routine, message);
         throw new InvalidCommandSyntaxException ( message );
     }
-    String Alias = (String)v.elementAt(1);
+    String Alias = (String)v.get(1);
     String TSID1 = null;
     String TSID2 = null;
     String Divisor = null;
@@ -211,9 +212,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
         // TSID is the only parameter
-        TSID1 = (String)v.elementAt(1);
-        TSID2 = (String)v.elementAt(2);
-        Divisor = (String)v.elementAt(3);
+        TSID1 = (String)v.get(1);
+        TSID2 = (String)v.get(2);
+        Divisor = (String)v.get(3);
  	}
 	else {
         // Current syntax...

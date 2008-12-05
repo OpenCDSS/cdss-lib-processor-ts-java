@@ -18,7 +18,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import java.util.Vector;
+import java.util.List;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -32,7 +32,7 @@ implements ActionListener, KeyListener, WindowListener
 {
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private Vector __command_Vector = null;// Command(s) as Vector of String
+private List __command_Vector = null;// Command(s) as Vector of String
 private JTextArea __command_JTextArea = null;// Command as JTextArea
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -42,7 +42,7 @@ Comment editor constructor.
 @param parent JFrame class instantiating this class.
 @param comments Comments to parse (Vector of String)
 */
-public Comment_JDialog ( JFrame parent, Vector comments )
+public Comment_JDialog ( JFrame parent, List comments )
 {	super(parent, true);
 	initialize ( parent, comments );
 }
@@ -69,7 +69,7 @@ Convert text area to comments.
 */
 private void checkComments ()
 {	// Reset the command from the fields...
-	__command_Vector = JGUIUtil.toVector( __command_JTextArea );
+	__command_Vector = JGUIUtil.toList( __command_JTextArea );
 	// Make sure there is a # character at the front of each line...
 	int size = 0;
 	if ( __command_Vector != null ) {
@@ -77,12 +77,11 @@ private void checkComments ()
 	}
 	String s = null;
 	for ( int i = 0; i < size; i++ ) {
-		s = ((String)__command_Vector.elementAt(i)).trim();
+		s = ((String)__command_Vector.get(i)).trim();
 		if ( !s.startsWith("#") ) {
-			// Replace with a new string that has the comment
-			// character...
-			__command_Vector.removeElementAt(i);
-			__command_Vector.insertElementAt(("# " + s), i);
+			// Replace with a new string that has the comment character...
+			__command_Vector.remove(i);
+			__command_Vector.add(i,("# " + s));
 		}
 		// Make sure there are no CTRL-M (^M) carriage returns in the string.
 		// If so, remove because the CTRL-N (newline) is enough for other code
@@ -90,8 +89,8 @@ private void checkComments ()
 		if ( s.indexOf("\015") > 0 ) {
 			// Replace with a new string that does not have the carriage returns.
 			String s2 = StringUtil.remove ( s, "\015" );
-			__command_Vector.removeElementAt(i);
-			__command_Vector.insertElementAt(s2, i);
+			__command_Vector.remove(i);
+			__command_Vector.add(i,s2);
 		}
 	}
 }
@@ -112,7 +111,7 @@ throws Throwable
 Return the text for the command.
 @return the text for the command or null if there is a problem with the command.
 */
-public Vector getText ()
+public List getText ()
 {	if ( __command_Vector == null ) {
 		// Indicates a cancel...
 		return null;
@@ -121,7 +120,7 @@ public Vector getText ()
 	checkComments ();
 	if (	(__command_Vector == null) ||
 		(__command_Vector.size() == 0) ||
-		((String)__command_Vector.elementAt(0)).equals("") ) {
+		((String)__command_Vector.get(0)).equals("") ) {
 		__command_Vector = null;
 	}
 	return __command_Vector;
@@ -132,7 +131,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param comments Comments to parse (Vector of String)
 */
-private void initialize ( JFrame parent, Vector comments )
+private void initialize ( JFrame parent, List comments )
 {	__command_Vector = comments;
 
 	addWindowListener( this );
@@ -244,7 +243,7 @@ private void refresh ()
 		// in a blank line and the user must back up to edit the blank.
 		if (	(__command_Vector != null) &&
 			(__command_Vector.size() > 0) &&
-			(((String)__command_Vector.elementAt(0)).length() > 0)){
+			(((String)__command_Vector.get(0)).length() > 0)){
 			String text = StringUtil.toString(__command_Vector,	System.getProperty("line.separator") );
 			if ( text.length() > 0 ) {
 				__command_JTextArea.setText ( text );
@@ -258,7 +257,7 @@ Return the time series command as a Vector of String.
 @param status 0 to cancel, 1 is OK.
 @return returns the command text or null if no command.
 */
-public Vector response ( int status )
+public List response ( int status )
 {	setVisible( false );
 	dispose();
 	if ( status == 0 ) {
@@ -270,7 +269,7 @@ public Vector response ( int status )
 	    __ok = true;
 	    refresh();
 		checkComments ();
-		if ( (__command_Vector.size() == 0) || ((String)__command_Vector.elementAt(0)).equals("") ) {
+		if ( (__command_Vector.size() == 0) || ((String)__command_Vector.get(0)).equals("") ) {
 			return null;
 		}
 		return __command_Vector;

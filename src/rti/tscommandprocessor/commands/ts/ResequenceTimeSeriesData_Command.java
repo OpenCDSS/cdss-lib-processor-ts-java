@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -169,7 +170,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
 	valid_Vector.add ( "EnsembleID" );
@@ -438,7 +439,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	Vector tslist = (Vector)o_TSList;
+	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Zero time series in list to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
@@ -656,7 +657,7 @@ CommandWarningException, CommandException
     TS newts = null;
     for ( int i = 0; i < size; i++ ) {
         // Create a copy of the original, but with the new scenario.
-        ts = (TS)tslist.elementAt(i);
+        ts = (TS)tslist.get(i);
         if ( ts.getDataIntervalBase() != TimeInterval.MONTH ) {
             message = "Resequencing can currently only be applied to monthly time series.";
             Message.printWarning ( warning_level,

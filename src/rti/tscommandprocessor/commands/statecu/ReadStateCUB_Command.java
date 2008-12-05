@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.statecu;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -139,7 +140,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "InputStart" );
@@ -369,16 +370,16 @@ CommandWarningException, CommandException
 
 		StateCU_BTS bts = null;
 		bts = new StateCU_BTS ( InputFile_full );
-		Vector tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
+		List tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
 		bts.close();
 		bts = null;
 
 		// Now add the time series to the end of the normal list...
 
 		if ( tslist != null ) {
-			Vector TSResultsList_Vector = null;
+			List TSResultsList_Vector = null;
 			try { Object o = processor.getPropContents( "TSResultsList" );
-					TSResultsList_Vector = (Vector)o;
+					TSResultsList_Vector = (List)o;
 			}
 			catch ( Exception e ){
 				message = "Cannot get time series list to add read time series.  Starting new list.";
@@ -415,7 +416,7 @@ CommandWarningException, CommandException
 			}
 
 			for ( int i = 0; i < size; i++ ) {
-				TSResultsList_Vector.addElement ( tslist.elementAt(i) );
+				TSResultsList_Vector.add ( tslist.get(i) );
 			}
 			
 			// Now reset the list in the processor...

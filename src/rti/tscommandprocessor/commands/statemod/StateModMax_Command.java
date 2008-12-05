@@ -44,7 +44,7 @@ public class StateModMax_Command extends AbstractCommand implements Command, Com
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -168,7 +168,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "InputFile1" );
     valid_Vector.add ( "InputFile2" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -196,7 +196,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -206,11 +206,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     // Check for TS request or class that matches the data...
@@ -242,7 +242,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	else {
 	    // Parse the old command...
-		Vector tokens = StringUtil.breakStringList (command_string,
+		List tokens = StringUtil.breakStringList (command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 3 ) {
 			message = "Invalid syntax for command.  Expecting StateModMax(InputFile1,InputFile2).";
@@ -252,8 +252,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                             message, "Use the command editor to correct the command." ) );
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String InputFile1 = ((String)tokens.elementAt(1)).trim();
-		String InputFile2 = ((String)tokens.elementAt(2)).trim();
+		String InputFile1 = ((String)tokens.get(1)).trim();
+		String InputFile2 = ((String)tokens.get(2)).trim();
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( InputFile1.length() > 0 ) {
@@ -353,8 +353,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String InputFile1_full = InputFile1;
     String InputFile2_full = InputFile2;
-    Vector tslist1 = null;  // First file and results
-    Vector tslist2 = null;  // Second file
+    List tslist1 = null;  // First file and results
+    List tslist2 = null;  // Second file
     try {
         boolean readData = true;
         if ( command_phase == CommandPhaseType.DISCOVERY ){
@@ -479,7 +479,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 int pos = 0;
                 for ( int iv = 0; iv < vsize; iv++ ) {
                     // Get a time series...
-                    ts1 = (TS)tslist1.elementAt(iv);
+                    ts1 = (TS)tslist1.get(iv);
                     if ( ts1 == null ) {
                         continue;
                     }
@@ -497,7 +497,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     }
                     else {
                         // The "ts1" instance will be modified..
-                        TSUtil.max ( ts1, (TS)tslist2.elementAt(pos) );
+                        TSUtil.max ( ts1, (TS)tslist2.get(pos) );
                     }
                 }
     
@@ -540,7 +540,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

@@ -16,6 +16,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import java.io.PrintWriter;
 import java.io.FileOutputStream;
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.Math.MathUtil;
@@ -58,13 +59,13 @@ private final int __INT_BEST_FIT_SEPTOTAL = 2;
 
 private PropList __analysisProperties = null;
 					// Stores the analysis properties.
-private Vector __independentTSList = null;
+private List __independentTSList = null;
 					// Stores the independent ts identifier
 					// strings
-private Vector __dependentTSList   = null;
+private List __dependentTSList   = null;
 					// Stores the dependent ts identifier
 					// strings
-private Vector __dependentStatisticsVector = null;
+private List __dependentStatisticsVector = null;
 					// This vector contains a list of
 					// objects representing each dependent
 					// time series.
@@ -75,9 +76,9 @@ private Vector __dependentStatisticsVector = null;
 					// and all the independent time series.
 
 // Analysis properties listed in logical order
-private Vector   __AnalysisMethod_Vector = null;
+private List   __AnalysisMethod_Vector = null;
 					// Stores the Analysis Methods to use
-private Vector   __Transformation_Vector = null;
+private List   __Transformation_Vector = null;
 					// Stores the Transformations to use
 private String   __NumberOfEquations = null;
 					// Stores the Num Equations to use
@@ -254,8 +255,8 @@ Transformation" is required or "Log,None" if both are required.</td>
 //                        handled
 @throws Exception if an invalid results passed in.
 */
-public MixedStationAnalysis ( 	Vector dependentTSList,
-				Vector independentTSList,
+public MixedStationAnalysis ( 	List dependentTSList,
+		List independentTSList,
 				PropList props )
 throws Exception
 {
@@ -284,8 +285,8 @@ plus the following extra parameter:
 @throws Exception if an invalid results passed in.
 */
 public MixedStationAnalysis ( FillMixedStation_JDialog parent,
-				Vector dependentTSList,
-				Vector independentTSList,
+		List dependentTSList,
+		List independentTSList,
 				PropList props )
 throws Exception
 {
@@ -350,7 +351,7 @@ throws Exception
 
 		__dependentStatisticsVector = new Vector( nDependentTS );
 
-		Vector dependentResults = null;
+		List dependentResults = null;
 
 		int initialCapacity = nIndependentTS
 				    * nAnalysisMethods
@@ -359,7 +360,7 @@ throws Exception
 		// Loop for each one of the dependent time series
 		for ( int nD = 0; nD < nDependentTS; nD++ ) {
 
-		    dependentTS = (TS) __dependentTSList.elementAt(nD);
+		    dependentTS = (TS) __dependentTSList.get(nD);
 		    dependentResults = new Vector( initialCapacity );
 
 		    // Loop for each one of the independent time series, except
@@ -367,7 +368,7 @@ throws Exception
 		    // list.
 		    for ( int nI = 0; nI < nIndependentTS; nI++ ) {
 
-		    	independentTS = (TS) __independentTSList.elementAt(nI);
+		    	independentTS = (TS) __independentTSList.get(nI);
 
 		    	// Make sure the time series are not the same.
 			if ( independentTS == dependentTS) {
@@ -385,7 +386,7 @@ throws Exception
 		    	for ( int nA = 0; nA < nAnalysisMethods; nA++ ) {
 		    		// Reset properties for AnalysisMethod,
 		    		String AnalysisMethod = (String)
-		    			__AnalysisMethod_Vector.elementAt(nA);
+		    			__AnalysisMethod_Vector.get(nA);
 		    		__analysisProperties.set(
 		    			"AnalysisMethod", AnalysisMethod );
 
@@ -394,7 +395,7 @@ throws Exception
 		    		for ( int nT = 0; nT < nTransformations; nT++ ) {
 		    		    // Reset properties for Transformation,
 		    		    String Transformation =  (String)
-		    		    	__Transformation_Vector.elementAt(nT);
+		    		    	__Transformation_Vector.get(nT);
 		    		    __analysisProperties.set(
 		    		    	"Transformation", Transformation );
 
@@ -429,7 +430,7 @@ throws Exception
 			    	    previousSecCount = sw.getSeconds();
 				    sw.start();
 			    	    try {
-			    	    	dependentResults.addElement (
+			    	    	dependentResults.add (
 			    		    new TSRegression (
 			    			independentTS,
 			    			dependentTS,
@@ -449,7 +450,7 @@ throws Exception
 			    	}
 			}
 		    }
-		    __dependentStatisticsVector.addElement ( dependentResults );
+		    __dependentStatisticsVector.add ( dependentResults );
 		}
 	} catch ( Exception e ) {
 		// Error other than from the TSRegression object.
@@ -538,7 +539,7 @@ Creates the fillRegression() and fillMOVE2() commands for each combination of
 dependent, independent, Transformation and Analysis Method,
 Returns a Vector containing command strings.
 */
-public Vector createFillCommands()
+public List createFillCommands()
 {
 	String mthd = "MixedStationAnalysis.createFillCommands", mssg;
 
@@ -561,7 +562,7 @@ public Vector createFillCommands()
 	// __MinimumR as integer.
 	int MinimumR = StringUtil.atoi( __MinimumR );
 
-	Vector commands_Vector = new Vector();
+	List commands_Vector = new Vector();
 
 try {
 	// Loop for each one of the dependent time series
@@ -572,8 +573,8 @@ try {
 	for ( int dep = 0; dep < nDependent; dep++ ) {
 
 		// Get the independent list (regressions) for this dependent
-		Vector independentList = (Vector)
-			__dependentStatisticsVector.elementAt( dep );
+		List independentList = (List)
+			__dependentStatisticsVector.get( dep );
 		int nIndependent = independentList.size();
 
 		// Using the same code to deal with monthly and single equation
@@ -592,7 +593,7 @@ try {
 				// Get the regression object.
 				TSRegression tsRegression = null;
 				tsRegression = (TSRegression)
-		    			independentList.elementAt(
+		    			independentList.get(
 		    				__sortedOrder[dep][month-1][ind]);
 		  		PropList tsRegressionProps =
 		  			tsRegression.getPropList();
@@ -833,7 +834,7 @@ try {
 	  	    		// Build the command, update the __command_Vector
 				String command =
 					fillCommand + "(" + b.toString() + ")";
-				commands_Vector.addElement ( command );
+				commands_Vector.add ( command );
 				Message.printStatus ( 1, mthd, command );
 
 	  	    		// Done with this month (or all)
@@ -939,7 +940,7 @@ private void createReportStatistics()
 	String MinimumR			= null;
 	String BestFitIndicator		= null;
 
-	Vector independentList     = null;
+	List independentList     = null;
 	TSRegression tsRegression  = null;
 	TS dependentTS		   = null;
 	TS independentTS	   = null;
@@ -963,8 +964,8 @@ private void createReportStatistics()
 			sRMSE        = new StringBuffer ();
 
 			// Get the regression list for this dependent time series.
-			independentList = (Vector)
-				__dependentStatisticsVector.elementAt( dp );
+			independentList = (List)
+				__dependentStatisticsVector.get( dp );
 
 			// Find out the number of regression analysis for this
 			// dependent time series
@@ -993,7 +994,7 @@ private void createReportStatistics()
 
 				// Get the regression object.
 				tsRegression = (TSRegression)
-		    			independentList.elementAt(rl);
+		    			independentList.get(rl);
 		  		tsRegressionProps = tsRegression.getPropList();
 
 	    			// If first time create the header
@@ -1368,7 +1369,7 @@ private void createReportSummary()
 	String Transformation		= null;
 	String BestFitIndicator		= null;
 
-	Vector independentList    = null;
+	List independentList    = null;
 	TSRegression tsRegression = null;
 
 	TS dependentTS	= null;
@@ -1391,8 +1392,8 @@ try {
 
 		// Get the independent list (regressions) for this dependent
 		// time series.
-		independentList = (Vector)
-			__dependentStatisticsVector.elementAt( dep );
+		independentList = (List)
+			__dependentStatisticsVector.get( dep );
 
 		int nIndependent = independentList.size();
 
@@ -1436,7 +1437,7 @@ try {
 				// Get the regression object.
 				tsRegression = null;
 				tsRegression = (TSRegression)
-		    			independentList.elementAt(
+		    			independentList.get(
 		    				__sortedOrder[dep][month-1][ind]);
 		  		tsRegressionProps = tsRegression.getPropList();
 
@@ -1728,8 +1729,8 @@ try {
 	for ( int dep = 0; dep < nDependent; dep++ ) {
 
 		// Get the independent list (regressions) for this dependent
-		Vector independentList = (Vector)
-			__dependentStatisticsVector.elementAt( dep );
+		List independentList = (List)
+			__dependentStatisticsVector.get( dep );
 		int nIndependent = independentList.size();
 
 		// Using the same code to deal with monthly and single equation
@@ -1748,7 +1749,7 @@ try {
 				// Get the regression object.
 				TSRegression tsRegression = null;
 				tsRegression = (TSRegression)
-		    			independentList.elementAt(
+		    			independentList.get(
 		    				__sortedOrder[dep][month-1][ind]);
 		  		PropList tsRegressionProps =
 		  			tsRegression.getPropList();
@@ -2115,7 +2116,7 @@ private void rank()
 {
 	String mthd = "MixedStationAnalysis.rank", mssg;
 
-	Vector independentList    = null;
+	List independentList    = null;
 	TSRegression tsRegression = null;
 
 	double[] values;
@@ -2128,8 +2129,8 @@ try {
 	for ( int dep = 0; dep < nDependent; dep++ ) {
 
 	    	// Get the independent list ( regressions ) for this independent
-		independentList = (Vector)
-			__dependentStatisticsVector.elementAt( dep );
+		independentList = (List)
+			__dependentStatisticsVector.get( dep );
 
 		int nIndependent = independentList.size();
 
@@ -2149,7 +2150,7 @@ try {
 					// Get the regression object.
 		  	    		tsRegression = null;
 			    		tsRegression = (TSRegression)
-			       			independentList.elementAt(ind);
+			       			independentList.get(ind);
 
 		  	    		try {
 		  	    		    switch ( __intBestFitIndicator ) {
@@ -2217,7 +2218,7 @@ try {
 				// Get the regression object.
 		  		tsRegression = null;
 				tsRegression = (TSRegression)
-					independentList.elementAt(ind);
+					independentList.get(ind);
 
 		  		try {
 					switch ( __intBestFitIndicator ) {

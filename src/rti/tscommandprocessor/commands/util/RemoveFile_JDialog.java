@@ -31,7 +31,6 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 public class RemoveFile_JDialog extends JDialog
@@ -188,7 +187,7 @@ private void initialize ( JFrame parent, Command command )
 {	__command = (RemoveFile_Command)command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
-	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 

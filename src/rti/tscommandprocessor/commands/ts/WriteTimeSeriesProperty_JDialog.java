@@ -23,6 +23,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -289,13 +290,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -313,7 +314,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Property to write:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PropertyName_JComboBox = new SimpleJComboBox(false);
-	Vector PropertyName_Vector = new Vector(1);
+	List PropertyName_Vector = new Vector(1);
 	// FIXME SAM 2008-08-18 Need to not hard-code property names.
 	PropertyName_Vector.add( "DataLimitsOriginal" );
 	__PropertyName_JComboBox.setData ( PropertyName_Vector );
@@ -327,10 +328,10 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Append to file?:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    Vector Append_Vector = new Vector();
-    Append_Vector.addElement ( "" );
-    Append_Vector.addElement ( __command._False );
-    Append_Vector.addElement ( __command._True );
+    List Append_Vector = new Vector();
+    Append_Vector.add ( "" );
+    Append_Vector.add ( __command._False );
+    Append_Vector.add ( __command._True );
 	__Append_JComboBox = new SimpleJComboBox(false);
     __Append_JComboBox.setData ( Append_Vector );
    	__Append_JComboBox.addItemListener (this);

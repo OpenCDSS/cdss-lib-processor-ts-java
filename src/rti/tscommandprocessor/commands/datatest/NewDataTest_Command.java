@@ -10,6 +10,7 @@
 
 package rti.tscommandprocessor.commands.datatest;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -139,8 +140,8 @@ even if a TSID from the tsVector matches more than one of the wildcard TSIDs.
 This Vector will not be null if no matches can be found -- it will be an empty
 Vector.  However, if tsVector is empty or null, a null Vector will be returned.
 */
-public Vector findTSMatches(Vector wildcardTSIDs, Vector tsVector) {
-	Vector v = new Vector();
+public List findTSMatches(List wildcardTSIDs, List tsVector) {
+	List v = new Vector();
 
 	if (tsVector == null || tsVector.size() == 0) {
 		// return null so that this case can be detected and an
@@ -159,11 +160,11 @@ public Vector findTSMatches(Vector wildcardTSIDs, Vector tsVector) {
 	// match any of the wildcarded TSIDs.
 
 	for (int i = 0; i < size; i++) {
-		ts = (TS)tsVector.elementAt(i);
+		ts = (TS)tsVector.get(i);
 		tsid = ts.getIdentifier();
 		
 		for (int j = 0; j < size2; j++) {
-			s = (String)wildcardTSIDs.elementAt(j);
+			s = (String)wildcardTSIDs.get(j);
 
 			if (tsid.matches(s)) {
 				v.add(tsid.toString(true));
@@ -179,13 +180,13 @@ public Vector findTSMatches(Vector wildcardTSIDs, Vector tsVector) {
 
 	java.util.Collections.sort(v);
 
-	Vector single = new Vector();
+	List single = new Vector();
 
 	size = v.size();
-	String val = (String)v.elementAt(0);
+	String val = (String)v.get(0);
 	single.add(val);
 	for (int i = 1; i < size; i++) {
-		s = (String)v.elementAt(i);
+		s = (String)v.get(i);
 		if (s.equals(val)) {
 			// next!
 		}
@@ -220,7 +221,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	int warning_level = 2;
 	int warning_count = 0;
 
-	Vector tokens = StringUtil.breakStringList ( command,
+	List tokens = StringUtil.breakStringList ( command,
 		"()", StringUtil.DELIM_SKIP_BLANKS |
 		StringUtil.DELIM_ALLOW_STRINGS);
 	if ( (tokens == null) || tokens.size() < 2 ) {
@@ -234,7 +235,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException {
 	
 	try {
 		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," ) );
+			(String)tokens.get(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command +
@@ -313,8 +314,8 @@ throws InvalidCommandParameterException,
 			(TSSupplier)processor);
 		test.setID(DataTestID);
 		// Reset the DataTest list in the processor.
-		Vector DataTestList_Vector 
-			= (Vector)processor.getPropContents("DataTestList");
+		List DataTestList_Vector 
+			= (List)processor.getPropContents("DataTestList");
 		if (DataTestList_Vector == null) {
 			DataTestList_Vector = new Vector();
 		}
@@ -324,18 +325,18 @@ throws InvalidCommandParameterException,
 		int size = DataTestList_Vector.size();
 		DataTest dt = null;
 		for (int i = size - 1; i >= 0; i--) {
-			dt = (DataTest)DataTestList_Vector.elementAt(i);
+			dt = (DataTest)DataTestList_Vector.get(i);
 			if (dt.getID().equals(DataTestID)) {
-				DataTestList_Vector.removeElementAt(i);	
+				DataTestList_Vector.remove(i);	
 			}
 		}
 		
 		boolean hasWildcards = test.hasWildcards();
 
 		if (hasWildcards) {
-			Vector v = test.getWildcardTSIDs();
-			Vector tsList = (Vector)processor.getPropContents( "TSResultsList");
-			Vector matches = findTSMatches(v, tsList);
+			List v = test.getWildcardTSIDs();
+			List tsList = (List)processor.getPropContents( "TSResultsList");
+			List matches = findTSMatches(v, tsList);
 
 			if (matches == null) {
 				message = "No matching time series found.";
@@ -348,11 +349,11 @@ throws InvalidCommandParameterException,
 				size = matches.size();
 				String s = null;
 
-				Vector tests = new Vector();
+				List tests = new Vector();
 				
 				for (int i = 0; i < size; i++) {
 					dt = new DataTest(test);
-					s = (String)matches.elementAt(i);
+					s = (String)matches.get(i);
 					dt.setWildcards(s);
 					dt.setTestData();
 					tests.add(dt);

@@ -23,6 +23,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -255,10 +256,10 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Append to file?:"),
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    Vector Append_Vector = new Vector();
-    Append_Vector.addElement ( "" );
-    Append_Vector.addElement ( __command._False );
-    Append_Vector.addElement ( __command._True );
+    List Append_Vector = new Vector();
+    Append_Vector.add ( "" );
+    Append_Vector.add ( __command._False );
+    Append_Vector.add ( __command._True );
 	__Append_JComboBox = new SimpleJComboBox(false);
     __Append_JComboBox.setData ( Append_Vector );
    	__Append_JComboBox.addItemListener (this);

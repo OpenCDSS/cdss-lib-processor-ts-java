@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -99,7 +100,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "BlendMethod" );
@@ -151,7 +152,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax.
-		Vector v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
 			ntokens = v.size();
@@ -169,9 +170,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String IndependentTSID = "";
 		String BlendMethod = "";
 		int ic = 1;		// Position 0 is the command name
-		TSID = ((String)v.elementAt(ic++)).trim();
-		IndependentTSID = ((String)v.elementAt(ic++)).trim();
-		BlendMethod =((String)v.elementAt(ic++)).trim();
+		TSID = ((String)v.get(ic++)).trim();
+		IndependentTSID = ((String)v.get(ic++)).trim();
+		BlendMethod =((String)v.get(ic++)).trim();
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {

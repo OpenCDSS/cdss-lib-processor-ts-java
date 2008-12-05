@@ -25,6 +25,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -213,13 +214,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -227,8 +228,8 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Dimension:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Dimension_JComboBox = new SimpleJComboBox ( false );
-	Vector dimension_data_Vector0 = DataDimension.getDimensionData();
-	Vector dimension_data_Vector = null;
+	List dimension_data_Vector0 = DataDimension.getDimensionData();
+	List dimension_data_Vector = null;
 	int size = 0;
 	if ( dimension_data_Vector0 != null ) {
 		size = dimension_data_Vector0.size();
@@ -236,9 +237,9 @@ private void initialize ( JFrame parent, Command command )
 		dimension_data_Vector = new Vector(size);
 		DataDimension dim;
 		for ( int i = 0; i < size; i++ ) {
-			dim =(DataDimension)dimension_data_Vector0.elementAt(i);
+			dim =(DataDimension)dimension_data_Vector0.get(i);
 			if ( dim.getAbbreviation().length() > 0 ) {
-				dimension_data_Vector.addElement ( dim.getAbbreviation() + " - " + dim.getLongName() );
+				dimension_data_Vector.add ( dim.getAbbreviation() + " - " + dim.getLongName() );
 			}
 		}
 		dimension_data_Vector =	StringUtil.sortStringList(dimension_data_Vector);
@@ -251,8 +252,8 @@ private void initialize ( JFrame parent, Command command )
 		size = dimension_data_Vector.size();
 	}
 	for ( int i = 0; i < size; i++ ) {
-		if ( ((String)dimension_data_Vector.elementAt(i)).length() > 0){
-			__Dimension_JComboBox.add (	(String)dimension_data_Vector.elementAt(i) );
+		if ( ((String)dimension_data_Vector.get(i)).length() > 0){
+			__Dimension_JComboBox.add (	(String)dimension_data_Vector.get(i) );
 		}
 	}
 	if ( size > 0 ) {
@@ -480,17 +481,17 @@ Refresh the data units based on the dimension.
 */
 private void refreshUnits ()
 {	String dimension = __Dimension_JComboBox.getSelected();
-	Vector units_Vector = DataUnits.lookupUnitsForDimension ( null, StringUtil.getToken(dimension," ",0,0) );
+	List units_Vector = DataUnits.lookupUnitsForDimension ( null, StringUtil.getToken(dimension," ",0,0) );
 	int size = 0;
 	if ( units_Vector != null ) {
 		size = units_Vector.size();
 	}
 	__NewUnits_JComboBox.removeAll ();
 	DataUnits units = null;
-	Vector units_sorted_Vector = new Vector();
+	List units_sorted_Vector = new Vector();
 	for ( int i = 0; i < size; i++ ) {
-		units = (DataUnits)units_Vector.elementAt(i);
-		units_sorted_Vector.addElement ( units.getAbbreviation() + " - " + units.getLongName() );
+		units = (DataUnits)units_Vector.get(i);
+		units_sorted_Vector.add ( units.getAbbreviation() + " - " + units.getLongName() );
 	}
 	units_sorted_Vector = StringUtil.sortStringList ( units_sorted_Vector );
 	__NewUnits_JComboBox.setData ( units_sorted_Vector );

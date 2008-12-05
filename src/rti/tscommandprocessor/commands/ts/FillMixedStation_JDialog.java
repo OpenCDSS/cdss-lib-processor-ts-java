@@ -36,6 +36,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import java.io.FileReader;
@@ -204,7 +205,7 @@ private String		__fillDependents_Tip =
 
 // Member initialized by the createFillCommands() method and used by the
 // the update FillCommandsControl() and copyCommandsToTSTool() methods.
-Vector __fillCommands_Vector = null;
+List __fillCommands_Vector = null;
 
 // Member flag Used to prevent ValueChange method to execute refresh()
 boolean ignoreValueChanged = false;
@@ -313,7 +314,7 @@ public void actionPerformed( ActionEvent event )
 		reportProp.set("Title = " + outputFile);
 
 		// First add the content of the Output file, if any.
-		Vector strings = new Vector();
+		List strings = new Vector();
 		if ( !outputFile.equals("") ) {
 			strings = readTextFile ( outputFile );
 		}
@@ -682,11 +683,11 @@ private String getAnalysisMethodFromInterface()
 {
 	String AnalysisMethod = "";
 
-	Vector analysis = __AnalysisMethod_SimpleJList.getSelectedItems();
+	List analysis = __AnalysisMethod_SimpleJList.getSelectedItems();
 	StringBuffer buffer = new StringBuffer();
 	for ( int i = 0; i < analysis.size(); i++ ) {
 		if ( i > 0 ) buffer.append ( ",");
-		buffer.append ( analysis.elementAt( i ) );
+		buffer.append ( analysis.get( i ) );
 	}
 	AnalysisMethod = buffer.toString();
 	buffer = null;
@@ -715,12 +716,12 @@ private String getDependentTSIDFromInterface()
 		DependentTSID = "";
 		if ( JGUIUtil.selectedSize(__DependentTSID_SimpleJList) > 0 ) {
 			// Get the selected and format...
-			Vector dependent =
+			List dependent =
 				__DependentTSID_SimpleJList.getSelectedItems();
 			StringBuffer buffer = new StringBuffer();
 			for ( int i = 0; i < dependent.size(); i++ ) {
 				if ( i > 0 ) buffer.append ( ",");
-				buffer.append ( dependent.elementAt( i ) );
+				buffer.append ( dependent.get( i ) );
 			}
 			DependentTSID = buffer.toString();
 		}
@@ -750,12 +751,12 @@ private String getIndependentTSIDFromInterface()
 		IndependentTSID = "";
 		if ( JGUIUtil.selectedSize(__IndependentTSID_SimpleJList) > 0 ) {
 			// Get the selected and format...
-			Vector independent =
+			List independent =
 				__IndependentTSID_SimpleJList.getSelectedItems();
 			StringBuffer buffer = new StringBuffer();
 			for ( int i = 0; i < independent.size(); i++ ) {
 				if ( i > 0 ) buffer.append ( ",");
-				buffer.append ( independent.elementAt( i ) );
+				buffer.append ( independent.get( i ) );
 			}
 			IndependentTSID = buffer.toString();
 		}
@@ -772,11 +773,11 @@ private String getTransformationFromInterface()
 {
 	String Transformation = "";
 
-	Vector transformation = __Transformation_SimpleJList.getSelectedItems();
+	List transformation = __Transformation_SimpleJList.getSelectedItems();
 	StringBuffer buffer = new StringBuffer();
 	for ( int i = 0; i < transformation.size(); i++ ) {
 		if ( i > 0 ) buffer.append ( ",");
-		buffer.append ( transformation.elementAt( i ) );
+		buffer.append ( transformation.get( i ) );
 	}
 	Transformation = buffer.toString();
 	buffer = null;
@@ -865,16 +866,16 @@ private void initialize ( JFrame parent, Command command )
 	// LT1 - REVISIT [LT 2006-06-01] The "" and "* can be added here, if we decide
 	// to replace the SimpleJList by JComboBox.
 	// (see AnalyzePattern_JDialog)
-	Vector tsids = null;
+	List tsids = null;
 	if ( __command.isCommandMode() ) {
 		
 		tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 				(TSCommandProcessor)__command.getCommandProcessor(), __command );
 		
 	} else {
-		Vector tsObjects = null;
+		List tsObjects = null;
 		try { Object o = processor.getPropContents ( "TSResultsList" );
-			tsObjects = (Vector)o;
+			tsObjects = (List)o;
 		}
 		catch ( Exception e ) {
 				String message = "Cannot get time series list to process.";
@@ -889,8 +890,8 @@ private void initialize ( JFrame parent, Command command )
 			int size = tsObjects.size();
 			tsids = new Vector( size );
 			for ( int i = 0; i < size; i++ ) {
-				TS ts = (TS) tsObjects.elementAt(i);
-				tsids.addElement ( ts.getIdentifier().toString(false) );
+				TS ts = (TS) tsObjects.get(i);
+				tsids.add ( ts.getIdentifier().toString(false) );
 			}
 		}
 	}
@@ -909,12 +910,12 @@ private void initialize ( JFrame parent, Command command )
 	}
 
 	// Vector of options for both the dependent and independent TSList
-	Vector tslist_Vector = new Vector();
+	List tslist_Vector = new Vector();
 	if ( __command.isCommandMode() ) {
-		tslist_Vector.addElement ( __command._AllTS );
-		tslist_Vector.addElement ( __command._SelectedTS );
+		tslist_Vector.add ( __command._AllTS );
+		tslist_Vector.add ( __command._SelectedTS );
 	}
-	tslist_Vector.addElement ( __command._AllMatchingTSID );
+	tslist_Vector.add ( __command._AllMatchingTSID );
 
 	// How to get the dependent time series list to fill.
 	JGUIUtil.addComponent(main_JPanel, new JLabel ("Dependent TS list:"),
@@ -933,11 +934,11 @@ private void initialize ( JFrame parent, Command command )
 		"Dependent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-	Vector dts = new Vector();
+	List dts = new Vector();
 	for ( int i = 0; i < size; i++ ) {
-		dts.addElement( (String) tsids.elementAt(i) );
+		dts.add( (String) tsids.get(i) );
 	}
-	dts.addElement( (String) "*" ); // See LT1 REVISIT above.
+	dts.add( (String) "*" ); // See LT1 REVISIT above.
 
 	__DependentTSID_SimpleJList = new SimpleJList (dts);
 	__DependentTSID_SimpleJList.setSelectionMode(
@@ -975,11 +976,11 @@ private void initialize ( JFrame parent, Command command )
 		"Independent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-	Vector its = new Vector();
+	List its = new Vector();
 	for ( int i = 0; i < size; i++ ) {
-		its.addElement( (String) tsids.elementAt(i) );
+		its.add( (String) tsids.get(i) );
 	}
-	its.addElement( (String) "*" ); // See LT1 REVISIT above.
+	its.add( (String) "*" ); // See LT1 REVISIT above.
 
 	__IndependentTSID_SimpleJList = new SimpleJList (its);
 	__IndependentTSID_SimpleJList.setSelectionMode(
@@ -1006,9 +1007,9 @@ private void initialize ( JFrame parent, Command command )
 	// Analysis method
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis method(s):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector av = new Vector();
-	av.addElement( __command._ANALYSIS_OLS   );
-	av.addElement( __command._ANALYSIS_MOVE2 );
+	List av = new Vector();
+	av.add( __command._ANALYSIS_OLS   );
+	av.add( __command._ANALYSIS_MOVE2 );
 	__AnalysisMethod_SimpleJList = new SimpleJList (av);
 	__AnalysisMethod_SimpleJList.setSelectionMode(
 		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
@@ -1037,9 +1038,9 @@ private void initialize ( JFrame parent, Command command )
 	// Transformation
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation(s):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tv = new Vector();
-	tv.addElement( __command._TRANSFORMATION_NONE );
-	tv.addElement( __command._TRANSFORMATION_LOG    );
+	List tv = new Vector();
+	tv.add( __command._TRANSFORMATION_NONE );
+	tv.add( __command._TRANSFORMATION_LOG    );
 	__Transformation_SimpleJList = new SimpleJList (tv);
 	__Transformation_SimpleJList.setSelectionMode(
 		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
@@ -1402,9 +1403,9 @@ Read the content of a text file, returning a vector of strings,
 one string per line.
 @param fileName - The file (path and file) to read.
 */
-Vector readTextFile ( String fileName )
+List readTextFile ( String fileName )
 {
-	Vector 	_fileContent = new Vector();	// The return vector.
+	List 	_fileContent = new Vector();	// The return vector.
 	FileReader _fileReader;			// The actual file stream.
 	BufferedReader	_bufferedReader ;	// Used to read the file line by line.
 	String line;
@@ -1417,7 +1418,7 @@ Vector readTextFile ( String fileName )
 
 		do {
 			line = _bufferedReader.readLine();
-			if( line!=null ) _fileContent.addElement( line );
+			if( line!=null ) _fileContent.add( line );
 		} while( line!=null  );
 
 	} catch( Exception e ) {
@@ -1476,7 +1477,7 @@ private void refresh()
 	__error_wait = false;
 
 	PropList props 	= null;
-	Vector v	= null;
+	List v	= null;
 
 	if ( __first_time ) {
 		__first_time = false;
@@ -1560,16 +1561,16 @@ private void refresh()
 				DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
 			int size = v.size();
 			int pos = 0;
-			Vector selected = new Vector();
+			List selected = new Vector();
 			String dependent = "";
 			for ( int i = 0; i < size; i++ ) {
-				dependent = (String)v.elementAt(i);
+				dependent = (String)v.get(i);
 				if ( (pos = JGUIUtil.indexOf(
 					__DependentTSID_SimpleJList,
 					dependent, false, true))>= 0 ) {
 					// Select it because it is in the
 					// command and the list...
-					selected.addElement ( "" + pos );
+					selected.add ( "" + pos );
 				} else {
 					Message.printWarning ( 1, mthd,
 					"Existing " +
@@ -1589,7 +1590,7 @@ private void refresh()
 				int [] iselected = new int[selected.size()];
 				for ( int is = 0; is < iselected.length; is++ ){
 					iselected[is] = StringUtil.atoi (
-					(String)selected.elementAt(is));
+					(String)selected.get(is));
 				}
 				__DependentTSID_SimpleJList.setSelectedIndices(
 					iselected );
@@ -1607,16 +1608,16 @@ private void refresh()
 				StringUtil.DELIM_SKIP_BLANKS );
 			int size = v.size();
 			int pos = 0;
-			Vector selected = new Vector();
+			List selected = new Vector();
 			String independent = "";
 			for ( int i = 0; i < size; i++ ) {
-				independent = (String)v.elementAt(i);
+				independent = (String)v.get(i);
 				if ( (pos = JGUIUtil.indexOf(
 					__IndependentTSID_SimpleJList,
 					independent, false, true))>= 0 ) {
 					// Select it because it is in the
 					// command and the list...
-					selected.addElement ( "" + pos );
+					selected.add ( "" + pos );
 				} else {
 					Message.printWarning ( 1, mthd,
 					"Existing " +
@@ -1636,7 +1637,7 @@ private void refresh()
 				int [] iselected = new int[selected.size()];
 				for ( int is = 0; is < iselected.length; is++ ){
 					iselected[is] = StringUtil.atoi (
-					(String)selected.elementAt(is));
+					(String)selected.get(is));
 				}
 				__IndependentTSID_SimpleJList.setSelectedIndices(
 					iselected );
@@ -1651,15 +1652,15 @@ private void refresh()
 				AnalysisMethod, ",",
 				StringUtil.DELIM_SKIP_BLANKS );
 			int pos = 0;
-			Vector selected = new Vector();
+			List selected = new Vector();
 			String analysis = "";
 			for ( int i = 0; i < v.size(); i++ ) {
-				analysis = (String) v.elementAt(i);
+				analysis = (String) v.get(i);
 				if ( (pos = JGUIUtil.indexOf(
 					__AnalysisMethod_SimpleJList,
 					analysis, false, true)) >= 0 ) {
 					// It in the command and the list...
-					selected.addElement ( "" + pos );
+					selected.add ( "" + pos );
 				} else {
 					Message.printWarning ( 1, mthd,
 						"Existing command references"
@@ -1681,7 +1682,7 @@ private void refresh()
 				int [] iselected = new int[selected.size()];
 				for ( int j = 0; j < selected.size(); j++ ){
 					iselected[j] = StringUtil.atoi (
-						(String)selected.elementAt(j));
+						(String)selected.get(j));
 					__AnalysisMethod_SimpleJList.
 						setSelectedIndices(
 							iselected );
@@ -1718,15 +1719,15 @@ private void refresh()
 				Transformation, ",",
 				StringUtil.DELIM_SKIP_BLANKS );
 			int pos = 0;
-			Vector selected = new Vector();
+			List selected = new Vector();
 			String transformation = "";
 			for ( int i = 0; i < v.size(); i++ ) {
-				transformation = (String) v.elementAt(i);
+				transformation = (String) v.get(i);
 				if ( (pos = JGUIUtil.indexOf(
 					__Transformation_SimpleJList,
 					transformation, false, true)) >= 0 ) {
 					// It in the command and the list...
-					selected.addElement ( "" + pos );
+					selected.add ( "" + pos );
 				} else {
 					Message.printWarning ( 1, mthd,
 						"Existing command references"
@@ -1748,7 +1749,7 @@ private void refresh()
 				int [] iselected = new int[selected.size()];
 				for ( int j = 0; j < selected.size(); j++ ){
 					iselected[j] = StringUtil.atoi (
-						(String)selected.elementAt(j));
+						(String)selected.get(j));
 					__Transformation_SimpleJList.
 						setSelectedIndices(
 							iselected );
@@ -1899,11 +1900,11 @@ private void resetTimeSeriesID_JLists()
 {
 	int size;
 
-	Vector dependent = __DependentTSID_SimpleJList.getSelectedItems();
+	List dependent = __DependentTSID_SimpleJList.getSelectedItems();
 	size = dependent.size();
 	if ( size > 1 ) {
 		for ( int i = 0; i < size; i++ ) {
-			if ( dependent.elementAt(i).equals("*") ) {
+			if ( dependent.get(i).equals("*") ) {
 				__DependentTSID_SimpleJList.clearSelection();
 				__DependentTSID_SimpleJList.select(i);
 				break;
@@ -1911,11 +1912,11 @@ private void resetTimeSeriesID_JLists()
 		}
 	}
 
-	Vector independent = __IndependentTSID_SimpleJList.getSelectedItems();
+	List independent = __IndependentTSID_SimpleJList.getSelectedItems();
 	size = independent.size();
 	if ( size > 1 ) {
 		for ( int i = 0; i < size; i++ ) {
-			if ( independent.elementAt(i).equals("*") ) {
+			if ( independent.get(i).equals("*") ) {
 				__IndependentTSID_SimpleJList.clearSelection();
 				__IndependentTSID_SimpleJList.select(i);
 				break;
@@ -1995,7 +1996,7 @@ private void updateFillCommandsControl ()
 	String s, commandList = "";
 	int nCommands = __fillCommands_Vector.size();
 	for ( int n=0; n<nCommands; n++ ) {
-		s = (String) __fillCommands_Vector.elementAt(n) + "\n";
+		s = (String) __fillCommands_Vector.get(n) + "\n";
 		commandList = commandList + s;
 	}
 	__Command_JTextArea.setText( commandList );

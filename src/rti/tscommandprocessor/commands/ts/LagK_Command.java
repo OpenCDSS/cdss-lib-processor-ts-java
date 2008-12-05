@@ -39,6 +39,7 @@
 
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -248,7 +249,7 @@ throws InvalidCommandParameterException
 	// the number of required states) cannot be computed from an Alias.
 	
 	if ( (InflowStates != null) && !InflowStates.equals("") ) {
-	    Vector v = StringUtil.breakStringList ( InflowStates, ",", 0 );
+		List v = StringUtil.breakStringList ( InflowStates, ",", 0 );
 	    int size = v.size();
 	    for ( int i = 0; i < size; i++ ) {
 	        String state = (String)v.get(i);
@@ -263,7 +264,7 @@ throws InvalidCommandParameterException
 	}
 	
     if ( (OutflowStates != null) && !OutflowStates.equals("") ) {
-        Vector v = StringUtil.breakStringList ( OutflowStates, ",", 0 );
+    	List v = StringUtil.breakStringList ( OutflowStates, ",", 0 );
         int size = v.size();
         for ( int i = 0; i < size; i++ ) {
             String state = (String)v.get(i);
@@ -280,7 +281,7 @@ throws InvalidCommandParameterException
 	// Throw an InvalidCommandParameterException in case of errors.
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "ObsTSID" );
@@ -357,10 +358,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// the assignment TS X = lagK (...).
 		int pos = command.indexOf('=');
 		substring = command.substring(0,pos).trim();
-		Vector v = StringUtil.breakStringList (
+		List v = StringUtil.breakStringList (
 			substring, " ", StringUtil.DELIM_SKIP_BLANKS ); 
 		// First field has format "TS Alias"
-		Alias = ((String)v.elementAt(1)).trim();		
+		Alias = ((String)v.get(1)).trim();		
 		// Get the main part of the command...
 		substring = command.substring(pos + 1).trim();	
 	}
@@ -370,7 +371,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		
 	// Split the substring into two parts: the command name and 
 	// the parameters list within the parenthesis.
-	Vector tokens = StringUtil.breakStringList ( substring, "()", 0 );
+	List tokens = StringUtil.breakStringList ( substring, "()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and the parameter
 		// list.
@@ -384,7 +385,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// needed to process the command.
 	try {
 		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String) tokens.elementAt(1), routine, "," ) );
+			(String) tokens.get(1), routine, "," ) );
 		// If the Alias was found in the command added it to the
 		// parameters propList.	
 		if ( (Alias != null) && (Alias.length() > 0) ) {
@@ -895,9 +896,9 @@ throws InvalidCommandParameterException, CommandWarningException,
 		result_ts.addToGenesis ( "Lag: " + __param_lag + " K: "  + __param_k );
 
 		// Add the newly created time series to the software memory.
-		Vector TSResultsList = 
-			(Vector) processor.getPropContents ( "TSResultsList" );
-		TSResultsList.addElement( result_ts );
+		List TSResultsList = 
+			(List) processor.getPropContents ( "TSResultsList" );
+		TSResultsList.add( result_ts );
 		processor.setPropContents ( "TSResultsList", TSResultsList );
 		TSResultsList = null;
 		
@@ -1237,7 +1238,7 @@ throws CommandWarningException
 	__param_InflowStates = new double[ __param_numStates ];	
 	//Check DefaultinflowStatesStr 
 	if (	(InflowStates != null) && InflowStates.length() != 0 ) {
-		Vector v1 = StringUtil.breakStringList (
+		List v1 = StringUtil.breakStringList (
 				InflowStates, ",",
 				StringUtil.DELIM_SKIP_BLANKS ); 
 		int num_co_supplied1 = v1.size();
@@ -1293,7 +1294,7 @@ throws CommandWarningException
 	//Check DefaultoutflowStatesStr 
 	__param_OutflowStates = new double[ __param_numStates ];
 	if( OutflowStates != null && OutflowStates.length() != 0 ) {
-		Vector v2 = StringUtil.breakStringList (
+		List v2 = StringUtil.breakStringList (
 				OutflowStates, ",",
 				StringUtil.DELIM_SKIP_BLANKS ); 
 		int num_co_supplied2 = v2.size();

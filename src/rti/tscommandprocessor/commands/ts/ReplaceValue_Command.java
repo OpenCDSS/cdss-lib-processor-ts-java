@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -180,7 +181,7 @@ throws InvalidCommandParameterException
     */
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -237,7 +238,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the only parameter is a single TSID or * to fill all.
-		Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -253,12 +254,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Get the individual tokens of the expression...
 
-		String TSID = ((String)v.elementAt(1)).trim();
-		String MinValue = ((String)v.elementAt(2)).trim();
-		String MaxValue = ((String)v.elementAt(3)).trim();
-		String NewValue = ((String)v.elementAt(4)).trim();
-		String SetStart = ((String)v.elementAt(5)).trim();
-		String SetEnd = ((String)v.elementAt(6)).trim();
+		String TSID = ((String)v.get(1)).trim();
+		String MinValue = ((String)v.get(2)).trim();
+		String MaxValue = ((String)v.get(3)).trim();
+		String NewValue = ((String)v.get(4)).trim();
+		String SetStart = ((String)v.get(5)).trim();
+		String SetEnd = ((String)v.get(6)).trim();
 
 		// Set parameters and new defaults...
 
@@ -357,7 +358,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -370,7 +371,7 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

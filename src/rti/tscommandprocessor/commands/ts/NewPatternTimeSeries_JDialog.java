@@ -12,7 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.Vector;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -272,10 +272,10 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
-    Vector interval_Vector = TimeInterval.getTimeIntervalChoices(
+    List interval_Vector = TimeInterval.getTimeIntervalChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, true);
     // Add a blank
-    interval_Vector.insertElementAt("", 0);
+    interval_Vector.add(0,"");
     __IrregularInterval_JComboBox.setData ( interval_Vector );
     __IrregularInterval_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,

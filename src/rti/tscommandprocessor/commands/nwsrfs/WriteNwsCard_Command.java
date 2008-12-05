@@ -161,7 +161,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
@@ -192,9 +192,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -225,14 +225,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
 			message =
 			"Invalid syntax for command.  Expecting WriteNwsCard(OutputFile).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String OutputFile = ((String)tokens.elementAt(1)).trim();
+		String OutputFile = ((String)tokens.get(1)).trim();
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
 		PropList parameters = new PropList ( getCommandName() );
@@ -314,7 +314,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Verify that the list of time series is specified correctly." ) );
 	}
-	Vector tslist = (Vector)o_TSList;
+	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Zero time series in list to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
@@ -421,7 +421,7 @@ CommandWarningException, CommandException
 
     TS ts = null;   // Single time series to write
     if ( (tslist != null) && (tslist.size() == 1) ) {
-        ts = (TS)tslist.elementAt(0);
+        ts = (TS)tslist.get(0);
     }
     if ( ts != null ) {
         String OutputFile_full = OutputFile;

@@ -63,6 +63,7 @@
 
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -181,7 +182,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (Tolerance != null) && !Tolerance.equals("") ) {
-		Vector v = StringUtil.breakStringList(Tolerance,", ",0);
+		List v = StringUtil.breakStringList(Tolerance,", ",0);
 		int size = 0;
 		if ( v != null ) {
 			size = v.size();
@@ -189,7 +190,7 @@ throws InvalidCommandParameterException
 		// Make sure that each tolerance is a number...
 		String string;
 		for ( int i = 0; i < size; i++ ) {
-			string = (String)v.elementAt(i);
+			string = (String)v.get(i);
 			if ( !StringUtil.isDouble(string) ) {
                 message = "The tolerance: \"" + string + "\" is not a number.";
 				warning += "\n" + message;
@@ -267,7 +268,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "MatchLocation" );
 	valid_Vector.add ( "MatchDataType" );
 	valid_Vector.add ( "Precision" );
@@ -315,7 +316,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "compareTimeSeries_Command.parseCommand", message;
 
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+	List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	if ( (tokens == null) ) {
 		message = "Invalid syntax for \"" + command + "\".  Expecting CompareTimeSeries(...).";
@@ -325,7 +326,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
 		try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.elementAt(1), routine,"," ) );
+				(String)tokens.get(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
 			message = "Syntax error in \"" + command + "\".  Not enough tokens.";
@@ -359,9 +360,9 @@ CommandWarningException, CommandException
     
 	PropList parameters = getCommandParameters();
 	
-	Vector tslist = null;
+	List tslist = null;
 	try { Object o = processor.getPropContents( "TSResultsList" );
-			tslist = (Vector)o;
+			tslist = (List)o;
 	}
 	catch ( Exception e ){
 		message = "Error requesting TSResultsList from processor.";
@@ -441,7 +442,7 @@ CommandWarningException, CommandException
 		value_format = "%." + Precision_int + "f";
 	}
 	int Tolerance_count = 0;
-	Vector Tolerance_tokens = null;
+	List Tolerance_tokens = null;
 	if ( Tolerance != null ) {
 		// The parameter has been specified as a list of one or more
 		// numbers...
@@ -455,7 +456,7 @@ CommandWarningException, CommandException
 		// Get each tolerance as a number...
 		for ( int it = 0; it < Tolerance_count; it++ ) {
 			Tolerance_double[it] = StringUtil.atod(
-				(String)Tolerance_tokens.elementAt(it) );
+				(String)Tolerance_tokens.get(it) );
 		}
 	}
 	else {	// Default is tolerance of 0.0...
@@ -463,7 +464,7 @@ CommandWarningException, CommandException
 		Tolerance_double = new double[1];
 		Tolerance_double[0] = 0.0;
 		Tolerance_tokens = new Vector (1);
-		Tolerance_tokens.addElement ("0");
+		Tolerance_tokens.add ("0");
 	}
 
 	DateTime AnalysisStart_DateTime = null;
@@ -592,14 +593,14 @@ CommandWarningException, CommandException
 	int tsdiff_count = 0;				// The number of time
 							// series that are
 							// different.
-	Vector compare_tslist = new Vector();		// Lists of data
-	Vector compare_numvalues = new Vector();	// that were processed,
-	Vector compare_diffmax = new Vector();		// that were processed,
-	Vector compare_diffabsavg = new Vector();	// for the report.
-	Vector compare_diffavg = new Vector();
-	Vector compare_diffcount = new Vector();
-	Vector compare_diffmaxdate = new Vector();
-	Vector diffts_Vector = null;			// Vector if CreateDiffTS=True
+	List compare_tslist = new Vector();		// Lists of data
+	List compare_numvalues = new Vector();	// that were processed,
+	List compare_diffmax = new Vector();		// that were processed,
+	List compare_diffabsavg = new Vector();	// for the report.
+	List compare_diffavg = new Vector();
+	List compare_diffcount = new Vector();
+	List compare_diffmaxdate = new Vector();
+	List diffts_Vector = null;			// Vector if CreateDiffTS=True
 	try {	// Loop through the time series.  For each time series, find its
 		// matching time series, by location, ignoring itself.  When a
 		// match is found, do the comparison.
@@ -628,15 +629,15 @@ CommandWarningException, CommandException
 		String loc1, datatype1;			// Location and data
 							// type for the first
 							// time series. 
-		Vector loc_Vector = new Vector();	// Location/datatype
-		Vector datatype_Vector = new Vector();	// pairs that have
+		List loc_Vector = new Vector();	// Location/datatype
+		List datatype_Vector = new Vector();	// pairs that have
 							// already been
 							// processed.
 		if ( CreateDiffTS_boolean ) {
 			diffts_Vector = new Vector ( size );
 		}
 		for ( int i = 0; i < size; i++ ) {
-			ts1 = (TS)tslist.elementAt(i);
+			ts1 = (TS)tslist.get(i);
 			loc1 = ts1.getLocation();
 			datatype1 = ts1.getDataType();
 			// Make sure not to analyze the same combination
@@ -650,11 +651,11 @@ CommandWarningException, CommandException
 				found_loc1 = false;
 				found_datatype1 = false;
 				if (	loc1.equalsIgnoreCase(
-					(String)loc_Vector.elementAt(j)) ) {
+					(String)loc_Vector.get(j)) ) {
 					found_loc1 = true;
 				}
 				if (	datatype1.equalsIgnoreCase(
-					(String)datatype_Vector.elementAt(j))) {
+					(String)datatype_Vector.get(j))) {
 					found_datatype1 = true;
 				}
 				// Now reset found_loc1 depending on whether
@@ -688,7 +689,7 @@ CommandWarningException, CommandException
 				if ( i == j ) {
 					continue;
 				}
-				ts2 = (TS)tslist.elementAt(j);
+				ts2 = (TS)tslist.get(j);
 				// Make sure that the interval is the same...
 				if (	!((ts1.getDataIntervalBase() ==
 					ts2.getDataIntervalBase()) &&
@@ -713,8 +714,8 @@ CommandWarningException, CommandException
 				// Have a match so do the comparison.  Currently
 				// only compare the data values, not the header
 				// information.
-				loc_Vector.addElement ( loc1 );
-				datatype_Vector.addElement ( datatype1 );
+				loc_Vector.add ( loc1 );
+				datatype_Vector.add ( datatype1 );
 								// save for check
 				// If the differences will be flagged, allocate
 				// the data flag space in both time series.
@@ -734,7 +735,7 @@ CommandWarningException, CommandException
 					diffts.copyHeader ( ts2 );
 					diffts.setIdentifier ( diffid );
 					diffts.allocateDataSpace();
-					diffts_Vector.addElement ( diffts );
+					diffts_Vector.add ( diffts );
 				}
 				// Initialize for the comparison...
 				totalcount = 0;
@@ -983,21 +984,21 @@ CommandWarningException, CommandException
 					" had no differences." );
 				}
 				// Save information for the report...
-				compare_tslist.addElement ( ts1 );
-				compare_numvalues.addElement (
+				compare_tslist.add ( ts1 );
+				compare_numvalues.add (
 					new Integer ( totalcount ) );
-				compare_diffcount.addElement ( diffcount );
-				compare_diffabsavg.addElement ( diffabsavg );
-				compare_diffavg.addElement ( diffavg );
+				compare_diffcount.add ( diffcount );
+				compare_diffabsavg.add ( diffabsavg );
+				compare_diffavg.add ( diffavg );
 				if ( is_diff ) {
-					compare_diffmax.addElement (
+					compare_diffmax.add (
 					new Double(diffmax) );
-					compare_diffmaxdate.addElement (
+					compare_diffmaxdate.add (
 					new DateTime(diffmax_DateTime) );
 				}
-				else {	compare_diffmax.addElement (
+				else {	compare_diffmax.add (
 					new Double(0.0) );
-					compare_diffmaxdate.addElement (
+					compare_diffmaxdate.add (
 					null );
 				}
 			}
@@ -1017,7 +1018,7 @@ CommandWarningException, CommandException
 		TS ts = null;
 		// Figure out the length for some of the string columns...
 		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)compare_tslist.elementAt(i);
+			ts = (TS)compare_tslist.get(i);
 			if (	ts.getIdentifier().getLocation().length() >
 				location_length ) {
 				location_length =
@@ -1061,9 +1062,9 @@ CommandWarningException, CommandException
 		b2.append ( "| #Val  " );
 		for ( j = 0; j < Tolerance_count; j++ ) {
 			b.append ( "|#D>" + StringUtil.formatString(
-				Tolerance_tokens.elementAt(j),"%-4.4s") );
+				Tolerance_tokens.get(j),"%-4.4s") );
 			b2.append ( "|#D>" + StringUtil.formatString(
-					Tolerance_tokens.elementAt(j),"%-4.4s") );
+					Tolerance_tokens.get(j),"%-4.4s") );
 			b.append ( "|AbsAvgDiff" );
 			b2.append ( "|AbsAvgDiff" );
 			b.append ( "| AvgDiff  " );
@@ -1079,11 +1080,11 @@ CommandWarningException, CommandException
 		double [] diffabsavg_array;
 		double [] diffavg_array;
 		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)compare_tslist.elementAt(i);
+			ts = (TS)compare_tslist.get(i);
 			is_diff = false;
-			// Check for difference here so that differency-only
+			// Check for difference here so that difference-only
 			// summary report can be completed...
-			diffcount_array = (int[])compare_diffcount.elementAt(i);
+			diffcount_array = (int[])compare_diffcount.get(i);
 			for ( j = 0; j < Tolerance_count; j++ ) {
 				if ( diffcount_array[j] > 0 ) {
 					is_diff = true;
@@ -1114,19 +1115,19 @@ CommandWarningException, CommandException
 			}
 			b.append ( "|" +
 				StringUtil.formatString(
-				((Integer)compare_numvalues.elementAt(i)).
+				((Integer)compare_numvalues.get(i)).
 				intValue(),
 				int_format) );
 			if ( is_diff ) {
 				b2.append ( "|" +
 					StringUtil.formatString(
-					((Integer)compare_numvalues.elementAt(i)).
+					((Integer)compare_numvalues.get(i)).
 					intValue(),
 					int_format) );
 			}
 			diffabsavg_array=
-				(double[])compare_diffabsavg.elementAt(i);
-			diffavg_array=(double[])compare_diffavg.elementAt(i);
+				(double[])compare_diffabsavg.get(i);
+			diffavg_array=(double[])compare_diffavg.get(i);
 			for ( j = 0; j < Tolerance_count; j++ ) {
 				b.append ( "|" +
 					StringUtil.formatString(
@@ -1163,16 +1164,16 @@ CommandWarningException, CommandException
 			if ( is_diff ) {
 				b.append ( "|" +
 					StringUtil.formatString(
-					((Double)compare_diffmax.elementAt(i)).
+					((Double)compare_diffmax.get(i)).
 					doubleValue(),
 					double_format) );
 				b2.append ( "|" +
 						StringUtil.formatString(
-						((Double)compare_diffmax.elementAt(i)).
+						((Double)compare_diffmax.get(i)).
 						doubleValue(),
 						double_format) );
 				date = (DateTime)
-					compare_diffmaxdate.elementAt(i);
+					compare_diffmaxdate.get(i);
 				if ( date == null ) {
 					b.append ( "|" +
 						StringUtil.formatString( "",
@@ -1184,13 +1185,13 @@ CommandWarningException, CommandException
 				else {	b.append ( "|" +
 						StringUtil.formatString(
 						((DateTime)compare_diffmaxdate.
-						elementAt(i)).
+						get(i)).
 						toString(),
 						date_format) );
 						b2.append ( "|" +
 						StringUtil.formatString(
 						((DateTime)compare_diffmaxdate.
-						elementAt(i)).
+						get(i)).
 						toString(),
 						date_format) );
 				}
@@ -1217,7 +1218,7 @@ CommandWarningException, CommandException
 
 		if ( CreateDiffTS_boolean ) {
 			try { Object o = processor.getPropContents ( "TSResultsList" );
-				tslist = (Vector)o;
+				tslist = (List)o;
 			}
 			catch ( Exception e ) {
 				// Not fatal, but of use to developers.
@@ -1227,7 +1228,7 @@ CommandWarningException, CommandException
 			// Add the difference time series...
 			int diffsize = diffts_Vector.size();
 			for ( int i = 0; i < diffsize; i++ ) {
-				tslist.addElement ( (TS)diffts_Vector.elementAt(i) );
+				tslist.add ( (TS)diffts_Vector.get(i) );
 			}
 			try {	processor.setPropContents ( "TSResultsList", tslist );
 			}

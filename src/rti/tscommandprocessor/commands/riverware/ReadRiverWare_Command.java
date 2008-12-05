@@ -54,7 +54,7 @@ private DateTime __InputEnd   = null;
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -214,7 +214,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     if ( _use_alias ) {
         valid_Vector.add ( "Alias" );
     }
@@ -262,7 +262,7 @@ throws Throwable
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -272,11 +272,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_Vector;
@@ -320,7 +320,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         }
         else {
             // Parse the old command...
-            Vector tokens = StringUtil.breakStringList ( command_string.substring(index + 1),
+        	List tokens = StringUtil.breakStringList ( command_string.substring(index + 1),
                 "(,)", StringUtil.DELIM_ALLOW_STRINGS );
             if ( tokens.size() != 5 ) {
                 message =
@@ -333,10 +333,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                                 message, "Verify command syntax or edit with command editor." ) );
                 throw new InvalidCommandSyntaxException ( message );
             }
-            InputFile = ((String)tokens.elementAt(1)).trim();
-            Units = ((String)tokens.elementAt(2)).trim();
-            InputStart = ((String)tokens.elementAt(3)).trim();
-            InputEnd = ((String)tokens.elementAt(4)).trim();
+            InputFile = ((String)tokens.get(1)).trim();
+            Units = ((String)tokens.get(2)).trim();
+            InputStart = ((String)tokens.get(3)).trim();
+            InputEnd = ((String)tokens.get(4)).trim();
             PropList parameters = getCommandParameters();
             parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
             parameters.set ( "InputFile", InputFile );
@@ -639,7 +639,7 @@ throws InvalidCommandParameterException,
         }
     }
     else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-        Vector tslist = new Vector(1);
+    	List tslist = new Vector(1);
         tslist.add ( ts );
         setDiscoveryTSList ( tslist );
     }
@@ -658,7 +658,7 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

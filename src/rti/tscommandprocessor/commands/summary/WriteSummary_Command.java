@@ -159,7 +159,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
@@ -190,9 +190,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -223,14 +223,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
 			message =
 			"Invalid syntax for command.  Expecting WriteSummary(OutputFile).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String OutputFile = ((String)tokens.elementAt(1)).trim();
+		String OutputFile = ((String)tokens.get(1)).trim();
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
 		PropList parameters = new PropList ( getCommandName() );
@@ -313,7 +313,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	Vector tslist = (Vector)o_TSList;
+	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
@@ -501,7 +501,7 @@ a BinaryTS has been created for daily data.
 @param OutputEnd_DateTime Datetime to end output.
 @exception IOException if there is an error writing the file.
 */
-private int writeSummary ( Vector tslist, String OutputFile,
+private int writeSummary ( List tslist, String OutputFile,
 		DateTime OutputStart_DateTime, DateTime OutputEnd_DateTime,
 		int warning_level, String command_tag, int warning_count )
 throws IOException

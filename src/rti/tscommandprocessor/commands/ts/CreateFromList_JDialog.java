@@ -12,6 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -326,9 +327,9 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "ID column:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IDCol_JComboBox = new SimpleJComboBox ( false );
-	Vector IDCol_Vector = new Vector ( 100 );
+	List IDCol_Vector = new Vector ( 100 );
 	for ( int i = 1; i < 101; i++ ) {
-		IDCol_Vector.addElement ( "" + i );
+		IDCol_Vector.add ( "" + i );
 	}
 	__IDCol_JComboBox.setData ( IDCol_Vector );
 	__IDCol_JComboBox.addItemListener ( this );

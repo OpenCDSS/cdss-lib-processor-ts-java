@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.logging;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -75,7 +76,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
 	valid_Vector.add ( "ScreenLevel" );
 	valid_Vector.add ( "LogFileLevel" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -121,7 +122,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
         // TODO SAM 2008-06-23 This whole block of code needs to be
         // removed as soon as commands have been migrated to the new syntax.
-        Vector v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
             ntokens = v.size();
@@ -130,11 +131,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String LogFileLevel = "";
         if ( ntokens >= 2 ) {
             // Command name and screen level...
-            ScreenLevel = ((String)v.elementAt(1)).trim();
+            ScreenLevel = ((String)v.get(1)).trim();
         }
         if ( ntokens == 3 ) {
             // Command name and screen level...
-            LogFileLevel = ((String)v.elementAt(2)).trim();
+            LogFileLevel = ((String)v.get(2)).trim();
         }
 
         // Set parameters and new defaults...

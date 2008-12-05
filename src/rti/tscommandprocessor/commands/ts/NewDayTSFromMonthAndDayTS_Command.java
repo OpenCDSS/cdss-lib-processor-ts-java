@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.DayTS;
@@ -131,7 +132,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "NewTSID" );
     valid_Vector.add ( "MonthTSID" );
@@ -187,14 +188,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     if ( v == null ) {
         message = "Syntax error in \"" + command +
         "\".  Expecting:  TS Alias = NewDayTSFromMonthAndDayTS(NewTSID,MonthTSID,DayTSID)";
         Message.printWarning ( warning_level, routine, message);
         throw new InvalidCommandSyntaxException ( message );
     }
-    String Alias = (String)v.elementAt(1);
+    String Alias = (String)v.get(1);
     String NewTSID = null;
     String MonthTSID = null;
     String DayTSID = null;
@@ -213,9 +214,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-        NewTSID = (String)v.elementAt(1);
-        MonthTSID = (String)v.elementAt(2);
-        DayTSID = (String)v.elementAt(3);
+        NewTSID = (String)v.get(1);
+        MonthTSID = (String)v.get(2);
+        DayTSID = (String)v.get(3);
 	}
 	else {
         // Current syntax...

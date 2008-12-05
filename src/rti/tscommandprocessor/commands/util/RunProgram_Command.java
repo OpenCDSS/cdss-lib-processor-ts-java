@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.util;
 
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -73,7 +74,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
 	valid_Vector.add ( "CommandLine" );
 	valid_Vector.add ( "Timeout" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -117,7 +118,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
         // Old syntax...
-        Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+    	List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
         CommandStatus status = getCommandStatus();
         if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
             message = "Invalid syntax for \"" + command_string + "\".  Expecting RunProgram(...).";
@@ -140,8 +141,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             // Set the parameters
             PropList parameters = getCommandParameters();
             parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-            parameters.set ( "CommandLine", (String)tokens.elementAt(1) );
-            parameters.set ( "TimeOut", (String)tokens.elementAt(2) );
+            parameters.set ( "CommandLine", (String)tokens.get(1) );
+            parameters.set ( "TimeOut", (String)tokens.get(2) );
             parameters.setHowSet ( Prop.SET_UNKNOWN );
         }
     }
@@ -216,13 +217,13 @@ CommandWarningException, CommandException
                         message, "Verify running the program on the command line before running in TSTool."));
         }
         // Echo the output to the log file.
-        Vector output = pm.getOutputVector();
+        List output = pm.getOutputList();
         int size = 0;
         if ( output != null ) {
             size = output.size();
         }
         for ( int i = 0; i < size; i++ ) {
-            Message.printStatus(2, routine, "Program output:  " + output.elementAt(i));
+            Message.printStatus(2, routine, "Program output:  " + output.get(i));
         }
 	}
 	catch ( Exception e ) {

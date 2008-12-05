@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.DayTS;
@@ -122,7 +123,7 @@ throws InvalidCommandParameterException
 	}
    
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSID_D1" );
     valid_Vector.add ( "TSID_M1" );
     valid_Vector.add ( "TSID_M2" );
@@ -221,7 +222,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax
-		Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -237,10 +238,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Get the individual tokens of the expression...
 
-		String TSID_D1 = ((String)v.elementAt(1)).trim();
-        String TSID_M1 = ((String)v.elementAt(2)).trim();
-        String TSID_M2 = ((String)v.elementAt(3)).trim();
-        String TSID_D2 = ((String)v.elementAt(4)).trim();
+		String TSID_D1 = ((String)v.get(1)).trim();
+        String TSID_M1 = ((String)v.get(2)).trim();
+        String TSID_M2 = ((String)v.get(3)).trim();
+        String TSID_D2 = ((String)v.get(4)).trim();
 
 		// Set parameters and new defaults...
 

@@ -106,7 +106,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "SearchFolder" );
 	valid_Vector.add ( "FilenamePattern" );
 	valid_Vector.add ( "OutputFile" );
@@ -176,9 +176,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-    Vector list = new Vector();
+	List list = new Vector();
     if ( getOutputFile() != null ) {
-        list.addElement ( getOutputFile() );
+        list.add ( getOutputFile() );
     }
     return list;
 }
@@ -198,7 +198,7 @@ should be included, indicated by "@os Windows" and "@os UNIX" tags in the
 comments of command files.
 @throws IOException 
  */
-private void getMatchingFilenamesInTree ( Vector commandFileVector, File path, String pattern,
+private void getMatchingFilenamesInTree ( List commandFileVector, File path, String pattern,
         String[] includedTestSuites, String[] includedOS ) 
 throws IOException
 {   String routine = getClass().getName() + ".getMatchingFilenamesInTree";
@@ -413,7 +413,7 @@ CommandWarningException, CommandException
 
 	try {
 	    // Get the list of files to run as test cases...
-        Vector files = new Vector();
+		List files = new Vector();
         String [] includedTestSuitePatterns = new String[0];
         includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
         String [] includedOSPatterns = new String[0];
@@ -450,11 +450,11 @@ CommandWarningException, CommandException
 		String commandFileToRun;
 		for ( int i = 0; i < size; i++ ) {
 			// The command files to run are relative to the commands file being created.
-			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.elementAt(i) );
+			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.get(i) );
 			// Determine if the command file has @expectedStatus in it.  If so, define an ExpectedStatus
 			// parameter for the command.
 			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +
-			        determineExpectedStatusParameter ( (String)files.elementAt(i) ) + ")");
+			        determineExpectedStatusParameter ( (String)files.get(i) ) + ")");
 		}
 		out.close();
         // Save the output file name...

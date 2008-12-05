@@ -194,7 +194,7 @@ throws InvalidCommandParameterException
 	*/
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	//valid_Vector.add ( "TSList" );
 	//valid_Vector.add ( "TSID" );
 	valid_Vector.add ( "OutputFile" );
@@ -218,9 +218,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -263,7 +263,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	else {
 	    // Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,
+		List tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
 			message =
@@ -275,7 +275,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 							message, "Verify command syntax or edit with command editor." ) );
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String OutputFile = ((String)tokens.elementAt(1)).trim();
+		String OutputFile = ((String)tokens.get(1)).trim();
 		// Defaults because not in the old command...
 		//String TSList = "AllTS";
 		PropList parameters = new PropList ( getCommandName() );
@@ -351,7 +351,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -362,7 +362,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report to software support." ) );
 	}
-	else {	tslist = (Vector)o_TSList;
+	else {	tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -529,11 +529,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 		// Get the comments to add to the top of the file.
 
-		Vector OutputComments_Vector = null;
+		List OutputComments_Vector = null;
 		try { Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
 			if ( o != null ) {
-				OutputComments_Vector = (Vector)o;
+				OutputComments_Vector = (List)o;
 			}
 		}
 		catch ( Exception e ) {

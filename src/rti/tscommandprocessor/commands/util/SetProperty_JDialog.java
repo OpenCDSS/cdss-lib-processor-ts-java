@@ -12,7 +12,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -21,11 +20,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-
-import rti.tscommandprocessor.core.TSCommandProcessor;
-import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-import rti.tscommandprocessor.core.TSListType;
-import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;

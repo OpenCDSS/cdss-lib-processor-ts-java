@@ -186,7 +186,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Delimiter" );
 	valid_Vector.add ( "Precision" );
@@ -222,9 +222,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -255,14 +255,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
 			message =
 			"Invalid syntax for command.  Expecting WriteDateValue(OutputFile).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String OutputFile = ((String)tokens.elementAt(1)).trim();
+		String OutputFile = ((String)tokens.get(1)).trim();
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
 		PropList parameters = new PropList ( getCommandName() );
@@ -347,7 +347,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	Vector tslist = (Vector)o_TSList;
+	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -469,11 +469,11 @@ CommandWarningException, CommandException
     
     // Get the comments to add to the top of the file.
 
-    Vector OutputComments_Vector = null;
+    List OutputComments_Vector = null;
     try { Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (Vector)o;
+            OutputComments_Vector = (List)o;
             props.setUsingObject("OutputComments",OutputComments_Vector);
         }
     }

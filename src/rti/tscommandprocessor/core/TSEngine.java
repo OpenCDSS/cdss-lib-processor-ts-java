@@ -818,7 +818,7 @@ private DateTime __AverageEnd_DateTime = null;
 /**
 List of data tests that are defined.
 */
-private Vector __datatestlist = null;
+private List __datatestlist = null;
 
 /**
 List of DateTime initialized from commands.
@@ -845,7 +845,7 @@ private int	_fatal_error_count = 0;
 HydroBase DMI instance Vector, to allow more than one database instance to
 be open at a time.
 */
-private Vector __hbdmi_Vector = new Vector();
+private List __hbdmi_Vector = new Vector();
 
 /**
 Indicates whether values <= 0 should be treated as missing when calculating historical averages.
@@ -870,7 +870,7 @@ private DateTime __InputEnd_DateTime = null;
 /**
 Vector to save list of time series identifiers that are not found.
 */
-private Vector	__missing_ts = new Vector();
+private List	__missing_ts = new Vector();
 
 // TODO SAM 2007-02-18 need to reenable NDFD
 //private Vector __NDFDAdapter_Vector = new Vector();
@@ -883,7 +883,7 @@ private Vector	__missing_ts = new Vector();
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
 */
-private Vector __nwsrfs_dmi_Vector = new Vector();
+private List __nwsrfs_dmi_Vector = new Vector();
 
 /**
 Default output file name.
@@ -922,7 +922,7 @@ private PropList __processor_PropList = null;
 /**
 RiversideDB DMI instance Vector, to allow more than one database instance to be open at a time.
 */
-private Vector __rdmi_Vector = new Vector();
+private List __rdmi_Vector = new Vector();
 
 /**
 Reference date for year to date report (only use month and day).
@@ -944,7 +944,7 @@ private TSCommandProcessor __ts_processor = null;
 Vector of time series vector that is the result of processing.
 This will always be non-null.
 */
-private Vector __tslist = new Vector(50,50);
+private List __tslist = new Vector(50,50);
 
 /**
 WindowListener for TSViewJFrame objects, used when calling app wants to listen for
@@ -967,10 +967,10 @@ DMI instances to see if they implement TSProductAnnotationProvider.  If so,
 call the TSViewJFrame.addTSProductAnnotationProvider() method with the instance.
 */
 private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
-{	Vector ap_Vector = getTSProductAnnotationProviders();
+{	List ap_Vector = getTSProductAnnotationProviders();
 	int size = ap_Vector.size();
 	for ( int i = 0; i < size; i++ ) {
-		view.addTSProductAnnotationProvider((TSProductAnnotationProvider)ap_Vector.elementAt(i), null );
+		view.addTSProductAnnotationProvider((TSProductAnnotationProvider)ap_Vector.get(i), null );
 	}
 }
 
@@ -984,7 +984,7 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 	int hsize = __hbdmi_Vector.size();
 	HydroBaseDMI hbdmi = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
+		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(ih);
 		if ((hbdmi != null) && (hbdmi instanceof TSProductDMI)){
 			view.addTSProductDMI(hbdmi);
 		}
@@ -993,7 +993,7 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
     int rsize = __rdmi_Vector.size();
     RiversideDB_DMI rdmi = null;
     for ( int ir = 0; ir < rsize; ir++ ) {
-        rdmi = (RiversideDB_DMI)__rdmi_Vector.elementAt(ir);
+        rdmi = (RiversideDB_DMI)__rdmi_Vector.get(ir);
         if ((rdmi != null) && (rdmi instanceof TSProductDMI)){
             view.addTSProductDMI(rdmi);
         }
@@ -1149,7 +1149,7 @@ Clear the time series results.  The commands will need to be rerun to regenerate
 protected void clearTimeSeriesResults ( )
 {
 	if ( __tslist != null ) {
-		__tslist.removeAllElements();
+		__tslist.clear();
 	} 
 }
 
@@ -1158,18 +1158,18 @@ Create data limits report.  Currently this creates a report for the available
 period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 */
-private Vector createDataLimitsReport ( Vector tslist )
+private List createDataLimitsReport ( List tslist )
 {	int size = tslist.size();
-	Vector report = new Vector ();
+	List report = new Vector ();
 
-	report.addElement ( "" );
-	report.addElement ( "DATA LIMITS REPORT" );
-	report.addElement ( "" );
+	report.add ( "" );
+	report.add ( "DATA LIMITS REPORT" );
+	report.add ( "" );
 
 	TS ts = null;
 	TSLimits limits = null;
 	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)tslist.elementAt(i);
+		ts = (TS)tslist.get(i);
 		if ( ts == null ) {
 			continue;
 		}
@@ -1187,16 +1187,16 @@ private Vector createDataLimitsReport ( Vector tslist )
 		if ( limits == null ) {
 			continue;
 		}
-		report.addElement ( "" );
-		report.addElement ( ts.getDescription() );
-		report.addElement ( ts.getIdentifierString() );
-		report.addElement ( "" );
+		report.add ( "" );
+		report.add ( ts.getDescription() );
+		report.add ( ts.getIdentifierString() );
+		report.add ( "" );
 		// The limits come back as a string with line breaks.  This
-		// apparenltly is displayed correctly but does not print
+		// apparently is displayed correctly but does not print
 		// correctly so break into separate strings here in order to
 		// keep the strings consistent...
 		StringUtil.addListToStringList ( report, StringUtil.breakStringList(limits.toString(), "\n", 0) );
-		report.addElement ( "" );
+		report.add ( "" );
 	}
 	ts = null;
 	limits = null;
@@ -1209,28 +1209,28 @@ available period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 @param props Properties to control report (see TSUtil.createMonthSummary()).
 */
-private Vector createMonthSummaryReport ( Vector tslist, PropList props )
+private List createMonthSummaryReport ( List tslist, PropList props )
 {	int size = tslist.size();
-	Vector report = new Vector ();
+	List report = new Vector ();
 	String routine = "TSEngine.createMonthSummaryReport";
 
 	String prop_val = props.getValue ( "DayType" );
 	
-	report.addElement ( "" );
+	report.add ( "" );
 	if ( (prop_val != null) && prop_val.equalsIgnoreCase("Total") ) {
-		report.addElement ( "MONTHLY SUMMARY REPORT (Daily Totals)" );
+		report.add ( "MONTHLY SUMMARY REPORT (Daily Totals)" );
 	}
 	else {
-	    report.addElement ( "MONTHLY SUMMARY REPORT (Daily Means)" );
+	    report.add ( "MONTHLY SUMMARY REPORT (Daily Means)" );
 	}
-	report.addElement ( "" );
+	report.add ( "" );
 
 	TS ts = null;
-	Vector summary = null;
+	List summary = null;
 	int interval_base;
 	int error_count = 0;
 	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)tslist.elementAt(i);
+		ts = (TS)tslist.get(i);
 		if ( ts == null ) {
 			continue;
 		}
@@ -1248,17 +1248,17 @@ private Vector createMonthSummaryReport ( Vector tslist, PropList props )
 				++error_count;
 				continue;
 			}
-			report.addElement ( "" );
+			report.add ( "" );
 			StringUtil.addListToStringList ( report, summary );
-			report.addElement ( "" );
+			report.add ( "" );
 		}
 		else {
-		    report.addElement ( "" );
-			report.addElement ( ts.getDescription() );
-			report.addElement ( ts.getIdentifierString() );
-			report.addElement ( "" );
-			report.addElement ( "Summary report is not supported for time series interval." );
-			report.addElement ( "" );
+		    report.add ( "" );
+			report.add ( ts.getDescription() );
+			report.add ( ts.getIdentifierString() );
+			report.add ( "" );
+			report.add ( "Summary report is not supported for time series interval." );
+			report.add ( "" );
 			++error_count;
 		}
 	}
@@ -1279,14 +1279,14 @@ each year to the specified date.  Handle real-time and historic.  But only CFS u
 @param props Properties to control output (currently the only property is
 SortTotals=true/false).
 */
-private Vector createYearToDateReport ( Vector tslist, DateTime end_date, PropList props )
+private List createYearToDateReport ( List tslist, DateTime end_date, PropList props )
 {	int size = tslist.size();
-	Vector report = new Vector ();
+	List report = new Vector ();
 
-	report.addElement ( "" );
-	report.addElement ( "Annual totals to date ending on " +
+	report.add ( "" );
+	report.add ( "Annual totals to date ending on " +
 			TimeUtil.MONTH_ABBREVIATIONS[end_date.getMonth() - 1] + " " + end_date.getDay() );
-	report.addElement ( "" );
+	report.add ( "" );
 
 	TS ts = null;
 	DateTime start = null;
@@ -1297,24 +1297,24 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date, PropLi
 	int missing[] = null;
 	int ypos = 0;
 	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)tslist.elementAt(i);
+		ts = (TS)tslist.get(i);
 		if ( ts == null ) {
 			continue;
 		}
 		if ( !(((ts.getDataIntervalBase() == TimeInterval.DAY) ||
 			(ts.getDataIntervalBase() == TimeInterval.IRREGULAR)) &&
 			ts.getDataUnits().equalsIgnoreCase("CFS")) ) {
-			report.addElement ( "" );
-			report.addElement ( ts.getIdentifierString() + " - " + ts.getDescription() + " Not CFS" );
-			report.addElement ( "" );
+			report.add ( "" );
+			report.add ( ts.getIdentifierString() + " - " + ts.getDescription() + " Not CFS" );
+			report.add ( "" );
 			continue;
 		}
-		report.addElement ( "" );
+		report.add ( "" );
 		report = StringUtil.addListToStringList ( report, ts.getComments());
-		report.addElement ( "" );
-		report.addElement ( "         Total           Number" );
-		report.addElement ( "         ACFT through    of missing" );
-		report.addElement ( "Year     "
+		report.add ( "" );
+		report.add ( "         Total           Number" );
+		report.add ( "         ACFT through    of missing" );
+		report.add ( "Year     "
 			+ TimeUtil.MONTH_ABBREVIATIONS[end_date.getMonth() - 1]
 			+ " "
 			+ StringUtil.formatString(end_date.getDay(),"%02d")
@@ -1403,7 +1403,7 @@ private Vector createYearToDateReport ( Vector tslist, DateTime end_date, PropLi
 		int sort_order[] = new int[nyears];
 		MathUtil.sort ( totals, MathUtil.SORT_QUICK, MathUtil.SORT_ASCENDING, sort_order, true );
 		for ( int j = 0; j < nyears; j++ ) {
-			report.addElement ( years[sort_order[j]] + "  "
+			report.add ( years[sort_order[j]] + "  "
 			+ StringUtil.formatString(totals[j], "%11.0f") + "          " +
 			StringUtil.formatString(missing[sort_order[j]], "%5d"));
 		}
@@ -1423,7 +1423,7 @@ Create the data coverage report dialog.
 @param orig_tslist Original list of time series to process.
 @exception Exception if there is an error.
 */
-private Vector createDataCoverageReport ( Vector orig_tslist )
+private List createDataCoverageReport ( List orig_tslist )
 throws Exception
 {	String routine = "TSEngine.createDataCoverageReport";
 	// If the output is to be a data coverage time series, convert each
@@ -1466,19 +1466,19 @@ throws Exception
 	}
 	for ( int i = 0; i < ntslist; i++ ) {
 		try {
-		    newts = TSAnalyst.createStatisticMonthTS( (TS)orig_tslist.elementAt(i), null );
+		    newts = TSAnalyst.createStatisticMonthTS( (TS)orig_tslist.get(i), null );
 			analyst.appendToDataCoverageSummaryReport ( newts );
 			// Don't actually need the time series...
 			newts = null;
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine, "Error creating Statistic Month TS for \"" +
-			((TS)orig_tslist.elementAt(i)).getIdentifierString() + "\"" );
+			((TS)orig_tslist.get(i)).getIdentifierString() + "\"" );
 			continue;
 		}
 	}
 	// Now return the report contents...
-	Vector report = analyst.getDataCoverageReport();
+	List report = analyst.getDataCoverageReport();
 	analyst = null;
 	newts = null;
 	return report;
@@ -1496,13 +1496,13 @@ createYearStatisticsReport(OutputFile="x",TSOutputFile="x")
 private void do_createYearStatisticsReport ( String command )
 throws Exception
 {	String routine = "TSEngine.do_createYearStatisticsReport", message;
-	Vector tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+	List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
 		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
 	}
 	// Get the input needed to process the file...
-	PropList props = PropList.parse ( (String)tokens.elementAt(1), routine, "," );
+	PropList props = PropList.parse ( (String)tokens.get(1), routine, "," );
 	String OutputFile = props.getValue ( "OutputFile" );
 	String TSOutputFile = props.getValue ( "TSOutputFile" );
 	String MeasTimeScale = props.getValue ( "MeasTimeScale" );
@@ -1529,7 +1529,7 @@ throws Exception
 	// Loop through the time series and convert to yearly...  Do it the brute force way right now...
 
 	int nts = getTimeSeriesSize();
-	Vector yts_Vector = new Vector(nts);
+	List yts_Vector = new Vector(nts);
 	YearTS yts = null;
 	TS ts = null;
 	TSIdent tsident = null;
@@ -1582,7 +1582,7 @@ throws Exception
 			}
 		}
 		// Add to the list...
-		yts_Vector.addElement ( yts );
+		yts_Vector.add ( yts );
 	}
 	// Now open the output file and average all the values...
 	PrintWriter out = null;
@@ -1593,7 +1593,7 @@ throws Exception
 	double statistic_val;
 	double [] yts_data;
 	for ( int i = 0; i < size; i++ ) {
-		yts = (YearTS)yts_Vector.elementAt(i);
+		yts = (YearTS)yts_Vector.get(i);
 		yts_data = TSUtil.toArray ( yts, null, null );
 		statistic_val = -999.0;
 		if ( Statistic.equalsIgnoreCase("Mean") ) {
@@ -1785,17 +1785,17 @@ commands if a commands file has been set but is probably better to move
 to a case where the commands are passed to the write methods.
 */
 protected String [] formatOutputHeaderComments ( List commands )
-{	Vector comments = new Vector();
+{	List comments = new Vector();
 	// Commands.  Show the file name but all commands may be in memory.
-	comments.addElement ( "-----------------------------------------------------------------------" );
+	comments.add ( "-----------------------------------------------------------------------" );
 	String commands_filename = __ts_processor.getCommandFileName();
 	if ( commands_filename == null ) {
-		comments.addElement ( "Command file name:  COMMANDS NOT SAVED TO FILE" );
+		comments.add ( "Command file name:  COMMANDS NOT SAVED TO FILE" );
 	}
 	else {
-	    comments.addElement ( "Command file name: \"" + commands_filename + "\"" );
+	    comments.add ( "Command file name: \"" + commands_filename + "\"" );
 	}
-	comments.addElement ( "Commands: " );
+	comments.add ( "Commands: " );
 	int size_commands = commands.size();
 	for ( int i = 0; i < size_commands; i++ ) {
 		comments.add ( ((Command)commands.get(i)).toString() );
@@ -1805,7 +1805,7 @@ protected String [] formatOutputHeaderComments ( List commands )
 	int hsize = __hbdmi_Vector.size();
 	String db_comments[] = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
+		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(ih);
 		if ( hbdmi != null ) {
 			try {
 			    db_comments = hbdmi.getVersionComments ();
@@ -1816,7 +1816,7 @@ protected String [] formatOutputHeaderComments ( List commands )
 		}
 		if ( db_comments != null ) {
 			for ( int i = 0; i < db_comments.length; i++ ) {
-				comments.addElement(db_comments[i]);
+				comments.add(db_comments[i]);
 			}
 		}
 	}
@@ -1852,7 +1852,7 @@ protected DateTime getAverageStart()
 Return the list of DataTest.
 @return Vector of DataTest that can be used for data test commands.
 */
-protected Vector getDataTestList ()
+protected List getDataTestList ()
 {   return __datatestlist;
 }
 
@@ -1918,7 +1918,7 @@ protected HydroBaseDMI getHydroBaseDMI ( String input_name )
 	}
 	HydroBaseDMI hbdmi = null;
 	for ( int i = 0; i < size; i++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(i);
+		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(i);
 		if ( hbdmi.getInputName().equalsIgnoreCase(input_name) ) {
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, "", "Returning HydroBaseDMI[" + i +"] InputName=\""+
@@ -1934,7 +1934,7 @@ protected HydroBaseDMI getHydroBaseDMI ( String input_name )
 Return the list of HydroBaseDMI.
 @return Vector of open HydroBaseDMI.
 */
-protected Vector getHydroBaseDMIList ()
+protected List getHydroBaseDMIList ()
 {	return __hbdmi_Vector;
 }
 
@@ -1975,7 +1975,7 @@ protected DateTime getInputStart()
 Return the list of TSID strings for which time series could not be read.
 @return the list of TSID strings for which time series could not be read.
 */
-protected Vector getMissingTS()
+protected List getMissingTS()
 {   return __missing_ts;
 }
 
@@ -2032,7 +2032,7 @@ protected NWSRFS_DMI getNWSRFSFS5FilesDMI ( String input_name, boolean open_if_n
 	}
 	NWSRFS_DMI nwsrfs_dmi = null;
 	for ( int i = 0; i < size; i++ ) {
-		nwsrfs_dmi = (NWSRFS_DMI)__nwsrfs_dmi_Vector.elementAt(i);
+		nwsrfs_dmi = (NWSRFS_DMI)__nwsrfs_dmi_Vector.get(i);
 		if ( nwsrfs_dmi.getInputName().equalsIgnoreCase(input_name) ) {
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, routine,
@@ -2127,7 +2127,7 @@ protected RiversideDB_DMI getRiversideDB_DMI ( String input_name )
     }
     RiversideDB_DMI rdmi = null;
     for ( int i = 0; i < size; i++ ) {
-        rdmi = (RiversideDB_DMI)__rdmi_Vector.elementAt(i);
+        rdmi = (RiversideDB_DMI)__rdmi_Vector.get(i);
         if ( rdmi.getInputName().equalsIgnoreCase(input_name) ) {
             if ( Message.isDebugOn ) {
                 Message.printDebug ( 1, "", "Returning RiversideDB_DMI[" + i +"] InputName=\""+
@@ -2207,7 +2207,7 @@ throws Exception
 		return null;
 	}
     // Else return the requested time series.
-	return (TS)__tslist.elementAt(position);
+	return (TS)__tslist.get(position);
 }
 
 /**
@@ -2216,20 +2216,20 @@ Return the list of time series.  See also getSelectedTimeSeriesList().
 @param indices a list of indices to return or null to return all.  Only indices
 within the time series list size will be returned.
 */
-protected Vector getTimeSeriesList ( int [] indices )
+protected List getTimeSeriesList ( int [] indices )
 {	if ( indices == null ){
 		return __tslist;
 	}
 	else {
 	    // Return only the requested indices...
-		Vector v = new Vector ();
+		List v = new Vector ();
 		int size = 0;
 		if ( __tslist != null ) {
 			size = __tslist.size();
 		}
 		for ( int i = 0; i < indices.length; i++ ) {
 			if ( indices[i] < size ) {
-				v.addElement ( __tslist.elementAt(indices[i]) );
+				v.add ( __tslist.get(indices[i]) );
 			}
 		}
 		return v;
@@ -2275,17 +2275,17 @@ to be used to update the time series.  Use the size of the Vector (in the first
 element) to determine the number of time series to process.  The order of the
 time series will be from first to last.  A non-null list is guaranteed to be returned.
 */
-protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID, String TSPosition )
+protected List getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID, String TSPosition )
 {	String routine = "TSEngine.getTimeSeriesToProcess";
-    Vector tslist = new Vector();	// List of time series to process
+    List tslist = new Vector();	// List of time series to process
 	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
 	int [] tspos = new int[nts];	// Positions of time series to process.
 					// Size to match the full list but may
 					// not be filled initially - trim before returning.
 	// Setup the return data...
-	Vector v = new Vector ( 2 );
-	v.addElement ( tslist );
-	v.addElement ( tspos );
+	List v = new Vector ( 2 );
+	v.add ( tslist );
+	v.add ( tspos );
 	// Loop through the time series in memory...
 	int count = 0;
 	TS ts = null;
@@ -2304,12 +2304,12 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
             if ( TSID.indexOf("~") > 0 ) {
                 // Include the input type...
                 if (ts.getIdentifier().matches(TSID,true,true)){
-                    tslist.addElement ( ts );
+                    tslist.add ( ts );
                     tspos[count++] = its;
                     // Only return the single index...
                     int [] tspos2 = new int[1];
                     tspos2[0] = tspos[0];
-                    v.setElementAt(tspos2,1);
+                    v.set(1,tspos2);
                     // Only want one match...
                     return v;
                 }
@@ -2317,12 +2317,12 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
             else {
                 // Just check the main information...
                 if(ts.getIdentifier().matches(TSID,true,false)){
-                    tslist.addElement ( ts );
+                    tslist.add ( ts );
                     tspos[count++] = its;
                     // Only return the single index...
                     int [] tspos2 = new int[1];
                     tspos2[0] = tspos[0];
-                    v.setElementAt(tspos2,1);
+                    v.set(1,tspos2);
                     // Only want one match...
                     return v;
                 }
@@ -2342,12 +2342,12 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
 			if ( TSID.indexOf("~") > 0 ) {
 				// Include the input type...
 				if (ts.getIdentifier().matches(TSID,true,true)){
-					tslist.addElement ( ts );
+					tslist.add ( ts );
 					tspos[count++] = its;
 					// Only return the single index...
 					int [] tspos2 = new int[1];
 					tspos2[0] = tspos[0];
-					v.setElementAt(tspos2,1);
+					v.set(1,tspos2);
 					// Only want one match...
 					return v;
 				}
@@ -2355,12 +2355,12 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
 			else {
                 // Just check the main information...
 				if(ts.getIdentifier().matches(TSID,true,false)){
-					tslist.addElement ( ts );
+					tslist.add ( ts );
 					tspos[count++] = its;
 					// Only return the single index...
 					int [] tspos2 = new int[1];
 					tspos2[0] = tspos[0];
-					v.setElementAt(tspos2,1);
+					v.set(1,tspos2);
 					// Only want one match...
 					return v;
 				}
@@ -2379,7 +2379,7 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
             for ( int ie = 0; ie < esize; ie++ ) {
                 // Set the time series instance (always what is included in the ensemble)...
                 ts = ensemble.get (ie);
-                tslist.addElement ( ts );
+                tslist.add ( ts );
                 // Figure out the index in the processor time series list by comparing the instance...
                 TS ts2; // Time series in main list to compare against.
                 boolean found = false;
@@ -2407,26 +2407,26 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
         if ( count == 0 ) {
-            v.setElementAt ( new int[0], 1 );
+            v.set ( 1, new int[0] );
         }
         else {
             int [] tspos2 = new int[count];
             for ( int i = 0; i < count; i++ ) {
                 tspos2[i] = tspos[i];
             }
-            v.setElementAt ( tspos2, 1 );
+            v.set ( 1, tspos2 );
         }
         return v;
     }
     else if ( TSList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString()) ) {
         // Return a list of time series that match the provided identifiers.
-        Vector tsid_Vector = StringUtil.breakStringList ( TSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+        List tsid_Vector = StringUtil.breakStringList ( TSID, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size_tsid = 0;
         if ( tsid_Vector != null ) {
             size_tsid = tsid_Vector.size();
         }
         for ( int itsid = 0; itsid < size_tsid; itsid++ ) {
-            String tsid = (String)tsid_Vector.elementAt(itsid);
+            String tsid = (String)tsid_Vector.get(itsid);
             Message.printStatus( 2, routine, "Trying to match \"" + tsid + "\"" );
             // Loop through the available time series and see if any match..
             boolean found = false;
@@ -2459,7 +2459,7 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
                 }
                 if ( found ) {
                     // Add the time series and increment the count...
-                    tslist.addElement ( ts );
+                    tslist.add ( ts );
                     tspos[count++] = its;
                     // Found the specific time series so break out of the list.
                     // FIXME SAM 2008-02-05 What if user has the same ID more than once?
@@ -2471,27 +2471,27 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         // code does not mistakenly iterate through a longer array...
         Message.printStatus( 2, routine, "Matched " + count + " time series." );
         if ( count == 0 ) {
-            v.setElementAt ( new int[0], 1 );
+            v.set ( 1, new int[0] );
         }
         else {
             int [] tspos2 = new int[count];
             for ( int i = 0; i < count; i++ ) {
                 tspos2[i] = tspos[i];
             }
-            v.setElementAt ( tspos2, 1 );
+            v.set ( 1, tspos2 );
         }
         return v;
     }
     else if ( TSList.equalsIgnoreCase(TSListType.TSPOSITION.toString()) ) {
         // Process the position string
-        Vector tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
+        List tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
         int npos = 0;
         if ( tokens != null ) {
             npos = tokens.size();
         }
         int tsposStart, tsposEnd;
         for ( int i = 0; i < npos; i++ ) {
-            String token = (String)tokens.elementAt(i);
+            String token = (String)tokens.get(i);
             if ( token.indexOf("-") >= 0 ) {
                 // Range...
                 String posString = StringUtil.getToken(token, "-",0,0).trim();
@@ -2506,7 +2506,7 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
             }
             for ( int itspos = tsposStart; itspos <= tsposEnd; itspos++ ) {
                 try {
-                    tslist.addElement ( getTimeSeries(itspos) );
+                    tslist.add ( getTimeSeries(itspos) );
                 }
                 catch ( Exception e ) {
                     // Don't add
@@ -2519,14 +2519,14 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
         if ( count == 0 ) {
-            v.setElementAt ( new int[0], 1 );
+            v.set ( 1, new int[0] );
         }
         else {
             int [] tspos2 = new int[count];
             for ( int i = 0; i < count; i++ ) {
                 tspos2[i] = tspos[i];
             }
-            v.setElementAt ( tspos2, 1 );
+            v.set ( 1, tspos2 );
         }
         return v;
     }
@@ -2563,21 +2563,21 @@ protected Vector getTimeSeriesToProcess ( String TSList, String TSID, String Ens
 		}
 		if ( found ) {
 			// Add the time series and increment the count...
-			tslist.addElement ( ts );
+			tslist.add ( ts );
 			tspos[count++] = its;
 		}
 	}
 	// Trim down the "tspos" array to only include matches so that other
 	// code does not mistakenly iterate through a longer array...
 	if ( count == 0 ) {
-		v.setElementAt ( new int[0], 1 );
+		v.set ( 1, new int[0] );
 	}
 	else {
 		int [] tspos2 = new int[count];
 		for ( int i = 0; i < count; i++ ) {
 			tspos2[i] = tspos[i];
 		}
-		v.setElementAt ( tspos2, 1 );
+		v.set ( 1, tspos2 );
 	}
 	//Message.printStatus( 2, routine, tslist.toString() );
 	return v;
@@ -2589,7 +2589,7 @@ See documentation for fully loaded method.  The list is not sorted
 @param commands Time series commands to search.
 @return list of time series identifiers or an empty non-null Vector if nothing found.
 */
-protected static Vector getTraceIdentifiersFromCommands ( Vector commands )
+protected static List getTraceIdentifiersFromCommands ( List commands )
 {	return getTraceIdentifiersFromCommands ( commands, false );
 }
 
@@ -2601,34 +2601,34 @@ These strings are suitable for drop-down lists, etc.
 @param sort Should output be sorted by identifier.
 @return list of time series identifiers or an empty non-null Vector if nothing found.
 */
-protected static Vector getTraceIdentifiersFromCommands ( Vector commands, boolean sort )
+protected static List getTraceIdentifiersFromCommands ( List commands, boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
 	}
-	Vector v = new Vector ( 10, 10 );
+	List v = new Vector ( 10, 10 );
 	int size = commands.size();
 	String command = null, string = null;
-	Vector tokens = null;
+	List tokens = null;
 	for ( int i = 0; i < size; i++ ) {
-		command = ((String)commands.elementAt(i)).trim();
+		command = ((String)commands.get(i)).trim();
 		if ( (command == null) || command.startsWith("#") || (command.length() == 0) ) {
 			// Make sure comments are ignored...
 			continue;
 		}
 		tokens = StringUtil.breakStringList( command," =(),", StringUtil.DELIM_SKIP_BLANKS );
-		string = ((String)tokens.elementAt(0)).trim();
+		string = ((String)tokens.get(0)).trim();
 		if ( !string.regionMatches ( true,0,"createTraces",0,12) ) {
 			// Not a command we are looking for...
 			continue;
 		}
-		string = ((String)tokens.elementAt(1)).trim();
+		string = ((String)tokens.get(1)).trim();
 		if ( string.regionMatches ( true,0,"tempts",0,6) ) {
 			// Assume the next item is the identifier...
-			v.addElement ( ((String)tokens.elementAt(2)).trim() );
+			v.add ( ((String)tokens.get(2)).trim() );
 		}
 		else {
 		    // Assume this item is the identifier...
-			v.addElement ( ((String)tokens.elementAt(1)).trim() );
+			v.add ( ((String)tokens.get(1)).trim() );
 		}
 	}
 	tokens = null;
@@ -2640,28 +2640,28 @@ Return a Vector of objects (currently open DMI instances) that implement
 TSProductAnnotationProvider. This is a helper method for other methods.
 @return a non-null Vector of TSProductAnnotationProviders.
 */
-protected Vector getTSProductAnnotationProviders ()
-{	Vector ap_Vector = new Vector();
+protected List getTSProductAnnotationProviders ()
+{	List ap_Vector = new Vector();
 	// Check the HydroBase instances...
 	int hsize = __hbdmi_Vector.size();
 	HydroBaseDMI hbdmi = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.elementAt(ih);
+		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(ih);
 		if ( (hbdmi != null) &&	(hbdmi instanceof TSProductAnnotationProvider)) {
-			ap_Vector.addElement ( hbdmi );
+			ap_Vector.add ( hbdmi );
 		}
 	}
 	// Check the ColoradoSMS instances...
 	if ( (__smsdmi != null) && (__smsdmi instanceof TSProductAnnotationProvider) ) {
-		ap_Vector.addElement ( __smsdmi );
+		ap_Vector.add ( __smsdmi );
 	}
 	// Check the RiversideDB_DMI instances...
     int rsize = __rdmi_Vector.size();
     RiversideDB_DMI rdmi = null;
     for ( int ir = 0; ir < rsize; ir++ ) {
-        rdmi = (RiversideDB_DMI)__rdmi_Vector.elementAt(ir);
+        rdmi = (RiversideDB_DMI)__rdmi_Vector.get(ir);
         if ( (rdmi != null) && (rdmi instanceof TSProductAnnotationProvider)) {
-            ap_Vector.addElement ( rdmi );
+            ap_Vector.add ( rdmi );
         }
     }
 
@@ -2787,7 +2787,7 @@ private int indexOf ( String string, int sequence_number )
         TS ts = null;
 		size = __tslist.size();
 		for ( int i = (size - 1); i >= 0; i-- ) {
-			ts = (TS)__tslist.elementAt(i);
+			ts = (TS)__tslist.get(i);
 			if ( ts == null ) {
 				continue;
 			}
@@ -3291,7 +3291,7 @@ throws Exception
 				// FIXME SAM 2007-11-06 Put in CheckTimeSeries()...
 				Message.printWarning ( ml, routine,"The following time series were not found:" );
 				for ( int i2 = 0; i2 < size; i2++ ) {
-					Message.printWarning ( ml, routine,"   "+(String)getMissingTS().elementAt(i2));
+					Message.printWarning ( ml, routine,"   "+(String)getMissingTS().get(i2));
 				}
 			}
 			// The following should will be passed through TSCommandProcessor.runCommands() and should
@@ -3538,7 +3538,7 @@ throws Exception
     setIgnoreLEZero ( false );
     setInputStart ( null );
     setInputEnd ( null );
-    getMissingTS().removeAllElements();
+    getMissingTS().clear();
     setOutputStart ( null );
     setOutputEnd ( null );
     setOutputYearType ( _CALENDAR_YEAR );
@@ -3589,7 +3589,7 @@ throws IOException
     // List of time series to output, determined from the time series in memory
     // and a list of selected array positions (e.g., from a GUI.
 
-    Vector tslist_output = null;
+    List tslist_output = null;
 
 	// Define a local proplist to better deal with null...
 	PropList props = proplist;
@@ -3630,7 +3630,7 @@ throws IOException
 		}
 		for ( int i = 0; i < ts_indices_size; i++ ) {
 			if ( (ts_indices[i] >= 0) && (ts_indices[i] < nts) ) {
-				tslist_output.addElement ( __tslist.elementAt(ts_indices[i]) );
+				tslist_output.add ( __tslist.get(ts_indices[i]) );
 			}
 		}
 	}
@@ -3781,7 +3781,7 @@ throws IOException
 
 		try {
 		    // For now, put the code in here at the bottom of this file...
-			Vector report = createDataCoverageReport ( tslist_output );
+			List report = createDataCoverageReport ( tslist_output );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -3806,7 +3806,7 @@ throws IOException
 
 		try {
 		    // For now, put the code in here at the bottom of this file...
-			Vector report = createDataLimitsReport(tslist_output);
+			List report = createDataLimitsReport(tslist_output);
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -3818,7 +3818,7 @@ throws IOException
 		try {
     		TS	tspt = null;
     		if ( (tslist_output != null) && (tslist_output.size() > 0)){
-    			tspt = (TS)tslist_output.elementAt(0);
+    			tspt = (TS)tslist_output.get(0);
     		}
     		String units = null;
     		if ( tspt != null ) {
@@ -3909,7 +3909,7 @@ throws IOException
 
 		try {
 		    // For now, put the code in here at the bottom of this file...
-			Vector report = createMonthSummaryReport ( tslist_output, sumprops );
+			List report = createMonthSummaryReport ( tslist_output, sumprops );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -3923,7 +3923,7 @@ throws IOException
     		TS	tspt = null;
     		int	list_size = 0;
     		if ( (tslist_output != null) && (tslist_output.size() > 0)){
-    			tspt = (TS)tslist_output.elementAt(0);
+    			tspt = (TS)tslist_output.get(0);
     			list_size = tslist_output.size();
     		}
     		// NWS Card files can only contain one time series...
@@ -3941,7 +3941,7 @@ throws IOException
     		// Format the comments to add to the top of the file.  In this
     		// case, add the commands used to generate the file...
     		int interval_mult = 1;
-    		interval_mult = ((TS)tslist_output.elementAt(0)).getDataIntervalMult();
+    		interval_mult = ((TS)tslist_output.get(0)).getDataIntervalMult();
     		// Need date precision to be hour and NWS uses hour 1 - 24 so adjust dates accordingly.
     		DateTime date1 = __OutputStart_DateTime;
     		if ( __OutputStart_DateTime != null ) {
@@ -3958,7 +3958,7 @@ throws IOException
     			date2.addDay ( 1 );
     			date2.setHour ( 0 );
     		}
-    		NWSCardTS.writeTimeSeries ( (TS)tslist_output.elementAt(0),	__output_file, date1, date2, units, true );
+    		NWSCardTS.writeTimeSeries ( (TS)tslist_output.get(0),	__output_file, date1, date2, units, true );
 		} catch ( Exception e ) {
 			message = "Error writing NWS Card file \"" + __output_file + "\"";
 			Message.printWarning ( 1, routine, message );
@@ -3972,7 +3972,7 @@ throws IOException
     		TS	tspt = null;
     		int	list_size = 0;
     		if ( (tslist_output != null) && (tslist_output.size() > 0)){
-    			tspt = (TS)tslist_output.elementAt(0);
+    			tspt = (TS)tslist_output.get(0);
     			list_size = tslist_output.size();
     		}
     		// RiverWare files can only contain one time series...
@@ -3989,7 +3989,7 @@ throws IOException
     
     		// Format the comments to add to the top of the file.  In this
     		// case, add the commands used to generate the file...
-    		RiverWareTS.writeTimeSeries ( (TS)tslist_output.elementAt(0),
+    		RiverWareTS.writeTimeSeries ( (TS)tslist_output.get(0),
     			__output_file, __OutputStart_DateTime, __OutputEnd_DateTime, units, 1.0, null, -1.0, true );
 		} catch ( Exception e ) {
 			message = "Error writing RiverWare file \"" + __output_file + "\"";
@@ -4000,10 +4000,10 @@ throws IOException
 	}
 	else if ( output_format == OUTPUT_SHEFA_FILE ) {
 		try {
-			Vector units_Vector = null;
-			Vector PE_Vector = ShefATS.getPEForTimeSeries (tslist_output );
-			Vector Duration_Vector = null;
-			Vector AltID_Vector = null;
+			List units_Vector = null;
+			List PE_Vector = ShefATS.getPEForTimeSeries (tslist_output );
+			List Duration_Vector = null;
+			List AltID_Vector = null;
 			PropList shef_props = new PropList ( "SHEF" );
 			shef_props.set ( "HourMax=24" );
 			ShefATS.writeTimeSeriesList ( tslist_output,
@@ -4054,7 +4054,7 @@ throws IOException
     
     		if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
     			try {
-                    Vector summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );	
+    				List summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );	
     				// Just write the summary to the given file...
     				IOUtil.printStringList ( __output_file, summary);
     			} catch ( Exception e ) {
@@ -4077,7 +4077,7 @@ throws IOException
     			reportProps.set ( "PageLength", "100000" );
     
     			try {
-    				Vector summary = TSUtil.formatOutput ( tslist_output, sumprops );
+    				List summary = TSUtil.formatOutput ( tslist_output, sumprops );
     				// Now display (the user can save as a file, etc.).
     				new ReportJFrame ( summary, reportProps );
     			}
@@ -4099,7 +4099,7 @@ throws IOException
         // need to initialize all the view data at the same time in case the user changes
         // views interactively after the initial view.
 		// Temporary copy of data...
-		Vector tslist = tslist_output;
+		List tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
     			Message.printWarning ( 1, routine, "Can only generate a table from GUI" );
@@ -4110,8 +4110,8 @@ throws IOException
     		// Set graph properties for a simple graph...
     		graphprops.set ( "ExtendedLegend", "true" );
     		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
-    		graphprops.set ( "DataUnits", ((TS)tslist.elementAt(0)).getDataUnits() );
-    		graphprops.set ( "YAxisLabelString", ((TS)tslist.elementAt(0)).getDataUnits() );
+    		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
+    		graphprops.set ( "YAxisLabelString", ((TS)tslist.get(0)).getDataUnits() );
     		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
     			graphprops.set ( "CalendarType", "WaterYear" );
     		}
@@ -4176,7 +4176,7 @@ throws IOException
 		reportProps.set ( "Search", "true" );
 
 		try {
-            Vector report = createYearToDateReport (tslist_output,__reference_date, null );
+			List report = createYearToDateReport (tslist_output,__reference_date, null );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -4197,7 +4197,7 @@ throws IOException
 			(output_format == OUTPUT_PredictedValueResidual_GRAPH)||
 			(output_format == OUTPUT_XY_SCATTER_GRAPH) ) {
 		// A graph type.  Temporary copy of data...
-		Vector tslist = tslist_output;
+		List tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
     			Message.printWarning ( 1, routine, "Can only graph from GUI" );
@@ -4207,8 +4207,8 @@ throws IOException
     		PropList graphprops = new PropList ( "Graph" );
     		graphprops.set ( "ExtendedLegend", "true" );
     		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
-    		graphprops.set ( "DataUnits", ((TS)tslist.elementAt(0)).getDataUnits() );
-    		graphprops.set ( "YAxisLabelString",((TS)tslist.elementAt(0)).getDataUnits() );
+    		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
+    		graphprops.set ( "YAxisLabelString",((TS)tslist.get(0)).getDataUnits() );
     		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
     			graphprops.set ( "CalendarType", "WaterYear" );
     		}
@@ -4438,10 +4438,10 @@ throws Exception
 				if ( readData ) {
 				    ts.allocateDataSpace();
 				}
-				Vector v = StringUtil.breakStringList (	tsident_string, "~", 0 );
+				List v = StringUtil.breakStringList (	tsident_string, "~", 0 );
 				// Version without the input...
 				String tsident_string2;
-				tsident_string2 = (String)v.elementAt(0);
+				tsident_string2 = (String)v.get(0);
 				ts.setIdentifier ( tsident_string2 );
 				Message.printStatus ( 1, routine, "Created empty time series for \"" +
 				tsident_string2 + "\" - not in DB and SetIncludeMissingTS(true) is specified." );
@@ -4455,7 +4455,7 @@ throws Exception
 				"Make sure that the data are in the database or input file.";
 			Message.printWarning ( wl,
 			MessageUtil.formatMessageTag(command_tag,++_fatal_error_count), routine, message );
-			getMissingTS().addElement(tsident_string);
+			getMissingTS().add(tsident_string);
 			throw new TimeSeriesNotFoundException ( message );
 		}
 	}
@@ -4495,18 +4495,18 @@ throws Exception
 
 	// Separate out the input from the TSID...
 
-	Vector v = StringUtil.breakStringList ( tsident_string, "~", 0 );
+	List v = StringUtil.breakStringList ( tsident_string, "~", 0 );
 	String tsident_string2;	// Version without the input...
 	String input_type = null;
 	String input_name = null;
     String input_name_full = null;  // input name with full path
-	tsident_string2 = (String)v.elementAt(0);
+	tsident_string2 = (String)v.get(0);
 	if ( v.size() == 2 ) {
-		input_type = (String)v.elementAt(1);
+		input_type = (String)v.get(1);
 	}
 	else if ( v.size() == 3 ) {
-		input_type = (String)v.elementAt(1);
-		input_name = (String)v.elementAt(2);
+		input_type = (String)v.get(1);
+		input_name = (String)v.get(2);
         input_name_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),input_name) );
 	}
@@ -4659,7 +4659,7 @@ throws Exception
             // For now read the file for each trace...
 			// TODO SAM 2004-11-29 need to optimize so the file does not need to get reread...
 			NWSRFS_ESPTraceEnsemble ensemble = new NWSRFS_ESPTraceEnsemble ( input_name_full, read_data );
-			Vector tslist = ensemble.getTimeSeriesVector ();
+			List tslist = ensemble.getTimeSeriesVector ();
 			// Loop through and find a matching time series...
 			int size = 0;
 			boolean found = false;
@@ -4668,7 +4668,7 @@ throws Exception
 			if ( tslist != null ) {
 				size = tslist.size();
 				for ( int i = 0; i < size; i++ ) {
-					ts2 = (TS)tslist.elementAt(i);
+					ts2 = (TS)tslist.get(i);
 					// This compares the sequence number but does not include the input
 					// type/name since that was already used to read the file...
 					if ( tsident.matches( ts2.getIdentifier().toString())){
@@ -4735,11 +4735,11 @@ throws Exception
 	else if ((input_type != null) && input_type.equalsIgnoreCase("StateCU") ) {
 		// New style TSID~input_type~input_name for StateCU...
 		try {
-            Vector ipy_types = StateCU_IrrigationPracticeTS.getTimeSeriesDataTypes(true, false);
+			List ipy_types = StateCU_IrrigationPracticeTS.getTimeSeriesDataTypes(true, false);
             boolean is_ipy_type = false;
             int ipy_types_size = ipy_types.size();
             for ( int i_ipy = 0; i_ipy < ipy_types_size; i_ipy++ ) {
-                if ( StringUtil.startsWithIgnoreCase(tsident.getType(), (String)ipy_types.elementAt(i_ipy))) {
+                if ( StringUtil.startsWithIgnoreCase(tsident.getType(), (String)ipy_types.get(i_ipy))) {
                     is_ipy_type = true;
                     break;
                 }
@@ -4898,7 +4898,7 @@ throws Exception
 
 		if ( !is_template ) {
 			for ( int i = 0; i < size; i++ ) {
-				ts = (TS)__tslist.elementAt(i);
+				ts = (TS)__tslist.get(i);
 				if ( ts == null ) {
 					continue;
 				}
@@ -4913,7 +4913,7 @@ throws Exception
 
 		int match_count = 0;
 		for ( int i = 0; i < size; i++ ) {
-			ts = (TS)__tslist.elementAt(i);
+			ts = (TS)__tslist.get(i);
 			if ( ts == null ) {
 				continue;
 			}
@@ -5010,7 +5010,7 @@ header will be read.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList ( String fname, DateTime date1, DateTime date2,
+public List readTimeSeriesList ( String fname, DateTime date1, DateTime date2,
 					String req_units, boolean read_data )
 throws Exception
 {	return null;
@@ -5035,7 +5035,7 @@ header will be read.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList ( TSIdent tsident, String fname, DateTime date1, DateTime date2,
+public List readTimeSeriesList ( TSIdent tsident, String fname, DateTime date1, DateTime date2,
 					String req_units, boolean read_data )
 throws Exception {
 	return null;
@@ -5123,15 +5123,15 @@ throws Exception
 	// a change interval is needed...
 
 	if ( haveOutputPeriod() && getAutoExtendPeriod() ) {
-		Vector v = new Vector ( 2 );
+		List v = new Vector ( 2 );
 		TSLimits limits = new TSLimits();
 		limits.setDate1 ( ts.getDate1() );
 		limits.setDate2 ( ts.getDate2() );
-		v.addElement ( limits );
+		v.add ( limits );
 		limits = new TSLimits();
 		limits.setDate1 ( __OutputStart_DateTime );
 		limits.setDate2 ( __OutputEnd_DateTime );
-		v.addElement ( limits );
+		v.add ( limits );
 		try {
             limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
 			if ( limits.getDate1().lessThan(ts.getDate1()) || limits.getDate2().greaterThan(ts.getDate2()) ) {
@@ -5153,7 +5153,7 @@ full_period parameter having a value of true.  This version is called by read co
 @param tslist Vector of TS to process.
 @exception Exception if there is an error processing the time series.
 */
-protected void readTimeSeries2 ( Vector tslist )
+protected void readTimeSeries2 ( List tslist )
 throws Exception
 {	readTimeSeries2 ( tslist, true );
 }
@@ -5165,7 +5165,7 @@ Call readTimeSeries2() for every time series in the Vector.
 If false, the output period will be queried.
 @exception Exception if there is an error processing the time series.
 */
-private void readTimeSeries2 ( Vector tslist, boolean full_period )
+private void readTimeSeries2 ( List tslist, boolean full_period )
 throws Exception
 {	int size = 0;
 	if ( tslist != null ) {
@@ -5173,7 +5173,7 @@ throws Exception
 	}
 	TS ts = null;
 	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)tslist.elementAt(i);
+		ts = (TS)tslist.get(i);
 		if ( ts == null ) {
 			continue;
 		}
@@ -5187,7 +5187,7 @@ Remove all time series in the results list.
 */
 protected void removeAllTimeSeries ()
 {
-    __tslist.removeAllElements();
+    __tslist.clear();
 }
 
 /**
@@ -5196,7 +5196,7 @@ Remove the time series at the specified index.
 */
 protected void removeTimeSeries ( int index )
 {
-    __tslist.removeElementAt ( index );
+    __tslist.remove ( index );
 }
 
 /**
@@ -5229,9 +5229,9 @@ protected void setAverageStart ( DateTime start )
 Set the list of DataTest, for example, when set with TSCommandsProcessor.
 @param DataTest_Vector List of data test definitions, as Vector of DataTest.
 */
-protected void setDataTestList ( Vector DataTest_Vector )
+protected void setDataTestList ( List DataTest_Vector )
 {	
-	__datatestlist = (Vector)DataTest_Vector;
+	__datatestlist = (List)DataTest_Vector;
 }
 
 /**
@@ -5252,7 +5252,7 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 	HydroBaseDMI hbdmi2 = null;
 	String input_name = hbdmi.getInputName();
 	for ( int i = 0; i < size; i++ ) {
-		hbdmi2 = (HydroBaseDMI)__hbdmi_Vector.elementAt(i);
+		hbdmi2 = (HydroBaseDMI)__hbdmi_Vector.get(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the Vector.
 			// Replace the instance in the Vector by the new instance...
@@ -5264,19 +5264,19 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 					// Probably can ignore.
 				}
 			}
-			__hbdmi_Vector.setElementAt ( hbdmi, i );
+			__hbdmi_Vector.set ( i, hbdmi );
 			return;
 		}
 	}
 	// Add a new instance to the Vector...
-	__hbdmi_Vector.addElement ( hbdmi );
+	__hbdmi_Vector.add ( hbdmi );
 }
 
 /**
 Set the list of HydroBaseDMI (e.g., when manipulated by an openHydroBase() command.
 @param dmilist Vector of HydroBaseDMI.
 */
-protected void setHydroBaseDMIList ( Vector dmilist )
+protected void setHydroBaseDMIList ( List dmilist )
 {	__hbdmi_Vector = dmilist;
 }
 
@@ -5389,7 +5389,7 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	NWSRFS_DMI nwsrfs_dmi2 = null;
 	String input_name = nwsrfs_dmi.getInputName();
 	for ( int i = 0; i < size; i++ ) {
-		nwsrfs_dmi2 = (NWSRFS_DMI)__nwsrfs_dmi_Vector.elementAt(i);
+		nwsrfs_dmi2 = (NWSRFS_DMI)__nwsrfs_dmi_Vector.get(i);
 		if ( nwsrfs_dmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the Vector.
 			// Replace the instance in the Vector by the new instance...
@@ -5401,12 +5401,12 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 					// Probably can ignore.
 				}
 			}
-			__nwsrfs_dmi_Vector.setElementAt ( nwsrfs_dmi, i );
+			__nwsrfs_dmi_Vector.set ( i, nwsrfs_dmi );
 			return;
 		}
 	}
 	// Add a new instance to the Vector...
-	__nwsrfs_dmi_Vector.addElement ( nwsrfs_dmi );
+	__nwsrfs_dmi_Vector.add ( nwsrfs_dmi );
 }
 
 /**
@@ -5463,7 +5463,7 @@ protected void setRiversideDB_DMI ( RiversideDB_DMI rdmi, boolean close_old )
     String input_name = rdmi.getInputName();
     Message.printStatus(2, routine, "Saving RiversideDB_DMI connection \"" + input_name + "\"" );
     for ( int i = 0; i < size; i++ ) {
-        rdmi2 = (RiversideDB_DMI)__rdmi_Vector.elementAt(i);
+        rdmi2 = (RiversideDB_DMI)__rdmi_Vector.get(i);
         if ( rdmi2.getInputName().equalsIgnoreCase(input_name)){
             // The input name of the current instance matches that of the instance in the Vector.
             // Replace the instance in the Vector by the new instance...
@@ -5475,13 +5475,13 @@ protected void setRiversideDB_DMI ( RiversideDB_DMI rdmi, boolean close_old )
                     // Probably can ignore.
                 }
             }
-            __rdmi_Vector.setElementAt ( rdmi, i );
+            __rdmi_Vector.set ( i, rdmi );
             return;
         }
     }
 
     // Add a new instance to the Vector...
-    __rdmi_Vector.addElement ( rdmi );
+    __rdmi_Vector.add ( rdmi );
 }
 
 /**
@@ -5526,20 +5526,19 @@ throws Exception
 	if ( position >= __tslist.size() ) {
 		// Append to the list.  Fill in intervening positions with null references...
 		for ( int i = __tslist.size(); i <= position; i++ ) {
-			__tslist.addElement ( (TS)null );
+			__tslist.add ( (TS)null );
 		}
 	}
 	// Now update at the requested position...
-	__tslist.removeElementAt ( position );
-	__tslist.insertElementAt ( ts, position );
+	__tslist.remove ( position );
+	__tslist.add ( position, ts );
 }
 
 /**
-Set the time series list, for example, when being processed through
-TSCommandsProcessor.
+Set the time series list, for example, when being processed through TSCommandsProcessor.
 @param tslist List of time series results, as Vector of TS.
 */
-protected void setTimeSeriesList ( Vector tslist )
+protected void setTimeSeriesList ( List tslist )
 {	__tslist = tslist;
 }
 
@@ -5556,7 +5555,7 @@ private void updateHydroBaseComments ( TS ts )
 {	if ( ts == null ) {
         return;
     }
-    Vector comments = ts.getComments();
+	List comments = ts.getComments();
 	int size = 0;
 	if ( comments != null ) {
 		size = comments.size();
@@ -5564,14 +5563,14 @@ private void updateHydroBaseComments ( TS ts )
 	String comment = null;
 	int pos = 0;
 	for ( int i = 0; i < size; i++ ) {
-		comment = (String)comments.elementAt(i);
+		comment = (String)comments.get(i);
 		if ( comment.regionMatches(true,0,"Data units",0,10) ) {
 			pos = comment.indexOf ( "=" );
-			comments.setElementAt( comment.substring(0,pos + 2) + ts.getDataUnits(), i);
+			comments.set( i, comment.substring(0,pos + 2) + ts.getDataUnits() );
 		}
 		else if ( comment.regionMatches(true,0,"Description",0,11) ) {
 			pos = comment.indexOf ( "=" );
-			comments.setElementAt( comment.substring(0,pos + 2) + ts.getDescription(), i);
+			comments.set( i, comment.substring(0,pos + 2) + ts.getDescription() );
 		}
 	}
 	comments = null;
@@ -5591,7 +5590,7 @@ StateMod.writePersistent().
 @param comments Comments to include at the top of the StateMod file, consisting
 of the commands as text and database version information.
 */
-private void writeStateModTS ( Vector tslist, String output_file, String precision_string, String[] comments )
+private void writeStateModTS ( List tslist, String output_file, String precision_string, String[] comments )
 {	String routine = "TSEngine.writeStateModTS";
 	// Type of calendar for output...
 	String calendar = "";
@@ -5614,7 +5613,7 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 	    int	list_size = 0;
 		TS	tspt = null;
 		if ( (tslist != null) && (tslist.size() > 0) ) {
-			tspt = (TS)tslist.elementAt(0);
+			tspt = (TS)tslist.get(0);
 			list_size = tslist.size();
 		}
 		if ( tspt != null ) {
@@ -5634,7 +5633,7 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 		// Old code that we still need to support...
 		// In year 2, we changed the precision to 0 for RSTO.  See if any of the TS in the list are RSTO...
 		for ( int ilist = 0; ilist < list_size; ilist++ ) {
-			tspt = (TS)tslist.elementAt(ilist);
+			tspt = (TS)tslist.get(ilist);
 			if ( tspt == null ) {
 				continue;
 			}
@@ -5648,7 +5647,7 @@ private void writeStateModTS ( Vector tslist, String output_file, String precisi
 	if ( TSUtil.intervalsMatch ( tslist )) {
 		// The time series to write have the same interval so write using the first interval....
 		int interval = 0;
-		interval = ((TS)tslist.elementAt(0)).getDataIntervalBase();
+		interval = ((TS)tslist.get(0)).getDataIntervalBase();
 		if((interval == TimeInterval.DAY) ||(interval == TimeInterval.MONTH) ) {
 			PropList smprops = new PropList ( "StateMod" );
 			// Don't set input file since it is null...

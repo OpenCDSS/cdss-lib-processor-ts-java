@@ -27,6 +27,7 @@
 // ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -272,7 +273,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "NewInterval" );
@@ -352,11 +353,11 @@ throws 	InvalidCommandSyntaxException,
 			// TS X = changeInterval (...)
 			pos = command.indexOf('=');
 			substring = command.substring(0,pos).trim();
-			Vector v = StringUtil.breakStringList (
+			List v = StringUtil.breakStringList (
 				substring, " ",
 				StringUtil.DELIM_SKIP_BLANKS ); 
 			// First field has format "TS X"
-			Alias = ((String)v.elementAt(1)).trim();		
+			Alias = ((String)v.get(1)).trim();		
 		}
 		
 		// Substring, eliminating "TS X =" when __read_one is true.
@@ -366,7 +367,7 @@ throws 	InvalidCommandSyntaxException,
 			
 		// Split the substring into two parts: the command name and 
 		// the parameters list within the parenthesis.
-		Vector tokens = StringUtil.breakStringList ( substring, "()", 0 );
+		List tokens = StringUtil.breakStringList ( substring, "()", 0 );
 		if ( tokens == null ) {
 			// Must have at least the command name and the parameter list.
 			mssg = "Syntax error in \"" + command + "\".";
@@ -378,7 +379,7 @@ throws 	InvalidCommandSyntaxException,
 		// needed to process the command.
 		try {
 			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String) tokens.elementAt(1), mthd, "," ) );
+				(String) tokens.get(1), mthd, "," ) );
 			// If the Alias was found in the command added it to the
 			// parameters propList.	
 			if ( Alias != null && Alias.length() > 0 ) {

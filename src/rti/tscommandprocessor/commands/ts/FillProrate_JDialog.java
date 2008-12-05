@@ -28,6 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.GUI.JGUIUtil;
@@ -303,13 +304,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -396,10 +397,10 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Initial value:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InitialValue_JComboBox = new SimpleJComboBox ( true );
-	Vector InitialValue_Vector = new Vector  ( 3 );
-	InitialValue_Vector.addElement ( "" );
-	InitialValue_Vector.addElement ( __command._NearestBackward );
-	InitialValue_Vector.addElement ( __command._NearestForward );
+	List InitialValue_Vector = new Vector  ( 3 );
+	InitialValue_Vector.add ( "" );
+	InitialValue_Vector.add ( __command._NearestBackward );
+	InitialValue_Vector.add ( __command._NearestForward );
 	__InitialValue_JComboBox.setData ( InitialValue_Vector );
 	__InitialValue_JComboBox.addKeyListener ( this );
 	__InitialValue_JComboBox.addActionListener ( this );

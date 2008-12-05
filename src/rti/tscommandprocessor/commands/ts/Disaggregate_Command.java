@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -128,7 +129,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "Method" );
@@ -186,13 +187,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-    Vector v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
     if ( v == null ) {
         message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Disaggregate(TSID)";
         Message.printWarning ( warning_level, routine, message);
         throw new InvalidCommandSyntaxException ( message );
     }
-    String Alias = (String)v.elementAt(1);
+    String Alias = (String)v.get(1);
     String TSID = null;
     String Method = null;
     String NewInterval = null;
@@ -214,14 +215,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			throw new InvalidCommandSyntaxException ( message );
 		}
         // TSID is the only parameter
-        TSID = (String)v.elementAt(1);
-        Method = (String)v.elementAt(2);
-        NewInterval = (String)v.elementAt(3);
-        NewDataType = (String)v.elementAt(4);
+        TSID = (String)v.get(1);
+        Method = (String)v.get(2);
+        NewInterval = (String)v.get(3);
+        NewDataType = (String)v.get(4);
         if ( NewDataType.equals("*") ) {
             NewDataType = "";
         }
-        NewUnits = (String)v.elementAt(5);
+        NewUnits = (String)v.get(5);
         if ( NewUnits.equals("*") ) {
             NewUnits = "";
         }

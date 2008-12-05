@@ -122,7 +122,7 @@ public final int	INSERT_TS = 1,
 The list of commands managed by this command processor,
 guaranteed to be non-null.
 */
-private Vector __Command_Vector = new Vector();
+private List __Command_Vector = new Vector();
 
 /**
 The name of the file to which the commands are saved, or null if not saved.
@@ -158,12 +158,12 @@ private Boolean __CreateOutput_Boolean = new Boolean(true);
 /**
 The list of StringMonthTS, currently only read by ReadPatternFile() and used with FillPattern().
 */
-private Vector __patternTS_Vector = new Vector();
+private List __patternTS_Vector = new Vector();
 
 /**
 The list of TSEnsemble managed by this command processor, guaranteed to be non-null.
 */
-private Vector __TSEnsemble_Vector = new Vector();
+private List __TSEnsemble_Vector = new Vector();
 
 /**
 The initial working directory for processing, typically the location of the commands
@@ -201,7 +201,7 @@ private volatile boolean __cancel_processing_requested = false;
 /**
 List of DataTable objects maintained by the processor.
 */
-Vector __Table_Vector = new Vector();
+List __Table_Vector = new Vector();
 
 /**
 Construct a command processor with no commands.
@@ -230,7 +230,7 @@ be notified.
 */
 public void addCommand ( Command command, boolean notifyCommandListListeners )
 {	String routine = "TSCommandProcessor.addCommand";
-	__Command_Vector.addElement( command );
+	__Command_Vector.add( command );
 	// Also add this processor as a listener for events
 	if ( command instanceof CommandProcessorEventProvider ) {
 	    CommandProcessorEventProvider ep = (CommandProcessorEventProvider)command;
@@ -389,7 +389,7 @@ public void clearResults()
 {
 	__tsengine.clearTimeSeriesResults();
     if ( __Table_Vector != null ) {
-        __Table_Vector.removeAllElements();
+        __Table_Vector.clear();
     }
     removeAllEnsembles();
     removeAllPatternTS();
@@ -802,7 +802,7 @@ private Boolean getPropContents_CreateOutput()
 Handle the DataTestList property request.
 @return Vector of DataTest instances.
 */
-private Vector getPropContents_DataTestList()
+private List getPropContents_DataTestList()
 {
 	return __tsengine.getDataTestList();
 }
@@ -830,7 +830,7 @@ private Boolean getPropContents_HaveOutputPeriod()
 Handle the HydroBaseDMIList property request.
 @return Vector of open HydroBaseDMI instances.
 */
-private Vector getPropContents_HydroBaseDMIList()
+private List getPropContents_HydroBaseDMIList()
 {
 	return __tsengine.getHydroBaseDMIList();
 }
@@ -841,7 +841,7 @@ Handle the HydroBaseDMIListSize property request.
 */
 private Integer getPropContents_HydroBaseDMIListSize()
 {
-    Vector v = __tsengine.getHydroBaseDMIList();
+    List v = __tsengine.getHydroBaseDMIList();
     if ( v == null ) {
         return new Integer(0);
     }
@@ -905,13 +905,13 @@ the commands that are active and HydroBase version information that documents
 data available for a command.
 @return Vector of String containing comments for output.
 */
-private Vector getPropContents_OutputComments()
+private List getPropContents_OutputComments()
 {
 	String [] array = __tsengine.formatOutputHeaderComments(getCommands());
-	Vector v = new Vector();
+	List v = new Vector();
 	if ( array != null ) {
 		for ( int i = 0; i < array.length; i++ ) {
-			v.addElement( array[i]);
+			v.add( array[i]);
 		}
 	}
 	return v;
@@ -976,7 +976,7 @@ Handle the TSProductAnnotationProviderList property request.
 @return The time series product annotation provider list,
 as a Vector of TSProductAnnotationProvider.
 */
-private Vector getPropContents_TSProductAnnotationProviderList()
+private List getPropContents_TSProductAnnotationProviderList()
 {
 	return __tsengine.getTSProductAnnotationProviders();
 }
@@ -985,7 +985,7 @@ private Vector getPropContents_TSProductAnnotationProviderList()
 Handle the TSResultsList property request.
 @return The time series results list, as a Vector of TS.
 */
-private Vector getPropContents_TSResultsList()
+private List getPropContents_TSResultsList()
 {
 	return __tsengine.getTimeSeriesList(null);
 }
@@ -1025,30 +1025,30 @@ These properties can be requested using getPropContents().
 */
 public Collection getPropertyNameList()
 {
-	Vector v = new Vector();
+	List v = new Vector();
 	// FIXME SAM 2008-02-15 Evaluate whether these should be in the
 	// property hashtable - should properties be available before ever
 	// being defined (in case they are used later) or should only defined
 	// properties be available (and rely on discovery to pass to other commands)?
 	// Add properties that are hard-coded.
-    v.addElement ( "AutoExtendPeriod" );
-    v.addElement ( "AverageStart" );
-    v.addElement ( "AverageEnd" );
-    v.addElement ( "DebugLevelLogFile" );
-    v.addElement ( "DebugLevelScreen" );
-    v.addElement ( "HydroBaseDMIListSize" );
-    v.addElement ( "IgnoreLEZero" );
-    v.addElement ( "IncludeMissingTS" );
-	v.addElement ( "InputStart" );
-	v.addElement ( "InputEnd" );
-	v.addElement ( "OutputStart" );
-	v.addElement ( "OutputEnd" );
-    v.addElement ( "OutputYearType" );
-    v.addElement ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
-    v.addElement ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
-    v.addElement ( "WarningLevelLogFile" );
-    v.addElement ( "WarningLevelScreen" );
-    v.addElement ( "WorkingDir" );
+    v.add ( "AutoExtendPeriod" );
+    v.add ( "AverageStart" );
+    v.add ( "AverageEnd" );
+    v.add ( "DebugLevelLogFile" );
+    v.add ( "DebugLevelScreen" );
+    v.add ( "HydroBaseDMIListSize" );
+    v.add ( "IgnoreLEZero" );
+    v.add ( "IncludeMissingTS" );
+	v.add ( "InputStart" );
+	v.add ( "InputEnd" );
+	v.add ( "OutputStart" );
+	v.add ( "OutputEnd" );
+    v.add ( "OutputYearType" );
+    v.add ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
+    v.add ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
+    v.add ( "WarningLevelLogFile" );
+    v.add ( "WarningLevelScreen" );
+    v.add ( "WorkingDir" );
     // Create a set that includes the above.
     TreeSet set = new TreeSet(v);
     // Add the hashtable keys and make a unique list
@@ -1068,7 +1068,7 @@ public boolean getReadOnly ()
     int size = size();
     Command c;
     for ( int i = 0; i < size; i++ ) {
-        c = (Command)__Command_Vector.elementAt(i);
+        c = (Command)__Command_Vector.get(i);
         String commandString = c.toString();
         if ( commandString.trim().startsWith("#") &&
                 (StringUtil.indexOfIgnoreCase(commandString,readOnlyString,0) > 0) ) {
@@ -1120,7 +1120,7 @@ public int indexOf ( Command command )
 	Command c;
 	//Message.printStatus ( 2, routine, "Checking " + size + " commands for command " + command );
 	for ( int i = 0; i < size; i++ ) {
-		c = (Command)__Command_Vector.elementAt(i);
+		c = (Command)__Command_Vector.get(i);
 		//Message.printStatus ( 2, routine, "Comparing to command " + c );
 		if ( c == command ) {
 			//Message.printStatus ( 2, routine, "Found command." );
@@ -1138,7 +1138,7 @@ Add a command using the Command instance.
 */
 public void insertCommandAt ( Command command, int index )
 {	String routine = "TSCommandProcessor.insertCommandAt";
-	__Command_Vector.insertElementAt( command, index);
+	__Command_Vector.add( index, command);
 	// Also add this processor as a listener for events
     if ( command instanceof CommandProcessorEventProvider ) {
         CommandProcessorEventProvider ep = (CommandProcessorEventProvider)command;
@@ -1951,7 +1951,7 @@ throws Exception
         tsensemble = null;
     }
     else {
-        tsensemble = (TSEnsemble)__TSEnsemble_Vector.elementAt ( i );
+        tsensemble = (TSEnsemble)__TSEnsemble_Vector.get ( i );
     }
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference...
@@ -2162,12 +2162,12 @@ throws Exception
 	// Get the information from TSEngine, which is returned as a Vector
 	// with the first element being the matching time series list and the second
 	// being the indices of those time series in the time series results list.
-	Vector tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
+	List tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
 	//Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );
-	results.setUsingObject("TSToProcessList", (Vector)(tslist.elementAt(0)) );
-	results.setUsingObject("Indices", (int [])(tslist.elementAt(1)) );
+	results.setUsingObject("TSToProcessList", (List)(tslist.get(0)) );
+	results.setUsingObject("Indices", (int [])(tslist.get(1)) );
 	return bean;
 }
 
@@ -2190,7 +2190,7 @@ throws Exception
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	Command command = (Command)o;
-	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand( this, command );
+	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand( this, command );
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
 	results.setUsingObject("TSIDList", tsids );
@@ -2218,16 +2218,16 @@ throws Exception
 	// Get the index of the requested command...
 	int index = indexOf ( command );
 	// Get the setWorkingDir() commands...
-	Vector needed_commands_String_Vector = new Vector();
-	needed_commands_String_Vector.addElement ( "SetWorkingDir" );
-	Vector setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
+	List needed_commands_String_Vector = new Vector();
+	needed_commands_String_Vector.add ( "SetWorkingDir" );
+	List setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
 			index,
 			this,
 			needed_commands_String_Vector,
 			false );	// Get all, not just last
 	// Always add the starting working directory to the top to
 	// make sure an initial condition is set...
-	setWorkingDir_CommandVector.insertElementAt ( newInitialSetWorkingDirCommand(), 0 );
+	setWorkingDir_CommandVector.add ( 0, newInitialSetWorkingDirCommand() );
 	// Create a local command processor
 	TSCommandProcessor ts_processor = new TSCommandProcessor();
 	ts_processor.setPropContents("InitialWorkingDir", getPropContents("InitialWorkingDir"));
@@ -2235,7 +2235,7 @@ throws Exception
 	// Add all the commands (currently no method to add all because this is normally
 	// not done).
 	for ( int i = 0; i < size; i++ ) {
-		ts_processor.addCommand ( (Command)setWorkingDir_CommandVector.elementAt(i));
+		ts_processor.addCommand ( (Command)setWorkingDir_CommandVector.get(i));
 	}
 	// Run the commands to set the working directory in the temporary processor...
 	try {	ts_processor.runCommands(
@@ -2299,7 +2299,7 @@ throws Exception
 					"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
-	Vector commands = (Vector)o_Commands;
+	List commands = (List)o_Commands;
 	Object o_Properties = request_params.getContents ( "Properties" );
 	if ( o_Properties == null ) {
 			String warning =
@@ -2522,7 +2522,7 @@ throws Exception
 					"This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
-	Vector TSList = (Vector)o;
+	List TSList = (List)o;
 	__tsengine.readTimeSeries2 ( TSList );
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
@@ -2584,13 +2584,13 @@ throws Exception
     __tsengine.removeTimeSeries ( Index.intValue() );
     // Remove the time series from ensembles and remove ensembles if empty.
     for ( int i = 0; i < __TSEnsemble_Vector.size(); i++ ) {
-        TSEnsemble ensemble = (TSEnsemble)__TSEnsemble_Vector.elementAt(i);
+        TSEnsemble ensemble = (TSEnsemble)__TSEnsemble_Vector.get(i);
         if ( ensemble.remove ( ts ) ) {
             // Time series was in the ensemble
             // Also remove empty ensembles
             if ( FreeEnsembleIfEmpty_Boolean.booleanValue() && (ensemble.size() == 0) ) {
                 Message.printStatus(2, routine, "Ensemble is empty, removing." );
-                __TSEnsemble_Vector.removeElementAt(i);
+                __TSEnsemble_Vector.remove(i);
             }
         }
     }
@@ -2613,7 +2613,7 @@ throws Exception
 			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
-	Vector commands = (Vector)o;
+	List commands = (List)o;
 	// Whether commands should create output...
 	Object o3 = request_params.getContents ( "CreateOutput" );
 	if ( o3 == null ) {
@@ -2692,7 +2692,7 @@ throws Exception
             bean.setWarningRecommendationText ( "This is likely a software code error.");
             throw new RequestParameterNotFoundException ( warning );
     }
-    Vector tslist = (Vector)o;
+    List tslist = (List)o;
     int size = tslist.size();
     TS tsi, tsj;
     for ( int i = 0; i < size; i++ ) {
@@ -2786,14 +2786,14 @@ throws Exception
     DataTable table;
     boolean found = false;
     for ( int i = 0; i < size; i++ ) {
-        table = (DataTable)__Table_Vector.elementAt(i);
+        table = (DataTable)__Table_Vector.get(i);
         if ( table.getTableID().equalsIgnoreCase(o_DataTable.getTableID())) {
-            __Table_Vector.setElementAt(o_DataTable, i);
+            __Table_Vector.set(i,o_DataTable);
             found = true;
         }
     }
     if ( !found ) {
-        __Table_Vector.addElement ( o_DataTable );
+        __Table_Vector.add ( o_DataTable );
     }
     // No data are returned in the bean.
     return bean;
@@ -3169,7 +3169,7 @@ empty string the units will not be converted.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList (	String fname, DateTime date1, DateTime date2,
+public List readTimeSeriesList ( String fname, DateTime date1, DateTime date2,
 					String req_units, boolean read_data )
 throws Exception
 {	return __tsengine.readTimeSeriesList ( fname, date1, date2, req_units, read_data );
@@ -3193,7 +3193,7 @@ empty string the units will not be converted.
 @return Vector of time series of appropriate type (e.g., MonthTS, HourTS).
 @exception Exception if an error occurs during the read.
 */
-public Vector readTimeSeriesList (	TSIdent tsident, String fname, DateTime date1, DateTime date2,
+public List readTimeSeriesList ( TSIdent tsident, String fname, DateTime date1, DateTime date2,
 					String req_units, boolean read_data )
 throws Exception {
 	return __tsengine.readTimeSeriesList ( tsident, fname, date1, date2, req_units, read_data );
@@ -3213,7 +3213,7 @@ Remove all commands.
 public void removeAllCommands ()
 {	int size = __Command_Vector.size();
 	if ( size > 0 ) {
-		__Command_Vector.removeAllElements ();
+		__Command_Vector.clear ();
 		notifyCommandListListenersOfRemove ( 0, size - 1 );
 	}
 }
@@ -3224,7 +3224,7 @@ Remove all ensembles.
 private void removeAllEnsembles ()
 {
     if ( __TSEnsemble_Vector != null ) {
-        __TSEnsemble_Vector.removeAllElements();
+        __TSEnsemble_Vector.clear();
     }
 }
 
@@ -3234,7 +3234,7 @@ Remove all pattern time series, for example at the start of a run.
 private void removeAllPatternTS ()
 {
     if ( __patternTS_Vector != null ) {
-        __patternTS_Vector.removeAllElements();
+        __patternTS_Vector.clear();
     }
 }
 
@@ -3244,7 +3244,7 @@ Remove a command at a position.
 */
 public void removeCommandAt ( int index )
 {	String routine = "TSCommandProcessor.removeCommandAt";
-	__Command_Vector.removeElementAt ( index );
+	__Command_Vector.remove ( index );
 	notifyCommandListListenersOfRemove ( index, index );
 	Message.printStatus(2, routine, "Remove command object at [" + index + "]" );
 }
@@ -3320,7 +3320,7 @@ reset before running.
 
 </table>
 */
-public void runCommands ( Vector commands, PropList props )
+public void runCommands ( List commands, PropList props )
 throws Exception
 {
     // Reset the global workflow properties if requested
@@ -3533,10 +3533,10 @@ public void setPropContents ( String prop, Object contents ) throws Exception
         __tsengine.setAverageStart ( (DateTime)contents );
     }
     else if ( prop.equalsIgnoreCase("DataTestList" ) ) {
-		__tsengine.setDataTestList ( (Vector)contents );
+		__tsengine.setDataTestList ( (List)contents );
 	}
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList" ) ) {
-		__tsengine.setHydroBaseDMIList ( (Vector)contents );
+		__tsengine.setHydroBaseDMIList ( (List)contents );
 	}
     else if ( prop.equalsIgnoreCase("IgnoreLEZero" ) ) {
         __tsengine.setIgnoreLEZero ( ((Boolean)contents).booleanValue() );
@@ -3569,7 +3569,7 @@ public void setPropContents ( String prop, Object contents ) throws Exception
         }
     }
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
-		__tsengine.setTimeSeriesList ( (Vector)contents );
+		__tsengine.setTimeSeriesList ( (List)contents );
 	}
     else if ( prop.equalsIgnoreCase("TSViewWindowListener") ) {
         __tsengine.addTSViewWindowListener((WindowListener)contents );

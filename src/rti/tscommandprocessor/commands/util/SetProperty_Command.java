@@ -135,7 +135,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "PropertyName" );
     valid_Vector.add ( "PropertyType" );
     valid_Vector.add ( "PropertyValue" );
@@ -182,7 +182,7 @@ public List getObjectList ( Class c )
     Prop prop = new Prop();
     // Check for TS request or class that matches the data...
     if ( c == prop.getClass() ) {
-        Vector v = new Vector (1);
+        List v = new Vector (1);
         v.add ( discovery_Prop );
         return v;
     }

@@ -19,6 +19,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import RTi.Util.Message.Message;
@@ -33,8 +34,6 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.String.StringUtil;
@@ -181,7 +180,7 @@ throws InvalidCommandParameterException
                         message, "Specify the columns to merge." ) );
 	}
 	else {	// Check for integers...
-		Vector v = StringUtil.breakStringList ( Columns, ",", 0 );
+		List v = StringUtil.breakStringList ( Columns, ",", 0 );
 		String token;
 		if ( v == null ) {
             message = "One or more columns must be specified";
@@ -193,7 +192,7 @@ throws InvalidCommandParameterException
 		else {	int size = v.size();
 			__Columns_intArray = new int[size];
 			for ( int i = 0; i < size; i++ ) {
-				token = (String)v.elementAt(i);
+				token = (String)v.get(i);
 				if ( !StringUtil.isInteger(token) ) {
                     message = "Column \"" + token + "\" is not a number";
 					warning += "\n" + message;
@@ -220,7 +219,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "ListFile" );
     valid_Vector.add ( "OutputFile" );
     valid_Vector.add ( "Columns" );
@@ -338,7 +337,7 @@ CommandWarningException, CommandException
 			SimpleMergeFormat2 += "%s";
 		}
 	}
-	else {	Vector v = StringUtil.breakStringList (	SimpleMergeFormat, ",", 0 );
+	else {	List v = StringUtil.breakStringList (	SimpleMergeFormat, ",", 0 );
 		int size = v.size();
 		if ( size != __Columns_intArray.length ) {
 			message +=
@@ -352,7 +351,7 @@ CommandWarningException, CommandException
                             message, "Verify that the number of format specifiers matches the columns to merge." ) );
 		}
 		else {	for ( int i = 0; i < size; i++ ) {
-				token = (String)v.elementAt(i);
+				token = (String)v.get(i);
 				if ( !StringUtil.isInteger(token) ) {
 					message += "\nThe format specifier \""+	token +	"\" is not an integer";
 					++warning_count;
@@ -416,12 +415,12 @@ CommandWarningException, CommandException
 	int size = table.getNumberOfRecords();
 	String merged;	// Merged column string
 	int mergedcol = table.getNumberOfFields() - 1;	// New at end
-	Vector v = new Vector ( __Columns_intArray.length );
+	List v = new Vector ( __Columns_intArray.length );
 	TableRecord rec = null;
 	String s;
 	int j;
 	for ( int i = 0; i < size; i++ ) {
-		v.removeAllElements();
+		v.clear();
 		try {	rec = table.getRecord(i);
 		}
 		catch ( Exception e ) {
@@ -438,7 +437,7 @@ CommandWarningException, CommandException
 		for ( j = 0; j < __Columns_intArray.length; j++ ) {
 			try {
                 s = (String)rec.getFieldValue(__Columns_intArray[j]);
-				v.addElement ( s );
+				v.add ( s );
 			}
 			catch ( Exception e ) {
 				message = "Error getting table field [" + i + "][" + j + "]";

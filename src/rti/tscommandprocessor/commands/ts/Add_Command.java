@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -154,7 +155,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "AddTSList" );
@@ -307,22 +308,22 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // removed as soon as commands have been migrated to the new syntax.
         //
         // Old syntax without named parameters.
-        Vector v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
         if ( (v == null) || (v.size() < 4) ) {
             message = "Syntax error in legacy command \"" + command_string +
                 "Expecting Add(TSID,HandleMissingHow,AddTSID,...";
             Message.printWarning ( warning_level, routine, message);
             throw new InvalidCommandSyntaxException ( message );
         }
-        String TSID = ((String)v.elementAt(1)).trim();
-        String HandleMissingHow = ((String)v.elementAt(2)).trim();
+        String TSID = ((String)v.get(1)).trim();
+        String HandleMissingHow = ((String)v.get(2)).trim();
         StringBuffer AddTSID = new StringBuffer();
         for ( int i = 3; i < v.size(); i++ ) {
             // Fourth and fifth fields optionally have analysis period...
             if ( i > 3 ) {
                 AddTSID.append(",");
             }
-            AddTSID.append(((String)v.elementAt(i)).trim());
+            AddTSID.append(((String)v.get(i)).trim());
         }
 
         // Set parameters and new defaults...
@@ -404,7 +405,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -417,7 +418,7 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -515,7 +516,7 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    Vector add_tslist = null;
+    List add_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + AddTSList +
         "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
@@ -528,7 +529,7 @@ CommandWarningException, CommandException
                 "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        add_tslist = (Vector)o_TSList2;
+        add_tslist = (List)o_TSList2;
         if ( add_tslist.size() == 0 ) {
             message = "No time series to add are available from processor GetTimeSeriesToProcess (TSList=\"" + AddTSList +
             "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\"";
@@ -669,7 +670,7 @@ CommandWarningException, CommandException
 		// Get the specific time series to add depending on the input parameters...
         
         TS tstoadd = null;  // Single time series to add
-        Vector tstoadd_list = new Vector(); // List of time series to add
+        List tstoadd_list = new Vector(); // List of time series to add
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
             // Processing a single time series.  Add all the time series to it
             // Reuse the same independent time series for all transfers...
@@ -684,7 +685,7 @@ CommandWarningException, CommandException
             if ( TSListType.ENSEMBLE_ID.equals(AddTSList) ) {
                 // Adding an ensemble to an ensemble so get the ensemble time series at the position...
                 tstoadd = getTimeSeriesToProcess ( its, add_tspos, command_tag, warning_count );
-                tstoadd_list.addElement( tstoadd );
+                tstoadd_list.add( tstoadd );
                 Message.printStatus(2, routine, "Adding ensemble time series \"" + tstoadd.getIdentifier() +
                         "\" to ensemble time series \"" + ts.getIdentifier() + "\".");
             }
@@ -713,14 +714,14 @@ CommandWarningException, CommandException
         
         TS add_ts;
         for ( int icheck = 0; icheck < tstoadd_list_size; icheck++ ) {
-            add_ts = (TS)add_tslist.elementAt(icheck);
+            add_ts = (TS)add_tslist.get(icheck);
             if ( add_ts == null ) {
                 continue;
             }
             else if ( add_ts == ts ) {
                 Message.printStatus(2, routine, "Removing \"" + add_ts.getIdentifier() +
                         "\" from add since it is same as the receiving time series." );
-                add_tslist.removeElementAt(icheck);
+                add_tslist.remove(icheck);
                 --icheck;
                 --tstoadd_list_size;
             }

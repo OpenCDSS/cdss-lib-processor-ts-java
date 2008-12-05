@@ -633,7 +633,7 @@ private void updateDataTypeChoices()
     		__DataType_JComboBox.add ( "Unavailable" );
     	}
     	else {
-    	    __DataType_JComboBox.setData ( StringUtil.toVector(availableDataTypes) );
+    	    __DataType_JComboBox.setData ( StringUtil.toList(availableDataTypes) );
     	}
     }
     catch ( Exception e ) {

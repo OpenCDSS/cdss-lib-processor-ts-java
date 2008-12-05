@@ -82,7 +82,7 @@ private TSEnsemble __tsensemble = null;
 List of time series read during discovery.  These are TS objects but with maintly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -330,7 +330,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     if ( _use_alias ) {
         valid_Vector.add ( "Alias" );
     }
@@ -391,7 +391,7 @@ private TSEnsemble getDiscoveryEnsemble()
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -401,11 +401,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+	List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_Vector;
@@ -416,8 +416,8 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-            Vector v = new Vector();
-            v.addElement ( ensemble );
+        	List v = new Vector();
+            v.add ( ensemble );
             return v;
         }
     }
@@ -700,7 +700,7 @@ throws InvalidCommandParameterException,
 	props.set("Read24HourAsDay=" + Read24HourAsDay);
 
 	// Read the NWS Card file.
-    Vector tslist = null;   // Keep the list of time series
+	List tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
         boolean read_data = true;
@@ -743,7 +743,7 @@ throws InvalidCommandParameterException,
                             CommandStatusType.WARNING, message,"Use the ReadNwsCard() command without the alias."));
                     }
                     for (int i = 0; i < tscount; i++) {
-                        ts = (TS)tslist.elementAt(i);
+                        ts = (TS)tslist.get(i);
                         ts.setAlias(Alias);
                     }
                 }
@@ -834,7 +834,7 @@ private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

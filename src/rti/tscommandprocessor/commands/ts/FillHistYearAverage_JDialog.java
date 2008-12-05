@@ -30,6 +30,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -230,10 +231,10 @@ private void initialize ( JFrame parent, Command command )
 
         JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	Vector tslist_Vector = new Vector();
-	tslist_Vector.addElement ( __command._AllTS );
-	tslist_Vector.addElement ( __command._AllMatchingTSID );
-	tslist_Vector.addElement ( __command._SelectedTS );
+        List tslist_Vector = new Vector();
+	tslist_Vector.add ( __command._AllTS );
+	tslist_Vector.add ( __command._AllMatchingTSID );
+	tslist_Vector.add ( __command._SelectedTS );
 	__TSList_JComboBox = new SimpleJComboBox(false);
 	__TSList_JComboBox.setData ( tslist_Vector );
 	__TSList_JComboBox.select ( 0 );
@@ -251,7 +252,7 @@ private void initialize ( JFrame parent, Command command )
 	// Allow edits...
 	__TSID_JComboBox = new SimpleJComboBox ( true );
 	
-	Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	if ( tsids == null ) {
@@ -260,12 +261,12 @@ private void initialize ( JFrame parent, Command command )
 	int size = tsids.size();
 	// Blank for default
 	if ( size > 0 ) {
-		tsids.insertElementAt ( "", 0 );
+		tsids.add ( 0, "" );
 	}
-	else {	tsids.addElement ( "" );
+	else {	tsids.add ( "" );
 	}
 	// Always allow a "*" to let all time series be filled (put at end)...
-	tsids.addElement ( "*" );
+	tsids.add ( "*" );
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
 	__TSID_JComboBox.addKeyListener ( this );

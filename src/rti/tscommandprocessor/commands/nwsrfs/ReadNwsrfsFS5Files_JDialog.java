@@ -26,6 +26,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -81,7 +82,7 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputEnd_JTextField,
 			__Units_JTextField;	// Units to return
 private JTextArea __command_JTextArea = null;
-private Vector __input_filter_JPanel_Vector = new Vector();
+private List __input_filter_JPanel_Vector = new Vector();
 private InputFilter_JPanel __input_filter_NWSRFS_FS5Files_JPanel = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up?
 private String __working_dir = null;	// Working directory.
@@ -349,7 +350,7 @@ private void initialize ( JFrame parent, Command command )
 			NWSRFS_TS_InputFilter_JPanel ();
        		JGUIUtil.addComponent(main_JPanel, __input_filter_NWSRFS_FS5Files_JPanel,
 				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement ( __input_filter_NWSRFS_FS5Files_JPanel);
+			__input_filter_JPanel_Vector.add ( __input_filter_NWSRFS_FS5Files_JPanel);
 			__input_filter_NWSRFS_FS5Files_JPanel.addEventListeners ( this );
 		}
 		catch ( Exception e ) {

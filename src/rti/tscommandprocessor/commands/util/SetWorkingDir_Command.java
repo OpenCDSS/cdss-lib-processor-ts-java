@@ -1,6 +1,7 @@
 package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -151,7 +152,7 @@ throws InvalidCommandParameterException
     }
 
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "WorkingDir" );
     valid_Vector.add ( "RunMode" );
     valid_Vector.add ( "RunOnOS" );
@@ -195,7 +196,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	else {
 	    // Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,
+		List tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 3 ) {
 			message =
@@ -203,8 +204,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String WorkingDir = ((String)tokens.elementAt(1)).trim();
-		String RunMode = ((String)tokens.elementAt(2)).trim();
+		String WorkingDir = ((String)tokens.get(1)).trim();
+		String RunMode = ((String)tokens.get(2)).trim();
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( WorkingDir.length() > 0 ) {

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -76,7 +77,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -172,7 +173,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
-	Vector tslist = (Vector)o_TSList;
+	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Zero time series in list to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
@@ -192,7 +193,7 @@ CommandWarningException, CommandException
     TS ts = null;
     for ( int i = 0; i < size; i++ ) {
         // Create a copy of the original, but with the new scenario.
-        ts = (TS)tslist.elementAt(i);
+        ts = (TS)tslist.get(i);
         // Now set the data...
         try {
             if ( (Description != null) && (Description.length() > 0) ) {

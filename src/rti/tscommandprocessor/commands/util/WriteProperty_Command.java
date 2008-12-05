@@ -137,14 +137,14 @@ throws InvalidCommandParameterException
 						message, "Specify a property name." ) );
 	}
 	else {
-		Vector valid_properties = new Vector(TSCommandProcessorUtil.getPropertyNameList(processor));
+		List valid_properties = new Vector(TSCommandProcessorUtil.getPropertyNameList(processor));
 		int size = 0;
 		if ( valid_properties != null ) {
 			size = valid_properties.size();
 		}
 		boolean found = false;
 		for ( int i = 0; i < size; i++ ) {
-			if ( PropertyName.equalsIgnoreCase((String)valid_properties.elementAt(i))) {
+			if ( PropertyName.equalsIgnoreCase((String)valid_properties.get(i))) {
 				found = true;
 				break;
 			}
@@ -168,7 +168,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "PropertyName" );
 	valid_Vector.add ( "Append" );
@@ -198,9 +198,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }

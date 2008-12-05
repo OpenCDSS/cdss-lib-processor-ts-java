@@ -18,6 +18,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -265,7 +266,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "NumberOfEquations" );
@@ -328,7 +329,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax (not free-format parameters)...
-		Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -356,31 +357,31 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String FillStart = "";
 		String FillEnd = "";
 		int ic = 1;   // Skip command name
-		TSID = ((String)v.elementAt(ic++)).trim();
-		IndependentTSID = ((String)v.elementAt(ic++)).trim();
-		NumberOfEquations=((String)v.elementAt(ic++)).trim();
-		Transformation = ((String)v.elementAt(ic++)).trim();
-		DependentAnalysisStart = ((String)v.elementAt(ic++)).trim();
+		TSID = ((String)v.get(ic++)).trim();
+		IndependentTSID = ((String)v.get(ic++)).trim();
+		NumberOfEquations=((String)v.get(ic++)).trim();
+		Transformation = ((String)v.get(ic++)).trim();
+		DependentAnalysisStart = ((String)v.get(ic++)).trim();
 		if ( DependentAnalysisStart.equals("*") ) {
 			DependentAnalysisStart = "";// Current default
 		}
-		DependentAnalysisEnd =((String)v.elementAt(ic++)).trim();
+		DependentAnalysisEnd =((String)v.get(ic++)).trim();
 		if ( DependentAnalysisEnd.equals("*") ) {
 			DependentAnalysisEnd = "";// Current default
 		}
-		IndependentAnalysisStart = ((String)v.elementAt(ic++)).trim();
+		IndependentAnalysisStart = ((String)v.get(ic++)).trim();
 		if ( IndependentAnalysisStart.equals("*") ) {
 			IndependentAnalysisStart = "";// Current default
 		}
-		IndependentAnalysisEnd =((String)v.elementAt(ic++)).trim();
+		IndependentAnalysisEnd =((String)v.get(ic++)).trim();
 		if ( IndependentAnalysisEnd.equals("*") ) {
 			IndependentAnalysisEnd = "";// Current default
 		}
-		FillStart = ((String)v.elementAt(ic++)).trim();
+		FillStart = ((String)v.get(ic++)).trim();
 		if ( FillStart.equals("*") ) {
 			FillStart = "";	// Current default.
 		}
-		FillEnd = ((String)v.elementAt(ic++)).trim();
+		FillEnd = ((String)v.get(ic++)).trim();
 		if ( FillEnd.equals("*") ) {
 			FillEnd = "";	// Current default.
 		}

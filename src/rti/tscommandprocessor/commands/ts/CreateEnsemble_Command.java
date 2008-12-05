@@ -161,7 +161,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -204,10 +204,10 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
-    Vector v = null;
+	List v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
         v = new Vector();
-        v.addElement ( tsensemble );
+        v.add ( tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }
     return v;
@@ -443,7 +443,7 @@ CommandWarningException, CommandException
 	
 	// Now try to process.
     
-    Vector tslist = null;
+    List tslist = null;
     try {
             TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
             tslist = util.getTracesFromTS ( ts, TraceLength,

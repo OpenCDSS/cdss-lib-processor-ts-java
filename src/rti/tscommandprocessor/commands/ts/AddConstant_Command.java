@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -117,7 +118,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -183,26 +184,26 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
-		Vector v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
+    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String ConstantValue = "";
 		String AnalysisStart = "";
 		String AnalysisEnd = "";
 		if ( (v != null) && (v.size() >= 3) ) {
 			// Second field is identifier...
-			TSID = ((String)v.elementAt(1)).trim();
+			TSID = ((String)v.get(1)).trim();
 			// Third field has constant value...
-            ConstantValue = ((String)v.elementAt(2)).trim();
+            ConstantValue = ((String)v.get(2)).trim();
 			// Fourth and fifth fields optionally have analysis period...
 			if ( v.size() >= 4 ) {
-				AnalysisStart = ((String)v.elementAt(3)).trim();
+				AnalysisStart = ((String)v.get(3)).trim();
 				if ( AnalysisStart.equals("*") ) {
 					// Change to new default...
 					AnalysisStart = "";
 				}
 			}
 			if ( v.size() >= 5 ) {
-				AnalysisEnd = ((String)v.elementAt(4)).trim();
+				AnalysisEnd = ((String)v.get(4)).trim();
 				if ( AnalysisEnd.equals("*") ) {
 					// Change to new default...
 					AnalysisEnd = "";
@@ -399,7 +400,7 @@ CommandWarningException, CommandException
     }
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -412,7 +413,7 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -457,7 +458,7 @@ CommandWarningException, CommandException
 	Object o_ts = null;
 	for ( int its = 0; its < nts; its++ ) {
 		// The the time series to process, from the list that was returned above.
-		o_ts = tslist.elementAt(its);
+		o_ts = tslist.get(its);
 		if ( o_ts == null ) {
 			message = "Time series to process is null.";
 			Message.printWarning(warning_level,

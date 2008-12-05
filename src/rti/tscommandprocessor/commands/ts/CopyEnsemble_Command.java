@@ -110,7 +110,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "NewEnsembleID" );
     valid_Vector.add ( "NewEnsembleName" );
     valid_Vector.add ( "EnsembleID" );
@@ -152,10 +152,10 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
-    Vector v = null;
+	List v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
         v = new Vector();
-        v.addElement ( tsensemble );
+        v.add ( tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }
     return v;

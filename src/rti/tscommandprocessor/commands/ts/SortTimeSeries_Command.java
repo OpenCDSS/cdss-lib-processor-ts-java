@@ -17,7 +17,7 @@
 
 package rti.tscommandprocessor.commands.ts;
 
-import java.util.Vector;
+import java.util.List;
 
 import javax.swing.JFrame;
 
@@ -116,14 +116,14 @@ throws CommandWarningException, CommandException
 {	String routine = "SortTimeSeries_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	Vector tslist = null;
+	List tslist = null;
 	
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
 	
 	try { Object o = processor.getPropContents ( "TSResultsList" );
-			tslist = (Vector)o;
+			tslist = (List)o;
 	}
 	catch ( Exception e ) {
 		// Not fatal, but of use to developers.
@@ -139,7 +139,7 @@ throws CommandWarningException, CommandException
 		Message.printStatus ( 2, routine,"No time series are available.  Not sorting." );
 	}
     else {
-        try {	Vector tslist_sorted = TSUtil.sort ( tslist );
+        try {	List tslist_sorted = TSUtil.sort ( tslist );
                 processor.setPropContents ( "TSResultsList", tslist_sorted );
         }
         catch ( Exception e ) {

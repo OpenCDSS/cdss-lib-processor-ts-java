@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.time;
 
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -73,7 +74,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputYearType" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -116,7 +117,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
         // TODO SAM 2008-07-08 This whole block of code needs to be
         // removed as soon as commands have been migrated to the new syntax.
-        Vector v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
             ntokens = v.size();
@@ -124,7 +125,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String OutputYearType = "";
         if ( ntokens >= 2 ) {
             // Output year type...
-            OutputYearType = ((String)v.elementAt(1)).trim();
+            OutputYearType = ((String)v.get(1)).trim();
         }
 
         // Set parameters and new defaults...

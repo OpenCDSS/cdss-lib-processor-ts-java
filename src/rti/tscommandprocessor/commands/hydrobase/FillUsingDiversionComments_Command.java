@@ -27,6 +27,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -183,7 +184,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
@@ -229,7 +230,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	int warning_level = 2;
 	int warning_count = 0;
 
-	Vector tokens = StringUtil.breakStringList ( command,"()", 0 );
+	List tokens = StringUtil.breakStringList ( command,"()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name, TSID
 		message = "Syntax error in \"" + command + "\".  Expecting FillUsingDiversionComments(...)";
@@ -239,7 +240,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 	// Get the input needed to process the file...
 	try {	setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.elementAt(1), routine, "," ) );
+			(String)tokens.get(1), routine, "," ) );
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command + "\".  Expecting FillUsingDiversionComments(...)";

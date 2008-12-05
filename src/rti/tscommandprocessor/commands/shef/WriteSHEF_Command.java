@@ -86,7 +86,7 @@ throws InvalidCommandParameterException
 	// Parse and check the data type to PE lookup.  Save the results for use later.
 	__DataTypePELookup.clear();
 	if ( (DataTypePELookup != null) && !DataTypePELookup.equals("") ) {
-	    Vector pairs = StringUtil.breakStringList(DataTypePELookup,";",0);
+		List pairs = StringUtil.breakStringList(DataTypePELookup,";",0);
 	    int pairsSize = 0;
 	    if ( pairs != null ) {
 	        pairsSize = pairs.size();
@@ -94,7 +94,7 @@ throws InvalidCommandParameterException
 	    for ( int i = 0; i < pairsSize; i++ ) {
 	        // Further break the pairs..
 	        String onePair = ((String)pairs.get(i)).trim();
-	        Vector pairParts = StringUtil.breakStringList(onePair,",",StringUtil.DELIM_SKIP_BLANKS);
+	        List pairParts = StringUtil.breakStringList(onePair,",",StringUtil.DELIM_SKIP_BLANKS);
 	        int pairPartsSize = 0;
 	        if ( pairParts != null ) {
 	            pairPartsSize = pairParts.size();
@@ -215,7 +215,7 @@ throws InvalidCommandParameterException
     */
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
 	valid_Vector.add ( "DataTypePELookup" );
@@ -240,9 +240,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -262,7 +262,7 @@ the contents as is otherwise.
 @param tslist List of time series, from which to extract data types.
 @param peList list of PE values (strings) corresponding to the time series data types.
  */
-private void getPEForTimeSeries ( Vector tslist, Vector peList )
+private void getPEForTimeSeries ( List tslist, List peList )
 {   String routine = "WriteSHEF_Command.getPEForTimeSeries";
     int size = 0;
     if ( tslist != null ) {
@@ -274,7 +274,7 @@ private void getPEForTimeSeries ( Vector tslist, Vector peList )
         if ( pe != null ) {
             Message.printStatus(2, routine, "Using user-specified PE code \"" + pe +
                     "\" for data type \"" + ts.getDataType() + "\"" );
-            peList.setElementAt(pe, i);
+            peList.set(i,pe);
         }
     }
 }
@@ -348,7 +348,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -359,7 +359,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report to software support." ) );
 	}
-	else {	tslist = (Vector)o_TSList;
+	else {	tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -539,9 +539,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         */
 
 		try {	
-            Vector units_Vector = null;
+			List units_Vector = null;
             // Get PE code from global information...
-            Vector PE_Vector = ShefATS.getPEForTimeSeries ( tslist );
+			List PE_Vector = ShefATS.getPEForTimeSeries ( tslist );
             // Get PE code from parameter
             getPEForTimeSeries ( tslist, PE_Vector );
             for ( int i = 0; i < tslist.size(); i++ ) {
@@ -557,8 +557,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                                     message, "Check log file for details." ) );
                 }
             }
-            Vector Duration_Vector = null;
-            Vector AltID_Vector = null;
+            List Duration_Vector = null;
+            List AltID_Vector = null;
             PropList shef_props = new PropList ( "SHEF" );
             shef_props.set ( "HourMax=24" );
             ShefATS.writeTimeSeriesList ( tslist,

@@ -280,7 +280,7 @@ throws InvalidCommandParameterException
 	*/
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     /*
     if ( _use_alias ) {
         valid_Vector.add ( "TSID" );
@@ -576,7 +576,7 @@ throws IOException, FileNotFoundException
     // FIXME SAM 2008-02-01 Need a way to assemble time series without reading the data, for discovery mode.
     TS[] ts = assembler.assemble();
     // Transfer to a Vector that adheres to the List interface...
-    Vector tslist = new Vector(ts.length);
+    List tslist = new Vector(ts.length);
     for ( int i = 0; i < ts.length; i++ ) {
         ts[i].setDataUnitsOriginal ( (String)Units_List.get(i) );
         ts[i].setDataUnits ( (String)Units_List.get(i) );

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
 
@@ -72,7 +73,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "IncludeMissingTS" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -115,7 +116,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
         // TODO SAM 2008-07-08 This whole block of code needs to be
         // removed as soon as commands have been migrated to the new syntax.
-        Vector v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
             ntokens = v.size();
@@ -123,7 +124,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String IncludeMissingTS = "";
         if ( ntokens >= 2 ) {
             // Output year type...
-            IncludeMissingTS = ((String)v.elementAt(1)).trim();
+            IncludeMissingTS = ((String)v.get(1)).trim();
         }
 
         // Set parameters and new defaults...

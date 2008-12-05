@@ -65,10 +65,10 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
-List of time series read during discovery.  These are TS objects but with maintly the
+List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private Vector __discovery_TS_Vector = null;
+private List __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used...
@@ -217,7 +217,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "InputStart" );
@@ -244,7 +244,7 @@ be used by StateDMI commands that read or write the file.
 @param tslist List of StateCU_IrrigationPracticeTS to check.
 @param status CommandStatus to append check warnings.
 */
-private void checkIrrigationPracticeTS ( Vector tslist, CommandStatus status )
+private void checkIrrigationPracticeTS ( List tslist, CommandStatus status )
 {	
 	int size = 0;
 	if ( tslist != null ) {
@@ -269,7 +269,7 @@ private void checkIrrigationPracticeTS ( Vector tslist, CommandStatus status )
 	String id;
 	double calculated_total;	// Calculated total of parts.
 	for ( int i = 0; i < size; i++ ) {
-		ipy_ts = (StateCU_IrrigationPracticeTS)tslist.elementAt(i);
+		ipy_ts = (StateCU_IrrigationPracticeTS)tslist.get(i);
 		id = ipy_ts.getID();
 		AcresSWFlood_yts = ipy_ts.getAcswflTS();
 		AcresSWSprinkler_yts = ipy_ts.getAcswsprTS();
@@ -339,7 +339,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Return the list of time series read in discovery phase.
 */
-private Vector getDiscoveryTSList ()
+private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -349,11 +349,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    Vector discovery_TS_Vector = getDiscoveryTSList ();
+    List discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.elementAt(0);
+    TS datats = (TS)discovery_TS_Vector.get(0);
     // Use the most generic for the base class...
     TS ts = new TS();
     if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
@@ -589,7 +589,7 @@ CommandWarningException, CommandException
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
         Message.printStatus ( 2, routine, "Reading StateCU file \"" + InputFile_full + "\"" );
-		Vector tslist = null;
+		List tslist = null;
 		String file_type = "unknown file type";
 		if ( StateCU_CropPatternTS.isCropPatternTSFile ( InputFile_full ) ) {
 			file_type = "crop pattern";
@@ -598,7 +598,7 @@ CommandWarningException, CommandException
 				read_props = new PropList ( "CDS" );
 				read_props.set ( "AutoAdjust", AutoAdjust );
 			}
-			tslist = StateCU_CropPatternTS.toTSVector(
+			tslist = StateCU_CropPatternTS.toTSList(
 				StateCU_CropPatternTS.readStateCUFile (
 				InputFile_full, InputStart_DateTime, InputEnd_DateTime,
 				read_props ),
@@ -612,10 +612,10 @@ CommandWarningException, CommandException
 			// Clear the status...
 			status.clearLog(command_phase);
 			try {
-			    Vector ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
+				List ipylist = StateCU_IrrigationPracticeTS.readStateCUFile (
 					InputFile_full, InputStart_DateTime, InputEnd_DateTime );
 					// Get the individual time series for use by TSTool.
-					tslist = StateCU_IrrigationPracticeTS.toTSVector(
+					tslist = StateCU_IrrigationPracticeTS.toTSList(
 							ipylist, IncludeDataSetTotal_boolean, null, null );
 					if ( CheckData_boolean ) {
 						// Check the time series for integrity (acreage adds, etc.)...
@@ -666,7 +666,7 @@ CommandWarningException, CommandException
 		if ( (NewScenario != null) && (NewScenario.length() > 0) ) {
 			TS ts = null;
 			for ( int i = 0; i < size; i++ ) {
-				ts = (TS)tslist.elementAt(i);
+				ts = (TS)tslist.get(i);
 				ts.getIdentifier().setScenario(NewScenario);
 			}
 		}
@@ -739,7 +739,7 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( Vector discovery_TS_Vector )
+private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

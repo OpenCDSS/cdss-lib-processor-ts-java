@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.time;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -114,7 +115,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "AverageStart" );
 	valid_Vector.add ( "AverageEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -159,15 +160,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	else {
 		// TODO SAM 2005-04-29 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new syntax.
-		Vector tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
+		List tokens = StringUtil.breakStringList ( command,"(,)", StringUtil.DELIM_SKIP_BLANKS );
 		if ( (tokens == null) || (tokens.size() != 3) ) {
 			throw new InvalidCommandSyntaxException ("Bad command \"" + command + "\"" );
 		}
-		AverageStart = ((String)tokens.elementAt(1)).trim();
+		AverageStart = ((String)tokens.get(1)).trim();
 		if ( AverageStart.equals("*") ) {	// Phase out old style
 			AverageStart = "";
 		}
-		AverageEnd = ((String)tokens.elementAt(2)).trim();
+		AverageEnd = ((String)tokens.get(2)).trim();
 		if ( AverageEnd.equals("*") ) {	// Phase out old style
 			AverageEnd = "";
 		}

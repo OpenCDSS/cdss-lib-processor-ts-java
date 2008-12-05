@@ -2,6 +2,7 @@ package rti.tscommandprocessor.ui;
 
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.util.List;
 import java.util.Vector;
 
 import java.awt.event.ItemListener;
@@ -32,7 +33,7 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-        JPanel panel, JLabel label, SimpleJComboBox choices, Vector EnsembleIDs, int y )
+        JPanel panel, JLabel label, SimpleJComboBox choices, List EnsembleIDs, int y )
 {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, label,
@@ -44,10 +45,10 @@ public static int addEnsembleIDToEditorDialogPanel ( ItemListener itemlistener, 
     size = EnsembleIDs.size();
     // Blank for default (not used)
     if ( size > 0 ) {
-        EnsembleIDs.insertElementAt ( "", 0 );
+        EnsembleIDs.add ( 0, "" );
     }
     else {
-        EnsembleIDs.addElement ( "" );
+        EnsembleIDs.add ( "" );
     }
     choices.setData ( EnsembleIDs );
     if ( itemlistener != null ) {
@@ -72,7 +73,7 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-        JPanel panel, JLabel label, SimpleJComboBox choices, Vector tsids, int y )
+        JPanel panel, JLabel label, SimpleJComboBox choices, List tsids, int y )
 {
     return addTSIDToEditorDialogPanel ( itemlistener, keylistener,
             panel, label, choices, tsids, y, true );
@@ -90,7 +91,7 @@ It is assumed that GridBagLayout is used for the layout.
 @return Incremented y reflecting the addition of a new vertical component group.
 */
 public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyListener keylistener,
-        JPanel panel, JLabel label, SimpleJComboBox choices, Vector tsids, int y, boolean add_asterisk )
+        JPanel panel, JLabel label, SimpleJComboBox choices, List tsids, int y, boolean add_asterisk )
 {
     Insets insetsTLBR = new Insets(2,2,2,2);
     JGUIUtil.addComponent(panel, label,
@@ -102,14 +103,14 @@ public static int addTSIDToEditorDialogPanel ( ItemListener itemlistener, KeyLis
     size = tsids.size();
     // Blank for default
     if ( size > 0 ) {
-        tsids.insertElementAt ( "", 0 );
+        tsids.add ( 0, "" );
     }
     else {
-        tsids.addElement ( "" );
+        tsids.add ( "" );
     }
     if ( add_asterisk ) {
         // Add a "*" to let all time series be filled (put at end)...
-        tsids.addElement ( "*" );
+        tsids.add ( "*" );
     }
     choices.setData ( tsids );
     if ( itemlistener != null ) {
@@ -205,14 +206,14 @@ public static int addTSListToEditorDialogPanel (
         label = new JLabel ("TS list:");
     }
     JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    Vector TSList_Vector = new Vector();
-    TSList_Vector.addElement ( "" );
-    TSList_Vector.addElement ( TSListType.ALL_MATCHING_TSID.toString() );
-    TSList_Vector.addElement ( TSListType.ALL_TS.toString() );
-    TSList_Vector.addElement ( TSListType.ENSEMBLE_ID.toString() );
-    TSList_Vector.addElement ( TSListType.FIRST_MATCHING_TSID.toString() );
-    TSList_Vector.addElement ( TSListType.LAST_MATCHING_TSID.toString() );
-    TSList_Vector.addElement ( TSListType.SELECTED_TS.toString() );
+    List TSList_Vector = new Vector();
+    TSList_Vector.add ( "" );
+    TSList_Vector.add ( TSListType.ALL_MATCHING_TSID.toString() );
+    TSList_Vector.add ( TSListType.ALL_TS.toString() );
+    TSList_Vector.add ( TSListType.ENSEMBLE_ID.toString() );
+    TSList_Vector.add ( TSListType.FIRST_MATCHING_TSID.toString() );
+    TSList_Vector.add ( TSListType.LAST_MATCHING_TSID.toString() );
+    TSList_Vector.add ( TSListType.SELECTED_TS.toString() );
     
     choices.setData ( TSList_Vector );
     choices.addItemListener (dialog);

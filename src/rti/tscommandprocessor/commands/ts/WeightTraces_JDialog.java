@@ -12,7 +12,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.Vector;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -199,12 +199,12 @@ Get the weights string from the GUI components.  The returned string has the for
 private String getWeights()
 {
     StringBuffer weights = new StringBuffer();
-    Vector Year_Vector = StringUtil.breakStringList ( __Year_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
+    List Year_Vector = StringUtil.breakStringList ( __Year_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
     int Year_size = 0;
     if ( Year_Vector != null ) {
         Year_size = Year_Vector.size();
     }
-    Vector Weight_Vector = StringUtil.breakStringList ( __Weight_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
+    List Weight_Vector = StringUtil.breakStringList ( __Weight_JTextArea.getText().trim(), ", \n", StringUtil.DELIM_SKIP_BLANKS );
     int Weight_size = 0;
     if ( Weight_Vector != null ) {
         Weight_size = Weight_Vector.size();
@@ -218,13 +218,13 @@ private String getWeights()
             weights.append ( "," );
         }
         if ( i < Year_size ) {
-            weights.append ( "" + Year_Vector.elementAt(i) + ",");
+            weights.append ( "" + Year_Vector.get(i) + ",");
         }
         else {
             weights.append ( "," );
         }
         if ( i < Weight_size ) {
-            weights.append ( "" + Weight_Vector.elementAt(i) );
+            weights.append ( "" + Weight_Vector.get(i) );
         }
     }
     return weights.toString();
@@ -267,7 +267,7 @@ private void initialize ( JFrame parent, Command command )
 
     JLabel EnsembleID_JLabel = new JLabel ("Ensemble to process:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -428,7 +428,7 @@ private void refresh ()
     				SpecifyWeightsHow + "\".\nSelect a different type or Cancel." );
     		}
         }
-        Vector v = StringUtil.breakStringList ( Weights, ",", StringUtil.DELIM_SKIP_BLANKS );
+        List v = StringUtil.breakStringList ( Weights, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size = 0;
         if ( v != null ) {
             size = v.size();
@@ -439,14 +439,14 @@ private void refresh ()
     			if ( i != 0 ) {
     				__Year_JTextArea.append ( "\n" );
     			}
-    			__Year_JTextArea.append ( (String)v.elementAt(i) );
+    			__Year_JTextArea.append ( (String)v.get(i) );
 		    }
 		    else {
 		        // Weight
 				if ( i != 1 ) {
 					__Weight_JTextArea.append ( "\n" );
 				}
-				__Weight_JTextArea.append (	(String)v.elementAt(i) );
+				__Weight_JTextArea.append (	(String)v.get(i) );
 			}
 		}
         if ( NewTSID != null ) {

@@ -37,7 +37,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.Vector;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -440,14 +440,14 @@ private void refresh ()
 	String WarnIfSame = "";
 	if ( __first_time ) {
 		__first_time = false;
-		Vector v = StringUtil.breakStringList (
+		List v = StringUtil.breakStringList (
 			__command.toString(),"()",
 			StringUtil.DELIM_SKIP_BLANKS );
 		PropList props = null;
 		if (	(v != null) && (v.size() > 1) &&
-			(((String)v.elementAt(1)).indexOf("=") > 0) ) {
+			(((String)v.get(1)).indexOf("=") > 0) ) {
 			props = PropList.parse (
-				(String)v.elementAt(1), routine, "," );
+				(String)v.get(1), routine, "," );
 		}
 		if ( props == null ) {
 			props = new PropList ( __command.getCommandName() );

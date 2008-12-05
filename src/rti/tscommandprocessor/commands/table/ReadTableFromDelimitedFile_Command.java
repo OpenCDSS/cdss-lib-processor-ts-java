@@ -171,7 +171,7 @@ throws InvalidCommandParameterException
 	// TODO SAM 2005-11-18 Check the format.
     
 	//  Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "SkipRows" );
@@ -199,13 +199,13 @@ private String convertNumberSequenceToZeroOffset ( String sequence_param )
         return sequence_param;
     }
     StringBuffer b = new StringBuffer();
-    Vector v = StringUtil.breakStringList ( sequence_param, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    List v = StringUtil.breakStringList ( sequence_param, ", ", StringUtil.DELIM_SKIP_BLANKS );
     int vsize = 0;
     if ( v != null ) {
         vsize = v.size();
     }
     for ( int i = 0; i < vsize; i++ ) {
-        String vi = (String)v.elementAt(i);
+        String vi = (String)v.get(i);
         if ( i != 0 ) {
             b.append (",");
         }
@@ -259,10 +259,10 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-    Vector v = null;
+List v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new Vector();
-        v.addElement ( table );
+        v.add ( table );
     }
     return v;
 }
@@ -456,9 +456,8 @@ CommandWarningException, CommandException
     if ( command_phase == CommandPhaseType.RUN ) {
         PropList request_params = new PropList ( "" );
         request_params.setUsingObject ( "Table", table );
-        CommandProcessorRequestResultsBean bean = null;
         try {
-            bean = processor.processRequest( "SetTable", request_params);
+            processor.processRequest( "SetTable", request_params);
         }
         catch ( Exception e ) {
             message = "Error requesting SetTable(Table=...) from processor.";

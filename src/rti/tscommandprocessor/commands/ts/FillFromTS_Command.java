@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -159,7 +160,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -289,7 +290,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax where the paramters are TSID,IndependentTSID,FillStart,FillEnd,TransferHow
-		Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -304,10 +305,10 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Get the individual tokens of the expression...
 
-		String TSID = ((String)v.elementAt(1)).trim();
-        String IndependentTSID = ((String)v.elementAt(2)).trim();
-		String FillStart = ((String)v.elementAt(3)).trim();
-        String FillEnd = ((String)v.elementAt(4)).trim();
+		String TSID = ((String)v.get(1)).trim();
+        String IndependentTSID = ((String)v.get(2)).trim();
+		String FillStart = ((String)v.get(3)).trim();
+        String FillEnd = ((String)v.get(4)).trim();
         // This parameter is of the format TransferData=...
         //String TransferHow = StringUtil.getToken(((String)v.elementAt(5)).trim(),"=",0,1);
 
@@ -461,7 +462,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -474,7 +475,7 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -556,7 +557,7 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    Vector independent_tslist = null;
+    List independent_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + IndependentTSList +
         "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\").";
@@ -569,7 +570,7 @@ CommandWarningException, CommandException
                 "Verify that the IndependentTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        independent_tslist = (Vector)o_TSList2;
+        independent_tslist = (List)o_TSList2;
         if ( independent_tslist.size() == 0 ) {
             message = "No independent time series are available from processor GetTimeSeriesToProcess (TSList=\"" + IndependentTSList +
             "\" TSID=\"" + IndependentTSID + "\", EnsembleID=\"" + IndependentEnsembleID + "\").";

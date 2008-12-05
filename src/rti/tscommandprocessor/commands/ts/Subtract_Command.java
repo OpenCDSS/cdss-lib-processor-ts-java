@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -154,7 +155,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "SubtractTSList" );
@@ -303,22 +304,22 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         // removed as soon as commands have been migrated to the new syntax.
         //
         // Old syntax without named parameters.
-        Vector v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_ALLOW_STRINGS );
         if ( (v == null) || (v.size() < 4) ) {
             message = "Syntax error in legacy command \"" + command_string +
                 "Expecting Subract(TSID,HandleMissingHow,SubtractTSID,...";
             Message.printWarning ( warning_level, routine, message);
             throw new InvalidCommandSyntaxException ( message );
         }
-        String TSID = ((String)v.elementAt(1)).trim();
-        String HandleMissingHow = ((String)v.elementAt(2)).trim();
+        String TSID = ((String)v.get(1)).trim();
+        String HandleMissingHow = ((String)v.get(2)).trim();
         StringBuffer SubtractTSID = new StringBuffer();
         for ( int i = 3; i < v.size(); i++ ) {
             // Fourth and fifth fields optionally have analysis period...
             if ( i > 3 ) {
                 SubtractTSID.append(",");
             }
-            SubtractTSID.append(((String)v.elementAt(i)).trim());
+            SubtractTSID.append(((String)v.get(i)).trim());
         }
 
         // Set parameters and new defaults...
@@ -400,7 +401,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -413,7 +414,7 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -511,7 +512,7 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    Vector subtract_tslist = null;
+    List subtract_tslist = null;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + SubtractTSList +
         "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
@@ -524,7 +525,7 @@ CommandWarningException, CommandException
                 "Verify that the SubtractTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        subtract_tslist = (Vector)o_TSList2;
+        subtract_tslist = (List)o_TSList2;
         if ( subtract_tslist.size() == 0 ) {
             message = "No time series to subtract are available from processor GetTimeSeriesToProcess (TSList=\"" + SubtractTSList +
             "\" TSID=\"" + SubtractTSID + "\", EnsembleID=\"" + SubtractEnsembleID + "\".";
@@ -665,7 +666,7 @@ CommandWarningException, CommandException
 		// Get the specific time series to subtract depending on the input parameters...
         
         TS tstosubtract = null;  // Single time series to subtract
-        Vector tstosubtract_list = new Vector(); // List of time series to subtract
+        List tstosubtract_list = new Vector(); // List of time series to subtract
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
             // Processing a single time series.  Subtract all the time series from it
             // Reuse the same independent time series for all transfers...
@@ -680,7 +681,7 @@ CommandWarningException, CommandException
             if ( TSListType.ENSEMBLE_ID.equals(SubtractTSList) ) {
                 // Subtracting an ensemble from an ensemble so get the ensemble time series at the position...
                 tstosubtract = getTimeSeriesToProcess ( its, subtract_tspos, command_tag, warning_count );
-                tstosubtract_list.addElement( tstosubtract );
+                tstosubtract_list.add( tstosubtract );
                 Message.printStatus(2, routine, "Subtracting ensemble time series \"" + tstosubtract.getIdentifier() +
                         "\" from ensemble time series \"" + ts.getIdentifier() + "\".");
             }
@@ -709,14 +710,14 @@ CommandWarningException, CommandException
         
         TS subtract_ts;
         for ( int icheck = 0; icheck < tstosubtract_list_size; icheck++ ) {
-            subtract_ts = (TS)subtract_tslist.elementAt(icheck);
+            subtract_ts = (TS)subtract_tslist.get(icheck);
             if ( subtract_ts == null ) {
                 continue;
             }
             else if ( subtract_ts == ts ) {
                 Message.printStatus(2, routine, "Removing \"" + subtract_ts.getIdentifier() +
                         "\" from subtract since it is same as the receiving time series." );
-                subtract_tslist.removeElementAt(icheck);
+                subtract_tslist.remove(icheck);
                 --icheck;
                 --tstosubtract_list_size;
             }

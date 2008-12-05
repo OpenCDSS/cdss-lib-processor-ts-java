@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
+import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
@@ -27,7 +28,6 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
@@ -112,7 +112,7 @@ throws InvalidCommandParameterException
     // a is optional
     if ( (a != null) && !a.equals("") ) {
         // Make sure coefficients are doubles...
-        Vector aVector = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
+    	List aVector = StringUtil.breakStringList ( a, ", ", StringUtil.DELIM_SKIP_BLANKS );
         int aSize = 0;
         if ( aVector != null ) {
             aSize = aVector.size();
@@ -120,7 +120,7 @@ throws InvalidCommandParameterException
         __a = new double[aSize];
         String aVal;
         for ( int i = 0; i < aSize; i++ ) {
-            aVal = ((String)aVector.elementAt(i)).trim();
+            aVal = ((String)aVector.get(i)).trim();
             if ( !StringUtil.isDouble(aVal)) {
                 message = "The a-coefficient " + aVal + " is not a number.";
                 warning += "\n" + message;
@@ -144,7 +144,7 @@ throws InvalidCommandParameterException
     else {
         if ( (b != null) && !b.equals("") ) {
             // Make sure coefficients are doubles...
-            Vector bVector = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
+        	List bVector = StringUtil.breakStringList ( b, ", ", StringUtil.DELIM_SKIP_BLANKS );
             int bSize = 0;
             if ( bVector != null ) {
                 bSize = bVector.size();
@@ -152,7 +152,7 @@ throws InvalidCommandParameterException
             __b = new double[bSize];
             String bVal;
             for ( int i = 0; i < bSize; i++ ) {
-                bVal = ((String)bVector.elementAt(i)).trim();
+                bVal = ((String)bVector.get(i)).trim();
                 if ( !StringUtil.isDouble(bVal)) {
                     message = "The b-coefficient " + bVal + " is not a number.";
                     warning += "\n" + message;
@@ -199,7 +199,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-    Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -251,7 +251,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
 		// TODO SAM 2009-09-15 This whole block of code needs to be
 		// removed as soon as commands have been migrated to the new syntax.
-		Vector v = StringUtil.breakStringList(command_string,
+    	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |	StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
@@ -267,25 +267,25 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 		// Get the individual tokens of the expression...
 
-		String TSID = ((String)v.elementAt(1)).trim();
-		String ARMAInterval = ((String)v.elementAt(2)).trim();
-		String p = ((String)v.elementAt(3)).trim();
+		String TSID = ((String)v.get(1)).trim();
+		String ARMAInterval = ((String)v.get(2)).trim();
+		String p = ((String)v.get(3)).trim();
 		StringBuffer a = new StringBuffer();
 		int aSize = StringUtil.atoi(p.substring(1));
 		for ( int i = 0; i < aSize; i++ ) {
 		    if ( i > 0 ) {
 		        a.append(",");
 		    }
-		    a.append((String)v.elementAt(4+i));
+		    a.append((String)v.get(4+i));
 		}
-		String q = ((String)v.elementAt(4 + aSize)).trim();
+		String q = ((String)v.get(4 + aSize)).trim();
         StringBuffer b = new StringBuffer();
         int bSize = StringUtil.atoi(q.substring(1)) + 1;
         for ( int i = 0; i < bSize; i++ ) {
             if ( i > 0 ) {
                 b.append(",");
             }
-            b.append((String)v.elementAt(4+aSize+1+i));
+            b.append((String)v.get(4+aSize+1+i));
         }
 
 		// Set parameters and new defaults...
@@ -367,7 +367,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	Vector tslist = null;
+	List tslist = null;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -380,7 +380,7 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";

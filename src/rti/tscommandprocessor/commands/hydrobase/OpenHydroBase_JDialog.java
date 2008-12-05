@@ -53,6 +53,7 @@ import java.awt.Insets;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JDialog;
@@ -138,7 +139,7 @@ private SimpleJComboBox	__UseStoredProcedures_JComboBox=null;
 private boolean		__error_wait = false;
 private boolean		__first_time = true;
 
-private Vector		__available_OdbcDsn = null;	// Available ODBC DSN to list.
+private List		__available_OdbcDsn = null;	// Available ODBC DSN to list.
 private OpenHydroBase_Command __command = null;	// Command to edit
 private boolean		__ok = false;		// Indicates whether the user
 						// has pressed OK to close the
@@ -396,14 +397,14 @@ private void initialize ( JFrame parent, Command command )
 	int size = __available_OdbcDsn.size();
 	String s = null;
 	for (int i = 0; i < size; i++) {
-		s = (String)__available_OdbcDsn.elementAt(i);
+		s = (String)__available_OdbcDsn.get(i);
 		if (StringUtil.indexOfIgnoreCase(s, "HydroBase", 0) < 0) {
-			__available_OdbcDsn.removeElementAt(i--);
+			__available_OdbcDsn.remove(i--);
 			--size;
 		}
 	}
 	// Always have a blank at the beginning...
-	__available_OdbcDsn.insertElementAt ( "", 0 );
+	__available_OdbcDsn.add ( 0, "" );
 	__OdbcDsn_JComboBox.setData ( __available_OdbcDsn );
 	__OdbcDsn_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OdbcDsn_JComboBox,
@@ -820,10 +821,10 @@ private void retrieveDatabaseNames(String server) {
 	
 		Connection c = dmi.getConnection();
 		DatabaseMetaData dmd = c.getMetaData();
-		Vector v = DMIUtil.processResultSet(dmd.getCatalogs());
+		List v = DMIUtil.processResultSet(dmd.getCatalogs());
 		dmi.close();
 		__DatabaseName_JComboBox.removeAllItems();
-		Vector v2 = null;
+		List v2 = null;
 		int size = v.size();
 
 		if (size == 0) {
@@ -836,10 +837,10 @@ private void retrieveDatabaseNames(String server) {
 		
 		s = null;
 		int count = 0;
-		Vector v3 = new Vector();
+		List v3 = new Vector();
 		for (i = 0; i < size; i++) {
-			v2 = (Vector)v.elementAt(i);
-			s = (String)v2.elementAt(0);
+			v2 = (List)v.get(i);
+			s = (String)v2.get(0);
 			s = s.trim();
 
 			// only add those database that start with "HydroBase"
@@ -883,7 +884,7 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-Vector __serverNames = null;
+List __serverNames = null;
 
 /**
 Reads the configuration file.
@@ -927,12 +928,12 @@ private void readConfigurationFile() {
 	int size = __serverNames.size();
 	String s = null;
 	for (int i = 0; i < size; i++) {
-		s = (String)__serverNames.elementAt(i);
+		s = (String)__serverNames.get(i);
 		if (s.equalsIgnoreCase("local")) {
 			s = IOUtil.getProgramHost();
 		}
 		s = s.toLowerCase().trim();
-		__serverNames.setElementAt(s, i);
+		__serverNames.set(i,s);
 	}
 
 	__serverNames = StringUtil.sortStringList(__serverNames);

@@ -21,6 +21,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import java.util.List;
 import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
@@ -213,9 +214,9 @@ throws Throwable
 /**
 Put together a list of row/column numbers (a list of numbers) for use in choices.
 */
-private Vector getRowNumberList ()
+private List getRowNumberList ()
 {
-    Vector v = new Vector();
+	List v = new Vector();
     v.add( "");
     for ( int i = 1; i <= 200; i++ ) {
         v.add("" + i);
@@ -265,13 +266,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    Vector tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    Vector EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -279,7 +280,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table ID for year sequence:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     // Allow edits...
-    Vector tableids = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+    List tableids = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     __TableID_JComboBox = new SimpleJComboBox ( true );
     if ( tableids == null ) {
@@ -627,7 +628,7 @@ private void response ( boolean ok )
 Set the table column data based on the selected table.
 */
 private void setTableColumnData ( String selected_tableid )
-{   Vector column_names = TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand(
+{   List column_names = TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command, __TableID_JComboBox.getSelected(), false );
     __TableColumn_JComboBox.setData ( column_names );
     if ( column_names.size() > 0 ) {

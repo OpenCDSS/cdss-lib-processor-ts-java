@@ -217,7 +217,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+	List valid_Vector = new Vector();
 	valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
 	valid_Vector.add ( "OutputFile" );
@@ -226,7 +226,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "Set_scale" );
 	valid_Vector.add ( "Precision" );
 	valid_Vector.add ( "Set_units" );
-	Vector warning_Vector = null;
+	List warning_Vector = null;
 	try {	warning_Vector = parameters.validatePropNames (
 			valid_Vector, null, null, "parameter" );
 	}
@@ -238,8 +238,8 @@ throws InvalidCommandParameterException
 		int size = warning_Vector.size();
 		StringBuffer b = new StringBuffer();
 		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.elementAt (i);
-			b.append ( (String)warning_Vector.elementAt(i));
+			warning += "\n" + (String)warning_Vector.get (i);
+			b.append ( (String)warning_Vector.get(i));
 		}
 		status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.WARNING,
@@ -271,9 +271,9 @@ Return the list of files that were created by this command.
 */
 public List getGeneratedFileList ()
 {
-	Vector list = new Vector();
+	List list = new Vector();
 	if ( getOutputFile() != null ) {
-		list.addElement ( getOutputFile() );
+		list.add ( getOutputFile() );
 	}
 	return list;
 }
@@ -304,7 +304,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		super.parseCommand ( command_string );
 	}
 	else {	// Parse the old command...
-		Vector tokens = StringUtil.breakStringList ( command_string,
+		List tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 6 ) {
 			message =
@@ -312,17 +312,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String OutputFile = ((String)tokens.elementAt(1)).trim();
-		String Units = ((String)tokens.elementAt(2)).trim();
+		String OutputFile = ((String)tokens.get(1)).trim();
+		String Units = ((String)tokens.get(2)).trim();
 		if ( Units.equals("*") ) {
 			Units = "";
 		}
-		String Scale = ((String)tokens.elementAt(3)).trim();
-		String SetUnits = ((String)tokens.elementAt(4)).trim();
+		String Scale = ((String)tokens.get(3)).trim();
+		String SetUnits = ((String)tokens.get(4)).trim();
 		if ( SetUnits.equals("*") ) {
 			SetUnits = "";
 		}
-		String SetScale = ((String)tokens.elementAt(5)).trim();
+		String SetScale = ((String)tokens.get(5)).trim();
 		// Defaults because not in the old command...
 		String TSList = "AllTS";
 		PropList parameters = new PropList ( getCommandName() );
@@ -417,7 +417,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
 	}
-	Vector tslist = (Vector)o_TSList;
+	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -528,11 +528,11 @@ CommandWarningException, CommandException
 	
     // Get the comments to add to the top of the file.
 
-    Vector OutputComments_Vector = null;
+	List OutputComments_Vector = null;
     try { Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (Vector)o;
+            OutputComments_Vector = (List)o;
             parameters.setUsingObject("OutputComments",OutputComments_Vector);
         }
     }
@@ -551,7 +551,7 @@ CommandWarningException, CommandException
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 		Message.printStatus ( 2, routine, "Writing RiverWare file \"" + OutputFile_full + "\"" );
 		// Only write the first time series...
-		TS tsout = (TS)tslist.elementAt(0);
+		TS tsout = (TS)tslist.get(0);
 		// Don't pass units to below...
 		RiverWareTS.writeTimeSeries ( tsout, OutputFile_full,
 			OutputStart_DateTime,

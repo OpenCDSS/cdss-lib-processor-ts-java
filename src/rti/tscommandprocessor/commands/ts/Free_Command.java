@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JFrame;
@@ -72,7 +73,7 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
     if ( (TSPosition != null) && !TSPosition.equals("") ) {
-        Vector tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
+    	List tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
         int npos = 0;
         if ( tokens != null ) {
             npos = tokens.size();
@@ -80,7 +81,7 @@ throws InvalidCommandParameterException
         __TSPositionStart = new int[npos];
         __TSPositionEnd = new int[npos];
         for ( int i = 0; i < npos; i++ ) {
-            String token = (String)tokens.elementAt(i);
+            String token = (String)tokens.get(i);
             if ( token.indexOf("-") >= 0 ) {
                 // Range...
                 String posString = StringUtil.getToken(token, "-",0,0).trim();
@@ -137,7 +138,7 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-	Vector valid_Vector = new Vector();
+    List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -192,13 +193,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
         // Parse the old command...
-        Vector tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
+    	List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
         if ( tokens.size() != 2 ) {
             message = "Invalid syntax for command.  Expecting Free(TSID).";
             Message.printWarning ( warning_level, routine, message);
             throw new InvalidCommandSyntaxException ( message );
         }
-        String TSID = ((String)tokens.elementAt(1)).trim();
+        String TSID = ((String)tokens.get(1)).trim();
         PropList parameters = new PropList ( getCommandName() );
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         if ( TSID.length() > 0 ) {
@@ -378,7 +379,7 @@ CommandWarningException, CommandException
     }
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    Vector tslist = null;
+    List tslist = null;
     int [] tsposArray = null;
     if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -392,7 +393,7 @@ CommandWarningException, CommandException
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (Vector)o_TSList;
+        tslist = (List)o_TSList;
         if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";

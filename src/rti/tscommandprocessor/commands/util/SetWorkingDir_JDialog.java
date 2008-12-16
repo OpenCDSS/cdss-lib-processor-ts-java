@@ -54,6 +54,9 @@ import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+/**
+Editor for SetWorkingDir() command.
+*/
 public class SetWorkingDir_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -63,7 +66,6 @@ private SimpleJButton	__browse_JButton = null,// directory browse button
 private SetWorkingDir_Command __command = null;
 private String		__working_dir = null;	// Working directory.
 private JTextArea	__command_JTextArea = null;
-						// Command as JTextField
 private SimpleJComboBox	__RunMode_JComboBox = null;// Field for GUI or GUI & batch
 private SimpleJComboBox __RunOnOS_JComboBox = null;
 private JTextField	__WorkingDir_JTextField = null;// Field for working directory

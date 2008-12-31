@@ -2896,7 +2896,7 @@ throws Exception
 	// This is done in the TSCommandProcessor instance before calling this method.
 	
 	String InitialWorkingDir = __ts_processor.getInitialWorkingDir();
-	// FIXME SAM 2008-07-31 Remove redundant location of properties
+	// FIXME SAM 2008-07-31 Remove redundant location of properties in TSEngine and TSCommandProcessor
 	if ( InitialWorkingDir != null ) {
 	    __processor_PropList.set ( "InitialWorkingDir", InitialWorkingDir );
 		__processor_PropList.set ( "WorkingDir", InitialWorkingDir );
@@ -4528,7 +4528,8 @@ throws Exception
 				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
-			Message.printWarning ( 2, routine, te );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from DateValue file." );
+			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4538,7 +4539,8 @@ throws Exception
 		    ts = DateValueTS.readTimeSeries ( tsident_string, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsident_string + "\" from DateValue file." );
+			Message.printWarning ( 3, routine, e );
 			ts = null;
 		}
 	}
@@ -4570,9 +4572,9 @@ throws Exception
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine,
 			"Error reading time series \"" + tsident_string2 + "\" from DIADvisor" );
-			Message.printWarning ( 2, routine, te );
-			Message.printWarning ( 2, routine, "Op:" +__DIADvisor_dmi.getLastSQLString() );
-			Message.printWarning ( 2, routine, "Archive:" +	__DIADvisor_archive_dmi.getLastSQLString() );
+			Message.printWarning ( 3, routine, te );
+			Message.printWarning ( 3, routine, "Op:" +__DIADvisor_dmi.getLastSQLString() );
+			Message.printWarning ( 3, routine, "Archive:" +	__DIADvisor_archive_dmi.getLastSQLString() );
 			ts = null;
 		}
 		// For now, if the time series does not have data, set it to null...
@@ -4590,7 +4592,8 @@ throws Exception
             ts = HecDssAPI.readTimeSeries ( new File(input_name), tsident_string, query_date1, query_date2, units, read_data );
         }
         catch ( Exception e ) {
-            Message.printWarning ( 2, routine, e );
+            Message.printWarning ( 2, routine, "Error reading \"" + tsident_string + "\" from HEC-DSS file." );
+            Message.printWarning ( 3, routine, e );
             ts = null;
         }
     }
@@ -4632,6 +4635,8 @@ throws Exception
 				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from MexicoCSMN file." );
+            Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4642,6 +4647,8 @@ throws Exception
 				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from MODSIM file." );
+            Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4684,7 +4691,7 @@ throws Exception
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" +	tsident_string2 +
 			"\" from ESP trace ensemble binary file." );
-			Message.printWarning ( 2, routine, te );
+			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4705,8 +4712,7 @@ throws Exception
                 ts = rdmi.readTimeSeries ( tsident_string2, query_date1, query_date2, units, read_data );
             }
 			catch ( Exception te ) {
-				Message.printWarning ( 2, routine,
-				"Error reading time series \""+tsident_string2 + "\" from RiversideDB" );
+				Message.printWarning ( 2, routine,"Error reading time series \""+tsident_string2 + "\" from RiversideDB" );
 				Message.printWarning ( 3, routine, te );
 				ts = null;
 			}
@@ -4729,6 +4735,8 @@ throws Exception
 				input_name_full, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from RiverWare file." );
+            Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4762,7 +4770,7 @@ throws Exception
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateCU file." );
-			Message.printWarning ( 2, routine, te );
+			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4774,7 +4782,7 @@ throws Exception
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateCU binary file." );
-            Message.printWarning ( 2, routine, te );
+            Message.printWarning ( 3, routine, te );
             ts = null;
         }
     }
@@ -4786,7 +4794,7 @@ throws Exception
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateMod file." );
-			Message.printWarning ( 2, routine, te );
+			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
@@ -4798,17 +4806,18 @@ throws Exception
 		}
 		catch ( Exception te ) {
 			Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from StateMod binary file." );
-			Message.printWarning ( 2, routine, te );
+			Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}
-	else if ((input_type != null) &&
-		input_type.equalsIgnoreCase("USGSNWIS") ) {
+	else if ((input_type != null) && input_type.equalsIgnoreCase("USGSNWIS") ) {
 		// New style TSID~input_type
 		try {
             ts = UsgsNwisTS.readTimeSeries ( tsident_string2, input_name, query_date1, query_date2, units, read_data );
 		}
 		catch ( Exception te ) {
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsident_string2 + "\" from USGS NWIS file." );
+            Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
 	}

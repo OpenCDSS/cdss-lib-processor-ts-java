@@ -276,6 +276,7 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 
+	int lineCountCompared = 0;
 	try {
 	    // Open the files...
 		BufferedReader in1 = new BufferedReader(new FileReader(IOUtil.getPathUsingWorkingDir(InputFile1_full)));
@@ -291,22 +292,28 @@ CommandWarningException, CommandException
 			}
 			// TODO SAM 2006-04-20 The following needs to handle comments at the end...
 			if ( (iline1 == null) && (iline2 != null) ) {
-				// First file is are done so files are different...
+				// First file is done (second is not) so files are different...
 				++diff_count;
 				break;
 			}
 			if ( (iline2 == null) && (iline1 != null) ) {
-				// Second file is are done so files are different...
+				// Second file is done (first is not) so files are different...
 				++diff_count;
 				break;
 			}
+			++lineCountCompared;
 			if ( !iline1.equals(iline2) ) {
 				++diff_count;
 			}
 		}
 		in1.close();
 		in2.close();
-		Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different.");
+		if ( lineCountCompared == 0 ) {
+			lineCountCompared = 1; // to avoid divide by zero below.
+		}
+		Message.printStatus ( 2, routine, "There are " + diff_count + " lines that are different, " +
+			StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
+			"% (compared " + lineCountCompared + " lines).");
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error comparing files (" + e + ").";
@@ -320,7 +327,9 @@ CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 	if ( WarnIfDifferent_boolean && (diff_count > 0) ) {
-		message = "" + diff_count + " lines were different.";
+		message = "" + diff_count + " lines were different, " +
+			StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
+			"% (compared " + lineCountCompared + " lines).";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );

@@ -168,7 +168,7 @@ private List __TSEnsemble_Vector = new Vector();
 /**
 The initial working directory for processing, typically the location of the commands
 file from read/write.  This is used to adjust the working directory with
-SetWorkingDir() commands.
+SetWorkingDir() commands and is used as the starting location with RunCommands().
 */
 private String __InitialWorkingDir_String = null;
 
@@ -1178,7 +1178,7 @@ command-context action.
 private Command newInitialSetWorkingDirCommand()
 {	// For now put in a generic command since no specific Command class is available...
 	GenericCommand c = new GenericCommand ();
-	c.setCommandString( "setWorkingDir(\"" + getInitialWorkingDir() + "\")" );
+	c.setCommandString( "SetWorkingDir(\"" + getInitialWorkingDir() + "\")" );
 	return c;
 	// TODO SAM 2007-08-22 Need to implement the command class
 }
@@ -1478,7 +1478,7 @@ Returned values from this request are:
 <tr>
 <td><b>ProcessCommands</b></td>
 <td>Process a list of commands (recursively), for example when called by the
-runCommands() command.
+RunCommands() command.
 	Parameters to this request are:
 <ol>
 <li>	<b>Commands</b> A list of commands to run, as a Vector of String.</li>
@@ -3396,12 +3396,13 @@ protected void setCreateOutput ( Boolean CreateOutput_Boolean )
 Set the initial working directory for the processor.  This is typically the location
 of the commands file, or a temporary directory if the commands have not been saved.
 Also set the current working directory by calling setWorkingDir() with the same information.
-@param WorkingDir The current working directory.
+@param InitialWorkingDir The current working directory.
 */
 public void setInitialWorkingDir ( String InitialWorkingDir )
 {   String routine = getClass().getName() + ".setInitialWorkingDir";
     Message.printStatus(2, routine, "Setting the initial working directory to \"" + InitialWorkingDir + "\"" );
 	__InitialWorkingDir_String = InitialWorkingDir;
+	// Also set the working directory...
 	setWorkingDir ( __InitialWorkingDir_String );
 }
 
@@ -3586,7 +3587,7 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 
 /**
 Set the working directory for the processor.  This is typically set by
-setInitialWorkingDir() method when initializing the processor and SetWorkingDir() commands.
+SetInitialWorkingDir() method when initializing the processor and SetWorkingDir() commands.
 @param WorkingDir The current working directory.
 */
 protected void setWorkingDir ( String WorkingDir )

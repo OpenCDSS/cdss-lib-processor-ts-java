@@ -4,14 +4,17 @@ import java.io.File;
 import java.util.List;
 import java.util.Vector;
 
+import hec.dssgui.CondensedReference;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSFileAccess;
+import hec.heclib.dss.HecDSSUtilities;
 //import hec.heclib.dss.HecDataManager;
 import hec.heclib.dss.HecTimeSeries;
 import hec.heclib.util.Heclib;
 import hec.heclib.util.HecTime;
 import hec.heclib.util.doubleArrayContainer;
 import hec.heclib.util.intArrayContainer;
+import hec.io.TimeSeriesContainer;
 
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
@@ -25,29 +28,52 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
 /**
- * Preliminary code to read/write HEC-DSS time series files - may refactor later.
- * @author sam
- *
- */
+API to read/write HEC-DSS time series files by interfacing the RTi time series packages with the HEC API.
+
+TODO SAM 2009-01-08 It is likely that some performance optimization may still need to occur.
+TODO SAM 2009-01-08 Comments are included below to indicate issues to resolve and to help Bill Charley
+*/
 public class HecDssAPI
 {
 
-// TODO SAM Evaluate where to put this load call.
 /**
-Load the javaHeclib.dll library, which is used via JNI to run native code that reads the DSS files.
+TODO QUESTION FOR BILL CHARLEY - we really don't want a special install where you have copied code into heclib.
+This will cause you to do more work and will possibly result in things falling through the cracks in future
+releases.  Instead, comments are included below to identify where the API could be improved.  SAM added hec.jar,
+rma.jar (and correspondingly rmaUtil.jar) during various trials of code but these may not be needed and more time
+will be spent later evaluating dependencies.
+
+TODO SAM 2009-01-08 Need to determine the minimum of the indicated files access to HEC-DSS files
+
+Load the javaHeclib.dll library in a static block so it gets done once.  These DLLs are used
+via JNI to run native code (C? and FORTRAN?) that reads the DSS files.  The following DLLs need to be
+in the classpath for the test environment and installed software:
+<ol>
+<li> hec.jar - contains many newer utility classes/methods (to support VUE?) (could be optional?)</li>
+<li> heclib.jar - the low-level API to the HEC-DSS files, which call native methods (required)</li>
+<li> javaHeclib.dll - the DLL that patches the Java code to native code (required)</li>
+<li> MSVCRTD.DLL - the Microsoft Visual Studio DLL that contains FORTRAN debug routines.  Normally on a
+computer only the optimized/release version of the DLL is distributed (required).  Although it is not ideal
+to distribute OS level DLLs, this copy of the file is isolated, is is probably not going to be found by
+anything else on the system.</li>
+<li> rma.jar - apparently some low-level IO code (optional, but required when hec.jar is used?)<li>
+<li> rmaUtil.dll - DLL corresponding to rma.jar (optional, but required with rma.jar)</li>
+</ol>
 */
 static 
-{   String routine = "HECDSS.static";
+{   String routine = "HecDssAPI.static";
     
     boolean loadUsingJavaLibraryPath = false;
-    String javaHeclib = "";
+    String dll = "";
     try {
         // This relies on the java.library.path to locate the javaHeclib.dll,
         // which may be problematic since that configuration is outside the control
         // of this software and may result in a version issue.
         if ( loadUsingJavaLibraryPath ) {
-            javaHeclib = "javaHeclib";
-            System.loadLibrary(javaHeclib);
+            dll = "javaHeclib";
+            System.loadLibrary(dll);
+            dll = "rmaUtil";
+            System.loadLibrary(dll);
         }
         else {
             // Instead, load the file explicitly knowing the application home and
@@ -55,20 +81,24 @@ static
             // the HEC package tries to load using the above method, which does not look for the
             // filename in the path, but matches the requested dll by name, which won't match the
             // path below, even though it is already loaded.
-            javaHeclib = IOUtil.getApplicationHomeDir() + "/bin/javaHeclib.dll";
-            Message.printStatus(2, routine, "Attempting to load library using System.load(" + javaHeclib + ")." );
-            System.load( javaHeclib );
-            Message.printStatus(2, routine, "Successfully loaded library \"" + javaHeclib + "\"" );
+            dll = IOUtil.getApplicationHomeDir() + "/bin/javaHeclib.dll";
+            Message.printStatus(2, routine, "Attempting to load library using System.load(" + dll + ")." );
+            System.load( dll );
+            Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
+            dll = IOUtil.getApplicationHomeDir() + "/bin/rmaUtil.dll";
+            Message.printStatus(2, routine, "Attempting to load library using System.load(" + dll + ")." );
+            System.load( dll );
+            Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
         }
     }
     catch ( UnsatisfiedLinkError e ) {
         if ( loadUsingJavaLibraryPath ) {
-            Message.printWarning ( 2, routine, "Unable to load javaHeclib.dll using System.loadLibrary(" +
-                javaHeclib + ") and java.library.path \"" + System.getProperty("java.library.path") + "\"." );
+            Message.printWarning ( 2, routine, "Unable to load " + dll + " using System.loadLibrary(" +
+                dll + ") and java.library.path \"" + System.getProperty("java.library.path") + "\"." );
         }
         else {
-            Message.printWarning ( 2, routine, "Unable to load javaHeclib.dll using System.load(" +
-                javaHeclib + ")." );
+            Message.printWarning ( 2, routine, "Unable to load " + dll + " using System.load(" +
+                dll + ")." );
         }
         Message.printWarning ( 2, routine, "HEC-DSS features will not be functional." );
         Message.printWarning( 3, routine, e);
@@ -164,7 +194,7 @@ throws Exception
     }
     else if ( tslist.size() != 1 ) {
         throw new RuntimeException ( "" + tslist.size() + " time series were found matching \"" +
-                tsident + "\" - expecting 1." );
+            tsident + "\" - expecting 1." );
     }
     else {
         TS ts = (TS)tslist.get(0);
@@ -230,11 +260,26 @@ throws Exception
     // TODO SAM 2008-11-10 Replace the following with HecDSSUtilities.getCondensedCatalog() when moved to Java 6
     stat = dssFile.searchDSSCatalog(aPartReq, bPartReq, cPartReq, dPartReq, ePartReq, fPartReq, pathnameList);
     Message.printStatus ( 2, routine, "Status from searching catalog is " + stat +
-            ".  Number of matching path names before condensing is " + pathnameList.size() );
+        ".  Number of matching path names before condensing is " + pathnameList.size() );
     // Condense the pathnames because the D part might be redundant
-    List condensedPathnameList = createCondensedCatalog(pathnameList);
-    Message.printStatus ( 2, routine, "Number of matching path names after condensing is " +
+    List condensedPathnameList = null;
+    boolean useHECCondensedPathnameListCode = true;
+    if ( useHECCondensedPathnameListCode ) {
+        // Get condensed catalog
+        HecDSSUtilities u = new HecDSSUtilities();
+        // TODO QUESTION FOR BILL
+        // TODO SAM 2009-01-07 Is this global filename a performance hit when jumping around files?
+        HecDSSUtilities.setDefaultDSSFileName ( filename );
+        // TODO QUESTION FOR BILL - how does this work with the ability to filter the parts
+        condensedPathnameList = u.getCondensedCatalog();
+    }
+    else {
+        // Use the code written by SAM at RTi
+        condensedPathnameList = createCondensedCatalog(pathnameList);
+        Message.printStatus ( 2, routine, "Number of matching path names after condensing is " +
             condensedPathnameList.size() );
+    }
+    
     // Loop through the pathnames and read each time series
     // Get the period from the D part in case data are not being read
     for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
@@ -395,7 +440,8 @@ throws Exception
             if ( Message.isDebugOn ) {
                 Message.printDebug(2, routine, "Before rts.read()" );
             }
-            int status = rts.read ();
+            TimeSeriesContainer tsc = new TimeSeriesContainer();
+            int status = rts.read (tsc,true);
             // Some time series don't have a period so can't set dates in RTi TS from HecTimeSeries
             if ( Message.isDebugOn ) {
                 Message.printDebug(2, routine, "Before setDataPeriod()" );
@@ -484,7 +530,7 @@ throws Exception
     // Close out the file so that reading multiple files does not waste resources
     //rts.done();
     //rts.close();  //  Close the file (usually at the end of the program)
-    dssFile.close();
+    //dssFile.close();
     return tslist;
 }
 

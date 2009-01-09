@@ -125,6 +125,7 @@ Create a condensed pathname list.  Records that are duplicates except for D part
 This is necessary because the normal catalog method returns path names that show data blocks (e.g., one block
 per year), resulting in multiple pathnames for the same time series.
 @param pathnameList A list of pathnames (as String).  This will be modified and returned.
+@return a condensed pathname list, as a new list.
 */
 private static List createCondensedCatalog ( List pathnameList )
 {   String routine = "HecDssAPI.createCondensedCatalog";
@@ -135,82 +136,69 @@ private static List createCondensedCatalog ( List pathnameList )
     // except for the D part, remove the item and change the D part to be inclusive
     
     int size = pathnameList.size();
-    String aPart, aPartPrev = null; // Basin
-    String bPart, bPartPrev = null; // Location
-    String cPart, cPartPrev = null; // Data type
-    String dPart, dPartPrev = null; // Period
-    String dPartMerged, dPartPrevMerged = null; // Period, merged
-    String ePart, ePartPrev = null; // Interval
-    String fPart, fPartPrev = null; // Scenario
-    DSSPathname dssPathName;
-    String pathname;
-    int nMerged = 0; // Number of records merged to make one record
-    int nRemoved = 0; // Number of records removed, total
+    List condensedPathnameList = new Vector();
+    String aPart, aPart2 = null; // Basin
+    String bPart, bPart2 = null; // Location
+    String cPart, cPart2 = null; // Data type
+    String dPart, dPart2 = null; // Period
+    String ePart, ePart2 = null; // Interval
+    String fPart, fPart2 = null; // Scenario
+    DSSPathname dssPathName, dssPathName2;
+    String pathname; // One record pathname
+    String pathname2;
+    String condensedPathname; // With D part that has two dates
+    int numAdditionalRecords = 0; // Number of records to merge with the first
+    int numAdditionalRecordsTotal = 0; // Number of total addtional/merged records
     for ( int i = 0; i < size; i++ ) {
         pathname = (String)pathnameList.get(i);
         dssPathName = new DSSPathname ( pathname );
         aPart = dssPathName.getAPart();
         bPart = dssPathName.getBPart();
         cPart = dssPathName.getCPart();
-        dPart = dssPathName.getDPart();
         ePart = dssPathName.getEPart();
         fPart = dssPathName.getFPart();
-        int pos;
-        if ( aPart.equals(aPartPrev) && bPart.equals(bPartPrev) && cPart.equals(cPartPrev) &&
-            !dPart.equals(dPartPrev) && ePart.equals(ePartPrev) && fPart.equals(fPartPrev)) {
-            // The parts match except for D part so need to merge
-            ++nMerged;
-            // Throw away the current pathname and update the D part in the kept (first) record to be
-            // the previous value to the current value
-            if ( dPartPrevMerged == null ) {
-                // This is the first record so just set the merged to the single date
-                dPartMerged = dPart;
+        // Look ahead to see if any duplicates exist.  If on the last record, numAdditionalRecords
+        // will be zero and the current record will be added below.
+        numAdditionalRecords = 0;
+        for ( int j = (i + 1); j < size; j++ ) {
+            pathname2 = (String)pathnameList.get(j);
+            dssPathName2 = new DSSPathname ( pathname2 );
+            aPart2 = dssPathName2.getAPart();
+            bPart2 = dssPathName2.getBPart();
+            cPart2 = dssPathName2.getCPart();
+            ePart2 = dssPathName2.getEPart();
+            fPart2 = dssPathName2.getFPart();
+            if ( !aPart.equals(aPart2) || !bPart.equals(bPart2) || !cPart.equals(cPart2) ||
+                !ePart.equals(ePart2) || !fPart.equals(fPart2)) {
+                // Not a continuation of the same time series
+                break;
             }
             else {
-                // 2nd+ records...
-                pos = dPartPrevMerged.indexOf("-");
-                if ( pos < 0 ) {
-                    // Previous D part was not a range so use it as is to construct a range
-                    dPartMerged = dPartPrev + " - " + dPart;
-                    dssPathName.setDPart( dPartMerged );
-                }
-                else {
-                    // Previous D part was a range so get the first part and then replace the second with
-                    // the current D part
-                    dPartMerged = dPartPrev.substring(0,pos).trim() + " - " + dPart;
-                    dssPathName.setDPart( dPartMerged );
-                }
+                // A continuation of the record
+                ++numAdditionalRecords;
+                ++numAdditionalRecordsTotal;
+                // Save the D part so by the end will have the maximum
+                dPart2 = dssPathName2.getDPart();
             }
-            // Comment once the code is verified.
-            Message.printStatus( 2, routine, "Condensed A=" + aPart +
-                " B=" + bPart + " C=" + cPart + " E=" + ePart + " F=" + fPart + " D now = " + dPartMerged +
-                " #records merged=" + nMerged );
-            // Remove the redundant pathname record since it has been processed (no need to reset "prev" since
-            // it is the same as the current record.
-            pathnameList.set(i - 1,dssPathName.toString() );
-            pathnameList.remove(i);
-            ++nRemoved;
-            --i;
-            --size;
-            dPartPrev = dPart; // The only thing that is different is related to D
-            dPartPrevMerged = dPartMerged;
-            continue;
         }
-        // Else the record remains in the list as either a single-record path or the first record in a
-        // multi-record path.
-        // Save the parts of the current record as "prev" to allow check of the next record
-        aPartPrev = aPart;
-        bPartPrev = bPart;
-        cPartPrev = cPart;
-        dPartPrev = dPart;
-        ePartPrev = ePart;
-        fPartPrev = fPart;
-        // No merged record exists, just a single record
-        dPartPrevMerged = null;
-        nMerged = 1;
+        // Now process the D parts in the first and last record to give a new pathname list
+        if ( numAdditionalRecords == 0 ) {
+            // Just add the original record to the condensed list
+            condensedPathnameList.add(pathname);
+        }
+        else {
+            // Modify the D part of the original record and add the merged record
+            dPart = dssPathName.getDPart();
+            dssPathName.setDPart( dPart + " - " + dPart2 );
+            condensedPathname = dssPathName.toString();
+            Message.printStatus( 2, routine, "Condensed pathname = \"" + condensedPathname + "\"" );
+            condensedPathnameList.add(dssPathName.toString());
+            // Increment the counter to start a new set of records
+            i += numAdditionalRecords;
+        }
     }
-    Message.printStatus( 2, routine, "Removed " + nRemoved + " path records during condensing." );
-    return pathnameList;
+    Message.printStatus( 2, routine, "Removed " + numAdditionalRecordsTotal + " path records during condensing." );
+    return condensedPathnameList;
 }
 
 /**
@@ -324,9 +312,9 @@ The main issue is that this convention utilizes periods and dashes and these cha
 data may need substitution for internal handling.  The input name should be the name of the HEC-DSS file to absolute or
 relative precision, consistent with how the identifier should appear for data access.  The "*" character can be used
 in the time series identifier parts to filter the query.
-@param readStart the DateTime to start reading data, with precision at least as fine as the time series.
+@param readStartReq the DateTime to start reading data, with precision at least as fine as the time series.
 If null, read all available data.
-@param readEnd the DateTime to end reading data, with precision at least as fine as the time series.
+@param readEndReq the DateTime to end reading data, with precision at least as fine as the time series.
 If null, read all available data.
 @param unitsReq requested units (under development, since HEC units may not be consistent with calling software).
 @param readData if true, read the time series values.  If false, only read the metadata.
@@ -334,7 +322,7 @@ If null, read all available data.
 @throws Exception if there is an error reading the time series
 */
 public static List readTimeSeriesList ( File file, String tsidentPattern,
-        DateTime readStart, DateTime readEnd, String unitsReq, boolean readData )
+        DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDssAPI.readTimeSeriesList";
 	List tslist = new Vector();
@@ -558,8 +546,9 @@ throws Exception
 
             // TODO QUESTION FOR BILL CHARLEY - is the following the correct way to get the data units
             // without reading the time series, or does it actually read ALL the data (which would be undesirable
-            // because it is slow)?
-            
+            // because it is slow)?  Or does it do nothing if the time series has not been read?
+            // It does not seem to result in units coming back so I have commented it out
+            /*
             HecTimeSeries rts = new HecTimeSeries();
             rts.setDSSFileName(dssFilename);
             HecTime start = new HecTime();
@@ -571,6 +560,7 @@ throws Exception
                 rts.getTSRecordInfo(start, end, unitsCont, typeCont);
             ts.setDataUnits ( unitsCont.toString() );
             ts.setDataUnitsOriginal ( unitsCont.toString() );
+            */
             
             // TODO SAM 2009-01-08 If the above does not work, maybe can read the time series records in limited
             // format (e.g., first day in period) to get the units when not reading data).
@@ -589,23 +579,23 @@ throws Exception
             HecTimeSeries rts = new HecTimeSeries();
             rts.setDSSFileName(dssFilename);
             // If the read period has been requested, use it when reading the time series from HEC-DSS
-            if ( (readStart != null) && (readEnd != null) ) {
+            if ( (readStartReq != null) && (readEndReq != null) ) {
                 // Format of the period to read...
                 //rts.setTimeWindow("04Sep1996 1200 05Sep1996 1200");
-                String start = StringUtil.formatString(readStart.getDay(),"%02d") +
-                    TimeUtil.monthAbbreviation(readStart.getMonth()) +
-                    StringUtil.formatString(readStart.getYear(), "%04d");
-                String end = StringUtil.formatString(readEnd.getDay(),"%02d") +
-                    TimeUtil.monthAbbreviation(readEnd.getMonth()) +
-                    StringUtil.formatString(readEnd.getYear(), "%04d");
+                String start = StringUtil.formatString(readStartReq.getDay(),"%02d") +
+                    TimeUtil.monthAbbreviation(readStartReq.getMonth()) +
+                    StringUtil.formatString(readStartReq.getYear(), "%04d");
+                String end = StringUtil.formatString(readEndReq.getDay(),"%02d") +
+                    TimeUtil.monthAbbreviation(readEndReq.getMonth()) +
+                    StringUtil.formatString(readEndReq.getYear(), "%04d");
                 if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) ||
                     (ts.getDataIntervalBase() == TimeInterval.MINUTE) ) {
                     // Add the hour and minute for higher precision interval
-                    start = start + " " + StringUtil.formatString(readStart.getHour(),"%02d");
-                    end = end + " " + StringUtil.formatString(readEnd.getHour(),"%02d");
+                    start = start + " " + StringUtil.formatString(readStartReq.getHour(),"%02d");
+                    end = end + " " + StringUtil.formatString(readEndReq.getHour(),"%02d");
                     if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
-                        start = start + StringUtil.formatString(readStart.getMinute(),"%02d");
-                        end = end + StringUtil.formatString(readEnd.getMinute(),"%02d");
+                        start = start + StringUtil.formatString(readStartReq.getMinute(),"%02d");
+                        end = end + StringUtil.formatString(readEndReq.getMinute(),"%02d");
                     }
                     else {
                         start = start + "00";
@@ -651,7 +641,7 @@ throws Exception
             }
             // readData2 below indicates that a period was determined so it is OK to continue reading the data.
             // If OK, it also sets the period for the RTi time series.
-            readData2 = setDataPeriod ( ts, rts, readStart, readEnd );
+            readData2 = setDataPeriod ( ts, rts, readStartReq, readEndReq );
             // Remember units are not available until data records are read so handle units below.
             String units = rts.units();
             ts.setDataUnits ( units );
@@ -671,6 +661,14 @@ throws Exception
                 if ( Message.isDebugOn ) {
                     Message.printStatus(2, routine, "Start transferring data." );
                 }
+                // Reset the dates in the time series to either the requested or the range of
+                // dates in the returned data.  This is easier than trying to interpret the path dates for
+                // returned data.
+                if ( (readStartReq == null) && (readEndReq == null) ) {
+                    setTimeSeriesDatesToData ( ts, tsc.times );
+                }
+                // Now allocate the data space for the time series before actually transferring the
+                // data.
                 ts.allocateDataSpace();
                 // FIXME SAM 2009-01-08 Evaluate transfer of quality flag to RTi time series
                 
@@ -803,6 +801,27 @@ private static void setDateTime ( DateTime date, HecTime hecTime )
     if ( hour24 ) {
         date.addHour(1);
     }
+}
+
+/**
+Set the time series period based on data read from the HEC-DSS file.
+@param ts Time series being filled.
+@param times list of times read from the HEC-DSS time series, corresponding to data.
+*/
+private static void setTimeSeriesDatesToData ( TS ts, int [] times )
+{
+    // Set the period to those of the data.
+    HecTime hdataStart = new HecTime();
+    hdataStart.set(times[0]);
+    HecTime hdataEnd = new HecTime();
+    hdataEnd.set (times[times.length - 1]);
+    DateTime dataStart = new DateTime();
+    setDateTime(dataStart,hdataStart);
+    DateTime dataEnd = new DateTime();
+    setDateTime(dataEnd,hdataEnd);
+    // The following will properly adjust the precision to match the time series interval
+    ts.setDate1(dataStart);
+    ts.setDate2(dataEnd);
 }
 
 /**

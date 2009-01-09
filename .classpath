@@ -12,5 +12,7 @@
 	<classpathentry kind="lib" path="lib/commons-net-1.2.2.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.8.jar"/>
 	<classpathentry kind="lib" path="lib/heclib/heclib.jar"/>
+	<classpathentry kind="lib" path="lib/heclib/hec.jar"/>
+	<classpathentry kind="lib" path="lib/heclib/rma.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

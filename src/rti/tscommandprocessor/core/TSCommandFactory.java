@@ -37,6 +37,7 @@ import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
 //HEC-DSS commands.
 
 import rti.tscommandprocessor.commands.hecdss.ReadHecDss_Command;
+import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
 
 // HydroBase commands.
 
@@ -687,6 +688,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteDateValue") ) {
 		return new WriteDateValue_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteHecDss") ) {
+        return new WriteHecDss_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(commandString, "WriteNwsCard")) {
         return new WriteNwsCard_Command();
     }
@@ -696,9 +700,6 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteProperty") ) {
 		return new WriteProperty_Command ();
 	}
-    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTimeSeriesProperty") ) {
-        return new WriteTimeSeriesProperty_Command ();
-    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteRiverWare") ) {
 		return new WriteRiverWare_Command ();
 	}
@@ -714,6 +715,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteSummary") ) {
 		return new WriteSummary_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTimeSeriesProperty") ) {
+        return new WriteTimeSeriesProperty_Command ();
+    }
     
     // Check for time series identifier.
     

@@ -274,7 +274,7 @@ private void initialize(JFrame parent, Command command) {
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<HTML>Read the time series from a HEC-DSS file.  <B>THIS COMMAND IS UNDER DEVELOPMENT</B></HTML>."),
+        "<HTML>Read the time series from a HEC-DSS file."),
         0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use * in the A, B, C, E, and F parts to filter the time series that are read." ), 

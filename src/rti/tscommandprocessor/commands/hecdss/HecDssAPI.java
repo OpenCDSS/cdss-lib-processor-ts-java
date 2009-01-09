@@ -118,6 +118,22 @@ static
 }
 
 /**
+Adjust an end date from a D part (period) to the end of the month.  This is because the end D part date shows
+the first of the month.
+@param endDateFromDPart a DateTime that was determined from the end date/time in the D part, with no previous
+adjustments.
+@return the adjusted DateTime that corresponds to the end of the month
+*/
+private static DateTime adjustDPartEndDateToEndOfMonth ( DateTime endDateFromDPart )
+{
+    DateTime adjusted = new DateTime ( endDateFromDPart );
+    // Set the number of days to the number in the month
+    adjusted.setDay ( TimeUtil.numDaysInMonth(endDateFromDPart) );
+    // FIXME SAM 2009-01-08 Need to figure out hour issues, in particular zero-reference and rollover to next month
+    return adjusted;
+}
+
+/**
 TODO SAM 2008-01-08 This method may be unnecessary if the condensed catalog code in the HEC library can be
 figured out for all requirements.
 
@@ -199,6 +215,46 @@ private static List createCondensedCatalog ( List pathnameList )
     }
     Message.printStatus( 2, routine, "Removed " + numAdditionalRecordsTotal + " path records during condensing." );
     return condensedPathnameList;
+}
+
+/**
+Create the time window string to limit the time series read.
+@param readStart the start date/time for the read.
+@param readEndReq the end date/time for the read.
+@param ts the RTi time series being processed, used to determine the data interval.
+*/
+private static String createTimeWindowString ( DateTime readStart, DateTime readEndReq, TS ts )
+{
+    // Format of the period to read...
+    //rts.setTimeWindow("04Sep1996 1200 05Sep1996 1200");
+    String start = StringUtil.formatString(readStart.getDay(),"%02d") +
+        TimeUtil.monthAbbreviation(readStart.getMonth()) +
+        StringUtil.formatString(readStart.getYear(), "%04d");
+    String end = StringUtil.formatString(readEndReq.getDay(),"%02d") +
+        TimeUtil.monthAbbreviation(readEndReq.getMonth()) +
+        StringUtil.formatString(readEndReq.getYear(), "%04d");
+    if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) ||
+        (ts.getDataIntervalBase() == TimeInterval.MINUTE) ) {
+        // Add the hour and minute for higher precision interval
+        start = start + " " + StringUtil.formatString(readStart.getHour(),"%02d");
+        end = end + " " + StringUtil.formatString(readEndReq.getHour(),"%02d");
+        if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
+            start = start + StringUtil.formatString(readStart.getMinute(),"%02d");
+            end = end + StringUtil.formatString(readEndReq.getMinute(),"%02d");
+        }
+        else {
+            start = start + "00";
+            end = end + "00";
+        }
+    }
+    else {
+        // Always add 0000 on times specified to day precision
+        start = start + " 0000";
+        end = end + " 0000";
+    }
+    // Set the time range using the information from the catalog.
+    String timeWindow = start + " " + end;
+    return timeWindow;
 }
 
 /**
@@ -475,13 +531,9 @@ throws Exception
             // Irr6Hour.
             ePart = "Irregular";
         }
-        Message.printStatus ( 2, routine,
-                "A=\"" + aPart + "\" " +
-                "B=\"" + bPart + "\" " +
-                "C=\"" + cPart + "\" " +
-                "D=\"" + dPart + "\" " +
-                "E=\"" + ePart + "\" " +
-                "F=\"" + fPart + "\"" );
+        Message.printStatus ( 2, routine, "DSS pathname for time series: " +
+            "A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
+            "D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
         // Create time series.
         // TODO SAM 2009-01-08 Need to evaluate how to handle use of reserved characters (periods and dashes) in
         // HEC parts since these conflict with RTi time series identifier conventions.  For now, replace the
@@ -580,37 +632,25 @@ throws Exception
             rts.setDSSFileName(dssFilename);
             // If the read period has been requested, use it when reading the time series from HEC-DSS
             if ( (readStartReq != null) && (readEndReq != null) ) {
-                // Format of the period to read...
-                //rts.setTimeWindow("04Sep1996 1200 05Sep1996 1200");
-                String start = StringUtil.formatString(readStartReq.getDay(),"%02d") +
-                    TimeUtil.monthAbbreviation(readStartReq.getMonth()) +
-                    StringUtil.formatString(readStartReq.getYear(), "%04d");
-                String end = StringUtil.formatString(readEndReq.getDay(),"%02d") +
-                    TimeUtil.monthAbbreviation(readEndReq.getMonth()) +
-                    StringUtil.formatString(readEndReq.getYear(), "%04d");
-                if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) ||
-                    (ts.getDataIntervalBase() == TimeInterval.MINUTE) ) {
-                    // Add the hour and minute for higher precision interval
-                    start = start + " " + StringUtil.formatString(readStartReq.getHour(),"%02d");
-                    end = end + " " + StringUtil.formatString(readEndReq.getHour(),"%02d");
-                    if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
-                        start = start + StringUtil.formatString(readStartReq.getMinute(),"%02d");
-                        end = end + StringUtil.formatString(readEndReq.getMinute(),"%02d");
-                    }
-                    else {
-                        start = start + "00";
-                        end = end + "00";
-                    }
-                }
-                else {
-                    // Always add 0000 on times specified to day precision
-                    start = start + " 0000";
-                    end = end + " 0000";
-                }
-                // Set the time range using the information from the catalog.
-                String timeWindow = start + " " + end;
+                String timeWindow = createTimeWindowString ( readStartReq, readEndReq, ts );
                 Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
+            }
+            else {
+                // No specific period has been requested so read all available data.  Not sure if there is a
+                // simple API to do this so do it brute force by coming up with temporary dates based on the
+                // condensed pathname D parts.
+                String timeWindow = createTimeWindowString ( date1FromDPart,
+                    adjustDPartEndDateToEndOfMonth(date2FromDPart), ts );
+                Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
+                rts.setTimeWindow(timeWindow);
+ 
+                // TODO QUESTION FOR BILL CHARLEY - reading the entire period without the user having to specify
+                // that information is a very common use case.  It would be great if there were a way to read
+                // the entire time series without specifying the window.  I'm still seeing that by default if the
+                // window is not specified it only reads the first "block".  Is there something easier than what
+                // I have done above?  DSS-VUE seems to do something because you can view the entire time series
+                // without specifying the time window.
             }
 
             Message.printStatus(2, routine, "Reading data using path \"" + dssPathName + "\"" );

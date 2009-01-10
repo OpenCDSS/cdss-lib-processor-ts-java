@@ -34,6 +34,9 @@ API to read/write HEC-DSS time series files by interfacing the RTi time series p
 TODO SAM 2009-01-08 It is likely that some performance optimization may still need to occur.
 TODO SAM 2009-01-08 Comments are included below to indicate issues to resolve and to help Bill Charley answer
 questions.
+
+TODO QUESTION FOR BILL CHARLEY - are the path strings case-dependent?  In other words, if someone accidentally
+put in a mixed-case string, will it match an upper-case string in the HEC-DSS file?
 */
 public class HecDssAPI
 {
@@ -285,6 +288,64 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
     //}
     
     return ht;
+}
+
+/**
+Get the list of A parts that are available in the file.
+@return the list of unique A parts from the file, using a condensed catalog.
+*/
+public static List getUniqueAPartList ( File hecDssFile, String bPartReq, String cPartReq, String ePartReq, String fPartReq )
+{
+    // Internally use the time series code because it handles all of the wildcarding
+    List tsList = null;
+    List aPartList = new Vector();
+    String bPart = "*";
+    String cPart = "*";
+    String ePart = "*";
+    String fPart = "*";
+    if ( (bPartReq != null) && !bPartReq.equals("") ) {
+        bPart = bPartReq;
+    }
+    if ( (cPartReq != null) && !cPartReq.equals("") ) {
+        cPart = cPartReq;
+    }
+    if ( (ePartReq != null) && !ePartReq.equals("") ) {
+        ePart = ePartReq;
+    }
+    if ( (fPartReq != null) && !fPartReq.equals("") ) {
+        fPart = fPartReq;
+    }
+    try {
+        String tsidPattern = "*-" + bPart + "*." + cPart + "." + ePart + "." + fPart;
+        tsList = readTimeSeriesList ( hecDssFile, tsidPattern, null, null, null, false );
+        int tsListSize = tsList.size();
+        TS ts = null;
+        String aPart = null;
+        int aPartListSize = 0;
+        boolean found = false;
+        for ( int i = 0; i < tsListSize; i++ ) {
+            // Search the list to see if the A part is already in the list.  If not, add it.
+            ts = (TS)tsList.get(i);
+            aPart = ts.getIdentifier().getMainLocation();
+            aPartListSize = aPartList.size();
+            found = false;
+            for ( int j = 0; j < aPartListSize; j++ ) {
+                if ( aPartList.get(j).equals(aPart)) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) {
+                aPartList.add ( aPart );
+            }
+        }
+    }
+    catch ( Exception e ) {
+        // Log it and return an empty list
+        String routine = "HecDssAPI.getUniqueAPartList";
+        Message.printWarning(3, routine, e);
+    }
+    return aPartList;
 }
      
 /**

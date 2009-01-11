@@ -9,10 +9,11 @@ import hec.dssgui.CondensedReference;
 import hec.heclib.dss.DSSPathname;
 import hec.heclib.dss.HecDSSFileAccess;
 import hec.heclib.dss.HecDSSUtilities;
+import hec.heclib.dss.HecDataManager;
 import hec.heclib.dss.HecTimeSeries;
 import hec.heclib.util.Heclib;
 import hec.heclib.util.HecTime;
-import hec.heclib.util.stringContainer;
+//import hec.heclib.util.stringContainer;
 import hec.io.TimeSeriesContainer;
 
 import RTi.TS.TS;
@@ -35,7 +36,7 @@ TODO SAM 2009-01-08 It is likely that some performance optimization may still ne
 TODO SAM 2009-01-08 Comments are included below to indicate issues to resolve and to help Bill Charley answer
 questions.
 
-TODO QUESTION FOR BILL CHARLEY - are the path strings case-dependent?  In other words, if someone accidentally
+TODO QUESTION FOR BILL CHARLEY - are the path strings case-sensitive?  In other words, if someone accidentally
 put in a mixed-case string, will it match an upper-case string in the HEC-DSS file?
 */
 public class HecDssAPI
@@ -118,6 +119,10 @@ static
         // Rethrow the error so it can be indicated as a command error
         throw ( e );
     }
+    
+    // Set the message level to the maximum to track down issues.
+    
+    //HecDataManager.setMessageLevel ( 15 );
 }
 
 /**
@@ -282,7 +287,7 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
     // lines below.  Doesn't HecTime allow setting the "granularity" to "year", "month", or even "period"?
     
     ht.setYearMonthDay(dt.getYear(), dt.getMonth(), dt.getDay(), (dt.getHour()*60 + dt.getMinute()) );
-    int precision = dt.getPrecision();
+    //int precision = dt.getPrecision();
     //if ( precision == DateTime.PRECISION_YEAR ) {
     //    ht.setTimeGranularity(ht.??);
     //}
@@ -559,8 +564,10 @@ throws Exception
             
             // FIXME SAM 2008-09-02 Might be HECLIB code to do this
             
-            // TODO QUESTION FOR BILL CHARLEY - is there code to convert the D part to one or two date/times?
-            // Then I would not need to deal with the parsing here.
+            // TODO QUESTION FOR BILL CHARLEY - is there code to convert the D part to one or two HecTimes?
+            // Then I would not need to deal with the parsing here.  What about automatically getting a date/time
+            // that is for the end of the month, not the start of month that is shown in the D part.?
+            // Is a full month of data always available?
             int pos = dPart.indexOf("-");
             if ( pos >= 0 ) {
                 // Have date range
@@ -960,6 +967,7 @@ private static DSSPathname tsidToHecPathName ( TSIdent tsid )
     // TODO SAM 2009-01-08 See if it is OK to leave blank to use the whole time series in writing
     // Don't set D part
     path.setEPart(tsidIntervalToHecInterval(tsid));
+    path.setFPart(tsid.getScenario());
     return path;
 }
 
@@ -979,7 +987,7 @@ RTi time series ID convention (see readTimeSeries() for documentation).
 public static void writeTimeSeriesList ( File outputFile, List tslist, DateTime writeStartReq, DateTime writeEndReq,
         String unitsReq )
 throws IOException, Exception
-{
+{   String routine = "HecDssAPE.writeTimeSeriesList";
     if ( (tslist == null) || (tslist.size() == 0) ) {
         // Nothing in the list so return
         return;
@@ -987,7 +995,7 @@ throws IOException, Exception
     // TODO QUESTION FOR BILL CHARLEY - is it bad to loop like this, or should some of the file manipulation occur
     // outside the loop?
     
-    // TODO QUESTION FOR BILL CHARLEY - I looked at the plugin example that you previously provided
+    // TODO QUESTION FOR BILL CHARLEY - I looked at the plug-in example that you previously provided
     // to see how to transfer from external time series to a HEC-DSS time series and write to a file.
     // It had very little information transferred.  Our code is pretty rigorous about units, missing data value,
     // etc. and I tried to handle below.  However, I wonder if there are more container or HEC time series
@@ -1025,7 +1033,7 @@ throws IOException, Exception
             value = dataPoint.getData();
             date = dataPoint.getDate();
             // Check for missing values in the RTi time series and set the the HEC missing value for output
-            if( !ts.isDataMissing( value ) ) {
+            if( ts.isDataMissing( value ) ) {
                 // Translate to the missing value used by HEC
                 value = Heclib.UNDEFINED_DOUBLE;
             }
@@ -1036,13 +1044,18 @@ throws IOException, Exception
             // consistent with the values, what do I do?  The following is a guess based on the methods that
             // are available for the HecTime class.
             tsc.times[ival] = dateTimeToHecTime(date, hectime).value();
+            if ( Message.isDebugOn ) {
+                Message.printDebug(1, routine, "TS container has value " + value + " at DateTime=" + date +
+                    " HecTime=" + hectime + " HecTime-int=" + tsc.times[ival] );
+            }
         }
         // Set the precision of output
         // FIXME SAM 2009-01-08 Not currently a parameter to this method but need to add if supported by HEC code
         
         //TODO QUESTION FOR BILL CHARLEY - is there a way to set the precision on output?  In the AddPlugin.java
         // example there is a method in HecDoubleArray but I am trying to use TimeSeriesContainer.  Is the following
-        // correct, where precisionReq would be 2 to output hundredths?
+        // correct, where precisionReq would be 2 to output to hundredths?
+        // int precisionReq = 2;
         //tsc.precision = precisionReq;
         // Create HEC time series and write the container to the specified file.
         HecTimeSeries hts = new HecTimeSeries();
@@ -1055,7 +1068,12 @@ throws IOException, Exception
         // used?  Please correct me if using these time series methods is correct given that you have instructed
         // me to use the TimeSeriesContainer for other things.
         hts.setType(ts.getDataType());
-        hts.setPathname(tsidToHecPathName(ts.getIdentifier()).toString());
+        // The pathname will NOT contain a D part.  It does not seem that a D part is necessary based on the
+        // HecDssTimeSeriesExample.java code.  Do convert it to uppercase though because it seems that HEC strings
+        // are all uppercase.
+        String pathname = tsidToHecPathName(ts.getIdentifier()).toString().toUpperCase();
+        Message.printStatus( 2, routine, "Writing time series using pathname \"" + pathname + "\"" );
+        hts.setPathname(pathname);
         hts.setDSSFileName(outputFile.getCanonicalPath());
         hts.write(tsc);
     }

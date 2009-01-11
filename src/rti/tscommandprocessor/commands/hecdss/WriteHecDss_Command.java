@@ -9,8 +9,6 @@ import javax.swing.JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
-import RTi.TS.DateValueTS;
-
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -25,11 +23,8 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -380,11 +375,9 @@ CommandWarningException, CommandException
 		}
 	}
 
-	// Now try to write.  Only do so if the number of time series is 1+.  Otherwise an exception will occur.
-    // TODO SAM 2007-11-19 Evaluate whether DateValueTS.writeTimeSeriesList() should allow empty list,
-    // resulting in just a header in the output.  This might be useful during testing
+	// Now try to write.
 
-	PropList props = new PropList ( "WriteDateValue" );
+	PropList props = new PropList ( "WriteHecDss" );
 	String Delimiter = parameters.getValue( "Delimiter" );
 	if ( (Delimiter != null) && (Delimiter.length() > 0) ) {
 	    props.set("Delimiter=" + Delimiter);
@@ -419,9 +412,9 @@ CommandWarningException, CommandException
         try {
             // Convert to an absolute path...
             OutputFile_full = IOUtil.verifyPathForOS(
-                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                            TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
-            Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                     TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+            Message.printStatus ( 2, routine, "Writing HEC-DSS file \"" + OutputFile_full + "\"" );
             HecDssAPI.writeTimeSeriesList ( new File(OutputFile_full), tslist,
 				OutputStart_DateTime, OutputEnd_DateTime, "" );
             // Save the output file name...
@@ -430,7 +423,7 @@ CommandWarningException, CommandException
         catch ( Exception e ) {
             message = "Unexpected error writing time series to HEC-DSS file \"" + OutputFile_full + "\" (" + e + ")";
             Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,

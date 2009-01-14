@@ -128,16 +128,57 @@ static
 /**
 Adjust an end date from a D part (period) to the end of the month.  This is because the end D part date shows
 the first of the month.
-@param endDateFromDPart a DateTime that was determined from the end date/time in the D part, with no previous
-adjustments.
+@param ts time series associated with date, to retrieve the data interval.
+@param blockStartDateTime a DateTime that was determined from the end date/time in the D part,
+with no previous adjustments.
 @return the adjusted DateTime that corresponds to the end of the month
 */
-private static DateTime adjustDPartEndDateToEndOfMonth ( DateTime endDateFromDPart )
+private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime blockStartDateTime )
 {
-    DateTime adjusted = new DateTime ( endDateFromDPart );
-    // Set the number of days to the number in the month
-    adjusted.setDay ( TimeUtil.numDaysInMonth(endDateFromDPart) );
-    // FIXME SAM 2009-01-08 Need to figure out hour issues, in particular zero-reference and rollover to next month
+    int intervalBase = ts.getDataIntervalBase();
+    int intervalMult = ts.getDataIntervalMult();
+    // Create a new DateTime from the block start
+    DateTime adjusted = new DateTime ( blockStartDateTime );
+    // Adjust DateTime to the end of the block, based on the time series interval.
+    if ( intervalBase == TimeInterval.YEAR ) {
+        // Annual blocks are century.  Add 100 to make sure roundoff results in the end being offset by
+        // a century and then subtract a year to make sure the year is at the end of the starting century
+        adjusted.setYear(((blockStartDateTime.getYear() + 100)/100)*100 - 1);
+    }
+    else if ( intervalBase == TimeInterval.MONTH ) {
+        // Blocks are decades.  Add 10 to make sure roundoff results in the end being offset by a decade
+        // and then subtract a year to make sure the year is at the end of the starting decade.
+        adjusted.setYear ( ((blockStartDateTime.getYear() + 10)/10)*10 - 1);
+        adjusted.setMonth ( 12 );
+    }
+    else if ( intervalBase == TimeInterval.DAY ) {
+        // Blocks are years - set the month and day to the end of the year
+        adjusted.setMonth ( 12 );
+        adjusted.setDay ( 31 );
+    }
+    else if ( (intervalBase == TimeInterval.HOUR) ||
+        ((intervalBase == TimeInterval.MINUTE) && (intervalMult == 15) || (intervalMult == 20) ||
+        (intervalMult == 30))) {
+        // Blocks are month - set the day and hour to the end of the month
+        adjusted.setDay ( TimeUtil.numDaysInMonth(blockStartDateTime) );
+        // FIXME SAM 2009-01-14 Below, ...may need to roll over to next day, hour zero
+        if (intervalBase == TimeInterval.HOUR) {
+            // HEC-DSS does not allow 24 hour so the following will give the last value in the day
+            adjusted.setHour ( 24 - intervalMult );
+        }
+        else {
+            // Set the hour to 23 since minute interval will go until the last hour of the day
+            adjusted.setHour ( 23 );
+            // HEC-DSS does not allow 60 minute so the following will give the last value in the day
+            adjusted.setMinute ( 60 - intervalMult );
+        }
+    }
+    else if ( intervalBase == TimeInterval.MINUTE ) {
+        // Blocks are day - set the hour to 23 since minute interval will go until the last hour of the day
+        adjusted.setHour ( 23 );
+        // HEC-DSS does not allow 60 minute so the following will give the last value in the day
+        adjusted.setMinute ( 60 - intervalMult );
+    }
     return adjusted;
 }
 
@@ -724,7 +765,7 @@ throws Exception
                 // simple API to do this so do it brute force by coming up with temporary dates based on the
                 // condensed pathname D parts.  Request that hour be added because it seems to be required.
                 String timeWindow = createTimeWindowString ( date1FromDPart,
-                    adjustDPartEndDateToEndOfMonth(date2FromDPart), ts, true );
+                    adjustEndBlockDateToLastDateTime(ts, date2FromDPart), ts, true );
                 Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
  

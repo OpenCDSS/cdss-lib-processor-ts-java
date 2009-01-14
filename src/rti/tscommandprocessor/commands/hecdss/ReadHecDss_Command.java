@@ -90,6 +90,8 @@ throws InvalidCommandParameterException
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
+	String A = parameters.getValue("A");
+	String B = parameters.getValue("B");
 	//String Alias = parameters.getValue("Alias");
     /*
 	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
@@ -151,6 +153,21 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that input file and working directory paths are compatible." ) );
         }
+    }
+    
+    if ( (A != null) && (A.length() != 0) && (A.contains(":") || A.contains("."))) {
+        message = "The value for A (" + A + ") is invalid - cannot contain \":.\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a value for A that does not contain \":.\" characters." ) );
+    }
+    if ( (B != null) && (B.length() != 0) && (B.contains(":") || B.contains("."))) {
+        message = "The value for B (" + B + ") is invalid - cannot contain \":.\".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a value for B that does not contain \":.\" characters." ) );
     }
 
 	if ( NewUnits != null ) {
@@ -500,7 +517,7 @@ throws InvalidCommandParameterException,
                         TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         // Read everything in the file (one time series or traces).
         tslist = HecDssAPI.readTimeSeriesList (
-            new File(InputFile_full), A + "-" + B + ".HEC-DSS." + C + "." + E + "." + F,
+            new File(InputFile_full), A + ":" + B + ".HEC-DSS." + C + "." + E + "." + F,
                 InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
         // TODO SAM 2007-12-27 - should enable EnsembleID if traces
 			

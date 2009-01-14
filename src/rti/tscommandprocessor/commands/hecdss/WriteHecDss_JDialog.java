@@ -66,6 +66,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JTextField __Precision_JTextField = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
@@ -184,6 +185,7 @@ private void checkInput ()
 	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String Precision = __Precision_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -205,6 +207,9 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
+    if ( Precision.length() > 0 ) {
+        parameters.set ( "Precision", Precision );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -227,12 +232,14 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	 String Precision = __Precision_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "Precision", Precision );
 }
 
 /**
@@ -338,6 +345,16 @@ private void initialize ( JFrame parent, Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Precision:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Precision_JTextField = new JTextField (20);
+    __Precision_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - number of digits after decimal (default=HEC-DSS default)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

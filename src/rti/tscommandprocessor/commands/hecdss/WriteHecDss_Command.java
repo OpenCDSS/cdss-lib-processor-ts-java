@@ -25,6 +25,7 @@ import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -62,6 +63,7 @@ throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String Precision = parameters.getValue ( "Precision" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -134,7 +136,8 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
-		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
+		try {
+		    DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");
 			}
@@ -147,11 +150,19 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+	if ( (Precision != null) && !OutputEnd.equals("") && !StringUtil.isInteger(Precision) ) {
+	    message = "The Precision \"" + Precision + "\" is not a valid integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the precision as an integer." ) );
+	}
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
+	valid_Vector.add ( "Precision" );
 	valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -383,8 +394,10 @@ CommandWarningException, CommandException
 	    props.set("Delimiter=" + Delimiter);
 	}
 	String Precision = parameters.getValue ( "Precision" );
+	int Precision_int = -1;    // Default
     if ( (Precision != null) && (Precision.length() > 0) ) {
         props.set("Precision=" + Precision);
+        Precision_int = Integer.parseInt(Precision);
     }
     String MissingValue = parameters.getValue ( "MissingValue" );
     if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
@@ -416,7 +429,7 @@ CommandWarningException, CommandException
                      TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing HEC-DSS file \"" + OutputFile_full + "\"" );
             HecDssAPI.writeTimeSeriesList ( new File(OutputFile_full), tslist,
-				OutputStart_DateTime, OutputEnd_DateTime, "" );
+				OutputStart_DateTime, OutputEnd_DateTime, "", Precision_int );
             // Save the output file name...
             setOutputFile ( new File(OutputFile_full));
         }
@@ -457,6 +470,7 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
+    String Precision = parameters.getValue( "Precision" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -499,6 +513,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (Precision != null) && (Precision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Precision=" + Precision );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

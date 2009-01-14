@@ -69,7 +69,7 @@ anything else on the system.</li>
 static 
 {   String routine = "HecDssAPI.static";
     
-    boolean loadUsingJavaLibraryPath = false;
+    boolean loadUsingJavaLibraryPath = true;
     String dll = "";
     boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies
     try {
@@ -226,42 +226,49 @@ private static List createCondensedCatalog ( List pathnameList )
 }
 
 /**
-Create the time window string to limit the time series read.
-@param readStart the start date/time for the read.
-@param readEndReq the end date/time for the read.
+Create the time window string to limit the time series read.  The format will be compatible with
+the D part if includeHour=false and compatible with the time window string in any case.
+@param startDateTime the start date/time for the read.
+@param endDateTime the end date/time for the read, null if not included.
 @param ts the RTi time series being processed, used to determine the data interval.
+@param includeHour indicates whether the hour should be included
 */
-private static String createTimeWindowString ( DateTime readStart, DateTime readEndReq, TS ts )
+private static String createTimeWindowString ( DateTime startDateTime, DateTime endDateTime, TS ts, boolean includeHour )
 {
     // Format of the period to read...
     //rts.setTimeWindow("04Sep1996 1200 05Sep1996 1200");
-    String start = StringUtil.formatString(readStart.getDay(),"%02d") +
-        TimeUtil.monthAbbreviation(readStart.getMonth()) +
-        StringUtil.formatString(readStart.getYear(), "%04d");
-    String end = StringUtil.formatString(readEndReq.getDay(),"%02d") +
-        TimeUtil.monthAbbreviation(readEndReq.getMonth()) +
-        StringUtil.formatString(readEndReq.getYear(), "%04d");
-    if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) ||
-        (ts.getDataIntervalBase() == TimeInterval.MINUTE) ) {
-        // Add the hour and minute for higher precision interval
-        start = start + " " + StringUtil.formatString(readStart.getHour(),"%02d");
-        end = end + " " + StringUtil.formatString(readEndReq.getHour(),"%02d");
-        if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
-            start = start + StringUtil.formatString(readStart.getMinute(),"%02d");
-            end = end + StringUtil.formatString(readEndReq.getMinute(),"%02d");
+    String startString = StringUtil.formatString(startDateTime.getDay(),"%02d") +
+        TimeUtil.monthAbbreviation(startDateTime.getMonth()).toUpperCase() +
+        StringUtil.formatString(startDateTime.getYear(), "%04d");
+    String endString = "";
+    if ( endDateTime != null ) {
+        endString = StringUtil.formatString(endDateTime.getDay(),"%02d") +
+        TimeUtil.monthAbbreviation(endDateTime.getMonth()).toUpperCase() +
+        StringUtil.formatString(endDateTime.getYear(), "%04d");
+    }
+    if ( includeHour ) {
+        if ( (ts.getDataIntervalBase() == TimeInterval.HOUR) ||
+            (ts.getDataIntervalBase() == TimeInterval.MINUTE) ) {
+            // Add the hour and minute for higher precision interval
+            startString = startString + " " + StringUtil.formatString(startDateTime.getHour(),"%02d");
+            endString = endString + " " + StringUtil.formatString(endDateTime.getHour(),"%02d");
+            if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
+                startString = startString + StringUtil.formatString(startDateTime.getMinute(),"%02d");
+                endString = endString + StringUtil.formatString(endDateTime.getMinute(),"%02d");
+            }
+            else {
+                startString = startString + "00";
+                endString = endString + "00";
+            }
         }
         else {
-            start = start + "00";
-            end = end + "00";
+            // Always add 0000 on times specified to day precision
+            startString = startString + " 0000";
+            endString = endString + " 0000";
         }
     }
-    else {
-        // Always add 0000 on times specified to day precision
-        start = start + " 0000";
-        end = end + " 0000";
-    }
     // Set the time range using the information from the catalog.
-    String timeWindow = start + " " + end;
+    String timeWindow = startString + " " + endString;
     return timeWindow;
 }
 
@@ -459,13 +466,18 @@ throws Exception
     // Normally wildcards will only be used when doing a bulk read and a single time series
     // will be matched for a specific time series identifier.
     Vector pathnameList = new Vector();
-    String aPartReq = StringUtil.getToken(tsident.getLocation(),"-",0,0); // From 1st part of Basin-Location in RTi TSID
-    if ( aPartReq == null ) {
-        aPartReq = "";
+    String location = tsident.getLocation();
+    int posColon = location.indexOf(':');
+    String aPartReq = "";
+    String bPartReq = "";
+    if ( posColon >= 0 ) {
+        // Get separate A parts
+        aPartReq = location.substring(0,posColon);
+        bPartReq = location.substring(posColon + 1);
     }
-    String bPartReq = StringUtil.getToken(tsident.getLocation(),"-",0,1); // From 2nd part of Basin-Location in RTi TSID
-    if ( bPartReq == null ) {
-        bPartReq = "";
+    else {
+        aPartReq = "";
+        bPartReq = location;
     }
     String cPartReq = tsident.getType();
     String dPartReq = "*"; // Do not limit based on start - get all available data
@@ -605,7 +617,7 @@ throws Exception
         // Create time series.
         // TODO SAM 2009-01-08 Need to evaluate how to handle use of reserved characters (periods and dashes) in
         // HEC parts since these conflict with RTi time series identifier conventions.  For now, replace the
-        // offending characters with spaces in the identifier and utilize the time
+        // periods with spaces in the identifier and utilize the time
         // series alias to retain the original identifier.
         String dotfPart = "";
         String dotfPartNoPeriod = ""; // Dot F part without a period
@@ -615,9 +627,10 @@ throws Exception
         }
         // Make sure that the parts do not contain periods, which will mess up the time series.  If the parts
         // do contain periods, set an alias with the first part since the alias can contain parts and replace
-        // the periods with dots.
-        String tsidMain = aPart + "-" + bPart + ".HEC-DSS." + cPart + "." + ePart + dotfPart;
-        String tsidMainNoPeriodsInParts = aPart.replace('.',' ') + "-" + bPart.replace('.',' ') + ".HEC-DSS." +
+        // the periods with dots.  Separate the A and B parts with a colon because dashes are often used in HEC
+        // and have special meaning in TSID for main-sub location.
+        String tsidMain = aPart + ":" + bPart + ".HEC-DSS." + cPart + "." + ePart + dotfPart;
+        String tsidMainNoPeriodsInParts = aPart.replace('.',' ') + ":" + bPart.replace('.',' ') + ".HEC-DSS." +
             cPart.replace('.',' ') + "." + ePart.replace('.',' ') + dotfPartNoPeriod;
         if ( aPart.indexOf(".") >= 0 ) {
             Message.printStatus(2 , routine, "TSID \"" + tsidMain +
@@ -655,7 +668,7 @@ throws Exception
         // only ranges will be shown.
         
         // FIXME SAM 2009-01-08 Need to set the precision of dates including hour.  Currently only set to day
-        // based on the D part.
+        // based on the D part.  This will be reset below.
         ts.setDate1 ( date1FromDPart );
         if ( !date1FromDPart.equals(date2FromDPart) ) {
             ts.setDate2 ( date2FromDPart );
@@ -692,24 +705,26 @@ throws Exception
             // For now just set the D part to first value because it does not seem that a range
             // is allowed when reading.
             // Setting to blank causes an exception - occurs because of irregular time series?
-            if ( (dPart1 != null) && (dPart1.length() > 0) && (dPart.indexOf("-") >= 0) ) {
-                dssPathName.setDPart(dPart1);
-            }
+            // Latest... don't set because the time window is always required for proper read and will be set
+            // to requested or based on the D part from above.
+            //if ( (dPart1 != null) && (dPart1.length() > 0) && (dPart.indexOf("-") >= 0) ) {
+            //    dssPathName.setDPart(dPart1);
+            //}
 
             HecTimeSeries rts = new HecTimeSeries();
             rts.setDSSFileName(dssFilename);
             // If the read period has been requested, use it when reading the time series from HEC-DSS
             if ( (readStartReq != null) && (readEndReq != null) ) {
-                String timeWindow = createTimeWindowString ( readStartReq, readEndReq, ts );
+                String timeWindow = createTimeWindowString ( readStartReq, readEndReq, ts, true );
                 Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
             }
             else {
                 // No specific period has been requested so read all available data.  Not sure if there is a
                 // simple API to do this so do it brute force by coming up with temporary dates based on the
-                // condensed pathname D parts.
+                // condensed pathname D parts.  Request that hour be added because it seems to be required.
                 String timeWindow = createTimeWindowString ( date1FromDPart,
-                    adjustDPartEndDateToEndOfMonth(date2FromDPart), ts );
+                    adjustDPartEndDateToEndOfMonth(date2FromDPart), ts, true );
                 Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
  
@@ -917,7 +932,7 @@ Set the time series period based on data read from the HEC-DSS file.
 @param times list of times read from the HEC-DSS time series, corresponding to data.
 */
 private static void setTimeSeriesDatesToData ( TS ts, int [] times )
-{
+{   String routine = "HecDssAPI.setTimeSeriesDatesToData";
     // Set the period to those of the data.
     HecTime hdataStart = new HecTime();
     hdataStart.set(times[0]);
@@ -930,6 +945,8 @@ private static void setTimeSeriesDatesToData ( TS ts, int [] times )
     // The following will properly adjust the precision to match the time series interval
     ts.setDate1(dataStart);
     ts.setDate2(dataEnd);
+    Message.printStatus(2, routine, "Setting time series period to dates from data records:  " + dataStart +
+        " to " + dataEnd );
 }
 
 /**
@@ -939,14 +956,53 @@ private static String tsidIntervalToHecInterval ( TSIdent tsid )
 {
     String hecInterval = null;
     int intervalBase = tsid.getIntervalBase();
+    int intervalMult = tsid.getIntervalMult();
     // FIXME SAM 2009-01-08 Need to handle irregular time series
     if ( intervalBase == TimeInterval.IRREGULAR ) {
         // Need special attention - not yet addressed
         throw new RuntimeException ( "Irregular time series are not yet handled for conversion to HEC-DSS.");
     }
+    else if ( intervalBase == TimeInterval.YEAR ) {
+        if ( intervalMult != 1 ) {
+            throw new RuntimeException ( "Only 1YEAR interval is allowed, " + intervalMult +
+                " year is not supported." );
+        }
+        hecInterval = "1YEAR";
+    }
+    else if ( intervalBase == TimeInterval.MONTH) {
+        if ( intervalMult != 1 ) {
+            throw new RuntimeException ( "Only 1MON interval is allowed, " + intervalMult +
+                " month is not supported." );
+        }
+        hecInterval = "1MON";
+    }
+    else if ( intervalBase == TimeInterval.DAY) {
+        if ( intervalMult != 1 ) {
+            throw new RuntimeException ( "Only 1DAY interval is allowed, " + intervalMult +
+                " month is not supported." );
+        }
+        hecInterval = "1DAY";
+    }
+    else if ( intervalBase == TimeInterval.HOUR) {
+        if ( (intervalMult != 1) && (intervalMult != 2) && (intervalMult != 3) && (intervalMult != 4) &&
+            (intervalMult != 6) && (intervalMult != 8) && (intervalMult != 12) ) {
+            throw new RuntimeException ( "Only hours intervals 1, 2, 3, 4, 6, 8, and 12 are allowed, " +
+                intervalMult + " hour is not supported." );
+        }
+        hecInterval = "" + intervalMult + "HOUR";
+    }
+    else if ( intervalBase == TimeInterval.HOUR) {
+        if ( (intervalMult != 1) && (intervalMult != 2) && (intervalMult != 3) && (intervalMult != 4) &&
+            (intervalMult != 5) && (intervalMult != 10) && (intervalMult != 15) && (intervalMult != 20) &&
+            (intervalMult != 30) ) {
+            throw new RuntimeException ( "Only hours intervals 1, 2, 3, 4, 6, 8, and 12 are allowed, " +
+                intervalMult + " hour is not supported." );
+        }
+        hecInterval = "" + intervalMult + "MIN";
+    }
     else {
-        // Just return the interval string
-        hecInterval = tsid.getInterval();
+        throw new RuntimeException ( "Interval " + tsid.getInterval() +
+            " is not supported with HEC-DSS time series." );
     }
     return hecInterval;
 }
@@ -954,18 +1010,60 @@ private static String tsidIntervalToHecInterval ( TSIdent tsid )
 /**
 Convert an RTi time series identifier to a HEC-DSS pathname.
 This is designed for writing time series, not general use, especially the handling of the D part.
-@param tsid Time series identifier that follows RTi conventions.
+@param ts Time series that follows RTi conventions.
+@param writeStart output start date/time, or null if no D part should be included (currently not used).
+@param writeEnd output end date/time, or null if no D part should be included (currently not used).
 @return HEC-DSS pathname suitable for use with HEC-DSS files.
 */
-private static DSSPathname tsidToHecPathName ( TSIdent tsid )
+private static DSSPathname getHecPathNameForTimeSeries ( TS ts, DateTime writeStart, DateTime writeEnd )
 {
     DSSPathname path = new DSSPathname();
-    // A part from first part of location
-    path.setAPart(tsid.getMainLocation());
-    path.setBPart(tsid.getSubLocation());
+    TSIdent tsid = ts.getIdentifier();
+    // A part from first part of location, separated by ':'
+    String location = tsid.getLocation();
+    int pos = location.indexOf(':');
+    int intervalBase = ts.getDataIntervalBase();
+    int intervalMult = ts.getDataIntervalMult();
+    if ( pos >= 0 ) {
+        // The location includes a : - assume that it is defined to be compatible with the HEC-DSS
+        // conventions and has a location Apart:Bpart
+        path.setAPart(location.substring(0,pos));
+        path.setBPart(location.substring(pos+1));
+    }
+    else {
+        // No colon so assume no basin
+        path.setAPart ( "" );
+        path.setBPart ( location );
+    }
     path.setCPart(tsid.getType());
-    // TODO SAM 2009-01-08 See if it is OK to leave blank to use the whole time series in writing
-    // Don't set D part
+    // D part depends on the interval
+    if ( writeStart != null ) {
+        if ( intervalBase == TimeInterval.YEAR ) {
+            // Annual blocks are century
+            path.setDPart( "01JAN" + (writeStart.getYear()/100)*100 );
+        }
+        else if ( intervalBase == TimeInterval.MONTH ) {
+            // Blocks are decades
+            path.setDPart( "01JAN" + (writeStart.getYear()/10)*10 );
+        }
+        else if ( intervalBase == TimeInterval.DAY ) {
+            // Blocks are years
+            path.setDPart( "01JAN" + writeStart.getYear() );
+        }
+        else if ( (intervalBase == TimeInterval.HOUR) ||
+            ((intervalBase == TimeInterval.MINUTE) && (intervalMult == 15) || (intervalMult == 20) ||
+            (intervalMult == 30))) {
+            // Blocks are month
+            path.setDPart( "01" + TimeUtil.monthAbbreviation(writeStart.getMonth()).toUpperCase() +
+                writeStart.getYear() );
+        }
+        else if ( intervalBase == TimeInterval.MINUTE ) {
+            // The rest of the minutes - blocks are day
+            path.setDPart( StringUtil.formatString(writeStart.getDay(), "%02d") +
+                    TimeUtil.monthAbbreviation(writeStart.getMonth()).toUpperCase() +
+                    writeStart.getYear() );
+        }
+    }
     path.setEPart(tsidIntervalToHecInterval(tsid));
     path.setFPart(tsid.getScenario());
     return path;
@@ -980,27 +1078,24 @@ RTi time series ID convention (see readTimeSeries() for documentation).
 @param writeStartReq the requested start for output, or null to write all data.
 @param writeEndReq the requested end for output, or null to write all data.
 @param unitsReq the requested units for output, currently not used.
+@param precisionReq the requested precision for output, digits after the period (specify as negative to use the
+default).
 @see #readTimeSeries(File, String, DateTime, DateTime, String, boolean)
 @exception IOException if the HEC-DSS file cannot be written.
 @exception Exception if other errors occur.
 */
 public static void writeTimeSeriesList ( File outputFile, List tslist, DateTime writeStartReq, DateTime writeEndReq,
-        String unitsReq )
+        String unitsReq, int precisionReq )
 throws IOException, Exception
 {   String routine = "HecDssAPE.writeTimeSeriesList";
     if ( (tslist == null) || (tslist.size() == 0) ) {
         // Nothing in the list so return
         return;
     }
-    // TODO QUESTION FOR BILL CHARLEY - is it bad to loop like this, or should some of the file manipulation occur
-    // outside the loop?
     
-    // TODO QUESTION FOR BILL CHARLEY - I looked at the plug-in example that you previously provided
-    // to see how to transfer from external time series to a HEC-DSS time series and write to a file.
-    // It had very little information transferred.  Our code is pretty rigorous about units, missing data value,
-    // etc. and I tried to handle below.  However, I wonder if there are more container or HEC time series
-    // data members that I should be setting before writing.
-    
+    // Turn messaging to high to troubleshoot
+    HecDataManager.setMessageLevel ( 12 );
+
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
     for ( int i = 0; i < tslistSize; i++ ) {
@@ -1016,6 +1111,7 @@ throws IOException, Exception
         }
         // Create a container to receive the data from the RTi time series
         TimeSeriesContainer tsc = new TimeSeriesContainer();
+        //Message.printStatus(2, routine, "Set time series container type=\"" + tsc.type + "\"" );
         // Get the number of values in the time series for the write interval.  This works
         // for regular or irregular interval time series.
         int numValues = TSUtil.calculateDataSize(ts, writeStart, writeEnd);
@@ -1039,43 +1135,58 @@ throws IOException, Exception
             }
             // Set in the arrays
             tsc.values[ival] = value;
-            // TODO QUESTION FOR BILL CHARLEY - I cannot figure out how to get from a HecTime to the time that
-            // is needed in the container.  Because the data values coming from the RTi time series code MUST be
-            // consistent with the values, what do I do?  The following is a guess based on the methods that
-            // are available for the HecTime class.
             tsc.times[ival] = dateTimeToHecTime(date, hectime).value();
             if ( Message.isDebugOn ) {
-                Message.printDebug(1, routine, "TS container has value " + value + " at DateTime=" + date +
+                Message.printDebug(1,routine, "TS container has value " + value + " at DateTime=" + date +
                     " HecTime=" + hectime + " HecTime-int=" + tsc.times[ival] );
             }
         }
-        // Set the precision of output
-        // FIXME SAM 2009-01-08 Not currently a parameter to this method but need to add if supported by HEC code
-        
-        //TODO QUESTION FOR BILL CHARLEY - is there a way to set the precision on output?  In the AddPlugin.java
-        // example there is a method in HecDoubleArray but I am trying to use TimeSeriesContainer.  Is the following
-        // correct, where precisionReq would be 2 to output to hundredths?
-        // int precisionReq = 2;
-        //tsc.precision = precisionReq;
+        // No toString() seems to be defined for TimeSeriesContainer – might help with troubleshooting.
+        //Message.printStatus(2, routine, "HEC-DSS time series container toString() is: " + tsc );
+        // Set the precision of output, if requested by calling code
+        if ( precisionReq >= 0 ) {
+            Message.printStatus(2, routine, "HEC-DSS time series container precision=" + precisionReq );
+            tsc.precision = precisionReq;
+        }
+        // Set the container interval based on Bill Charley's email
+        tsc.interval = 1440;
+        // Also try the number of values
+        //tsc.numberValues = numValues;
+        // Set the data type - any string can be used but may want to standardize to allow units conversion
+        tsc.units = ts.getDataUnits();
+        Message.printStatus(2, routine, "HEC-DSS time series container units=\"" + tsc.units + "\"" );
+        // Set the data type.  This is equivalent to the RTi TimeScale.  Allowable values are:
+        //   PER-AVER (period average, is this interval average?)
+        //   PER-CUM (period cumulative, is this interval cumulative?)
+        //   INST-VAL (instantaneous)
+        //   INST-CUM (instantaneous cumulative)
+        // FIXME SAM 2008-12-01 Try this to see if it solves the -5 status on write (it does not)
+        tsc.type = "INST-VAL";
+        Message.printStatus(2, routine, "HEC-DSS time series container type=\"" + tsc.type + "\"" );
         // Create HEC time series and write the container to the specified file.
         HecTimeSeries hts = new HecTimeSeries();
-        // Set the data units
-        // TODO QUESTION FOR BILL CHARLEY - is it required to use HEC-DSS units or can any string be used?
-        hts.setUnits(ts.getDataUnits());
-        // Set the data type
-        // TODO QUESTION FOR BILL CHARLEY - what is the purpose of "type"?  In the HecDssTimeSeriesExample.java code
-        // the type is different from the data type used in the path.  How is the string from setType() ever
-        // used?  Please correct me if using these time series methods is correct given that you have instructed
-        // me to use the TimeSeriesContainer for other things.
-        hts.setType(ts.getDataType());
         // The pathname will NOT contain a D part.  It does not seem that a D part is necessary based on the
         // HecDssTimeSeriesExample.java code.  Do convert it to uppercase though because it seems that HEC strings
         // are all uppercase.
-        String pathname = tsidToHecPathName(ts.getIdentifier()).toString().toUpperCase();
-        Message.printStatus( 2, routine, "Writing time series using pathname \"" + pathname + "\"" );
+        String outputFileCanonical = outputFile.getCanonicalPath();
+        String pathname = getHecPathNameForTimeSeries(ts, writeStart, null ).toString().toUpperCase();
+        Message.printStatus( 2, routine, "HEC-DSS time series output file is \"" + outputFileCanonical + "\"" );
+        Message.printStatus( 2, routine, "HEC-DSS time series pathname is \"" + pathname + "\"" );
         hts.setPathname(pathname);
-        hts.setDSSFileName(outputFile.getCanonicalPath());
-        hts.write(tsc);
+        hts.setDSSFileName(outputFileCanonical);
+        // Setting the time window seems to make no difference - still get status -5 on write
+        String timeWindow = createTimeWindowString ( writeStart, writeEnd, ts, true );
+        Message.printStatus(2, routine, "HEC-DSS time series time window for write=\"" + timeWindow + "\"" );
+        hts.setTimeWindow(timeWindow);
+        // Now try to write...
+        int status = hts.write(tsc);
+        Message.printStatus( 2, routine, "Status from writing time series is " + status );
+        if ( status != 0 ) {
+            // FIXME SAM 2009-01-13 Evaluate code.
+            // For now throw an exception whenever an error occurs, until we figure out status.
+            // May want to accumulate errors to put in one exception message.
+            throw new RuntimeException ( "Error writing time series to HEC-DSS file, return status=" + status);
+        }
     }
 }
 

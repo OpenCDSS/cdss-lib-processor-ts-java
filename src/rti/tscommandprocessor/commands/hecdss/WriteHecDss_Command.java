@@ -38,6 +38,14 @@ public class WriteHecDss_Command extends AbstractCommand implements Command, Fil
 {
 
 /**
+Values for Type parameter.
+*/
+protected final String _PerAver = "PER-AVER";
+protected final String _PerCum = "PER-CUM";
+protected final String _InstVal = "INST-VAL";
+protected final String _InstCum = "INST-CUM";
+
+/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
@@ -64,6 +72,7 @@ throws InvalidCommandParameterException
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String Precision = parameters.getValue ( "Precision" );
+	String Type = parameters.getValue ( "Type" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -157,12 +166,27 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the precision as an integer." ) );
 	}
+    if ( (Type == null) || (Type.length() == 0) ||
+        (!Type.equalsIgnoreCase(_InstCum) && !Type.equalsIgnoreCase(_InstVal) &&
+        !Type.equalsIgnoreCase(_PerAver) && !Type.equalsIgnoreCase(_PerCum) )) {
+        message = "The time series type is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the time series type as " + _InstCum + ", " + _InstVal + ", " +
+                _PerAver + ", or " + _PerCum + "." ) );
+    }
+    else {
+        
+    }
+    
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "Precision" );
+	valid_Vector.add ( "Type" );
 	valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -399,10 +423,7 @@ CommandWarningException, CommandException
         props.set("Precision=" + Precision);
         Precision_int = Integer.parseInt(Precision);
     }
-    String MissingValue = parameters.getValue ( "MissingValue" );
-    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
-        props.set("MissingValue=" + MissingValue);
-    }
+    String Type = parameters.getValue ( "Type" );
     
     // Get the comments to add to the top of the file.
 
@@ -429,7 +450,7 @@ CommandWarningException, CommandException
                      TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing HEC-DSS file \"" + OutputFile_full + "\"" );
             HecDssAPI.writeTimeSeriesList ( new File(OutputFile_full), tslist,
-				OutputStart_DateTime, OutputEnd_DateTime, "", Precision_int );
+				OutputStart_DateTime, OutputEnd_DateTime, "", Precision_int, Type );
             // Save the output file name...
             setOutputFile ( new File(OutputFile_full));
         }
@@ -471,6 +492,7 @@ public String toString ( PropList parameters )
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
     String Precision = parameters.getValue( "Precision" );
+    String Type = parameters.getValue( "Type" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -519,6 +541,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Precision=" + Precision );
+    }
+    if ( (Type != null) && (Type.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Type=" + Type );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

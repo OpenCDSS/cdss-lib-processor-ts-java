@@ -67,6 +67,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __Precision_JTextField = null;
+private SimpleJComboBox __Type_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
@@ -186,6 +187,7 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String Precision = __Precision_JTextField.getText().trim();
+    String Type = __Type_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -210,6 +212,9 @@ private void checkInput ()
     if ( Precision.length() > 0 ) {
         parameters.set ( "Precision", Precision );
     }
+    if ( Type.length() > 0 ) {
+        parameters.set ( "Type", Type );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -232,7 +237,8 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	 String Precision = __Precision_JTextField.getText().trim();
+	String Precision = __Precision_JTextField.getText().trim();
+	String Type = __Type_JComboBox.getSelected(); 
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -240,6 +246,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "Precision", Precision );
+	__command.setCommandParameter ( "Type", Type );
 }
 
 /**
@@ -309,6 +316,19 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Type_JComboBox = new SimpleJComboBox ( false );
+    __Type_JComboBox.add ( __command._PerAver );
+    __Type_JComboBox.add ( __command._PerCum );
+    __Type_JComboBox.add ( __command._InstVal );
+    __Type_JComboBox.add ( __command._InstCum );
+    __Type_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __Type_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - HEC-DSS time series type." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -321,11 +341,11 @@ private void initialize ( JFrame parent, Command command )
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
 	__OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -444,6 +464,8 @@ private void refresh ()
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
+    String Precision = "";
+    String Type = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -456,6 +478,8 @@ private void refresh ()
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
+        Precision = parameters.getValue ( "Precision" );
+        Type = parameters.getValue ( "Type" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -510,6 +534,24 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( Precision != null ) {
+            __Precision_JTextField.setText (Precision);
+        }
+        if ( Type == null ) {
+            // Select default...
+            __Type_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Type_JComboBox,Type, JGUIUtil.NONE, null, null ) ) {
+                __Type_JComboBox.select ( Type );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nType value \"" + Type +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -518,6 +560,8 @@ private void refresh ()
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
+    Precision = __Precision_JTextField.getText().trim();
+    Type = __Type_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -525,6 +569,8 @@ private void refresh ()
 	parameters.add ( "OutputFile=" + OutputFile );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "Precision=" + Precision );
+	parameters.add ( "Type=" + Type );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

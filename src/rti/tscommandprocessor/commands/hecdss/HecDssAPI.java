@@ -183,6 +183,55 @@ private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime block
 }
 
 /**
+Run Bill Charley's example write code.  Keep this around for awhile for a reference.
+*/
+private static void billsWriteCode ()
+{
+    HecTimeSeries.setMessageLevel(9);
+    HecTimeSeries.setDefaultDSSFileName("C:/Temp_X/mydb.dss");
+    
+    TimeSeriesContainer tsc = new TimeSeriesContainer();
+    HecTime startTime = new HecTime("12Jan2009", "2400");
+    HecTime time = new HecTime();
+    tsc.interval = 1440;
+    tsc.numberValues = 20;
+    //  Set values and times
+    tsc.values = new double[tsc.numberValues];
+    tsc.times = new int[tsc.numberValues];
+    for (int i=0; i<tsc.times.length; i++) {
+              //  Make up data
+        tsc.values[i] = Math.pow((double)i, 2.0);
+        time.set(startTime);
+        time.increment(i, tsc.interval);
+        tsc.times[i] = time.value();
+    }
+    tsc.startTime = tsc.times[0];
+    tsc.endTime = tsc.times[tsc.times.length-1];
+    
+    //  Set pathname
+    DSSPathname path = new DSSPathname();
+    path.setAPart("River");
+    path.setBPart("Loc");
+    path.setCPart("Flow");
+    String ePart =
+HecTimeSeries.getEPartFromInterval(tsc.interval);
+    path.setEPart(ePart);
+    path.setFPart("Ver");
+    
+    tsc.fullName = path.pathname();
+    tsc.units = "CFS";
+    tsc.type = "PER_AVER";
+    
+    HecTimeSeries hecTimeSeries = new HecTimeSeries();
+    hecTimeSeries.write(tsc);
+    hecTimeSeries.done();
+
+    // Force close at end of execution
+    HecTimeSeries.closeAllFiles();
+    System.out.println("done!");
+}
+
+/**
 TODO SAM 2008-01-08 This method may be unnecessary if the condensed catalog code in the HEC library can be
 figured out for all requirements.
 
@@ -502,7 +551,7 @@ throws Exception
     // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened
     // Do this similar to other binary file databases like StateMod and StateCU
     int stat = dssFile.open();
-    Message.printStatus ( 2, routine, "Status from opening DSS file is " + stat );
+    Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat );
     // Use the following code to allow wildcards in matching 1+ time series
     // Normally wildcards will only be used when doing a bulk read and a single time series
     // will be matched for a specific time series identifier.
@@ -1121,21 +1170,26 @@ RTi time series ID convention (see readTimeSeries() for documentation).
 @param unitsReq the requested units for output, currently not used.
 @param precisionReq the requested precision for output, digits after the period (specify as negative to use the
 default).
+@param hecType the "type" in HEC-DSS convention (e.g., "PER-AVER").
 @see #readTimeSeries(File, String, DateTime, DateTime, String, boolean)
 @exception IOException if the HEC-DSS file cannot be written.
 @exception Exception if other errors occur.
 */
 public static void writeTimeSeriesList ( File outputFile, List tslist, DateTime writeStartReq, DateTime writeEndReq,
-        String unitsReq, int precisionReq )
+        String unitsReq, int precisionReq, String hecType )
 throws IOException, Exception
 {   String routine = "HecDssAPE.writeTimeSeriesList";
+
     if ( (tslist == null) || (tslist.size() == 0) ) {
         // Nothing in the list so return
         return;
     }
     
     // Turn messaging to high to troubleshoot
-    HecDataManager.setMessageLevel ( 12 );
+    if ( Message.isDebugOn ) {
+        HecDataManager.setMessageLevel ( 9 );
+        //HecDataManager.setMessageLevel ( 12 );
+    }
 
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
@@ -1182,19 +1236,30 @@ throws IOException, Exception
                     " HecTime=" + hectime + " HecTime-int=" + tsc.times[ival] );
             }
         }
-        // No toString() seems to be defined for TimeSeriesContainer – might help with troubleshooting.
-        //Message.printStatus(2, routine, "HEC-DSS time series container toString() is: " + tsc );
+        tsc.numberValues = numValues;
+        tsc.startTime = tsc.times[0];
+        tsc.endTime = tsc.times[numValues - 1];
+        HecTime hstart = new HecTime();
+        hstart.set(tsc.startTime);
+        HecTime hend = new HecTime();
+        hend.set(tsc.endTime);
+        Message.printStatus(2, routine, "HEC-DSS time series container startTime=" + hstart + " endTime=" + hend );
         // Set the precision of output, if requested by calling code
         if ( precisionReq >= 0 ) {
             Message.printStatus(2, routine, "HEC-DSS time series container precision=" + precisionReq );
             tsc.precision = precisionReq;
         }
-        // Set the container interval based on Bill Charley's email
-        tsc.interval = 1440;
-        // Also try the number of values
-        //tsc.numberValues = numValues;
-        // Set the data type - any string can be used but may want to standardize to allow units conversion
+        // Set the pathname and use the E part to get the interval.
+        DSSPathname dssPathName = getHecPathNameForTimeSeries(ts, null, null );
+        String pathname = dssPathName.toString().toUpperCase();
+        tsc.fullName = pathname;
+        tsc.interval = HecTimeSeries.getIntervalFromEPart(dssPathName.getEPart());
+        // Set the data units - any string can be used but may want to standardize to allow units conversion
         tsc.units = ts.getDataUnits();
+        if ( (tsc.units == null) || (tsc.units.length() == 0) ) {
+            throw new RuntimeException ( "The HEC-DSS data units are not defined for \"" +
+                ts.getIdentifierString() + "\"" );
+        }
         Message.printStatus(2, routine, "HEC-DSS time series container units=\"" + tsc.units + "\"" );
         // Set the data type.  This is equivalent to the RTi TimeScale.  Allowable values are:
         //   PER-AVER (period average, is this interval average?)
@@ -1202,23 +1267,23 @@ throws IOException, Exception
         //   INST-VAL (instantaneous)
         //   INST-CUM (instantaneous cumulative)
         // FIXME SAM 2008-12-01 Try this to see if it solves the -5 status on write (it does not)
-        tsc.type = "INST-VAL";
-        Message.printStatus(2, routine, "HEC-DSS time series container type=\"" + tsc.type + "\"" );
-        // Create HEC time series and write the container to the specified file.
-        HecTimeSeries hts = new HecTimeSeries();
+        if ( hecType == null ) {
+            throw new RuntimeException ( "The HEC-DSS type is not defined for \"" +
+                ts.getIdentifierString() + "\"" );
+        }
+        else {
+            tsc.type = hecType;
+            Message.printStatus(2, routine, "HEC-DSS time series container type=\"" + tsc.type + "\"" );
+        }
         // The pathname will NOT contain a D part.  It does not seem that a D part is necessary based on the
         // HecDssTimeSeriesExample.java code.  Do convert it to uppercase though because it seems that HEC strings
         // are all uppercase.
         String outputFileCanonical = outputFile.getCanonicalPath();
-        String pathname = getHecPathNameForTimeSeries(ts, writeStart, null ).toString().toUpperCase();
         Message.printStatus( 2, routine, "HEC-DSS time series output file is \"" + outputFileCanonical + "\"" );
         Message.printStatus( 2, routine, "HEC-DSS time series pathname is \"" + pathname + "\"" );
-        hts.setPathname(pathname);
+        // Create HEC time series and write the container to the specified file.
+        HecTimeSeries hts = new HecTimeSeries();
         hts.setDSSFileName(outputFileCanonical);
-        // Setting the time window seems to make no difference - still get status -5 on write
-        String timeWindow = createTimeWindowString ( writeStart, writeEnd, ts, true );
-        Message.printStatus(2, routine, "HEC-DSS time series time window for write=\"" + timeWindow + "\"" );
-        hts.setTimeWindow(timeWindow);
         // Now try to write...
         int status = hts.write(tsc);
         Message.printStatus( 2, routine, "Status from writing time series is " + status );

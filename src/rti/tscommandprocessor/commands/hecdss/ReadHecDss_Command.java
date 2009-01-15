@@ -118,12 +118,13 @@ throws InvalidCommandParameterException
         message = "The input file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an existing input file." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an existing input file." ) );
     }
     else {
         String working_dir = null;
-        try { Object o = processor.getPropContents ( "WorkingDir" );
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
                 // Working directory is available so use it...
                 if ( o != null ) {
                     working_dir = (String)o;
@@ -406,7 +407,8 @@ throws InvalidCommandParameterException,
                             message, "Verify that the specified date/time is valid." ) );
             throw new InvalidCommandParameterException ( message );
         }
-        else {  InputStart_DateTime = (DateTime)prop_contents;
+        else {
+            InputStart_DateTime = (DateTime)prop_contents;
         }
     }
     catch ( Exception e ) {
@@ -513,8 +515,8 @@ throws InvalidCommandParameterException,
             read_data = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         // Read everything in the file (one time series or traces).
         tslist = HecDssAPI.readTimeSeriesList (
             new File(InputFile_full), A + ":" + B + ".HEC-DSS." + C + "." + E + "." + F,
@@ -531,7 +533,7 @@ throws InvalidCommandParameterException,
                 if ( (Alias != null) && (Alias.length() > 0) ) {
                     // Set the alias to the desired string.
                     ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                            processor, ts, Alias, status, command_phase) );
+                        processor, ts, Alias, status, command_phase) );
                 }
             }
 		}

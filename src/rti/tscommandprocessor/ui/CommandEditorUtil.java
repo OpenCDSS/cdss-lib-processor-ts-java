@@ -220,7 +220,7 @@ public static int addTSListToEditorDialogPanel (
     JGUIUtil.addComponent(panel, choices,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(panel, new JLabel (
-        "Indicates the time series to process (default=AllTS)."),
+        "Optional - indicates the time series to process (default=AllTS)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     return y;
 }

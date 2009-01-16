@@ -194,7 +194,7 @@ public static void closeRegressionTestReportFile ()
 }
 
 /**
-Expand a parameter valueto recognize processor-level properties.  For example, a parameter value like
+Expand a parameter value to recognize processor-level properties.  For example, a parameter value like
 "${WorkingDir}/morepath" will be expanded to include the working directory.
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).

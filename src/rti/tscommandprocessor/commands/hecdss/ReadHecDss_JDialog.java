@@ -54,16 +54,16 @@ private JTextField	__Alias_JTextField = null, // Alias for time series.
             __E_JTextField = null,
             __F_JTextField = null,
 			__InputStart_JTextField,
-			__InputEnd_JTextField, // Text fields for input period.
-			__InputFile_JTextField = null, // Field for input file
+			__InputEnd_JTextField,
+			__InputFile_JTextField = null,
 			__NewUnits_JTextField = null; // Units to convert to at read
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 
 private boolean __ok = false;			
-private final String __RemoveWorkingDirectory = "Remove Working Directory",
-	__AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Add Working Directory";
 
 /**
 Command editor constructor.
@@ -123,20 +123,20 @@ public void actionPerformed( ActionEvent event )
 			response(true);
 		}
 	}
-	else if ( o == __path_JButton ) {
-		if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
-			__InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,__InputFile_JTextField.getText() ) );
-		}
-		else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
-			try {
-                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,	__InputFile_JTextField.getText() ) );
-			}
-			catch ( Exception e ) {
-				Message.printWarning ( 1, "ReadHecDss_JDialog", "Error converting file to relative path." );
-			}
-		}
-		refresh ();
-	}
+    else if ( o == __path_JButton ) {
+        if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
+            __InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir,__InputFile_JTextField.getText() ) );
+        }
+        else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+            try {
+                __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __InputFile_JTextField.getText() ) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, "ReadHecDss_JDialog", "Error converting file to relative path." );
+            }
+        }
+        refresh ();
+    }
 }
 
 /**
@@ -274,7 +274,7 @@ private void initialize(JFrame parent, Command command) {
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<HTML>Read the time series from a HEC-DSS file."),
+        "<HTML>Read time series from a HEC-DSS file."),
         0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Use * in the A, B, C, E, and F parts to filter the time series that are read." ), 
@@ -284,8 +284,7 @@ private void initialize(JFrame parent, Command command) {
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full path or relative path (relative to working " +
-		"directory) for a HEC-DSS file to read." ), 
+		"Specify a full path or relative path (relative to working directory) for a HEC-DSS file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -326,7 +325,7 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - B part to match (default=match all)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel("C part (data type):"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("C part (parameter):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __C_JTextField = new JTextField ( "", 30 );
     __C_JTextField.addKeyListener ( this );
@@ -554,8 +553,7 @@ private void refresh()
 }
 
 /**
-Refresh the PathControl text based on the contents of the input text field
-contents.
+Refresh the PathControl text based on the contents of the input text field contents.
 */
 private void refreshPathControl()
 {
@@ -582,8 +580,7 @@ private void refreshPathControl()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok ) {
 	__ok = ok;

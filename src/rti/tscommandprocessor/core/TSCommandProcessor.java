@@ -84,6 +84,10 @@ import RTi.TS.TSSupplier;
 
 import rti.tscommandprocessor.commands.check.CheckFileCommandProcessorEventListener;
 
+// HEC-DSS I/O...
+
+import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+
 // HydroBase commands.
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
@@ -393,6 +397,20 @@ public void clearResults()
     }
     removeAllEnsembles();
     removeAllPatternTS();
+}
+
+//TODO SAM 2009-01-15 Evaluate whether something is needed for databases, etc.
+//To date things have worked fine as is but HEC-DSS open connections may linger and cause resources issues.
+/**
+Close data connections, in particular any HEC-DSS connections that may be open.
+@param closeAll if true, close all connections in use by the processor, even those that by reference may
+be used in an external application and which were passed by reference (currently not implemented).  If false,
+close only the connections that are likely to be used locally in the processor.
+*/
+public void closeDataConnections ( boolean closeAll )
+{
+     // Regardless, close HEC-DSS connections
+     HecDssAPI.closeAllFiles();
 }
 
 /**

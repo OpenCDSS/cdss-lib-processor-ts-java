@@ -232,6 +232,14 @@ HecTimeSeries.getEPartFromInterval(tsc.interval);
 }
 
 /**
+Close the data files that may be open.
+*/
+public static void closeAllFiles ()
+{
+    HecTimeSeries.closeAllFiles();
+}
+
+/**
 TODO SAM 2008-01-08 This method may be unnecessary if the condensed catalog code in the HEC library can be
 figured out for all requirements.
 
@@ -1206,11 +1214,10 @@ throws IOException, Exception
         }
         // Create a container to receive the data from the RTi time series
         TimeSeriesContainer tsc = new TimeSeriesContainer();
-        //Message.printStatus(2, routine, "Set time series container type=\"" + tsc.type + "\"" );
-        // Get the number of values in the time series for the write interval.  This works
-        // for regular or irregular interval time series.
         int numValues = TSUtil.calculateDataSize(ts, writeStart, writeEnd);
+        Message.printStatus(2, routine, "Writing " + numValues + " values for period " + writeStart + " to " + writeEnd );
         // Allocate the container arrays.
+        tsc.numberValues = numValues;
         tsc.values = new double[numValues];
         tsc.times = new int[numValues];
         DateTime date = new DateTime(writeStart);
@@ -1220,7 +1227,7 @@ throws IOException, Exception
         double value;
         // Iterate through the time series and transfer the date and corresponding values from
         // the RTi time series to the HEC time series container.
-        for ( int ival = 0; (dataPoint = tsi.next()) != null; ival++ ) {
+        for ( int ival = 0; ((dataPoint = tsi.next()) != null) && (ival < numValues); ival++ ) {
             value = dataPoint.getData();
             date = dataPoint.getDate();
             // Check for missing values in the RTi time series and set the the HEC missing value for output
@@ -1232,11 +1239,10 @@ throws IOException, Exception
             tsc.values[ival] = value;
             tsc.times[ival] = dateTimeToHecTime(date, hectime).value();
             if ( Message.isDebugOn ) {
-                Message.printDebug(1,routine, "TS container has value " + value + " at DateTime=" + date +
+                Message.printDebug(1,routine, "[" + ival + "] TS container has value " + value + " at DateTime=" + date +
                     " HecTime=" + hectime + " HecTime-int=" + tsc.times[ival] );
             }
         }
-        tsc.numberValues = numValues;
         tsc.startTime = tsc.times[0];
         tsc.endTime = tsc.times[numValues - 1];
         HecTime hstart = new HecTime();

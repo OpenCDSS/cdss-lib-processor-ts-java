@@ -3072,7 +3072,7 @@ throws Exception
     				// Initialize the command (parse)...
     				// TODO SAM 2007-09-05 Need to evaluate where the initialization occurs (probably the initial edit or load)?
     				if ( Message.isDebugOn ) {
-    					Message.printDebug ( 1, routine, "Initializing the Command for \"" +	command_String + "\"" );
+    					Message.printDebug ( 1, routine, "Initializing the Command for \"" + command_String + "\"" );
     				}
     				if ( command instanceof CommandStatusProvider ) {
     					((CommandStatusProvider)command).getCommandStatus().clearLog(CommandPhaseType.INITIALIZATION);

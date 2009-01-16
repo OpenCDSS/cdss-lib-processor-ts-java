@@ -83,6 +83,7 @@ throws InvalidCommandParameterException
     List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "DivisorTSID" );
+    valid_Vector.add ( "NewUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -191,6 +192,7 @@ CommandWarningException, CommandException
 	
 	String TSID = parameters.getValue ( "TSID" );
 	String DivisorTSID = parameters.getValue ( "DivisorTSID" );
+	String NewUnits = parameters.getValue ( "NewUnits" );
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
@@ -296,6 +298,10 @@ CommandWarningException, CommandException
 	try {
 	    // Make a copy of the found time series...
 	    TSUtil.divide ( ts, tsDivisor );
+        if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
+            ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
+            ts.setDataUnits ( NewUnits );
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to divide \""+
@@ -332,6 +338,7 @@ public String toString ( PropList props )
 	}
 	String TSID = props.getValue( "TSID" );
 	String DivisorTSID = props.getValue( "DivisorTSID" );
+	String NewUnits = props.getValue( "NewUnits" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -344,6 +351,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "DivisorTSID=\"" + DivisorTSID + "\"" );
+    }
+    if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewUnits=\"" + NewUnits + "\"" );
     }
 	return getCommandName() + "("+ b.toString()+")";
 }

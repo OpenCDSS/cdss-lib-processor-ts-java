@@ -64,29 +64,29 @@ import RTi.Util.Message.Message;
 public class Scale_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private Scale_Command	__command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;
+private SimpleJButton __cancel_JButton = null;// Cancel Button
+private SimpleJButton __ok_JButton = null;	// Ok Button
+private Scale_Command __command = null;	// Command to edit
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField	__ScaleValue_JTextField = null;// Field for scale
-private JTextField	__AnalysisStart_JTextField = null;
-private JTextField	__AnalysisEnd_JTextField = null;// Fields for analysis period
-private JTextField	__NewUnits_JTextField = null;// Field for new units
-private boolean		__error_wait = false;	// Is there an error to be cleared up or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button has been pressed.
+private JTextField __ScaleValue_JTextField = null;
+private JTextField __AnalysisStart_JTextField = null;
+private JTextField __AnalysisEnd_JTextField = null;
+private JTextField __NewUnits_JTextField = null;// Field for new units
+private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Scale_JDialog ( JFrame parent, Command command )
+public Scale_JDialog ( JFrame parent, Scale_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -173,7 +173,8 @@ private void checkInput ()
 	if ( NewUnits.length() > 0 ) {
 		parameters.set ( "NewUnits", NewUnits );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -227,8 +228,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command The command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (Scale_Command)command;
+private void initialize ( JFrame parent, Scale_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -293,7 +294,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"(Optional) new data units string."), 
+		"Optional - new data units."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

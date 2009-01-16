@@ -43,13 +43,16 @@ public class NewPatternTimeSeries_Command extends AbstractCommand implements Com
 {
 	
 /**
-Pattern values as doubles.  These are created during initialization and used
-during the run.
+Pattern values as doubles.  These are created during initialization and used during the run.
 */
 private double[] __PatternValues_double = null;
 
-// Other data are either primitives that don't need conversion or must be
-// resolved at run time.
+/**
+Pattern flags.  These are created during initialization and used during the run.
+*/
+private String[] __PatternFlags = null;
+
+// Other data are either primitives that don't need conversion or must be resolved at run time.
 
 /**
 Constructor.
@@ -65,11 +68,9 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
-public void checkCommandParameters (	PropList parameters, String command_tag,
-					int warning_level )
+public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String routine = getClass().getName() + ".checkCommandParameters";
     String Alias = parameters.getValue ( "Alias" );
@@ -78,6 +79,7 @@ throws InvalidCommandParameterException
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String PatternValues = parameters.getValue ( "PatternValues" );
+	String PatternFlags = parameters.getValue ( "PatternFlags" );
 	String warning = "";
     String message;
 	
@@ -182,7 +184,15 @@ throws InvalidCommandParameterException
 			}
 		}
 	}
-	if (	(SetStart != null) && !SetStart.equals("") &&
+	
+	// TODO SAM 2009-01-15 Evaluate whether the number of flags should equal the number of values
+	// Perhaps warn if not but do not make fatal.
+	if ( (PatternFlags != null) && !PatternFlags.equals("") ) {
+	    // Break the list here - don't allow quotes because the parameter is enclosed in quotes
+	    __PatternFlags = StringUtil.toArray(StringUtil.breakStringList(PatternFlags,",",0));
+	}
+	
+	if ( (SetStart != null) && !SetStart.equals("") &&
 		!SetStart.equalsIgnoreCase("OutputStart") &&
 		!SetStart.equalsIgnoreCase("OutputEnd") ) {
 		try {
@@ -247,6 +257,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "SetEnd" );
 	valid_Vector.add ( "Units" );
 	valid_Vector.add ( "PatternValues" );
+	valid_Vector.add ( "PatternFlags" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 	
 	if ( warning.length() > 0 ) {
@@ -340,10 +351,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -389,8 +398,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", "OutputStart" );
 			CommandProcessorRequestResultsBean bean = null;
-			bean =
-			processor.processRequest( "DateTime", request_params);
+			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -405,7 +413,8 @@ CommandWarningException, CommandException
 						"Specify SetStart or make sure that a setOutputPeriod() command has been specified prior to this command."));
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetStart_DateTime = (DateTime)prop_contents;
+			else {
+			    SetStart_DateTime = (DateTime)prop_contents;
 			}
 		}
 		else {
@@ -424,7 +433,8 @@ CommandWarningException, CommandException
 					routine, message );
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetStart_DateTime = (DateTime)prop_contents;
+			else {
+			    SetStart_DateTime = (DateTime)prop_contents;
 			}
 		}
 	}
@@ -444,8 +454,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", "OutputEnd" );
 			CommandProcessorRequestResultsBean bean = null;
-			bean =
-			processor.processRequest( "DateTime", request_params);
+			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -459,7 +468,8 @@ CommandWarningException, CommandException
 						"Specify SetEnd or make sure that a setOutputPeriod() command has been specified prior to this command."));
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetEnd_DateTime = (DateTime)prop_contents;
+			else {
+			    SetEnd_DateTime = (DateTime)prop_contents;
 			}
 		}
 		else {
@@ -482,7 +492,8 @@ CommandWarningException, CommandException
                         "Report the problem to software support."));
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetEnd_DateTime = (DateTime)prop_contents;
+			else {
+			    SetEnd_DateTime = (DateTime)prop_contents;
 			}
 		}
 	}
@@ -501,7 +512,8 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
 	TS ts = null;
-	try {	// Create the time series...
+	try {
+	    // Create the time series...
 		ts = TSUtil.newTimeSeries ( NewTSID, true );
 		if ( ts == null ) {
 			throw new Exception ( "Null time series." );
@@ -543,6 +555,16 @@ CommandWarningException, CommandException
 					CommandStatusType.FAILURE, message,
 					"Verify that the output period is not huge and check computer memory."));
 		}
+		if ( __PatternFlags != null ) {
+		    // Also allocate the space for flags - allocate to maximum length of the flags
+		    int dataFlagLength = 1; // Default
+		    for ( int i = 0; i < __PatternFlags.length; i++ ) {
+		        if ( __PatternFlags[i].length() > dataFlagLength ) {
+		            dataFlagLength = __PatternFlags[i].length();
+		        }
+		    }
+		    ts.allocateDataFlagSpace(dataFlagLength, null, false);
+		}
 		if ( (__PatternValues_double != null) && (__PatternValues_double.length > 0) ) {
 		    if ( ts instanceof IrregularTS ) {
 		        // Irregular time series don't have a regular data space so need to fill in some
@@ -563,14 +585,25 @@ CommandWarningException, CommandException
 		                    "Verify that the output period is not huge and check computer memory."));
 		        }
 		        double missing = ts.getMissing();
+		        int iPattern = 0; // Pattern to use
 		        for ( DateTime date = new DateTime(ts.getDate1()); date.lessThanOrEqualTo(end);
 		            date.addInterval(tsinterval.getBase(),tsinterval.getMultiplier())) {
-		            ts.setDataValue(date, missing );
+		            if ( __PatternFlags != null ) {
+		                ts.setDataValue(date, missing, __PatternFlags[iPattern++], 0 );
+		                if ( iPattern == __PatternFlags.length ) {
+		                    iPattern = 0;
+		                }
+		            }
+		            else {
+		                // Just set the data value
+		                ts.setDataValue(date, missing );
+		            }
 		        }
 		    }
 		    // Set the data.  This will reset the initial missing values in the time series.
 			TSUtil_SetDataValuesUsingPattern tsworker = new TSUtil_SetDataValuesUsingPattern ();
-			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime, __PatternValues_double );
+			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime,
+			    __PatternValues_double, __PatternFlags );
 		}
         
         ts.setAlias ( Alias );
@@ -652,6 +685,7 @@ public String toString ( PropList props )
 	String SetEnd = props.getValue( "SetEnd" );
 	String Units = props.getValue( "Units" );
 	String PatternValues = props.getValue( "PatternValues" );
+	String PatternFlags = props.getValue( "PatternFlags" );
 	StringBuffer b = new StringBuffer ();
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -695,6 +729,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "PatternValues=\"" + PatternValues + "\"" );
 	}
+    if ( (PatternFlags != null) && (PatternFlags.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PatternFlags=\"" + PatternFlags + "\"" );
+    }
 	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
 }
 

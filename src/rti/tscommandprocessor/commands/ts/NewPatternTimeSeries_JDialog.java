@@ -40,24 +40,25 @@ public class NewPatternTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,
-			__ok_JButton = null;
-private JFrame		__parent_JFrame = null;	// parent JFrame
-private NewPatternTimeSeries_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;
-private JTextField	__Alias_JTextField = null;
-private JTextArea	__NewTSID_JTextArea=null;
-private SimpleJButton	__edit_JButton = null;
-private SimpleJButton	__clear_JButton = null;
-private SimpleJComboBox   __IrregularInterval_JComboBox=null;// Interval used to initialize irregular time series
-private JTextField	__Description_JTextField = null; // Time series description.
-private JTextField	__SetStart_JTextField = null;
-private JTextField	__SetEnd_JTextField = null;
-private JTextField	__Units_JTextField = null;
-private JTextArea	__PatternValues_JTextArea=null; // Value(s) to fill TS with.
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Whether OK has been pressed.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JFrame __parent_JFrame = null; // parent JFrame
+private NewPatternTimeSeries_Command __command = null; // Command to edit
+private JTextArea __command_JTextArea=null;
+private JTextField __Alias_JTextField = null;
+private JTextArea __NewTSID_JTextArea=null;
+private SimpleJButton __edit_JButton = null;
+private SimpleJButton __clear_JButton = null;
+private SimpleJComboBox __IrregularInterval_JComboBox=null;// Interval used to initialize irregular time series
+private JTextField __Description_JTextField = null; // Time series description.
+private JTextField __SetStart_JTextField = null;
+private JTextField __SetEnd_JTextField = null;
+private JTextField __Units_JTextField = null;
+private JTextArea __PatternValues_JTextArea=null; // Value(s) to fill TS with.
+private JTextArea __PatternFlags_JTextArea=null; // Flags(s) to fill TS with.
+private boolean __error_wait = false; // Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Whether OK has been pressed.
 
 /**
 newPatternTimeSeries_JDialog constructor.
@@ -74,7 +75,7 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	String routine = "newPatternTimeSeries_JDialog.actionPerformed";
+{	String routine = "NewPatternTimeSeries_JDialog.actionPerformed";
 	Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
@@ -84,27 +85,24 @@ public void actionPerformed( ActionEvent event )
 		__NewTSID_JTextArea.setText ( "" );
 	}
 	else if ( o == __edit_JButton ) {
-		// Edit the NewTSID in the dialog.  It is OK for the string to
-		// be blank.
+		// Edit the NewTSID in the dialog.  It is OK for the string to be blank.
 		String NewTSID = __NewTSID_JTextArea.getText().trim();
 		TSIdent tsident;
-		try {	if ( NewTSID.length() == 0 ) {
+		try {
+		    if ( NewTSID.length() == 0 ) {
 				tsident = new TSIdent();
 			}
-			else {	tsident = new TSIdent ( NewTSID );
+			else {
+			    tsident = new TSIdent ( NewTSID );
 			}
-			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame,
-				true, tsident, null )).response();
+			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame, true, tsident, null )).response();
 			if ( tsident2 != null ) {
-				__NewTSID_JTextArea.setText (
-					tsident2.toString(true) );
+				__NewTSID_JTextArea.setText ( tsident2.toString(true) );
 				refresh();
 			}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" +
-			NewTSID + "\"." );
+			Message.printWarning ( 1, routine, "Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -132,6 +130,7 @@ private void checkInput ()
 	String SetEnd = __SetEnd_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
 	String PatternValues = __PatternValues_JTextArea.getText().trim();
+	String PatternFlags = __PatternFlags_JTextArea.getText().trim();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -158,6 +157,9 @@ private void checkInput ()
 	if ( (PatternValues != null) && (PatternValues.length() > 0) ) {
 		props.set ( "PatternValues", PatternValues );
 	}
+    if ( (PatternFlags != null) && (PatternFlags.length() > 0) ) {
+        props.set ( "PatternFlags", PatternFlags );
+    }
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -180,6 +182,7 @@ private void commitEdits ()
 	String SetEnd = __SetEnd_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
 	String PatternValues = __PatternValues_JTextArea.getText().trim();
+	String PatternFlags = __PatternFlags_JTextArea.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
@@ -188,6 +191,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SetEnd", SetEnd );
 	__command.setCommandParameter ( "Units", Units );
 	__command.setCommandParameter ( "PatternValues", PatternValues );
+	__command.setCommandParameter ( "PatternFlags", PatternFlags );
 }
 
 /**
@@ -244,10 +248,9 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Alias_JTextField = new JTextField ( "" );
 	__Alias_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Can use in other commands instead of TSID." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Required - can use in other commands instead of TSID." ), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
@@ -260,8 +263,7 @@ private void initialize ( JFrame parent, Command command )
 	// Make 3-high to fit in the edit button...
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Specify to avoid confusion with TSID from original TS."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - unique internal identifier."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
     JGUIUtil.addComponent(main_JPanel, (__edit_JButton = new SimpleJButton ( "Edit", "Edit", this ) ),
@@ -270,7 +272,7 @@ private void initialize ( JFrame parent, Command command )
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
     List interval_Vector = TimeInterval.getTimeIntervalChoices(
         TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, true);
@@ -281,7 +283,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Use to initialize data (irregular time series only)."),
+        "Use to initialize data (required for irregular time series)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
@@ -298,7 +300,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Starting date/time for time series (blank=setOutputPeriod() start)."),
+		"Optional - Starting date/time (default=SetOutputPeriod() start)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ), 
@@ -308,7 +310,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Ending date/time for time series (blank=setOutputPeriod() end)."),
+		"Optional - ending date/time (default=setOutputPeriod() end)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
@@ -318,7 +320,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__Units_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"For example:  ACFT, CFS, IN."),
+		"Optional - for example:  ACFT, CFS, IN."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern values:"),
@@ -329,9 +331,19 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__PatternValues_JTextArea),
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__PatternValues_JTextArea.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Separate by spaces or commas (default is all missing values)."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel("Required - separate by spaces or commas."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern flags:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PatternFlags_JTextArea = new JTextArea (4,60);
+    __PatternFlags_JTextArea.setLineWrap ( true );
+    __PatternFlags_JTextArea.setWrapStyleWord ( true );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__PatternFlags_JTextArea),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __PatternFlags_JTextArea.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - annotates data (default=no flags)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -416,6 +428,7 @@ private void refresh ()
 	String SetEnd = "*";
 	String Units = "";
 	String PatternValues = "";
+	String PatternFlags = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -427,6 +440,7 @@ private void refresh ()
 		SetEnd = props.getValue ( "SetEnd" );
 		Units = props.getValue ( "Units" );
 		PatternValues = props.getValue ( "PatternValues" );
+		PatternFlags = props.getValue ( "PatternFlags" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -463,6 +477,9 @@ private void refresh ()
 		if ( PatternValues != null ) {
 			__PatternValues_JTextArea.setText ( PatternValues );
 		}
+        if ( PatternFlags != null ) {
+            __PatternFlags_JTextArea.setText ( PatternFlags );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
@@ -472,7 +489,8 @@ private void refresh ()
 	SetStart = __SetStart_JTextField.getText().trim();
 	SetEnd = __SetEnd_JTextField.getText().trim();
 	Units = __Units_JTextField.getText().trim();
-	PatternValues = __PatternValues_JTextArea.getText();
+	PatternValues = __PatternValues_JTextArea.getText().trim();
+	PatternFlags = __PatternFlags_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "NewTSID=" + NewTSID );
@@ -482,6 +500,7 @@ private void refresh ()
 	props.add ( "SetEnd=" + SetEnd );
 	props.add ( "Units=" + Units );
 	props.add ( "PatternValues=" + PatternValues );
+	props.add ( "PatternFlags=" + PatternFlags );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

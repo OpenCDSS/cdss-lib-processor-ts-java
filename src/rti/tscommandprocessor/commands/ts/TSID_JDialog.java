@@ -10,6 +10,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.File;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -19,26 +20,44 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
+import RTi.TS.TSIdent;
+
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 
+// TODO SAM 2009-01-15 Implement field-based time series editor, consistent with that used
+// in other commands where NewTSID is entered, like the NewTimeSeries() command.
 /**
 Editor dialog for time series identifiers.  Currently a simple text field is provided
-but in the future separate fields may be used.
+but in the future separate fields may be used for TSID parts.
 */
 public class TSID_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private TSID_Command __command = null; // Command as Vector of String
-private JTextArea __command_JTextArea=null;// Command as TextField
+    
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+private final String __AddWorkingDirectory = "Add Working Directory";
+    
+private SimpleJButton __cancel_JButton = null;// Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private SimpleJButton __path_JButton = null;
+private TSID_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private String __working_dir = null; // Working directory.
 private JTextField __TSID_JTextField=null;
 private boolean __first_time = true;
 private boolean __error_wait = false;
 private boolean __ok = false; // Whether OK has been pressed.
+
+TSIdent __tsident = null; // Time series identifier object
 
 /**
 Command editor constructor.
@@ -67,6 +86,36 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else if ( o == __path_JButton ) {
+        // Get the time series identifier
+        TSIdent tsident = null;
+        try {
+            tsident = new TSIdent ( __TSID_JTextField.getText().trim() );
+        }
+        catch ( Exception e ) {
+            tsident = null;
+        }
+        if ( tsident == null ) {
+            // Nothing to do.
+            return;
+        }
+        // Convert the input name
+        String inputName = tsident.getInputName();
+        if ( __path_JButton.getText().equals( __AddWorkingDirectory) ) {
+            tsident.setInputName( IOUtil.toAbsolutePath(__working_dir,inputName ) );
+            __TSID_JTextField.setText ( tsident.toString(true) );
+        }
+        else if ( __path_JButton.getText().equals( __RemoveWorkingDirectory) ) {
+            try {
+                tsident.setInputName ( IOUtil.toRelativePath ( __working_dir, inputName ) );
+                __TSID_JTextField.setText ( tsident.toString(true) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, "ReadHecDss_JDialog", "Error converting file to relative path." );
+            }
+        }
+        refresh ();
+    }
 }
 
 /**
@@ -116,12 +165,43 @@ throws Throwable
 }
 
 /**
+Indicate whether the time series identifier has a filename.  This is determined from the input type.
+Databases will not have filenames.
+@param inputType input type from time series identifier.
+*/
+private boolean identifierHasFilename ( TSIdent tsident )
+{
+    if ( tsident == null ) {
+        // Initialization?
+        return false;
+    }
+    String inputType = tsident.getInputType();
+    if ( inputType.equalsIgnoreCase("HydroBase") || inputType.equalsIgnoreCase("RiversideDB") ) {
+        // Databases so no filename
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, Command command )
 {	__command = (TSID_Command)command;
+    CommandProcessor processor = __command.getCommandProcessor();
+    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
+    
+    try {
+        String TSID = __command.getCommandParameters().getValue("TSID");
+        __tsident = new TSIdent(TSID);
+    }
+    catch ( Exception e ) {
+        __tsident = null;
+    }
 
 	addWindowListener( this );
 
@@ -147,6 +227,19 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "See also the CreateFromList() command."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    if ( identifierHasFilename(__tsident) ) {
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+            "Specify a full path or relative path (relative to working directory) for a file to read." ), 
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<HTML><B>It is strongly recommended that relative paths be used in commands if possible.</B></HTML>." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        if ( __working_dir != null ) {
+            JGUIUtil.addComponent(main_JPanel, new JLabel (
+            "The working directory is: " + __working_dir ), 
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        }
+    }
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Time series identifier:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -172,7 +265,17 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        
+    // Refresh here so that the TSID text field is populated
+    refresh();
 
+    // FIXME SAM 2009-01-15 Figure out how to not hard code here.  Basically only want to show the path button
+    // for input types that are for files (not databases).
+    if ( (__working_dir != null) && identifierHasFilename(__tsident) ) {
+        // Add the button to allow conversion to/from relative path...
+        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, this);
+        button_JPanel.add ( __path_JButton );
+    }
 	__cancel_JButton = new SimpleJButton("Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -182,7 +285,7 @@ private void initialize ( JFrame parent, Command command )
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
-	refresh();
+	refreshPathControl();   // Sets the __path_JButton status
     super.setVisible( true );
 }
 
@@ -233,6 +336,44 @@ private void refresh ()
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSID=" + TSID );
     __command_JTextArea.setText( __command.toString ( props ) );
+    // Refresh the Path Control text.
+    refreshPathControl();
+}
+
+/**
+Refresh the PathControl text based on the contents of the input text field contents.
+*/
+private void refreshPathControl()
+{   TSIdent tsident = null;
+    try {
+        tsident = new TSIdent ( __TSID_JTextField.getText().trim() );
+    }
+    catch ( Exception e ) {
+        tsident = null;
+    }
+    if ( tsident == null ) {
+        // Nothing to do.
+        return;
+    }
+    String InputFile = tsident.getInputName();
+    if ( (InputFile == null) || (InputFile.trim().length() == 0) ) {
+        if ( __path_JButton != null ) {
+            __path_JButton.setEnabled ( false );
+        }
+        return;
+    }
+
+    // Check the path and determine what the label on the path button should be...
+    if ( __path_JButton != null ) {
+        __path_JButton.setEnabled ( true );
+        File f = new File ( InputFile );
+        if ( f.isAbsolute() ) {
+            __path_JButton.setText( __RemoveWorkingDirectory );
+        }
+        else {
+            __path_JButton.setText( __AddWorkingDirectory );
+        }
+    }
 }
 
 /**

@@ -46,12 +46,12 @@ public class SetFromTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;// Cancel Button
+private SimpleJButton __ok_JButton = null;	// Ok Button
 private SetFromTS_Command __command = null;// Command to edit
-private JTextField	__SetStart_JTextField,
-			__SetEnd_JTextField; // Text fields for set period.
-private JTextArea   __command_JTextArea=null;// Command as JTextField
+private JTextField __SetStart_JTextField;
+private JTextField __SetEnd_JTextField; // Text fields for set period.
+private JTextArea __command_JTextArea=null;// Command as JTextField
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;

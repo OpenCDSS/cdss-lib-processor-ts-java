@@ -83,6 +83,7 @@ throws InvalidCommandParameterException
     List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "MultiplierTSID" );
+    valid_Vector.add ( "NewUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -191,6 +192,7 @@ CommandWarningException, CommandException
 	
 	String TSID = parameters.getValue ( "TSID" );
 	String MultiplierTSID = parameters.getValue ( "MultiplierTSID" );
+	String NewUnits = parameters.getValue ( "NewUnits" );
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
@@ -295,6 +297,11 @@ CommandWarningException, CommandException
 
 	try {
 	    TSUtil.multiply ( ts, tsMultiplier );
+        // If requested, change the data units...
+        if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
+            ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
+            ts.setDataUnits ( NewUnits );
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to multiply \""+
@@ -331,6 +338,7 @@ public String toString ( PropList props )
 	}
 	String TSID = props.getValue( "TSID" );
 	String MultiplierTSID = props.getValue( "MultiplierTSID" );
+	String NewUnits = props.getValue( "NewUnits" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -343,6 +351,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "MultiplierTSID=\"" + MultiplierTSID + "\"" );
+    }
+    if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewUnits=\"" + NewUnits + "\"" );
     }
 	return getCommandName() + "("+ b.toString()+")";
 }

@@ -21,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -37,12 +38,13 @@ public class Divide_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;// Cancel Button
+private SimpleJButton __ok_JButton = null;	// Ok Button
 private Divide_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private SimpleJComboBox __DivisorTSID_JComboBox = null;
+private JTextField __NewUnits_JTextField = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -86,6 +88,7 @@ private void checkInput ()
     PropList props = new PropList ( "" );
     String TSID = __TSID_JComboBox.getSelected();
     String DivisorTSID = __DivisorTSID_JComboBox.getSelected();
+    String NewUnits = __NewUnits_JTextField.getText().trim();
     __error_wait = false;
 
     if ( (TSID != null) && (TSID.length() > 0) ) {
@@ -93,6 +96,9 @@ private void checkInput ()
     }
     if ( (DivisorTSID != null) && (DivisorTSID.length() > 0) ) {
         props.set ( "DivisorTSID", DivisorTSID );
+    }
+    if ( NewUnits.length() > 0 ) {
+        props.set ( "NewUnits", NewUnits );
     }
     try {
         // This will warn the user...
@@ -111,8 +117,10 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {   String TSID = __TSID_JComboBox.getSelected();
     String DivisorTSID = __DivisorTSID_JComboBox.getSelected();
+    String NewUnits = __NewUnits_JTextField.getText().trim();
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "DivisorTSID", DivisorTSID );
+    __command.setCommandParameter ( "NewUnits", NewUnits );
 }
 
 /**
@@ -169,6 +177,15 @@ private void initialize ( JFrame parent, Command command )
     __DivisorTSID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DivisorTSID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New units:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewUnits_JTextField = new JTextField ( 10 );
+    __NewUnits_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - new data units."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -244,11 +261,13 @@ private void refresh()
 {   String TSID = "";
     String DivisorTSID = "";
     PropList props = __command.getCommandParameters();
+    String NewUnits = "";
     if ( __first_time ) {
         __first_time = false;
         // Get the parameters from the command...
         TSID = props.getValue ( "TSID" );
         DivisorTSID = props.getValue ( "DivisorTSID" );
+        NewUnits = props.getValue ( "NewUnits" );
         // Now select the item in the list.  If not a match, print a warning.
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
             __TSID_JComboBox.select ( TSID );
@@ -284,13 +303,18 @@ private void refresh()
                 }
             }
         }
+        if ( NewUnits != null ) {
+            __NewUnits_JTextField.setText ( NewUnits );
+        }
     }
     // Regardless, reset the command from the fields...
     TSID = __TSID_JComboBox.getSelected();
     DivisorTSID = __DivisorTSID_JComboBox.getSelected();
+    NewUnits = __NewUnits_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSID=" + TSID );
     props.add ( "DivisorTSID=" + DivisorTSID );
+    props.add ( "NewUnits=" + NewUnits );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

@@ -13,6 +13,7 @@ import RTi.TS.TS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -53,12 +54,12 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String Editable = parameters.getValue ( "Editable" );
+    String MissingValue = parameters.getValue("MissingValue" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -66,14 +67,21 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     
+    if ( (MissingValue != null) && !MissingValue.equals("") && !StringUtil.isDouble(MissingValue) ) {
+        message = "The missing value \"" + MissingValue + "\" is not a number.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the missing value as a number." ) );
+    }
+	
 	if ( (Editable != null) && (Editable.length() != 0) &&
-            !Editable.equalsIgnoreCase(_False) &&
-            !Editable.equalsIgnoreCase(_True)) {
+        !Editable.equalsIgnoreCase(_False) && !Editable.equalsIgnoreCase(_True)) {
 		message = "The value for Editable is invalid.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify blank, " + _False + " (default), or " + _True + "." ) );
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify blank, " + _False + " (default), or " + _True + "." ) );
 	}
 
 	// Check for invalid parameters...
@@ -83,6 +91,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "EnsembleID" );
 	valid_Vector.add ( "Description" );
     valid_Vector.add ( "Units" );
+    valid_Vector.add ( "MissingValue" );
 	valid_Vector.add ( "Editable" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -136,6 +145,7 @@ CommandWarningException, CommandException
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String Description = parameters.getValue ( "Description" );
     String Units = parameters.getValue ( "Units" );
+    String MissingValue = parameters.getValue ( "MissingValue" );
     boolean Editable_boolean = false;   // Default
     String Editable = parameters.getValue ( "Editable" );
     if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
@@ -202,6 +212,9 @@ CommandWarningException, CommandException
             if ( (Units != null) && (Units.length() > 0) ) {
                 ts.setDataUnits ( Units );
             }
+            if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+                ts.setMissing ( Double.parseDouble(MissingValue) );
+            }
             ts.setEditable ( Editable_boolean );
         }
         catch ( Exception e ) {
@@ -241,6 +254,7 @@ public String toString ( PropList parameters )
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String Description = parameters.getValue ( "Description" );
     String Units = parameters.getValue ( "Units" );
+    String MissingValue = parameters.getValue("MissingValue");
     String Editable = parameters.getValue ( "Editable" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -269,6 +283,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Units=\"" + Units + "\"" );
+    }
+    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MissingValue=" + MissingValue );
     }
     if ( (Editable != null) && (Editable.length() > 0) ) {
         if ( b.length() > 0 ) {

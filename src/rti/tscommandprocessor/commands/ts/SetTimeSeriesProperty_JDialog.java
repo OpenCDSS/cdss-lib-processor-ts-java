@@ -45,7 +45,7 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private SetTimeSeriesProperty_Command __command = null;// Command to edit
-private JTextArea	__command_JTextArea=null;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -54,9 +54,10 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Editable_JComboBox = null;
 private JTextField __Description_JTextField = null;
 private JTextField __Units_JTextField = null;
-private boolean		__error_wait = false;	// Is there an error to be cleared up or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Has user has pressed OK to close the dialog?
+private JTextField __MissingValue_JTextField = null; // Missing value for output
+private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
+private boolean __ok = false; // Has user has pressed OK to close the dialog?
 
 /**
 Command editor constructor.
@@ -126,6 +127,7 @@ private void checkInput ()
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
+    String MissingValue = __MissingValue_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -147,7 +149,11 @@ private void checkInput ()
     if ( Units.length() > 0 ) {
         parameters.set ( "Units", Units );
     }
-	try {	// This will warn the user...
+    if ( MissingValue.length() > 0 ) {
+        parameters.set ( "MissingValue", MissingValue );
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -168,12 +174,14 @@ private void commitEdits ()
     String Editable = __Editable_JComboBox.getSelected();
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
+    String MissingValue = __MissingValue_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "Editable", Editable );
     __command.setCommandParameter ( "Description", Description );
     __command.setCommandParameter ( "Units", Units );
+    __command.setCommandParameter ( "MissingValue", MissingValue );
 }
 
 /**
@@ -235,7 +243,7 @@ private void initialize ( JFrame parent, Command command )
     __Description_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Often the location."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Option - often the location."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
@@ -244,8 +252,17 @@ private void initialize ( JFrame parent, Command command )
     __Units_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Only set equivalent to original units."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - only set equivalent to original units."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 20 );
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - missing data value."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Are data editable?:"),
@@ -261,7 +278,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __Editable_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "For interactive edits (default=" + __command._False + ")."),
+        "Optional - for interactive edits (default=" + __command._False + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -346,6 +363,7 @@ private void refresh ()
     String EnsembleID = "";
     String Description = "";
     String Units = "";
+    String MissingValue = "";
     String Editable = "";
 	__error_wait = false;
 	PropList parameters = null;
@@ -358,6 +376,7 @@ private void refresh ()
         EnsembleID = parameters.getValue ( "EnsembleID" );
         Description = parameters.getValue ( "Description" );
         Units = parameters.getValue ( "Units" );
+        MissingValue = parameters.getValue("MissingValue");
         Editable = parameters.getValue ( "Editable" );
 		if ( TSList == null ) {
 			// Select default...
@@ -410,6 +429,9 @@ private void refresh ()
         if ( Units != null ) {
             __Units_JTextField.setText(Units);
         }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText ( MissingValue );
+        }
         if ( Editable == null ) {
             // Select default...
             if ( __Editable_JComboBox.getItemCount() > 0 ) {
@@ -434,6 +456,7 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     Description = __Description_JTextField.getText().trim();
     Units = __Units_JTextField.getText().trim();
+    MissingValue = __MissingValue_JTextField.getText().trim();
     Editable = __Editable_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
@@ -441,14 +464,14 @@ private void refresh ()
     parameters.add ( "EnsembleID=" + EnsembleID );
     parameters.add ( "Description=" + Description );
     parameters.add ( "Units=" + Units );
+    parameters.add ( "MissingValue=" + MissingValue );
     parameters.add ( "Editable=" + Editable );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
@@ -481,4 +504,3 @@ public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
 }
-

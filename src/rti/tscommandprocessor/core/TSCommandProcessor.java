@@ -384,6 +384,276 @@ public void addCommandProcessorListener ( CommandProcessorListener listener )
 		}
 }
 
+// TODO SAM 2009-01-20 Could name the method better if working with generics.  For now use the longer
+// method name to clue people in that the list contains strings.
+/**
+Initialize and add new commands to the processor given a list of command strings.
+This is an alternative to reading the command file with the readCommandFile() method and allows in-memory
+command processing without the command file.  A disadvantage of this approach is that the command file is not
+an artifact of processing and therefore troubleshooting may be more difficult - verify that the log file
+contains the commands in the header comments.
+Registered CommandListListener instances are notified about each add - this could be used to let a GUI update
+its appearance when a command file is loaded.
+@param commandStrings a list of command strings, as if read from a command file.
+@param createUnknownCommandIfNotRecognized If true, create a GenericCommand
+if the command is not recognized or has a syntax problem.
+This is being used during transition of old string commands to full Command classes and
+may be needed in any case to preserve commands that were manually edited.  Commands with
+problems will in any case be flagged at run-time as unrecognized or problematic.
+@param append If true, the commands will be appended to the existing commands.
+@param initialWorkingDir the initial working directory to use to run the commands (if not null) - this is typically
+specified because it would be set to the location of the command file if the command file were read from disk.
+@exception IOException if initialWorkingDir is not valid.
+*/
+public void addCommandsFromStringList ( List commandStrings, boolean createUnknownCommandIfNotRecognized,
+    boolean append, File initialWorkingDir )
+throws IOException
+{   String routine = getClass().getName() + ".initializeCommandsFromStringList";
+    // Set the working directory because this may be used by other commands.
+    if ( initialWorkingDir != null ) {
+        setInitialWorkingDir ( initialWorkingDir.getCanonicalPath() );
+    }
+    String line;
+    Command command = null;
+    TSCommandFactory cf = new TSCommandFactory();
+    // Use this to control whether listeners should be notified for each
+    // insert.  Why would this be done?  If, for example, a GUI should display
+    // the progress in reading/initializing the commands.
+    //
+    // Why would this not be done?  Because of performance issues.
+    boolean notifyListenersForEachAdd = true;
+    // If not appending, remove all...
+    if ( !append ) {
+        removeAllCommands();
+    }
+    // Now process each line in the file and turn into a command...
+    int numAdded = 0;
+    int numCommandStrings = commandStrings.size();
+    for ( int i = 0; i < numCommandStrings; i++ ) {
+        line = (String)commandStrings.get(i);
+        // Trim spaces from the end of the line.  These can really cause problems with time series identifiers
+        // FIXME SAM 2009-01-20 Is desirable to trim later so the original representation of commands is not changed.
+        // In particular people may want to indent the commands.  Need to make sure that trim() is included when
+        // the command strings are interpreted.  For now this is more trouble than it is worth.
+        line = line.trim();
+        // Create a command from the line.
+        // Normally will create the command even if not recognized.
+        if ( createUnknownCommandIfNotRecognized ) {
+            try {
+                command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
+            }
+            catch ( UnknownCommandException e ) {
+                // Should not happen because of parameter passed above
+            }
+        }
+        else {
+            try {
+                command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
+            }
+            catch ( UnknownCommandException e ) {
+                // TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load
+                // In this case skip the command, although the above case may always be needed?
+            }
+        }
+        // Have a command instance.  Initialize the command (parse the command string) and check its arguments.
+        String fixme = "FIXME! ";  // String for inserted messages
+        try {
+            command.initializeCommand(
+                line,   // Command string, needed to do full parse on parameters
+                this,   // Processor, needed to make requests
+                true);  // Do full initialization (parse)
+        }
+        catch ( InvalidCommandSyntaxException e ) {
+            // Can't use cf.newCommand() because it will recognized the command
+            // and generate yet another exception!  So, treat as a generic command with a problem.
+            Message.printWarning (2, routine, "Invalid command syntax.  Adding command with problems:  " + line );
+            Message.printWarning(3, routine, e);
+            // CommandStatus will be set while initializing so no need to set here
+            // Do it anyway to make sure something does not fall through the cracks
+            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
+                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Invalid command syntax (" + e + ").",
+                                "Correct the command.  See log file for details." ) );
+            }
+            // Add generic commands as comments prior to this command to show the original,
+            Command command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme +
+                    "The following command had errors and needs to be corrected below and this comment removed.");
+            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading the following command.",
+                            "Correct the command below (typically a parameter error due to manual edit)." ) );
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
+            command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme + line );
+            status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading this command.",
+                            "Correct the command below (typically a parameter error due to manual edit)." ) );
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
+            // Allow the bad command to be loaded below.  It may have no arguments or partial
+            // parameters that need corrected.
+        }
+        catch ( InvalidCommandParameterException e) {
+            // Can't use cf.newCommand() because it will recognized the command
+            // and generate yet another exception!  So, treat as a generic command with a problem.
+            Message.printWarning (2, routine, "Invalid command parameter.  Adding command with problems:  " + line );
+            Message.printWarning(3, routine, e);
+            // CommandStatus will be set while initializing so no need to set here
+            // Do it anyway to make sure something does not fall through the cracks
+            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
+                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Invalid command parameter." + e + ").",
+                                "Correct the command.  See log file for details." ) );
+            }
+            // Add generic commands as comments prior to this command to show the original,
+            Command command2 = new GenericCommand ();
+            command2.setCommandString ( "# " + fixme +
+                    "The following command had errors and needs to be corrected below and this comment removed.");
+            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading the following command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
+            command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + line );
+            status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading this command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
+            // Allow the bad command to be loaded below.  It may have no arguments or partial
+            // parameters that need corrected.
+        }
+        catch ( Exception e ) {
+            // TODO SAM 2007-11-29 Need to decide whether to handle here or in command with CommandStatus
+            // It is important that the command get added, even if it is invalid, so the user can edit the
+            // command file.  They will likely need to replace the command, not edit it.
+            Message.printWarning( 1, routine, "Unexpected error creating command \"" + line + "\" - report to software support." );
+            Message.printWarning ( 3, routine, e );
+            // CommandStatus likely not set while initializing so need to set here to alert user
+            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
+                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "Unexpected error creating the command.",
+                                "Check the command syntax.  See log file for details." ) );
+            }
+            // Add generic commands as comments prior to this command to show the original,
+            Command command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme +
+                    " The following command had errors and needs to be corrected below and this comment removed.");
+            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading the following command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
+            command2 = new GenericCommand ();
+            command2.setCommandString ( "#" + fixme + line );
+            status = ((CommandStatusProvider)command2).getCommandStatus();
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            "There was an error loading this command.",
+                            "Correct the command below (typically an error due to manual edit)." ) );
+            addCommand ( command2, notifyListenersForEachAdd );
+            ++numAdded;
+            // Allow the bad command to be loaded below.  It may have no arguments or partial
+            // parameters that need corrected.
+        }
+        // TODO SAM 2007-10-09 Evaluate whether to call listeners each time a command is added.
+        // Could be good to indicate progress of load in the GUI.
+        // For now, add the command, without notifying listeners of changes...
+        if ( command != null ) {
+            // Check the command parameters
+            String command_tag = "" + numAdded + 1;  // Command number, for messaging
+            int error_count = 0;
+            try {  
+                command.checkCommandParameters(command.getCommandParameters(), command_tag, 2 );
+            }
+            catch ( InvalidCommandParameterException e ) {
+                /* TODO SAM 2008-05-14 Evaluate whether this can work - don't want a bunch
+                of extra comments for commands that are already being flagged with status.
+                // Add generic commands as comments prior to this command to show the original,
+                Command command2 = new GenericCommand ();
+                command2.setCommandString ( "#" + fixme +
+                "The following command had errors and needs to be corrected below and this comment removed.");
+                CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "There was an error loading the following command.",
+                                "Correct the command below (typically an error due to manual edit)." ) );
+                addCommand ( command2, notify_listeners_for_each_add );
+                ++num_added;
+                command2 = new GenericCommand ();
+                command2.setCommandString ( "#" + fixme + line );
+                status = ((CommandStatusProvider)command2).getCommandStatus();
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                "There was an error loading this command.",
+                                "Correct the command below (typically an error due to manual edit)." ) );
+                addCommand ( command2, notify_listeners_for_each_add );
+                ++num_added;
+                */
+                // Add command status to the command itself, handling whether a recognized
+                // command or a generic command (string command)...
+                String message = "Error loading command - invalid syntax (" + e + ").";
+                if ( command instanceof CommandStatusProvider ) {
+                       if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
+                               greaterThan(CommandStatusType.UNKNOWN) ) {
+                           // No need to print a message to the screen because a visual marker will be shown, but log...
+                           Message.printWarning ( 2,
+                                   MessageUtil.formatMessageTag(command_tag,
+                                           ++error_count), routine, message );
+                       }
+                       if ( command instanceof GenericCommand ) {
+                            // The command class will not have added a log record so do it here...
+                            ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
+                                    new CommandLogRecord(CommandStatusType.FAILURE,
+                                            message, "Check the log for more details." ) );
+                       }
+                }
+                else {
+                    // Command has not been updated to set warning/failure in status so show here
+                    Message.printWarning ( 2,
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++error_count), routine, message );
+                }
+                // Log the exception.
+                if (Message.isDebugOn) {
+                    Message.printDebug(3, routine, e);
+                }
+            }
+            // Now finally add the command to the list
+            addCommand ( command, notifyListenersForEachAdd );
+            ++numAdded;
+            // Run discovery on the command so that the identifiers are available to other commands.
+            // Do up front and then only when commands are edited.
+            if ( command instanceof CommandDiscoverable ) {
+                readCommandFile_RunDiscoveryOnCommand ( command );
+            }
+        }
+    } // Looping over command strings
+    // Now notify listeners about the add one time (only need to do if it
+    // was not getting done for each add)...
+    if ( !notifyListenersForEachAdd ) {
+        notifyCommandListListenersOfAdd ( 0, (numAdded - 1) );
+    }
+}
+
 /**
 Clear the results of processing.  This resets the list of time series, tables, and ensembles to empty.
 Other data still closely coupled with __tsengine are cleared in its processCommands_ResetDataForRun()
@@ -2848,7 +3118,9 @@ throws Exception
 }
 
 /**
-Read the command file and initialize new commands.
+Read the command file and initialize new commands.  The initial working directory for the processor will be set
+to the directory of the command file.  The addCommandsFromStringList() method is called on the strings from
+the file.
 @param path Path to the command file - this should be an absolute path.
 @param createUnknownCommandIfNotRecognized If true, create a GenericCommand
 if the command is not recognized or has a syntax problem.
@@ -2861,252 +3133,31 @@ problems will in any case be flagged at run-time as unrecognized or problematic.
 */
 public void readCommandFile ( String path, boolean createUnknownCommandIfNotRecognized, boolean append )
 throws IOException, FileNotFoundException
-{	String routine = getClass().getName() + ".readCommandFile";
-	BufferedReader br = null;
+{	BufferedReader br = null;
 	br = new BufferedReader( new FileReader(path) );
-	setCommandFileName ( path );   // This is used in headers, etc.
-	// Set the working directory because this may be used by other commands.
-	File path_File = new File(path);
-	setInitialWorkingDir ( path_File.getParent() );
-	String line;
-	Command command = null;
-	TSCommandFactory cf = new TSCommandFactory();
-	// Use this to control whether listeners should be notified for each
-	// insert.  Why would this be done?  If, for example, a GUI should display
-	// the progress in reading/initializing the commands.
-	//
-	// Why would this not be done?  Because of performance issues.
-	boolean notifyListenersForEachAdd = true;
-	// If not appending, remove all...
-	if ( !append ) {
-		removeAllCommands();
+	try {
+        setCommandFileName ( path );   // This is used in headers, etc.
+        // Read all the lines in the file
+        String line;
+        List commandStrings = new Vector();
+        while ( true ) {
+        	line = br.readLine();
+        	if ( line == null ) {
+        		break;
+        	}
+        	commandStrings.add ( line );
+        } // Looping over commands in file
+        // Now add the commands from the string list that was read
+        File path_File = new File(path);
+        String initialWorkingDir = path_File.getParent();
+        addCommandsFromStringList ( commandStrings, createUnknownCommandIfNotRecognized,
+                append, new File(initialWorkingDir) );
 	}
-	// Now process each line in the file and turn into a command...
-	int numAdded = 0;
-	while ( true ) {
-		line = br.readLine();
-		if ( line == null ) {
-			break;
-		}
-		// Trim spaces from the end of the line.  These can really cause problems with time series identifiers
-		line = line.trim();
-		// Create a command from the line.
-		// Normally will create the command even if not recognized.
-		if ( createUnknownCommandIfNotRecognized ) {
-			try {
-			    command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
-			}
-			catch ( UnknownCommandException e ) {
-				// Should not happen because of parameter passed above
-			}
-		}
-		else {
-			try {
-			    command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
-			}
-			catch ( UnknownCommandException e ) {
-				// TODO SAM 2007-09-08 Evaluate how to handle unknown commands at load without stopping the load
-				// In this case skip the command, although the above case may always be needed?
-			}
-		}
-		// Have a command instance.  Initialize the command (parse the command string) and check its arguments.
-		String fixme = "FIXME! ";  // String for inserted messages
-		try {
-			command.initializeCommand(
-				line,	// Command string, needed to do full parse on parameters
-				this,	// Processor, needed to make requests
-				true);	// Do full initialization (parse)
-		}
-		catch ( InvalidCommandSyntaxException e ) {
-		    // Can't use cf.newCommand() because it will recognized the command
-		    // and generate yet another exception!  So, treat as a generic command with a problem.
-		    Message.printWarning (2, routine, "Invalid command syntax.  Adding command with problems:  " + line );
-            Message.printWarning(3, routine, e);
-            // CommandStatus will be set while initializing so no need to set here
-            // Do it anyway to make sure something does not fall through the cracks
-            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
-                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "Invalid command syntax (" + e + ").",
-                                "Correct the command.  See log file for details." ) );
-            }
-            // Add generic commands as comments prior to this command to show the original,
-            Command command2 = new GenericCommand ();
-            command2.setCommandString ( "#" + fixme +
-                    "The following command had errors and needs to be corrected below and this comment removed.");
-            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading the following command.",
-                            "Correct the command below (typically a parameter error due to manual edit)." ) );
-            addCommand ( command2, notifyListenersForEachAdd );
-            ++numAdded;
-            command2 = new GenericCommand ();
-            command2.setCommandString ( "#" + fixme + line );
-            status = ((CommandStatusProvider)command2).getCommandStatus();
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading this command.",
-                            "Correct the command below (typically a parameter error due to manual edit)." ) );
-            addCommand ( command2, notifyListenersForEachAdd );
-            ++numAdded;
-            // Allow the bad command to be loaded below.  It may have no arguments or partial
-            // parameters that need corrected.
-		}
-		catch ( InvalidCommandParameterException e) {
-            // Can't use cf.newCommand() because it will recognized the command
-            // and generate yet another exception!  So, treat as a generic command with a problem.
-		    Message.printWarning (2, routine, "Invalid command parameter.  Adding command with problems:  " + line );
-            Message.printWarning(3, routine, e);
-            // CommandStatus will be set while initializing so no need to set here
-            // Do it anyway to make sure something does not fall through the cracks
-            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
-                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "Invalid command parameter." + e + ").",
-                                "Correct the command.  See log file for details." ) );
-            }
-            // Add generic commands as comments prior to this command to show the original,
-            Command command2 = new GenericCommand ();
-            command2.setCommandString ( "# " + fixme +
-                    "The following command had errors and needs to be corrected below and this comment removed.");
-            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading the following command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notifyListenersForEachAdd );
-            ++numAdded;
-            command2 = new GenericCommand ();
-            command2.setCommandString ( "#" + line );
-            status = ((CommandStatusProvider)command2).getCommandStatus();
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading this command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notifyListenersForEachAdd );
-            ++numAdded;
-            // Allow the bad command to be loaded below.  It may have no arguments or partial
-            // parameters that need corrected.
-		}
-        catch ( Exception e ) {
-            // TODO SAM 2007-11-29 Need to decide whether to handle here or in command with CommandStatus
-            // It is important that the command get added, even if it is invalid, so the user can edit the
-            // command file.  They will likely need to replace the command, not edit it.
-            Message.printWarning( 1, routine, "Unexpected error creating command \"" + line + "\" - report to software support." );
-            Message.printWarning ( 3, routine, e );
-            // CommandStatus likely not set while initializing so need to set here to alert user
-            if ( (command != null) && (command instanceof CommandStatusProvider) ) {
-                CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "Unexpected error creating the command.",
-                                "Check the command syntax.  See log file for details." ) );
-            }
-            // Add generic commands as comments prior to this command to show the original,
-            Command command2 = new GenericCommand ();
-            command2.setCommandString ( "#" + fixme +
-                    " The following command had errors and needs to be corrected below and this comment removed.");
-            CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading the following command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notifyListenersForEachAdd );
-            ++numAdded;
-            command2 = new GenericCommand ();
-            command2.setCommandString ( "#" + fixme + line );
-            status = ((CommandStatusProvider)command2).getCommandStatus();
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            "There was an error loading this command.",
-                            "Correct the command below (typically an error due to manual edit)." ) );
-            addCommand ( command2, notifyListenersForEachAdd );
-            ++numAdded;
-            // Allow the bad command to be loaded below.  It may have no arguments or partial
-            // parameters that need corrected.
-        }
-        // TODO SAM 2007-10-09 Evaluate whether to call listeners each time a command is added.
-        // Could be good to indicate progress of load in the GUI.
-        // For now, add the command, without notifying listeners of changes...
-        if ( command != null ) {
-            // Check the command parameters
-            String command_tag = "" + numAdded + 1;  // Command number, for messaging
-            int error_count = 0;
-            try {  
-                command.checkCommandParameters(command.getCommandParameters(), command_tag, 2 );
-            }
-            catch ( InvalidCommandParameterException e ) {
-                /* TODO SAM 2008-05-14 Evaluate whether this can work - don't want a bunch
-                of extra comments for commands that are already being flagged with status.
-                // Add generic commands as comments prior to this command to show the original,
-                Command command2 = new GenericCommand ();
-                command2.setCommandString ( "#" + fixme +
-                "The following command had errors and needs to be corrected below and this comment removed.");
-                CommandStatus status = ((CommandStatusProvider)command2).getCommandStatus();
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "There was an error loading the following command.",
-                                "Correct the command below (typically an error due to manual edit)." ) );
-                addCommand ( command2, notify_listeners_for_each_add );
-                ++num_added;
-                command2 = new GenericCommand ();
-                command2.setCommandString ( "#" + fixme + line );
-                status = ((CommandStatusProvider)command2).getCommandStatus();
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                "There was an error loading this command.",
-                                "Correct the command below (typically an error due to manual edit)." ) );
-                addCommand ( command2, notify_listeners_for_each_add );
-                ++num_added;
-                */
-                // Add command status to the command itself, handling whether a recognized
-                // command or a generic command (string command)...
-                String message = "Error loading command - invalid syntax (" + e + ").";
-                if ( command instanceof CommandStatusProvider ) {
-                       if ( CommandStatusUtil.getHighestSeverity((CommandStatusProvider)command).
-                               greaterThan(CommandStatusType.UNKNOWN) ) {
-                           // No need to print a message to the screen because a visual marker will be shown, but log...
-                           Message.printWarning ( 2,
-                                   MessageUtil.formatMessageTag(command_tag,
-                                           ++error_count), routine, message );
-                       }
-                       if ( command instanceof GenericCommand ) {
-                            // The command class will not have added a log record so do it here...
-                            ((CommandStatusProvider)command).getCommandStatus().addToLog ( CommandPhaseType.RUN,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                            message, "Check the log for more details." ) );
-                       }
-                }
-                else {
-                    // Command has not been updated to set warning/failure in status so show here
-                    Message.printWarning ( 2,
-                        MessageUtil.formatMessageTag(command_tag,
-                        ++error_count), routine, message );
-                }
-                // Log the exception.
-                if (Message.isDebugOn) {
-                    Message.printDebug(3, routine, e);
-                }
-            }
-            // Now finally add the command to the list
-            addCommand ( command, notifyListenersForEachAdd );
-            ++numAdded;
-            // Run discovery on the command so that the identifiers are available to other commands.
-            // Do up front and then only when commands are edited.
-            if ( command instanceof CommandDiscoverable ) {
-                readCommandFile_RunDiscoveryOnCommand ( command );
-            }
-        }
-	} // Looping over commands in file
-	// Close the file...
-	br.close();
-	// Now notify listeners about the add one time (only need to do if it
-	// was not getting done for each add)...
-	if ( !notifyListenersForEachAdd ) {
-		notifyCommandListListenersOfAdd ( 0, (numAdded - 1) );
+	finally {
+        // Close the file...
+	    if ( br != null ) {
+	        br.close();
+	    }
 	}
 }
 

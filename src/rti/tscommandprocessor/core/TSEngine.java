@@ -842,8 +842,7 @@ Count of errors.
 private int	_fatal_error_count = 0;
 
 /**
-HydroBase DMI instance Vector, to allow more than one database instance to
-be open at a time.
+HydroBase DMI instance Vector, to allow more than one database instance to be open at a time.
 */
 private List __hbdmi_Vector = new Vector();
 
@@ -870,15 +869,13 @@ private DateTime __InputEnd_DateTime = null;
 /**
 Vector to save list of time series identifiers that are not found.
 */
-private List	__missing_ts = new Vector();
+private List __missing_ts = new Vector();
 
 // TODO SAM 2007-02-18 need to reenable NDFD
-//private Vector __NDFDAdapter_Vector = new Vector();
-						// NDFD Adapter instance
-						// Vector, to allow more than
-						// one database instance to
-						// be open at a time, only
-						// used with openNDFD().
+/**
+NDFD Adapter instance list, to allow more than one database instance to be open at a time, used with openNDFD().
+*/
+//private List __NDFDAdapter_Vector = new Vector();
 
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
@@ -947,8 +944,8 @@ This will always be non-null.
 private List __tslist = new Vector(50,50);
 
 /**
-WindowListener for TSViewJFrame objects, used when calling app wants to listen for
-window events on lot windows.
+WindowListener for TSViewJFrame objects, used when calling application wants to listen for
+window events on plot windows.
 */
 private WindowListener _tsview_window_listener = null;
 
@@ -4523,8 +4520,7 @@ throws Exception
 	if ( (inputType != null) && inputType.equalsIgnoreCase("DateValue") ) {
 		// New style TSID~input_type~input_name
 		try {
-		    ts = DateValueTS.readTimeSeries ( tsidentString2,
-				inputNameFull, readStart, readEnd, units, readData );
+		    ts = DateValueTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
 		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from DateValue file." );
@@ -4805,7 +4801,7 @@ throws Exception
 	else if ((inputType != null) && inputType.equalsIgnoreCase("USGSNWIS") ) {
 		// New style TSID~input_type
 		try {
-            ts = UsgsNwisTS.readTimeSeries ( tsidentString2, inputName, readStart, readEnd, units, readData );
+            ts = UsgsNwisTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
 		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from USGS NWIS file." );

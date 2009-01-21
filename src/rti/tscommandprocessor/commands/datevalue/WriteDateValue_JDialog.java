@@ -142,8 +142,7 @@ public void actionPerformed( ActionEvent event )
 				IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"WriteDateValue_JDialog", "Error converting file to relative path." );
+				Message.printWarning ( 1, "WriteDateValue_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -157,8 +156,8 @@ private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }

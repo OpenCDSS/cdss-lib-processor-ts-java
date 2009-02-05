@@ -1,48 +1,3 @@
-// ----------------------------------------------------------------------------
-// readHydroBase_JDialog - editor for TS Alias = readHydroBase() and
-//					readHydroBase().
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2004-08-25	Steven A. Malers, RTi	Initial version (copy and modify
-//					TSreadDateValue).
-// 2004-08-26	SAM, RTi		Combine the TS X = read... and read...
-//					versions of the command editors into
-//					this dialog.
-// 2004-08-29	SAM, RTi		* Add all the input filter panels but
-//					  still only enable the structure with
-//					  SFUT.
-//					* Change "SheetName" to
-//					  "SheetNameWISFormat" to reflect the
-//					  objects being used.
-// 2004-08-31	SAM, RTi		* Increase the number of where clauses
-//					  to 5.
-// 2005-04-12	SAM, RTi		* Add InputName parameter to allow
-//					  reading from a specific HydroBase
-//					  connection.
-//					* Convert the command JTextField to a
-//					  scrolled JTextArea because of the
-//					  length of the command.
-// 2006-04-21	SAM, RTi		* Update to use command class.
-//					* Add parameters to fill with diversion
-//					  comments and fill daily diversions.
-// 2006-04-27	SAM, RTi		* Add support for RelTotal and RelClass
-//					  filling with carry forward and
-//					  comments.
-//					* As per Ray Bennett, filling with
-//					  daily carry forward should ALWAYS
-//					  occur (no user option) - comment out
-//					  code in case he changes his mind.
-//					* As per Ray Bennett, filling with
-//					  diversion comments should NOT be the
-//					  default.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.hydrobase;
 
 import java.awt.FlowLayout;
@@ -81,13 +36,12 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
 
 /**
-The ReadHydroBase_JDialog edits the ReadHydroBase() and
-TS Alias = ReadHydroBase() command.
+The ReadHydroBase_JDialog edits the ReadHydroBase() and TS Alias = ReadHydroBase() command.
 */
 public class ReadHydroBase_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
+private SimpleJButton __cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private ReadHydroBase_Command __command = null; // Command to edit
 private JTextField	__Alias_JTextField=null,// Alias for time series, alias version
@@ -174,6 +128,7 @@ private boolean		__use_alias = false;	// Indicates if one time series
 private boolean		__ok = false;		// Indicates whether OK was
 						// pressed when closing the
 						// dialog.
+private int __numWhere = (HydroBaseDMI.getSPFlexMaxParameters() - 2); // Number of visible where fields
 
 /**
 Command editor constructor.
@@ -295,30 +250,12 @@ private void checkInput ()
 		if ( InputName.length() > 0 ) {
 			props.set ( "InputName", InputName );
 		}
-		String Where1 = getWhere ( 0 );
-		if ( Where1.length() > 0 ) {
-			props.set ( "Where1", Where1 );
-		}
-		String Where2 = getWhere ( 1 );
-		if ( Where2.length() > 0 ) {
-			props.set ( "Where2", Where2 );
-		}
-		String Where3 = getWhere ( 2 );
-		if ( Where3.length() > 0 ) {
-			props.set ( "Where3", Where3 );
-		}
-		String Where4 = getWhere ( 3 );
-		if ( Where4.length() > 0 ) {
-			props.set ( "Where4", Where4 );
-		}
-		String Where5 = getWhere ( 4 );
-		if ( Where5.length() > 0 ) {
-			props.set ( "Where5", Where5 );
-		}
-		String Where6 = getWhere ( 5 );
-		if ( Where6.length() > 0 ) {
-			props.set ( "Where6", Where6 );
-		}
+		for ( int i = 1; i <= __numWhere; i++ ) {
+		    String where = getWhere ( i - 1 );
+		    if ( where.length() > 0 ) {
+		        props.set ( "Where" + i, where );
+		    }
+	    }
 	}
 	// Both command types use these...
 	String InputStart = __InputStart_JTextField.getText().trim();
@@ -380,36 +317,13 @@ private void commitEdits ()
 		String InputName = __InputName_JTextField.getText().trim();
 		__command.setCommandParameter ( "InputName", InputName );
 		String delim = ";";
-		String Where1 = getWhere ( 0 );
-		if ( Where1.startsWith(delim) ) {
-			Where1 = "";
+		for ( int i = 1; i <= __numWhere; i++ ) {
+		    String where = getWhere ( i - 1 );
+		    if ( where.startsWith(delim) ) {
+		        where = "";
+		    }
+		    __command.setCommandParameter ( "Where" + i, where );
 		}
-		__command.setCommandParameter ( "Where1", Where1 );
-		String Where2 = getWhere ( 1 );
-		if ( Where2.startsWith(delim) ) {
-			Where2 = "";
-		}
-		__command.setCommandParameter ( "Where2", Where2 );
-		String Where3 = getWhere ( 2 );
-		if ( Where3.startsWith(delim) ) {
-			Where3 = "";
-		}
-		__command.setCommandParameter ( "Where3", Where3 );
-		String Where4 = getWhere ( 3 );
-		if ( Where4.startsWith(delim) ) {
-			Where4 = "";
-		}
-		__command.setCommandParameter ( "Where4", Where4 );
-		String Where5 = getWhere ( 4 );
-		if ( Where5.startsWith(delim) ) {
-			Where5 = "";
-		}
-		__command.setCommandParameter ( "Where5", Where5 );
-		String Where6 = getWhere ( 5 );
-		if ( !Where6.startsWith(delim) ) {
-			Where6 = "";
-		}
-		__command.setCommandParameter ( "Where6", Where6 );
 	}
 	// Both versions of the commands use these...
 	String InputStart = __InputStart_JTextField.getText().trim();
@@ -520,8 +434,7 @@ private void initialize ( JFrame parent, Command command )
 				__hbdmi = (HydroBaseDMI)v.get(0);
 			}
 			else {
-				String message =
-					"No HydroBase connection is available to use with command editing.\n" +
+				String message = "No HydroBase connection is available to use with command editing.\n" +
 					"Make sure that HydroBase is open.";
 				Message.printWarning(1, routine, message );
 			}
@@ -529,8 +442,7 @@ private void initialize ( JFrame parent, Command command )
 	}
 	catch ( Exception e ){
 		// Not fatal, but of use to developers.
-		String message =
-			"No HydroBase connection is available to use with command editing.\n" +
+		String message = "No HydroBase connection is available to use with command editing.\n" +
 			"Make sure that HydroBase is open.";
 		Message.printWarning(1, routine, message );
 	}
@@ -549,7 +461,8 @@ private void initialize ( JFrame parent, Command command )
 		"Read a single time series from the HydroBase database."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-	else {	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	else {
+	    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Read one or more time series from the HydroBase database."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
        	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -686,7 +599,8 @@ private void initialize ( JFrame parent, Command command )
 		try {	// Structure with SFUT...
 
 			PropList filter_props = new PropList ( "" );
-			filter_props.set ( "NumFilterGroups=6" );
+			// Number of filters is the maximum - 2 (data type and interval)
+			filter_props.set ( "NumFilterGroups=" + __numWhere );
 			__input_filter_HydroBase_structure_sfut_JPanel = new
 				HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
 				__hbdmi, true, filter_props );

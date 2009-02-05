@@ -88,6 +88,12 @@ public class ReadHydroBase_Command extends AbstractCommand implements Command, C
 {
 
 /**
+Number of where clauses shown in the editor and available as parameters - the HydroBase SPFlex maximum minus
+2 (data type and interval).
+*/
+private int __numWhere = (HydroBaseDMI.getSPFlexMaxParameters() - 2);
+
+/**
 Data values for boolean parameters.
 */
 protected String _False = "False";
@@ -124,8 +130,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -339,12 +344,10 @@ throws InvalidCommandParameterException
     else {
         valid_Vector.add ( "DataType" );
         valid_Vector.add ( "Interval" );
-        valid_Vector.add ( "Where1" );
-        valid_Vector.add ( "Where2" );
-        valid_Vector.add ( "Where3" );
-        valid_Vector.add ( "Where4" );
-        valid_Vector.add ( "Where5" );
-        valid_Vector.add ( "Where6" );
+        int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
+        for ( int i = 1; i <= numFilters; i++ ) { 
+            valid_Vector.add ( "Where" + i );
+        }
     }
     valid_Vector.add ( "InputName" );
     valid_Vector.add ( "InputStart" );
@@ -454,8 +457,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	String Alias = null;
 	_use_alias = false;
 	if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-		// There is an alias specified.  Extract the alias from the full
-		// command...
+		// There is an alias specified.  Extract the alias from the full command...
 		String str = command_string.substring(3);	
 		int index = str.indexOf("=");
 		int index2 = str.indexOf("(");
@@ -481,8 +483,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		_use_alias = true;
 	}
 
-	// Convert QueryStart and QueryEnd to new syntax InputStart and
-	// InputEnd...
+	// Convert QueryStart and QueryEnd to new syntax InputStart and InputEnd...
 	String QueryStart = parameters.getValue ( "QueryStart" );
 	if ( (QueryStart != null) && (QueryStart.length() > 0) ) {
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
@@ -566,11 +567,11 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
             message = "Error requesting DateTime(DateTime=" + InputStart + ") from processor.";
 			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
             status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Report problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                   message, "Report problem to software support." ) );
 		}
 		PropList bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
@@ -580,13 +581,15 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Verify that a valid InputStart string has been specified." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a valid InputStart string has been specified." ) );
 		}
-		else {	InputStart_DateTime = (DateTime)prop_contents;
+		else {
+		    InputStart_DateTime = (DateTime)prop_contents;
 		}
 	}
-	else {	// Get from the processor...
+	else {
+	    // Get from the processor...
 		try {
             Object o = processor.getPropContents ( "InputStart" );
 			if ( o != null ) {
@@ -596,11 +599,11 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
 			message = "Error requesting InputStart from processor.";
             Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( command_phase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report problem to software support." ) );
 		}
 	}
 	String InputEnd = parameters.getValue ( "InputEnd" );
@@ -615,14 +618,14 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
             message = "Error requesting DateTime(DateTime=" + InputEnd + ") from processor.";
 			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
             Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
             status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report problem to software support." ) );
 		}
 		PropList bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
@@ -632,13 +635,15 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
             status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Verify that a valid InputEnd has been specified." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that a valid InputEnd has been specified." ) );
 		}
-		else {	InputEnd_DateTime = (DateTime)prop_contents;
+		else {
+		    InputEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
-	else {	// Get from the processor...
+	else {
+	    // Get from the processor...
 		try { Object o = processor.getPropContents ( "InputEnd" );
 			if ( o != null ) {
 				InputEnd_DateTime = (DateTime)o;
@@ -648,11 +653,11 @@ CommandWarningException, CommandException
 			// Not fatal, but of use to developers.
 			message = "Error requesting InputEnd from processor.";
             Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
                 status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                           message, "Report problem to software support." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report problem to software support." ) );
 		}
 	}
 
@@ -718,9 +723,9 @@ CommandWarningException, CommandException
 			if ( o == null ) {
 				message = "Could not get list of HydroBase connections to query data.";
 				Message.printWarning ( 2, routine, message );
-                   status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Verify that a HydroBase database connection has been opened." ) );
+                    status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
 			List hbdmi_Vector = (List)o;
@@ -730,8 +735,8 @@ CommandWarningException, CommandException
                 tsident.getInputName() + "\" to query data.";
 				Message.printWarning ( 2, routine, message );
                 status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Verify that a HydroBase connection with the given name has been opened." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that a HydroBase connection with the given name has been opened." ) );
 				throw new Exception ( message );
 			}
 			try {
@@ -744,16 +749,16 @@ CommandWarningException, CommandException
 				Message.printWarning ( 2, routine, message );
 				Message.printWarning ( 2, routine, e );
 				if ( IfMissingWarn ) {
-                   status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Verify the time series identifier." ) );
+                    status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the time series identifier." ) );
                    throw new Exception ( message );
 				}
 				else {
 				    // Just show for info purposes
-	                   status.addToLog ( command_phase,
-	                            new CommandLogRecord(CommandStatusType.INFO,
-	                               message, "Verify the time series identifier." ) );
+                    status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.INFO,
+                            message, "Verify the time series identifier." ) );
 				}
 			}
 			finally {
@@ -782,8 +787,7 @@ CommandWarningException, CommandException
 			String WhereN;
 			int nfg = 0;	// Used below.
 			for ( nfg = 0; nfg < 1000; nfg++ ) {
-				WhereN = parameters.getValue (
-					"Where" + (nfg + 1) );
+				WhereN = parameters.getValue ( "Where" + (nfg + 1) );
 				if ( WhereN == null ) {
 					break;	// No more where clauses
 				}
@@ -796,8 +800,8 @@ CommandWarningException, CommandException
 				message = "Could not get list of HydroBase connections to query data.";
 				Message.printWarning ( 2, routine, message );
                 status.addToLog ( command_phase,
-                         new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that a HydroBase database connection has been opened." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
 			List hbdmi_Vector = (List)o;
@@ -806,8 +810,8 @@ CommandWarningException, CommandException
 				message ="Could not find HydroBase connection with input name \"" + InputName + "\" to query data.";
 				Message.printWarning ( 2, routine, message );
                 status.addToLog ( command_phase,
-                          new CommandLogRecord(CommandStatusType.FAILURE,
-                             message, "Verify that a HydroBase database connection has been opened." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
 
@@ -880,9 +884,9 @@ CommandWarningException, CommandException
 			else {
                 message = "Data type \"" + DataType + "\" is not recognized as a HydroBase data type.";
 				Message.printWarning ( 2, routine, message );
-                  status.addToLog ( command_phase,
-                          new CommandLogRecord(CommandStatusType.FAILURE,
-                             message, "Verify that the datatype can be used with HydroBase (see documentation)." ) );
+                status.addToLog ( command_phase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the datatype can be used with HydroBase (see documentation)." ) );
 				throw new Exception ( message );
 			}
 
@@ -904,19 +908,17 @@ CommandWarningException, CommandException
 					Message.printWarning ( 3, routine, e );
 					++warning_count;
                     status.addToLog ( command_phase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                   message, "Report the problem to software support - also see the log file." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support - also see the log file." ) );
 				}
 			}
 		
-			// Read the list of objects from which identifiers can
-			// be obtained.  This code is similar to that in
+			// Read the list of objects from which identifiers can be obtained.  This code is similar to that in
 			// TSTool_JFrame.readHydroBaseHeaders...
 		
-			Message.printStatus ( 2, "", "Getting the list of time series..." );
+			Message.printStatus ( 2, routine, "Getting the list of time series..." );
 		
-			List tslist0 = HydroBase_Util.readTimeSeriesHeaderObjects ( hbdmi,
-					DataType, Interval, filter_panel );
+			List tslist0 = HydroBase_Util.readTimeSeriesHeaderObjects ( hbdmi, DataType, Interval, filter_panel );
 			// Make sure that size is set...
 			int size = 0;
 			if ( tslist0 != null ) {
@@ -930,10 +932,10 @@ CommandWarningException, CommandException
 	                message = "No time series were read from HydroBase.";
 	                Message.printWarning ( warning_level, 
 	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-	                    status.addToLog ( command_phase,
-	                            new CommandLogRecord(CommandStatusType.FAILURE,
-	                                    message, "Data may not be in database." +
-	                                    		"  Previous messages may provide more information." ) );
+                    status.addToLog ( command_phase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Data may not be in database." +
+                            	"  Previous messages may provide more information." ) );
 	            }
 	            else {
 	                // Ignore the problem.  Call it a success if no other problems occurred.
@@ -942,31 +944,27 @@ CommandWarningException, CommandException
 	            // Generate an event for listeners
 	            // FIXME SAM 2008-08-20 Need to put together a more readable id for reporting
                 notifyCommandProcessorEventListeners(
-                        new MissingObjectEvent(DataType + ", " + Interval + ", see command for user-specified criteria",
-                                Class.forName("RTi.TS.TS"),"Time Series", this));
+                    new MissingObjectEvent(DataType + ", " + Interval + ", see command for user-specified criteria",
+                        Class.forName("RTi.TS.TS"),"Time Series", this));
 				return;
        		}
 		
-			// Else, convert each header object to a TSID string and
-			// read the time series...
+			// Else, convert each header object to a TSID string and read the time series...
 
 			Message.printStatus ( 2, "", "Reading " + size + " time series..." );
 
-			String tsident_string = null;	// TSIdent string
-			TS ts;				// Time series to read.
+			String tsident_string = null; // TSIdent string
+			TS ts; // Time series to read.
 			HydroBase_AgriculturalCASSCropStats cass;
 			HydroBase_AgriculturalNASSCropStats nass;
 			HydroBase_WISSheetNameWISFormat wis;
 			HydroBase_StructureGeolocStructMeasType str;
 			HydroBase_StructureIrrigSummaryTS irrigts;
 			HydroBase_StationGeolocMeasType sta;
-			String input_name = "";	// Input name to add to
-						// identifiers, if it has been
-						// requested (this includes the
-						// tilde character).
+			String input_name = "";	// Input name to add to identifiers, if it has been
+						// requested (this includes the tilde character).
 			if ( (InputName != null) && (InputName.length() > 0) ) {
-				// Include the input name in the returned
-				// TSIdent...
+				// Include the input name in the returned TSIdent...
 				input_name = "~" + InputName;
 			}
 			for ( int i = 0; i < size; i++ ) {
@@ -977,37 +975,28 @@ CommandWarningException, CommandException
 					tsident_string = 
 						sta.getStation_id()
 						+ "." + sta.getData_source()
-						+ "." + DataType + "." +Interval
+						+ "." + DataType + "." + Interval
 						+ "~HydroBase" + input_name;
 				}
 				else if ( is_Structure ) {
 					str = (HydroBase_StructureGeolocStructMeasType)tslist0.get(i);
-					tsident_string =
-						HydroBase_WaterDistrict.
-						formWDID( wdid_length,
-						str.getWD(),str.getID())
+					tsident_string = HydroBase_WaterDistrict.formWDID( wdid_length,str.getWD(),str.getID())
 						+ "." + str.getData_source()
-						+ "." + DataType + "." +Interval
+						+ "." + DataType + "." + Interval
 						+ "~HydroBase" + input_name;
 				}
 				else if ( is_StructureSFUT ) {
 					str = (HydroBase_StructureGeolocStructMeasType)tslist0.get(i);
-					tsident_string =
-						HydroBase_WaterDistrict.
-						formWDID( wdid_length,
-						str.getWD(),str.getID())
+					tsident_string = HydroBase_WaterDistrict.formWDID( wdid_length,str.getWD(),str.getID())
 						+ "." + str.getData_source()
 						+ "." + DataType + "-"
 						+ str.getIdentifier() + "." +
-						Interval
-						+ "~HydroBase" + input_name;
+						Interval + "~HydroBase" + input_name;
 				}
 				else if ( is_StructureIrrigSummaryTS ) {
 					// Irrig summary TS...
 					irrigts = (HydroBase_StructureIrrigSummaryTS)tslist0.get(i);
-					tsident_string =HydroBase_WaterDistrict.
-						formWDID( wdid_length,
-						irrigts.getWD(),irrigts.getID())
+					tsident_string =HydroBase_WaterDistrict.formWDID( wdid_length,irrigts.getWD(),irrigts.getID())
 						+ ".CDSSGIS" 
 						+ "." + DataType + "-"
 						+ irrigts.getLand_use()
@@ -1044,7 +1033,8 @@ CommandWarningException, CommandException
 				}
 	
 				Message.printStatus ( 2, routine, "Reading time series for \"" +tsident_string + "\"..." );
-				try {	ts = hbdmi.readTimeSeries (
+				try {
+				    ts = hbdmi.readTimeSeries (
 						tsident_string,
 						InputStart_DateTime,
 						InputEnd_DateTime, null, read_data,
@@ -1058,8 +1048,8 @@ CommandWarningException, CommandException
 					Message.printWarning ( 2, routine, e );
 					++warning_count;
                     status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                               message, "Report the problem to software support - also see the log file." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Report the problem to software support - also see the log file." ) );
 				}
 			}
 		}
@@ -1082,8 +1072,8 @@ CommandWarningException, CommandException
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
                         status.addToLog ( command_phase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Report the problem to software support." ) );
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
                 }
     
@@ -1096,8 +1086,8 @@ CommandWarningException, CommandException
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
                         status.addToLog ( command_phase,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Report the problem to software support." ) );
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
                 }
             }
@@ -1112,8 +1102,8 @@ CommandWarningException, CommandException
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Data may not be in database.  See previous messages." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Data may not be in database.  See previous messages." ) );
             }
             // Generate an event for listeners
             // TOD SAM 2008-08-20 Evaluate whether need here
@@ -1127,8 +1117,8 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
         status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report the problem to software support - also see the log file." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+               message, "Report the problem to software support - also see the log file." ) );
 		throw new CommandException ( message );
 	}
 
@@ -1208,54 +1198,15 @@ public String toString ( PropList props )
 			b.append ( "InputName=\"" + InputName + "\"" );
 		}
 		String delim = ";";
-		String Where1 = props.getValue("Where1");
-		if ( (Where1 != null) && (Where1.length() > 0) &&
-			!Where1.startsWith(delim) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Where1=\"" + Where1 + "\"" );
-		}
-		String Where2 = props.getValue("Where2");
-		if ( (Where2 != null) && (Where2.length() > 0) &&
-			!Where2.startsWith(delim) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Where2=\"" + Where2 + "\"" );
-		}
-		String Where3 = props.getValue("Where3");
-		if ( (Where3 != null) && (Where3.length() > 0) &&
-			!Where3.startsWith(delim) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Where3=\"" + Where3 + "\"" );
-		}
-		String Where4 = props.getValue("Where4");
-		if ( (Where4 != null) && (Where4.length() > 0) &&
-			!Where4.startsWith(delim) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Where4=\"" + Where4 + "\"" );
-		}
-		String Where5 = props.getValue("Where5");
-		if ( (Where5 != null) && (Where5.length() > 0) &&
-			!Where5.startsWith(delim) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Where5=\"" + Where5 + "\"" );
-		}
-		String Where6 = props.getValue("Where6");
-		if ( (Where6 != null) && (Where6.length() > 0) &&
-			!Where6.startsWith(delim) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Where6=\"" + Where6 + "\"" );
-		}
+	    for ( int i = 1; i <= __numWhere; i++ ) {
+        	String where = props.getValue("Where" + i);
+        	if ( (where != null) && (where.length() > 0) && !where.startsWith(delim) ) {
+        		if ( b.length() > 0 ) {
+        			b.append ( "," );
+        		}
+        		b.append ( "Where" + i + "=\"" + where + "\"" );
+        	}
+	    }
 	}
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {

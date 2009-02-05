@@ -1905,18 +1905,26 @@ throws Exception
 
 /**
 Return the HydroBaseDMI that is being used.  Use a blank input name to get the default.
-@param input_name Input name for the DMI, can be blank.
+@param inputName Input name for the DMI, can be blank.
 @return the HydroBaseDMI that is being used (may return null).
 */
-protected HydroBaseDMI getHydroBaseDMI ( String input_name )
+protected HydroBaseDMI getHydroBaseDMI ( String inputName )
 {	int size = __hbdmi_Vector.size();
-	if ( input_name == null ) {
-		input_name = "";
+	if ( inputName == null ) {
+		inputName = "";
 	}
+	if ( Message.isDebugOn ) {
+        Message.printDebug ( 1, "", "Trying to find requested HydroBaseDMI instance for input name=\""+
+        inputName + "\"" );
+    }
 	HydroBaseDMI hbdmi = null;
 	for ( int i = 0; i < size; i++ ) {
 		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(i);
-		if ( hbdmi.getInputName().equalsIgnoreCase(input_name) ) {
+	    if ( Message.isDebugOn ) {
+	        Message.printDebug ( 1, "", "Checking HydroBaseDMI instance with input name=\""+
+	            hbdmi.getInputName() + "\"" );
+	    }
+		if ( hbdmi.getInputName().equalsIgnoreCase(inputName) ) {
 			if ( Message.isDebugOn ) {
 				Message.printDebug ( 1, "", "Returning HydroBaseDMI[" + i +"] InputName=\""+
 				hbdmi.getInputName() + "\"" );

@@ -31,14 +31,14 @@ public class SetOutputYearType_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
-private SetOutputYearType_Command		__command = null;	// Command to edit
-private JTextArea	__command_JTextArea = null;
-private SimpleJComboBox	__OutputYearType_JComboBox = null;	// Field for year type
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private boolean     __ok = false;       // Indicates whether OK button has been pressed.
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private SetOutputYearType_Command __command = null; // Command to edit
+private JTextArea __command_JTextArea = null;
+private SimpleJComboBox __OutputYearType_JComboBox = null; // Field for year type
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor dialog constructor.
@@ -82,7 +82,8 @@ private void checkInput ()
     if ( OutputYearType.length() > 0 ) {
         props.set ( "OutputYearType", OutputYearType );
     }
-    try {   // This will warn the user...
+    try {
+    	// This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
     }
     catch ( Exception e ) {
@@ -144,12 +145,16 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 	"Water year:  October (year - 1) to September (year) (e.g., water year 1970 is Oct 1969 to Sep 1970."),
 	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+	"NovToOct:  November (year - 1) to October(year) (e.g., year 1970 is Nov 1969 to Oct 1970."),
+	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputYearType_JComboBox = new SimpleJComboBox ( false );
 	__OutputYearType_JComboBox.add ( __command._Calendar );
 	__OutputYearType_JComboBox.add ( __command._Water );
+	__OutputYearType_JComboBox.add ( __command._NovToOct );
 	__OutputYearType_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -222,7 +227,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "setOutputYearType_JDialog.refresh";
+{   String routine = getClass().getName() + "._JDialog.refresh";
     String OutputYearType = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {

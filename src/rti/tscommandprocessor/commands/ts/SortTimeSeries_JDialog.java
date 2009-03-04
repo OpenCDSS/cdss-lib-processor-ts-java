@@ -1,16 +1,3 @@
-// ----------------------------------------------------------------------------
-// sortTimeSeries_JDialog - editor for sortTimeSeries()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-05-03	Steven A. Malers, RTi	Initial version (copy and modify
-//					setOutputYearType_Dialog).
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;

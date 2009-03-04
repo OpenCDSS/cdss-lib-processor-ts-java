@@ -43,9 +43,9 @@ public class AnalyzePattern_Command extends AbstractCommand	implements Command, 
 {
 
 // Defines used by this class and its analyzePattern_Dialog counterpart.
-protected final String _SelectedTS          = "SelectedTS";
-protected final String _AllMatchingTSID     = "AllMatchingTSID";
-protected final String _AllTS               = "AllTS";
+protected final String _SelectedTS = "SelectedTS";
+protected final String _AllMatchingTSID = "AllMatchingTSID";
+protected final String _AllTS = "AllTS";
 protected final String _ANALYSIS_PERCENTILE = "Percentile";
 
 double [] __percentileArray = null;
@@ -71,20 +71,19 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String warning = "";
     String message;
 	
-	String TSList     = parameters.getValue ( "TSList"     );
-	String TSID       = parameters.getValue ( "TSID"       );
+	String TSList = parameters.getValue ( "TSList"     );
+	String TSID = parameters.getValue ( "TSID"       );
 	// TODO SAM 2007-02-17 Need to enable Method
-	//String Method     = parameters.getValue ( "Method"     );
+	//String Method = parameters.getValue ( "Method"     );
 	String Percentile = parameters.getValue ( "Percentile" );
-	String PatternID  = parameters.getValue ( "PatternID"  );
+	String PatternID = parameters.getValue ( "PatternID"  );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
 	// Get the working_dir from the command processor
@@ -104,13 +103,13 @@ throws InvalidCommandParameterException
         message = "Error requesting WorkingDir from processor.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Software error - report problem to support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Software error - report problem to support." ) );
 	}
 	
     if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
-            !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
-            !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
+        !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         if ( TSID != null ) {
             message = "TSID should only be specified when TSList=" +
             TSListType.ALL_MATCHING_TSID.toString() + " or " +
@@ -131,16 +130,16 @@ throws InvalidCommandParameterException
                 message = "TSID should should not be empty when TSList=" + _AllMatchingTSID + " is specified.";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a TSID." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a TSID." ) );
 			}
 		}
         else {
             message = "TSID should should not be empty when TSList=" + _AllMatchingTSID + " is specified.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a TSID." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a TSID." ) );
 		}
 	}
 
@@ -692,8 +691,8 @@ throws InvalidCommandParameterException,
 		String CalendarType = "CalendarYear";
 	   	try { Object o = processor.getPropContents ( "OutputYearType" );
 	   		if ( o != null ) {
-	   			CalendarType = (String)o;
-	   			// Convert to the format used by code below...
+	   			CalendarType = (String)o; // Default to whatever is coming in
+	   			// Convert to the format used by code below ("NovToDec" is ok just passing through)...
 	   			if ( StringUtil.indexOfIgnoreCase(CalendarType, "calendar", 0) >= 0 ){
 	   				CalendarType = "CalendarYear";
 	   			}
@@ -833,4 +832,4 @@ public String toString ( PropList props )
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
-} // end analyzePattern_Command
+}

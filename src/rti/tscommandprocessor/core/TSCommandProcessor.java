@@ -874,14 +874,13 @@ open HydroBase connection information, if available.
 
 <tr>
 <td><b>OutputYearType</b></td>
-<td>The output year type, as a String ("Calendar" or "Water", Oct-Nov).
+<td>The output year type, as a String ("Calendar", "Water" (Oct-Nov), or "NovToOct" (Nov-Oct)).
 </td>
 </tr>
 
 <tr>
 <td><b>NDFDAdapterList</b></td>
-<td>A Vector of available NDFDAdapter, available for reading.
-THIS HAS NOT BEEN IMPLEMENTED.
+<td>A list of available NDFDAdapter, available for reading.  THIS HAS NOT BEEN IMPLEMENTED.
 </td>
 </tr>
 
@@ -3633,6 +3632,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
         String OutputYearType = (String)contents;
         if ( OutputYearType.equalsIgnoreCase("Water") ) {
             __tsengine.setOutputYearType ( __tsengine._WATER_YEAR );
+        }
+        else if ( OutputYearType.equalsIgnoreCase("NovToOct") ) {
+            __tsengine.setOutputYearType ( __tsengine._NOV_TO_OCT_YEAR );
         }
         else if ( OutputYearType.equalsIgnoreCase("Calendar") ) {
             __tsengine.setOutputYearType ( __tsengine._CALENDAR_YEAR );

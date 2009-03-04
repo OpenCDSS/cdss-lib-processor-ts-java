@@ -787,6 +787,8 @@ Filter indicating that output should be data coverage (% non-missing).
 */
 public final int OUTPUT_FILTER_DATA_COVERAGE = 2;
 
+// FIXME SAM 2009-03-04 Need to use class for year type to have more flexibility
+
 /**
 Output in water year, for use with setOutputYearType().
 */
@@ -796,6 +798,11 @@ protected final int _WATER_YEAR = 1;
 Output in calendar year.
 */
 protected final int _CALENDAR_YEAR = 2;
+
+/**
+Output in NovToOct year.
+*/
+protected final int _NOV_TO_OCT_YEAR = 2;
 
 // Data members...
 
@@ -1436,6 +1443,9 @@ throws Exception
 	    PropList props = new PropList ( "tsanalyst" );
 		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			props.set( "CalendarType=WaterYear" );
+		}
+		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
+			props.set( "CalendarType=NovToOct" );
 		}
 		else {
 		    // Default...
@@ -2096,6 +2106,9 @@ protected String getOutputYearType()
 	else if ( OutputYearType_int == _WATER_YEAR ) {
 		return "Water";
 	}
+	else if ( OutputYearType_int == _NOV_TO_OCT_YEAR ) {
+		return "NovToOct";
+	}
 	else {
 		return "";
 	}
@@ -2103,7 +2116,7 @@ protected String getOutputYearType()
 
 /**
 Return the output year type as an internal integer, to be used for commands that create output.
-@return the output year type, as "Calendar" or "Water".
+@return the output year type integer representation.
 */
 private int getOutputYearTypeInt()
 {   
@@ -3359,7 +3372,7 @@ throws Exception
     }
 	else if ( command_String.equalsIgnoreCase("-cy") ) {
 		message = "-cy is obsolete.";
-		suggest = "Use SetOutputYearType().";
+		suggest = "Use SetOutputYearType(OutputYearType=Calendar).";
 	}
 	else if(command_String.regionMatches(true,0,"-data_interval",0,14)){
 		message = "-data_interval is obsolete.";
@@ -3496,7 +3509,7 @@ throws Exception
 	}
 	else if ( command_String.equalsIgnoreCase("-wy") ) {
 		message = "-wy is obsolete.";
-		suggest = "Use SetOutputYearType().";
+		suggest = "Use SetOutputYearType(OutputYearType=Water).";
 	}
 	// Put after -wy...
 	else if ( command_String.regionMatches(true,0,"-w",0,2) ) {
@@ -3908,6 +3921,9 @@ throws IOException
 		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 			sumprops.set ( "CalendarType", "WaterYear" );
 		}
+		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
+			sumprops.set ( "CalendarType", "NovToOct" );
+		}
 		else {
 		    sumprops.set ( "CalendarType", "CalendarYear" );
 		}
@@ -4031,6 +4047,9 @@ throws IOException
     		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
     			sumprops.set ( "CalendarType", "WaterYear" );
     		}
+    		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
+    			sumprops.set ( "CalendarType", "NovToOct" );
+    		}
     		else {
                 sumprops.set ( "CalendarType", "CalendarYear" );
     		}
@@ -4119,6 +4138,9 @@ throws IOException
     		graphprops.set ( "YAxisLabelString", ((TS)tslist.get(0)).getDataUnits() );
     		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
     			graphprops.set ( "CalendarType", "WaterYear" );
+    		}
+    		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
+    			graphprops.set ( "CalendarType", "NovToOct" );
     		}
     		else {
                 graphprops.set ( "CalendarType", "CalendarYear" );
@@ -4216,6 +4238,9 @@ throws IOException
     		graphprops.set ( "YAxisLabelString",((TS)tslist.get(0)).getDataUnits() );
     		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
     			graphprops.set ( "CalendarType", "WaterYear" );
+    		}
+    		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
+    			graphprops.set ( "CalendarType", "NovToOct" );
     		}
     		else {
     		    graphprops.set ( "CalendarType", "CalendarYear" );
@@ -5600,6 +5625,9 @@ private void writeStateModTS ( List tslist, String output_file, String precision
 	String calendar = "";
 	if ( getOutputYearTypeInt() == _WATER_YEAR ) {
 		calendar = "WaterYear";
+	}
+	else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
+		calendar = "NovToOct";
 	}
 	else {
 	    calendar = "CalendarYear";

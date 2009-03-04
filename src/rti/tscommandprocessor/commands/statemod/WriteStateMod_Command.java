@@ -544,17 +544,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	// Check OutputYearType at runtime because it is specified in earlier commands.
 	
-    if (    !OutputYearType.equalsIgnoreCase("Calendar") &&
-            !OutputYearType.equalsIgnoreCase("Water") ) {
-            message = "\nThe output year type (" + OutputYearType +
-                    ") must be \"Calendar\" or \"Water\".  Defaulting to Calendar.";
-            OutputYearType = "Calendar";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-    		status.addToLog ( CommandPhaseType.RUN,
-    				new CommandLogRecord(CommandStatusType.WARNING,
-    						message, "Check the SetOutputYearType() command." ) );
+    if ( !OutputYearType.equalsIgnoreCase("Calendar") && !OutputYearType.equalsIgnoreCase("Water")
+    	&& !OutputYearType.equalsIgnoreCase("NovToOct") ) {
+        message = "\nThe output year type (" + OutputYearType +
+            ") must be \"Calendar\", \"Water\", or \"NovToOct\".  Defaulting to Calendar.";
+        OutputYearType = "Calendar";
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+			new CommandLogRecord(CommandStatusType.WARNING,
+				message, "Check the SetOutputYearType() command." ) );
     }
 	
 	if ( warning_count > 0 ) {
@@ -575,6 +574,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		String sm_calendar = "CalendarYear";
 		if ( OutputYearType.equalsIgnoreCase("Water") ) {
 			sm_calendar = "WaterYear";
+		}
+		else if ( OutputYearType.equalsIgnoreCase("NovToOct") ) {
+			sm_calendar = "IrrigationYear";
 		}
 
 		// Get the comments to add to the top of the file.

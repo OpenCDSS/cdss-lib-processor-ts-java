@@ -32,6 +32,7 @@ implements Command
     
 protected final String _Water = "Water";
 protected final String _Calendar = "Calendar";
+protected final String _NovToOct = "NovToOct";
 
 /**
 Constructor.
@@ -63,14 +64,16 @@ throws InvalidCommandParameterException
 	// because files may be created dynamically at runtime.
 
 	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
-		if (	!OutputYearType.equalsIgnoreCase(_Calendar) &&
-			!OutputYearType.equalsIgnoreCase(_Water) ) {
+		if ( !OutputYearType.equalsIgnoreCase(_Calendar) &&
+			!OutputYearType.equalsIgnoreCase(_Water) &&
+			!OutputYearType.equalsIgnoreCase(_NovToOct)) {
 			message = "The OutputYearType parameter \"" + OutputYearType + "\" must be " + _Calendar +
-			" or " + _Water + ".";
+			" (default), " + _Water + " (Oct to Sep) or " + _NovToOct + ".";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the parameter as " + _Calendar + " or " + _Water + "."));
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Calendar + ", " + _Water + ", or " +
+					_NovToOct + "."));
 		}
 	}
 	// Check for invalid parameters...
@@ -145,8 +148,7 @@ Run the command.
 @param command_line Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -175,8 +177,8 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "See the log file for details."));
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
 

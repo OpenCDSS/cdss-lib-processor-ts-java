@@ -277,6 +277,7 @@ CommandWarningException, CommandException
 		TSList = _AllTS;
 	}
 	String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
 	CommandStatus status = getCommandStatus();
@@ -286,6 +287,7 @@ CommandWarningException, CommandException
 	PropList request_params = new PropList ( "" );
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
+    request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
 	try { bean =
 		processor.processRequest( "GetTimeSeriesToProcess", request_params);
@@ -545,6 +547,16 @@ throws IOException
 				new CommandLogRecord(CommandStatusType.WARNING,
 						message, "Software error - report problem to support." ) );
 	}
+	else {
+	    OutputYearType = (String)o;
+	    // Translate into formats used by the summary method
+	    if ( OutputYearType.equalsIgnoreCase("Calendar") ) {
+	        OutputYearType = "CalendarYear";
+	    }
+	    else if ( OutputYearType.equalsIgnoreCase("Water") ) {
+            OutputYearType = "WaterYear";
+        }
+	}
 	
 	// First need to get the summary strings...
 	PropList sumprops = new PropList ( "Summary" );
@@ -574,12 +586,12 @@ throws IOException
 		TSUtil.formatOutput ( OutputFile, tslist, sumprops );
 	}
 	catch ( Exception e ) {
-		message = "Unable to write summary to file \"" + OutputFile + "\"";
+		message = "Unexpected error writing summary to file \"" + OutputFile + "\" (" + e + ")";
 		Message.printWarning ( warning_level, 
-				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Software error - report problem to support." ) );
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Software error - report problem to support." ) );
 	}
 	return warning_count;
 }

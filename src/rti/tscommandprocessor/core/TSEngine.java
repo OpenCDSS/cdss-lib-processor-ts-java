@@ -802,7 +802,7 @@ protected final int _CALENDAR_YEAR = 2;
 /**
 Output in NovToOct year.
 */
-protected final int _NOV_TO_OCT_YEAR = 2;
+protected final int _NOV_TO_OCT_YEAR = 3;
 
 // Data members...
 

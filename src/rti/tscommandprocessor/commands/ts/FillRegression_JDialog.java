@@ -272,11 +272,10 @@ private void initialize ( JFrame parent, Command command )
 		"Fill missing data using ordinary least squares (OLS) regression."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The analysis period will be used to determine relationships used for filling." ),
+		"The analysis period is used to determine relationships used for filling." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use a setOutputPeriod() command before reading to extend " +
-		"the dependent time series, if necessary." ),
+		"Use a SetOutputPeriod() command before reading to extend the dependent time series, if necessary." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data, " +
@@ -318,7 +317,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Number of equations to use (blank=one equation)."), 
+		"Optional - number of equations (default=" + __command._OneEquation + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis month:"),
@@ -334,7 +333,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __AnalysisMonth_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Can be used with monthly equations (blank=all months)."), 
+		"Optional - use with monthly equations (default=process all months)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation:" ), 
@@ -348,7 +347,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"How to transform data before analysis (blank=None)."), 
+		"Optional - how to transform data before analysis (blank=" + __command._None + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ), 
@@ -358,15 +357,14 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Intercept_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Blank or 0.0 are allowed with no transformation."), 
+		"Optional - blank or 0.0 are allowed with no transformation."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AnalysisStart_JTextField = new JTextField ( "", 15 );
 	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel,
-		__AnalysisStart_JTextField,
+	JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -394,8 +392,7 @@ private void initialize ( JFrame parent, Command command )
 	__FillFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"1-character flag to indicate fill."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - 1-character flag to indicate fill."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -465,29 +462,7 @@ public boolean ok ()
 }
 
 /**
-Refresh the expression from the other text field contents.  The syntax is:
-<pre>
-fillRegression(TSID="X",IndependentID="X",NumberOfEquations=X,AnalysisMonth=X,
-Transformation=X,AnalysisStart="X",AnalysisEnd="X",FillStart="X",FillEnd="X",
-Intercept=0,FillFlag="X")
-</pre>
-Old syntax is:
-<pre>
-fillRegression(Alias,IndependentID,NumberOfEquations,Transformation,
-AnalysisStart,AnalysisEnd,FillStart,FillEnd,Intercept=0)
-</pre>
-where the analysis and fill periods are optional to be backward compatible.
-The Intercept property is also optional and can occur anywhere in the command.
-Additionally, parse old-style commands and convert to new syntax.  Very old
-syntax is:
-<pre>
-regress(TSID,TSID)
-regress12(TSID,TSID)
-regressMonthly(TSID,TSID)
-regresslog(TSID,TSID)
-regresslog12(TSID,TSID)
-regressMonthlyLog(TSID,TSID)
-</pre>
+Refresh the expression from the other text field contents.
 */
 private void refresh ()
 {	String TSID = "";
@@ -754,4 +729,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end fillRegression_JDialog
+}

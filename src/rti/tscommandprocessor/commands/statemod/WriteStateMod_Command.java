@@ -355,7 +355,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+	    bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +

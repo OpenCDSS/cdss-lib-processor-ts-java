@@ -29,17 +29,19 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
-public class LagK_JDialog extends JDialog
+/**
+Editor for the VariableLagK command.
+*/
+public class VariableLagK_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
 private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
-private LagK_Command __command = null;	// Command to edit.
+private VariableLagK_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;// Command as JTextField
 private JTextField __Alias_JTextField = null;// Field for time series alias
 private SimpleJComboBox __TSID_JComboBox = null;// Time series available to operate on.
@@ -60,7 +62,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public LagK_JDialog ( JFrame parent, Command command )
+public VariableLagK_JDialog ( JFrame parent, VariableLagK_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -199,8 +201,8 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (LagK_Command)command;
+private void initialize ( JFrame parent, VariableLagK_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 

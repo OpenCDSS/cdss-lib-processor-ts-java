@@ -1,42 +1,3 @@
-// ----------------------------------------------------------------------------
-// lagK_Command - editor for TS X = LagK()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-07-11	Steven A. Malers, RTi	Initial version, initialized from
-//					changeInterval_Command().
-// 2005-07-14	Michael Thiemann, RTi	Ported LagK operation from C++. Changed
-//                                      fillNearest maximum search window to
-//                                      24 intervals.
-// 2005-08-04	SAM, RTi		* Update the toString() method to be
-//					  consistent with other commands.
-//					* Change the InTSID parameter to TSID,
-//					  consistent with other commands.
-// 2005-08-07	SAM, RTi		* Change so that the InflowStates and
-//					  OutflowStates parameters are listed
-//					  earliest to latest in time (left to
-//					  right).  The parameters are reversed
-//					  when parsed and put into the internal
-//					  arrays, which are still ordered latest
-//					  to earliest in time.
-// 2005-08-17	SAM, RTi		* Fix bug where missing TSID was causing
-//					  an exception checking the parameters.
-//					* Format code to fit 80-column width.
-//					* Update all warning checks to be
-//					  consistent with other code and be more
-//					  useful to users.
-//					* Remove valueOf() calls.
-//					* Time series lookup was not being
-//					  checked properly, resulting in
-//					  exceptions if the time series was
-//					  not found.
-// 2007-02-13	SAM, RTi		Remove direct dependence on TSCommandProcessor.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.util.List;
@@ -72,7 +33,12 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
-public class LagK_Command extends AbstractCommand implements Command
+/**
+This class initializes, edits, and runs the VariableLagK command.
+TODO SAM 2009-03-10 Need to determine how to plug in RTi_Common riverside.ts.routing.lagk code.
+At the moment this class is essentially a copy of LagK and therefore needs serious rework.
+*/
+public class VariableLagK_Command extends AbstractCommand implements Command
 {
 
 /**
@@ -122,9 +88,9 @@ private int	 __searchWindowIntervals = 0;	// Number of intervals to search
 /**
 Constructor.
 */
-public LagK_Command ()
+public VariableLagK_Command ()
 {	super();
-	setCommandName ( "LagK" );
+	setCommandName ( "VariableLagK" );
 }
 
 /**
@@ -312,7 +278,7 @@ not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	
-	return ( new LagK_JDialog ( parent, this ) ).ok();
+	return ( new VariableLagK_JDialog ( parent, this ) ).ok();
 }
 
 /**

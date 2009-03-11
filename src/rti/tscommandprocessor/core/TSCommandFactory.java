@@ -167,6 +167,7 @@ import rti.tscommandprocessor.commands.ts.ShiftTimeByInterval_Command;
 import rti.tscommandprocessor.commands.ts.SortTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.Subtract_Command;
 import rti.tscommandprocessor.commands.ts.TSID_Command;
+import rti.tscommandprocessor.commands.ts.VariableLagK_Command;
 import rti.tscommandprocessor.commands.ts.WeightTraces_Command;
 import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
@@ -679,6 +680,12 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"TestCommand") ) {
 		return new TestCommand_Command ();
 	}
+    
+    // "V" commands...
+
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"VariableLagK") ) {
+        return new VariableLagK_Command ();
+    }
 
 	// "W" commands...
 

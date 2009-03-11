@@ -453,7 +453,7 @@ parameter values are invalid.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "fillRegression_Command.runCommand", message;
+{	String routine = "FillRegression_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -477,27 +477,23 @@ CommandWarningException, CommandException
 		processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\" from processor.";
+		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report the problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TS = bean_PropList.getContents ( "TS");
 	TS ts_to_fill = null;
 	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\") from processor.";
+		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the dependent TSID matches a time series." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the dependent TSID matches a time series." ) );
 	}
 	else {
 		ts_to_fill = (TS)o_TS;
@@ -506,11 +502,10 @@ CommandWarningException, CommandException
 	if ( ts_to_fill == null ) {
         message = "Unable to find dependent time series \"" + TSID+"\".";
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,++warning_count),
-			routine, message);
+		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message);
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the dependent TSID matches a time series." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the dependent TSID matches a time series." ) );
 	}
 	// The independent identifier may or may not have TEMPTS at the front
 	// but is handled by getTimeSeries...
@@ -520,31 +515,28 @@ CommandWarningException, CommandException
 	request_params.set ( "CommandTag", command_tag );
 	request_params.set ( "TSID", IndependentTSID );
 	bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesForTSID", request_params);
+	try {
+	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID +
 		"\") from processor.";
 		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report the problem to software support." ) );
 	}
 	bean_PropList = bean.getResultsPropList();
 	o_TS = bean_PropList.getContents ( "TS");
 	TS ts_independent = null;
 	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID +
-		"\") from processor.";
+		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID + "\") from processor.";
 		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the independent TSID matches a time series." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the independent TSID matches a time series." ) );
 	}
 	else {
 		ts_independent = (TS)o_TS;
@@ -553,11 +545,10 @@ CommandWarningException, CommandException
 	if ( ts_independent == null ) {
         message = "Unable to find independent time series \"" + IndependentTSID + "\".";
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,++warning_count),
-			routine, message );
+		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the independent TSID matches a time series." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the independent TSID matches a time series." ) );
 	}
 
 	// Now set the fill properties for TSUtil.fillRegress()...
@@ -575,8 +566,7 @@ CommandWarningException, CommandException
 	}
 
 	String Transformation = parameters.getValue("Transformation");
-	if (	(Transformation == null) ||
-		Transformation.equalsIgnoreCase(_Linear) ) {
+	if ( (Transformation == null) || Transformation.equalsIgnoreCase(_Linear) ) {
 		Transformation = _None;	// default (old _Linear is obsolete)
 	}
 	props.set ( "Transformation", Transformation );
@@ -609,20 +599,22 @@ CommandWarningException, CommandException
 
 	String AnalysisStart = parameters.getValue("AnalysisStart");
 	if ( AnalysisStart != null ) {
-		props.set ( "AnalysisStart=" + AnalysisStart );
+	    // Change the property name for called code.
+		props.set ( "DependentAnalysisStart", AnalysisStart );
 	}
 	String AnalysisEnd = parameters.getValue("AnalysisEnd");
 	if ( AnalysisEnd != null ) {
-		props.set ( "AnalysisEnd="+ AnalysisEnd );
+	    // Change the property name for called code.
+		props.set ( "DependentAnalysisEnd", AnalysisEnd );
 	}
 
 	String FillStart = parameters.getValue("FillStart");
 	if ( FillStart != null ) {
-		props.set ( "FillStart="+ FillStart );
+		props.set ( "FillStart", FillStart );
 	}
 	String FillEnd = parameters.getValue("FillEnd");
 	if ( FillEnd != null ) {
-		props.set ( "FillEnd="+ FillEnd );
+		props.set ( "FillEnd", FillEnd );
 	}
 
 	String FillFlag = parameters.getValue("FillFlag");
@@ -650,8 +642,8 @@ CommandWarningException, CommandException
 			request_params = new PropList ( "" );
 			request_params.set ( "DateTime", FillStart );
 			bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
+			try {
+			    bean = processor.processRequest( "DateTime", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting FillStart DateTime(DateTime=" +	FillStart + ") from processor.";

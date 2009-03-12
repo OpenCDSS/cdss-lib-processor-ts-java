@@ -1,5 +1,7 @@
 package rti.tscommandprocessor.commands.ts;
 
+import RTi.TS.TSIdent;
+import RTi.TS.TSIdent_JDialog;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -41,15 +43,16 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 
 private SimpleJButton	__cancel_JButton = null,// Cancel button
 			__ok_JButton = null;	// Ok button
+private JFrame __parent_JFrame = null;	// parent JFrame
 private VariableLagK_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;// Command as JTextField
 private JTextField __Alias_JTextField = null;// Field for time series alias
 private SimpleJComboBox __TSID_JComboBox = null;// Time series available to operate on.
-private SimpleJComboBox __ObsTSID_JComboBox = null;// Observed time series
-private SimpleJComboBox	__FillNearest_JComboBox = null;
-private JTextField __DefaultFlow_JTextField = null;
-private JTextField __Lag_JTextField = null;
-private JTextField __K_JTextField = null;
+private JTextArea __NewTSID_JTextArea = null; // New TSID.
+private SimpleJButton __edit_JButton = null;	// Edit button
+private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
+private JTextArea __Lag_JTextArea = null;
+private JTextArea __K_JTextArea = null;
 private JTextArea __InflowStates_JTextArea = null;
 private JTextArea __OutflowStates_JTextArea = null;
 
@@ -73,9 +76,39 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
+    String routine = "VariableLagK_JDialog.actionPerformed";
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
+	}
+    else if ( o == __clear_JButton ) {
+		__NewTSID_JTextArea.setText ( "" );
+        refresh();
+	}
+	else if ( o == __edit_JButton ) {
+		// Edit the NewTSID in the dialog.  It is OK for the string to
+		// be blank.
+		String NewTSID = __NewTSID_JTextArea.getText().trim();
+		TSIdent tsident;
+		try {	if ( NewTSID.length() == 0 ) {
+				tsident = new TSIdent();
+			}
+			else {	tsident = new TSIdent ( NewTSID );
+			}
+			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame,
+				true, tsident, null )).response();
+			if ( tsident2 != null ) {
+				__NewTSID_JTextArea.setText (
+					tsident2.toString(true) );
+				refresh();
+			}
+		}
+		catch ( Exception e ) {
+			Message.printWarning ( 1, routine,
+			"Error creating time series identifier from \"" +
+			NewTSID + "\"." );
+			Message.printWarning ( 3, routine, e );
+		}
 	}
 	else if ( o == __ok_JButton ) {
 		refresh ();
@@ -106,11 +139,9 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
-	String ObsTSID = __ObsTSID_JComboBox.getSelected();
-	String FillNearest = __FillNearest_JComboBox.getSelected();
-	String DefaultFlow = __DefaultFlow_JTextField.getText().trim();
-	String Lag = __Lag_JTextField.getText().trim();
-	String K = __K_JTextField.getText().trim();
+    String NewTSID = __NewTSID_JTextArea.getText().trim();
+	String Lag = __Lag_JTextArea.getText().trim();
+	String K = __K_JTextArea.getText().trim();
 	String InflowStates = __InflowStates_JTextArea.getText().trim();
 	String OutflowStates = __OutflowStates_JTextArea.getText().trim();
 	__error_wait = false;
@@ -120,15 +151,6 @@ private void checkInput ()
 	}
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		props.set ( "TSID", TSID );
-	}
-	if ( (ObsTSID != null) && (ObsTSID.length() > 0) ) {
-		props.set ( "ObsTSID", ObsTSID );
-	}
-	if ( (FillNearest != null) && (FillNearest.length() > 0) ) {
-		props.set ( "FillNearest", FillNearest );
-	}
-	if ( (DefaultFlow != null) && (DefaultFlow.length() > 0) ) {
-		props.set ( "DefaultFlow", DefaultFlow );
 	}
 	if ( (Lag != null) && (Lag.length() > 0) ) {
 		props.set ( "Lag", Lag );
@@ -159,18 +181,14 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String Alias = __Alias_JTextField.getText().trim();
     String TSID = __TSID_JComboBox.getSelected();
-    String ObsTSID = __ObsTSID_JComboBox.getSelected();
-    String FillNearest = __FillNearest_JComboBox.getSelected();
-    String DefaultFlow = __DefaultFlow_JTextField.getText().trim();
-    String Lag = __Lag_JTextField.getText().trim();
-    String K = __K_JTextField.getText().trim();
+    String NewTSID = __NewTSID_JTextArea.getText().trim();
+    String Lag = __Lag_JTextArea.getText().trim();
+    String K = __K_JTextArea.getText().trim();
     String InflowStates = __InflowStates_JTextArea.getText().trim();
     String OutflowStates = __OutflowStates_JTextArea.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "TSID", TSID );
-	__command.setCommandParameter ( "ObsTSID", ObsTSID );
-	__command.setCommandParameter ( "FillNearest", FillNearest );
-	__command.setCommandParameter ( "DefaultFlow", DefaultFlow );
+    __command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Lag", Lag);
 	__command.setCommandParameter ( "K", K );
 	__command.setCommandParameter ( "InflowStates", InflowStates );
@@ -184,14 +202,14 @@ protected void finalize ()
 throws Throwable
 {	__Alias_JTextField = null;
 	__TSID_JComboBox = null;
+    __NewTSID_JTextArea = null;
 	__InflowStates_JTextArea = null;
-	__FillNearest_JComboBox = null;
-	__DefaultFlow_JTextField = null;
-	__Lag_JTextField = null;
-	__K_JTextField = null;
+	__Lag_JTextArea = null;
+	__K_JTextArea = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__ok_JButton = null;
+    __parent_JFrame = null;
 	super.finalize ();
 }
 
@@ -202,7 +220,8 @@ Instantiates the GUI components.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, VariableLagK_Command command )
-{	__command = command;
+{	__parent_JFrame = parent;
+    __command = command;
 
 	addWindowListener( this );
 
@@ -214,27 +233,14 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
 	int y = 0;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Lag and attenuate a time series, creating a new time series." ),
+		"Lag and attenuate a time series, creating a new time series using variable Lag and K technique." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
        "The time series to be routed cannot contain missing values." ),
        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "The observed time series is used for filling, then FillNearest, and finally DefaultFlow." ),
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"See the documentation for a complete description of the algorithm." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( "" );
-	__Alias_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Often the location from the TSID, or a short string."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Time series to lag (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -250,69 +256,57 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Observed time series for filling:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ObsTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    List tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    if ( tsids2 == null ) {
-        // User will not be able to select anything.
-        tsids2 = new Vector();
-    }
-    if ( tsids.size() == 0 ) {
-        tsids2.add("");
-    }
-    else {
-        // Add a blank at the start
-        tsids2.add(0,"");
-    }
-    __ObsTSID_JComboBox.setData ( tsids2 );
-    __ObsTSID_JComboBox.addItemListener ( this );
-    __ObsTSID_JComboBox.getJTextComponent().addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ObsTSID_JComboBox,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Fill nearest?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__FillNearest_JComboBox = new SimpleJComboBox(false);
-	__FillNearest_JComboBox.add ( "" );
-	__FillNearest_JComboBox.add ( __command._False );
-	__FillNearest_JComboBox.add ( __command._True );
-	__FillNearest_JComboBox.select ( 0 );
-	__FillNearest_JComboBox.addActionListener (this);
-	JGUIUtil.addComponent(main_JPanel, __FillNearest_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - fill missing with nearest data from TSID? (default=False)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Default flow:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DefaultFlow_JTextField = new JTextField (10);
-	__DefaultFlow_JTextField.addKeyListener (this);
-	JGUIUtil.addComponent(main_JPanel, __DefaultFlow_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - use if no other filling works (default=0)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
+    __NewTSID_JTextArea.setEditable(false);
+	__NewTSID_JTextArea.setLineWrap ( true );
+	__NewTSID_JTextArea.setWrapStyleWord ( true );
+	__NewTSID_JTextArea.addKeyListener ( this );
+	// Make 3-high to fit in the edit button...
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
+		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Specify to avoid confusion with TSID from original TS."),
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	y += 2;
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
+		new SimpleJButton ( "Edit", "Edit", this ) ),
+		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
+		new SimpleJButton ( "Clear", "Clear", this ) ),
+		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new JTextField ( "" );
+    __Alias_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Often the location from the TSID, or a short string."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Lag:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Lag_JTextField = new JTextField (10);
-    __Lag_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Lag_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __Lag_JTextArea = new JTextArea (3, 25);
+    __Lag_JTextArea.setLineWrap ( true );
+    __Lag_JTextArea.setWrapStyleWord ( true );
+    __Lag_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Lag_JTextArea),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - lag in time series base interval time units."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("K:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __K_JTextField = new JTextField (10);
-    __K_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __K_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __K_JTextArea = new JTextArea (3, 25);
+    __K_JTextArea.setLineWrap ( true );
+    __K_JTextArea.setWrapStyleWord ( true );
+    __K_JTextArea.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__K_JTextArea),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - attenuation in time series base interval time units."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -419,9 +413,7 @@ private void refresh ()
 {	String routine = "LagK_JDialog.refresh";
 	String Alias = "";
 	String TSID = "";
-	String ObsTSID = "";
-	String FillNearest = "";
-	String DefaultFlow = "";
+    String NewTSID = "";
 	String Lag = "";
 	String K = "";
 	String InflowStates = "";
@@ -431,10 +423,8 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		Alias = props.getValue ( "Alias" );
-		TSID = props.getValue ( "TSID" );
-		ObsTSID = props.getValue ( "ObsTSID" );
-		FillNearest = props.getValue ( "FillNearest" );
-		DefaultFlow = props.getValue ( "DefaultFlow" );
+        TSID = props.getValue ( "TSID" );
+        NewTSID = props.getValue ( "NewTSID" );
 		Lag = props.getValue ( "Lag" );
 		K = props.getValue ( "K" );
 	    InflowStates = props.getValue ( "InflowStates" );
@@ -447,54 +437,23 @@ private void refresh ()
 				JGUIUtil.NONE, null, null ) ) {
 				__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {	// Automatically add to the list after the blank...  what blank? CEN
 			if ( (TSID != null) && (TSID.length() > 0) ) {
-				__TSID_JComboBox.insertItemAt ( TSID, 1 );
+				__TSID_JComboBox.insertItemAt ( TSID, 0 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
 			else {	// Do not select anything...
 			}
 		}
-       if (  JGUIUtil.isSimpleJComboBoxItem( __ObsTSID_JComboBox, ObsTSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __ObsTSID_JComboBox.select ( ObsTSID );
-        }
-        else {
-            // Automatically add to the list after the blank...
-            if ( (ObsTSID != null) && (ObsTSID.length() > 0) ) {
-                __ObsTSID_JComboBox.insertItemAt ( ObsTSID, 1 );
-                // Select...
-                __ObsTSID_JComboBox.select ( ObsTSID );
-            }
-            else {
-                // Do not select anything...
-            }
-        }
-		if ( FillNearest == null ) {
-			// Select default...
-			__FillNearest_JComboBox.select ( 0 );
-		}
-		else {
-		    if ( JGUIUtil.isSimpleJComboBoxItem(
-				__FillNearest_JComboBox, FillNearest, JGUIUtil.NONE, null, null ) ) {
-				__FillNearest_JComboBox.select ( FillNearest );
-			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command references an invalid\nFillNearest value \"" +
-				FillNearest +
-				"\".  Select a different value or Cancel.");
-				__error_wait = true;
-			}
-		}
-		if ( DefaultFlow != null ) {
-			__DefaultFlow_JTextField.setText ( DefaultFlow );
+        if ( NewTSID != null ) {
+			__NewTSID_JTextArea.setText ( NewTSID );
 		}
 		if ( Lag != null ) {
-			__Lag_JTextField.setText( Lag );
+			__Lag_JTextArea.setText( Lag );
 		}
 		if ( K != null ) {
-			__K_JTextField.setText ( K );
+			__K_JTextArea.setText ( K );
 		}
         if ( InflowStates != null ) {
             __InflowStates_JTextArea.setText ( InflowStates );
@@ -506,19 +465,16 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
 	TSID = __TSID_JComboBox.getSelected();
-	ObsTSID = __ObsTSID_JComboBox.getSelected();
-	FillNearest = __FillNearest_JComboBox.getSelected();
-	DefaultFlow = __DefaultFlow_JTextField.getText();
-	Lag = __Lag_JTextField.getText().trim();
-	K = __K_JTextField.getText().trim();
+    NewTSID = __NewTSID_JTextArea.getText().trim();
+
+	Lag = __Lag_JTextArea.getText().trim();
+	K = __K_JTextArea.getText().trim();
     InflowStates = __InflowStates_JTextArea.getText().trim();
     OutflowStates = __OutflowStates_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "TSID=" + TSID );
-	props.add ( "ObsTSID=" + ObsTSID );
-	props.add ( "FillNearest=" + FillNearest );
-	props.add ( "DefaultFlow=" + DefaultFlow );
+    props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Lag=" + Lag );
 	props.add ( "K=" + K );
 	props.add ( "InflowStates=" + InflowStates );

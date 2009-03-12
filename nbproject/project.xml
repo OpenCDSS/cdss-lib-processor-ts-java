@@ -5,7 +5,7 @@
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>TSCommandProcessor</name>
             <properties>
-                <property name="ant.script">conf/build.xml</property>
+                <property name="ant.script">nbproject/build.xml</property>
                 <property-file>conf/product-user.properties</property-file>
                 <property-file>conf/product.properties</property-file>
             </properties>

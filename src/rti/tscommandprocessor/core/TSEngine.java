@@ -665,6 +665,7 @@ import java.util.Vector;
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.ipp.IppDMI;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
@@ -849,7 +850,12 @@ Count of errors.
 private int	_fatal_error_count = 0;
 
 /**
-HydroBase DMI instance Vector, to allow more than one database instance to be open at a time.
+IppDMI instance list, to allow more than one database instance to be open at a time.
+*/
+private List __ippdmi_Vector = new Vector();
+
+/**
+HydroBase DMI instance list, to allow more than one database instance to be open at a time.
 */
 private List __hbdmi_Vector = new Vector();
 
@@ -1853,6 +1859,14 @@ Return the average start, or null if all available data are to be used.
 */
 protected DateTime getAverageStart()
 {   return __AverageStart_DateTime;
+}
+
+/**
+Return the list of IppDMI.
+@return List of open IppDMI.
+*/
+protected List getColoradoIppDMIList ()
+{   return __ippdmi_Vector;
 }
 
 /**
@@ -5252,6 +5266,44 @@ Set the average period start.
 */
 protected void setAverageStart ( DateTime start )
 {   __AverageStart_DateTime = start;
+}
+
+/**
+Set an IppDMI instance in the list that is being maintained for use.
+The input name in the DMI is used to lookup the instance.  If a match is found,
+the old instance is optionally closed and the new instance is set in the same
+location.  If a match is not found, the new instance is added at the end.
+@param dmi HydroBaseDMI to add to the list.  Null will be ignored.
+@param close_old If an old DMI instance is matched, close the DMI instance if
+true.  The main issue is that if something else is using the DMI instance (e.g.,
+the TSTool GUI) it may be necessary to leave the old instance open.
+*/
+protected void setColoradoIppDMI ( IppDMI dmi, boolean close_old )
+{   if ( dmi == null ) {
+        return;
+    }
+    int size = __ippdmi_Vector.size();
+    IppDMI dmi2 = null;
+    String input_name = dmi.getInputName();
+    for ( int i = 0; i < size; i++ ) {
+        dmi2 = (IppDMI)__ippdmi_Vector.get(i);
+        if ( dmi2.getInputName().equalsIgnoreCase(input_name)){
+            // The input name of the current instance matches that of the instance in the list.
+            // Replace the instance in the list by the new instance...
+            if ( close_old ) {
+                try {
+                    dmi2.close();
+                }
+                catch ( Exception e ) {
+                    // Probably can ignore.
+                }
+            }
+            __ippdmi_Vector.set ( i, dmi );
+            return;
+        }
+    }
+    // Add a new instance to the Vector...
+    __ippdmi_Vector.add ( dmi );
 }
 
 /**

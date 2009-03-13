@@ -87,6 +87,7 @@ import rti.tscommandprocessor.commands.check.CheckFileCommandProcessorEventListe
 // HEC-DSS I/O...
 
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.ipp.IppDMI;
 
 // HydroBase commands.
 
@@ -949,6 +950,9 @@ public Object getPropContents ( String prop ) throws Exception
     else if ( prop.equalsIgnoreCase("AverageStart") ) {
         return getPropContents_AverageStart();
     }
+    else if ( prop.equalsIgnoreCase("ColoradoIppDMIList") ) {
+        return getPropContents_ColoradoIppDMIList();
+    }
 	else if ( prop.equalsIgnoreCase("CreateOutput") ) {
 		return getPropContents_CreateOutput();
 	}
@@ -1074,6 +1078,15 @@ Handle the AverageStart property request.
 private DateTime getPropContents_AverageStart()
 {
     return __tsengine.getAverageStart();
+}
+
+/**
+Handle the ColoradoIppDMIList property request.
+@return List of open IppDMI instances.
+*/
+private List getPropContents_ColoradoIppDMIList()
+{
+    return __tsengine.getColoradoIppDMIList();
 }
 
 /**
@@ -2042,6 +2055,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("RunCommands") ) {
 		return processRequest_RunCommands ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetColoradoIppDMI") ) {
+        return processRequest_SetColoradoIppDMI ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("SetHydroBaseDMI") ) {
 		return processRequest_SetHydroBaseDMI ( request, request_params );
 	}
@@ -2918,6 +2934,28 @@ throws Exception
 	runCommands ( commands, props );
 	// No results need to be returned.
 	return bean;
+}
+
+/**
+Process the SetHydroBaseDMI request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetColoradoIppDMI (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "ColoradoIppDMI" );
+    if ( o == null ) {
+            String warning = "Request SetColoradoIppDMI() does not provide a ColoradoIppDMI parameter.";
+            bean.setWarningText ( warning );
+            bean.setWarningRecommendationText ( "This is likely a software code error.");
+            throw new RequestParameterNotFoundException ( warning );
+    }
+    IppDMI dmi = (IppDMI)o;
+    // Add an open IppDMI instance, closing a previous connection of the same name if it exists.
+    __tsengine.setColoradoIppDMI( dmi, true );
+    // No results need to be returned.
+    return bean;
 }
 
 /**

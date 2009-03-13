@@ -33,6 +33,7 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor for the VariableLagK command.
@@ -53,6 +54,8 @@ private SimpleJButton __edit_JButton = null;	// Edit button
 private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
 private JTextArea __Lag_JTextArea = null;
 private JTextArea __K_JTextArea = null;
+private JTextField __DataUnits_JTextField = null;
+private SimpleJComboBox __LagInterval_JComboBox = null;
 private JTextArea __InflowStates_JTextArea = null;
 private JTextArea __OutflowStates_JTextArea = null;
 
@@ -142,6 +145,8 @@ private void checkInput ()
     String NewTSID = __NewTSID_JTextArea.getText().trim();
 	String Lag = __Lag_JTextArea.getText().trim();
 	String K = __K_JTextArea.getText().trim();
+    String DataUnits = __DataUnits_JTextField.getText().trim();
+    String DataInterval = __LagInterval_JComboBox.getSelected().trim();
 	String InflowStates = __InflowStates_JTextArea.getText().trim();
 	String OutflowStates = __OutflowStates_JTextArea.getText().trim();
 	__error_wait = false;
@@ -152,11 +157,20 @@ private void checkInput ()
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		props.set ( "TSID", TSID );
 	}
+	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+		props.set ( "NewTSID", NewTSID );
+	}
 	if ( (Lag != null) && (Lag.length() > 0) ) {
 		props.set ( "Lag", Lag );
 	}
 	if ( (K != null) && (K.length() > 0) ) {
 		props.set ( "K", K );
+	}
+	if ( (DataUnits != null) && (DataUnits.length() > 0) ) {
+		props.set ( "DataUnits", DataUnits );
+	}
+	if ( (DataInterval != null) && (DataInterval.length() > 0) ) {
+		props.set ( "DataInterval", DataInterval );
 	}
 	if ( (InflowStates != null) && (InflowStates.length() > 0) ) {
 		props.set ( "InflowStates", InflowStates );
@@ -184,6 +198,8 @@ private void commitEdits ()
     String NewTSID = __NewTSID_JTextArea.getText().trim();
     String Lag = __Lag_JTextArea.getText().trim();
     String K = __K_JTextArea.getText().trim();
+    String DataUnits = __DataUnits_JTextField.getText().trim();
+    String LagInterval = __LagInterval_JComboBox.getSelected().trim();
     String InflowStates = __InflowStates_JTextArea.getText().trim();
     String OutflowStates = __OutflowStates_JTextArea.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
@@ -191,6 +207,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Lag", Lag);
 	__command.setCommandParameter ( "K", K );
+	__command.setCommandParameter ( "DataUnits", DataUnits );
+	__command.setCommandParameter ( "LagInterval", LagInterval );
 	__command.setCommandParameter ( "InflowStates", InflowStates );
 	__command.setCommandParameter ( "OutflowStates", OutflowStates );
 }
@@ -206,6 +224,8 @@ throws Throwable
 	__InflowStates_JTextArea = null;
 	__Lag_JTextArea = null;
 	__K_JTextArea = null;
+	__DataUnits_JTextField = null;
+    __LagInterval_JComboBox = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__ok_JButton = null;
@@ -310,7 +330,31 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - attenuation in time series base interval time units."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataUnits_JTextField = new JTextField (10);
+    __DataUnits_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DataUnits_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Required - units of Lag and K data, compatible with time series."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+	JGUIUtil.addComponent(main_JPanel, new JLabel("Lag interval: "),
+		0, ++y, 1, 1, 0, 0, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__LagInterval_JComboBox = new SimpleJComboBox(false);
+	List interval_Vector = TimeInterval.getTimeIntervalChoices(
+		TimeInterval.MINUTE, TimeInterval.YEAR, false, 1, true);
+    interval_Vector.add ( 0, "" );
+
+	__LagInterval_JComboBox.setData ( interval_Vector );
+	__LagInterval_JComboBox.addActionListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __LagInterval_JComboBox,
+		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel(" Lag interval."),
+		3, y, 1, 1, 0, 0, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Inflow states:" ),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InflowStates_JTextArea = new JTextArea ( 3, 25 );
@@ -358,7 +402,7 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 
-	setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
+	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 
 	setResizable ( true );
     pack();
@@ -416,6 +460,8 @@ private void refresh ()
     String NewTSID = "";
 	String Lag = "";
 	String K = "";
+	String DataUnits = "";
+	String Interval = "";
 	String InflowStates = "";
 	String OutflowStates = "";
 	PropList props = __command.getCommandParameters();
@@ -427,6 +473,8 @@ private void refresh ()
         NewTSID = props.getValue ( "NewTSID" );
 		Lag = props.getValue ( "Lag" );
 		K = props.getValue ( "K" );
+		DataUnits = props.getValue ( "DataUnits" );
+		Interval = props.getValue ( "LagInterval" );
 	    InflowStates = props.getValue ( "InflowStates" );
 	    OutflowStates = props.getValue ( "OutflowStates" );
 		if ( Alias != null ) {
@@ -455,6 +503,12 @@ private void refresh ()
 		if ( K != null ) {
 			__K_JTextArea.setText ( K );
 		}
+		if ( DataUnits != null ) {
+			__DataUnits_JTextField.setText ( DataUnits );
+		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__LagInterval_JComboBox,Interval, JGUIUtil.NONE, null, null ) ) {
+    			__LagInterval_JComboBox.select ( Interval );
+    	}
         if ( InflowStates != null ) {
             __InflowStates_JTextArea.setText ( InflowStates );
         }
@@ -469,6 +523,8 @@ private void refresh ()
 
 	Lag = __Lag_JTextArea.getText().trim();
 	K = __K_JTextArea.getText().trim();
+	DataUnits = __DataUnits_JTextField.getText().trim();
+	Interval = __LagInterval_JComboBox.getSelected();
     InflowStates = __InflowStates_JTextArea.getText().trim();
     OutflowStates = __OutflowStates_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
@@ -477,6 +533,8 @@ private void refresh ()
     props.add ( "NewTSID=" + NewTSID );
 	props.add ( "Lag=" + Lag );
 	props.add ( "K=" + K );
+	props.add ( "DataUnits=" + DataUnits );
+	props.add ( "LagInterval=" + Interval );
 	props.add ( "InflowStates=" + InflowStates );
 	props.add ( "OutflowStates=" + OutflowStates );
 	__command_JTextArea.setText( __command.toString ( props ) );

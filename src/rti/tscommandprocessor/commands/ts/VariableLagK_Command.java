@@ -40,12 +40,6 @@ At the moment this class is essentially a copy of LagK and therefore needs serio
 */
 public class VariableLagK_Command extends AbstractCommand implements Command
 {
-
-/**
-Possible values for FillNearest parameter.
-*/
-protected final String _False = "False";
-protected final String _True = "True";
 	
 private boolean  __param_FillNearest = false;	// Flag indicating that missing
 						// data points are filled with
@@ -53,15 +47,17 @@ private boolean  __param_FillNearest = false;	// Flag indicating that missing
 private double   __param_DefaultFlow = 0.0;	// Flow used in routing when
 						// missing data cannot be
 						// replaced by other means 
-private double   __param_lag;			// Time in input data intervals
+private double[][]   __param_lags;			// Time in input data intervals
 						// that the flow data will be
 						// delayed when there is no 
 						// attenuation (__param_k=0)
-private double   __param_k;			// Attenuation time in input
+private double[][]   __param_ks;			// Attenuation time in input
 						// data intervals. 
 						// K can be thought of as the
 						// ratio of storage to discharge
-	
+private String __param_dataUnits;       // Units of the data in the DataValue, Lag and DataVal,K pairs.
+                        //  These units can be different from those of the time series but must be
+                        // compatible so that they can be converted on the fly during processing.
 private int      __param_numStates;		// Number of initial values
 						// (states) required for the
 						// computation during the first
@@ -112,11 +108,12 @@ throws InvalidCommandParameterException
 	
 	// Get the properties from the PropList parameters.
 	String TSID = parameters.getValue( "TSID" );
-	String ObsTSID = parameters.getValue( "ObsTSID" );
+    String NewTSID = parameters.getValue ( "NewTSID" );
 	String DefaultFlow = parameters.getValue( "DefaultFlow" );
-	String FillNearest = parameters.getValue( "FillNearest" );
-	String K = parameters.getValue( "K" );
-	String Lag = parameters.getValue( "Lag" );
+	String Ks = parameters.getValue( "K" );
+	String Lags = parameters.getValue( "Lag" );
+	String DataUnits = parameters.getValue( "DataUnits" );
+	String LagInterval = parameters.getValue( "LagInterval" );
 	String InflowStates = parameters.getValue( "InflowStates" );
 	String OutflowStates = parameters.getValue( "OutflowStates" );
 	
@@ -132,14 +129,51 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the identifier for the time series to process." ) );
 	}
-	else if ( TSID.equalsIgnoreCase( ObsTSID) ) {
-		// The observed TS must be different from in input TS
-        message = "The observed time series must be different from the input time series.";
+	else if ( TSID.equalsIgnoreCase( NewTSID ) ) {
+		// The new TS must be different from in input TS
+        message = "The lagged time series must be different from the input time series.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify different identifiers for the observed and lagged time series." ) );
+                        message, "Specify different identifiers for the input and lagged time series." ) );
 	}
+
+    if ( (NewTSID == null) || NewTSID.equals("") ) {
+        message = "The new time series identifier must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a new time series identifier when defining the command.  " +
+                "Previously was optional but is now required."));
+    }
+    else {
+        try {
+            TSIdent tsident = TSIdent.parseIdentifier( NewTSID );
+            try { TimeInterval.parseInterval(tsident.getInterval());
+            }
+            catch ( Exception e2 ) {
+                message = "NewTSID interval \"" + tsident.getInterval() + "\" is not a valid interval.";
+                warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a valid interval when defining the command."));
+            }
+        }
+        catch ( Exception e ) {
+            // TODO SAM 2007-03-12 Need to catch a specific exception like
+            // InvalidIntervalException so that more intelligent messages can be
+            // generated.
+            message = "NewTSID \"" + NewTSID + "\" is not a valid identifier." +
+            "Use the command editor to enter required fields.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Use the command editor to enter required fields."));
+        }
+    }
 	
 	// If specified, the DefaultFlow must be a double value
 
@@ -155,59 +189,135 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	// Set the FillNearest boolean
-	if( FillNearest != null && FillNearest.equalsIgnoreCase(_True) ) {
-		__param_FillNearest = true;
+    //
+    // The Lag must be specified and as flow/lag pairs
+    //
+    if ( (Lags == null) || Lags.equals("") ) {
+        message = "The lag values must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a list of value pairs to define the lag."));
+    }
+
+	if ( (Lags != null) && !Lags.equals("") ) {
+		// If pair values are specified, make sure they are a sequence of numbers...
+		List tokens = StringUtil.breakStringList(Lags, " ;", 0);
+		int size = 0;
+		if ( tokens != null ) {
+			size = tokens.size();
+		}
+		String token, pairs;
+        String flow, lag;
+		if ( size > 0 ) {
+			__param_lags = new double[size][2];
+		}
+		for ( int i = 0; i < size; i++ ) {
+			pairs = (String)tokens.get(i);
+            List pair = StringUtil.breakStringList(pairs, " ,", 0);
+            if ( pair.size() != 2 ) {
+                message = "Lag value (" + (i + 1) + "): " + pairs + " is not a comma-separated pair of flow/lag numbers.";
+				warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(
+					CommandStatusType.FAILURE, message,
+					"Provide a valid pair of numbers."));
+            }
+            else {
+                flow = (String)pair.get(0);
+                lag = (String)pair.get(1);
+                if ( !StringUtil.isDouble(flow) ) {
+                    message = "Flow value (" + (i + 1) + "): " + flow + " is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Provide a valid number."));
+                } else if ( !StringUtil.isDouble(lag) ) {
+                    message = "Lag value (" + (i + 1) + "): " + lag + " is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Provide a valid number."));
+                }
+                else {
+                    __param_lags[i][0] = StringUtil.atod ( flow );
+                    __param_lags[i][1] = StringUtil.atod ( lag );
+                }
+            }
+		}
 	}
-	else if ( FillNearest != null && FillNearest.equalsIgnoreCase(_False)){
-		__param_FillNearest = false;
+	//
+	// K must be specified as flow/k pairs
+    //
+	if ( (Ks == null) || Ks.equals("") ) {
+        message = "The k values must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message,
+                "Provide a list of value pairs to define the k."));
+    }
+
+	// The k must be specified and as flow/k pairs
+	if ( (Ks != null) && !Ks.equals("") ) {
+		// If pair values are specified, make sure they are a sequence of numbers...
+		List tokens = StringUtil.breakStringList(Ks, " ;", 0);
+		int size = 0;
+		if ( tokens != null ) {
+			size = tokens.size();
+		}
+		String token, pairs;
+        String flow, k;
+		if ( size > 0 ) {
+			__param_ks = new double[size][2];
+		}
+		for ( int i = 0; i < size; i++ ) {
+			pairs = (String)tokens.get(i);
+            List pair = StringUtil.breakStringList(pairs, " ,", 0);
+            if ( pair.size() != 2 ) {
+                message = "K value (" + (i + 1) + "): " + pairs + " is not a comma-separated pair of flow/k numbers.";
+				warning += "\n" + message;
+                status.addToLog(CommandPhaseType.INITIALIZATION,
+					new CommandLogRecord(
+					CommandStatusType.FAILURE, message,
+					"Provide a valid pair of numbers."));
+            }
+            else {
+                flow = (String)pair.get(0);
+                k = (String)pair.get(1);
+                if ( !StringUtil.isDouble(flow) ) {
+                    message = "Flow value (" + (i + 1) + "): " + flow + " is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Provide a valid number."));
+                } else if ( !StringUtil.isDouble(k) ) {
+                    message = "K value (" + (i + 1) + "): " + k + " is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog(CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(
+                        CommandStatusType.FAILURE, message,
+                        "Provide a valid number."));
+                }
+                else {
+                    __param_ks[i][0] = StringUtil.atod ( flow );
+                    __param_ks[i][1] = StringUtil.atod ( k );
+                }
+            }
+		}
 	}
-	else if( FillNearest != null ) {
-        message = "The value for FillNearest \"" + FillNearest + "\" must be either \"" + _True +
-        "\" or \"" + _False + "\".";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify as " + _True + " or " + _False + "." ) );
-	}
-	
-	// The Lag must be specified and a double precision value
-	if ( Lag == null || Lag.length() == 0) {
-        message = "Lag must be specified.";
-		warning +="\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the lag." ) );
-	}
-	else if ( !StringUtil.isDouble( Lag ) ) {
-        message = "The value for Lag \"" + Lag + "\" must be a number.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the lag value as a number." ) );
-	}
-	else {
-		__param_lag = StringUtil.atod( Lag );
-	}
-	
-	// K must be specified as a number
-	if ( K == null || K.length() == 0) {
-        message = "K must be specified.";
-		warning +="\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the K value as a number." ) );
-	}
-	else if ( ! StringUtil.isDouble( K ) ) {
-        message = "The value for K \"" + K + "\" must be a number.";
-		warning +="\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the K value as a number." ) );
-	}
-	else {
-		__param_k = StringUtil.atod( K );
-	}	
+
+    if ( DataUnits == null ) {
+        message = "The value for DataUnits must be specified.";
+	            warning +="\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                    new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "DataUnits must be specified." ) );
+    }
 
 	// TODO SAM 2008-10-06 Do more checks for the states in the 'runCommand' method. At this time, only
 	// the TS Aliases are known, and the data interval (needed to compute
@@ -249,11 +359,12 @@ throws InvalidCommandParameterException
     List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
-    valid_Vector.add ( "ObsTSID" );
-    valid_Vector.add ( "FillNearest" );
+    valid_Vector.add ( "NewTSID" );
     valid_Vector.add ( "DefaultFlow" );
     valid_Vector.add ( "Lag" );
     valid_Vector.add ( "K" );
+    valid_Vector.add ( "DataUnits" );
+    valid_Vector.add ( "LagInterval" );
     valid_Vector.add ( "InflowStates" );
     valid_Vector.add ( "OutflowStates" );
     //valid_Vector.add ( "SearchStart" );
@@ -312,31 +423,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		"Command to parse is: " + command );
 	}
 	 
-	String Alias = "";
-	     
-	// Since this command is of the type TS X = lagK (...), first parse the
-	// Alias (the X in the command)...
-
-	String substring = command;
-	if ( command.indexOf('=') >= 0 ) {
-		// Because the parameters contain =, find the first = to break
-		// the assignment TS X = lagK (...).
-		int pos = command.indexOf('=');
-		substring = command.substring(0,pos).trim();
-		List v = StringUtil.breakStringList (
-			substring, " ", StringUtil.DELIM_SKIP_BLANKS ); 
-		// First field has format "TS Alias"
-		Alias = ((String)v.get(1)).trim();		
-		// Get the main part of the command...
-		substring = command.substring(pos + 1).trim();	
-	}
-	else {	// New blank command may not have alias so assign a default...
-		Alias = "Alias";
-	}
-		
 	// Split the substring into two parts: the command name and 
 	// the parameters list within the parenthesis.
-	List tokens = StringUtil.breakStringList ( substring, "()", 0 );
+	List tokens = StringUtil.breakStringList ( command, "()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and the parameter
 		// list.
@@ -351,16 +440,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	try {
 		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
 			(String) tokens.get(1), routine, "," ) );
-		// If the Alias was found in the command added it to the
-		// parameters propList.	
-		if ( (Alias != null) && (Alias.length() > 0) ) {
-			setCommandParameter( "Alias", Alias );
-			
-			if ( Message.isDebugOn ) {
-				message = "Alias is: " + Alias;
-				Message.printDebug ( 10, routine, message );
-			}
-		} 	
 	}
 	catch ( Exception e ) {
 		message = "Syntax error in \"" + command
@@ -391,10 +470,10 @@ throws InvalidCommandParameterException, CommandWarningException,
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
-	
+	/*
 	String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID"  );
-	String ObsTSID = parameters.getValue( "ObsTSID"  );
+	String NewTSID = parameters.getValue( "NewTSID"  );
 	
 	TS original_ts = null;		// Original time series
 	TS result_ts = null;		// Result time series
@@ -889,6 +968,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 			routine, message );
 		throw new CommandWarningException ( message );
 	}
+     * */
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
@@ -1142,8 +1222,6 @@ throws CommandWarningException
 	String routine = "lagK_Command.initializeStates";
     CommandStatus status = getCommandStatus();
 
-	// If specified, the States data must be an array 
-	// of (Lag/TSID-Multiplier) + 1  = __param_numStates double values
 	PropList parameters = getCommandParameters ();
 	String InflowStates = parameters.getValue( "InflowStates"  );
 	String OutflowStates = parameters.getValue( "OutflowStates"  );
@@ -1280,40 +1358,23 @@ public String toString ( PropList props )
 
 	// Get the properties from the command; 
 	String Alias = props.getValue( "Alias" );
-	if ( (Alias == null) || (Alias.length() == 0) ) {
-		// Can occur when first editing...
-		Alias = "X";	// Default
-	}
-
 	String TSID = props.getValue( "TSID" );
-	String ObsTSID = props.getValue("ObsTSID");
-	String DefaultFlow = props.getValue("DefaultFlow");
-	String FillNearest = props.getValue("FillNearest");
-	String K = props.getValue("K");
+	String NewTSID = props.getValue("NewTSID");
 	String Lag = props.getValue("Lag");
+	String K = props.getValue("K");
+	String DataUnits = props.getValue("DataUnits");
+	String LagInterval = props.getValue("LagInterval");
 	String InflowStates = props.getValue("InflowStates");
 	String OutflowStates = props.getValue("OutflowStates");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
-	if ( (ObsTSID != null) && (ObsTSID.length() > 0) ) {
+	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "ObsTSID=\"" + ObsTSID + "\"" );
-	}
-	if ( (FillNearest != null) && (FillNearest.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "FillNearest=" + FillNearest );
-	}
-	if ( (DefaultFlow != null) && (DefaultFlow.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DefaultFlow=" + DefaultFlow );
+		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
 	if ( (Lag != null) && (Lag.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -1327,6 +1388,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "K=" + K );
 	}
+	if ( (DataUnits != null) && (DataUnits.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "DataUnits=" + DataUnits );
+	}
+	if ( (LagInterval != null) && (LagInterval.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "LagInterval=" + LagInterval );
+	}
 	if ( (InflowStates != null) && (InflowStates.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -1339,8 +1412,13 @@ public String toString ( PropList props )
 		}
 		b.append ( "OutflowStates=\"" + OutflowStates + "\"" );
 	}
-	return "TS " + Alias + " = " +
-		getCommandName() + "(" + b.toString() + ")";
+	if ( (Alias != null) && (Alias.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "Alias=\"" + Alias + "\"" );
+	}
+	return getCommandName() + "(" + b.toString() + ")";
 }
 
 }

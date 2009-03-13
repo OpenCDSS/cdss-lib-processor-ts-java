@@ -470,7 +470,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
-	/*
+	
 	String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID"  );
 	String NewTSID = parameters.getValue( "NewTSID"  );
@@ -560,88 +560,6 @@ throws InvalidCommandParameterException, CommandWarningException,
                 message, "Verify that the time series to lag matches an available time series." ) );
 	}
 			
-	//Get the optional obs_ts
-	if( ObsTSID != null && ObsTSID.length() > 0 ) {
-		try {
-			request_params = new PropList ( "" );
-			request_params.set ( "TSID", ObsTSID );
-			bean = null;
-			ts_pos = -1;	// No time series found
-			try {
-			    bean = processor.processRequest( "IndexOf", request_params);
-				PropList bean_PropList = bean.getResultsPropList();
-				Object o_Index = bean_PropList.getContents ( "Index" );
-				if ( o_Index == null ) {
-					Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Null value for IndexOf(TSID=" + ObsTSID + ") returned from processor." );
-                    status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the time series to lag matches an available time series." ) );
-				}
-				else {
-				    ts_pos = ((Integer)o_Index).intValue();
-				}
-			}
-			catch ( Exception e ) {
-                message = "Error requesting IndexOf(TSID=" + ObsTSID + "\" from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-			}
-						
-			if ( ts_pos < 0 ) {
-				message = "The time series \"" + ObsTSID + "\" was not defined in a previous command.";
-				Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-				command_tag,++warning_count), routine, message);
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the time series to lag matches an available time series." ) );
-			}
-			else {			
-				request_params = new PropList ( "" );
-				request_params.setUsingObject ( "Index", new Integer(ts_pos) );
-				bean = null;
-				try {
-				    bean = processor.processRequest( "GetTimeSeries", request_params);
-				}
-				catch ( Exception e ) {
-					Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, "Error requesting GetTimeSeries(Index=" + ts_pos + ") from processor." );
-                    status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the time series to lag matches an available time series." ) );
-				}
-				PropList bean_PropList = bean.getResultsPropList();
-				Object prop_contents = bean_PropList.getContents ( "TS" );
-				if ( prop_contents == null ) {
-					Message.printWarning(warning_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, "Null value for GetTimeSeries(Index=" + ts_pos + ") returned from processor." );
-                    status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the time series to lag matches an available time series." ) );
-				}
-				else {
-				    obs_ts = (TS)prop_contents;
-				}
-			}
-		} catch ( Exception e ) {
-            message = "Unexpected error getting the observed time series \"" + ObsTSID + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the time series to lag matches an available time series." ) );
-		}
-	}
-	
 	// Get the base multiplier of the input time series.
 	// Initialize to -1 will result in __param_numStates to be negative,
 	// which will allow for a check in initializeStates().
@@ -660,37 +578,8 @@ throws InvalidCommandParameterException, CommandWarningException,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Use ChangeInterval() to convert to a regular time series before routing." ) );
     	}
-    	
-    	//Check the default flow value
-    	if( __param_DefaultFlow == original_ts.getMissing() ) {
-    		message = "The default flow cannot be the missing value of the input TS.";
-    		Message.printWarning ( warning_level,
-    		MessageUtil.formatMessageTag(
-    		command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Change the default flow value." ) );
-    	}
 	} // end if ( original_ts != null )
-	
-	//Define the search window if data are filled
-	if( __param_FillNearest ) {
-		if( base <= TimeInterval.SECOND )  { // 1000 intervals
-			__searchWindowIntervals = 100;
-		}
-		else if( base == TimeInterval.MINUTE )  { // one day
-			__searchWindowIntervals = 60 * 24 / mult;
-		}
-		else if ( base == TimeInterval.HOUR ) { // one day
-			__searchWindowIntervals = 24 / mult;
-		}
-		else if ( base == TimeInterval.DAY ) { // one week
-			__searchWindowIntervals = 7 / mult;
-		}
-		else { //one week, month, year
-			__searchWindowIntervals = 1;
-		}
-	}
+	/*
 	//Compute the number of required states
 	__param_numStates = ((int) __param_lag/mult ) + 1;
 
@@ -968,7 +857,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 			routine, message );
 		throw new CommandWarningException ( message );
 	}
-     * */
+    */
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 

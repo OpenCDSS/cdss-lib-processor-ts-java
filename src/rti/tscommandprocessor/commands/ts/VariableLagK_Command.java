@@ -1380,13 +1380,13 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "Lag=" + Lag );
+		b.append ( "Lag=\"" + Lag +"\"" );
 	}
 	if ( (K != null) && (K.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "K=" + K );
+		b.append ( "K=\"" + K + "\"" );
 	}
 	if ( (DataUnits != null) && (DataUnits.length() > 0) ) {
 		if ( b.length() > 0 ) {

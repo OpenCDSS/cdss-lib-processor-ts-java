@@ -2814,16 +2814,14 @@ Process the ReadTimeSeries2 request.
 private CommandProcessorRequestResultsBean processRequest_ReadTimeSeries2 (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TSList" );
 	if ( o == null ) {
-			String warning = "Request ReadTimeSeries2() does not provide a TSList parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request ReadTimeSeries2() does not provide a TSList parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText ( "This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	List TSList = (List)o;
 	__tsengine.readTimeSeries2 ( TSList );

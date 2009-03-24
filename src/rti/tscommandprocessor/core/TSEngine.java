@@ -5142,7 +5142,7 @@ throws Exception
             ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
     	}
     	catch ( Exception e ) {
-    		Message.printWarning ( 2, routine,
+    		Message.printWarning ( 3, routine,
     		"Error getting original data limits for \"" + ts.getIdentifierString() + "\""  );
     		Message.printWarning ( 3, routine, e );
     	}
@@ -5182,9 +5182,9 @@ throws Exception
 			}
 		}
 		catch ( Exception e ) {
-			String message = "Unable to extend period for \"" +
-			ts.getIdentifierString() + "\" to output period.";
-			Message.printWarning ( 2, routine, message );
+			String message = "Unable to extend period for \"" + ts.getIdentifierString() + "\" to output period.";
+			Message.printWarning ( 3, routine, e );
+			Message.printWarning ( 3, routine, message );
 			throw new Exception ( message );
 		}
 	}
@@ -5215,6 +5215,7 @@ throws Exception
 		size = tslist.size();
 	}
 	TS ts = null;
+	// Only process non-null time series.
 	for ( int i = 0; i < size; i++ ) {
 		ts = (TS)tslist.get(i);
 		if ( ts == null ) {

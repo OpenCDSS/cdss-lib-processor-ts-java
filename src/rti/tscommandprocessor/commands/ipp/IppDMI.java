@@ -1,63 +1,24 @@
 package rti.tscommandprocessor.commands.ipp;
 
-import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
-import javax.swing.JFrame;
-
-import RTi.DataTest.Action;
-import RTi.DataTest.ActionDataModel;
-import RTi.DataTest.AlertIOInterface;
-import RTi.DataTest.Contact;
-import RTi.DataTest.DataTest;
-import RTi.DataTest.DataTestExpression;
-import RTi.DataTest.DataTestFunction;
-import RTi.DataTest.DataTestSide;
-import RTi.DataTest.DataTestDataModel;
-import RTi.DataTest.DataTestExpressionDataModel;
-import RTi.DataTest.DataTestFunctionDataModel;
-import RTi.DataTest.DataTestResult;
-import RTi.DataTest.Severity;
-
 import RTi.DMI.DMI;
-import RTi.DMI.DMIDeleteStatement;
 import RTi.DMI.DMISelectStatement;
 import RTi.DMI.DMIWriteStatement;
 import RTi.DMI.DMIStatement;
-import RTi.DMI.DMIUtil;
 
-import RTi.GRTS.TSProduct;
-import RTi.GRTS.TSProductDMI;
-
-import RTi.TS.DayTS;
-import RTi.TS.HourTS;
-import RTi.TS.IrregularTS;
-import RTi.TS.MinuteTS;
-import RTi.TS.MonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSData;
 import RTi.TS.TSIdent;
-import RTi.TS.TSSupplier;
 import RTi.TS.YearTS;
 
-import RTi.Util.GUI.JComboBoxResponseJDialog;
-import RTi.Util.GUI.ResponseJDialog;
-
-import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Time.TimeInterval;
 
-import RTi.Util.IO.DataUnits;
-import RTi.Util.IO.DataDimension;
 import RTi.Util.IO.IOUtil;
-import RTi.Util.IO.Prop;
-
-import RTi.Util.String.StringUtil;
 
 import RTi.Util.Time.DateTime;
 
@@ -243,6 +204,7 @@ throws Exception
             select.addField ( "vCountyDataMetaData.name" );
             select.addField ( "vCountyDataMetaData.dataType" );
             select.addField ( "vCountyDataMetaData.subType" );
+            select.addField ( "vCountyDataMetaData.units" );
             select.addField ( "vCountyDataMetaData.method" );
             select.addField ( "vCountyDataMetaData.subMethod" );
             select.addField ( "vCountyDataMetaData.source" );
@@ -263,6 +225,7 @@ throws Exception
             select.addField ( "vIPPDataMetaData.name" );
             select.addField ( "vIPPDataMetaData.dataType" );
             select.addField ( "vIPPDataMetaData.subType" );
+            select.addField ( "vIPPDataMetaData.units" );
             select.addField ( "vIPPDataMetaData.method" );
             select.addField ( "vIPPDataMetaData.subMethod" );
             select.addField ( "vIPPDataMetaData.source" );
@@ -283,6 +246,7 @@ throws Exception
 			select.addField ( "vProviderDataMetaData.name" );
 			select.addField ( "vProviderDataMetaData.dataType" );
 			select.addField ( "vProviderDataMetaData.subType" );
+			select.addField ( "vProviderDataMetaData.units" );
 			select.addField ( "vProviderDataMetaData.method" );
 			select.addField ( "vProviderDataMetaData.subMethod" );
 			select.addField ( "vProviderDataMetaData.source" );
@@ -1194,8 +1158,8 @@ throws Exception {
 Read a time series given the id of the time series (metadata are provided to simplify creating the time series).
 */
 public TS readTimeSeries ( String subject, long id, String name, String source, String dataType,
-        String subType, String method, String subMethod, String scenario, DateTime reqStart, DateTime reqEnd,
-        boolean readData )
+        String subType, String units, String method, String subMethod, String scenario, 
+        DateTime reqStart, DateTime reqEnd, boolean readData )
 throws Exception
 {   DMISelectStatement q = new DMISelectStatement ( this );
     if ( subject.equalsIgnoreCase("County")) {
@@ -1217,9 +1181,10 @@ throws Exception
     List v = toTSDataList (rs);
     // Define the time series with metadata
     TS ts = new YearTS();
-    // FIXME SAM 2009-03-12 Need units!
-    //ts.setDataUnits ();
-    //ts.setDataUnitsOriginal ();
+    if ( units != null ) {
+        ts.setDataUnits ( units );
+        ts.setDataUnitsOriginal ( units );
+    }
     TSIdent tsident = new TSIdent ( subject + ":" + name + "." + source + "." + dataType + "-" + subType +
             ".Year." + method + "-" + subMethod + "-" + scenario );
     ts.setIdentifier( tsident );
@@ -1624,7 +1589,6 @@ throws SQLException
     }
     s = rs.getString ( index++ );
     if ( !rs.wasNull() ) {
-        Message.printStatus ( 2, "toDataMetaData", "Processing name \"" + s + "\"" );
         data.setName ( s.trim() );
     }
     s = rs.getString ( index++ );
@@ -1634,6 +1598,10 @@ throws SQLException
     s = rs.getString ( index++ );
     if ( !rs.wasNull() ) {
         data.setSubType ( s.trim() );
+    }
+    s = rs.getString ( index++ );
+    if ( !rs.wasNull() ) {
+        data.setUnits ( s.trim() );
     }
     s = rs.getString ( index++ );
     if ( !rs.wasNull() ) {

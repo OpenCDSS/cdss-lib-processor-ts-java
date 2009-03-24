@@ -643,7 +643,7 @@ CommandWarningException, CommandException
 				    "\" name=\"" + meta.getName() + "\"..." );
 				try {
 				    ts = ippdmi.readTimeSeries ( meta.getSubject(), meta.getID(), meta.getName(),
-			            meta.getSource(), meta.getDataType(), meta.getSubType(), meta.getMethod(),
+			            meta.getSource(), meta.getDataType(), meta.getSubType(), meta.getUnits(), meta.getMethod(),
 			            meta.getSubMethod(), meta.getScenario(), InputStart_DateTime, InputEnd_DateTime, readData );
 				    /*
 				    It gets a bit complicated with the ID so deal with parsing later
@@ -685,7 +685,7 @@ CommandWarningException, CommandException
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
-                    throw new CommandException ( message );
+                    // Don't throw an exception - probably due to missing data.
                 }
     
                 // Now add the list in the processor...

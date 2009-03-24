@@ -34,6 +34,10 @@ Data sub-type.
 */
 protected String _subType = DMIUtil.MISSING_STRING;
 /**
+Data units.
+*/
+protected String _units = DMIUtil.MISSING_STRING;
+/**
 Data method.
 */
 protected String _method = DMIUtil.MISSING_STRING;
@@ -164,6 +168,14 @@ public String getSubType() {
 }
 
 /**
+Returns _units
+@return _units
+*/
+public String getUnits() {
+    return _units;
+}
+
+/**
 Sets _dataType
 @param dataType value to put in _dataType
 */
@@ -257,6 +269,16 @@ public void setSubType(String subType) {
 	if ( subType != null ) {
 		_subType = subType;
 	}
+}
+
+/**
+Sets _units
+@param units value to put in _units
+*/
+public void setUnits(String units) {
+    if ( units != null ) {
+        _units = units;
+    }
 }
 
 /** 

@@ -877,10 +877,15 @@ throws InvalidCommandParameterException, CommandWarningException,
 
 		// done	
 		
-		//Update the data subtype
+		// Update the scenario
 		TSIdent tsIdent = result_ts.getIdentifier();
 		tsIdent.setAlias ( Alias );
-		tsIdent.setSubType( "routed" );
+		if ( tsIdent.getScenario().equals("") ) {
+		    tsIdent.setScenario( "routed" );
+		}
+		else {
+		    tsIdent.setScenario( tsIdent.getScenario() + "-routed" );
+		}
 		result_ts.setIdentifier( tsIdent );
 		// Update the newly created time series genesis.
 		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());

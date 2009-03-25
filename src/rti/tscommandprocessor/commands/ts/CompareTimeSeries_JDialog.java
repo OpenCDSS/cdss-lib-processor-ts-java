@@ -244,6 +244,10 @@ private void initialize ( JFrame parent, Command command )
 		"comparing time series that have the same time series identifier location and/or data type." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+    "The command is useful for comparing two time series (e.g., a simple test) " +
+    "or two similar lists of time series (e.g., two data files)." ),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify one or more tolerances, separated by commas.  " +
 		"Differences greater than these values will be noted." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -259,10 +263,10 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __MatchLocation_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Match location to find time series pair? (default=true)"), 
+		"Optional - match location to find time series pair? (default=" + __command._True + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match data type:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match data type:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MatchDataType_JComboBox = new SimpleJComboBox ( false );
 	__MatchDataType_JComboBox.addItem ( "" );	// Default
@@ -270,38 +274,37 @@ private void initialize ( JFrame parent, Command command )
 	__MatchDataType_JComboBox.addItem ( __command._True );
 	__MatchDataType_JComboBox.select ( 0 );
 	__MatchDataType_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __MatchDataType_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __MatchDataType_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Match data type to find time series pair? (default=false)"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - match data type to find time series pair? (default=" + __command._False + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( 5 );
 	__Precision_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Precision for comparison (digits after decimal)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - digits after decimal to compare (default=available digits are used)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Tolerance_JTextField = new JTextField ( 15 );
 	__Tolerance_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Tolerance(s) to indicate difference (e.g., .01, .1)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - tolerance(s) to indicate difference (e.g., .01, .1, default=exact comparison)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AnalysisStart_JTextField = new JTextField ( "", 15 );
 	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel,
-		__AnalysisStart_JTextField,
+	JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -310,31 +313,31 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Difference flag:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Difference flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DiffFlag_JTextField = new JTextField ( 15 );
 	__DiffFlag_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __DiffFlag_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __DiffFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"1-character flag to use for values that are different."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - 1-character flag to use for values that are different."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Create difference time series?:"),
-    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-      	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
-      	__CreateDiffTS_JComboBox.addItem ( "" );	// Default
-       	__CreateDiffTS_JComboBox.addItem ( __command._False );
-       	__CreateDiffTS_JComboBox.addItem ( __command._True );
-       	__CreateDiffTS_JComboBox.select ( 0 );
-       	__CreateDiffTS_JComboBox.addActionListener ( this );
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+  	__CreateDiffTS_JComboBox = new SimpleJComboBox ( false );
+  	__CreateDiffTS_JComboBox.addItem ( "" );	// Default
+   	__CreateDiffTS_JComboBox.addItem ( __command._False );
+   	__CreateDiffTS_JComboBox.addItem ( __command._True );
+   	__CreateDiffTS_JComboBox.select ( 0 );
+   	__CreateDiffTS_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __CreateDiffTS_JComboBox,
-       		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-               JGUIUtil.addComponent(main_JPanel, new JLabel(
-       		"Create a time series TS1 - TS2? (default=false)"), 
-       		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);        
+	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+	"Optional - create a time series TS1 - TS2? (default=" + __command._False + ")."), 
+	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);        
         
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfDifferent_JComboBox = new SimpleJComboBox ( false );
 	__WarnIfDifferent_JComboBox.addItem ( "" );	// Default
@@ -342,13 +345,13 @@ private void initialize ( JFrame parent, Command command )
 	__WarnIfDifferent_JComboBox.addItem ( __command._True );
 	__WarnIfDifferent_JComboBox.select ( 0 );
 	__WarnIfDifferent_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __WarnIfDifferent_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __WarnIfDifferent_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Generate a warning if different? (default=false)"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - generate a warning if different? (default=" + __command._False + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if same?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if same?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__WarnIfSame_JComboBox = new SimpleJComboBox ( false );
 	__WarnIfSame_JComboBox.addItem ( "" );	// Default
@@ -356,13 +359,13 @@ private void initialize ( JFrame parent, Command command )
 	__WarnIfSame_JComboBox.addItem ( __command._True );
 	__WarnIfSame_JComboBox.select ( 0 );
 	__WarnIfSame_JComboBox.addActionListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __WarnIfSame_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Generate a warning if same? (default=false)"), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, __WarnIfSame_JComboBox,
+	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+	"Optional - generate a warning if same? (default=" + __command._False + ")."), 
+	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 60 );
 	__command_JTextArea.setLineWrap ( true );

@@ -67,6 +67,11 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __Precision_JTextField = null;
+private JTextField __A_JTextField = null;
+private JTextField __B_JTextField = null;
+private JTextField __C_JTextField = null;
+private JTextField __E_JTextField = null;
+private JTextField __F_JTextField = null;
 private SimpleJComboBox __Type_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -187,6 +192,11 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String Precision = __Precision_JTextField.getText().trim();
+    String A = __A_JTextField.getText().trim();
+    String B = __B_JTextField.getText().trim();
+    String C = __C_JTextField.getText().trim();
+    String E = __E_JTextField.getText().trim();
+    String F = __F_JTextField.getText().trim();
     String Type = __Type_JComboBox.getSelected();
 
 	__error_wait = false;
@@ -194,6 +204,9 @@ private void checkInput ()
 	if ( TSList.length() > 0 ) {
 		parameters.set ( "TSList", TSList );
 	}
+    if ( Type.length() > 0 ) {
+        parameters.set ( "Type", Type );
+    }
     if ( TSID.length() > 0 ) {
         parameters.set ( "TSID", TSID );
     }
@@ -212,8 +225,20 @@ private void checkInput ()
     if ( Precision.length() > 0 ) {
         parameters.set ( "Precision", Precision );
     }
-    if ( Type.length() > 0 ) {
-        parameters.set ( "Type", Type );
+    if ( A.length() > 0 ) {
+        parameters.set ( "A", A );
+    }
+    if ( B.length() > 0 ) {
+        parameters.set ( "B", B );
+    }
+    if ( C.length() > 0 ) {
+        parameters.set ( "C", C );
+    }
+    if ( E.length() > 0 ) {
+        parameters.set ( "E", E );
+    }
+    if ( F.length() > 0 ) {
+        parameters.set ( "F", F );
     }
 	try {
 	    // This will warn the user...
@@ -232,13 +257,18 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
+    String Type = __Type_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();  
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String Precision = __Precision_JTextField.getText().trim();
-	String Type = __Type_JComboBox.getSelected(); 
+    String A = __A_JTextField.getText().trim();
+    String B = __B_JTextField.getText().trim();
+    String C = __C_JTextField.getText().trim();
+    String E = __E_JTextField.getText().trim();
+    String F = __F_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -247,6 +277,11 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "Type", Type );
+	__command.setCommandParameter ( "A", A );
+	__command.setCommandParameter ( "B", B );
+	__command.setCommandParameter ( "C", C );
+	__command.setCommandParameter ( "E", E );
+	__command.setCommandParameter ( "F", F );
 }
 
 /**
@@ -306,6 +341,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to a "+
 		"precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("HEC-DSS parts will be taken from the time series " +
+    	"identifier as follows: Apart:Bpart.*.Cpart.Epart.Fpart"),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The defaults can be overridden with the optional part fields."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "HEC-DSS file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -374,6 +415,56 @@ private void initialize ( JFrame parent, Command command )
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - number of digits after decimal (default=HEC-DSS default)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("A:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __A_JTextField = new JTextField (20);
+    __A_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - A part to write (default=first : part of TSID location)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("B:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __B_JTextField = new JTextField (20);
+    __B_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - B part to write (default=second : part of TSID location)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("C:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __C_JTextField = new JTextField (20);
+    __C_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - C part to write (default=TSID data type)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("E:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __E_JTextField = new JTextField (20);
+    __E_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - E part to write (default=TSID interval)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("F:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __F_JTextField = new JTextField (20);
+    __F_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - F part to write (default=TSID scenario)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -466,6 +557,11 @@ private void refresh ()
     String EnsembleID = "";
     String Precision = "";
     String Type = "";
+    String A = "";
+    String B = "";
+    String C = "";
+    String E = "";
+    String F = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -480,6 +576,11 @@ private void refresh ()
         EnsembleID = parameters.getValue ( "EnsembleID" );
         Precision = parameters.getValue ( "Precision" );
         Type = parameters.getValue ( "Type" );
+        A = parameters.getValue ( "A" );
+        B = parameters.getValue ( "B" );
+        C = parameters.getValue ( "C" );
+        E = parameters.getValue ( "E" );
+        F = parameters.getValue ( "F" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -552,6 +653,21 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( A != null ) {
+            __A_JTextField.setText (A);
+        }
+        if ( B != null ) {
+            __B_JTextField.setText (B);
+        }
+        if ( C != null ) {
+            __C_JTextField.setText (C);
+        }
+        if ( E != null ) {
+            __E_JTextField.setText (E);
+        }
+        if ( F != null ) {
+            __F_JTextField.setText (F);
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -562,6 +678,11 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     Precision = __Precision_JTextField.getText().trim();
     Type = __Type_JComboBox.getSelected();
+    A = __A_JTextField.getText().trim();
+    B = __B_JTextField.getText().trim();
+    C = __C_JTextField.getText().trim();
+    E = __E_JTextField.getText().trim();
+    F = __F_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -571,6 +692,11 @@ private void refresh ()
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	parameters.add ( "Precision=" + Precision );
 	parameters.add ( "Type=" + Type );
+	parameters.add ( "A=" + A );
+	parameters.add ( "B=" + B );
+	parameters.add ( "C=" + C );
+	parameters.add ( "E=" + E );
+	parameters.add ( "F=" + F );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

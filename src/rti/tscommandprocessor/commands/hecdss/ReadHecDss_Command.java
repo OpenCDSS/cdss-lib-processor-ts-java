@@ -223,6 +223,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "D" );
     valid_Vector.add ( "E" );
     valid_Vector.add ( "F" );
+    valid_Vector.add ( "Pathname" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "NewUnits" );
@@ -369,6 +370,7 @@ throws InvalidCommandParameterException,
     if ( (F == null) || F.equals("") ) {
         F = "*"; // Default
     }
+    String Pathname = parameters.getValue("Pathname"); // Null OK if not available
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
@@ -517,10 +519,18 @@ throws InvalidCommandParameterException,
         InputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
-        // Read everything in the file (one time series or traces).
-        tslist = HecDssAPI.readTimeSeriesList (
-            new File(InputFile_full), A + ":" + B + ".HEC-DSS." + C + "." + E + "." + F,
-                InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+        // If the pathname is specified, read it as is...
+        if ( (Pathname != null) && !Pathname.equals("") ) {
+            tslist = HecDssAPI.readTimeSeriesListUsingPathname (
+                new File(InputFile_full), Pathname,
+                    InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+        }
+        else {
+            // Read everything in the file (one time series or traces).
+            tslist = HecDssAPI.readTimeSeriesList (
+                new File(InputFile_full), A + ":" + B + ".HEC-DSS." + C + "." + E + "." + F,
+                    InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+        }
         // TODO SAM 2007-12-27 - should enable EnsembleID if traces
 			
 		if ( tslist != null ) {
@@ -628,6 +638,7 @@ public String toString ( PropList props )
     String C = props.getValue("C");
     String E = props.getValue("E");
     String F = props.getValue("F");
+    String Pathname = props.getValue("Pathname");
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
@@ -670,6 +681,12 @@ public String toString ( PropList props )
         }
         b.append("F=\"" + F + "\"");
     }
+    if ((Pathname != null) && (Pathname.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Pathname=\"" + Pathname + "\"");
+    }   
 
 	// New Units
 	if ((NewUnits != null) && (NewUnits.length() > 0)) {

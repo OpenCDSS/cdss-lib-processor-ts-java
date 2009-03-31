@@ -122,7 +122,7 @@ static
     
     // Set the message level to the maximum to track down issues.
     
-    //HecDataManager.setMessageLevel ( 15 );
+    HecDataManager.setMessageLevel ( 15 );
 }
 
 /**
@@ -178,6 +178,67 @@ private static DateTime adjustEndBlockDateToLastDateTime ( TS ts, DateTime block
         adjusted.setHour ( 23 );
         // HEC-DSS does not allow 60 minute so the following will give the last value in the day
         adjusted.setMinute ( 60 - intervalMult );
+    }
+    return adjusted;
+}
+
+/**
+Adjust a requested date/time precision to that needed by HEC-DSS (to minute).
+*/
+private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean start )
+{
+    DateTime adjusted = new DateTime();
+    if ( dt.getPrecision() == DateTime.PRECISION_YEAR ) {
+        adjusted.setYear(dt.getYear());
+        if ( start ) {
+            adjusted.setMonth(1);
+            adjusted.setDay(1);
+            adjusted.setHour(0);
+            adjusted.setMinute(0);
+        }
+        else {
+            adjusted.setMonth(12);
+            adjusted.setDay(31);
+            adjusted.setHour(0);
+            adjusted.addHour(24); // OK to roll over
+            adjusted.setMinute(0);
+        }
+    }
+    else if ( dt.getPrecision() == DateTime.PRECISION_MONTH ) {
+        adjusted.setYear(dt.getYear());
+        adjusted.setMonth(dt.getMonth());
+        if ( start ) {
+            adjusted.setDay(1);
+            adjusted.setHour(0);
+            adjusted.setMinute(0);
+        }
+        else {
+            adjusted.setDay(TimeUtil.numDaysInMonth(dt));
+            adjusted.setHour(0);
+            adjusted.addHour(24); // OK to roll over
+            adjusted.setMinute(0);
+        }
+    }
+    else if ( dt.getPrecision() == DateTime.PRECISION_DAY ) {
+        adjusted.setYear(dt.getYear());
+        adjusted.setMonth(dt.getMonth());
+        adjusted.setMonth(dt.getDay());
+        if ( start ) {
+            adjusted.setHour(0);
+            adjusted.setMinute(0);
+        }
+        else {
+            adjusted.setHour(0);
+            adjusted.addHour(24); // OK to roll over
+            adjusted.setMinute(0);
+        }
+    }
+    else if ( dt.getPrecision() == DateTime.PRECISION_HOUR ) {
+        adjusted.setYear(dt.getYear());
+        adjusted.setMonth(dt.getMonth());
+        adjusted.setMonth(dt.getDay());
+        adjusted.setHour(dt.getHour());
+        adjusted.setMinute(0);
     }
     return adjusted;
 }
@@ -360,9 +421,9 @@ private static String createTimeWindowString ( DateTime startDateTime, DateTime 
             }
         }
         else {
-            // Always add 0000 on times specified to day precision
+            // Ending at 2400 seems to be the standard
             startString = startString + " 0000";
-            endString = endString + " 0000";
+            endString = endString + " 2400";
         }
     }
     // Set the time range using the information from the catalog.
@@ -371,7 +432,8 @@ private static String createTimeWindowString ( DateTime startDateTime, DateTime 
 }
 
 /**
-Convert an RTi DateTime to HecTime instance.
+Convert an RTi DateTime to HecTime instance.  The precision of the DateTime is used to set the date values.
+For example, for daily and monthly values the hour is set to 24.
 @param dt RTi DateTime instance.
 @param ht Existing HecTime instance to reuse (for optimization).  If null, create a new
 instance to return.
@@ -390,8 +452,29 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
     // member that seems to be similar to the HecTime granularity so I'm trying to keep them consistent.
     // Does the HEC code now how to deal with granularity from the interval on the time series?  See the commented
     // lines below.  Doesn't HecTime allow setting the "granularity" to "year", "month", or even "period"?
-    
-    ht.setYearMonthDay(dt.getYear(), dt.getMonth(), dt.getDay(), (dt.getHour()*60 + dt.getMinute()) );
+    int month = dt.getMonth();
+    int day = dt.getDay();
+    int hour = dt.getHour();
+    int minute = dt.getMinute();
+    if ( dt.getPrecision() == DateTime.PRECISION_YEAR ) {
+        // Value is recorded for last day of the year
+        month = 12;
+        day = 31;
+    }
+    if ( dt.getPrecision() == DateTime.PRECISION_MONTH ) {
+        // Value is recorded for the last day of the month
+        day = TimeUtil.numDaysInMonth(dt);
+    }
+    if ( (dt.getPrecision() == DateTime.PRECISION_YEAR) ||
+        (dt.getPrecision() == DateTime.PRECISION_MONTH) ||
+        (dt.getPrecision() == DateTime.PRECISION_DAY) ) {
+        // Value is recorded at the end of the day
+        hour = 24;
+        minute = 0;
+    }
+    // TODO SAM 2009-03-30 Does the hour depend on the time series "Type".  For example does instantaneous vs. mean
+    // change the hour that a daily value is recorded?
+    ht.setYearMonthDay(dt.getYear(), month, day, (hour*60 + minute) );
     //int precision = dt.getPrecision();
     //if ( precision == DateTime.PRECISION_YEAR ) {
     //    ht.setTimeGranularity(ht.??);
@@ -552,7 +635,6 @@ public static List readTimeSeriesList ( File file, String tsidentPattern,
         DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
 throws Exception
 {   String routine = "HecDssAPI.readTimeSeriesList";
-	List tslist = new Vector();
     TSIdent tsident = new TSIdent ( tsidentPattern );
     String dssFilename = file.getCanonicalPath();
     HecDSSFileAccess dssFile = new HecDSSFileAccess ( dssFilename );
@@ -581,8 +663,6 @@ throws Exception
     String dPartReq = "*"; // Do not limit based on start - get all available data
     String ePartReq = tsident.getInterval();
     String fPartReq = tsident.getScenario();
-    DateTime date1FromDPart = null;
-    DateTime date2FromDPart = null;
     Message.printStatus ( 2, routine, "Requesting matching pathnames for " +
             "A=\"" + aPartReq + "\" " +
             "B=\"" + bPartReq + "\" " +
@@ -617,7 +697,50 @@ throws Exception
         Message.printStatus ( 2, routine, "Number of matching path names after condensing is " +
             condensedPathnameList.size() );
     }
-    
+    return readTimeSeriesListUsingPathnameList ( dssFilename, condensedPathnameList, readStartReq, readEndReq,
+        unitsReq, readData );
+}
+
+/**
+Read a list of one or more time series from a HEC-DSS file.  This method is typically called when a specific
+pathname is given.  It is envisioned that * could be included in the pathname but currently the pathname must be
+a literal string, as if taken from the condensed catalog.
+@param file HEC-DSS file (full path).
+@param pathname HEC-DSS condensed pathname for time series to read (D-part must contain period, not just one date).
+@param readStartReq the DateTime to start reading data, with precision at least as fine as the time series.
+If null, read all available data.
+@param readEndReq the DateTime to end reading data, with precision at least as fine as the time series.
+If null, read all available data.
+@param unitsReq requested units (under development, since HEC units may not be consistent with calling software).
+@param readData if true, read the time series values.  If false, only read the metadata.
+@return a list of time series that were read.
+@throws Exception if there is an error reading the time series
+*/
+public static List readTimeSeriesListUsingPathname ( File file, String pathname,
+        DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
+throws Exception
+{   String routine = "HecDssAPI.readTimeSeriesListUsingPathname";
+    String dssFilename = file.getCanonicalPath();
+    HecDSSFileAccess dssFile = new HecDSSFileAccess ( dssFilename );
+    // FIXME SAM 2009-01-08 Need to implement a cache so that the file is not repeatedly opened
+    // Do this similar to other binary file databases like StateMod and StateCU
+    int stat = dssFile.open();
+    Message.printStatus ( 2, routine, "Status from opening DSS file \"" + dssFilename + "\" is " + stat );
+    Vector pathnameList = new Vector();
+    pathnameList.add ( pathname );
+    return readTimeSeriesListUsingPathnameList ( dssFilename, pathnameList, readStartReq, readEndReq, unitsReq, readData );
+}
+
+/**
+Internal method to help with reading time series, called from multiple methods.
+*/
+private static List readTimeSeriesListUsingPathnameList ( String dssFilename, List condensedPathnameList,
+    DateTime readStartReq, DateTime readEndReq, String unitsReq, boolean readData )
+throws Exception
+{   String routine = "HecDSSAPI.readTimeSeriesListUsingPathnameList";
+    List tslist = new Vector();
+    DateTime date1FromDPart = null;
+    DateTime date2FromDPart = null;
     // Loop through the pathnames and read each time series
     // Get the period from the D part in case data are not being read
     for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
@@ -748,6 +871,7 @@ throws Exception
         String tsidentString = tsidMainNoPeriodsInParts + "~HEC-DSS~" + dssFilename;
         // Create a new time series with appropriate internal data management for the interval
         TS ts = TSUtil.newTimeSeries(tsidentString, true);
+        int tsIntervalBase = ts.getDataIntervalBase(); // Used to help with date precisions
         ts.setIdentifier( tsidentString );
         // Set the alias if the TSID had periods above
         if ( alias != null ) {
@@ -813,8 +937,10 @@ throws Exception
             rts.setDSSFileName(dssFilename);
             // If the read period has been requested, use it when reading the time series from HEC-DSS
             if ( (readStartReq != null) && (readEndReq != null) ) {
-                String timeWindow = createTimeWindowString ( readStartReq, readEndReq, ts, true );
-                Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
+                String timeWindow = createTimeWindowString ( adjustRequestedDateTimePrecision(readStartReq,true),
+                        adjustRequestedDateTimePrecision(readEndReq,false), ts, true );
+                Message.printStatus(2, routine,
+                    "Setting time window for read (requested by calling code) to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
             }
             else {
@@ -823,7 +949,8 @@ throws Exception
                 // condensed pathname D parts.  Request that hour be added because it seems to be required.
                 String timeWindow = createTimeWindowString ( date1FromDPart,
                     adjustEndBlockDateToLastDateTime(ts, date2FromDPart), ts, true );
-                Message.printStatus(2, routine, "Setting time window for read to \"" + timeWindow + "\"" );
+                Message.printStatus(2, routine,
+                    "Setting time window for read (based on catalog) to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
  
                 // TODO QUESTION FOR BILL CHARLEY - reading the entire period without the user having to specify
@@ -854,6 +981,7 @@ throws Exception
             // are for the boolean (see also above TODO comment).
             
             int status = rts.read (tsc,false);
+            Message.printStatus(2, routine, "Status from read = " + status + " number of values=" + tsc.values.length );
             // Some time series don't have a period so can't set dates in RTi TS from HecTimeSeries
             // TODO QUESTION FOR BILL CHARLEY - why do some time series not have dates for their period?  Is it
             // because a time series is defined but no data records are saved?
@@ -861,8 +989,9 @@ throws Exception
                 Message.printDebug(2, routine, "Before setDataPeriod()" );
             }
             // readData2 below indicates that a period was determined so it is OK to continue reading the data.
-            // If OK, it also sets the period for the RTi time series.
-            readData2 = setDataPeriod ( ts, rts, readStartReq, readEndReq );
+            // If OK, it also sets the period for the RTi time series.  However, it is possible that data were
+            // read but the output of getTimeRange() is not valid so rely on the data values below to set the dates.
+            readData2 = setDataPeriodFromData ( ts, tsc, readStartReq, readEndReq );
             // Remember units are not available until data records are read so handle units below.
             String units = rts.units();
             ts.setDataUnits ( units );
@@ -877,7 +1006,7 @@ throws Exception
                 // No data - OK if time series was defined but no data saved
                 Message.printStatus(2,routine, "No Data for " + dssPathName + " in \"" + dssFilename + "\"");
             }
-            else if ( readData2 ) {
+            else if ( readData2 || (tsc.values.length > 0) ) {
                 // Have data - transfer to the RTi time series instance.
                 if ( Message.isDebugOn ) {
                     Message.printStatus(2, routine, "Start transferring data." );
@@ -888,8 +1017,7 @@ throws Exception
                 if ( (readStartReq == null) && (readEndReq == null) ) {
                     setTimeSeriesDatesToData ( ts, tsc.times );
                 }
-                // Now allocate the data space for the time series before actually transferring the
-                // data.
+                // Now allocate the data space for the time series before actually transferring the data.
                 ts.allocateDataSpace();
                 // FIXME SAM 2009-01-08 Evaluate transfer of quality flag to RTi time series
                 
@@ -910,7 +1038,15 @@ throws Exception
                         continue;
                     }
                     // Set RTi DateTime class instances to HecTime data
-                    setDateTime ( date, hecTime );
+                    // Monthly and daily values are set using hecTime like 31 January 2000 24:00
+                    // ... so be picky about how dates roll over hour 24
+                    if ( (tsIntervalBase == TimeInterval.YEAR) || (tsIntervalBase == TimeInterval.MONTH) ||
+                        (tsIntervalBase == TimeInterval.DAY) ) {
+                        setDateTime ( date, hecTime, tsIntervalBase, false );
+                    }
+                    else {
+                        setDateTime ( date, hecTime, tsIntervalBase, true );
+                    }
                     // Set the value in the RTi time series
                     ts.setDataValue( date, tsc.values[idata]);
                     // FIXME SAM 2009-01-08 Here is where units would be converted, or do it on the entire time
@@ -953,7 +1089,7 @@ Set the period in the TS using the HecTimeSeries.
 @param hects HEC time series to get period from.
 @return true if the period can be set, false if not (undefined period in the time series).
 */
-private static boolean setDataPeriod ( TS ts, HecTimeSeries hects, DateTime readStart, DateTime readEnd )
+private static boolean setDataPeriodFromData ( TS ts, TimeSeriesContainer tsc, DateTime readStart, DateTime readEnd )
 {   String routine = "HecDssAPI.setDataPeriod";
     // The precision of the dates will be handled based on the time series interval.
     HecTime hecStart = new HecTime();
@@ -961,7 +1097,12 @@ private static boolean setDataPeriod ( TS ts, HecTimeSeries hects, DateTime read
     if ( Message.isDebugOn ) {
         Message.printDebug(2, routine, "Before hects.getSeriesTimeRange()" );
     }
-    hects.getSeriesTimeRange ( hecStart, hecEnd, 0 );
+    // This did not work so just look at the data values themselves
+    //hects.getSeriesTimeRange ( hecStart, hecEnd, 0 );
+    if ( (tsc != null) && (tsc.times != null) && (tsc.times.length > 0) ) {
+        hecStart.set ( tsc.times[0] );
+        hecEnd.set ( tsc.times[tsc.times.length - 1] );
+    }
     if ( Message.isDebugOn ) {
         Message.printStatus(2, routine, "Hec start = " + hecStart + " end = " + hecEnd );
     }
@@ -974,9 +1115,12 @@ private static boolean setDataPeriod ( TS ts, HecTimeSeries hects, DateTime read
         return false;
     }
     DateTime date1 = new DateTime();
-    setDateTime ( date1, hecStart );
+    // Allow rollover because for monthly data need 1999-12-31 24 to show up as 2000-01 and
+    // daily to show up as 2000-01-01
+    setDateTime ( date1, hecStart, ts.getDataIntervalBase(), true );
     DateTime date2 = new DateTime();
-    setDateTime ( date2, hecEnd );
+    // TODO SAM 2009-03-30 Not sure about roll-over here?
+    setDateTime ( date2, hecEnd, ts.getDataIntervalBase(), true );
     // Set the dates in the file...
     ts.setDate1Original ( date1 );
     ts.setDate2Original ( date2 );
@@ -1001,14 +1145,28 @@ private static boolean setDataPeriod ( TS ts, HecTimeSeries hects, DateTime read
 Set an RTi DateTime from a HecTime instance.
 @param date RTi DateTime instance to modify.
 @param hecTime HecTime instance from which to retrieve data.
+@param tsIntervalBase time series interval base.  Monthly dates in hecTime will have an hour of 24 and therefore
+need to ignore the hour when setting the date.
+@param rollOver if True allow the day to roll over if hour is 24.  If false, do not roll over the day for year,
+month, and day interval.  This flag is needed because some of the period-related dates are at hour 24 of a prior
+day and data is typically on the same day.
 */
-private static void setDateTime ( DateTime date, HecTime hecTime )
+private static void setDateTime ( DateTime date, HecTime hecTime, int tsIntervalBase, boolean rollOver )
 {
     date.setYear( hecTime.year() );
+    if ( tsIntervalBase == TimeInterval.YEAR ) {
+        return;
+    }
     date.setMonth( hecTime.month() );
+    if ( (tsIntervalBase == TimeInterval.MONTH) && !rollOver ) {
+        return;
+    }
     date.setDay( hecTime.day() );
+    if ( (tsIntervalBase == TimeInterval.DAY) && !rollOver ) {
+        return;
+    }
     boolean hour24 = false;
-    if ( hecTime.hour() == 24 ) {
+    if ( (hecTime.hour() == 24) ) {
         // Set to hour 23 and then increment by one hour after setting everything, to roll to hour "24"
         // This is because RTi DateTime only allows hour 0
         date.setHour( 23 );
@@ -1017,15 +1175,23 @@ private static void setDateTime ( DateTime date, HecTime hecTime )
     else {
         date.setHour( hecTime.hour() );
     }
-    date.setMinute( hecTime.minute() );
-    date.setSecond( hecTime.second() );
     if ( hour24 ) {
         date.addHour(1);
     }
+    if ( tsIntervalBase == TimeInterval.HOUR ) {
+        return;
+    }
+    date.setMinute( hecTime.minute() );
+    if ( tsIntervalBase == TimeInterval.MINUTE ) {
+        return;
+    }
+    date.setSecond( hecTime.second() );
 }
 
 /**
-Set the time series period based on data read from the HEC-DSS file.
+Set the time series period based on data read from the HEC-DSS file.  The precisions of the dates will
+be set automatically in the TS.set*() methods.  The dates should be OK (no extra 24 hour rollover for monthly, etc.)
+because the setDateTime() method only sets what is appropriate for the precision of the time series.
 @param ts Time series being filled.
 @param times list of times read from the HEC-DSS time series, corresponding to data.
 */
@@ -1037,9 +1203,12 @@ private static void setTimeSeriesDatesToData ( TS ts, int [] times )
     HecTime hdataEnd = new HecTime();
     hdataEnd.set (times[times.length - 1]);
     DateTime dataStart = new DateTime();
-    setDateTime(dataStart,hdataStart);
+    // Allow the roll-over to the next day if hour 24 because for monthly data 1999-12-31 24 should actually
+    // be 2000-01 and daily should be 2000-01-01
+    setDateTime(dataStart,hdataStart,ts.getDataIntervalBase(),true);
     DateTime dataEnd = new DateTime();
-    setDateTime(dataEnd,hdataEnd);
+    // Do not allow roll-over to the next day
+    setDateTime(dataEnd,hdataEnd,ts.getDataIntervalBase(),false);
     // The following will properly adjust the precision to match the time series interval
     ts.setDate1(dataStart);
     ts.setDate2(dataEnd);
@@ -1201,6 +1370,7 @@ throws IOException, Exception
 
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
+    List pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written
     for ( int i = 0; i < tslistSize; i++ ) {
         TS ts = (TS)tslist.get(i);
         // Get the date/times for output, either the entire period or the requested date/times
@@ -1258,6 +1428,10 @@ throws IOException, Exception
         // Set the pathname and use the E part to get the interval.
         DSSPathname dssPathName = getHecPathNameForTimeSeries(ts, null, null );
         String pathname = dssPathName.toString().toUpperCase();
+        // Check the path name for <= 80 characters.
+        if ( pathname.length() > 80 ) {
+            pathsNotWritten80List.add ( pathname );
+        }
         tsc.fullName = pathname;
         tsc.interval = HecTimeSeries.getIntervalFromEPart(dssPathName.getEPart());
         // Set the data units - any string can be used but may want to standardize to allow units conversion
@@ -1299,6 +1473,20 @@ throws IOException, Exception
             // May want to accumulate errors to put in one exception message.
             throw new RuntimeException ( "Error writing time series to HEC-DSS file, return status=" + status);
         }
+    }
+    // Throw an exception if there were any other problems in the loop.  Could put this in the loop but want
+    // as much writing to occur as possible.  For now a single message can be written
+    int pathsNotWrittenListSize = pathsNotWritten80List.size();
+    if ( pathsNotWrittenListSize > 0 ) {
+        StringBuffer b = new StringBuffer();
+        b.append ( "Error writing the following time series because the pathname is > 80 characters." );
+        for ( int i = 0; i < pathsNotWrittenListSize; i++ ) {
+            if ( i > 0 ) {
+                b.append ( ", " );
+            }
+            b.append ( (String)pathsNotWritten80List.get(i) );
+        }
+        throw new RuntimeException ( b.toString() );
     }
 }
 

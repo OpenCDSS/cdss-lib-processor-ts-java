@@ -53,10 +53,11 @@ private JTextField	__Alias_JTextField = null, // Alias for time series.
             __C_JTextField = null,
             __E_JTextField = null,
             __F_JTextField = null,
+            __Pathname_JTextField = null,
 			__InputStart_JTextField,
 			__InputEnd_JTextField,
-			__InputFile_JTextField = null,
-			__NewUnits_JTextField = null; // Units to convert to at read
+			__InputFile_JTextField = null;
+			//__NewUnits_JTextField = null; // Units to convert to at read
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -153,6 +154,7 @@ private void checkInput () {
 	String C = __C_JTextField.getText().trim();
 	String E = __E_JTextField.getText().trim();
 	String F = __F_JTextField.getText().trim();
+	String Pathname = __Pathname_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -177,6 +179,9 @@ private void checkInput () {
     }
     if (F.length() > 0) {
         props.set("F", F);
+    }
+    if (Pathname.length() > 0) {
+        props.set("Pathname", Pathname);
     }
 	if (InputStart.length() > 0 && !InputStart.equals("*")) {
 		props.set("InputStart", InputStart);
@@ -215,6 +220,7 @@ private void commitEdits()
     String C = __C_JTextField.getText().trim();
     String E = __E_JTextField.getText().trim();
     String F = __F_JTextField.getText().trim();
+    String Pathname = __Pathname_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -226,6 +232,7 @@ private void commitEdits()
     __command.setCommandParameter("C", C);
     __command.setCommandParameter("E", E);
     __command.setCommandParameter("F", F);
+    __command.setCommandParameter("Pathname", Pathname);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	//__command.setCommandParameter("NewUnits", NewUnits);
@@ -247,7 +254,7 @@ throws Throwable {
 	__InputStart_JTextField = null;
 	__InputEnd_JTextField = null;
 	__InputFile_JTextField = null;
-	__NewUnits_JTextField = null;
+	//__NewUnits_JTextField = null;
 	__Command_JTextArea = null;
 
 	super.finalize();
@@ -274,13 +281,16 @@ private void initialize(JFrame parent, Command command) {
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<HTML>Read time series from a HEC-DSS file."),
+        "Read time series from a HEC-DSS file."),
         0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use * in the A, B, C, E, and F parts to filter the time series that are read." ), 
+        "Use * in the A, B, C, E, and F parts to filter the time series that are read (or leave blank to read all)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "The D part (start of period) is handled by specifying the input period." ), 
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    "Or, instead of specifying parts, specify the DSS pathname to read a specific time series." ), 
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -350,6 +360,15 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, __F_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - F part to match (default=match all)."),
+    3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("DSS pathname:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Pathname_JTextField = new JTextField ( "", 30 );
+    __Pathname_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Pathname_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - DSS pathname to read (default=use parts from above)."),
     3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     /* TODO - Add later
@@ -459,15 +478,16 @@ Refresh the command from the other text field contents.
 private void refresh()
 {
 	String InputFile = "",
-	    A = "",
-	    B = "",
-	    C = "",
-	    E = "",
-	    F = "",
-        InputStart = "",
-        InputEnd = "",
-        NewUnits = "",
-        Alias = "";
+    A = "",
+    B = "",
+    C = "",
+    E = "",
+    F = "",
+    Pathname = "",
+    InputStart = "",
+    InputEnd = "",
+    NewUnits = "",
+    Alias = "";
 
 	PropList props = null;
 
@@ -482,6 +502,7 @@ private void refresh()
 		C = props.getValue("C");
 		E = props.getValue("E");
 		F = props.getValue("F");
+		Pathname = props.getValue("Pathname");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");
@@ -501,6 +522,9 @@ private void refresh()
         }
         if (F != null) {
             __F_JTextField.setText(F);
+        }
+        if (Pathname != null) {
+            __Pathname_JTextField.setText(Pathname);
         }
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
@@ -529,6 +553,7 @@ private void refresh()
     C = __C_JTextField.getText().trim();
     E = __E_JTextField.getText().trim();
     F = __F_JTextField.getText().trim();
+    Pathname = __Pathname_JTextField.getText().trim();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	//NewUnits = __NewUnits_JTextField.getText().trim();
@@ -541,6 +566,7 @@ private void refresh()
     props.add("C=" + C);
     props.add("E=" + E);
     props.add("F=" + F);
+    props.add("Pathname=" + Pathname);
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	props.add("NewUnits=" + NewUnits);

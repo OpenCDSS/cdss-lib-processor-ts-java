@@ -32,7 +32,6 @@ import RTi.Util.Time.DateTime;
 <p>
 This class initializes, checks, and runs the WriteHecDss() command.
 </p>
-</p>
 */
 public class WriteHecDss_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -238,8 +237,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -343,7 +341,8 @@ CommandWarningException, CommandException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Report problem to software support." ) );
 		}
-		else {	OutputStart_DateTime = (DateTime)prop_contents;
+		else {
+		    OutputStart_DateTime = (DateTime)prop_contents;
 		}
 	}
 	else {
@@ -409,6 +408,8 @@ CommandWarningException, CommandException
 			Message.printDebug(10, routine, message );
 		}
 	}
+	Message.printStatus ( 2, routine, "Will write HEC-DSS time series for period " + OutputStart_DateTime +
+	    " to " + OutputEnd_DateTime );
 
 	// Now try to write.
 

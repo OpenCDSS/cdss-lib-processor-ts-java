@@ -753,9 +753,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             // Make sure that the K table is in the same base interval as the time series being lagged
             Table K_Table = getNormalizedTable ( "K", original_ts, DataUnits, __LagInterval_TimeInterval, __K_Table,
                   log_level, command_tag, warning_count, status );
-            
-            Message.printStatus(2, routine, "Lag table used for procesing: " + Lag_Table );
-            Message.printStatus(2, routine, "K table used for procesing: " + K_Table );
+            String units = DataUnits;
+            if ( (units == null) || units.equals("") ) {
+                units = original_ts.getDataUnits();
+            }
+            Message.printStatus(2, routine, "Lag table used for procesing (" + units + "):\n" + Lag_Table );
+            Message.printStatus(2, routine, "K table used for procesing (" + units + "):\n" + K_Table );
             
     	    // TODO SAM 2009-03-24 Paste in the Sentry logic below, but may want to put this in the LagK class
     	    TSIterator tsi = original_ts.iterator();
@@ -765,24 +768,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		lkb.setKOut ( K_Table );
     		riverside.ts.routing.lagk.LagK lagK = lkb.create();
     		
+    		StringBuffer b = new StringBuffer();
+            double [] co0 = lagK.getCarryoverValues();
+            for ( int i = 0; i < co0.length; i++ ) {
+                b.append ( StringUtil.formatString(co0[i],"%.4f") + " " );
+            }
+            if ( Message.isDebugOn ) {
+                Message.printDebug(1, routine, "Initial input carryover values co=" + b.toString());
+            }
+    		
             // TODO SAM 2009-03-24 evaluate input states - for now do not use and accept defaults (0)
             //reinstate(lagK);
             double prev = 0;
             //final boolean verbal = verbal();
             // TODO SAM 2009-03-24 What does the following do?  Position the arrays?
+            /*
             while ((tsd = tsi.next()) != null) {
                 if (!original_ts.isDataMissing(tsd.getData())) {
                     tsi.previous();
                     break;
                 }
             }
-            StringBuffer b = new StringBuffer();
+            */
+            b = new StringBuffer();
             while ((tsd = tsi.next()) != null) {
                 double dataIn = tsd.getData();
                 double lagVal = lagK.solveMethod(tsd.getDate(), prev);
                 lagK.doCarryOver(tsd.getDate());
                 b.setLength(0);
-                double [] co = lagK.getCarryOverValues(tsd.getDate());
+                // Only using for debugging...
+                //double [] co = lagK.getCarryOverValues(tsd.getDate());
+                double [] co = lagK.getCarryoverValues();
                 for ( int i = 0; i < co.length; i++ ) {
                     b.append ( StringUtil.formatString(co[i],"%.4f") + " " );
                 }
@@ -790,10 +806,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     Message.printDebug(1, routine, "Time: " + tsd.getDate() + " in=" + dataIn + " routed=" + lagVal
                         + " co=" + b.toString());
                 }
-                prev = dataIn;
-                DateTime future = new DateTime(tsd.getDate());
-                future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
-                result_ts.setDataValue(future, lagVal);
+                // TODO SAM 2009-03-29 Evaluate removing - we're trying to make it work
+                //prev = dataIn;
+                prev = lagVal;
+                // TODO SAM 2009-03-29 Evaluate removing - lagged value from solveMethod() is for current time
+                //DateTime future = new DateTime(tsd.getDate());
+                //future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
+                //result_ts.setDataValue(future, lagVal);
+                result_ts.setDataValue(tsd.getDate(), lagVal);
                 if (original_ts.isDataMissing(dataIn)) {
                     message = "The input time series has missing data at " + tsd.getDate() +
                     " - unable to route time series at and beyond this date/time.";  

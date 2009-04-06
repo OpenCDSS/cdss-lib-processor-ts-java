@@ -397,6 +397,7 @@ private void initialize(JFrame parent, Command command) {
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new JTextField ( 30 );
     __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location (A-part:B-part), %T for data type (C-part), %Z for scenario (F-part).");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),

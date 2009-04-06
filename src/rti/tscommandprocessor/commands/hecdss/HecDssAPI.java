@@ -1278,11 +1278,17 @@ private static String tsidIntervalToHecInterval ( TSIdent tsid )
 Convert an RTi time series identifier to a HEC-DSS pathname.
 This is designed for writing time series, not general use, especially the handling of the D part.
 @param ts Time series that follows RTi conventions.
+@param A A-part to override default from TSID, or null to use TSID.
+@param B B-part to override default from TSID, or null to use TSID.
+@param C C-part to override default from TSID, or null to use TSID.
+@param E E-part to override default from TSID, or null to use TSID.
+@param F F-part to override default from TSID, or null to use TSID.
 @param writeStart output start date/time, or null if no D part should be included (currently not used).
 @param writeEnd output end date/time, or null if no D part should be included (currently not used).
 @return HEC-DSS pathname suitable for use with HEC-DSS files.
 */
-private static DSSPathname getHecPathNameForTimeSeries ( TS ts, DateTime writeStart, DateTime writeEnd )
+private static DSSPathname getHecPathNameForTimeSeries ( TS ts, String A, String B, String C, String E, String F,
+    DateTime writeStart, DateTime writeEnd )
 {
     DSSPathname path = new DSSPathname();
     TSIdent tsid = ts.getIdentifier();
@@ -1302,7 +1308,19 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, DateTime writeSt
         path.setAPart ( "" );
         path.setBPart ( location );
     }
-    path.setCPart(tsid.getType());
+    // Reset with what was passed in.
+    if ( (A != null) && !A.equals("") ) {
+        path.setAPart( A );
+    }
+    if ( (B != null) && !B.equals("") ) {
+        path.setBPart( B );
+    }
+    if ( (C != null) && !C.equals("") ) {
+        path.setCPart(C);
+    }
+    else {
+        path.setCPart(tsid.getType());
+    }
     // D part depends on the interval
     if ( writeStart != null ) {
         if ( intervalBase == TimeInterval.YEAR ) {
@@ -1331,14 +1349,24 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, DateTime writeSt
                     writeStart.getYear() );
         }
     }
-    path.setEPart(tsidIntervalToHecInterval(tsid));
-    path.setFPart(tsid.getScenario());
+    if ( (E != null) && !E.equals("") ) {
+        path.setEPart(E);
+    }
+    else {
+        path.setEPart(tsidIntervalToHecInterval(tsid));
+    }
+    if ( (F != null) && !F.equals("") ) {
+        path.setFPart(F);
+    }
+    else {
+        path.setFPart(tsid.getScenario()); 
+    }
     return path;
 }
 
 /**
 Write a list of time series to a HEC-DSS file.  
-@param outputFile the output file to write.  TThe file will be created if it does not already exist.
+@param outputFile the output file to write.  The file will be created if it does not already exist.
 The parent folder must exist.
 @param tslist list of time series to write.  The HEC-DSS pathname for each time series will be created from the
 RTi time series ID convention (see readTimeSeries() for documentation).
@@ -1348,12 +1376,21 @@ RTi time series ID convention (see readTimeSeries() for documentation).
 @param precisionReq the requested precision for output, digits after the period (specify as negative to use the
 default).
 @param hecType the "type" in HEC-DSS convention (e.g., "PER-AVER").
+@param A A-part to override default from TSID, or null to use TSID.
+@param B B-part to override default from TSID, or null to use TSID.
+@param C C-part to override default from TSID, or null to use TSID.
+@param E E-part to override default from TSID, or null to use TSID.
+@param F F-part to override default from TSID, or null to use TSID.
+@param replaceTimeSeries if true, delete the existing time series before writing.
+@param closeFileAfterWrite if true, close the HEC-DSS file after write.  This may slow overall performance but
+will ensure that the process does not lock the file for removal, etc.
 @see #readTimeSeries(File, String, DateTime, DateTime, String, boolean)
 @exception IOException if the HEC-DSS file cannot be written.
 @exception Exception if other errors occur.
 */
 public static void writeTimeSeriesList ( File outputFile, List tslist, DateTime writeStartReq, DateTime writeEndReq,
-        String unitsReq, int precisionReq, String hecType )
+        String unitsReq, int precisionReq, String hecType, String A, String B, String C, String E, String F,
+        boolean replaceTimeSeries, boolean closeFileAfterWrite )
 throws IOException, Exception
 {   String routine = "HecDssAPE.writeTimeSeriesList";
 
@@ -1371,6 +1408,7 @@ throws IOException, Exception
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
     List pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written
+    HecTimeSeries hts = null; // Put here because handle on time series is used to close HEC-DSS files after loop
     for ( int i = 0; i < tslistSize; i++ ) {
         TS ts = (TS)tslist.get(i);
         // Get the date/times for output, either the entire period or the requested date/times
@@ -1426,7 +1464,7 @@ throws IOException, Exception
             tsc.precision = precisionReq;
         }
         // Set the pathname and use the E part to get the interval.
-        DSSPathname dssPathName = getHecPathNameForTimeSeries(ts, null, null );
+        DSSPathname dssPathName = getHecPathNameForTimeSeries(ts, A, B, C, E, F, null, null );
         String pathname = dssPathName.toString().toUpperCase();
         // Check the path name for <= 80 characters.
         if ( pathname.length() > 80 ) {
@@ -1456,14 +1494,19 @@ throws IOException, Exception
             Message.printStatus(2, routine, "HEC-DSS time series container type=\"" + tsc.type + "\"" );
         }
         // The pathname will NOT contain a D part.  It does not seem that a D part is necessary based on the
-        // HecDssTimeSeriesExample.java code.  Do convert it to uppercase though because it seems that HEC strings
-        // are all uppercase.
+        // HecDssTimeSeriesExample.java code.  Do convert it to upper-case though because it seems that HEC strings
+        // are all upper-case.
         String outputFileCanonical = outputFile.getCanonicalPath();
         Message.printStatus( 2, routine, "HEC-DSS time series output file is \"" + outputFileCanonical + "\"" );
         Message.printStatus( 2, routine, "HEC-DSS time series pathname is \"" + pathname + "\"" );
         // Create HEC time series and write the container to the specified file.
-        HecTimeSeries hts = new HecTimeSeries();
+        hts = new HecTimeSeries();
         hts.setDSSFileName(outputFileCanonical);
+        // Delete the old records if replacing
+        if ( replaceTimeSeries ) {
+            // FIXME SAM 2009-04-05 See Bill Charley email about ZDELET?
+            //Heclib.zdelet(ifltab, pathname);
+        }
         // Now try to write...
         int status = hts.write(tsc);
         Message.printStatus( 2, routine, "Status from writing time series is " + status );
@@ -1473,6 +1516,13 @@ throws IOException, Exception
             // May want to accumulate errors to put in one exception message.
             throw new RuntimeException ( "Error writing time series to HEC-DSS file, return status=" + status);
         }
+    }
+    // Close the file if requested - not the default because it may be a performance hit
+    if ( closeFileAfterWrite && (hts != null) ) {
+        hts.done();
+        hts.close();
+        hts.closeDSSFile();
+        //Heclib.zclose(ifltab);
     }
     // Throw an exception if there were any other problems in the loop.  Could put this in the loop but want
     // as much writing to occur as possible.  For now a single message can be written

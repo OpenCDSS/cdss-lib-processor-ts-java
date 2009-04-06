@@ -45,6 +45,12 @@ protected final String _InstVal = "INST-VAL";
 protected final String _InstCum = "INST-CUM";
 
 /**
+Values for Close parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+
+/**
 Output file that is created by this command.
 */
 private File __OutputFile_File = null;
@@ -72,6 +78,8 @@ throws InvalidCommandParameterException
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String Precision = parameters.getValue ( "Precision" );
 	String Type = parameters.getValue ( "Type" );
+	String Replace = parameters.getValue ( "Replace" );
+	String Close = parameters.getValue ( "Close" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -81,7 +89,7 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-		message = "The output file: \"" + OutputFile + "\" must be specified.";
+		message = "The output file must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
@@ -165,9 +173,15 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the precision as an integer." ) );
 	}
-    if ( (Type == null) || (Type.length() == 0) ||
-        (!Type.equalsIgnoreCase(_InstCum) && !Type.equalsIgnoreCase(_InstVal) &&
-        !Type.equalsIgnoreCase(_PerAver) && !Type.equalsIgnoreCase(_PerCum) )) {
+    if ( (Type == null) || (Type.length() == 0) ) {
+        message = "The time series type must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the time series type" ) );
+    }
+    else if ( !Type.equalsIgnoreCase(_InstCum) && !Type.equalsIgnoreCase(_InstVal) &&
+        !Type.equalsIgnoreCase(_PerAver) && !Type.equalsIgnoreCase(_PerCum) ) {
         message = "The time series type is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -175,8 +189,21 @@ throws InvalidCommandParameterException
                 message, "Specify the time series type as " + _InstCum + ", " + _InstVal + ", " +
                 _PerAver + ", or " + _PerCum + "." ) );
     }
-    else {
-        
+
+    if ( (Replace != null) && !Replace.equals("") && !Type.equalsIgnoreCase(_False) && !Type.equalsIgnoreCase(_True) ) {
+        message = "The value of Replace (" + Replace + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the value of Replace as " + _False + " (default) or " + _True + "." ) );
+    }
+
+    if ( (Close != null) && !Close.equals("") && !Type.equalsIgnoreCase(_False) && !Type.equalsIgnoreCase(_True) ) {
+        message = "The value of Close (" + Close + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the value of Close as " + _False + " (default) or " + _True + "." ) );
     }
     
 	// Check for invalid parameters...
@@ -189,6 +216,13 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "A" );
+    valid_Vector.add ( "B" );
+    valid_Vector.add ( "C" );
+    valid_Vector.add ( "E" );
+    valid_Vector.add ( "F" );
+    valid_Vector.add ( "Replace" );
+    valid_Vector.add ( "Close" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -425,6 +459,21 @@ CommandWarningException, CommandException
         Precision_int = Integer.parseInt(Precision);
     }
     String Type = parameters.getValue ( "Type" );
+    String A = parameters.getValue ( "A" );
+    String B = parameters.getValue ( "B" );
+    String C = parameters.getValue ( "C" );
+    String E = parameters.getValue ( "E" );
+    String F = parameters.getValue ( "F" );
+    String Replace = parameters.getValue ( "Replace" );
+    boolean Replace_boolean = false; // Default
+    if ( (Replace != null) && Replace.equalsIgnoreCase(_True)) {
+        Replace_boolean = true;
+    }
+    String Close = parameters.getValue ( "Close" );
+    boolean Close_boolean = false; // Default
+    if ( (Close != null) && Close.equalsIgnoreCase(_True)) {
+        Close_boolean = true;
+    }
     
     // Get the comments to add to the top of the file.
 
@@ -451,7 +500,8 @@ CommandWarningException, CommandException
                      TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing HEC-DSS file \"" + OutputFile_full + "\"" );
             HecDssAPI.writeTimeSeriesList ( new File(OutputFile_full), tslist,
-				OutputStart_DateTime, OutputEnd_DateTime, "", Precision_int, Type );
+				OutputStart_DateTime, OutputEnd_DateTime, "", Precision_int, Type, A, B, C, E, F, Replace_boolean,
+				Close_boolean );
             // Save the output file name...
             setOutputFile ( new File(OutputFile_full));
         }
@@ -494,6 +544,13 @@ public String toString ( PropList parameters )
     String EnsembleID = parameters.getValue( "EnsembleID" );
     String Precision = parameters.getValue( "Precision" );
     String Type = parameters.getValue( "Type" );
+    String A = parameters.getValue( "A" );
+    String B = parameters.getValue( "B" );
+    String C = parameters.getValue( "C" );
+    String E = parameters.getValue( "E" );
+    String F = parameters.getValue( "F" );
+    String Replace = parameters.getValue( "Replace" );
+    String Close = parameters.getValue( "Close" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -507,12 +564,6 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputStart=\"" + OutputStart + "\"" );
     }
-	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputStart=\"" + OutputStart + "\"" );
-	}
 	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -548,6 +599,48 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Type=" + Type );
+    }
+    if ( (A != null) && (A.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "A=\"" + A + "\"");
+    }
+    if ( (B != null) && (B.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "B=\"" + B + "\"");
+    }
+    if ( (C != null) && (C.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "C=\"" + C + "\"");
+    }
+    if ( (E != null) && (E.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "E=\"" + E + "\"");
+    }
+    if ( (F != null) && (F.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "F=\"" + F + "\"");
+    }
+    if ( (Replace != null) && (Replace.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Replace=" + Replace );
+    }
+    if ( (Close != null) && (Close.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Close=" + Close );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -73,6 +73,8 @@ private JTextField __C_JTextField = null;
 private JTextField __E_JTextField = null;
 private JTextField __F_JTextField = null;
 private SimpleJComboBox __Type_JComboBox = null;
+private SimpleJComboBox __Replace_JComboBox = null;
+private SimpleJComboBox __Close_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false;		// Has user pressed OK to close the dialog.
@@ -198,6 +200,8 @@ private void checkInput ()
     String E = __E_JTextField.getText().trim();
     String F = __F_JTextField.getText().trim();
     String Type = __Type_JComboBox.getSelected();
+    String Replace = __Replace_JComboBox.getSelected();
+    String Close = __Close_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -240,6 +244,12 @@ private void checkInput ()
     if ( F.length() > 0 ) {
         parameters.set ( "F", F );
     }
+    if ( Replace.length() > 0 ) {
+        parameters.set ( "Replace", Replace );
+    }
+    if ( Close.length() > 0 ) {
+        parameters.set ( "Close", Close );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -269,6 +279,8 @@ private void commitEdits ()
     String C = __C_JTextField.getText().trim();
     String E = __E_JTextField.getText().trim();
     String F = __F_JTextField.getText().trim();
+    String Replace = __Replace_JComboBox.getSelected();
+    String Close = __Close_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -282,6 +294,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "C", C );
 	__command.setCommandParameter ( "E", E );
 	__command.setCommandParameter ( "F", F );
+	__command.setCommandParameter ( "Replace", Replace );
+	__command.setCommandParameter ( "Close", Close );
 }
 
 /**
@@ -333,7 +347,7 @@ private void initialize ( JFrame parent, Command command )
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The Browse button can be used to select an existing file " +
-		"to overwrite (or edit the file name after selection)."),
+		"to update (or edit the file name after selection to specify a new file)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Specifying a file that does not exist will create a new file."),
@@ -421,7 +435,7 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __A_JTextField = new JTextField (20);
     __A_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __A_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - A part to write (default=first : part of TSID location)."),
@@ -431,7 +445,7 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __B_JTextField = new JTextField (20);
     __B_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __B_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - B part to write (default=second : part of TSID location)."),
@@ -441,7 +455,7 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __C_JTextField = new JTextField (20);
     __C_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __C_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - C part to write (default=TSID data type)."),
@@ -451,7 +465,7 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __E_JTextField = new JTextField (20);
     __E_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __E_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - E part to write (default=TSID interval)."),
@@ -461,11 +475,37 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __F_JTextField = new JTextField (20);
     __F_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __F_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - F part to write (default=TSID scenario)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replace entire time series?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Replace_JComboBox = new SimpleJComboBox ( false );
+    __Replace_JComboBox.add ( "" );
+    __Replace_JComboBox.add ( __command._False );
+    __Replace_JComboBox.add ( __command._True );
+    __Replace_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __Replace_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - replace the entire time series (default="+
+        __command._True + ")." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Close HEC-DSS files after?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Close_JComboBox = new SimpleJComboBox ( false );
+    __Close_JComboBox.add ( "" );
+    __Close_JComboBox.add ( __command._False );
+    __Close_JComboBox.add ( __command._True );
+    __Close_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __Close_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - close HEC-DSS file after write (default="+
+        __command._False + ")." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -562,6 +602,8 @@ private void refresh ()
     String C = "";
     String E = "";
     String F = "";
+    String Replace = "";
+    String Close = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -581,6 +623,8 @@ private void refresh ()
         C = parameters.getValue ( "C" );
         E = parameters.getValue ( "E" );
         F = parameters.getValue ( "F" );
+        Replace = parameters.getValue ( "Replace" );
+        Close = parameters.getValue ( "Close" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -668,6 +712,36 @@ private void refresh ()
         if ( F != null ) {
             __F_JTextField.setText (F);
         }
+        if ( Replace == null ) {
+            // Select default...
+            __Replace_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Replace_JComboBox,Replace, JGUIUtil.NONE, null, null ) ) {
+                __Replace_JComboBox.select ( Replace );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nReplace value \"" + Replace +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( Close == null ) {
+            // Select default...
+            __Close_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Close_JComboBox,Close, JGUIUtil.NONE, null, null ) ) {
+                __Close_JComboBox.select ( Close );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nClose value \"" + Close +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -683,6 +757,8 @@ private void refresh ()
     C = __C_JTextField.getText().trim();
     E = __E_JTextField.getText().trim();
     F = __F_JTextField.getText().trim();
+    Replace = __Replace_JComboBox.getSelected();
+    Close = __Close_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -697,6 +773,8 @@ private void refresh ()
 	parameters.add ( "C=" + C );
 	parameters.add ( "E=" + E );
 	parameters.add ( "F=" + F );
+	parameters.add ( "Replace=" + Replace );
+	parameters.add ( "Close=" + Close );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

@@ -233,9 +233,7 @@ throws InvalidCommandParameterException
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+			MessageUtil.formatMessageTag( command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     

@@ -35,6 +35,7 @@ Data members used for parameter values.
 */
 protected final String _Ignore = "Ignore";
 protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
 
 /**
 Constructor.
@@ -50,8 +51,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -70,16 +70,16 @@ throws InvalidCommandParameterException
 		message = "The input file (file to remove) must be specified.";
 		warning += "\n" + message;
 		status.addToLog(CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the file to remove."));
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Specify the file to remove."));
 	}
 	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
 		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
 			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the parameter as " + _Ignore + " or (default) " + _Warn + "."));
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Ignore + " or (default) " + _Warn + "."));
 		}
 	}
 	// Check for invalid parameters...
@@ -112,7 +112,6 @@ Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -140,8 +139,7 @@ Run the command.
 @param command_line Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -159,26 +157,31 @@ CommandWarningException, CommandException
 	
 	String InputFile = parameters.getValue ( "InputFile" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
-	boolean IfNotFound_Warn_boolean = false;	// Default
-	if ( (IfNotFound != null) && IfNotFound.equalsIgnoreCase(_Warn)){
-		IfNotFound_Warn_boolean = true;
+	if ( (IfNotFound == null) || IfNotFound.equals("")) {
+	    IfNotFound = _Warn; // Default
 	}
 
 	String InputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile ) );
     File file = new File ( InputFile_full );
 	if ( !file.exists() ) {
         message = "File to remove \"" + InputFile_full + "\" does not exist.";
-        if ( IfNotFound_Warn_boolean ) {
+        if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
             Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                            command_tag,++warning_count), routine, message );
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog(CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the file exists at the time the command is run."));
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the file exists at the time the command is run."));
+        }
+        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.WARNING,
+                    message, "Verify that the file exists at the time the command is run."));
         }
         else {
-            Message.printStatus( 2, routine, message );
+            Message.printStatus( 2, routine, message + "  Ignoring.");
         }
 	}
 	if ( warning_count > 0 ) {
@@ -188,20 +191,47 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 
-	try {
-        // Remove the file...
-        file.delete();
-		Message.printStatus ( 2, routine, "Removed file \"" + InputFile_full + "\".");
-	}
-	catch ( Exception e ) {
-		message = "Unexpected error removing file \"" + InputFile_full + "\" (" + e + ").";
-		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-		Message.printWarning ( 3, routine, e );
-		status.addToLog(CommandPhaseType.RUN,
+	if ( file.exists() ) {
+	    try {
+            // Remove the file...
+            file.delete();
+    	}
+	    catch ( SecurityException e ) {
+            message = "Security (permissions) do not allow removing file \"" + InputFile_full + "\" (" + e + ").";
+            Message.printWarning ( warning_level, 
+            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            Message.printWarning ( 3, routine, e );
+            status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "See the log file for details."));
+            throw new CommandException ( message );
+        }
+    	catch ( Exception e ) {
+    		message = "Unexpected error removing file \"" + InputFile_full + "\" (" + e + ").";
+    		Message.printWarning ( warning_level, 
+    		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    		Message.printWarning ( 3, routine, e );
+    		status.addToLog(CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "See the log file for details."));
-		throw new CommandException ( message );
+    		throw new CommandException ( message );
+    	}
+
+    	// Sometimes files are locked because another process is using it.  Make sure that the file was deleted.
+    	// If not, generate a failure - user will need to do something
+    	if ( file.exists() ) {
+    	    // The file was not removed
+            message = "Unable to remove file \"" + InputFile_full + "\".";
+            Message.printWarning ( warning_level, 
+            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            status.addToLog(CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "May be locked by another process/program."));
+            throw new CommandException ( message );
+    	}
+    	else {
+    	    Message.printStatus ( 2, routine, "Removed file \"" + InputFile_full + "\".");
+    	}
 	}
 
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);

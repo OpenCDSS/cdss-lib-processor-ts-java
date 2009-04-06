@@ -228,6 +228,7 @@ private void initialize ( JFrame parent, Command command )
 	__IfNotFound_JComboBox.addItem ( "" );	// Default
 	__IfNotFound_JComboBox.addItem ( __command._Ignore );
 	__IfNotFound_JComboBox.addItem ( __command._Warn );
+	__IfNotFound_JComboBox.addItem ( __command._Fail );
 	__IfNotFound_JComboBox.select ( 0 );
 	__IfNotFound_JComboBox.addActionListener ( this );
    JGUIUtil.addComponent(main_JPanel, __IfNotFound_JComboBox,

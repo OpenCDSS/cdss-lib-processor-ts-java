@@ -196,6 +196,7 @@ public static void closeRegressionTestReportFile ()
 /**
 Expand a parameter value to recognize processor-level properties.  For example, a parameter value like
 "${WorkingDir}/morepath" will be expanded to include the working directory.
+The characters \" will be replaced by a literal ".
 @param processor the CommandProcessor that has a list of named properties.
 @param command the command that is being processed (may be used later for context sensitive values).
 @param parameterValue the parameter value being expanded.
@@ -206,12 +207,17 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         // Just return what was provided.
         return parameterValue;
     }
+    // First replace escaped characters.
+    // TODO SAM 2009-04-03 Evaluate this
+    // Evaluate whether to write a general method for this - for now only handle // \" and \' replacement.
+    parameterValue = parameterValue.replace("\\\"", "\"" );
+    parameterValue = parameterValue.replace("\\'", "'" );
     // Else see if the parameter value can be expanded to replace $ symbolic references with other values
     // Search the parameter string for $ until all processor parameters have been resolved
-    int searchPos = 0;  // Position in the "parameter_val" string to search for $ references
-    int foundPos;       // Position when leading ${ is found
-    int foundPosEnd;   // Position when ending } is found
-    String foundProp = null;    // Whether a property is found that matches the $ symbol
+    int searchPos = 0; // Position in the "parameter_val" string to search for $ references
+    int foundPos; // Position when leading ${ is found
+    int foundPosEnd; // Position when ending } is found
+    String foundProp = null; // Whether a property is found that matches the $ symbol
     String delimStart = "${";
     String delimEnd = "}";
     while ( searchPos < parameterValue.length() ) {
@@ -250,9 +256,9 @@ public static String expandParameterValue( CommandProcessor processor, Command c
         }
         // Now reset the search position to finish evaluating whether to expand the string.
         parameterValue = b.toString();
-        searchPos = foundPos + propvalString.length();   // Expanded so no need to consider delim*
+        searchPos = foundPos + propvalString.length(); // Expanded so no need to consider delim*
         Message.printStatus( 2, routine, "Expanded property value is \"" + parameterValue +
-                "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
+            "\" searchpos is now " + searchPos + " in string \"" + parameterValue + "\"" );
     }
     return parameterValue;
 }

@@ -384,8 +384,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -398,8 +397,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -412,8 +410,7 @@ Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */

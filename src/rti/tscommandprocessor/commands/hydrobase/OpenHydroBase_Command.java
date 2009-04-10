@@ -106,13 +106,13 @@ throws InvalidCommandParameterException
 	//String UseStoredProcedures = parameters.getValue("UseStoredProcedures");
 	//String InputName = parameters.getValue ( "InputName" );
 
-	if (	(OdbcDsn.equals("") && DatabaseServer.equals("")) ||
+	if ( (OdbcDsn.equals("") && DatabaseServer.equals("")) ||
 		(!OdbcDsn.equals("") && !DatabaseServer.equals("")) ) {
         message = "An ODBC DSN or Database Server must be specified (but not both).";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the ODBC DSN ... OR a databas server." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the ODBC DSN ... OR a databas server." ) );
 	}
 
 	if ( DatabaseServer.equals("") ) {
@@ -120,8 +120,8 @@ throws InvalidCommandParameterException
             message = "A database name can be specified only when the database server is specified.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Do not specify the database name when the ODBC DSN is specified." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Do not specify the database name when the ODBC DSN is specified." ) );
 		}
 	}
     

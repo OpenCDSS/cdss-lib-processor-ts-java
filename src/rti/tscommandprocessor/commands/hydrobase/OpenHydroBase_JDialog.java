@@ -625,15 +625,12 @@ private void refresh ()
 			__OdbcDsn_JComboBox.select ( 0 );
 		}
 		else {	
-			if ( JGUIUtil.isSimpleJComboBoxItem(
-				__OdbcDsn_JComboBox,
-				OdbcDsn, JGUIUtil.NONE, null, null ) ) {
+			if ( JGUIUtil.isSimpleJComboBoxItem( __OdbcDsn_JComboBox, OdbcDsn, JGUIUtil.NONE, null, null ) ) {
 				__OdbcDsn_JComboBox.select ( OdbcDsn );
 			}
-			else {	Message.printWarning ( 1,
-				"openHydroBase_JDialog.refresh",
-				"Existing openHydroBase() references an " +
-				"invalid\nODBC DSN \"" + OdbcDsn +
+			else {
+			    Message.printWarning ( 1, "openHydroBase_JDialog.refresh",
+				"Existing openHydroBase() references an invalid\nODBC DSN \"" + OdbcDsn +
 				"\".  Select a different ODBC DSN or Cancel.");
 				__error_wait = true;
 			}
@@ -641,23 +638,18 @@ private void refresh ()
 		
 		if ( DatabaseServer != null ) {
 			__holdServer = DatabaseServer;
-			if (!__DatabaseServer_JComboBox.contains(
-			    DatabaseServer)) {
-			    	__DatabaseServer_JComboBox.add(DatabaseServer);
+			if (!__DatabaseServer_JComboBox.contains(DatabaseServer)) {
+			    __DatabaseServer_JComboBox.add(DatabaseServer);
 			}
 			__DatabaseServer_JComboBox.select(DatabaseServer);
-			retrieveDatabaseNames(
-				__DatabaseServer_JComboBox.getFieldText());	
+			retrieveDatabaseNames(__DatabaseServer_JComboBox.getFieldText());	
 		}
 		else if (__defaultServerName != null) {
-			if (!__DatabaseServer_JComboBox.contains(
-			    __defaultServerName)) {
-			    	__DatabaseServer_JComboBox.add(
-				    __defaultServerName);
+			if (!__DatabaseServer_JComboBox.contains(__defaultServerName)) {
+			    	__DatabaseServer_JComboBox.add(__defaultServerName);
 			}
 			__DatabaseServer_JComboBox.select(__defaultServerName);
-			retrieveDatabaseNames(
-				__DatabaseServer_JComboBox.getFieldText());	
+			retrieveDatabaseNames(__DatabaseServer_JComboBox.getFieldText());	
 		}			    
 
 		if ( DatabaseName != null ) {
@@ -675,17 +667,14 @@ private void refresh ()
 			__UseStoredProcedures_JComboBox.select ( 0 );
 		}
 		else {	
-			if (	JGUIUtil.isSimpleJComboBoxItem(
-				__UseStoredProcedures_JComboBox,
+			if ( JGUIUtil.isSimpleJComboBoxItem( __UseStoredProcedures_JComboBox,
 				UseStoredProcedures, JGUIUtil.NONE, null,null)){
 				__holdStoredProcedures = UseStoredProcedures;
 			}
-			else {	Message.printWarning ( 1,
-				"openHydroBase_JDialog.refresh",
-				"Existing openHydroBase() references an " +
-				"invalid\nflag for using stored procedures \""
-				+ UseStoredProcedures +
-				"\".  Select a different value or Cancel.");
+			else {
+			    Message.printWarning ( 1, "openHydroBase_JDialog.refresh",
+				"Existing openHydroBase() references an invalid\nflag for using stored procedures \""
+				+ UseStoredProcedures + "\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
 		}
@@ -693,15 +682,13 @@ private void refresh ()
 			// Select default...
 			__RunMode_JComboBox.select ( 0 );	// None
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__RunMode_JComboBox,
-				RunMode, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __RunMode_JComboBox, RunMode, JGUIUtil.NONE, null, null ) ) {
 				__RunMode_JComboBox.select ( RunMode );
 			}
-			else {	Message.printWarning ( 1,
-				"openHydroBase_JDialog.refresh",
-				"Existing openHydroBase() references an " +
-				"invalid\nrun mode \"" + RunMode +
+			else {
+			    Message.printWarning ( 1, "openHydroBase_JDialog.refresh",
+				"Existing openHydroBase() references an invalid\nrun mode \"" + RunMode +
 				"\".  Select a different run mode or Cancel.");
 				__error_wait = true;
 			}
@@ -712,8 +699,7 @@ private void refresh ()
 		OdbcDsn = __OdbcDsn_JComboBox.getSelected();
 	}
 	if (__DatabaseServer_JComboBox.isEnabled()) {
-		DatabaseServer = __DatabaseServer_JComboBox.getFieldText()
-			.trim();
+		DatabaseServer = __DatabaseServer_JComboBox.getFieldText().trim();
 	}
 	if (__DatabaseName_JComboBox.isEnabled()) {
 		DatabaseName = __DatabaseName_JComboBox.getFieldText().trim();
@@ -723,8 +709,7 @@ private void refresh ()
 	InputName = __InputName_JTextField.getText().trim();
 
 	if (__UseStoredProcedures_JComboBox.isEnabled()) {
-		UseStoredProcedures = __UseStoredProcedures_JComboBox
-			.getSelected();
+		UseStoredProcedures = __UseStoredProcedures_JComboBox.getSelected();
 	}
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "OdbcDsn=" + OdbcDsn );

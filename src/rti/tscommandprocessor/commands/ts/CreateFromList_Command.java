@@ -425,6 +425,12 @@ throws InvalidCommandParameterException,
         for ( int i = 0; i < tsize; i++ ) {
             rec = table.getRecord ( i );
             id = (String)rec.getFieldValue ( IDCol_int );
+            if ( id.equals("") ) {
+                // Probably a blank line in the list file - no need to generate a command warning
+                Message.printStatus ( 2, routine, "Missing identifier for time series - " +
+                	"probably a blank line in the list file - skipping time series " + (i + 1));
+                continue;
+            }
             if ( !StringUtil.matchesIgnoreCase(id,idpattern_Java) ) {
                 // Does not match...
                 continue;
@@ -464,9 +470,8 @@ throws InvalidCommandParameterException,
                     else {
                         // Non-fatal - ignoring or defaulting time series.
                         message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                        status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.WARNING,
-                                        message, "Verify that the identifier information is correct." ) );
+                        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that the identifier information is correct." ) );
                     }
                     ts = null;
                     notFoundLogged = true;
@@ -498,15 +503,14 @@ throws InvalidCommandParameterException,
                         else {
                             // Non-fatal - ignoring or defaulting time series.
                             message += "  Non-fatal because IfNotFound=" + IfNotFound;
-                            status.addToLog ( commandPhase,
-                                    new CommandLogRecord(CommandStatusType.WARNING,
-                                            message, "Verify that the identifier information is correct." ) );
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that the identifier information is correct." ) );
                         }
                     }
                     // Always check for output period because required for default time series.
                     if ( IfNotFound.equalsIgnoreCase(_Default) &&
-                            ((processor.getPropContents("OutputStart") == null) ||
-                            (processor.getPropContents("OutputEnd") == null)) ) {
+                        ((processor.getPropContents("OutputStart") == null) ||
+                        (processor.getPropContents("OutputEnd") == null)) ) {
                         message = "Time series could not be found using identifier \"" + TSID + "\"." +
                         		"  Requesting default time series but no output period is defined.";
                         status.addToLog ( commandPhase,

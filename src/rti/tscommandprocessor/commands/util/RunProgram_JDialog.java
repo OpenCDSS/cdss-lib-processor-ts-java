@@ -18,6 +18,8 @@ package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -37,11 +39,13 @@ import javax.swing.JTextField;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
 
 public class RunProgram_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
@@ -50,6 +54,7 @@ private JTextArea __command_JTextArea=null;
 private JTextArea __CommandLine_JTextArea = null;
 private JTextField __Program_JTextField= null;
 private JTextField [] __ProgramArg_JTextField = null;
+private SimpleJComboBox __UseCommandShell_JComboBox=null;
 private JTextField __Timeout_JTextField = null;
 private JTextField __ExitStatusIndicator_JTextField = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up
@@ -98,6 +103,7 @@ private void checkInput ()
     for ( int i = 0; i < __ProgramArg_JTextField.length; i++ ) {
         ProgramArg[i] = __ProgramArg_JTextField[i].getText().trim();
     }
+    String UseCommandShell =__UseCommandShell_JComboBox.getSelected();
     String Timeout = __Timeout_JTextField.getText().trim();
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
     __error_wait = false;
@@ -111,6 +117,9 @@ private void checkInput ()
         if ( Program.length() > 0 ) {
             ProgramArg[i] = __ProgramArg_JTextField[i].getText().trim();
         }
+    }
+    if ( UseCommandShell.length() > 0 ) {
+        props.set ( "UseCommandShell", UseCommandShell );
     }
     if ( Timeout.length() > 0 ) {
         props.set ( "Timeout", Timeout );
@@ -139,6 +148,7 @@ private void commitEdits ()
     for ( int i = 0; i < __ProgramArg_JTextField.length; i++ ) {
         ProgramArg[i] = __ProgramArg_JTextField[i].getText().trim();
     }
+    String UseCommandShell =__UseCommandShell_JComboBox.getSelected();
     String Timeout = __Timeout_JTextField.getText().trim();
     String ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText().trim();
     __command.setCommandParameter ( "CommandLine", CommandLine );
@@ -146,6 +156,7 @@ private void commitEdits ()
     for ( int i = 0; i < __ProgramArg_JTextField.length; i++ ) {
         __command.setCommandParameter ( "ProgramArg" + (i + 1), ProgramArg[i] );
     }
+    __command.setCommandParameter ( "UseCommandShell", UseCommandShell );
     __command.setCommandParameter ( "Timeout", Timeout );
     __command.setCommandParameter ( "ExitStatusIndicator", ExitStatusIndicator );
 }
@@ -201,9 +212,13 @@ private void initialize ( JFrame parent, Command command )
         "exit status (e.g., \"Status:\")."),
         0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "Specify the program to run using the command line OR separate arguments - the latter makes it simpler " +
-            "to know how to treat whitespace in command line arguments."),
-            0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        "Specify the program to run using the command line OR separate arguments - the latter makes it simpler " +
+        "to know how to treat whitespace in command line arguments."),
+        0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The program by default will be run with a command shell (e.g., cmd.exe on Windows) - specify as " +
+        __command._False + " if it is known that the program is an executable (not a shell command or script)."),
+        0, ++y, 7, 1, 1, 0, insetsMin, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command to run (with arguments):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -222,7 +237,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __Program_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required if command line is not specified."), 
+        "Required - if full command line is not specified above."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __ProgramArg_JTextField = new JTextField[__command._ProgramArg_SIZE];
@@ -231,12 +246,25 @@ private void initialize ( JFrame parent, Command command )
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __ProgramArg_JTextField[i] = new JTextField ( "", 40 );
         __ProgramArg_JTextField[i].addKeyListener ( this );
-            JGUIUtil.addComponent(main_JPanel, __ProgramArg_JTextField[i],
+        JGUIUtil.addComponent(main_JPanel, __ProgramArg_JTextField[i],
             1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-            "As needed if Program is specified."), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - as needed if Program is specified."), 
             3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use command shell:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __UseCommandShell_JComboBox = new SimpleJComboBox ( false );
+    __UseCommandShell_JComboBox.add ( "" );
+    __UseCommandShell_JComboBox.add ( __command._False );
+    __UseCommandShell_JComboBox.add ( __command._True );
+    __UseCommandShell_JComboBox.select ( 0 );
+    __UseCommandShell_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __UseCommandShell_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - use command shell (default="+ __command._True + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Timeout (seconds):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -290,6 +318,15 @@ private void initialize ( JFrame parent, Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged(ItemEvent event)
+{
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -325,6 +362,7 @@ private void refresh ()
 {	String CommandLine = "";
     String Program = "";
     String [] ProgramArg = new String[__ProgramArg_JTextField.length];
+    String UseCommandShell = "";
 	String Timeout = "";
 	String ExitStatusIndicator = "";
     PropList parameters = null;
@@ -336,6 +374,7 @@ private void refresh ()
         for ( int i = 0; i < ProgramArg.length; i++ ) {
             ProgramArg[i] = parameters.getValue ( "ProgramArg" + (i + 1) );
         }
+        UseCommandShell = parameters.getValue ( "UseCommandShell" );
         Timeout = parameters.getValue ( "Timeout" );
         ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
         if ( CommandLine != null ) {
@@ -349,8 +388,27 @@ private void refresh ()
                 __ProgramArg_JTextField[i].setText ( ProgramArg[i] );
             }  
         }
+        if ( UseCommandShell == null ) {
+            // Select default...
+            __UseCommandShell_JComboBox.select ( 0 );
+        }
+        else {  
+            if ( JGUIUtil.isSimpleJComboBoxItem( __UseCommandShell_JComboBox,
+                UseCommandShell, JGUIUtil.NONE, null,null)){
+                __UseCommandShell_JComboBox.select ( UseCommandShell );
+            }
+            else {
+                Message.printWarning ( 1, "openHydroBase_JDialog.refresh",
+                "Existing command references an invalid UseCommandShell parameter \""
+                + UseCommandShell + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( Timeout != null ) {
             __Timeout_JTextField.setText ( Timeout );
+        }
+        if ( ExitStatusIndicator != null ) {
+            __ExitStatusIndicator_JTextField.setText ( ExitStatusIndicator );
         }
 	}
 	// Regardless, reset the command from the fields...
@@ -359,6 +417,7 @@ private void refresh ()
     for ( int i = 0; i < ProgramArg.length; i++ ) {
         ProgramArg[i] = __ProgramArg_JTextField[i].getText();
     }
+    UseCommandShell =__UseCommandShell_JComboBox.getSelected();
     Timeout = __Timeout_JTextField.getText();
     ExitStatusIndicator = __ExitStatusIndicator_JTextField.getText();
     PropList props = new PropList ( __command.getCommandName() );
@@ -367,6 +426,7 @@ private void refresh ()
     for ( int i = 0; i < ProgramArg.length; i++ ) {
         props.add ( "ProgramArg" + (i + 1) + "=" + ProgramArg[i] );
     }
+    props.add ( "UseCommandShell=" + UseCommandShell );
     props.add ( "Timeout=" + Timeout );
     props.add ( "ExitStatusIndicator=" + ExitStatusIndicator );
     __command_JTextArea.setText( __command.toString(props) );

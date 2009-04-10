@@ -32,6 +32,12 @@ implements Command
 {
     
 /**
+Possible values for UseCommandShell parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+    
+/**
 Number of arguments that can be added as ProgramArg# parameters.
 */
 protected final int _ProgramArg_SIZE = 8;
@@ -56,6 +62,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String CommandLine = parameters.getValue ( "CommandLine" );
     String Program = parameters.getValue ( "Program" );
+    String UseCommandShell = parameters.getValue ( "UseCommandShell" );
 	String Timeout = parameters.getValue ( "Timeout" );
 	String warning = "";
 	String message;
@@ -63,22 +70,33 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-    if ( (CommandLine == null) || (CommandLine.length() == 0) ) {
-        message = "The command line for the program to run must be specified.";
+    if ( ((CommandLine == null) || (CommandLine.length() == 0)) &&
+        ((Program == null) || (Program.length() == 0)) ) {
+        message = "The command line or the program name for the program to run must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the program command line to run."));
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the program command line to run."));
     }
+    
+    if ( UseCommandShell != null && !UseCommandShell.equalsIgnoreCase("") &&
+        !UseCommandShell.equalsIgnoreCase("True") && !UseCommandShell.equalsIgnoreCase("False")) {
+        message = "The UseCommandShell parameter value (" + UseCommandShell + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify UseCommandShell as " + _False + " or " + _True + " (default)." ) );
+    }
+    
     // TODO SAM 2009-04-05 For now allow command line and individual arguments to both be specified and
     // use the separate arguments first.
     // Timeout is not required
     if ( (Timeout != null) && (Timeout.length() != 0) && !StringUtil.isDouble(Timeout) ) {
-        message = "TThe tmeout value \"" + Timeout + "\" is not a number.";
+        message = "The tmeout value \"" + Timeout + "\" is not a number.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the timeout as a number of seconds or leave blank to default to no timeout."));
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the timeout as a number of seconds or leave blank to default to no timeout."));
     }
 
 	// Check for invalid parameters...
@@ -88,6 +106,7 @@ throws InvalidCommandParameterException
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
 	    valid_Vector.add ( "ProgramArg" + (i + 1) );
 	}
+	valid_Vector.add ( "UseCommandShell" );
 	valid_Vector.add ( "Timeout" );
 	valid_Vector.add ( "ExitStatusIndicator" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -189,18 +208,36 @@ CommandWarningException, CommandException
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
 	    ProgramArg[i] = parameters.getValue ( "ProgramArg" + (i + 1) );
 	}
+    String UseCommandShell = parameters.getValue ( "UseCommandShell" );
+    boolean UseCommandShell_boolean = true; // default
+    if ( (UseCommandShell != null) && UseCommandShell.equalsIgnoreCase(_False) ) {
+        UseCommandShell_boolean = false;
+    }
 	String Timeout = parameters.getValue ( "Timeout" );
-	String ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
     double Timeout_double = 0.0;
     if ( (Timeout != null) && (Timeout.length() > 0) ) {
         Timeout_double = Double.parseDouble(Timeout);
     }
+    String ExitStatusIndicator = parameters.getValue ( "ExitStatusIndicator" );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
+	}
+	
+	// If the Program has been specified but CommandLine has not, construct the command line from the
+	// program for logging.  The Program will take precedence below so this will not change the logic
+	if ( (CommandLine == null) || CommandLine.equals("") ) {
+	    StringBuffer b = new StringBuffer();
+	    b.append ( Program );
+	    for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
+            if ( ProgramArg[i] != null ) {
+                b.append ( " " + ProgramArg[i] );
+            }
+        }
+	    CommandLine = b.toString();
 	}
 
 	String CommandLine_full = CommandLine;
@@ -226,7 +263,8 @@ CommandWarningException, CommandException
         // process is finished (need to figure out a way to make TSTool wait on the thread without hanging).
         ProcessManager pm = null;
         if ( (Program != null) && !Program.equals("") ) {
-            // Specify the program to run using individual strings.
+            // Specify the program to run using individual strings - this takes precedence over the full
+            // command line.
             List programAndArgsList = new Vector();
             programAndArgsList.add ( Program_full );
             for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
@@ -234,12 +272,14 @@ CommandWarningException, CommandException
                     programAndArgsList.add (ProgramArg_full[i]);
                 }
             }
-            pm = new ProcessManager ( StringUtil.toArray(programAndArgsList), (int)(Timeout_double*1000.0), ExitStatusIndicator);
+            pm = new ProcessManager ( StringUtil.toArray(programAndArgsList), (int)(Timeout_double*1000.0),
+                ExitStatusIndicator, UseCommandShell_boolean );
             //CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator);
         }
         else {
             // Specify the command to run using a full command line
-            pm = new ProcessManager (CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator);
+            pm = new ProcessManager (CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator,
+                UseCommandShell_boolean);
         }
         pm.saveOutput ( true ); // Save output so it can be used in troubleshooting
         pm.run();
@@ -278,9 +318,8 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		Message.printWarning ( 3, routine, e );
-		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "See the log file for details."));
+		status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+		    message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
 
@@ -300,6 +339,7 @@ public String toString ( PropList parameters )
 	for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
 	    ProgramArg[i] = parameters.getValue("ProgramArg" + (i + 1));
 	}
+	String UseCommandShell = parameters.getValue("UseCommandShell");
 	String Timeout = parameters.getValue("Timeout");
 	String ExitStatusIndicator = parameters.getValue("ExitStatusIndicator");
 	StringBuffer b = new StringBuffer ();
@@ -310,15 +350,21 @@ public String toString ( PropList parameters )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "Program=" + Program );
+        b.append ( "Program=\"" + Program + "\"");
     }
     for ( int i = 0; i < _ProgramArg_SIZE; i++ ) {
         if ( (ProgramArg[i] != null) && (ProgramArg[i].length() > 0) ) {
             if ( b.length() > 0 ) {
                 b.append ( "," );
             }
-            b.append ( "ProgramArg" + (i + 1) + "=" + ProgramArg[i] );
+            b.append ( "ProgramArg" + (i + 1) + "=\"" + ProgramArg[i] + "\"");
         } 
+    }
+    if ( (UseCommandShell != null) && (UseCommandShell.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "UseCommandShell=" + UseCommandShell );
     }
 	if ( (Timeout != null) && (Timeout.length() > 0) ) {
 		if ( b.length() > 0 ) {

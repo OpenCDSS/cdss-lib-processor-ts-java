@@ -191,6 +191,7 @@ import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
+import rti.tscommandprocessor.commands.util.RunDSSUTL_Command;
 import rti.tscommandprocessor.commands.util.RunProgram_Command;
 import rti.tscommandprocessor.commands.util.RunPython_Command;
 import rti.tscommandprocessor.commands.util.SetProperty_Command;
@@ -572,6 +573,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"RunCommands") ) {
 		return new RunCommands_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"RunDSSUTL") ) {
+        return new RunDSSUTL_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"RunProgram") ) {
         return new RunProgram_Command ();
     }

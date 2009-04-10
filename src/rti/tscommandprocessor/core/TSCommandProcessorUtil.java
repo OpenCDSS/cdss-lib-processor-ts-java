@@ -23,6 +23,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.ProcessRunner;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
@@ -1078,6 +1079,34 @@ protected static boolean isTSID ( String command )
 	else {
 	    return false;
 	}
+}
+
+/**
+Kill any processes associated with the list of commands.  Any commands that implements the
+ProcessRunner interface are checked.
+@param commandList the list of commands to check.
+*/
+public static void killCommandProcesses ( List<Command>commandList )
+{   String routine = "TSCommandProcessorUtil.killCommandProcesses";
+    int size = 0;
+    if ( commandList != null ) {
+        // Use all commands...
+        size = commandList.size();
+    }
+    Command command;
+    for ( int i = 0; i < size; i++ ) {
+        command = commandList.get(i);
+        if ( command instanceof ProcessRunner ) {
+            ProcessRunner pr = (ProcessRunner)command;
+            List<Process> processList = pr.getProcessList();
+            int processListSize = processList.size();
+            for ( int iprocess = 0; iprocess < processListSize; iprocess++ ) {
+                Process process = processList.get(iprocess);
+                Message.printStatus ( 2, routine, "Destroying process for command: " + command.toString() );
+                process.destroy();
+            }
+        }
+    }
 }
 
 /**

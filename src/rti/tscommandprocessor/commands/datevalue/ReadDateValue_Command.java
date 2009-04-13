@@ -104,9 +104,8 @@ throws InvalidCommandParameterException
 	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
 	    message = "The Alias must be specified.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an alias." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify an alias." ) );
     }
 
     if (Alias != null && !Alias.equals("")) {
@@ -114,21 +113,21 @@ throws InvalidCommandParameterException
             // do not allow spaces in the alias
             message = "The Alias value cannot contain any spaces.";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Remove spaces from the alias." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Remove spaces from the alias." ) );
         }
     }
 
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an existing input file." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify an existing input file." ) );
     }
-    else {  String working_dir = null;
-        try { Object o = processor.getPropContents ( "WorkingDir" );
+    else {
+        String working_dir = null;
+        try {
+            Object o = processor.getPropContents ( "WorkingDir" );
                 // Working directory is available so use it...
                 if ( o != null ) {
                     working_dir = (String)o;
@@ -138,15 +137,14 @@ throws InvalidCommandParameterException
                 message = "Error requesting WorkingDir from processor.";
                 warning += "\n" + message;
                 Message.printWarning(3, routine, message );
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify an existing input file." ) );
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify an existing input file." ) );
             }
     
         try {
             //String adjusted_path = 
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
-                    TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         }
         catch ( Exception e ) {
             message = "The input file:\n" +
@@ -154,9 +152,8 @@ throws InvalidCommandParameterException
             "\"\ncannot be adjusted using the working directory:\n" +
             "    \"" + working_dir + "\".";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that input file and working directory paths are compatible." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that input file and working directory paths are compatible." ) );
         }
     }
 
@@ -382,8 +379,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -395,8 +391,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
@@ -408,16 +403,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number The number of the command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "ReadDateValue_Command.runCommand", message;
 	int warning_level = 2;
     int log_level = 3;

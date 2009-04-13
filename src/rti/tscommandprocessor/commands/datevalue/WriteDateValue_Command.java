@@ -36,7 +36,6 @@ import RTi.Util.Time.DateTime;
 <p>
 This class initializes, checks, and runs the WriteDateValue() command.
 </p>
-</p>
 */
 public class WriteDateValue_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -81,13 +80,13 @@ throws InvalidCommandParameterException
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		message = "The output file: \"" + OutputFile + "\" must be specified.";
 		warning += "\n" + message;
-		status.addToLog ( CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify an output file." ) );
+		status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+			message, "Specify an output file." ) );
 	}
 	else {
         String working_dir = null;
-		try { Object o = processor.getPropContents ( "WorkingDir" );
+		try {
+		    Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
 			}
@@ -95,9 +94,8 @@ throws InvalidCommandParameterException
 		catch ( Exception e ) {
 			message = "Error requesting WorkingDir from processor.";
 			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Software error - report the problem to support." ) );
+			status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Software error - report the problem to support." ) );
 		}
 
 		try {
@@ -106,12 +104,10 @@ throws InvalidCommandParameterException
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
-				message = "The output file parent directory does " +
-				"not exist for: \"" + adjusted_path + "\".";
+				message = "The output file parent directory does not exist for: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
-				status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Create the output directory." ) );
+				status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Create the output directory." ) );
 			}
 			f = null;
 			f2 = null;
@@ -122,9 +118,8 @@ throws InvalidCommandParameterException
 			"\"\ncannot be adjusted using the working directory:\n" +
 			"    \"" + working_dir + "\".";
 			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Verify that output file and working directory paths are compatible." ) );
+			status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
 	

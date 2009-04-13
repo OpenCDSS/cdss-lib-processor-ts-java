@@ -137,8 +137,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_line Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -169,15 +168,13 @@ CommandWarningException, CommandException
         if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the file exists at the time the command is run."));
         }
         else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog(CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
+            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
                     message, "Verify that the file exists at the time the command is run."));
         }
         else {

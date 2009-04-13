@@ -97,14 +97,12 @@ The String that the Databases should start with.
 private final String __HYDROBASE = "HydroBase";
 
 /**
-Used to ignore itemStateChanged() events when setting the list of databases
-that are found on a server.
+Used to ignore itemStateChanged() events when setting the list of databases that are found on a server.
 */
 private boolean __ignoreItemStateChange = false;
 
 /**
-The combo box that holds the selected of whether the database is an Access
-or a SQL Server database.
+The combo box that holds the selected of whether the database is an Access or a SQL Server database.
 */
 private SimpleJComboBox __databaseType_JComboBox = null;
 
@@ -120,17 +118,14 @@ private String
 	__holdName = null,
 	__holdStoredProcedures = null;
 
-private SimpleJButton	__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
+private SimpleJButton	__cancel_JButton = null, // Cancel Button
+			__ok_JButton = null; // Ok Button
 private JTextArea	__command_JTextArea = null;	// Command as JTextArea
 private SimpleJComboBox	__OdbcDsn_JComboBox = null;	// Field for OdbcDsn
-private SimpleJComboBox __DatabaseServer_JComboBox=null;
-							// Field for database
-							// server
+private SimpleJComboBox __DatabaseServer_JComboBox=null; // Field for database server
 private SimpleJComboBox __DatabaseName_JComboBox=null;
-private SimpleJComboBox	__RunMode_JComboBox=null;	// Field for run mode
-private JTextField	__InputName_JTextField=null;	// Field for InputName
-							// for DMI.
+private SimpleJComboBox	__RunMode_JComboBox=null; // Field for run mode
+private JTextField	__InputName_JTextField=null; // Field for InputName for DMI.
 private SimpleJComboBox	__UseStoredProcedures_JComboBox=null;
 							// Indicate whether
 							// stored procedures
@@ -141,9 +136,7 @@ private boolean		__first_time = true;
 
 private List		__available_OdbcDsn = null;	// Available ODBC DSN to list.
 private OpenHydroBase_Command __command = null;	// Command to edit
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private boolean		__ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
 Command editor constructor.
@@ -175,7 +168,8 @@ public void actionPerformed( ActionEvent event )
 	else if (o == __databaseType_JComboBox) {
 		databaseTypeSelected(__databaseType_JComboBox.getSelected());
 	}
-	else {	// Choices...
+	else {
+	    // Choices...
 		refresh();
 	}
 }
@@ -206,8 +200,7 @@ private void checkInput ()
 	
 	String UseStoredProcedures = "";
 	if (__UseStoredProcedures_JComboBox.isEnabled()) {
-		UseStoredProcedures = 
-			__UseStoredProcedures_JComboBox.getSelected();
+		UseStoredProcedures = __UseStoredProcedures_JComboBox.getSelected();
 	}
 	__error_wait = false;
 	if ( OdbcDsn.length() > 0 ) {
@@ -228,7 +221,8 @@ private void checkInput ()
 	if ( RunMode.length() > 0 ) {
 		props.set ( "RunMode", RunMode );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -262,8 +256,7 @@ private void commitEdits() {
 	
 	String UseStoredProcedures = "";
 	if (__UseStoredProcedures_JComboBox.isEnabled()) {
-		UseStoredProcedures = 
-			__UseStoredProcedures_JComboBox.getSelected();
+		UseStoredProcedures = __UseStoredProcedures_JComboBox.getSelected();
 	}
 
 	__command.setCommandParameter ( "OdbcDsn", OdbcDsn );
@@ -271,16 +264,14 @@ private void commitEdits() {
 	__command.setCommandParameter ( "DatabaseName", DatabaseName );
 	__command.setCommandParameter ( "RunMode", RunMode );
 	__command.setCommandParameter ( "InputName", InputName );
-	__command.setCommandParameter ( "UseStoredProcedures",
-		UseStoredProcedures );
+	__command.setCommandParameter ( "UseStoredProcedures", UseStoredProcedures );
 }
 
 /**
 Called when a database type is selected from the database type combo box,
 this method enables or disables the components on the GUI that are not necessary
 for the type of database selected.
-@param databaseType the type of database selected (one of __TYPE_ACCESS or
-__TYPE_SQLSERVER).
+@param databaseType the type of database selected (one of __TYPE_ACCESS or __TYPE_SQLSERVER).
 */
 private void databaseTypeSelected(String databaseType) {
 	if (databaseType.equals(__TYPE_ACCESS)) {
@@ -355,23 +346,24 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command opens a connection to a HydroBase database," +
 		" closing the previous connection with the same input name." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"This command is used, for example, when making connections to more "+
 		"than one HydroBase database, or running in batch mode."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The RunMode can also be set to control whether the command " +
 		"is run in batch mode, in interactive sessions, or both."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The connection can be made either by specifying a database server/name for SQL Server,"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"or an ODBC Data Source Name (DSN) for a Microsoft Access HydroBase database."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"or an ODBC Data Source Name (DSN) for a Microsoft Access HydroBase database " +
+		"(only for very old HydroBase databases)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel("Database type:"),
@@ -384,73 +376,69 @@ private void initialize ( JFrame parent, Command command )
 	__databaseType_JComboBox.addActionListener(this);
 	JGUIUtil.addComponent(main_JPanel, __databaseType_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates whether a database server/name or ODBC DSN is specified."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Required - indicates whether a database server/name or ODBC DSN is specified below."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "ODBC DSN:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OdbcDsn_JComboBox = new SimpleJComboBox ( false );
-	// Get the data source names from the system...
-	__available_OdbcDsn = DMIUtil.getDefinedOdbcDsn ( true );
-	// Remove any that don't have "HydroBase" in them...
-	int size = __available_OdbcDsn.size();
-	String s = null;
-	for (int i = 0; i < size; i++) {
-		s = (String)__available_OdbcDsn.get(i);
-		if (StringUtil.indexOfIgnoreCase(s, "HydroBase", 0) < 0) {
-			__available_OdbcDsn.remove(i--);
-			--size;
-		}
-	}
-	// Always have a blank at the beginning...
-	__available_OdbcDsn.add ( 0, "" );
-	__OdbcDsn_JComboBox.setData ( __available_OdbcDsn );
-	__OdbcDsn_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OdbcDsn_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Only used with Microsoft Access."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Database server:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Database server:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	String prototype = "[No HydroBase databases available]";
 	__DatabaseServer_JComboBox = new SimpleJComboBox(__serverNames, true);
 	__DatabaseServer_JComboBox.setPrototypeDisplayValue(prototype);
 	__DatabaseServer_JComboBox.addTextFieldKeyListener(this);
 	__DatabaseServer_JComboBox.addItemListener(this);
-        JGUIUtil.addComponent(main_JPanel, __DatabaseServer_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __DatabaseServer_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Only used with SQL Server."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - when using SQL Server."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Database name:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Database name:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DatabaseName_JComboBox = new SimpleJComboBox(true);
 	__DatabaseName_JComboBox.setPrototypeDisplayValue(prototype);
 	__DatabaseName_JComboBox.addTextFieldKeyListener(this);
 	__DatabaseName_JComboBox.addItemListener(this);
-        JGUIUtil.addComponent(main_JPanel, __DatabaseName_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __DatabaseName_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Only used with SQL Server."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - when using SQL Server."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "ODBC DSN:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OdbcDsn_JComboBox = new SimpleJComboBox ( false );
+    // Get the data source names from the system...
+    __available_OdbcDsn = DMIUtil.getDefinedOdbcDsn ( true );
+    // Remove any that don't have "HydroBase" in them...
+    int size = __available_OdbcDsn.size();
+    String s = null;
+    for (int i = 0; i < size; i++) {
+        s = (String)__available_OdbcDsn.get(i);
+        if (StringUtil.indexOfIgnoreCase(s, "HydroBase", 0) < 0) {
+            __available_OdbcDsn.remove(i--);
+            --size;
+        }
+    }
+    // Always have a blank at the beginning...
+    __available_OdbcDsn.add ( 0, "" );
+    __OdbcDsn_JComboBox.setData ( __available_OdbcDsn );
+    __OdbcDsn_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OdbcDsn_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - only used with Microsoft Access."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input name:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input name:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputName_JTextField = new JTextField ( "", 20 );
 	__InputName_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Input name for connection, to be used with time series " +
-		"(optional)."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - input name for connection, to be used with time series identifiers."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use stored procedures?:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Use stored procedures?:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__UseStoredProcedures_JComboBox = new SimpleJComboBox ( false );
 	__UseStoredProcedures_JComboBox.add ( "" );
@@ -458,13 +446,13 @@ private void initialize ( JFrame parent, Command command )
 	__UseStoredProcedures_JComboBox.add ( __command._False );
 	__UseStoredProcedures_JComboBox.select ( 0 );
 	__UseStoredProcedures_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __UseStoredProcedures_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __UseStoredProcedures_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Default is true for SQL Server, ignored for Access."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - default is true for SQL Server, ignored for Access."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run Mode:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Run Mode:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RunMode_JComboBox = new SimpleJComboBox ( false );
 	__RunMode_JComboBox.add ( "" );
@@ -472,13 +460,12 @@ private void initialize ( JFrame parent, Command command )
 	__RunMode_JComboBox.add ( __command._GUIAndBatch );
 	__RunMode_JComboBox.add ( __command._GUIOnly );
 	__RunMode_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __RunMode_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __RunMode_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Default is GUI and batch mode."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is GUI and batch mode."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (2,60);
 	__command_JTextArea.setLineWrap ( true );
@@ -488,8 +475,7 @@ private void initialize ( JFrame parent, Command command )
 		new JScrollPane ( __command_JTextArea ),
 		1, y, 6, 2, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-	// determine whether the database is making a connection to an access
-	// database or not.
+	// Determine whether the database is making a connection to an access database or not.
 	PropList props = __command.getCommandParameters();
 	String OdbcDsn = props.getValue("OdbcDsn");
 	boolean isAccess = false;
@@ -497,7 +483,7 @@ private void initialize ( JFrame parent, Command command )
 		isAccess = true;
 	}
 		
-	// enable/disable components on the GUI as appropriate for the
+	// Enable/disable components on the GUI as appropriate for the
 	// connection type that was determined from the parameters
 	if (isAccess) {
 		__databaseType_JComboBox.select(__TYPE_ACCESS);
@@ -506,24 +492,20 @@ private void initialize ( JFrame parent, Command command )
 		__databaseType_JComboBox.select(__TYPE_SQLSERVER);
 	}
 
-	// do an initial refresh to make sure the command at the bottom is
-	// filled out
+	// Do an initial refresh to make sure the command at the bottom is filled out
 	refresh();
 
-	// select the database server and name from the combo box
+	// Select the database server and name from the combo box
 	if (!isAccess) {
 		if (__holdServer != null) {
 			__DatabaseServer_JComboBox.select(__holdServer);
 		}
 		
-		// note: the stored procedures combo box value is selected 
-		// prior to the database name combo box value because selecting
-		// in the stored procedure combo box will requery the database
-		// names for the other combo box.  So do not change the order
-		// of the following:
+		// Note: the stored procedures combo box value is selected prior to the database name combo box value
+		// because selecting in the stored procedure combo box will requery the database
+		// names for the other combo box.  So do not change the order of the following:
 		if (__holdStoredProcedures != null) {
-			__UseStoredProcedures_JComboBox.select(
-				__holdStoredProcedures);
+			__UseStoredProcedures_JComboBox.select(	__holdStoredProcedures);
 		}		
 		if (__holdName != null) {
 			__DatabaseName_JComboBox.select(__holdName);
@@ -566,11 +548,9 @@ public void itemStateChanged(ItemEvent event) {
 		return;
 	}
 
-	if (event.getSource() == __DatabaseServer_JComboBox
-	    || event.getSource() == __UseStoredProcedures_JComboBox) {
+	if (event.getSource() == __DatabaseServer_JComboBox || event.getSource() == __UseStoredProcedures_JComboBox) {
 		// new server name entered, return pressed
-		retrieveDatabaseNames
-			(__DatabaseServer_JComboBox.getFieldText());	
+		retrieveDatabaseNames (__DatabaseServer_JComboBox.getFieldText());	
 	}
 
 	refresh();
@@ -750,28 +730,29 @@ private void retrieveDatabaseNames(String server) {
 		return;
 	}
 
-	String[] usernames = new String[2];
-	String[] passwords = new String[2];
+	String[] unms = new String[2];
+	String[] pws = new String[2];
 	int[] ports = new int[2];
 
+	// FIXME SAM 2009-04-12 Need to obfuscate this
 	String s = __UseStoredProcedures_JComboBox.getSelected();
 	if (s.trim().equals("") || s.trim().equalsIgnoreCase("true")) {
-		usernames[0] = "cdss";
-		passwords[0] = "cdss%tools";
+		unms[0] = "cdss";
+		pws[0] = "cdss%tools";
 		ports[0] = 	21784;
 		
-		usernames[1] = "cdss";	
-		passwords[1] = "cdss%tools";  
+		unms[1] = "cdss";	
+		pws[1] = "cdss%tools";  
 		ports[1] = 	1433;	
 	} 
 	else {
-		usernames[0] = "crdss";	
-		passwords[0] = "crdss3nt";    
+		unms[0] = "crdss";	
+		pws[0] = "crdss3nt";    
 		ports[0] = 	21784;
 
-		usernames[1] = "crdss";	
-		passwords[1] = "crdss3nt";    
-		ports[1] = 	1433;
+		unms[1] = "crdss";	
+		pws[1] = "crdss3nt";    
+		ports[1] = 1433;
 	}
 
 	GenericDMI dmi = null;
@@ -780,20 +761,17 @@ private void retrieveDatabaseNames(String server) {
 
 	for (; i < 2; i++) {
 		try {
-			dmi = new GenericDMI("SQLServer2000", server,
-				"master", ports[i], usernames[i], passwords[i]);
+			dmi = new GenericDMI("SQLServer2000", server, "master", ports[i], unms[i], pws[i]);
 			dmi.open();
 		}
 		catch (Exception e) {
-			// if there is an exception then the DMI was not opened,
-			// so there is no need to close it here.
+			// If there is an exception then the DMI was not opened, so there is no need to close it here.
 			dmi = null;
 		}
 
 		if (dmi != null) {
 			i = 5;
-			// the DMI is closed below after database information
-			// is read from it.
+			// The DMI is closed below after database information is read from it.
 		}
 	}
 
@@ -813,8 +791,7 @@ private void retrieveDatabaseNames(String server) {
 		int size = v.size();
 
 		if (size == 0) {
-			// no database found -- this should NEVER happen,
-			// but just in case ...
+			// No database found -- this should NEVER happen, but just in case ...
 			v.add(__NO_DATABASES);
 			__DatabaseName_JComboBox.add(__NO_DATABASES);
 			return;
@@ -828,7 +805,7 @@ private void retrieveDatabaseNames(String server) {
 			s = (String)v2.get(0);
 			s = s.trim();
 
-			// only add those database that start with "HydroBase"
+			// Only add those database that start with "HydroBase"
 			if (StringUtil.startsWithIgnoreCase(s, __HYDROBASE)) {
 				v3.add(s);
 				__DatabaseName_JComboBox.add(s);
@@ -877,19 +854,16 @@ Reads the configuration file.
 private void readConfigurationFile() {
 	PropList configurationProps = new PropList("Config");
 	configurationProps.setPersistentName(
-		IOUtil.getApplicationHomeDir() + File.separator
-		+ "system" + File.separator + "CDSS.cfg");
+		IOUtil.getApplicationHomeDir() + File.separator + "system" + File.separator + "CDSS.cfg");
 	try {
 		configurationProps.readPersistent();
 	}
 	catch (Exception e) {
-		// ignore -- probably a file not found error, in which 
-		// the result is the same as an empty file: an empty
-		// proplist.
+		// Ignore -- probably a file not found error, in which 
+		// the result is the same as an empty file: an empty proplist.
 	}
 
-	String serverNames = configurationProps.getValue(
-		"HydroBase.ServerNames");
+	String serverNames = configurationProps.getValue("HydroBase.ServerNames");
 	if (serverNames == null) {
 		__serverNames = new Vector();
 		if (IOUtil.testing()) {
@@ -899,8 +873,7 @@ private void readConfigurationFile() {
 			__serverNames.add("greenmtn.state.co.us");
 		}
 
-		// if SQL Server is running locally (eg, MSDE), 
-		// add the local machine to the list of serves that
+		// if SQL Server is running locally (eg, MSDE), add the local machine to the list of serves that
 		// can be connected to.
 		if (!IOUtil.isPortOpen(21784)) {
 			__serverNames.add("local");
@@ -923,8 +896,7 @@ private void readConfigurationFile() {
 
 	__serverNames = StringUtil.sortStringList(__serverNames);
 
-	String defaultServerName = configurationProps.getValue(
-		"HydroBase.DefaultServerName");
+	String defaultServerName = configurationProps.getValue("HydroBase.DefaultServerName");
 	if (defaultServerName == null) {
 		if (IOUtil.testing()) {
 			__defaultServerName = "hbserver";
@@ -937,8 +909,7 @@ private void readConfigurationFile() {
 		__defaultServerName = defaultServerName;
 	}
 
-	String defaultDatabaseName = configurationProps.getValue(
-		"HydroBase.DefaultDatabaseName");
+	String defaultDatabaseName = configurationProps.getValue("HydroBase.DefaultDatabaseName");
 	if (defaultDatabaseName == null) {
 		__defaultDatabaseName = __HYDROBASE;
 	}
@@ -950,4 +921,4 @@ private void readConfigurationFile() {
 String __defaultServerName = null;
 String __defaultDatabaseName = null;
 
-} // end openHydroBase_JDialog
+}

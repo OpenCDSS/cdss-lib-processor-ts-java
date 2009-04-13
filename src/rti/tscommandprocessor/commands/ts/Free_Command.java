@@ -89,8 +89,8 @@ throws InvalidCommandParameterException
                     message = "The TSPosition range (" + token + ") contains an invalid position.";
                     warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the range using integers with value 1+." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the range using integers with value 1+." ) );
                 }
                 else {
                     __TSPositionStart[i] = StringUtil.atoi( posString ) - 1;
@@ -100,8 +100,8 @@ throws InvalidCommandParameterException
                     message = "The TSPosition range (" + token + ") contains an invalid position.";
                     warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the range using integer with value 1+." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the range using integer with value 1+." ) );
                 }
                 else {
                     __TSPositionEnd[i] = StringUtil.atoi( posString ) - 1;
@@ -113,27 +113,24 @@ throws InvalidCommandParameterException
                     message = "The TSPosition (" + token + ") is invalid.";
                     warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the position as an integer 1+." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the position as an integer 1+." ) );
                 }
                 __TSPositionStart[i] = StringUtil.atoi(token) - 1;
                 __TSPositionEnd[i] = __TSPositionStart[i];
             }
             Message.printStatus ( 1, "", "Range " + i + " from " + token + " is " +
-                    __TSPositionStart[i] + "," + __TSPositionEnd[i] );
+                __TSPositionStart[i] + "," + __TSPositionEnd[i] );
         }
     }
     
     if ( (FreeEnsembleIfEmpty != null) && !FreeEnsembleIfEmpty.equals("") ) {
-        if (    !FreeEnsembleIfEmpty.equals(_False) &&
-            !FreeEnsembleIfEmpty.equals(_True) ) {
+        if ( !FreeEnsembleIfEmpty.equals(_False) && !FreeEnsembleIfEmpty.equals(_True) ) {
             message = "The FreeEnsembleIfEmpty parameter \"" + FreeEnsembleIfEmpty + "\" must be " +
             _False + " or " + _True + ".";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify " + _False + " or " + _True + " (or use blank to use default of " +
-                            _True + ")." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify " + _False + " or " + _True + " (or use blank to use default of " + _True + ")." ) );
         }
     }
 	
@@ -239,11 +236,9 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
     catch ( Exception e ) {
         message = "Error requesting GetTimeSeries(Index=\"" + o_Index + "\") from processor.";
         Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
         return warning_count;
     }
 
@@ -252,13 +247,12 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TS = bean_PropList.getContents ( "TS" );
     if ( o_TS == null ) {
-            message = "Unable to find time series \"" + TSID + "\" for Free() command.";
-            Message.printWarning ( 2, routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Verify that the TSID pattern matches 1+ time series identifiers - may be OK if a partial run." ) );
-            //throw new Exception ( message );
-            return warning_count;
+        message = "Unable to find time series \"" + TSID + "\" for Free() command.";
+        Message.printWarning ( 2, routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+            message, "Verify that the TSID pattern matches 1+ time series identifiers - may be OK if a partial run." ) );
+        //throw new Exception ( message );
+        return warning_count;
     }
     TS ts = (TS)o_TS;
 
@@ -286,11 +280,9 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
     catch ( Exception e ) {
         message = "Error requesting RemoveTimeSeriesFromResultsList(Index=\"" + o_Index + "\") from processor.";
         Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
         return warning_count;
     }
     
@@ -300,10 +292,8 @@ private int removeTimeSeriesAtIndex ( CommandProcessor processor, String TSID,
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -337,20 +327,16 @@ CommandWarningException, CommandException
     catch ( Exception e ) {
         message = "Error requesting TSResultsListSize from processor.";
         Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
     }
     if ( o == null ) {
         message = "TSResultsListSize returned as null from processor.";
         Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                   message, "Report problem to software support." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
     }
     
     // Get the time series to process.  Allow TSID to be a pattern or specific time series...
@@ -368,11 +354,9 @@ CommandWarningException, CommandException
         message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
         Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report the problem to software support." ) );
     }
     if ( bean == null ) {
         Message.printStatus ( 2, routine, "Bean is null.");
@@ -385,12 +369,9 @@ CommandWarningException, CommandException
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";
         Message.printWarning ( log_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
         tslist = (List)o_TSList;
@@ -398,12 +379,9 @@ CommandWarningException, CommandException
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\").";
             Message.printWarning ( log_level,
-                    MessageUtil.formatMessageTag(
-                            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message,
-                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
         }
         // Also get the array positions...
         tsposArray = (int [])bean_PropList.getContents ( "Indices" );
@@ -414,12 +392,9 @@ CommandWarningException, CommandException
         message = "Unable to find time series to free using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\" TSPosition=\"" + TSPosition + "\".";
         Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
 
     if ( warning_count > 0 ) {
@@ -470,11 +445,9 @@ CommandWarningException, CommandException
         catch ( Exception e ) {
             message = "Unexpected error freeing (removing) time series (" + e + ").";
             Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(
-                command_tag,++warning_count),routine,message );
+                MessageUtil.formatMessageTag( command_tag,++warning_count),routine,message );
             Message.printWarning(3,routine,e);
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "See the log file for details - report the problem to software support." ) );
         }
     }
@@ -482,9 +455,8 @@ CommandWarningException, CommandException
         // Maybe an error but could be OK for a partial run.
         message = "No time series were matched for \"" + this + "\"";
         Message.printWarning ( 2, routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-           new CommandLogRecord(CommandStatusType.WARNING,
-              message, "Verify that the TSID pattern matches 1+ time series identifiers - may be OK if a partial run." ) );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+            message, "Verify that the TSID pattern matches 1+ time series identifiers - may be OK if a partial run." ) );
         //throw new Exception ( message );
     }
     else {

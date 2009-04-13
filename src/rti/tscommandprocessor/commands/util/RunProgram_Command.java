@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.util;
 
+import java.io.File;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.JFrame;
@@ -273,13 +274,14 @@ CommandWarningException, CommandException
                 }
             }
             pm = new ProcessManager ( StringUtil.toArray(programAndArgsList), (int)(Timeout_double*1000.0),
-                ExitStatusIndicator, UseCommandShell_boolean );
+                ExitStatusIndicator, UseCommandShell_boolean,
+                new File((String)processor.getPropContents("WorkingDir")));
             //CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator);
         }
         else {
             // Specify the command to run using a full command line
             pm = new ProcessManager (CommandLine_full, (int)(Timeout_double*1000.0), ExitStatusIndicator,
-                UseCommandShell_boolean);
+                UseCommandShell_boolean, new File((String)processor.getPropContents("WorkingDir")));
         }
         pm.saveOutput ( true ); // Save output so it can be used in troubleshooting
         pm.run();

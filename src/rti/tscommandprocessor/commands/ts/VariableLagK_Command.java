@@ -29,13 +29,13 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.DataUnitsConversion;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.DataUnits;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
@@ -61,12 +61,12 @@ LagInterval as a TimeInterval.
 private TimeInterval __LagInterval_TimeInterval = null;
 
 /**
-Table of data,lag values.
+Table of flow,lag values.
 */
 private Table __Lag_Table = null;
 
 /**
-Table of data,K values.
+Table of flow,K values.
 */
 private Table __K_Table = null;
 
@@ -98,7 +98,7 @@ throws InvalidCommandParameterException
 	// Get the properties from the PropList parameters.
 	String TSID = parameters.getValue( "TSID" );
     String NewTSID = parameters.getValue ( "NewTSID" );
-    String DataUnits = parameters.getValue( "DataUnits" );
+    String FlowUnits = parameters.getValue( "FlowUnits" );
     String LagInterval = parameters.getValue( "LagInterval" );
     String Lag = parameters.getValue( "Lag" );
 	String K = parameters.getValue( "K" );
@@ -161,11 +161,11 @@ throws InvalidCommandParameterException
         }
     }
     
-    if ( (DataUnits == null) || DataUnits.equals("") ) {
-        message = "The value for DataUnits must be specified.";
+    if ( (FlowUnits == null) || FlowUnits.equals("") ) {
+        message = "The value for FlowUnits must be specified.";
         warning +="\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE, message, "DataUnits must be specified." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE, message, "FlowUnits must be specified." ) );
     }
     
     if ( (LagInterval == null) || LagInterval.equals("") ) {
@@ -213,29 +213,27 @@ throws InvalidCommandParameterException
                 "Provide a value,Lag as pairs."));
 		}
 		else {
-		    // Verify that each value in the pair is a number and set the pair in the table
+		    // Verify that each value in the pair is a number and set the pair in the table.
+		    // Also verify that the flow values are in increasing order.
 		    __Lag_Table = new Table();
 		    __Lag_Table.allocateDataSpace(size/2);
     		String token;
             double value = 0.0, lag = 0.0; // "value" needs to stick around because it is saved with lag
+            double value_prev = 0.0;
     		for ( int i = 0; i < size; i++ ) {
     			token = ((String)tokens.get(i)).trim();
     			if ( !StringUtil.isDouble(token) ) {
     			    if ( (i%2) == 0 ) {
-                        message = "Data value (" + token + ") is not a number.";
+                        message = "Lag table flow value (" + token + ") is not a number.";
                         warning += "\n" + message;
                         status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(
-                            CommandStatusType.FAILURE, message,
-                            "Provide a valid number."));
+                            new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
                     }
     			    else {
                         message = "Lag value (" + token + ") is not a number.";
                         warning += "\n" + message;
                         status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(
-                            CommandStatusType.FAILURE, message,
-                            "Provide a valid number."));
+                            new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
                     }
                 }
     			else {
@@ -246,6 +244,16 @@ throws InvalidCommandParameterException
     			        lag = Double.parseDouble(token);
     			        // Have processed the value and lag so set in the table.
     			        __Lag_Table.set(i/2, value, lag);
+                        if ( (i > 1) && (value <= value_prev) ) {
+                            // Verify that the flow value is larger than the previous value
+                            message = "Flow value (" + StringUtil.formatString(value,"%.4f") +
+                                ") is <= previous flow value in the Lag table.";
+                            warning += "\n" + message;
+                            status.addToLog(CommandPhaseType.INITIALIZATION,
+                                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                                "Verify that flow values are in increasing order in the Lag table."));
+                        }
+                        value_prev = value;
     			    }
     			}
     		}
@@ -266,20 +274,21 @@ throws InvalidCommandParameterException
             message = "The K values (" + K + ") are not specified as pairs.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE, message,
-                "Provide a value,K as pairs."));
+                new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a value,K as pairs."));
         }
         else {
             // Verify that each value in the pair is a number and set the pair in the table
+            // Also verify that the flow values are in increasing order.
             __K_Table = new Table();
             __K_Table.allocateDataSpace(size/2);
             String token;
             double value = 0.0, k = 0.0; // "value" needs to stick around because it is saved with lag
+            double value_prev = 0.0;
             for ( int i = 0; i < size; i++ ) {
                 token = ((String)tokens.get(i)).trim();
                 if ( !StringUtil.isDouble(token) ) {
                     if ( (i%2) == 0 ) {
-                        message = "Data value (" + token + ") is not a number.";
+                        message = "K table flow value (" + token + ") is not a number.";
                         warning += "\n" + message;
                         status.addToLog(CommandPhaseType.INITIALIZATION,
                             new CommandLogRecord(
@@ -303,6 +312,16 @@ throws InvalidCommandParameterException
                         k = Double.parseDouble(token);
                         // Have processed the value and k so set in the table.
                         __K_Table.set(i/2, value, k);
+                        if ( (i > 1) && (value <= value_prev) ) {
+                            // Verify that the flow value is larger than the previous value
+                            message = "Flow value (" + StringUtil.formatString(value,"%.4f") +
+                                ") is <= previous flow value in the K table.";
+                            warning += "\n" + message;
+                            status.addToLog(CommandPhaseType.INITIALIZATION,
+                                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                                "Verify that flow values are in increasing order in the K table."));
+                        }
+                        value_prev = value;
                     }
                 }
             }
@@ -351,7 +370,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "NewTSID" );
     valid_Vector.add ( "Lag" );
     valid_Vector.add ( "K" );
-    valid_Vector.add ( "DataUnits" );
+    valid_Vector.add ( "FlowUnits" );
     valid_Vector.add ( "LagInterval" );
     valid_Vector.add ( "InflowStates" );
     valid_Vector.add ( "OutflowStates" );
@@ -396,16 +415,16 @@ private List getDiscoveryTSList ()
 }
 
 /**
-Get a table (Lag or K) that contains data values that are in the same units as the time series and
+Get a table (Lag or K) that contains flow values that are in the same units as the time series and
 time interval that are the same base unit as the time series.  If the original table is null, return a new
 empty table (no Lag or no K).
 @param tableType table type being checked, for logging ( "Lag" or "K").
 @param ts Time series that will be routed.
-@param dataUnits data units for the table (values in column [0]).
+@param flowUnits data units for the table (values in column [0]).
 @param lagInterval base interval for the table (values in column [1]).
 @param originalTable original table provided by the user.
 */
-private Table getNormalizedTable ( String tableType, TS ts, String dataUnits, TimeInterval lagInterval, Table originalTable,
+private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, TimeInterval lagInterval, Table originalTable,
     int log_level, String command_tag, int warning_count, CommandStatus status )
 {   String routine = getClass().getName() + ".getNormalizedTable";
     // If the original table is null, return an empty table.  For K, need to initialize so that
@@ -419,38 +438,38 @@ private Table getNormalizedTable ( String tableType, TS ts, String dataUnits, Ti
     }
     DataUnitsConversion unitsConversion = null;
     // The units must exactly match to use the existing table - otherwise values need to be converted
-    boolean unitsExact = DataUnits.areUnitsStringsCompatible(ts.getDataUnits(), dataUnits, true );
+    boolean unitsExact = DataUnits.areUnitsStringsCompatible(ts.getDataUnits(), flowUnits, true );
     if ( !unitsExact ) {
         // Verify that conversion factors can be obtained.
-        boolean unitsCompatible = DataUnits.areUnitsStringsCompatible(ts.getDataUnits(), dataUnits, false );
+        boolean unitsCompatible = DataUnits.areUnitsStringsCompatible(ts.getDataUnits(), flowUnits, false );
         if ( !unitsExact && !unitsCompatible ) {
             // This is a problem
             String message = "The input time series units \"" + ts.getDataUnits() +
-            "\" are not compatible with the " + tableType + " table data values - cannot convert to use for routing.";
+            "\" are not compatible with the " + tableType + " table flow values - cannot convert to use for routing.";
             Message.printWarning(log_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count),
             routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the time series to lag has data units compatible with the " +
+                    message, "Verify that the time series to lag has flow units compatible with the " +
                     tableType + " table." ) );
             throw new RuntimeException ( message );
         }
         else if ( !unitsExact && unitsCompatible ) {
             // Get the conversion factor on the units.
             try {
-                unitsConversion = DataUnits.getConversion(dataUnits, ts.getDataUnits());
+                unitsConversion = DataUnits.getConversion(flowUnits, ts.getDataUnits());
             }
             catch ( Exception e ) {
-                String message = "Cannot get conversion factor to convert " + tableType + " data value units \"" +
-                dataUnits + " to time series units \"" + ts.getDataUnits() +
+                String message = "Cannot get conversion factor to convert " + tableType + " flow value units \"" +
+                flowUnits + " to time series units \"" + ts.getDataUnits() +
                 "\" - cannot convert to use for routing.";
                 Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
                 status.addToLog ( CommandPhaseType.RUN,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the time series to lag has data units compatible with the " +
+                        message, "Verify that the time series to lag has flow units compatible with the " +
                         tableType + " table." ) );
                 throw new RuntimeException ( message );
             }
@@ -460,22 +479,6 @@ private Table getNormalizedTable ( String tableType, TS ts, String dataUnits, Ti
     boolean intervalBaseExact = false;
     if ( lagInterval.getBase() == ts.getDataIntervalBase() ) {
         intervalBaseExact = true;
-    }
-    // If the interval base is not an exact match, have not currently implemented code to do the conversion
-    // (e.g., to convert minutes to hours).
-    if ( !intervalBaseExact ) {
-        // This is a problem
-        String message = "The input time series interval \"" + ts.getIdentifier().getInterval() +
-        "\" base is not the same as the " + tableType + " table interval values - cannot route.";
-        Message.printWarning(log_level,
-        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-        routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the time series to lag has interval base that is the same as the " +
-                tableType + " table (automatic conversion is planned for the future - report to software" +
-                	" support if this is a needed feature)." ) );
-        throw new RuntimeException ( message );
     }
     // Now either return the original table or do the conversion.
     if ( unitsExact && intervalBaseExact || (originalTable.getNRows() == 0) ) {
@@ -487,12 +490,50 @@ private Table getNormalizedTable ( String tableType, TS ts, String dataUnits, Ti
         Table newTable = new Table();
         int nRows = originalTable.getNRows();
         newTable.allocateDataSpace(nRows);
-        double newValue;
-        double addFactor = unitsConversion.getAddFactor();
-        double multFactor = unitsConversion.getMultFactor();
+        double newFlowValue;
+        double newTimeValue;
+        double flowAddFactor = unitsConversion.getAddFactor();
+        double flowMultFactor = unitsConversion.getMultFactor();
+        double timeMultFactor = 1.0; // Convert from original table to time series base interval, 1.0 for no change
+        if ( intervalBaseExact ) {
+            // No need to do anything
+        }
+        else if ( (lagInterval.getBase() == TimeInterval.DAY) && (ts.getDataIntervalBase() == TimeInterval.HOUR)) {
+           timeMultFactor = lagInterval.getMultiplier()*24.0;
+        }
+        else if ( (lagInterval.getBase() == TimeInterval.DAY) && (ts.getDataIntervalBase() == TimeInterval.MINUTE)) {
+            timeMultFactor = lagInterval.getMultiplier()*24.0*60.0/ts.getDataIntervalMult();
+        }
+        else if ( (lagInterval.getBase() == TimeInterval.HOUR) && (ts.getDataIntervalBase() == TimeInterval.MINUTE)) {
+            timeMultFactor = lagInterval.getMultiplier()*60.0/ts.getDataIntervalMult();
+        }
+        else if ( (lagInterval.getBase() == TimeInterval.HOUR) && (ts.getDataIntervalBase() == TimeInterval.DAY)) {
+            timeMultFactor = lagInterval.getMultiplier()/ts.getDataIntervalMult()*24.0;
+        }
+        else if ( (lagInterval.getBase() == TimeInterval.MINUTE) && (ts.getDataIntervalBase() == TimeInterval.DAY)) {
+            timeMultFactor = lagInterval.getMultiplier()/ts.getDataIntervalMult()*24.0*60.0;
+        }
+        else if ( (lagInterval.getBase() == TimeInterval.MINUTE) && (ts.getDataIntervalBase() == TimeInterval.HOUR)) {
+            timeMultFactor = lagInterval.getMultiplier()/ts.getDataIntervalMult()*60.0;
+        }
+        else {
+            // If the interval base is not an exact match or a supported ratio of intervals, print a warning.
+            if ( !intervalBaseExact ) {
+                // This is a problem
+                String message = "The input time series interval \"" + ts.getIdentifier().getInterval() +
+                "\" cannot be converted to the " + tableType + " table interval values - cannot route.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the time series to lag has interval base that can be converted to the " +
+                    tableType + " table (conversion is only implemented for minute/hour/day)." ) );
+                throw new RuntimeException ( message );
+            }
+        }
         for ( int i = 0; i < nRows; i++ ) {
-            newValue = addFactor + multFactor*originalTable.get(i,0);
-            newTable.set(i, newValue, originalTable.get(i,1) );
+            newFlowValue = flowAddFactor + flowMultFactor*originalTable.get(i,0);
+            newTimeValue = timeMultFactor*originalTable.get(i,1);
+            newTable.set(i, newFlowValue, newTimeValue );
         }
         return newTable;
     }
@@ -519,12 +560,33 @@ public List getObjectList ( Class c )
 }
 
 /**
+Parse the command string into a PropList of parameters.  This method currently
+supports old syntax and new parameter-based syntax.
+@param command_string A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is
+determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command
+parameters are determined to be invalid.
+*/
+public void parseCommand ( String command_string )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{   // This is only needed to translate older properties that have been renamed.
+    // Parse with parent
+    super.parseCommand( command_string);
+    // Now convert DataUnits to FlowUnits.
+    PropList parameters = getCommandParameters();
+    String DataUnits = parameters.getValue ( "DataUnits");
+    if ( DataUnits != null ) {
+        parameters.set("FlowUnits", DataUnits);
+        parameters.unSet(DataUnits);
+    }
+}
+
+/**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -535,8 +597,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
@@ -568,7 +629,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	String TSID = parameters.getValue( "TSID"  );
 	String NewTSID = parameters.getValue( "NewTSID"  );
-    String DataUnits = parameters.getValue( "DataUnits" );
+    String FlowUnits = parameters.getValue( "FlowUnits" );
 	String Lag = parameters.getValue( "Lag" );
     String K = parameters.getValue( "K" );
 	String Alias = parameters.getValue( "Alias" );
@@ -683,190 +744,163 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                         message, "Verify that the time series to lag matches an available time series." ) );
             }
                     
-            // Get the base multiplier of the input time series.
-            // Initialize to -1 will result in __param_numStates to be negative,
-            // which will allow for a check in initializeStates().
-
-            /* FIXME SAM Evaluate use
-            int mult = -1, base = -1;
-            if ( original_ts != null ) {
-                mult = original_ts.getDataIntervalMult();
-                base = original_ts.getDataIntervalBase();
+            // Verify that the interval of the input time series is the same as the output time series.
+            
+            if ( (original_ts.getDataIntervalBase() != result_ts.getDataIntervalBase()) ||
+                (original_ts.getDataIntervalMult() != result_ts.getDataIntervalMult())) {
+                message = "The input time series interval \"" + original_ts.getIdentifier().getInterval() +
+                "\" is not the same as the output time series interval \"" + result_ts.getIdentifier().getInterval() +
+                "\" - cannot route.";  
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                // This is just a warning
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the NewTSID interval is the same as the input time series." ) );
+            }
+            else if ( original_ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
+                message = "The input time series has irregular interval - cannot route.";  
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                // This is just a warning
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Convert the time series to a regular interval before routing." ) );
+            }
+            else {
+                // Set additional properties on the output time series
+                if ( original_ts != null ) {
+                    result_ts.setDataUnits ( original_ts.getDataUnits() );
+                    result_ts.setDataUnitsOriginal ( original_ts.getDataUnits() );
+                    result_ts.setDate1 ( original_ts.getDate1() );
+                    result_ts.setDate1Original ( original_ts.getDate1() );
+                    result_ts.setDate2 ( original_ts.getDate2() );
+                    result_ts.setDate2Original ( original_ts.getDate2() );
+                    // Allocate memory
+                    result_ts.allocateDataSpace();
+                }
                 
-                if( base == TimeInterval.IRREGULAR ) {
-                    message = "The input time series is irregular, cannot route!";  
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Use ChangeInterval() to convert to a regular time series before routing." ) );
+                // Make sure that the Lag table is in the same units as the time series being lagged
+                Table Lag_Table = getNormalizedTable ( "Lag", original_ts, FlowUnits, __LagInterval_TimeInterval, __Lag_Table,
+                    log_level, command_tag, warning_count, status );
+                // Make sure that the K table is in the same base interval as the time series being lagged
+                Table K_Table = getNormalizedTable ( "K", original_ts, FlowUnits, __LagInterval_TimeInterval, __K_Table,
+                      log_level, command_tag, warning_count, status );
+                String units = FlowUnits;
+                if ( (units == null) || units.equals("") ) {
+                    units = original_ts.getDataUnits();
                 }
-            } // end if ( original_ts != null )
-            //Compute the number of required states
-            __param_numStates = ((int) __param_lag/mult ) + 1;
-
-            // Get the processing period
-
-            DateTime date1 = null;
-            DateTime date2 = null;
-            
-            if ( original_ts != null ) {
-                date1 = original_ts.getDate1();
-                date2 = original_ts.getDate2();
-                if ( original_ts.getDate1() == null ) {
-                    message = "The starting date/time for the input time series s not defined.";    
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
-                       status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that data exist for the time series." ) );
-                }
-                if ( original_ts.getDate2() == null ) {
-                    message = "The ending date/time for the input time series is not defined."; 
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that data exist for the time series." ) );
-                }
-            }
-            */
-            
-            // Set additional properties on the output time series
-            if ( original_ts != null ) {
-                result_ts.setDataUnits ( original_ts.getDataUnits() );
-                result_ts.setDataUnitsOriginal ( original_ts.getDataUnits() );
-                result_ts.setDate1 ( original_ts.getDate1() );
-                result_ts.setDate1Original ( original_ts.getDate1() );
-                result_ts.setDate2 ( original_ts.getDate2() );
-                result_ts.setDate2Original ( original_ts.getDate2() );
-                // Allocate memory
-                result_ts.allocateDataSpace();
-            }
-            
-            // Make sure that the Lag table is in the same units as the time series being lagged
-            Table Lag_Table = getNormalizedTable ( "Lag", original_ts, DataUnits, __LagInterval_TimeInterval, __Lag_Table,
-                log_level, command_tag, warning_count, status );
-            // Make sure that the K table is in the same base interval as the time series being lagged
-            Table K_Table = getNormalizedTable ( "K", original_ts, DataUnits, __LagInterval_TimeInterval, __K_Table,
-                  log_level, command_tag, warning_count, status );
-            String units = DataUnits;
-            if ( (units == null) || units.equals("") ) {
-                units = original_ts.getDataUnits();
-            }
-            Message.printStatus(2, routine, "Lag table used for procesing (" + units + "):\n" + Lag_Table );
-            Message.printStatus(2, routine, "K table used for procesing (" + units + "):\n" + K_Table );
-            
-    	    // TODO SAM 2009-03-24 Paste in the Sentry logic below, but may want to put this in the LagK class
-    	    TSIterator tsi = original_ts.iterator();
-    	    TSData tsd = null;
-    		LagKBuilder lkb = new LagKBuilder(original_ts);
-    		lkb.setLagIn ( Lag_Table );
-    		lkb.setKOut ( K_Table );
-    		riverside.ts.routing.lagk.LagK lagK = lkb.create();
-    		
-    		StringBuffer b = new StringBuffer();
-            double [] co0 = lagK.getCarryoverValues();
-            for ( int i = 0; i < co0.length; i++ ) {
-                b.append ( StringUtil.formatString(co0[i],"%.4f") + " " );
-            }
-            if ( Message.isDebugOn ) {
-                Message.printDebug(1, routine, "Initial input carryover values co=" + b.toString());
-            }
-    		
-            // TODO SAM 2009-03-24 evaluate input states - for now do not use and accept defaults (0)
-            //reinstate(lagK);
-            double prev = 0;
-            //final boolean verbal = verbal();
-            // TODO SAM 2009-03-24 What does the following do?  Position the arrays?
-            /*
-            while ((tsd = tsi.next()) != null) {
-                if (!original_ts.isDataMissing(tsd.getData())) {
-                    tsi.previous();
-                    break;
-                }
-            }
-            */
-            b = new StringBuffer();
-            while ((tsd = tsi.next()) != null) {
-                double dataIn = tsd.getData();
-                double lagVal = lagK.solveMethod(tsd.getDate(), prev);
-                lagK.doCarryOver(tsd.getDate());
-                b.setLength(0);
-                // Only using for debugging...
-                //double [] co = lagK.getCarryOverValues(tsd.getDate());
-                double [] co = lagK.getCarryoverValues();
-                for ( int i = 0; i < co.length; i++ ) {
-                    b.append ( StringUtil.formatString(co[i],"%.4f") + " " );
+                Message.printStatus(2, routine, "Lag table used for procesing (" + units + "):\n" + Lag_Table );
+                Message.printStatus(2, routine, "K table used for procesing (" + units + "):\n" + K_Table );
+                
+        	    // TODO SAM 2009-03-24 Paste in the Sentry logic below, but may want to put this in the LagK class
+        	    TSIterator tsi = original_ts.iterator();
+        	    TSData tsd = null;
+        		LagKBuilder lkb = new LagKBuilder(original_ts);
+        		lkb.setLagIn ( Lag_Table );
+        		lkb.setKOut ( K_Table );
+        		riverside.ts.routing.lagk.LagK lagK = lkb.create();
+        		
+        		StringBuffer b = new StringBuffer();
+                double [] co0 = lagK.getCarryoverValues();
+                for ( int i = 0; i < co0.length; i++ ) {
+                    b.append ( StringUtil.formatString(co0[i],"%.4f") + " " );
                 }
                 if ( Message.isDebugOn ) {
-                    Message.printDebug(1, routine, "Time: " + tsd.getDate() + " in=" + dataIn + " routed=" + lagVal
-                        + " co=" + b.toString());
+                    Message.printDebug(1, routine, "Initial input carryover values co=" + b.toString());
                 }
-                // TODO SAM 2009-03-29 Evaluate removing - we're trying to make it work
-                //prev = dataIn;
-                prev = lagVal;
-                // TODO SAM 2009-03-29 Evaluate removing - lagged value from solveMethod() is for current time
-                //DateTime future = new DateTime(tsd.getDate());
-                //future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
-                //result_ts.setDataValue(future, lagVal);
-                result_ts.setDataValue(tsd.getDate(), lagVal);
-                if (original_ts.isDataMissing(dataIn)) {
-                    message = "The input time series has missing data at " + tsd.getDate() +
-                    " - unable to route time series at and beyond this date/time.";  
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
+        		
+                // TODO SAM 2009-03-24 evaluate input states - for now do not use and accept defaults (0)
+                //reinstate(lagK);
+                double prev = 0;
+                //final boolean verbal = verbal();
+                // TODO SAM 2009-03-24 What does the following do?  Position the arrays?
+                /*
+                while ((tsd = tsi.next()) != null) {
+                    if (!original_ts.isDataMissing(tsd.getData())) {
+                        tsi.previous();
+                        break;
+                    }
+                }
+                */
+                b = new StringBuffer();
+                while ((tsd = tsi.next()) != null) {
+                    double dataIn = tsd.getData();
+                    double lagVal = lagK.solveMethod(tsd.getDate(), prev);
+                    lagK.doCarryOver(tsd.getDate());
+                    b.setLength(0);
+                    // Only using for debugging...
+                    //double [] co = lagK.getCarryOverValues(tsd.getDate());
+                    double [] co = lagK.getCarryoverValues();
+                    for ( int i = 0; i < co.length; i++ ) {
+                        b.append ( StringUtil.formatString(co[i],"%.4f") + " " );
+                    }
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(1, routine, "Time: " + tsd.getDate() + " in=" + dataIn + " routed=" + lagVal
+                            + " co=" + b.toString());
+                    }
+                    // TODO SAM 2009-03-29 Evaluate removing - we're trying to make it work
+                    //prev = dataIn;
+                    prev = lagVal;
+                    // TODO SAM 2009-03-29 Evaluate removing - lagged value from solveMethod() is for current time
+                    //DateTime future = new DateTime(tsd.getDate());
+                    //future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
+                    //result_ts.setDataValue(future, lagVal);
+                    result_ts.setDataValue(tsd.getDate(), lagVal);
+                    if (original_ts.isDataMissing(dataIn)) {
+                        message = "The input time series has missing data at " + tsd.getDate() +
+                        " - unable to route time series at and beyond this date/time.";  
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag(
+                        command_tag,++warning_count), routine, message );
+                        // This is just a warning
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Fill the time series to be routed before trying to route." ) );
+                        break;
+                    }
+                }
+        
+        		// Update the newly created time series genesis.
+        		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
+        		result_ts.addToGenesis ( "Lag: " + Lag + " K: "  + K );
+        
+                // Further process the time series...
+                // This makes sure the period is at least as long as the output period, and computes the historical averages.
+                List tslist = new Vector();
+                tslist.add ( result_ts );
+                request_params = new PropList ( "" );
+                request_params.setUsingObject ( "TSList", tslist );
+                try {
+                    processor.processRequest( "ReadTimeSeries2", request_params);
+                }
+                catch ( Exception e ) {
+                    message = "Error post-processing routed time series.";
+                    Message.printWarning ( warning_level, 
+                        MessageUtil.formatMessageTag(command_tag,
+                        ++warning_count), routine, message );
+                    Message.printWarning(log_level, routine, e);
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Fill the time series to be routed before trying to route." ) );
-                    break;
+                            message, "Report the problem to software support." ) );
+                    throw new CommandException ( message );
                 }
-            }
-    
-    		// Update the newly created time series genesis.
-    		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
-    		result_ts.addToGenesis ( "Lag: " + Lag + " K: "  + K );
-    
-            // Further process the time series...
-            // This makes sure the period is at least as long as the output period, and computes the historical averages.
-            List tslist = new Vector();
-            tslist.add ( result_ts );
-            request_params = new PropList ( "" );
-            request_params.setUsingObject ( "TSList", tslist );
-            try {
-                processor.processRequest( "ReadTimeSeries2", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error post-processing routed time series.";
-                Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-                Message.printWarning(log_level, routine, e);
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-                throw new CommandException ( message );
-            }
-            
-            // Update the data to the processor...
-            
-            try {
-                TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, result_ts );
-            }
-            catch ( Exception e ){
+                
+                // Update the data to the processor...
+                
+                try {
+                    TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, result_ts );
+                }
+                catch ( Exception e ){
                     message = "Cannot append new time series to results list.  Skipping.";
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(
                         command_tag, ++warning_count),
                         routine,message);
                     status.addToLog(commandPhase,
-                            new CommandLogRecord(
-                            CommandStatusType.FAILURE, message,
-                            "Unable to provide recommendation - check log file for details."));
+                        new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        "Unable to provide recommendation - check log file for details."));
+                }
             }
         }
         if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -919,7 +953,7 @@ public String toString ( PropList props )
 	// Get the properties from the command; 
 	String TSID = props.getValue( "TSID" );
 	String NewTSID = props.getValue("NewTSID");
-    String DataUnits = props.getValue("DataUnits");
+    String FlowUnits = props.getValue("FlowUnits");
     String LagInterval = props.getValue("LagInterval");
 	String Lag = props.getValue("Lag");
 	String K = props.getValue("K");
@@ -936,11 +970,11 @@ public String toString ( PropList props )
 		}
 		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
-    if ( (DataUnits != null) && (DataUnits.length() > 0) ) {
+    if ( (FlowUnits != null) && (FlowUnits.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataUnits=" + DataUnits );
+        b.append ( "FlowUnits=" + FlowUnits );
     }
     if ( (LagInterval != null) && (LagInterval.length() > 0) ) {
         if ( b.length() > 0 ) {

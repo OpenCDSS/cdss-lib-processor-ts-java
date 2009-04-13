@@ -292,6 +292,10 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "Or, instead of specifying parts, specify the DSS pathname to read a specific time series." ), 
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    "The alias can be assigned for time series based on time series properties, for example use " +
+    "%L for location (A-part:B-part), %T for data type (C-part), %Z for scenario (F-part)." ), 
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working directory) for a HEC-DSS file to read." ), 

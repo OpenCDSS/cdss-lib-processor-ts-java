@@ -323,16 +323,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number The number of the command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "ReadHecDss_Command.runCommand", message;
 	int warning_level = 2;
     int log_level = 3;
@@ -373,71 +369,76 @@ throws InvalidCommandParameterException,
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
+	
+    String InputFile_full = IOUtil.verifyPathForOS(
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
+    if ( !IOUtil.fileExists(InputFile_full)) {
+        message = "Input file \"" + InputFile_full + "\" does not exist.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+        status.addToLog(command_phase, new CommandLogRecord( CommandStatusType.FAILURE, message,
+            "Verify that the file exists before using this command."));
+        throw new CommandException ( message );
+    }
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
     if ( (InputStart != null) && (InputStart.length() != 0) ) {
         try {
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "DateTime", InputStart );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", InputStart );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+    
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the specified date/time is valid." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {
+                InputStart_DateTime = (DateTime)prop_contents;
+            }
         }
         catch ( Exception e ) {
-            message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+            message = "InputStart \"" + InputStart + "\" is invalid.";
+            Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time for the input start, " +
+                "or InputStart for the global input start." ) );
             throw new InvalidCommandParameterException ( message );
         }
-
-        PropList bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the specified date/time is valid." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-        else {
-            InputStart_DateTime = (DateTime)prop_contents;
-        }
-    }
-    catch ( Exception e ) {
-        message = "InputStart \"" + InputStart + "\" is invalid.";
-        Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time for the input start, " +
-                        "or InputStart for the global input start." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
     }
     else {
         // Get the global input start from the processor...
-        try {   Object o = processor.getPropContents ( "InputStart" );
-                if ( o != null ) {
-                    InputStart_DateTime = (DateTime)o;
-                }
+        try {
+            Object o = processor.getPropContents ( "InputStart" );
+            if ( o != null ) {
+                InputStart_DateTime = (DateTime)o;
+            }
         }
         catch ( Exception e ) {
             message = "Error requesting the global InputStart from processor.";
             Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
+            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
         }
     }
@@ -453,11 +454,9 @@ throws InvalidCommandParameterException,
             catch ( Exception e ) {
                 message = "Error requesting InputEnd DateTime(DateTime=" + InputEnd + ") from processor.";
                 Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
             }
 
@@ -465,58 +464,50 @@ throws InvalidCommandParameterException,
             Object prop_contents = bean_PropList.getContents ( "DateTime" );
             if ( prop_contents == null ) {
                 message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +  ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                Message.printWarning(log_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the end date/time is valid." ) );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the end date/time is valid." ) );
                 throw new InvalidCommandParameterException ( message );
             }
-            else {  InputEnd_DateTime = (DateTime)prop_contents;
+            else {
+                InputEnd_DateTime = (DateTime)prop_contents;
             }
         }
         catch ( Exception e ) {
             message = "InputEnd \"" + InputEnd + "\" is invalid.";
             Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time for the input end, " +
-                            "or InputEnd for the global input start." ) );
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
+            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time for the input end, " +
+                "or InputEnd for the global input start." ) );
             throw new InvalidCommandParameterException ( message );
         }
+    }
+    else {
+        // Get from the processor...
+        try {
+            Object o = processor.getPropContents ( "InputEnd" );
+            if ( o != null ) {
+                InputEnd_DateTime = (DateTime)o;
+            }
         }
-        else {
-            // Get from the processor...
-            try {   Object o = processor.getPropContents ( "InputEnd" );
-                    if ( o != null ) {
-                        InputEnd_DateTime = (DateTime)o;
-                    }
-            }
-            catch ( Exception e ) {
-                message = "Error requesting the global InputEnd from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-            }
+        catch ( Exception e ) {
+            message = "Error requesting the global InputEnd from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
     }
 
 	// Read the file.
     List tslist = null;   // Keep the list of time series
-    String InputFile_full = InputFile;
 	try {
         boolean read_data = true;
         if ( command_phase == CommandPhaseType.DISCOVERY ){
             read_data = false;
         }
-        InputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         // If the pathname is specified, read it as is...
         if ( (Pathname != null) && !Pathname.equals("") ) {
             tslist = HecDssAPI.readTimeSeriesListUsingPathname (
@@ -530,7 +521,7 @@ throws InvalidCommandParameterException,
                     InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
         }
         // TODO SAM 2007-12-27 - should enable EnsembleID if traces
-			
+		List<String> aliasList = new Vector();
 		if ( tslist != null ) {
 			int tscount = tslist.size();
 			message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";
@@ -540,30 +531,50 @@ throws InvalidCommandParameterException,
                 ts = (TS)tslist.get(i);
                 if ( (Alias != null) && (Alias.length() > 0) ) {
                     // Set the alias to the desired string.
-                    ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                        processor, ts, Alias, status, command_phase) );
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, command_phase);
+                    ts.setAlias ( alias );
+                    // Search for duplicate alias and warn
+                    int aliasListSize = aliasList.size();
+                    for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
+                        if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
+                            message = "Alias \"" + alias +
+                            "\" was also used for another time series read from the HEC-DSS file.";
+                            Message.printWarning(log_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                            status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Consider using a more specific alias to uniquely identify the time series." ) );
+                        }
+                    }
+                    // Now add the new list to the alias...
+                    aliasList.add ( alias );
                 }
             }
 		}
 	}
+    catch ( UnsatisfiedLinkError e ) {
+        message = "Unexpected error loading HEC-DSS dynamic library (" + e + ").";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+        status.addToLog(command_phase, new CommandLogRecord( CommandStatusType.FAILURE, message,
+            "Contact software support - may be a problem if running on a file server."));
+        throw new CommandException ( message );
+    }
 	catch ( FileNotFoundException e ) {
         message = "HEC-DSS file \"" + InputFile_full + "\" is not found or accessible.";
         Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
-            status.addToLog(command_phase,
-                new CommandLogRecord( CommandStatusType.FAILURE, message,
-                    "Verify that the file exists and is readable."));
+        status.addToLog(command_phase, new CommandLogRecord( CommandStatusType.FAILURE, message,
+            "Verify that the file exists and is readable."));
         throw new CommandException ( message );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error reading HEC-DSS file. \"" + InputFile_full + "\" (" + e + ")";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+			MessageUtil.formatMessageTag(command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
         status.addToLog(command_phase,
-                new CommandLogRecord( CommandStatusType.FAILURE, message,"Check the log file for details."));
+            new CommandLogRecord( CommandStatusType.FAILURE, message,"Check the log file for details."));
 		throw new CommandException ( message );
 	}
     
@@ -575,11 +586,9 @@ throws InvalidCommandParameterException,
             if ( wc > 0 ) {
                 message = "Error post-processing series after read.";
                 Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report the problem to software support." ) );
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
     
@@ -589,11 +598,9 @@ throws InvalidCommandParameterException,
             if ( wc2 > 0 ) {
                 message = "Error adding time series after read.";
                 Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag,
-                    ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report the problem to software support." ) );
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+                status.addToLog ( command_phase,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
         }

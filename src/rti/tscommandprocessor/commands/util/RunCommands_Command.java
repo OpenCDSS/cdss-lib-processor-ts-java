@@ -190,8 +190,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -215,8 +214,7 @@ CommandWarningException, CommandException
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
 		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine, message );
+	        MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		throw new InvalidCommandParameterException ( message );
 	}
 	
@@ -254,12 +252,10 @@ CommandWarningException, CommandException
                 // User has indicated an expected status and it matches the actual so consider this a success.
                 // This should generally be used only when running a test that we expect to fail (e.g., run
                 // obsolete command or testing handling of errors).
-                status.addToLog(CommandPhaseType.RUN,
-                        new CommandLogRecord(
-                                CommandStatusType.SUCCESS,
-                                "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
-                                "Additional status messages are omitted to allow test to be success - " +
-                                "refer to log file if warning/failure."));
+                status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.SUCCESS,
+                    "Severity is max of commands file that was run (may not be a problem) - matches expected so considered Success.",
+                    "Additional status messages are omitted to allow test to be success - " +
+                    "refer to log file if warning/failure."));
                 // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
                 // have a successful status that shows in the displays.
                 // DO NOT append the messages from the command because their status will cause the
@@ -268,11 +264,10 @@ CommandWarningException, CommandException
 		    }
 		    else {
 		        // User has specified an expected status and it does NOT match the actual status so this is a failure.
-                status.addToLog(CommandPhaseType.RUN,
-                    new CommandLogRecord(
-                        CommandStatusType.SUCCESS,
-                        "Severity is max of commands file that was run (may not be a problem) - does not match expected so considered Failure.",
-                        "Check the command to confirm the expected status."));
+                status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(
+                    CommandStatusType.SUCCESS,
+                    "Severity is max of commands file that was run (may not be a problem) - does not match expected so considered Failure.",
+                    "Check the command to confirm the expected status."));
                 // TODO SAM 2008-07-09 Need to evaluate how to append all the log messages but still
                 // have a successful status that shows in the displays.
                 // DO NOT append the messages from the command because their status will cause the
@@ -281,11 +276,9 @@ CommandWarningException, CommandException
 		    }
         }
         else {
-            status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(
-						maxSeverity,
-						"Severity is max of commands file that was run (may not be a problem).",
-						"See additional status messages and refer to log file if warning/failure."));
+            status.addToLog(CommandPhaseType.RUN,new CommandLogRecord(maxSeverity,
+				"Severity is max of commands file that was run (may not be a problem).",
+				"See additional status messages and refer to log file if warning/failure."));
             // Append the log records from the command file that was run.
             CommandStatusUtil.appendLogRecords ( status, runner.getProcessor().getCommands() );
             if ( maxSeverity.greaterThanOrEqualTo(CommandStatusType.WARNING)) {

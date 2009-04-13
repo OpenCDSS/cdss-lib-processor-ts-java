@@ -553,6 +553,45 @@ public static List getDataTypes ( String filename )
 }
 
 /**
+Determine whether the time series interval is supported by the HEC-DSS API.
+Some intervals (e.g., irregular) are not supported because the software has not
+been written.  Others are not supported because the interval is not supported by
+HEC-DSS (e.g., 24-hour).
+@return false if the interval is not supported.
+*/
+public static boolean isTimeSeriesIntervalSupportedByAPI ( TS ts )
+{
+    boolean supported = false;
+    int intervalBase = ts.getDataIntervalBase();
+    int intervalMult = ts.getDataIntervalMult();
+    if ( (intervalBase == TimeInterval.MINUTE) && (
+        (intervalMult == 1) || (intervalMult == 2) || (intervalMult == 3) || (intervalMult == 4)
+        || (intervalMult == 5) || (intervalMult == 10) || (intervalMult == 15) || (intervalMult == 20)
+        || (intervalMult == 30)) ) {
+        supported = true;
+    }
+    else if ( (intervalBase == TimeInterval.HOUR) && ( (intervalMult == 1) || (intervalMult == 2)
+        || (intervalMult == 3) || (intervalMult == 4) || (intervalMult == 6) || (intervalMult == 8)
+        || (intervalMult == 12)) ) {
+        supported = true;
+    }
+    else if ( (intervalBase == TimeInterval.DAY) && ( (intervalMult == 1) ) ) {
+        supported = true;
+    }
+    else if ( intervalBase == TimeInterval.WEEK ) {
+        // Not currently handled by RTi code
+        supported = false;
+    }
+    else if ( (intervalBase == TimeInterval.MONTH) && ( (intervalMult == 1) ) ) {
+        supported = true;
+    }
+    else if ( (intervalBase == TimeInterval.YEAR) && ( (intervalMult == 1) ) ) {
+        supported = true;
+    }
+    return supported;
+}
+
+/**
 Read a single time series from a HEC-DSS file.  This method is typically called when a specific time series is
 read for processing.
 @param file HEC-DSS file (full path).
@@ -831,6 +870,10 @@ throws Exception
             // interval convention in RTi code than the current generic irregular interval.  For example use
             // Irr6Hour.
             ePart = "Irregular";
+            Message.printStatus ( 2, routine, "Reading irregular time series and paired data are not yet supported - " +
+        		"not reading data for " + "A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
+                "D=\"" + dPart + "\" " + "E=\"" + ePart + "\" " + "F=\"" + fPart + "\"" );
+            continue;
         }
         Message.printStatus ( 2, routine, "DSS pathname for time series: " +
             "A=\"" + aPart + "\" " + "B=\"" + bPart + "\" " + "C=\"" + cPart + "\" " +
@@ -1407,7 +1450,8 @@ throws IOException, Exception
 
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
-    List pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written
+    List pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written (path > 80 char)
+    List pathsNotWrittenBadIntervalList = new Vector(); // HEC-DSS time series that could not be written (interval not supported)
     HecTimeSeries hts = null; // Put here because handle on time series is used to close HEC-DSS files after loop
     for ( int i = 0; i < tslistSize; i++ ) {
         TS ts = (TS)tslist.get(i);
@@ -1470,6 +1514,10 @@ throws IOException, Exception
         if ( pathname.length() > 80 ) {
             pathsNotWritten80List.add ( pathname );
         }
+        // Verify that the interval is ok.
+        if ( !isTimeSeriesIntervalSupportedByAPI(ts) ) {
+            pathsNotWrittenBadIntervalList.add ( pathname );
+        }
         tsc.fullName = pathname;
         tsc.interval = HecTimeSeries.getIntervalFromEPart(dssPathName.getEPart());
         // Set the data units - any string can be used but may want to standardize to allow units conversion
@@ -1526,15 +1574,23 @@ throws IOException, Exception
     }
     // Throw an exception if there were any other problems in the loop.  Could put this in the loop but want
     // as much writing to occur as possible.  For now a single message can be written
-    int pathsNotWrittenListSize = pathsNotWritten80List.size();
-    if ( pathsNotWrittenListSize > 0 ) {
+    int pathsNotWritten80ListSize = pathsNotWritten80List.size();
+    int pathsNotWrittenBadIntervalListSize = pathsNotWritten80List.size();
+    if ( (pathsNotWritten80ListSize > 0) || (pathsNotWrittenBadIntervalListSize > 0) ) {
         StringBuffer b = new StringBuffer();
-        b.append ( "Error writing the following time series because the pathname is > 80 characters." );
-        for ( int i = 0; i < pathsNotWrittenListSize; i++ ) {
+        b.append ( "Error writing the following time series because the pathname is > 80 characters:" );
+        for ( int i = 0; i < pathsNotWritten80ListSize; i++ ) {
             if ( i > 0 ) {
                 b.append ( ", " );
             }
             b.append ( (String)pathsNotWritten80List.get(i) );
+        }
+        b.append ( "\nError writing the following time series because the interval is not supported:" );
+        for ( int i = 0; i < pathsNotWrittenBadIntervalListSize; i++ ) {
+            if ( i > 0 ) {
+                b.append ( ", " );
+            }
+            b.append ( (String)pathsNotWrittenBadIntervalList.get(i) );
         }
         throw new RuntimeException ( b.toString() );
     }

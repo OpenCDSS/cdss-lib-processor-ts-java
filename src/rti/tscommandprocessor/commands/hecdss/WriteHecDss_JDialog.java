@@ -384,26 +384,6 @@ private void initialize ( JFrame parent, Command command )
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - HEC-DSS time series type." ), 
         2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputStart_JTextField = new JTextField (20);
-	__OutputStart_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - override the global output start (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputEnd_JTextField = new JTextField (20);
-	__OutputEnd_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - override the global output end (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -420,6 +400,26 @@ private void initialize ( JFrame parent, Command command )
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputStart_JTextField = new JTextField (20);
+    __OutputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - override the global output start (default=write all data)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputEnd_JTextField = new JTextField (20);
+    __OutputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - override the global output end (default=write all data)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Precision:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -481,17 +481,20 @@ private void initialize ( JFrame parent, Command command )
         "Optional - F part to write (default=TSID scenario)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replace entire time series?:" ), 
+    JLabel label = new JLabel ( "Replace entire time series?:" );
+    label.setEnabled(false);
+    JGUIUtil.addComponent(main_JPanel, label, 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Replace_JComboBox = new SimpleJComboBox ( false );
+    __Replace_JComboBox.setEnabled(false); // Under development
     __Replace_JComboBox.add ( "" );
     __Replace_JComboBox.add ( __command._False );
     __Replace_JComboBox.add ( __command._True );
     __Replace_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Replace_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - replace the entire time series (default="+
-        __command._True + ")." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "<html>Optional - replace the entire time series (default="+
+        __command._True + "). <b>Under development.</b></html>" ), 
         2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Close HEC-DSS files after?:" ), 
@@ -503,8 +506,8 @@ private void initialize ( JFrame parent, Command command )
     __Close_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Close_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - close HEC-DSS file after write (default="+
-        __command._False + ")." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "<html>Optional - close HEC-DSS file after write (default="+
+        __command._False + "). <b>Under development.</b></html>" ), 
         2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -795,8 +798,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()

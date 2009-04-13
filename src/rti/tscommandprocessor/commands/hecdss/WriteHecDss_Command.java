@@ -97,7 +97,8 @@ throws InvalidCommandParameterException
 	}
 	else {
         String working_dir = null;
-		try { Object o = processor.getPropContents ( "WorkingDir" );
+		try {
+		    Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
 			}
@@ -106,13 +107,13 @@ throws InvalidCommandParameterException
 			message = "Error requesting WorkingDir from processor.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Software error - report the problem to support." ) );
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Software error - report the problem to support." ) );
 		}
 
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
-                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+                TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -120,7 +121,7 @@ throws InvalidCommandParameterException
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Create the output directory." ) );
+						message, "Create the output directory." ) );
 			}
 			f = null;
 			f2 = null;
@@ -133,12 +134,13 @@ throws InvalidCommandParameterException
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Verify that output file and working directory paths are compatible." ) );
+					message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
 
 	if ( (OutputStart != null) && !OutputStart.equals("")) {
-		try {	DateTime datetime1 = DateTime.parse(OutputStart);
+		try {
+		    DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
 			}
@@ -147,8 +149,8 @@ throws InvalidCommandParameterException
 			message = "Output start date/time \"" + OutputStart + "\" is not a valid date/time.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid output start date/time." ) );
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify a valid output start date/time." ) );
 		}
 	}
 	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
@@ -166,7 +168,7 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
-	if ( (Precision != null) && !OutputEnd.equals("") && !StringUtil.isInteger(Precision) ) {
+	if ( (Precision != null) && !Precision.equals("") && !StringUtil.isInteger(Precision) ) {
 	    message = "The Precision \"" + Precision + "\" is not a valid integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -198,7 +200,7 @@ throws InvalidCommandParameterException
                 message, "Specify the value of Replace as " + _False + " (default) or " + _True + "." ) );
     }
 
-    if ( (Close != null) && !Close.equals("") && !Type.equalsIgnoreCase(_False) && !Type.equalsIgnoreCase(_True) ) {
+    if ( (Close != null) && !Close.equals("") && !Close.equalsIgnoreCase(_False) && !Close.equalsIgnoreCase(_True) ) {
         message = "The value of Close (" + Close + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -317,11 +319,9 @@ CommandWarningException, CommandException
         message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
 		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+		    message, "Report problem to software support." ) );
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -329,11 +329,9 @@ CommandWarningException, CommandException
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-			new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Report problem to software support." ) );
+		    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+			message, "Report problem to software support." ) );
 	}
 	List tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
@@ -341,9 +339,8 @@ CommandWarningException, CommandException
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-			new CommandLogRecord(CommandStatusType.WARNING,
-				message, "Confirm that time series are available (may be OK for partial run)." ) );
+		status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+			message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
 
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -357,23 +354,18 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
 			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
 		}
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputStart +
-				"\") returned from processor.";
+			message = "Null value for DateTime(DateTime=" + OutputStart + "\") returned from processor.";
 			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
 		}
 		else {
 		    OutputStart_DateTime = (DateTime)prop_contents;
@@ -390,9 +382,8 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
 			message = "Error requesting OutputStart from processor - not using.";
 			Message.printDebug(10, routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
 		}
 	}
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -406,23 +397,18 @@ CommandWarningException, CommandException
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
 			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
 		}
 		bean_PropList = bean.getResultsPropList();
 		Object prop_contents = bean_PropList.getContents ( "DateTime" );
 		if ( prop_contents == null ) {
-			message = "Null value for DateTime(DateTime=" + OutputEnd +
-			"\") returned from processor.";
+			message = "Null value for DateTime(DateTime=" + OutputEnd + "\") returned from processor.";
 			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Report problem to software support." ) );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+			status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
 		}
 		else {
 		    OutputEnd_DateTime = (DateTime)prop_contents;
@@ -511,8 +497,7 @@ CommandWarningException, CommandException
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
             status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check log file for details." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE, message, "Check log file for details." ) );
             throw new CommandException ( message );
         }
     }

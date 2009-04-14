@@ -363,7 +363,7 @@ private void initialize ( JFrame parent, Command command )
 	__NewInterval_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewInterval_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data interval for result."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Required - Data interval for result."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Old time scale
@@ -395,7 +395,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __NewDataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__NewDataType_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is to use the data type from original time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Data type (default = original time series data type)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // New data type
@@ -405,7 +405,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __NewUnits_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __NewUnits_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default is to use the units from original time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Data units (default = original time series units)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
@@ -416,7 +416,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__AllowMissingCount_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Number of missing values allowed in original " +
+		"Optional - Number of missing values allowed in original " +
 		"processing interval (default=0)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
@@ -447,7 +447,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use to fill output when converting from large to small " +
+		"Optional - Use to fill output when converting from large to small " +
 		"interval (default=" + __command._Repeat + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
@@ -466,7 +466,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicate how to handle missing values in input (default=" + __command._KeepMissing + ")."),
+		"Optional - Indicate how to handle missing values in input (default=" + __command._KeepMissing + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command

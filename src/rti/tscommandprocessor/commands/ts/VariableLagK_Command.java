@@ -36,6 +36,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
@@ -197,6 +198,7 @@ throws InvalidCommandParameterException
 	
     // Lag is not required - can attenuate without
 
+    __Lag_Table = null;
 	if ( (Lag != null) && !Lag.equals("") ) {
 		// If pair values are specified, make sure they are a sequence of numbers.  Save the results
 	    // for use when running the command.
@@ -262,6 +264,7 @@ throws InvalidCommandParameterException
 	
 	// K is not required - can lag without attenuating
 
+	__K_Table = null;
     if ( (K != null) && !K.equals("") ) {
         // If pair values are specified, make sure they are a sequence of numbers.  Save the results
         // for use when running the command.
@@ -445,7 +448,8 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
         if ( !unitsExact && !unitsCompatible ) {
             // This is a problem
             String message = "The input time series units \"" + ts.getDataUnits() +
-            "\" are not compatible with the " + tableType + " table flow values - cannot convert to use for routing.";
+            "\" are not compatible with the " + tableType + " table flow value units \"" + flowUnits +
+            "\" - cannot convert to use for routing.";
             Message.printWarning(log_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count),
             routine, message );
@@ -453,7 +457,7 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the time series to lag has flow units compatible with the " +
                     tableType + " table." ) );
-            throw new RuntimeException ( message );
+            throw new IllegalArgumentException ( message );
         }
         else if ( !unitsExact && unitsCompatible ) {
             // Get the conversion factor on the units.
@@ -471,7 +475,7 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that the time series to lag has flow units compatible with the " +
                         tableType + " table." ) );
-                throw new RuntimeException ( message );
+                throw new IllegalArgumentException ( message );
             }
         }
     }
@@ -492,8 +496,12 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
         newTable.allocateDataSpace(nRows);
         double newFlowValue;
         double newTimeValue;
-        double flowAddFactor = unitsConversion.getAddFactor();
-        double flowMultFactor = unitsConversion.getMultFactor();
+        double flowAddFactor = 0.0;
+        double flowMultFactor = 1.0;
+        if ( unitsConversion != null ) {
+            flowAddFactor = unitsConversion.getAddFactor();
+            flowMultFactor = unitsConversion.getMultFactor();
+        }
         double timeMultFactor = 1.0; // Convert from original table to time series base interval, 1.0 for no change
         if ( intervalBaseExact ) {
             // No need to do anything
@@ -527,7 +535,7 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
                 status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the time series to lag has interval base that can be converted to the " +
                     tableType + " table (conversion is only implemented for minute/hour/day)." ) );
-                throw new RuntimeException ( message );
+                throw new IllegalArgumentException ( message );
             }
         }
         for ( int i = 0; i < nRows; i++ ) {
@@ -663,6 +671,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 processor, result_ts, Alias, status, commandPhase) );
 		}
         if ( commandPhase == CommandPhaseType.RUN ){
+            boolean canRun = true; // Use to help with graceful error handling
             //Get the reference (original_ts) to the time series to route
             
             PropList request_params = new PropList ( "" );
@@ -781,125 +790,149 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 }
                 
                 // Make sure that the Lag table is in the same units as the time series being lagged
-                Table Lag_Table = getNormalizedTable ( "Lag", original_ts, FlowUnits, __LagInterval_TimeInterval, __Lag_Table,
-                    log_level, command_tag, warning_count, status );
-                // Make sure that the K table is in the same base interval as the time series being lagged
-                Table K_Table = getNormalizedTable ( "K", original_ts, FlowUnits, __LagInterval_TimeInterval, __K_Table,
-                      log_level, command_tag, warning_count, status );
-                String units = FlowUnits;
-                if ( (units == null) || units.equals("") ) {
-                    units = original_ts.getDataUnits();
-                }
-                Message.printStatus(2, routine, "Lag table used for procesing (" + units + "):\n" + Lag_Table );
-                Message.printStatus(2, routine, "K table used for procesing (" + units + "):\n" + K_Table );
-                
-        	    // TODO SAM 2009-03-24 Paste in the Sentry logic below, but may want to put this in the LagK class
-        	    TSIterator tsi = original_ts.iterator();
-        	    TSData tsd = null;
-        		LagKBuilder lkb = new LagKBuilder(original_ts);
-        		lkb.setLagIn ( Lag_Table );
-        		lkb.setKOut ( K_Table );
-        		riverside.ts.routing.lagk.LagK lagK = lkb.create();
-        		
-        		StringBuffer b = new StringBuffer();
-                double [] co0 = lagK.getCarryoverValues();
-                for ( int i = 0; i < co0.length; i++ ) {
-                    b.append ( StringUtil.formatString(co0[i],"%.4f") + " " );
-                }
-                if ( Message.isDebugOn ) {
-                    Message.printDebug(1, routine, "Initial input carryover values co=" + b.toString());
-                }
-        		
-                // TODO SAM 2009-03-24 evaluate input states - for now do not use and accept defaults (0)
-                //reinstate(lagK);
-                double prev = 0;
-                //final boolean verbal = verbal();
-                // TODO SAM 2009-03-24 What does the following do?  Position the arrays?
-                /*
-                while ((tsd = tsi.next()) != null) {
-                    if (!original_ts.isDataMissing(tsd.getData())) {
-                        tsi.previous();
-                        break;
-                    }
-                }
-                */
-                b = new StringBuffer();
-                while ((tsd = tsi.next()) != null) {
-                    double dataIn = tsd.getData();
-                    double lagVal = lagK.solveMethod(tsd.getDate(), prev);
-                    lagK.doCarryOver(tsd.getDate());
-                    b.setLength(0);
-                    // Only using for debugging...
-                    //double [] co = lagK.getCarryOverValues(tsd.getDate());
-                    double [] co = lagK.getCarryoverValues();
-                    for ( int i = 0; i < co.length; i++ ) {
-                        b.append ( StringUtil.formatString(co[i],"%.4f") + " " );
-                    }
-                    if ( Message.isDebugOn ) {
-                        Message.printDebug(1, routine, "Time: " + tsd.getDate() + " in=" + dataIn + " routed=" + lagVal
-                            + " co=" + b.toString());
-                    }
-                    // TODO SAM 2009-03-29 Evaluate removing - we're trying to make it work
-                    //prev = dataIn;
-                    prev = lagVal;
-                    // TODO SAM 2009-03-29 Evaluate removing - lagged value from solveMethod() is for current time
-                    //DateTime future = new DateTime(tsd.getDate());
-                    //future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
-                    //result_ts.setDataValue(future, lagVal);
-                    result_ts.setDataValue(tsd.getDate(), lagVal);
-                    if (original_ts.isDataMissing(dataIn)) {
-                        message = "The input time series has missing data at " + tsd.getDate() +
-                        " - unable to route time series at and beyond this date/time.";  
-                        Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(
-                        command_tag,++warning_count), routine, message );
-                        // This is just a warning
-                        status.addToLog ( commandPhase,
-                            new CommandLogRecord(CommandStatusType.WARNING,
-                                message, "Fill the time series to be routed before trying to route." ) );
-                        break;
-                    }
-                }
-        
-        		// Update the newly created time series genesis.
-        		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
-        		result_ts.addToGenesis ( "Lag: " + Lag + " K: "  + K );
-        
-                // Further process the time series...
-                // This makes sure the period is at least as long as the output period, and computes the historical averages.
-                List tslist = new Vector();
-                tslist.add ( result_ts );
-                request_params = new PropList ( "" );
-                request_params.setUsingObject ( "TSList", tslist );
+                Table Lag_Table = null;
                 try {
-                    processor.processRequest( "ReadTimeSeries2", request_params);
+                    Lag_Table = getNormalizedTable ( "Lag", original_ts, FlowUnits, __LagInterval_TimeInterval, __Lag_Table,
+                    log_level, command_tag, warning_count, status );
                 }
                 catch ( Exception e ) {
-                    message = "Error post-processing routed time series.";
-                    Message.printWarning ( warning_level, 
-                        MessageUtil.formatMessageTag(command_tag,
-                        ++warning_count), routine, message );
-                    Message.printWarning(log_level, routine, e);
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-                    throw new CommandException ( message );
+                    canRun = false;
                 }
-                
-                // Update the data to the processor...
-                
+                // Make sure that the K table is in the same base interval as the time series being lagged
+                Table K_Table = null;
                 try {
-                    TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, result_ts );
+                    K_Table = getNormalizedTable ( "K", original_ts, FlowUnits, __LagInterval_TimeInterval, __K_Table,
+                      log_level, command_tag, warning_count, status );
                 }
-                catch ( Exception e ){
-                    message = "Cannot append new time series to results list.  Skipping.";
-                    Message.printWarning ( warning_level,
-                        MessageUtil.formatMessageTag(
-                        command_tag, ++warning_count),
-                        routine,message);
-                    status.addToLog(commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE, message,
-                        "Unable to provide recommendation - check log file for details."));
+                catch ( Exception e ) {
+                    canRun = false;
+                }
+                
+                if ( canRun ) {
+                    // OK to continue processing...
+                    String units = FlowUnits;
+                    if ( (units == null) || units.equals("") ) {
+                        units = original_ts.getDataUnits();
+                    }
+                    Message.printStatus(2, routine, "Lag table used for procesing (" + units + "):\n" + Lag_Table );
+                    Message.printStatus(2, routine, "K table used for procesing (" + units + "):\n" + K_Table );
+                    
+            	    // TODO SAM 2009-03-24 Paste in the Sentry logic below, but may want to put this in the LagK class
+            	    TSIterator tsi = original_ts.iterator(); // Iterate through entire input time series
+            	    TSData tsd = null;
+            		LagKBuilder lkb = new LagKBuilder(original_ts);
+            		lkb.setLagIn ( Lag_Table );
+            		lkb.setKOut ( K_Table );
+            		riverside.ts.routing.lagk.LagK lagK = lkb.create();
+            		
+            		StringBuffer b = new StringBuffer();
+                    double [] co0 = lagK.getCarryoverValues();
+                    for ( int i = 0; i < co0.length; i++ ) {
+                        b.append ( StringUtil.formatString(co0[i],"%.4f") + " " );
+                    }
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(1, routine, "Initial input carryover values co=" + b.toString());
+                    }
+            		
+                    // TODO SAM 2009-03-24 evaluate input states - for now do not use and accept defaults (0)
+                    //reinstate(lagK);
+                    double prev = 0;
+                    //final boolean verbal = verbal();
+                    // TODO SAM 2009-03-24 What does the following do?  Position the arrays?
+                    /*
+                    while ((tsd = tsi.next()) != null) {
+                        if (!original_ts.isDataMissing(tsd.getData())) {
+                            tsi.previous();
+                            break;
+                        }
+                    }
+                    */
+                    b = new StringBuffer();
+                    DateTime dt = null;
+                    // The following is necessary to initialize for negative lag.
+                    // It repositions the initial time of the loop and initializes carryover because of the negative lag.
+                    // If there is no negative lag, it does not do anything to the Date/time
+                    lagK.initializeCarryoverForNegativeLag (tsi);
+                    TSIterator tso = original_ts.iterator(); // Same as tsi when positive lag, different when negative lag
+                    while ((tsd = tsi.next()) != null) {
+                        tso.next();
+                        dt = tsd.getDate();
+                        double dataIn = tsd.getData();
+                        double lagVal = lagK.solveMethod(tsd.getDate(), prev);
+                        lagK.doCarryOver(tsd.getDate());
+                        b.setLength(0);
+                        // Only using for debugging...
+                        //double [] co = lagK.getCarryOverValues(tsd.getDate());
+                        double [] co = lagK.getCarryoverValues();
+                        for ( int i = 0; i < co.length; i++ ) {
+                            b.append ( StringUtil.formatString(co[i],"%.4f") + " " );
+                        }
+                        if ( Message.isDebugOn ) {
+                            Message.printDebug(1, routine, "Time: " + tsd.getDate() + " in=" + dataIn + " routed=" + lagVal
+                                + " co=" + b.toString());
+                        }
+                        // TODO SAM 2009-03-29 Evaluate removing - we're trying to make it work
+                        //prev = dataIn;
+                        prev = lagVal;
+                        // TODO SAM 2009-03-29 Evaluate removing - lagged value from solveMethod() is for current time
+                        //DateTime future = new DateTime(tsd.getDate());
+                        //future.addInterval(original_ts.getDataIntervalBase(), original_ts.getDataIntervalMult());
+                        //result_ts.setDataValue(future, lagVal);
+                        result_ts.setDataValue(tso.getDate(), lagVal);
+                        if (original_ts.isDataMissing(dataIn)) {
+                            message = "The input time series has missing data at " + dt +
+                            " - unable to route time series at and beyond this date/time.";  
+                            Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag(
+                            command_tag,++warning_count), routine, message );
+                            // This is just a warning
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Fill the time series to be routed before trying to route." ) );
+                            break;
+                        }
+                    }
+            
+            		// Update the newly created time series genesis.
+            		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
+            		result_ts.addToGenesis ( "Lag: " + Lag + " K: "  + K );
+            
+                    // Further process the time series...
+                    // This makes sure the period is at least as long as the output period, and computes the historical averages.
+                    List tslist = new Vector();
+                    tslist.add ( result_ts );
+                    request_params = new PropList ( "" );
+                    request_params.setUsingObject ( "TSList", tslist );
+                    try {
+                        processor.processRequest( "ReadTimeSeries2", request_params);
+                    }
+                    catch ( Exception e ) {
+                        message = "Error post-processing routed time series.";
+                        Message.printWarning ( warning_level, 
+                            MessageUtil.formatMessageTag(command_tag,
+                            ++warning_count), routine, message );
+                        Message.printWarning(log_level, routine, e);
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                        throw new CommandException ( message );
+                    }
+                    
+                    // Update the data to the processor...
+                    
+                    try {
+                        TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, result_ts );
+                    }
+                    catch ( Exception e ){
+                        message = "Cannot append new time series to results list.  Skipping.";
+                        Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag(
+                            command_tag, ++warning_count),
+                            routine,message);
+                        status.addToLog(commandPhase,
+                            new CommandLogRecord(CommandStatusType.FAILURE, message,
+                            "Unable to provide recommendation - check log file for details."));
+                    }
                 }
             }
         }

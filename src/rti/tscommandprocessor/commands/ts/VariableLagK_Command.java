@@ -507,22 +507,22 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
             // No need to do anything
         }
         else if ( (lagInterval.getBase() == TimeInterval.DAY) && (ts.getDataIntervalBase() == TimeInterval.HOUR)) {
-           timeMultFactor = lagInterval.getMultiplier()*24.0;
+            timeMultFactor = lagInterval.getMultiplier()*24.0;
         }
         else if ( (lagInterval.getBase() == TimeInterval.DAY) && (ts.getDataIntervalBase() == TimeInterval.MINUTE)) {
-            timeMultFactor = lagInterval.getMultiplier()*24.0*60.0/ts.getDataIntervalMult();
+            timeMultFactor = (lagInterval.getMultiplier()*24.0*60.0)/ts.getDataIntervalMult();
         }
         else if ( (lagInterval.getBase() == TimeInterval.HOUR) && (ts.getDataIntervalBase() == TimeInterval.MINUTE)) {
-            timeMultFactor = lagInterval.getMultiplier()*60.0/ts.getDataIntervalMult();
+            timeMultFactor = (lagInterval.getMultiplier()*60.0)/ts.getDataIntervalMult();
         }
         else if ( (lagInterval.getBase() == TimeInterval.HOUR) && (ts.getDataIntervalBase() == TimeInterval.DAY)) {
-            timeMultFactor = lagInterval.getMultiplier()/ts.getDataIntervalMult()*24.0;
+            timeMultFactor = lagInterval.getMultiplier()/(ts.getDataIntervalMult()*24.0);
         }
         else if ( (lagInterval.getBase() == TimeInterval.MINUTE) && (ts.getDataIntervalBase() == TimeInterval.DAY)) {
-            timeMultFactor = lagInterval.getMultiplier()/ts.getDataIntervalMult()*24.0*60.0;
+            timeMultFactor = lagInterval.getMultiplier()/(ts.getDataIntervalMult()*24.0*60.0);
         }
         else if ( (lagInterval.getBase() == TimeInterval.MINUTE) && (ts.getDataIntervalBase() == TimeInterval.HOUR)) {
-            timeMultFactor = lagInterval.getMultiplier()/ts.getDataIntervalMult()*60.0;
+            timeMultFactor = lagInterval.getMultiplier()/(ts.getDataIntervalMult()*60.0);
         }
         else {
             // If the interval base is not an exact match or a supported ratio of intervals, print a warning.
@@ -538,6 +538,8 @@ private Table getNormalizedTable ( String tableType, TS ts, String flowUnits, Ti
                 throw new IllegalArgumentException ( message );
             }
         }
+        Message.printStatus(2, routine, "Normalizing " + tableType + " values using flowAddFactor="+flowAddFactor +
+            " flowMultFactor=" + flowMultFactor + " timeMultFactor=" + timeMultFactor );
         for ( int i = 0; i < nRows; i++ ) {
             newFlowValue = flowAddFactor + flowMultFactor*originalTable.get(i,0);
             newTimeValue = timeMultFactor*originalTable.get(i,1);

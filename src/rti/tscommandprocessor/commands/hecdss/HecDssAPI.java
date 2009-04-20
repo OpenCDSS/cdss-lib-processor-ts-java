@@ -7,7 +7,9 @@ import java.util.Vector;
 
 import hec.dssgui.CondensedReference;
 import hec.heclib.dss.DSSPathname;
+import hec.heclib.dss.HecDSSDataAttributes;
 import hec.heclib.dss.HecDSSFileAccess;
+import hec.heclib.dss.HecDSSFileDataManager;
 import hec.heclib.dss.HecDSSUtilities;
 import hec.heclib.dss.HecDataManager;
 import hec.heclib.dss.HecTimeSeries;
@@ -72,14 +74,14 @@ static
     boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path
     String dll = "";
     boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies
-    // TODO SAM 2009-04-13 Need to add a loop to retry loading multiple times - might help when running on the server.
+    // TODO SAM 2009-04-15 This may not be needed - load problems were probably due to changing the "start in" folder
+    // for the app on Windows - keep for now.
     int maxTries = 5; // Number of times to try loading a library - have seen some exceptions on servers due to locking?
     int sleepMilliSeconds = 10;
     
     // Do each library separately to be able to better handle errors, but loop to avoid redundant code
     String [] libnames = { "javaHeclib", "rmaUtil" };
     UnsatisfiedLinkError [] libException = new UnsatisfiedLinkError[libnames.length]; // Default to null for each
-    boolean [] libLoaded = new boolean[libnames.length]; // Default to "true"
     for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
         // If not loading the rmaUtil, skip the second iteration
         if ( (ilib == 1) && !loadRmaUtil ) {
@@ -110,6 +112,8 @@ static
                     System.load( dll );
                     Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
                 }
+                // Sleep for the next try...
+                TimeUtil.sleep(sleepMilliSeconds);
             }
             // Exceptions should only be thrown if the test environment or build process is incorrect and should be
             // corrected on the developer side - users should never see an issue if the build process is correct.
@@ -245,7 +249,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
     else if ( dt.getPrecision() == DateTime.PRECISION_DAY ) {
         adjusted.setYear(dt.getYear());
         adjusted.setMonth(dt.getMonth());
-        adjusted.setMonth(dt.getDay());
+        adjusted.setDay(dt.getDay());
         if ( start ) {
             adjusted.setHour(0);
             adjusted.setMinute(0);
@@ -259,7 +263,7 @@ private static DateTime adjustRequestedDateTimePrecision ( DateTime dt, boolean 
     else if ( dt.getPrecision() == DateTime.PRECISION_HOUR ) {
         adjusted.setYear(dt.getYear());
         adjusted.setMonth(dt.getMonth());
-        adjusted.setMonth(dt.getDay());
+        adjusted.setDay(dt.getDay());
         adjusted.setHour(dt.getHour());
         adjusted.setMinute(0);
     }
@@ -321,6 +325,8 @@ Close the data files that may be open.
 public static void closeAllFiles ()
 {
     HecTimeSeries.closeAllFiles();
+    // As per Bill Charley, this will print the status of all files...
+    HecDSSFileDataManager.status();
 }
 
 /**
@@ -330,6 +336,7 @@ figured out for all requirements.
 Create a condensed pathname list.  Records that are duplicates except for D parts are removed from the list.
 This is necessary because the normal catalog method returns path names that show data blocks (e.g., one block
 per year), resulting in multiple pathnames for the same time series.
+Condensing works for time series records and paired data pass through.
 @param pathnameList A list of pathnames (as String).  This will be modified and returned.
 @return a condensed pathname list, as a new list.
 */
@@ -374,6 +381,7 @@ private static List createCondensedCatalog ( List pathnameList )
             cPart2 = dssPathName2.getCPart();
             ePart2 = dssPathName2.getEPart();
             fPart2 = dssPathName2.getFPart();
+            // TODO SAM 2009-04-16 Does this always work correctly for paired data?
             if ( !aPart.equals(aPart2) || !bPart.equals(bPart2) || !cPart.equals(cPart2) ||
                 !ePart.equals(ePart2) || !fPart.equals(fPart2)) {
                 // Not a continuation of the same time series
@@ -397,11 +405,14 @@ private static List createCondensedCatalog ( List pathnameList )
             dPart = dssPathName.getDPart();
             dssPathName.setDPart( dPart + " - " + dPart2 );
             condensedPathname = dssPathName.toString();
-            Message.printStatus( 2, routine, "Condensed pathname = \"" + condensedPathname + "\"" );
-            condensedPathnameList.add(dssPathName.toString());
+            //Message.printStatus( 2, routine, "Condensed pathname = \"" + condensedPathname + "\"" );
+            condensedPathnameList.add(condensedPathname);
             // Increment the counter to start a new set of records
             i += numAdditionalRecords;
         }
+    }
+    for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
+        Message.printStatus( 2, routine, "Condensed pathname " + i + " = \"" + condensedPathnameList.get(i) + "\"" );
     }
     Message.printStatus( 2, routine, "Removed " + numAdditionalRecordsTotal + " path records during condensing." );
     return condensedPathnameList;
@@ -803,6 +814,10 @@ throws Exception
     List tslist = new Vector();
     DateTime date1FromDPart = null;
     DateTime date2FromDPart = null;
+    // Create a file manager so that the utility code for sure knows the filename
+    //System.out.println("Creating HecDataManager");
+    HecDataManager hmgr = new HecDataManager(dssFilename);
+    //System.out.println("Created HecDataManager");
     // Loop through the pathnames and read each time series
     // Get the period from the D part in case data are not being read
     for ( int i = 0; i < condensedPathnameList.size(); i++ ) {
@@ -823,6 +838,7 @@ throws Exception
             // From RTi code above.
             String p = (String)condensedPathname;
             dssPathName = new DSSPathname ( p );
+            Message.printStatus ( 2, routine, "Reading using condensed pathname \"" + dssPathName + "\"." );
             aPart = dssPathName.getAPart();
             bPart = dssPathName.getBPart();
             cPart = dssPathName.getCPart();
@@ -850,6 +866,25 @@ throws Exception
             }
             ePart = cp1.ePart();
             fPart = cp1.fPart();
+        }
+        // Check here whether the pathname corresponds to a time series or not.
+        // This can't be called unless the HecDSSUtilities code is told what the DSS file is
+        //HecDSSUtilities hutil = new HecDSSUtilities.pathnameDataType(dssPathName.toString());
+        //System.out.println("Trying to get attributes");
+        String dssPathNameNotCondensed = uncondensedPathName(dssPathName).toString();
+        int t = hmgr.recordType(dssPathNameNotCondensed);
+        // TODO SAM 2009-04-16 Emailed Bill Charley to ask how to interpret the type and for now just skip types
+        // that obviously look inappropriate
+        if ( (t == HecDSSDataAttributes.PAIRED) || (t == HecDSSDataAttributes.PAIRED_DOUBLES) ||
+            (t == HecDSSDataAttributes.TEXT) ) {
+            Message.printStatus(2, routine, "Skipping path \"" + dssPathName + "\" because it is record type " + t +
+                " (not time series).");
+            continue;
+        }
+        else {
+            if ( Message.isDebugOn ) {
+                Message.printStatus(2, routine, "Path \"" + dssPathName + "\" has record type " + t + ".");
+            }
         }
         // Handle the D part similarly regardless of whether using RTi or HEC code above.
         if ( !dPart.equals("") ) {
@@ -1004,7 +1039,7 @@ throws Exception
             // If the read period has been requested, use it when reading the time series from HEC-DSS
             if ( (readStartReq != null) && (readEndReq != null) ) {
                 String timeWindow = createTimeWindowString ( adjustRequestedDateTimePrecision(readStartReq,true),
-                        adjustRequestedDateTimePrecision(readEndReq,false), ts, true );
+                    adjustRequestedDateTimePrecision(readEndReq,false), ts, true );
                 Message.printStatus(2, routine,
                     "Setting time window for read (requested by calling code) to \"" + timeWindow + "\"" );
                 rts.setTimeWindow(timeWindow);
@@ -1431,6 +1466,24 @@ private static DSSPathname getHecPathNameForTimeSeries ( TS ts, String A, String
 }
 
 /**
+Get the uncondensed pathname string given a condensed path name.  Examine the D part for a dash and two dates
+and return the first date only.
+@param DSS pathhname to evaluate.
+@return the uncondensed pathname.  A new instance is always returned.
+*/
+private static DSSPathname uncondensedPathName ( DSSPathname dssPathName )
+{
+    DSSPathname uncondensed = new DSSPathname(dssPathName.toString());
+    String dPart = dssPathName.getDPart();
+    if ( (dPart.length() == 21) && Character.isDigit(dPart.charAt(0)) && dPart.regionMatches(9, " - ", 0, 3)) {
+        // Assume that the part might be a normal path of form DDMonYYYY - DDMonYYYY
+        dPart = dPart.substring(0,9);
+        uncondensed.setDPart(dPart);
+    }
+    return uncondensed;
+}
+
+/**
 Write a list of time series to a HEC-DSS file.  
 @param outputFile the output file to write.  The file will be created if it does not already exist.
 The parent folder must exist.
@@ -1473,8 +1526,10 @@ throws IOException, Exception
 
     // Loop through the time series and write each to the file
     int tslistSize = tslist.size();
-    List pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written (path > 80 char)
-    List pathsNotWrittenBadIntervalList = new Vector(); // HEC-DSS time series that could not be written (interval not supported)
+    List<String> pathsNotWritten80List = new Vector(); // HEC-DSS time series that could not be written (path > 80 char)
+    List<String> pathsNotWrittenBadIntervalList = new Vector(); // HEC-DSS time series that could not be written (interval not supported)
+    List<String> errorDuplicatePathsList = new Vector(); // Writing multiple time series with the same path
+    List<String> pathsWrittenNoDPartList = new Vector(); // Unique list of paths (no D parts) that are written (duplicates removed) - for error check
     HecTimeSeries hts = null; // Put here because handle on time series is used to close HEC-DSS files after loop
     for ( int i = 0; i < tslistSize; i++ ) {
         TS ts = (TS)tslist.get(i);
@@ -1532,7 +1587,7 @@ throws IOException, Exception
         }
         // Set the pathname and use the E part to get the interval.
         DSSPathname dssPathName = getHecPathNameForTimeSeries(ts, A, B, C, E, F, null, null );
-        String pathname = dssPathName.toString().toUpperCase();
+        String pathname = dssPathName.toString(); // TODO SAM 2009-04-15 Evaluate use .toUpperCase();
         // Check the path name for <= 80 characters.
         if ( pathname.length() > 80 ) {
             pathsNotWritten80List.add ( pathname );
@@ -1541,6 +1596,31 @@ throws IOException, Exception
         if ( !isTimeSeriesIntervalSupportedByAPI(ts) ) {
             pathsNotWrittenBadIntervalList.add ( pathname );
         }
+        // Verify that the path is not already written (ignore the D part)
+        DSSPathname pathnameNoD = new DSSPathname();
+        pathnameNoD.setAPart(dssPathName.getAPart());
+        pathnameNoD.setBPart(dssPathName.getBPart());
+        pathnameNoD.setCPart(dssPathName.getCPart());
+        pathnameNoD.setEPart(dssPathName.getEPart());
+        pathnameNoD.setFPart(dssPathName.getFPart());
+        String pathnameNoDString = pathnameNoD.toString();
+        boolean duplicateFound = false;
+        int pathsWrittenNoDPartListSize = pathsWrittenNoDPartList.size();
+        Message.printStatus(2, routine, "Checking " + pathsWrittenNoDPartListSize + " paths for duplicates.");
+        for ( int ipath = 0; ipath < pathsWrittenNoDPartListSize; ipath++ ) {
+            Message.printStatus(2, routine, "Checking \"" + pathnameNoDString + "\" vs \"" +
+                    pathsWrittenNoDPartList.get(ipath) + "\"" );
+            if ( pathnameNoDString.equalsIgnoreCase(pathsWrittenNoDPartList.get(ipath))) {
+                duplicateFound = true;
+                errorDuplicatePathsList.add(pathname); // Include D so user can match
+                break;
+            }
+        }
+        if ( !duplicateFound ) {
+            // Add to the list of unique paths (no D part) that are written, to allow check
+            pathsWrittenNoDPartList.add ( pathnameNoDString );
+        }
+        // End of duplicate path check
         tsc.fullName = pathname;
         tsc.interval = HecTimeSeries.getIntervalFromEPart(dssPathName.getEPart());
         // Set the data units - any string can be used but may want to standardize to allow units conversion
@@ -1589,32 +1669,49 @@ throws IOException, Exception
         }
     }
     // Close the file if requested - not the default because it may be a performance hit
-    if ( closeFileAfterWrite && (hts != null) ) {
-        hts.done();
-        hts.close();
-        hts.closeDSSFile();
+    if ( closeFileAfterWrite ) {
+        if ( hts != null ) {
+            // TODO SAM 2009-04-14 does not seem to work
+            hts.done();
+            hts.close();
+            hts.closeDSSFile();
+        }
         //Heclib.zclose(ifltab);
+        // The following is code from Bill Charley
+        closeAllFiles();
     }
     // Throw an exception if there were any other problems in the loop.  Could put this in the loop but want
-    // as much writing to occur as possible.  For now a single message can be written
+    // as much writing to occur as possible.  For now a single message is passed back to the calling code.
     int pathsNotWritten80ListSize = pathsNotWritten80List.size();
     int pathsNotWrittenBadIntervalListSize = pathsNotWritten80List.size();
+    StringBuffer b = new StringBuffer();
     if ( (pathsNotWritten80ListSize > 0) || (pathsNotWrittenBadIntervalListSize > 0) ) {
-        StringBuffer b = new StringBuffer();
-        b.append ( "Error writing the following time series because the pathname is > 80 characters:" );
+        b.append ( "\nError writing the following time series because the pathname is > 80 characters:\n" );
         for ( int i = 0; i < pathsNotWritten80ListSize; i++ ) {
             if ( i > 0 ) {
-                b.append ( ", " );
+                b.append ( "\n" );
             }
             b.append ( (String)pathsNotWritten80List.get(i) );
         }
-        b.append ( "\nError writing the following time series because the interval is not supported:" );
+        b.append ( "\nError writing the following time series because the interval is not supported:\n" );
         for ( int i = 0; i < pathsNotWrittenBadIntervalListSize; i++ ) {
             if ( i > 0 ) {
-                b.append ( ", " );
+                b.append ( "\n" );
             }
             b.append ( (String)pathsNotWrittenBadIntervalList.get(i) );
         }
+    }
+    int errorDuplicatePathsListSize = errorDuplicatePathsList.size();
+    if ( errorDuplicatePathsListSize > 0 ) {
+        b.append ( "\nDuplicate HEC-DSS paths (A-C,E-F) for the following time series (may result in merged/overwritten output):\n" );
+        for ( int i = 0; i < errorDuplicatePathsListSize; i++ ) {
+            if ( i > 0 ) {
+                b.append ( "\n" );
+            }
+            b.append ( (String)errorDuplicatePathsList.get(i) );
+        }
+    }
+    if ( b.length() > 0 ) {
         throw new RuntimeException ( b.toString() );
     }
 }

@@ -271,8 +271,7 @@ private File getOutputFile ()
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -483,13 +482,22 @@ CommandWarningException, CommandException
             // Convert to an absolute path...
             OutputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                     TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing HEC-DSS file \"" + OutputFile_full + "\"" );
             HecDssAPI.writeTimeSeriesList ( new File(OutputFile_full), tslist,
 				OutputStart_DateTime, OutputEnd_DateTime, "", Precision_int, Type, A, B, C, E, F, Replace_boolean,
 				Close_boolean );
             // Save the output file name...
             setOutputFile ( new File(OutputFile_full));
+        }
+        catch ( RuntimeException e ) {
+            message = "Error writing time series to HEC-DSS file \"" + OutputFile_full + "\" (" + e + ")";
+            Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            Message.printWarning ( 3, routine, e );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE, message, "Check log file for details." ) );
+            throw new CommandException ( message );
         }
         catch ( Exception e ) {
             message = "Unexpected error writing time series to HEC-DSS file \"" + OutputFile_full + "\" (" + e + ")";

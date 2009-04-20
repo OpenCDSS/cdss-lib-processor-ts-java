@@ -290,7 +290,8 @@ private void initialize(JFrame parent, Command command) {
     "The D part (start of period) is handled by specifying the input period." ), 
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "Or, instead of specifying parts, specify the DSS pathname to read a specific time series." ), 
+    "Or, instead of specifying parts, specify the DSS pathname to read a specific time series " +
+    "(the path will be used before the parts)." ), 
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "The alias can be assigned for time series based on time series properties, for example use " +

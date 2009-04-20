@@ -506,8 +506,8 @@ private void initialize ( JFrame parent, Command command )
     __Close_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Close_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "<html>Optional - close HEC-DSS file after write (default="+
-        __command._False + "). <b>Under development.</b></html>" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - close HEC-DSS file after write (default="+
+        __command._False + ")." ), 
         2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

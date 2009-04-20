@@ -676,6 +676,16 @@ throws InvalidCommandParameterException, CommandWarningException,
                     message, "Verify that data exist for the time series." ) );
     	}
 	}
+	
+	if ( (__param_k != 0.0) && (Math.abs(__param_k) < .5*original_ts.getDataIntervalMult() ) ) {
+        message = "The K value (" + __param_k + ") is < .5 the time series interval (" +
+        original_ts.getIdentifier().getInterval() + ") - results may not be accurate.";
+        Message.printWarning(log_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.WARNING,
+                message, "Specify the K value as 0 or > .5 the time series interval." ) );
+    }
 
 	// Lag the time series...
 	try {

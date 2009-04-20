@@ -65,7 +65,7 @@ throws InvalidCommandParameterException
     String DssFile = parameters.getValue ( "DssFile" );
     String InputFile = parameters.getValue ( "InputFile" );
     String OutputFile = parameters.getValue ( "OutputFile" );
-	//String DssutlProgram = parameters.getValue ( "DssutlProgram" );
+	String DssutlProgram = parameters.getValue ( "DssutlProgram" );
 	String warning = "";
 	String message;
 
@@ -73,47 +73,49 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-    if ( (DssFile == null) || (DssFile.length() == 0) ) {
-        message = "The HEC-DSS file must be specified.";
-        warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the HEC-DSS file."));
-    }
-    else {
-        String working_dir = null;
-        try {
-            Object o = processor.getPropContents ( "WorkingDir" );
-            // Working directory is available so use it...
-            if ( o != null ) {
-                working_dir = (String)o;
+	// Required for DSSUTL, use the OPEN command in command files for other utilities
+	if ( (DssutlProgram != null) && dssFileArgRequired(DssutlProgram) ) {
+        if ( (DssFile == null) || (DssFile.length() == 0) ) {
+            message = "The HEC-DSS file must be specified.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the HEC-DSS file."));
+        }
+        else {
+            String working_dir = null;
+            try {
+                Object o = processor.getPropContents ( "WorkingDir" );
+                // Working directory is available so use it...
+                if ( o != null ) {
+                    working_dir = (String)o;
+                }
+            }
+            catch ( Exception e ) {
+                message = "Error requesting WorkingDir from processor.";
+                warning += "\n" + message;
+                Message.printWarning(3, routine, message );
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an existing input file." ) );
+            }
+            try {
+                //String adjusted_path = 
+                IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,DssFile)));
+            }
+            catch ( Exception e ) {
+                message = "The HEC-DSS file:\n" +
+                "    \"" + InputFile +
+                "\"\ncannot be adjusted using the working directory:\n" +
+                "    \"" + working_dir + "\".";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the HEC-DSS file and working directory paths are compatible." ) );
             }
         }
-        catch ( Exception e ) {
-            message = "Error requesting WorkingDir from processor.";
-            warning += "\n" + message;
-            Message.printWarning(3, routine, message );
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify an existing input file." ) );
-        }
-    
-        try {
-            //String adjusted_path = 
-            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
-                    TSCommandProcessorUtil.expandParameterValue(processor,this,DssFile)));
-        }
-        catch ( Exception e ) {
-            message = "The HEC-DSS file:\n" +
-            "    \"" + InputFile +
-            "\"\ncannot be adjusted using the working directory:\n" +
-            "    \"" + working_dir + "\".";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the HEC-DSS file and working directory paths are compatible." ) );
-        }
-    }
+	}
     
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
@@ -216,6 +218,31 @@ throws InvalidCommandParameterException
 }
 
 /**
+Indicate whether the DSSFILE= command line argument is required, given the program name.
+@param programName name of the program being run (full or relational path).
+@return true if the program requires the DSSFILE= command line argument.
+*/
+public boolean dssFileArgRequired ( String programName )
+{
+    if ( programName == null ) {
+        return false;
+    }
+    if ( (StringUtil.indexOfIgnoreCase(programName,"DSPLAY",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"DSSITS",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"DSSPD",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"DSSTS",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"DSSTXT",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"DSSUTL",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"NWSDSS",0) >= 0) ||
+        (StringUtil.indexOfIgnoreCase(programName,"WATDSS",0) >= 0)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
 @return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed.
@@ -294,9 +321,13 @@ CommandWarningException, CommandException
 	if ( (DssutlProgram == null) || DssutlProgram.equals("") ) {
 	    DssutlProgram = "DSSUTL.EXE"; // Default
 	}
-	String DssFile = parameters.getValue ( "DssFile" );
+    boolean includeDssFileOnCommandLine = dssFileArgRequired(DssutlProgram);
+	int narray = 2; // Number of items in the command array:  DssutlProgram, InputFile, and optionally DSSFILE
 	String InputFile = parameters.getValue ( "InputFile" );
-	int narray = 3; // Number of items in the command array:  DssutlProgram, DssFile, and InputFile
+	String DssFile = parameters.getValue ( "DssFile" );
+	if ( (DssFile != null) && !DssFile.equals("") ) {
+        ++narray;
+    }
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	if ( (OutputFile != null) && !OutputFile.equals("") ) {
 	    ++narray;
@@ -313,7 +344,10 @@ CommandWarningException, CommandException
     //String DssutlProgram_full = IOUtil.getPathUsingWorkingDir(DssutlProgram_forDSSUTL);
     String DssFile_forDSSUTL = IOUtil.verifyPathForOS(
         TSCommandProcessorUtil.expandParameterValue(processor,this,DssFile));
-    String DssFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DssFile_forDSSUTL);
+    String DssFile_full = null;
+    if ( (DssFile != null) && !DssFile.equals("") ) {
+        DssFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DssFile_forDSSUTL);
+    }
     String InputFile_forDSSUTL = IOUtil.verifyPathForOS(
         TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile));
     String InputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile_forDSSUTL);
@@ -325,7 +359,7 @@ CommandWarningException, CommandException
         OutputFile_full = IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile_forDSSUTL);
     }
     
-    if ( !IOUtil.fileExists(DssFile_full) ) {
+    if ( includeDssFileOnCommandLine && !IOUtil.fileExists(DssFile_full) ) {
         message = "HEC-DSS file \"" + DssFile_full + "\" does not exist.";
         Message.printWarning ( warning_level, 
         MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
@@ -360,8 +394,18 @@ CommandWarningException, CommandException
 		throw new InvalidCommandParameterException ( message );
 	}
 	
-	String CommandLine_full = DssutlProgram_forDSSUTL + " DSSFILE=" + DssFile_forDSSUTL + " INPUT=" + InputFile_forDSSUTL +
-	    " OUTPUT=" + OutputFile_forDSSUTL;
+	String CommandLine_full = null;
+	StringBuffer b = new StringBuffer();
+	// This is for troubleshooting and is not actually used to run the program
+	b.append(DssutlProgram_forDSSUTL + " INPUT=" + InputFile_forDSSUTL );
+	if ( includeDssFileOnCommandLine ) {
+	    // Include the DSSFILE command line argument because it is required
+	    b.append ( " DSSFILE=" + DssFile_forDSSUTL );
+	}
+    if ( (OutputFile != null) && !OutputFile.equals("") ) {
+        b.append (" OUTPUT=" + OutputFile_forDSSUTL);
+    }
+    CommandLine_full = b.toString();
 	try {
         // Expand the command line to recognize processor-level properties like WorkingDir
         CommandLine_full = TSCommandProcessorUtil.expandParameterValue(processor,this,CommandLine_full);
@@ -371,7 +415,9 @@ CommandWarningException, CommandException
         String [] commandArray = new String[narray];
         int iarg = 0;
         commandArray[iarg++] = DssutlProgram_forDSSUTL;
-        commandArray[iarg++] = "DSSFILE=" + DssFile_forDSSUTL;
+        if ( includeDssFileOnCommandLine ) {
+            commandArray[iarg++] = "DSSFILE=" + DssFile_forDSSUTL;
+        }
         commandArray[iarg++] = "INPUT=" + InputFile_forDSSUTL;
         if ( (OutputFile != null) && !OutputFile.equals("") ) {
             commandArray[iarg++] = "OUTPUT=" + OutputFile_forDSSUTL;

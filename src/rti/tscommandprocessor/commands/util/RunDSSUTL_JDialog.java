@@ -283,21 +283,22 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command run runs the DSSUTL program, developed by the US Army Corps of Engineers." ),
+		"This command runs the DSSUTL and other HEC-DSS utility programs, " +
+		"which have been developed by the US Army Corps of Engineers." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "DSSUTL processes data stored in a HEC-DSS binary database file, using DSSUTL commands in the input file." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The DSSUTL program location must be in the PATH environment variable, specified using an absolute" +
+        "The utility program location must be in the PATH environment variable, specified using an absolute" +
         "path, or specified using ${WorkingDir}, which is the location of the command file." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The HEC-DSS file must exist because otherwise the DSSUTL software prompts for the filename, and interaction " +
-        "with DSSUTL from TSTool is not enabled." ),
+        "with utility programs from TSTool is not enabled." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "DSSUTL will be run in TSTool's working directory (command file location)." ),
+        "The program will be run in TSTool's working directory (command file location)." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path to HEC-DSS, input, and output files (relative to working directory)." ), 
@@ -316,6 +317,7 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
 	__browseDssFile_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browseDssFile_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    __DssFile_JTextField.setToolTipText("Required for DSSUTL, DSPLAY.");
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -326,6 +328,7 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
     __browseInputFile_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browseInputFile_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    __InputFile_JTextField.setToolTipText("Required for all programs.");
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -336,6 +339,7 @@ private void initialize ( JFrame parent, RunDSSUTL_Command command )
     __browseOutputFile_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browseOutputFile_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    __OutputFile_JTextField.setToolTipText("Optional for all programs.");
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("DSSUTL program:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

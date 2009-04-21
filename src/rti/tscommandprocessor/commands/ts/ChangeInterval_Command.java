@@ -65,6 +65,8 @@ protected final String _Interpolate = "Interpolate";
 protected final String _KeepMissing = "KeepMissing";
 protected final String _Repeat      = "Repeat";
 protected final String _SetToZero   = "SetToZero";
+public final String _IncFirstOnly   = "IncludeFirstOnly";
+public final String _AvgEndpoints   = "AverageEndpoints";
 
 private final boolean  __read_one    = true;	// For now only enable the TS Alias notation.
 /**
@@ -99,6 +101,8 @@ throws InvalidCommandParameterException
 	String NewInterval = parameters.getValue( "NewInterval"  );
 	String OldTimeScale = parameters.getValue( "OldTimeScale"  );
 	String NewTimeScale = parameters.getValue( "NewTimeScale"  );
+	String Tolerance = parameters.getValue( "Tolerance"  );
+	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow"  );
 	String AllowMissingCount  = parameters.getValue("AllowMissingCount"  );
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent= parameters.getValue("AllowMissingPercent");
@@ -229,7 +233,32 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify the allowed missing count as an interger."));
 
 	}
-	
+
+	// If the Tolerance is specified, it should be a double.
+	if ( Tolerance!=null && (Tolerance.length()>0) &&
+		( !StringUtil.isDouble(Tolerance) || StringUtil.atod(Tolerance) < 0  ||
+        StringUtil.atod(Tolerance) > 1 )) {
+        message = "Tolerance \"" + Tolerance + "\" must be a number between 0 and 1 (0.01 = 1 percent).";
+		warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify the allowed missing count as an interger."));
+
+	}
+
+    // If the HandleEndpointsHow is specified, make sure it is valid.
+	if ( HandleEndpointsHow!=null && HandleEndpointsHow.length()>0 ) {
+		if (!HandleEndpointsHow.equalsIgnoreCase(_IncFirstOnly)&&
+			!HandleEndpointsHow.equalsIgnoreCase(_AvgEndpoints)){
+            message = "The HandleEndpointsHow (" + HandleEndpointsHow + ") parameter is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message, "Valid values are \"" + _IncFirstOnly
+                        + ", and \"" + _AvgEndpoints + "\"."));
+		}
+	}
+
 	// If the AllowMissingPercent is specified, it should be an number.
 	/* TODO SAM 2005-02-18 may enable later
 	if ( AllowMissingPercent!=null && (AllowMissingPercent.length()>0) &&
@@ -281,6 +310,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "NewTimeScale" );
     valid_Vector.add ( "NewDataType" );
     valid_Vector.add ( "NewUnits" );
+    valid_Vector.add ( "Tolerance" );
+    valid_Vector.add ( "HandleEndpointsHow" );
     valid_Vector.add ( "AllowMissingCount" );
     valid_Vector.add ( "OutputFillMethod" );
     valid_Vector.add ( "HandleMissingInputHow" );
@@ -433,6 +464,8 @@ throws InvalidCommandParameterException,
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
 	String NewDataType = parameters.getValue( "NewDataType" );
 	String NewUnits = parameters.getValue( "NewUnits" );
+	String Tolerance = parameters.getValue( "Tolerance" );
+	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
 	String AllowMissingCount = parameters.getValue("AllowMissingCount"  );
 	/* TODO SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
@@ -453,6 +486,12 @@ throws InvalidCommandParameterException,
 	}
     if ( NewUnits != null && NewUnits.length() > 0  ) {
         props.set ( "NewUnits", NewUnits );
+    }
+    if ( Tolerance != null && Tolerance.length() > 0  ) {
+        props.set ( "Tolerance", Tolerance );
+    }
+    if ( HandleEndpointsHow != null && HandleEndpointsHow.length() > 0  ) {
+        props.set ( "HandleEndpointsHow", HandleEndpointsHow );
     }
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0  ) {
 		props.set ( "AllowMissingCount", AllowMissingCount );
@@ -578,6 +617,8 @@ public String toString ( PropList props )
 	String NewTimeScale = props.getValue( "NewTimeScale" );
 	String NewDataType = props.getValue( "NewDataType" );
 	String NewUnits = props.getValue( "NewUnits" );
+	String Tolerance = props.getValue( "Tolerance" );
+	String HandleEndpointsHow = props.getValue( "HandleEndpointsHow" );
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent = props.getValue( "AllowMissingPercent" );
@@ -613,7 +654,7 @@ public String toString ( PropList props )
 		b.append ( "NewTimeScale=" + NewTimeScale  );
 	}
 
-	// Adding the OutputFile
+	// Adding the NewDataType
 	if ( NewDataType != null && NewDataType.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewDataType=" + NewDataType );
@@ -623,7 +664,17 @@ public String toString ( PropList props )
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "NewUnits=" + NewUnits );
     }
+
+    if ( Tolerance != null && Tolerance.length() > 0 ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "Tolerance=" + Tolerance );
+    }
 	
+    if ( HandleEndpointsHow != null && HandleEndpointsHow.length() > 0 ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "HandleEndpointsHow=" + HandleEndpointsHow );
+    }
+
 	// Adding the AllowMissingCount
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );

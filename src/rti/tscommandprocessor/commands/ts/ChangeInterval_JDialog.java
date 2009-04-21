@@ -87,6 +87,8 @@ private SimpleJComboBox	__OldTimeScale_JComboBox = null;
 private SimpleJComboBox	__NewTimeScale_JComboBox = null;
 private JTextField	__NewDataType_JTextField = null;
 private JTextField  __NewUnits_JTextField = null;// Field for new units
+private JTextField	__Tolerance_JTextField = null;
+private SimpleJComboBox	__HandleEndpointsHow_JComboBox = null;
 private JTextField	__AllowMissingCount_JTextField = null;
 						// Number of missing to allow
 						// in input when converting.
@@ -162,6 +164,8 @@ private void checkInput ()
 	String NewTimeScale  = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewDataType = __NewDataType_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String Tolerance = __Tolerance_JTextField.getText().trim();
+    String HandleEndpointsHow = __HandleEndpointsHow_JComboBox.getSelected();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	/* TODO LT 2005-05-24 may enable later		
 	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
@@ -196,6 +200,15 @@ private void checkInput ()
 	}
 	if ( NewUnits != null && NewUnits.length() > 0 ) {
 	     props.set( "NewUnits", NewUnits );
+	}
+    // Tolerance
+    if ( Tolerance != null && Tolerance.length() > 0 ) {
+	     props.set( "Tolerance", Tolerance );
+	}
+    // HandleEndpointsHow
+	if ( HandleEndpointsHow != null &&
+	     HandleEndpointsHow.length() > 0 ) {
+		props.set( "HandleEndpointsHow", HandleEndpointsHow );
 	}
 	// AllowMissingCount
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
@@ -240,6 +253,8 @@ private void commitEdits ()
 	String NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewDataType = __NewDataType_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
+	String Tolerance = __Tolerance_JTextField.getText().trim();
+    String HandleEndpointsHow = __HandleEndpointsHow_JComboBox.getSelected();
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	/* TODO LT 2005-05-24 may enable later		
 	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
@@ -254,6 +269,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "NewTimeScale", NewTimeScale );
 	__command.setCommandParameter ( "NewDataType", NewDataType );
 	__command.setCommandParameter ( "NewUnits", NewUnits );
+	__command.setCommandParameter ( "Tolerance", Tolerance );
+	__command.setCommandParameter ( "HandleEndpointsHow", HandleEndpointsHow );
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount );
 	/* TODO LT 2005-05-24 may enable later
 	__command.setCommandParameter ( "AllowMissingPercent", AllowMissingPercent ); */
@@ -278,6 +295,8 @@ throws Throwable
 	__AllowMissingPercent_JTextField  = null; */
 	__NewTimeScale_JComboBox 	  = null;
 	__NewDataType_JTextField 	  = null;
+	__Tolerance_JTextField 	  = null;
+	__HandleEndpointsHow_JComboBox = null;
 	__OutputFillMethod_JComboBox 	  = null;
 	__HandleMissingInputHow_JComboBox = null;
 	__Command_JTextArea		  = null;
@@ -398,7 +417,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Data type (default = original time series data type)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // New data type
+    // New units
     JGUIUtil.addComponent(main_JPanel,new JLabel ("New units:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NewUnits_JTextField = new JTextField ( "", 10 );
@@ -407,6 +426,33 @@ private void initialize ( JFrame parent, Command command )
     __NewUnits_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Data units (default = original time series units)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Tolerance
+    JGUIUtil.addComponent(main_JPanel,new JLabel ("Tolerance:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Tolerance_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __Tolerance_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Tolerance (default = 1% (0.01))."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Handle endpoints how?
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Handle endpoints how?:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__HandleEndpointsHow_JComboBox = new SimpleJComboBox ( false );
+	List endpoints_Vector = new Vector(4);
+	endpoints_Vector.add ( "" );	// Blank is default
+	endpoints_Vector.add ( __command._IncFirstOnly );
+	endpoints_Vector.add ( __command._AvgEndpoints );
+	__HandleEndpointsHow_JComboBox.setData ( endpoints_Vector );
+	__HandleEndpointsHow_JComboBox.select ( 0 );	// Default
+	__HandleEndpointsHow_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JComboBox,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - Indicate how to handle endpoints values in input (default=" + __command._IncFirstOnly + ")."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
     JGUIUtil.addComponent(main_JPanel, new JLabel("Allow missing count:"), 
@@ -581,6 +627,8 @@ private void refresh ()
 	String NewInterval = "";
 	String NewDataType = "";
 	String NewUnits = "";
+	String Tolerance = "";
+	String HandleEndpointsHow = "";
 	String OldTimeScale = "";
 	String NewTimeScale = "";
 	String AllowMissingCount = "";
@@ -604,6 +652,8 @@ private void refresh ()
 		NewInterval = props.getValue( "NewInterval" );
 		NewDataType = props.getValue( "NewDataType" );
 		NewUnits = props.getValue( "NewUnits" );
+		Tolerance = props.getValue( "Tolerance" );
+		HandleEndpointsHow = props.getValue( "HandleEndpointsHow" );
 		OldTimeScale = props.getValue( "OldTimeScale" );
 		NewTimeScale = props.getValue( "NewTimeScale" );
 		AllowMissingCount = props.getValue( "AllowMissingCount" );
@@ -713,11 +763,40 @@ private void refresh ()
 		if ( NewDataType != null ) {
 			__NewDataType_JTextField.setText ( NewDataType);
 		}
-		
+
+        // Update new units text field
         if ( NewUnits != null ) {
             __NewUnits_JTextField.setText ( NewUnits );
         }
-		
+
+        // Update tolerance text field
+        if ( Tolerance != null ) {
+            __Tolerance_JTextField.setText ( Tolerance );
+        }
+
+        // Update HandleEndpointsHow text field
+		// Select the item in the list. If not a match, print a warning.
+		if ( HandleEndpointsHow == null ) {
+			// Select default...
+			__HandleEndpointsHow_JComboBox.select ( 0 );
+		}
+		else {	try {	JGUIUtil.selectTokenMatches (
+				__HandleEndpointsHow_JComboBox,
+					true, " ", 0, 0,
+					HandleEndpointsHow, null );
+			}
+			catch ( Exception e ) {
+				mssg = "Existing " + __command.getCommandName()
+					+ "() references an unrecognized\n"
+					+ "HandleEndpointsHow value \""
+					+ HandleEndpointsHow
+					+ "\".  Using the user value.";
+				Message.printWarning ( 2, mthd, mssg );
+				__HandleEndpointsHow_JComboBox.
+					setText ( HandleEndpointsHow );
+			}
+		}
+
 		// Update AllowMissingCount text field
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText (
@@ -788,6 +867,8 @@ private void refresh ()
 	NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	NewDataType = __NewDataType_JTextField.getText().trim();
 	NewUnits = __NewUnits_JTextField.getText().trim();
+	Tolerance = __Tolerance_JTextField.getText().trim();
+    HandleEndpointsHow = __HandleEndpointsHow_JComboBox.getSelected();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	/* TODO LT 2005-05-24 may enable later		
 	AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
@@ -803,6 +884,8 @@ private void refresh ()
 	props.add ( "NewTimeScale=" + NewTimeScale );
 	props.add ( "NewDataType=" + NewDataType );
 	props.add ( "NewUnits=" + NewUnits );
+	props.add ( "Tolerance=" + Tolerance );
+	props.add ( "HandleEndpointsHow=" + HandleEndpointsHow );
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	/* TODO LT 2005-05-24 may enable later	
 	props.add ( "AllowMissingPercent=" + AllowMissingPercent   ); */

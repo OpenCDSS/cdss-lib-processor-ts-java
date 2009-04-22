@@ -72,11 +72,9 @@ public Scale_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -94,56 +92,46 @@ throws InvalidCommandParameterException
 	if ( (TSID == null) || TSID.equals("") ) {
         message = "The time series identifier must be specified.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Provide a time series identifier." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Provide a time series identifier." ) );
 	}
     */
 	if ( (ScaleValue == null) || ScaleValue.equals("") ) {
         message = "The scale value must be specified.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Provide a scale value." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Provide a scale value." ) );
 	}
 	else if ( !ScaleValue.equalsIgnoreCase(_DaysInMonth) &&
 		!ScaleValue.equalsIgnoreCase(_DaysInMonthInverse) &&
 		!StringUtil.isDouble(ScaleValue) ) {
-		warning +=
-			"\nThe scale value \"" + ScaleValue +
-			"\" is not a number, " + _DaysInMonth + ", or " +
-			_DaysInMonthInverse + ".";
         message = "The scale value (" + ScaleValue + ") is invalid.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the scale value as a number, " + _DaysInMonth + ", or " +
-            _DaysInMonthInverse + "." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the scale value as a number, " + _DaysInMonth + ", or " + _DaysInMonthInverse + "." ) );
 	}
-	if (	(AnalysisStart != null) && !AnalysisStart.equals("") &&
-		!AnalysisStart.equalsIgnoreCase("OutputStart") &&
-		!AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse(AnalysisStart);
+	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
+		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
+		try {
+		    DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
             message = "The analysis start date/time \"" + AnalysisStart + "\" is not a valid date/time.";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time, OutputStart, or output end." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time, OutputStart, or output end." ) );
 		}
 	}
-	if (	(AnalysisEnd != null) && !AnalysisEnd.equals("") &&
-		!AnalysisEnd.equalsIgnoreCase("OutputStart") &&
-		!AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( AnalysisEnd );
+	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
+		!AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+		try {
+		    DateTime.parse( AnalysisEnd );
 		}
 		catch ( Exception e ) {
             message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
     
@@ -159,9 +147,7 @@ throws InvalidCommandParameterException
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		Message.printWarning ( warning_level, MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -171,8 +157,7 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
@@ -183,10 +168,8 @@ public boolean editCommand ( JFrame parent )
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
@@ -272,12 +255,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 Run the command.
 ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,

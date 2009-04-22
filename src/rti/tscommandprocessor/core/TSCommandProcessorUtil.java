@@ -31,8 +31,7 @@ import RTi.Util.Table.DataTable;
 
 /**
 This class contains static utility methods to support TSCommandProcessor.  These methods
-are here to prevent the processor from getting to large and in some cases because code is
-being migrated.
+are here to prevent the processor from getting to large and in some cases because code is being migrated.
 */
 public abstract class TSCommandProcessorUtil
 {
@@ -1043,6 +1042,25 @@ public static String getWorkingDirForCommand ( CommandProcessor processor, Comma
 		Message.printWarning(3, routine, message );
 	}
 	return null;
+}
+
+/**
+Determine the index of a command in the processor.  A reference comparison occurs.
+@param command A command to search for in the processor.
+@param startIndex the starting index for processing.
+@return the index (0+) of the matching command, or -1 if not found.
+*/
+public static int indexOf ( CommandProcessor processor, Command command, int startIndex )
+{   List<Command> commands = processor.getCommands();
+    int size = commands.size();
+    Command c;
+    for ( int i = startIndex; i < size; i++ ) {
+        c = commands.get(i);
+        if ( c == command ) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 /**

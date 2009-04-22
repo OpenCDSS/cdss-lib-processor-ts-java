@@ -1,11 +1,9 @@
 package rti.tscommandprocessor.commands.check;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import RTi.Util.IO.CheckFile_DataModel;
 import RTi.Util.IO.CommandProcessorEvent;
 import RTi.Util.IO.CommandProcessorEventListener;
 import RTi.Util.IO.HTMLWriter;
@@ -166,9 +164,28 @@ private void startHTML( HTMLWriter html ) throws Exception
 {
     if ( html != null ) {
         html.htmlStart();
-        html.headForCheckFile();
+        writeCheckFileStyle(html);
         html.bodyStart();
     }
+}
+
+/**
+Inserts the style attributes for a check file.
+@throws Exception
+ */
+public void writeCheckFileStyle(HTMLWriter html) throws Exception
+{
+    html.write("<style>\n"
+            + "#titles { font-weight:bold; color:#303044 }\n"
+            + "table { background-color:black; text-align:left }\n"  
+            + "th {background-color:#333366; text-align:center;"
+            + " vertical-align:bottom; color:white }\n" 
+            + "td {background-color:white; text-align:center;"
+            + " vertical-align:bottom; }\n" 
+            + "body { text-align:left; font-size:12; }\n"
+            + "pre { font-size:12; }\n"
+            + "p { font-size:12; }\n"
+            + "</style>\n");
 }
 
 /**

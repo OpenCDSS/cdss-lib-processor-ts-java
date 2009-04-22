@@ -953,6 +953,9 @@ public Object getPropContents ( String prop ) throws Exception
     else if ( prop.equalsIgnoreCase("ColoradoIppDMIList") ) {
         return getPropContents_ColoradoIppDMIList();
     }
+    else if ( prop.equalsIgnoreCase("CommandFileName") ) {
+        return getCommandFileName();
+    }
 	else if ( prop.equalsIgnoreCase("CreateOutput") ) {
 		return getPropContents_CreateOutput();
 	}
@@ -1414,21 +1417,7 @@ Determine the index of a command in the processor.  A reference comparison occur
 @return the index (0+) of the matching command, or -1 if not found.
 */
 public int indexOf ( Command command )
-{	// Uncomment to troubleshoot
-	//String routine = getClass().getName() + ".indexOf";
-	int size = size();
-	Command c;
-	//Message.printStatus ( 2, routine, "Checking " + size + " commands for command " + command );
-	for ( int i = 0; i < size; i++ ) {
-		c = (Command)__Command_Vector.get(i);
-		//Message.printStatus ( 2, routine, "Comparing to command " + c );
-		if ( c == command ) {
-			//Message.printStatus ( 2, routine, "Found command." );
-			return i;
-		}
-	}
-	//Message.printStatus ( 2, routine, "Did not find command." );
-	return -1;
+{	return TSCommandProcessorUtil.indexOf(this,command,0);
 }
 
 /**

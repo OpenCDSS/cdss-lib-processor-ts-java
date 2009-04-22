@@ -17,7 +17,9 @@ import RTi.Util.String.StringUtil;
 import rti.tscommandprocessor.commands.ipp.ReadColoradoIPP_Command;
 
 // Data checks (for now keep separate from logging and data tests)
+import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.OpenCheckFile_Command;
+import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
 // DataTest commands
 // FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
@@ -312,6 +314,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("ChangeInterval") ) {
 		return new ChangeInterval_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"CheckTimeSeries") ) {
+        return new CheckTimeSeries_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"CompareFiles") ) {
 		return new CompareFiles_Command ();
 	}
@@ -702,6 +707,9 @@ throws UnknownCommandException
 
     else if ( isTScommand && TScommand.equalsIgnoreCase("WeightTraces") ) {
         return new WeightTraces_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteCheckFile") ) {
+        return new WriteCheckFile_Command ();
     }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteDateValue") ) {
 		return new WriteDateValue_Command ();

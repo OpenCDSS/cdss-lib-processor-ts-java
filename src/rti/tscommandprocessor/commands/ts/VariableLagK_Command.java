@@ -199,6 +199,8 @@ throws InvalidCommandParameterException
     // Lag is not required - can attenuate without
 
     __Lag_Table = null;
+    int countLagPositive = 0;
+    int countLagNegative = 0;
 	if ( (Lag != null) && !Lag.equals("") ) {
 		// If pair values are specified, make sure they are a sequence of numbers.  Save the results
 	    // for use when running the command.
@@ -220,7 +222,7 @@ throws InvalidCommandParameterException
 		    __Lag_Table = new Table();
 		    __Lag_Table.allocateDataSpace(size/2);
     		String token;
-            double value = 0.0, lag = 0.0; // "value" needs to stick around because it is saved with lag
+            double flowValue = 0.0, lag = 0.0; // "value" needs to stick around because it is saved with lag
             double value_prev = 0.0;
     		for ( int i = 0; i < size; i++ ) {
     			token = ((String)tokens.get(i)).trim();
@@ -240,25 +242,39 @@ throws InvalidCommandParameterException
                 }
     			else {
     			    if ( (i%2) == 0 ) {
-    			        value = Double.parseDouble(token);
+    			        flowValue = Double.parseDouble(token);
     			    }
     			    else {
     			        lag = Double.parseDouble(token);
+                        if ( lag > 0.0 ) {
+                            ++countLagPositive;
+                        }
+                        else if ( lag < 0.0 ) {
+                            ++countLagNegative;
+                        }
     			        // Have processed the value and lag so set in the table.
-    			        __Lag_Table.set(i/2, value, lag);
-                        if ( (i > 1) && (value <= value_prev) ) {
+    			        __Lag_Table.set(i/2, flowValue, lag);
+                        if ( (i > 1) && (flowValue <= value_prev) ) {
                             // Verify that the flow value is larger than the previous value
-                            message = "Flow value (" + StringUtil.formatString(value,"%.4f") +
+                            message = "Flow value (" + StringUtil.formatString(flowValue,"%.4f") +
                                 ") is <= previous flow value in the Lag table.";
                             warning += "\n" + message;
                             status.addToLog(CommandPhaseType.INITIALIZATION,
                                 new CommandLogRecord(CommandStatusType.FAILURE, message,
                                 "Verify that flow values are in increasing order in the Lag table."));
                         }
-                        value_prev = value;
+                        value_prev = flowValue;
     			    }
     			}
     		}
+		}
+		// Make sure that lag values are either all positive or all negative
+		if ( (countLagNegative > 0) && (countLagPositive > 0) ) {
+            message = "Negative and positive lag values cannot be used together.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                "Specify lag values as all <= 0 or all >= 0."));
 		}
 	}
 	
@@ -294,9 +310,7 @@ throws InvalidCommandParameterException
                         message = "K table flow value (" + token + ") is not a number.";
                         warning += "\n" + message;
                         status.addToLog(CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(
-                            CommandStatusType.FAILURE, message,
-                            "Provide a valid number."));
+                            new CommandLogRecord(CommandStatusType.FAILURE, message,"Provide a valid number."));
                     }
                     else {
                         message = "K value (" + token + ") is not a number.";

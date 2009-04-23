@@ -35,7 +35,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -57,9 +56,15 @@ private SimpleJComboBox	__TSList_JComboBox = null; // Indicate how to get time s
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
 private JTextArea __DataTypePELookup_JTextArea = null;
-private JTextField __OutputFile_JTextField = null;// Field for time series identifier
-private JTextField __OutputStart_JTextField = null; // Start of period for output
-private JTextField __OutputEnd_JTextField = null; // End of period for output
+private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __Append_JComboBox = null;
+private JTextField __OutputStart_JTextField = null;
+private JTextField __OutputEnd_JTextField = null;
+private JTextField __TimeZone_JTextField = null;
+private JTextField __ObservationTime_JTextField = null;
+private JTextField __CreationDate_JTextField = null;
+private JTextField __Duration_JTextField = null;
+private JTextField __Precision_JTextField = null;
 // TODO SAM 2007-12-10 Evaluate if other parameters are needed like the following
 //private JTextField __MissingValue_JTextField = null; // Missing value for output
 //private JTextField __Precision_JTextField = null; // Precision for output
@@ -74,7 +79,7 @@ Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WriteSHEF_JDialog ( JFrame parent, Command command )
+public WriteSHEF_JDialog ( JFrame parent, WriteSHEF_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -158,8 +163,8 @@ private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -180,10 +185,14 @@ private void checkInput ()
 	String TSID = __TSID_JComboBox.getSelected();
 	String DataTypePELookup = __DataTypePELookup_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Append = __Append_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	//String MissingValue = __MissingValue_JTextField.getText().trim();
-	//String Precision = __Precision_JTextField.getText().trim();
+	String TimeZone = __TimeZone_JTextField.getText().trim();
+	String ObservationTime = __ObservationTime_JTextField.getText().trim();
+	String CreationDate = __CreationDate_JTextField.getText().trim();
+	String Duration = __Duration_JTextField.getText().trim();
+	String Precision = __Precision_JTextField.getText().trim();
 	__error_wait = false;
 	if ( TSList.length() > 0 ) {
 		props.set ( "TSList", TSList );
@@ -194,6 +203,9 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		props.set ( "OutputFile", OutputFile );
 	}
+    if ( Append.length() > 0 ) {
+        props.set ( "Append", Append );
+    }
 	if ( OutputStart.length() > 0 ) {
 		props.set ( "OutputStart", OutputStart );
 	}
@@ -203,15 +215,23 @@ private void checkInput ()
     if ( DataTypePELookup.length() > 0 ) {
         props.set ( "DataTypePELookup", DataTypePELookup );
     }
-    /*
-	if ( MissingValue.length() > 0 ) {
-		props.set ( "MissingValue", MissingValue );
+	if ( TimeZone.length() > 0 ) {
+		props.set ( "TimeZone", TimeZone );
 	}
+    if ( ObservationTime.length() > 0 ) {
+        props.set ( "ObservationTime", ObservationTime );
+    }
+    if ( CreationDate.length() > 0 ) {
+        props.set ( "CreationDate", CreationDate );
+    }
+    if ( Duration.length() > 0 ) {
+        props.set ( "Duration", Duration );
+    }
 	if ( Precision.length() > 0 ) {
 		props.set ( "Precision", Precision );
 	}
-    */
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -229,18 +249,26 @@ private void commitEdits ()
 	String TSID = __TSID_JComboBox.getSelected();
 	String DataTypePELookup = __DataTypePELookup_JTextArea.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
+	String Append = __Append_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
-	//String MissingValue = __MissingValue_JTextField.getText().trim();
-	//String Precision = __Precision_JTextField.getText().trim();
+    String TimeZone = __TimeZone_JTextField.getText().trim();
+    String ObservationTime = __ObservationTime_JTextField.getText().trim();
+    String CreationDate = __CreationDate_JTextField.getText().trim();
+    String Duration = __Duration_JTextField.getText().trim();
+    String Precision = __Precision_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "DataTypePELookup", DataTypePELookup );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "Append", Append );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
-	//__command.setCommandParameter ( "MissingValue", MissingValue );
-	//__command.setCommandParameter ( "Precision", Precision );
+	__command.setCommandParameter ( "TimeZone", TimeZone );
+    __command.setCommandParameter ( "ObservationTime", ObservationTime );
+    __command.setCommandParameter ( "CreationDate", CreationDate );
+    __command.setCommandParameter ( "Duration", Duration );
+	__command.setCommandParameter ( "Precision", Precision );
 }
 
 /**
@@ -251,7 +279,7 @@ throws Throwable
 {	__cancel_JButton = null;
 	__command_JTextArea = null;
 	__OutputFile_JTextField = null;
-	//__Precision_JTextField = null;
+	__Precision_JTextField = null;
 	__command = null;
 	__browse_JButton = null;
 	__ok_JButton = null;
@@ -265,8 +293,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (WriteSHEF_Command)command;
+private void initialize ( JFrame parent, WriteSHEF_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -282,20 +310,17 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write time series to a Standard Hydrologic Exchange Format (SHEF) file."),
+		"Write time series to a Standard Hydrologic Exchange Format (SHEF) file - " +
+		"refer to SHEF documentation for data format and nomenclature details."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the file name be relative to the working directory."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file " +
-		"to overwrite (edit the file name after selection if necessary)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
@@ -304,6 +329,18 @@ private void initialize ( JFrame parent, Command command )
     "The SHEF physical element (PE) code will normally be determined from the operational environment; " +
     "however, specify the data type to PE lookup information if necessary."),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The observation time, if specified, will be used for all data - specify as an integer or " +
+        "include the character prefix (e.g., DH1200)."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The creation time, if specified, will be used for all data - specify as an integer or " +
+        "include the character prefix (e.g., CD20091231)."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The duration, if specified, will be used for all data - specify as an integer or " +
+        "include the character prefix (e.g., DVH06)."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -316,14 +353,6 @@ private void initialize ( JFrame parent, Command command )
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "DataType,PE;DataType,PE;...:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        __DataTypePELookup_JTextArea = new JTextArea ( 4, 55 );
-        __DataTypePELookup_JTextArea.setLineWrap ( true );
-        __DataTypePELookup_JTextArea.setWrapStyleWord ( true );
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataTypePELookup_JTextArea),
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"SHEF file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST );
 	__OutputFile_JTextField = new JTextField ( 50 );
@@ -333,6 +362,28 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Append to output?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Append_JComboBox = new SimpleJComboBox ( false );
+    __Append_JComboBox.addItem ( "" );  // Default
+    __Append_JComboBox.addItem ( __command._False );
+    __Append_JComboBox.addItem ( __command._True );
+    __Append_JComboBox.select ( 0 );
+    __Append_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Append_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - append to command file? (default=" + __command._False + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "DataType,PE;DataType,PE;...:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataTypePELookup_JTextArea = new JTextArea ( 4, 55 );
+    __DataTypePELookup_JTextArea.setLineWrap ( true );
+    __DataTypePELookup_JTextArea.setWrapStyleWord ( true );
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__DataTypePELookup_JTextArea),
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -341,7 +392,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - override the global output start."),
+		"Optional - default is all data or global output start."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
@@ -351,31 +402,58 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - override the global output end."),
+		"Optional - default is all data or global output end."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        /*
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time zone:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__MissingValue_JTextField = new JTextField ( "", 20 );
-	__MissingValue_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+	__TimeZone_JTextField = new JTextField ( "", 20 );
+	__TimeZone_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TimeZone_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Value to write for missing data (default=-999)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - time zone for output (default=from time series or Z)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Observation time:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ObservationTime_JTextField = new JTextField ( "", 20 );
+    __ObservationTime_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ObservationTime_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - observation time (default=from data)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Creation date:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CreationDate_JTextField = new JTextField ( "", 20 );
+    __CreationDate_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __CreationDate_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - creation date (default=not used)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Duration:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Duration_JTextField = new JTextField ( "", 20 );
+    __Duration_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Duration_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - duration (default=determined from time series if irregular)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Output precision:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output precision:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( "", 20 );
 	__Precision_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Digits after decimal (default=-2)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Optional - digits after decimal (default=from units, or 2)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        */
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -431,7 +509,8 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// Other character entered...
+	else {
+	    // Other character entered...
 		refresh();
 	}
 }
@@ -459,10 +538,14 @@ private void refresh ()
 	String TSID = "";
 	String DataTypePELookup = "";
 	String OutputFile = "";
+	String Append = "";
 	String OutputStart = "";
 	String OutputEnd = "";
-	//String MissingValue = "";
-	//String Precision = "";
+	String TimeZone = "";
+	String ObservationTime = "";
+	String CreationDate = "";
+	String Duration = "";
+	String Precision = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -472,10 +555,14 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
 		DataTypePELookup = props.getValue ( "DataTypePELookup" );
 		OutputFile = props.getValue("OutputFile");
+		Append = props.getValue ( "Append" );
 		OutputStart = props.getValue("OutputStart");
 		OutputEnd = props.getValue("OutputEnd");
-		//MissingValue = props.getValue("MissingValue");
-		//Precision = props.getValue("Precision");
+		TimeZone = props.getValue("TimeZone");
+		ObservationTime = props.getValue("ObservationTime");
+		CreationDate = props.getValue("CreationDate");
+		Duration = props.getValue("Duration");
+		Precision = props.getValue("Precision");
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( 0 );
@@ -485,7 +572,8 @@ private void refresh ()
 				__TSList_JComboBox,	TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
 			}
-			else {	Message.printWarning ( 1, routine,
+			else {
+			    Message.printWarning ( 1, routine,
 				"Existing command references an invalid\nTSList value \"" + TSList +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
@@ -517,20 +605,42 @@ private void refresh ()
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText( OutputFile );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem( __Append_JComboBox, Append, JGUIUtil.NONE, null, null ) ) {
+            __Append_JComboBox.select ( Append );
+        }
+        else {
+            if ( (Append == null) || Append.equals("") ) {
+                // New command...select the default...
+                __Append_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nAppend parameter \"" +
+                Append + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText ( OutputStart );
 		}
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText ( OutputEnd );
 		}
-        /*
-		if ( MissingValue != null ) {
-			__MissingValue_JTextField.setText ( MissingValue );
+		if ( TimeZone != null ) {
+			__TimeZone_JTextField.setText ( TimeZone );
 		}
+        if ( ObservationTime != null ) {
+            __ObservationTime_JTextField.setText ( ObservationTime );
+        }
+        if ( CreationDate != null ) {
+            __CreationDate_JTextField.setText ( CreationDate );
+        }
+        if ( Duration != null ) {
+            __Duration_JTextField.setText ( Duration );
+        }
 		if ( Precision != null ) {
 			__Precision_JTextField.setText ( Precision );
 		}
-        */
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -541,19 +651,27 @@ private void refresh ()
 	    TSID = "";
 	}
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	Append = __Append_JComboBox.getSelected();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
-	//MissingValue = __MissingValue_JTextField.getText().trim();
-	//Precision = __Precision_JTextField.getText().trim();
+	TimeZone = __TimeZone_JTextField.getText().trim();
+    ObservationTime = __ObservationTime_JTextField.getText().trim();
+    CreationDate = __CreationDate_JTextField.getText().trim();
+    Duration = __Duration_JTextField.getText().trim();
+	Precision = __Precision_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
 	props.add ( "DataTypePELookup=" + DataTypePELookup );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "Append=" + Append );
 	props.add ( "OutputStart=" + OutputStart );
 	props.add ( "OutputEnd=" + OutputEnd );
-	//props.add ( "MissingValue=" + MissingValue );
-	//props.add ( "Precision=" + Precision );
+	props.add ( "TimeZone=" + TimeZone );
+    props.add ( "ObservationTime=" + ObservationTime );
+    props.add ( "CreationDate=" + CreationDate );
+    props.add ( "Duration=" + Duration );
+	props.add ( "Precision=" + Precision );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {

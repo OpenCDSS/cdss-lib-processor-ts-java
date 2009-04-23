@@ -4036,20 +4036,21 @@ throws IOException
 	else if ( output_format == OUTPUT_SHEFA_FILE ) {
 		try {
 			List units_Vector = null;
+			// This will use NWSRFS environment data if available but often null.
 			List PE_Vector = ShefATS.getPEForTimeSeries (tslist_output );
 			List Duration_Vector = null;
 			List AltID_Vector = null;
-			PropList shef_props = new PropList ( "SHEF" );
-			shef_props.set ( "HourMax=24" );
-			ShefATS.writeTimeSeriesList ( tslist_output,
-				__output_file, __OutputStart_DateTime,
-				__OutputEnd_DateTime,
-				units_Vector, PE_Vector,
-				Duration_Vector, AltID_Vector, shef_props );
+			String timeZone = null;
+			String observationTime = null;
+			String creationDate = null;
+			String duration = null;
+			ShefATS.writeTimeSeriesList ( tslist_output, __output_file, false, __OutputStart_DateTime,
+			    __OutputEnd_DateTime, units_Vector, PE_Vector, Duration_Vector, AltID_Vector, timeZone, observationTime,
+			    creationDate, duration, 24, -1 );
 		} catch ( Exception e ) {
-			message = "Error writing SHEF A file \"" + __output_file + "\"";
+			message = "Error writing SHEF A file \"" + __output_file + "\" (" + e + ")";
 			Message.printWarning ( 1, routine, message );
-			Message.printWarning ( 2, routine, e );
+			Message.printWarning ( 3, routine, e );
 			throw new IOException ( message );
 		}
 	}
@@ -4067,19 +4068,7 @@ throws IOException
     		else {
                 sumprops.set ( "CalendarType", "CalendarYear" );
     		}
-    		// Check the first time series.  If NWSCARD or DateValue, don't
-    		// use comments for header...
-    		/* TODO SAM 2004-07-20 - try default header always -
-    			transition to HydroBase comments being only additional information
-    		else {	// HydroBase, so use the comments for the header...
-    			sumprops.set ( "UseCommentsForHeader", "true" );
-    		}
-    		if ( _non_co_detected ) {
-    			// Data other that HydroBase, so format using standard
-    			// headers...
-    			sumprops.set ( "UseCommentsForHeader", "false" );
-    		}
-    		*/
+    		// Check the first time series.  If NWSCARD or DateValue, don't use comments for header...
     		sumprops.set ( "PrintHeader", "true" );
     		sumprops.set ( "PrintComments", "true" );
     		if ( output_format == OUTPUT_SUMMARY ) {
@@ -4096,7 +4085,7 @@ throws IOException
     				// Just write the summary to the given file...
     				IOUtil.printStringList ( __output_file, summary);
     			} catch ( Exception e ) {
-    				Message.printWarning ( 1, routine,"Unable to print summary to file \"" + __output_file + "\"" );
+    				Message.printWarning ( 1, routine,"Unable to print summary to file \"" + __output_file + "\" (" + e + ")." );
     			}
     		}
     		else {
@@ -4120,14 +4109,14 @@ throws IOException
     				new ReportJFrame ( summary, reportProps );
     			}
     			catch ( Exception e ) {
-    				Message.printWarning ( 1, routine, "Error printing summary." );
-    				Message.printWarning ( 2, routine, e );
+    				Message.printWarning ( 1, routine, "Error printing summary (" + e + ")." );
+    				Message.printWarning ( 3, routine, e );
     			}
     		}
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
-			message = "Error creating summary";
+			Message.printWarning ( 3, routine, e );
+			message = "Error creating summary (" + e + ").";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
@@ -4159,16 +4148,6 @@ throws IOException
     		else {
                 graphprops.set ( "CalendarType", "CalendarYear" );
     		}
-    		// Check the first time series.  If NWSCARD or DateValue, don't use comments for header...
-    		/* TODO SAM 2004-07-20 - try default header always -
-    			transition to HydroBase comments being only additional information
-    		if ( _non_co_detected ) {
-    			graphprops.set ( "UseCommentsForHeader", "false" );
-    		}
-    		else {
-    		    graphprops.set ( "UseCommentsForHeader", "true" );
-    		}
-    		*/
     		// Set the total size of the graph window...
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
@@ -4195,8 +4174,8 @@ throws IOException
     		tslist = null;
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
-			message = "Error creating table";
+			Message.printWarning ( 3, routine, e );
+			message = "Error creating table (" + e + ").";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
@@ -4221,8 +4200,8 @@ throws IOException
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 1, routine,"Error printing summary." );
-			Message.printWarning ( 2, routine, e );
+			Message.printWarning ( 1, routine,"Error printing summary (" + e + ")." );
+			Message.printWarning ( 3, routine, e );
 		}
 	}
 	else if (	(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ||
@@ -4259,16 +4238,6 @@ throws IOException
     		else {
     		    graphprops.set ( "CalendarType", "CalendarYear" );
     		}
-    		// Check the first time series.  If NWSCARD or DateValue, don't
-    		// use comments for header...
-    		/* TODO SAM 2004-07-20 - try default header always -
-    			transition to HydroBase comments being only additional information
-    		if ( _non_co_detected ) {
-    			graphprops.set ( "UseCommentsForHeader", "false" );
-    		}
-    		else {	graphprops.set ( "UseCommentsForHeader", "true" );
-    		}
-    		*/
     		// Set the total size of the graph window...
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
@@ -4371,7 +4340,8 @@ throws IOException
     		else if ( output_format == OUTPUT_XY_SCATTER_GRAPH ) {
     			graphprops.set("GraphType=XY-Scatter");
     		}
-    		else {	// Default properties...
+    		else {
+    		    // Default properties...
     			graphprops.set("GraphType=Line");
     			// Handle flags...
     			/* TODO SAM 2006-05-22
@@ -4401,14 +4371,14 @@ throws IOException
     		tslist = null;
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, e );
-			message = "Error creating graph";
+			Message.printWarning ( 3, routine, e );
+			message = "Error creating graph (" + e + ").";
 			Message.printWarning ( 1, routine, message );
 			throw new IOException ( message );
 		}
 	}
 
-	Message.printStatus ( 1, routine, "Ending time series output at:  " +
+	Message.printStatus ( 2, routine, "Ending time series output at:  " +
 	new DateTime(DateTime.DATE_CURRENT).toString() );
 }
 
@@ -4438,8 +4408,7 @@ Read a time series from a database or file.  The following occur related to peri
 	averages.  Otherwise, the full period is used.</li>
 <li>	If the output period is specified, then the time series that are read
 	will be extended to the output period if necessary.  If the output
-	period is within the returned data, the period is not changed (it is not
-	shortened).</li>
+	period is within the returned data, the period is not changed (it is not shortened).</li>
 </ol>
 @param wl Warning level if the time series is not found.  Typically this will be 1 if
 mimicing the old processing, and 2+ during transition to the new command status approach.

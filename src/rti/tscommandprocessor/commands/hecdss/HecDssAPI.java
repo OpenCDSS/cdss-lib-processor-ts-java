@@ -518,6 +518,33 @@ private static HecTime dateTimeToHecTime ( DateTime dt, HecTime ht )
 }
 
 /**
+Get a DSSPathname from a time series, assuming that the TSID follows the default convention:
+A:B.HEC-DSS.Cpart.Epart.Fpart.
+@param ts Time series to examine.
+@return a new DSS pathname object with parts set according to the above.
+*/
+public static DSSPathname getPathnamePartsFromDefaultTSIdent( TS ts )
+{
+    TSIdent tsident = ts.getIdentifier();
+    DSSPathname p = new DSSPathname();
+    String loc = tsident.getLocation();
+    int pos = loc.indexOf(":");
+    if ( pos < 0 ) {
+        // No basin
+        p.setBPart(loc);
+    }
+    else {
+        // Have basin and site
+        p.setAPart(loc.substring(0,pos));
+        p.setBPart(loc.substring(pos + 1));
+    }
+    p.setCPart(tsident.getType());
+    p.setEPart(tsident.getInterval());
+    p.setFPart(tsident.getScenario());
+    return p;
+}
+
+/**
 Get the list of A parts that are available in the file.
 @return the list of unique A parts from the file, using a condensed catalog.
 */

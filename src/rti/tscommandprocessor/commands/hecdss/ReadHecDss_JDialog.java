@@ -47,7 +47,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null;	// Ok Button
 private Command __command = null;
 private String __working_dir = null; // Working directory.
-private JTextField	__Alias_JTextField = null, // Alias for time series.
+private JTextField
             __A_JTextField = null,
             __B_JTextField = null,
             __C_JTextField = null,
@@ -56,7 +56,9 @@ private JTextField	__Alias_JTextField = null, // Alias for time series.
             __Pathname_JTextField = null,
 			__InputStart_JTextField,
 			__InputEnd_JTextField,
-			__InputFile_JTextField = null;
+			__InputFile_JTextField = null,
+			__Location_JTextField = null,
+			__Alias_JTextField = null; // Alias for time series.
 			//__NewUnits_JTextField = null; // Units to convert to at read
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
@@ -158,6 +160,7 @@ private void checkInput () {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
+	String Location = __Location_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 
 	__error_wait = false;
@@ -194,6 +197,9 @@ private void checkInput () {
 		props.set("NewUnits", NewUnits);
 	}
 	*/
+    if (Location.length() > 0) {
+        props.set("Location", Location);
+    }
     if (Alias.length() > 0) {
         props.set("Alias", Alias);
     }
@@ -224,6 +230,7 @@ private void commitEdits()
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
+	String Location = __Location_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
 
 	__command.setCommandParameter("InputFile", InputFile);
@@ -236,6 +243,7 @@ private void commitEdits()
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	//__command.setCommandParameter("NewUnits", NewUnits);
+	__command.setCommandParameter("Location", Location);
 	__command.setCommandParameter("Alias", Alias);
 }
 
@@ -398,6 +406,16 @@ private void initialize(JFrame parent, Command command) {
 	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
+    JGUIUtil.addComponent(main_JPanel, new JLabel("TSID location to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Location_JTextField = new JTextField ( 30 );
+    __Location_JTextField.addKeyListener ( this );
+    __Location_JTextField.setToolTipText("%A for A-part, %B for B-part, etc.");
+    JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %A for A-part, etc. (default=%A:%B)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new JTextField ( 30 );
@@ -493,6 +511,7 @@ private void refresh()
     InputStart = "",
     InputEnd = "",
     NewUnits = "",
+    Location = "",
     Alias = "";
 
 	PropList props = null;
@@ -512,6 +531,7 @@ private void refresh()
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");
+		Location = props.getValue("Location");
         Alias = props.getValue("Alias");
 		// Set the control fields
         if (A != null) {
@@ -546,6 +566,9 @@ private void refresh()
 			__NewUnits_JTextField.setText(NewUnits);
 		}
 		*/
+        if (Location != null ) {
+            __Location_JTextField.setText(Location.trim());
+        }
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
@@ -563,6 +586,7 @@ private void refresh()
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	//NewUnits = __NewUnits_JTextField.getText().trim();
+	Location = __Location_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
 
 	props = new PropList(__command.getCommandName());
@@ -576,6 +600,7 @@ private void refresh()
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	props.add("NewUnits=" + NewUnits);
+	props.add("Location=" + Location);
 	props.add("Alias=" + Alias);
 
 	__Command_JTextArea.setText( __command.toString(props) );

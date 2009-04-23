@@ -4,6 +4,8 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import hec.heclib.dss.DSSPathname;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.List;
@@ -227,6 +229,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "NewUnits" );
+    valid_Vector.add ( "Location" );
     valid_Vector.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -243,13 +246,61 @@ throws InvalidCommandParameterException
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
 	return ( new ReadHecDss_JDialog ( parent, this ) ).ok();
+}
+
+/**
+Expand the time series identifier location based on user input.  This assumes that the time series identifier
+has been set to defaults.
+@param ts time series to process.
+@param location location string to process and set in the time series location.
+@return expanded location string, suitable for setting in the time series location.
+*/
+private String expandLocation ( TS ts, String location )
+{
+    DSSPathname dssPathname = HecDssAPI.getPathnamePartsFromDefaultTSIdent(ts);
+    StringBuffer b = new StringBuffer();
+    int length = location.length();
+    char c;
+    for ( int i = 0; i < length; i++ ) {
+        c = location.charAt(i);
+        if ( c == '%' ) {
+            // Special meaning - need to check next character to know
+            ++i;
+            if ( i >= length ) {
+                break;
+            }
+            char c2 = location.charAt(i);
+            if ( (c2 == 'a') || (c2 == 'A') ) {
+                b.append ( dssPathname.getAPart() );
+            }
+            else if ( (c2 == 'b') || (c2 == 'B') ) {
+                b.append ( dssPathname.getBPart() );
+            }
+            else if ( (c2 == 'c') || (c2 == 'C') ) {
+                b.append ( dssPathname.getCPart() );
+            }
+            else if ( (c2 == 'e') || (c2 == 'E') ) {
+                b.append ( dssPathname.getEPart() );
+            }
+            else if ( (c2 == 'f') || (c2 == 'F') ) {
+                b.append ( dssPathname.getFPart() );
+            }
+            else {
+                // Nothing special - add the literal characters
+                b.append ( "%" + c2 );
+            }
+        }
+        else {
+            b.append ( c );
+        }
+    }
+    return b.toString();
 }
 
 /**
@@ -296,10 +347,8 @@ public List getObjectList ( Class c )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -310,8 +359,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
@@ -368,6 +416,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
+	String Location = parameters.getValue("Location");
 	String Alias = parameters.getValue("Alias");
 	
     String InputFile_full = IOUtil.verifyPathForOS(
@@ -529,8 +578,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 			TS ts = null;
             for (int i = 0; i < tscount; i++) {
                 ts = (TS)tslist.get(i);
+                if ( (Location != null) && (Location.length() > 0) ) {
+                    // Set the location in the TSID
+                    ts.setLocation(expandLocation(ts,Location));
+                    // Also reset the description
+                    ts.setDescription(ts.getLocation() + " " + ts.getDataType() );
+                }
                 if ( (Alias != null) && (Alias.length() > 0) ) {
-                    // Set the alias to the desired string.
+                    // Set the alias to the desired string - this is impacted by the Location parameter
                     String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                         processor, ts, Alias, status, command_phase);
                     ts.setAlias ( alias );
@@ -647,6 +702,7 @@ public String toString ( PropList props )
 	String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String Location = props.getValue("Location");
 	String Alias = props.getValue("Alias");
 
 	StringBuffer b = new StringBuffer ();
@@ -717,6 +773,13 @@ public String toString ( PropList props )
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
 	
+    if ((Location != null) && (Location.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Location=\"" + Location + "\"");
+    }
+    
     if ((Alias != null) && (Alias.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");

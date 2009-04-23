@@ -355,7 +355,7 @@ throws InvalidCommandParameterException
 	    for ( int i = 0; i < size; i++ ) {
 	        String state = (String)v.get(i);
 	        if ( !StringUtil.isDouble(state) ) {
-	            message = "The value for InflowStates \"" + state + "\" is invalid.";
+	            message = "The value for InflowStates \"" + state + "\" is not a valid number.";
 	            warning +="\n" + message;
 	            status.addToLog ( CommandPhaseType.INITIALIZATION,
 	                    new CommandLogRecord(CommandStatusType.FAILURE,
@@ -370,7 +370,7 @@ throws InvalidCommandParameterException
         for ( int i = 0; i < size; i++ ) {
             String state = (String)v.get(i);
             if ( !StringUtil.isDouble(state) ) {
-                message = "The value for OutflowStates \"" + state + "\" is invalid.";
+                message = "The value for OutflowStates \"" + state + "\" is not a valid number.";
                 warning +="\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -899,12 +899,20 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                             message = "The input time series has missing data at " + dt +
                             " - unable to route time series at and beyond this date/time.";  
                             Message.printWarning ( warning_level,
-                            MessageUtil.formatMessageTag(
-                            command_tag,++warning_count), routine, message );
+                                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                             // This is just a warning
-                            status.addToLog ( commandPhase,
-                                new CommandLogRecord(CommandStatusType.WARNING,
-                                    message, "Fill the time series to be routed before trying to route." ) );
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Fill the time series to be routed before trying to route." ) );
+                            break;
+                        }
+                        if ( dataIn < 0.0 ) {
+                            message = "The input time series has a negative data value at " + dt +
+                            " - unable to route time series at and beyond this date/time.";  
+                            Message.printWarning ( warning_level,
+                                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                            // This is just a warning
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Adjust negative values before trying to route." ) );
                             break;
                         }
                     }
@@ -1006,8 +1014,8 @@ public String toString ( PropList props )
     String LagInterval = props.getValue("LagInterval");
 	String Lag = props.getValue("Lag");
 	String K = props.getValue("K");
-	String InputStates = props.getValue("InputStates");
-	String OutputStates = props.getValue("OutputStates");
+	String InflowStates = props.getValue("InflowStates");
+	String OutflowStates = props.getValue("OutflowStates");
 	String Alias = props.getValue( "Alias" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
@@ -1043,17 +1051,17 @@ public String toString ( PropList props )
 		}
 		b.append ( "K=\"" + K + "\"" );
 	}
-	if ( (InputStates != null) && (InputStates.length() > 0) ) {
+	if ( (InflowStates != null) && (InflowStates.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "InputStates=\"" + InputStates + "\"" );
+		b.append ( "InflowStates=\"" + InflowStates + "\"" );
 	}
-	if ( (OutputStates != null) && (OutputStates.length() > 0) ) {
+	if ( (OutflowStates != null) && (OutflowStates.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "OutputStates=\"" + OutputStates + "\"" );
+		b.append ( "OutflowStates=\"" + OutflowStates + "\"" );
 	}
 	if ( (Alias != null) && (Alias.length() > 0) ) {
 		if ( b.length() > 0 ) {

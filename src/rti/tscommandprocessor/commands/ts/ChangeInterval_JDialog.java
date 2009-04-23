@@ -87,8 +87,11 @@ private SimpleJComboBox	__OldTimeScale_JComboBox = null;
 private SimpleJComboBox	__NewTimeScale_JComboBox = null;
 private JTextField	__NewDataType_JTextField = null;
 private JTextField  __NewUnits_JTextField = null;// Field for new units
+private JLabel	__Tolerance_JLabel = null;
 private JTextField	__Tolerance_JTextField = null;
+private JLabel     	__HandleEndpointsHow_JLabel = null;
 private SimpleJComboBox	__HandleEndpointsHow_JComboBox = null;
+private JLabel  	__AllowMissingCount_JLabel = null;
 private JTextField	__AllowMissingCount_JTextField = null;
 						// Number of missing to allow
 						// in input when converting.
@@ -97,9 +100,11 @@ private JTextField	__AllowMissingPercent_JTextField = null;
 						// Percent of missing to allow
 						// in input when converting.
 */
+private JLabel      	__OutputFillMethod_JLabel = null;
 private SimpleJComboBox	__OutputFillMethod_JComboBox = null;
 						// Fill method when going from
 						// large to small interval.
+private JLabel  	__HandleMissingInputHow_JLabel = null;
 private SimpleJComboBox	__HandleMissingInputHow_JComboBox = null;
 						// How to handle missing data
 						// in input time series.
@@ -150,6 +155,56 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+}
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    // initially set the following to gray and only enable based on input and output scale.
+
+    __Tolerance_JLabel.setEnabled ( false );
+    __Tolerance_JTextField.setEnabled ( false );
+    __HandleEndpointsHow_JLabel.setEnabled ( false );
+    __HandleEndpointsHow_JComboBox.setEnabled ( false );
+    __AllowMissingCount_JLabel.setEnabled ( false );
+    __AllowMissingCount_JTextField.setEnabled ( false );
+    __OutputFillMethod_JLabel.setEnabled ( false );
+    __OutputFillMethod_JComboBox.setEnabled ( false );
+    __HandleMissingInputHow_JLabel.setEnabled ( false );
+    __HandleMissingInputHow_JComboBox.setEnabled ( false );
+
+    String oldTimeScale = __OldTimeScale_JComboBox.getSelected();
+    String newTimeScale = __NewTimeScale_JComboBox.getSelected();
+    if ( oldTimeScale.startsWith(MeasTimeScale.MEAN) && newTimeScale.startsWith(MeasTimeScale.INST)) {
+        __Tolerance_JLabel.setEnabled( true );
+        __Tolerance_JTextField.setEnabled( true );
+        __HandleMissingInputHow_JLabel.setEnabled ( true );
+        __HandleMissingInputHow_JComboBox.setEnabled ( true );
+    } else if (( oldTimeScale.startsWith(MeasTimeScale.MEAN) || oldTimeScale.startsWith(MeasTimeScale.ACCM)) &&
+            newTimeScale.startsWith(MeasTimeScale.MEAN) || newTimeScale.startsWith(MeasTimeScale.ACCM)) {
+        __AllowMissingCount_JLabel.setEnabled ( true );
+        __AllowMissingCount_JTextField.setEnabled ( true );
+        __HandleMissingInputHow_JLabel.setEnabled ( true );
+        __HandleMissingInputHow_JComboBox.setEnabled ( true );
+        __OutputFillMethod_JLabel.setEnabled ( true );
+        __OutputFillMethod_JComboBox.setEnabled ( true );
+        __HandleEndpointsHow_JLabel.setEnabled ( true );
+        __HandleEndpointsHow_JComboBox.setEnabled ( true );
+    } else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.INST)) {
+        __HandleMissingInputHow_JLabel.setEnabled ( true );
+        __HandleMissingInputHow_JComboBox.setEnabled ( true );
+    } else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.MEAN)) {
+        __AllowMissingCount_JLabel.setEnabled ( true );
+        __AllowMissingCount_JTextField.setEnabled ( true );
+        __HandleMissingInputHow_JLabel.setEnabled ( true );
+        __HandleMissingInputHow_JComboBox.setEnabled ( true );
+        __OutputFillMethod_JLabel.setEnabled ( true );
+        __OutputFillMethod_JComboBox.setEnabled ( true );
+        __HandleEndpointsHow_JLabel.setEnabled ( true );
+        __HandleEndpointsHow_JComboBox.setEnabled ( true );
+    }
 }
 
 /**
@@ -396,6 +451,8 @@ private void initialize ( JFrame parent, Command command )
 	__OldTimeScale_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OldTimeScale_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// New time scale
     JGUIUtil.addComponent(main_JPanel, new JLabel("New time scale:"),
@@ -406,6 +463,8 @@ private void initialize ( JFrame parent, Command command )
 	__NewTimeScale_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewTimeScale_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// New data type
     JGUIUtil.addComponent(main_JPanel,new JLabel ("New data type:" ),
@@ -428,7 +487,8 @@ private void initialize ( JFrame parent, Command command )
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Tolerance
-    JGUIUtil.addComponent(main_JPanel,new JLabel ("Tolerance:" ),
+    __Tolerance_JLabel = new JLabel ("Tolerance:" );
+    JGUIUtil.addComponent(main_JPanel, __Tolerance_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Tolerance_JTextField = new JTextField ( "", 10 );
     JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
@@ -438,24 +498,26 @@ private void initialize ( JFrame parent, Command command )
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Handle endpoints how?
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Handle endpoints how?:"),
+    __HandleEndpointsHow_JLabel = new JLabel("Handle endpoints how?:");
+    JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleEndpointsHow_JComboBox = new SimpleJComboBox ( false );
 	List endpoints_Vector = new Vector(4);
 	endpoints_Vector.add ( "" );	// Blank is default
-	endpoints_Vector.add ( __command._IncFirstOnly );
 	endpoints_Vector.add ( __command._AvgEndpoints );
+	endpoints_Vector.add ( __command._IncFirstOnly );
 	__HandleEndpointsHow_JComboBox.setData ( endpoints_Vector );
 	__HandleEndpointsHow_JComboBox.select ( 0 );	// Default
 	__HandleEndpointsHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - Indicate how to handle endpoints values in input (default=" + __command._IncFirstOnly + ")."),
+		"Optional - Indicate how to handle each interval endpoint values in hourly or finer input (default=" + __command._AvgEndpoints + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Allow missing count:"), 
+    __AllowMissingCount_JLabel = new JLabel("Allow missing count:");
+    JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AllowMissingCount_JTextField = new JTextField ( "", 10 );
 	JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JTextField,
@@ -479,8 +541,10 @@ private void initialize ( JFrame parent, Command command )
 		"processing interval."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	*/
+
 	// Output fill method
-        JGUIUtil.addComponent(main_JPanel, new JLabel( "Output fill method:"),
+    __OutputFillMethod_JLabel = new JLabel( "Output fill method:");
+    JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFillMethod_JComboBox = new SimpleJComboBox ( false );
 	List fill_Vector = new Vector(3);
@@ -490,15 +554,16 @@ private void initialize ( JFrame parent, Command command )
 	__OutputFillMethod_JComboBox.setData ( fill_Vector );
 	__OutputFillMethod_JComboBox.select ( 0 );	// Default
 	__OutputFillMethod_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - Use to fill output when converting from large to small " +
 		"interval (default=" + __command._Repeat + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Handle missing input how?
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Handle missing input how?:"),
+    __HandleMissingInputHow_JLabel = new JLabel("Handle missing input how?:");
+    JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JLabel,
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__HandleMissingInputHow_JComboBox = new SimpleJComboBox ( false );
 	List missing_Vector = new Vector(4);
@@ -528,6 +593,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkGUIState();
 	refresh();
 
 	// South Panel: North
@@ -574,7 +640,8 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	
+{
+    checkGUIState();
 	refresh();
 }
 

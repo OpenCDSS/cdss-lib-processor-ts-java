@@ -234,17 +234,14 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "<html><b>This command is under development.</b></html>" ), 
-    0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Check time series values and statistics for quality control purposes." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Check time series values and statistics for critical values." ), 
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Warnings will be generated for values that match the requested check." ), 
+        "A warning will be generated for each case where a value matches the specified condition(s)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Use the WriteCheckFile() to save the results of all checks." ), 
+        "Use the WriteCheckFile() command to save the results of all checks." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data, " +
@@ -271,18 +268,20 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ValueToCheck_JComboBox = new SimpleJComboBox ( 10, true );    // Allow edit
     __ValueToCheck_JComboBox.add ( "" );
-    __ValueToCheck_JComboBox.add ( __command._Raw );
-    __ValueToCheck_JComboBox.add ( __command._Statistic );
+    __ValueToCheck_JComboBox.add ( __command._DataValue );
+    // TODO SAM 2009-04-23 Enable in the future.
+    //__ValueToCheck_JComboBox.add ( __command._Statistic );
     __ValueToCheck_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ValueToCheck_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - check raw values or statistic? (default=" + __command._Raw + ")."), 
+        "<html>Optional - check data values or statistic? (default=" + __command._DataValue +
+        "). <b>Statistic is not enabled.</b></html>"), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check criteria:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __CheckCriteria_JComboBox = new SimpleJComboBox ( 10, true );    // Allow edit
+    __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
     List checkCriteriaChoices = TSUtil_CheckTimeSeries.getCheckCriteriaChoices();
     __CheckCriteria_JComboBox.setData ( checkCriteriaChoices );
     __CheckCriteria_JComboBox.addItemListener ( this );
@@ -290,7 +289,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, __CheckCriteria_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - will requires other parameters."), 
+        "Required - may require other parameters."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value1:" ), 

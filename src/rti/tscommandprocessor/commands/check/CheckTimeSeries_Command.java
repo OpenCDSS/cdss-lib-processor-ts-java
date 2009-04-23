@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_CheckTimeSeries;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -23,7 +22,6 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
-import RTi.Util.IO.DataSetComponent;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -52,7 +50,7 @@ protected final String _PROBLEM_TYPE_Check = "Check";
 /**
 Values for ValueToCheck parameter.
 */
-protected final String _Raw = "Raw";
+protected final String _DataValue = "DataValue";
 protected final String _Statistic = "Statistic";
 
 /**
@@ -75,14 +73,24 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   //String TSID = parameters.getValue ( "TSID" );
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
+    String ValueToCheck = parameters.getValue ( "ValueToCheck" );
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String Value1 = parameters.getValue ( "Value1" );
+    String Value2 = parameters.getValue ( "Value2" );
     String warning = "";
     String message;
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
+    if ( (ValueToCheck != null) && !ValueToCheck.equalsIgnoreCase(_DataValue) &&
+        !ValueToCheck.equalsIgnoreCase(_Statistic)) {
+        message = "The value to check (" + ValueToCheck + ") is not valid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the value to check as " + _DataValue + " (default), or " + _Statistic + ".") );
+    }
     
     if ( (CheckCriteria == null) || CheckCriteria.equals("") ) {
         message = "The check criteria must be specified.";
@@ -90,56 +98,82 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide the check criteria to evaluate." ) );
     }
+    else {
+        // Make sure that it is in the supported list
+        List<String> criteriaSupported = TSUtil_CheckTimeSeries.getCheckCriteriaChoices();
+        boolean found = false;
+        for ( int i = 0; i < criteriaSupported.size(); i++ ) {
+           if ( criteriaSupported.get(i).equalsIgnoreCase(CheckCriteria) ) {
+               found = true;
+               break;
+           }
+        }
+        if ( !found ) {
+            message = "The check criteria (" + CheckCriteria + ") is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported criteria using the command editor." ) );
+        }
+        
+        // Additional checks that depend on the criteria
+        
+        int nRequiredValues = TSUtil_CheckTimeSeries.getRequiredNumberOfValuesForCheckCriteria ( CheckCriteria );
+        
+        if ( nRequiredValues >= 1 ) {
+            if ( (Value1 == null) || Value1.equals("") ) {
+                message = "Value1 must be specified for the criteria.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Provide Value1." ) );
+            }
+            else if ( !StringUtil.isDouble(Value1) ) {
+                message = "Value1 (" + Value1 + ") is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify Value1 as a number." ) );
+            }
+        }
+        
+        if ( nRequiredValues == 2 ) {
+            if ( (Value2 == null) || Value2.equals("") ) {
+                message = "Value2 must be specified for the criteria.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Provide Value2." ) );
+            }
+            else if ( !StringUtil.isDouble(Value2) ) {
+                message = "Value2 (" + Value2 + ") is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify Value2 as a number." ) );
+            }
+        }
+    }
 
-    /*
-    if ( (ScaleValue == null) || ScaleValue.equals("") ) {
-        message = "The scale value must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Provide a scale value." ) );
-    }
-    else if ( !ScaleValue.equalsIgnoreCase(_DaysInMonth) &&
-        !ScaleValue.equalsIgnoreCase(_DaysInMonthInverse) &&
-        !StringUtil.isDouble(ScaleValue) ) {
-        warning +=
-            "\nThe scale value \"" + ScaleValue +
-            "\" is not a number, " + _DaysInMonth + ", or " +
-            _DaysInMonthInverse + ".";
-        message = "The scale value (" + ScaleValue + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the scale value as a number, " + _DaysInMonth + ", or " +
-            _DaysInMonthInverse + "." ) );
-    }
-    if (    (AnalysisStart != null) && !AnalysisStart.equals("") &&
-        !AnalysisStart.equalsIgnoreCase("OutputStart") &&
-        !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
-        try {   DateTime.parse(AnalysisStart);
+    if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
+        !AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
+        try {
+            DateTime.parse(AnalysisStart);
         }
         catch ( Exception e ) {
             message = "The analysis start date/time \"" + AnalysisStart + "\" is not a valid date/time.";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time, OutputStart, or output end." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time, OutputStart, or output end." ) );
         }
     }
-    if (    (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
-        !AnalysisEnd.equalsIgnoreCase("OutputStart") &&
-        !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
-        try {   DateTime.parse( AnalysisEnd );
+    if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
+        !AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+        try {
+            DateTime.parse( AnalysisEnd );
         }
         catch ( Exception e ) {
             message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
             warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         }
     }
-    */
     
     // Check for invalid parameters...
     List valid_Vector = new Vector();
@@ -218,6 +252,9 @@ CommandWarningException, CommandException
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String ProblemType = parameters.getValue ( "ProblemType" );
+    if ( (ProblemType ==null) || ProblemType.equals("") ) {
+        ProblemType = "Check"; // Default
+    }
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -225,85 +262,79 @@ CommandWarningException, CommandException
     DateTime AnalysisEnd_DateTime = null;
     
     try {
-    if ( AnalysisStart != null ) {
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "DateTime", AnalysisStart );
-        CommandProcessorRequestResultsBean bean = null;
-        try { bean =
-            processor.processRequest( "DateTime", request_params);
+        if ( AnalysisStart != null ) {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", AnalysisStart );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting AnalysisStart DateTime(DateTime=" + AnalysisStart + ") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+    
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for AnalysisStart DateTime(DateTime=" +
+                AnalysisStart + ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {
+                AnalysisStart_DateTime = (DateTime)prop_contents;
+            }
         }
-        catch ( Exception e ) {
-            message = "Error requesting AnalysisStart DateTime(DateTime=" +
-            AnalysisStart + ") from processor.";
-            Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-
-        PropList bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for AnalysisStart DateTime(DateTime=" +
-            AnalysisStart + ") returned from processor.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-        else {  AnalysisStart_DateTime = (DateTime)prop_contents;
-        }
-    }
     }
     catch ( Exception e ) {
         message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
         Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
         throw new InvalidCommandParameterException ( message );
     }
     
     try {
-    if ( AnalysisEnd != null ) {
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "DateTime", AnalysisEnd );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
+        if ( AnalysisEnd != null ) {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", AnalysisEnd );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + ") from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+    
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for AnalysisStart DateTime(DateTime=" +
+                AnalysisStart + "\") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {
+                AnalysisEnd_DateTime = (DateTime)prop_contents;
+            }
         }
-        catch ( Exception e ) {
-            message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + ") from processor.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-
-        PropList bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for AnalysisStart DateTime(DateTime=" +
-            AnalysisStart + "\") returned from processor.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-        else {
-            AnalysisEnd_DateTime = (DateTime)prop_contents;
-        }
-    }
     }
     catch ( Exception e ) {
         message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
@@ -407,6 +438,7 @@ CommandWarningException, CommandException
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
                     // No recommendation since it is a user-defined check
+                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
                     status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
                 }
             }

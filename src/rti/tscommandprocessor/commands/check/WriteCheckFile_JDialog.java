@@ -210,14 +210,18 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
     paragraph.setLayout(new GridBagLayout());
     int yy = 0;
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command writes command run messages to a check file, as a summary of processor errors."),
+        "This command writes command warning/failure messages to a check file, as a summary of data/processing problems."),
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "Use Check*() commands prior to this command to perform checks on specific data types."),
+        "Use Check*() commands prior to this command to perform checks on specific data object types."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "Specify an \"html\" extension for the output file to generate an HTML report, or \"csv\" to " +
         "create a comma-separated value file."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "The HTML file will contain navigable information whereas the CSV file will only contain a list of " +
+        "warning/failure messages."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, paragraph,

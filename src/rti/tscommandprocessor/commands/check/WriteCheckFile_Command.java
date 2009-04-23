@@ -198,14 +198,55 @@ private void htmlWriteCheckFileIntro( HTMLWriter html, String title, CommandProc
     //PropList header_prop = new PropList("header");
     //header_prop.add("name=header");
     
-    html.heading(1, "Overview" );
+    html.heading(1, IOUtil.getProgramName() + " Check Results" );
+    
+    html.heading(2, "Program/Environment Information" );
     
     DateTime now = new DateTime(DateTime.DATE_CURRENT);
-    html.paragraph("Creation time: " + now );
+    Object o = processor.getPropContents("CommandFileName");
+    String commandFileName = "Unknown";
+    if ( o != null ) {
+        commandFileName = "" + o;
+    }
+    String [] tableHeaders = { "Property", "Value" };
+    html.paragraphStart();
+    html.tableStart();
+    html.tableRowStart();
+    html.tableHeaders( tableHeaders );
+    html.tableRowEnd();
+    String [] tds = new String[2];
+    tds[0] = "Command file";
+    tds[1] = commandFileName;
+    html.tableRow( tds );
+    tds[0] = "Program";
+    tds[1] = IOUtil.getProgramName() + " " + IOUtil.getProgramVersion();
+    html.tableRow( tds );
+    tds[0] = "User";
+    tds[1] = IOUtil.getProgramUser();
+    html.tableRow( tds );
+    tds[0] = "Creation time";
+    tds[1] = "" + now;
+    html.tableRow( tds );
+    tds[0] = "Computer";
+    tds[1] = IOUtil.getProgramHost();
+    html.tableRow( tds );
+    tds[0] = "Processor initial working directory";
+    tds[1] = "" + processor.getPropContents("InitialWorkingDir");
+    html.tableRow( tds );
+    StringBuffer b = new StringBuffer();
+    b.append( IOUtil.getProgramName() );
+    String [] args = IOUtil.getProgramArguments();
+    for ( int i = 0; i < args.length; i++ ) {
+        b.append ( " " + args[i] );
+    }
+    tds[0] = "Command line";
+    tds[1] = b.toString();
+    html.tableRow( tds );
+    html.tableEnd();
+    html.paragraphEnd();
     
-    html.heading(1, "Commands" );
-    htmlWriteCommands( html, processor.getCommands() );
-    html.horizontalRule();
+    html.heading(2, "Commands" );
+    htmlWriteCommands( html, processor.getCommands(), true ); // false to write text, true for table
 }
 
 /**
@@ -213,20 +254,82 @@ Writes the commands from the processor in HTML using the <code> tag, with embedd
 other content can link to it.  This will
 force the output to match the command files text exactly.
 @param html HTMLWriter object.
+@param writeTable indicates whether to write the commands as simple text or a table.
 @throws Exception
  */
-private void htmlWriteCommands( HTMLWriter html, List<Command> commands )  throws Exception
+private void htmlWriteCommands( HTMLWriter html, List<Command> commands, boolean writeTable )
+throws Exception
 {
+    String [] tableHeaders = { "#", "Warnings", "Failures", "Command" };
     html.paragraphStart();
     int size = commands.size();
-    for ( int i = 0; i < size; i++ ) {
-        html.anchorStart("c" + i );
-        html.code("" + commands.get(i));
-        html.anchorEnd();
-        html.breakLine();
+    if ( writeTable ) {
+        html.tableStart();
+        html.tableRowStart();
+        html.tableHeaders( tableHeaders );
+        html.tableRowEnd();
+        // loop through the data
+        String [] td1 = new String[1]; // Cell data for single column
+        PropList severityAttributes = null;
+        PropList warningAttributes = new PropList("warning");
+        warningAttributes.set( "class", CommandStatusType.WARNING.toString().toLowerCase());
+        PropList failureAttributes = new PropList("failure");
+        failureAttributes.set( "class", CommandStatusType.FAILURE.toString().toLowerCase());
+        int commandsSize = commands.size();
+        Command command;
+        int countWarnings, countFailures;
+        for ( int iCommand = 0; iCommand < commandsSize; iCommand++ ) {
+            command = commands.get(iCommand);
+            html.tableRowStart();
+            // Row (command) number...
+            td1[0] = "" + (iCommand + 1);
+            html.tableCells( td1, null );
+            // Number of warnings
+            countWarnings = CommandStatusUtil.getSeverityCount ( command, CommandStatusType.WARNING, false );
+            td1[0] = "" + countWarnings;
+            severityAttributes = null;
+            if ( countWarnings > 0 ) {
+                severityAttributes = warningAttributes;
+            }
+            html.tableCells( td1, severityAttributes );
+            // Number of failures
+            countFailures = CommandStatusUtil.getSeverityCount ( command, CommandStatusType.FAILURE, false );
+            td1[0] = "" + countFailures;
+            severityAttributes = null;
+            if ( countFailures > 0 ) {
+                severityAttributes = failureAttributes;
+            }
+            html.tableCells( td1, severityAttributes );
+            // Command, with anchor
+            // Format the link manually because HTMLWriter does not have anything that will handle it
+            html.tableCellStart();
+            td1[0] = "<a name=\"c" + iCommand + "\">" + command + "</a>";
+            html.write(td1[0]);
+            html.tableCellEnd();
+            html.tableRowEnd();
+        }
+        html.tableEnd();
     }
-    html.paragraphEnd();
-    html.horizontalRule();
+    else {
+        boolean doPre = true; // If using "pre", the lines don't wrap, but have to embed link in hidden text
+        for ( int i = 0; i < size; i++ ) {
+            if ( doPre ) {
+                // Wrap each command in "pre" to prevent wrapping
+                html.anchorStart("c" + i );
+                html.write(" ");
+                html.anchorEnd();
+                html.pre("" + commands.get(i));
+            }
+            else {
+                // TODO SAM 2009-04-22 Evaluate use - use "code" and line breaks - problem is that commands wrap - keep code
+                html.anchorStart("c" + i );
+                html.code("" + commands.get(i));
+                html.anchorEnd();
+                html.breakLine();
+            }
+        }
+        html.paragraphEnd();
+    }
 }
 
 /**
@@ -235,8 +338,7 @@ Writes the log records to the check file.
 @param logRecordList list of log records to output.
 @throws Exception
  */
-private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, PropList tableProps,
-    PropList tableRowProps, String [] tableHeaders ) throws Exception
+private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, String [] tableHeaders ) throws Exception
 {
     // Get the data from the model
     // proplist provides an anchor link for this section used
@@ -245,23 +347,25 @@ private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, Pr
     //data_prop.add( "name=data" + index );
     // write the more component specific data
     
-    String heading = "Run/Validation Problems";
-    html.heading(1, heading);
-    html.paragraphStart( heading );
+    String heading = "Command Problem Summary";
+    html.heading(2, heading);
+    html.paragraphStart();
     html.write("Total number of failures: " +
-        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE ));
+        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE, false ));
     html.breakLine();
-    html.write("Total number of commands with failures: " );
+    html.write("Total number of commands with failures: " +
+        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE, true ));
     html.breakLine();
     html.write("Total number of warnings: " +
-            CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING ));
+        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING, false ));
     html.breakLine();
-    html.write("Total number of commands with warnings: " );
+    html.write("Total number of commands with warnings: " +
+        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING, true ));
     html.breakLine();
     html.paragraphEnd( );
     if ( logRecordList.size() > 0 ) {
         // table start
-        html.tableStart( tableProps );
+        html.tableStart();
         html.tableRowStart();
         html.tableHeaders( tableHeaders );
         html.tableRowEnd();
@@ -326,20 +430,20 @@ private void htmlWriteStyles(HTMLWriter html)
 throws Exception
 {
     html.write("<style>\n"
-            + "#titles { font-weight:bold; color:#303044 }\n"
-            + "table { background-color:black; text-align:left }\n"  
-            + "th {background-color:#333366; text-align:center;"
-            + " vertical-align:bottom; color:white }\n" 
-            + "td {background-color:white; text-align:left;"
-            + " vertical-align:bottom; }\n" 
-            + "body { text-align:left; font-size:12; }\n"
-            + "pre { font-size:12; }\n"
-            + "p { font-size:12; }\n"
-            + "/* Following control formatting of severity column in table */"
-            + ".warning { background-color:yellow; }\n"
-            + ".failure { background-color:red; }\n"
-            + ".success { background-color:green; }\n"
-            + "</style>\n");
+        + "#titles { font-weight:bold; color:#303044 }\n"
+        + "table { background-color:black; text-align:left; border:1; bordercolor:black; cellspacing:1; cellpadding:1 }\n"  
+        + "th { background-color:#333366; text-align:center; vertical-align:bottom; color:white }\n"
+        + "tr { valign:bottom }\n"
+        + "td { background-color:white; text-align:left; vertical-align:bottom; }\n" 
+        + "body { text-align:left; font-size:12pt; }\n"
+        + "pre { font-size:12pt; margin: 0px }\n"
+        + "p { font-size:12pt; }\n"
+        + "/* The following controls formatting of severity column in tables */\n"
+        + ".warning { background-color:yellow; }\n"
+        + ".failure { background-color:red; }\n"
+        + ".success { background-color:green; }\n"
+        + ".unknown { background-color:white; }\n"
+        + "</style>\n");
 }
 
 /**
@@ -481,6 +585,8 @@ throws Exception {
     List ignoredCommentIndicators = new Vector(1);
     ignoredCommentIndicators.add ( "#>");
     
+    // TODO SAM Need to get normal comment header info and fold into HTML file in nice format
+    
     // Format some basic comments at the top of the file.  Do this to a copy of the
     // incoming comments so that they are not modified in the calling code.
     List newComments2 = null;
@@ -493,18 +599,6 @@ throws Exception {
     newComments2.add(0,"");
     newComments2.add(1,appName + " check file containing all warning/failure messages from run.");
     newComments2.add(2,"");
-    //out = IOUtil.processFileHeaders( oldFile, IOUtil.getPathUsingWorkingDir(filename), 
-    //  newComments2, commentIndicators, ignoredCommentIndicators, 0);
-    
-    // Properties for tables
-    PropList tableProps = new PropList("Table");
-    tableProps.add("border=\"1\"");
-    tableProps.add("bordercolor=black");
-    tableProps.add("cellspacing=1");
-    tableProps.add("cellpadding=1");
-    
-    PropList tableRowProps = new PropList("TableRowProps");
-    tableRowProps.add("valign=bottom");
 
     String title = appName + " Check File (" + processor.getPropContents("CommandFileName") + ")";
     
@@ -521,8 +615,7 @@ throws Exception {
         // Write introduction information
         htmlWriteCheckFileIntro( html, title, processor );
         // Write the main table that contains the problems
-        // TODO SAM 2009-04-21 Why aren't the table properties just handled with styles?  JEditorPane limitation?
-        htmlWriteCommandLogRecords( html, data, tableProps, tableRowProps, names );
+        htmlWriteCommandLogRecords( html, data, names );
         // Close the body section and file
         html.bodyEnd();
         html.htmlEnd();
@@ -589,7 +682,7 @@ throws Exception {
             newComments2 = new Vector(newComments);
         }
         newComments2.add(0,"");
-        newComments2.add(1,"StateDMI check file containing all warning/failure messages from run.");
+        newComments2.add(1,IOUtil.getProgramName() + " check file containing all warning/failure messages from run.");
         newComments2.add(2,"");
         out = IOUtil.processFileHeaders( oldFile, IOUtil.getPathUsingWorkingDir(filename), 
             newComments2, commentIndicators, ignoredCommentIndicators, 0);
@@ -615,21 +708,17 @@ throws Exception {
             if ( csp != null ) {
                 command = csp.toString();
             }
-            line[2] = StringUtil.formatString(command, formats[2]).trim();
-            line[3] = StringUtil.formatString(logRecord.getProblem(), formats[3]).trim();
-            line[4] = StringUtil.formatString(logRecord.getRecommendation(), formats[3]).trim();
+            line[2] = StringUtil.formatStringForCsv(StringUtil.formatString(command, formats[2]).trim(),true);
+            line[3] = StringUtil.formatStringForCsv(StringUtil.formatString(logRecord.getProblem(), formats[3]).trim(),true);
+            line[4] = StringUtil.formatStringForCsv(StringUtil.formatString(logRecord.getRecommendation(), formats[3]).trim(),true);
 
             buffer = new StringBuffer();    
             for (j = 0; j < fieldCount; j++) {
                 if ( j > 0 ) {
                     buffer.append(delimiter);
                 }
-                if (line[j].indexOf(delimiter) > -1) {
-                    line[j] = "\"" + line[j] + "\"";
-                }
                 buffer.append(line[j]);
             }
-
             out.println(buffer.toString());
         }
     }

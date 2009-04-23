@@ -37,11 +37,11 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private SetIncludeMissingTS_Command __command = null; // Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextField
+private JTextArea __command_JTextArea=null;// Command as JTextField
 private SimpleJComboBox	__IncludeMissingTS_JComboBox = null;// Field for true/false
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private boolean     __ok = false;       // Indicates whether OK button has been pressed.
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor dialog constructor.

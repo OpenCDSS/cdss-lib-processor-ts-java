@@ -57,7 +57,6 @@ import rti.tscommandprocessor.ui.CommandEditorUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -406,17 +405,18 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {
+		    // Automatically add to the list after the blank...
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the blank...
+			else {
+			    // Select the blank...
 				__TSID_JComboBox.select ( 0 );
 			}
 		}

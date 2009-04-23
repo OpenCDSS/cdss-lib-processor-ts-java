@@ -95,8 +95,8 @@ private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -393,19 +393,19 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
-        if ( TSID == null ) {
-            // Select default...
-            __TSID_JComboBox.select ( 0 );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox,TSID, JGUIUtil.NONE, null, null ) ) {
+            // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
                 __TSID_JComboBox.select ( TSID );
             }
             else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTSID value \"" + TSID +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
+                // Select the blank...
+                __TSID_JComboBox.select ( 0 );
             }
         }
         if ( EnsembleID == null ) {

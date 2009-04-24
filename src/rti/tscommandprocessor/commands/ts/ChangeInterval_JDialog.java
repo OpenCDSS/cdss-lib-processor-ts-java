@@ -494,7 +494,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     __Tolerance_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Tolerance (default = 1% (0.01))."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Tolerance (default = 0.01)."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Handle endpoints how?
@@ -512,7 +512,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - Indicate how to handle each interval endpoint values in hourly or finer input (default=" + __command._AvgEndpoints + ")."),
+		"Optional - Indicate how to handle each interval endpoint values in daily or finer input (default=" + __command._AvgEndpoints + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count

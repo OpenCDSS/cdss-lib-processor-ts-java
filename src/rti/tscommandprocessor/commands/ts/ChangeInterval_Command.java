@@ -571,7 +571,18 @@ throws InvalidCommandParameterException,
         // Update the data to the processor so that appropriate actions are taken...
 
         TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
-	} 
+	}
+    catch ( InvalidCommandParameterException e ) {
+      message = "Error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
+		Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+		Message.printWarning ( log_level, routine, e );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Consult documentation for available time scale combinations." ) );
+        throw new CommandWarningException ( message );
+    }
 	catch ( Exception e ) {
 		message = "Unexpected error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
 		Message.printWarning(warning_level,

@@ -512,7 +512,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - Indicate how to handle each interval endpoint values in daily or finer input (default=" + __command._AvgEndpoints + ")."),
+		"Optional - Indicate how to handle interval endpoint values in hourly or finer input (default=" + __command._AvgEndpoints + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
@@ -524,8 +524,8 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__AllowMissingCount_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - Number of missing values allowed in original " +
-		"processing interval (default=0)."),
+		"Optional - Number of missing values allowed in input " +
+		"interval (default=0)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Allow missing percent
@@ -557,7 +557,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - Use to fill output when converting from large to small " +
+		"Optional - Use when converting from large to small " +
 		"interval (default=" + __command._Repeat + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	

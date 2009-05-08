@@ -124,10 +124,9 @@ public final int	INSERT_TS = 1,
 					NONE = 4;
 
 /**
-The list of commands managed by this command processor,
-guaranteed to be non-null.
+The list of commands managed by this command processor, guaranteed to be non-null.
 */
-private List __Command_Vector = new Vector();
+private List<Command> __Command_Vector = new Vector();
 
 /**
 The name of the file to which the commands are saved, or null if not saved.
@@ -439,11 +438,15 @@ throws IOException
         line = line.trim();
         // Create a command from the line.
         // Normally will create the command even if not recognized.
+        if ( Message.isDebugOn ) {
+            Message.printDebug( 10, routine, "Creating command using trimmed string \"" + line + "\"" );
+        }
         if ( createUnknownCommandIfNotRecognized ) {
             try {
                 command = cf.newCommand ( line, createUnknownCommandIfNotRecognized );
             }
             catch ( UnknownCommandException e ) {
+                Message.printWarning( 3, routine, "Unexpected error creating command (" + e + ")." );
                 // Should not happen because of parameter passed above
             }
         }
@@ -653,6 +656,9 @@ throws IOException
     if ( !notifyListenersForEachAdd ) {
         notifyCommandListListenersOfAdd ( 0, (numAdded - 1) );
     }
+    if ( Message.isDebugOn ) {
+        Message.printDebug(10, routine, "Added " + numAdded + " commands." );
+    }
 }
 
 /**
@@ -706,7 +712,7 @@ public boolean getCancelProcessingRequested ()
 Return the list of commands.
 @return the list of commands.
 */
-public List getCommands ()
+public List<Command> getCommands ()
 {
 	return __Command_Vector;
 }

@@ -8,6 +8,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import java.io.File;
 
+import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +41,8 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.text.DateFormat;
 
 /**
@@ -54,6 +57,7 @@ public class FillPrincipalComponentAnalysis_Command extends AbstractCommand impl
 protected final String _SelectedTS      = "SelectedTS";
 protected final String _AllMatchingTSID = "AllMatchingTSID";
 protected final String _AllTS           = "AllTS";
+public final int _maxCombinationsDefault = 20;
 
 // Run mode flag. 
 private boolean __commandMode = true;
@@ -105,8 +109,10 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	// Get the properties from the propList parameters.
+	String DependentTSList  = parameters.getValue ( "DependentTSList"  );
 	String DependentTSID    = parameters.getValue ( "DependentTSID"    );
 	String IndependentTSList= parameters.getValue ( "IndependentTSList");
+	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
 	String AnalysisStart	= parameters.getValue ( "AnalysisStart"    );
 	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
 	String FillStart 	= parameters.getValue ( "FillStart"        );
@@ -132,7 +138,6 @@ throws InvalidCommandParameterException
 	}
 		
 	// Make sure one or more time series are selected when AllMatchingTSID is selected.
-    /*
 	if ( IndependentTSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
 		if ( IndependentTSID != null ) {
 			List selectedV = StringUtil.breakStringList (
@@ -153,7 +158,6 @@ throws InvalidCommandParameterException
 				+ "\" is specified.";
 		}
 	}
-     */
 
 	// Make sure AnalysisStart, if given, is a valid date
 	DateTime AnalysisStartDate = null;
@@ -481,6 +485,7 @@ throws InvalidCommandParameterException,
 	
 	CommandProcessor tsCP = getCommandProcessor();
 	CommandProcessor processor = tsCP;
+    PrintWriter out = null;
 	
 	// Get the list of dependent time series to process...
     TS dependentTS = null;
@@ -564,6 +569,8 @@ throws InvalidCommandParameterException,
 			DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
 		dependentTSList = TSUtil.selectTimeSeries ( 
 			tsObjects, dependentTSID_Vector, null );
+        if ( dependentTSList.size() > 0 )
+            dependentTS = (TS) dependentTSList.get(0);
 	}
 	
 	// Get the list of independent time series to process...
@@ -685,9 +692,16 @@ throws InvalidCommandParameterException,
 	*/
 
 	if ( OutputFile != null && OutputFile.length() > 0  ) {
-		// analysisProperties.set ( "OutputFile", OutputFile );
+            try {
+                out = new PrintWriter(OutputFile);
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(FillPrincipalComponentAnalysis_Command.class.getName()).log(Level.SEVERE, null, ex);
+            }
 	}
-	
+
+    int maxCombinationsInt = MaxCombinations == null? _maxCombinationsDefault :
+        Integer.parseInt(MaxCombinations);
+
 	// Run the PrincipalComponentAnalysis.
 	try {
 		// Instantiate the PrincipalComponentAnalysis	object
@@ -696,14 +710,19 @@ throws InvalidCommandParameterException,
 			independentTSList,
 			AnalysisStartDateTime,
             AnalysisEndDateTime,
-            Integer.parseInt(MaxCombinations),
+            maxCombinationsInt,
             AnalysisMonths ).getPrincipalComponentAnalysis();
+        if ( out != null ) {
+            __PrincipalComponentAnalysis.printOutput(out);
+            out.flush();
+            out.close();
+        }
 	} catch ( Exception e ) {
 		// REVISIT [LT 2005-04-20] Problems throwing an exception
 		// from here to be catch by the calling object. This method
 		// is called by actionPerformed and it is not allowing me 
 		// to declare "Throws Exception". How to fix this?
-		mssg = "Unexpected error performing mixed station analysis (" + e + ").";
+		mssg = "Unexpected error performing principal component analysis (" + e + ").";
 		Message.printWarning (1, mthd, mssg );
 	} 
 

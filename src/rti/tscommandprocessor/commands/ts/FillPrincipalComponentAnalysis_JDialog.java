@@ -103,23 +103,6 @@ private JPopupMenu	 __IndependentTS_JPopupMenu   = null;
 						// Field for independent time
 						// series identifiers
 
-private SimpleJList	__AnalysisMethod_SimpleJList  = null;
-						// Field for AnalysisMethod
-
-private SimpleJComboBox	__NumberOfEquations_JComboBox = null;
-						// OneEquation, MonthlyEquations
-
-private SimpleJList 	__Transformation_SimpleJList  = null;
-						// Field for Transformation
-
-private JTextField	__MinimumDataCount_JTextField;
-						// Field to the MinimumDataCount
-private JTextField	__MinimumR_JTextField;
-						// Field to the MinimumR
-private SimpleJComboBox	__BestFitIndicator_JComboBox = null; 	// SEP
-
-private JTextField	__Intercept_JTextField = null;
-						// Intercept value as JTextField
 private JTextField	__AnalysisStart_JTextField = null,
 			__AnalysisEnd_JTextField   = null,
 						// Text fields for dependent
@@ -244,7 +227,7 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {
-	String mthd = "fillMixedStation_JDialog.actionPerformed", mssg;
+	String mthd = "fillPrincipalComponentAnalysis_JDialog.actionPerformed", mssg;
 	String s = event.getActionCommand();
 	Object o = event.getSource();
 
@@ -454,17 +437,10 @@ private void checkInput ()
 	String DependentTSID    = getDependentTSIDFromInterface();
 	String IndependentTSList= __IndependentTSList_JComboBox.getSelected();
 	String IndependentTSID  = getIndependentTSIDFromInterface();
-	String AnalysisMethod   = getAnalysisMethodFromInterface();
-	String Transformation   = getTransformationFromInterface();
-	String NumberOfEquations= __NumberOfEquations_JComboBox.getSelected();
 	String AnalysisStart    = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd      = __AnalysisEnd_JTextField.getText().trim();
-	String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
-	String MinimumR         = __MinimumR_JTextField.getText().trim();
-	String BestFitIndicator = __BestFitIndicator_JComboBox.getSelected();
 	String FillStart        = __FillStart_JTextField.getText().trim();
 	String FillEnd          = __FillEnd_JTextField.getText().trim();
-	String Intercept        = __Intercept_JTextField.getText().trim();
 	String OutputFile       = __OutputFile_JTextField.getText().trim();
 
 	// Put together the list of parameters to check...
@@ -485,18 +461,6 @@ private void checkInput ()
 	if ( IndependentTSID != null && IndependentTSID.length() > 0 ) {
 		props.set( "IndependentTSID", IndependentTSID );
 	}
-	// AnalysisMethod
-	if ( AnalysisMethod != null && AnalysisMethod.length() > 0 ) {
-		props.set( "AnalysisMethod", AnalysisMethod );
-	}
-	// NumberOfEquations
-	if ( NumberOfEquations != null && NumberOfEquations.length() > 0 ) {
-		props.set( "NumberOfEquations", NumberOfEquations );
-	}
-	// Transformation
-	if ( Transformation != null && Transformation.length() > 0 ) {
-		props.set( "Transformation", Transformation );
-	}
 	// AnalysisStart
 	if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {
 		props.set( "AnalysisStart", AnalysisStart );
@@ -505,18 +469,6 @@ private void checkInput ()
 	if ( AnalysisEnd != null && AnalysisEnd.length() > 0 ) {
 		props.set( "AnalysisEnd", AnalysisEnd );
 	}
-	// MinimumDataCount
-	if ( MinimumDataCount != null && MinimumDataCount.length() > 0 ) {
-		props.set( "MinimumDataCount", MinimumDataCount );
-	}
-	// MinimumR
-	if ( MinimumR != null && MinimumR.length() > 0 ) {
-		props.set( "MinimumR", MinimumR );
-	}
-	// BestFitIndicator
-	if ( BestFitIndicator != null && BestFitIndicator.length() > 0 ) {
-		props.set( "BestFitIndicator", BestFitIndicator );
-	}
 	// FillStart
 	if ( FillStart != null && FillStart.length() > 0 ) {
 		props.set( "FillStart", FillStart );
@@ -524,10 +476,6 @@ private void checkInput ()
 	// FillEnd
 	if ( FillEnd != null && FillEnd.length() > 0 ) {
 		props.set( "FillEnd", FillEnd );
-	}
-	// Intercept
-	if ( Intercept != null && Intercept.length() > 0 ) {
-		props.set( "Intercept", Intercept );
 	}
 	// OutputFile
 	if ( OutputFile != null && OutputFile.length() > 0 ) {
@@ -556,17 +504,10 @@ private void commitEdits ()
 	String DependentTSID = getDependentTSIDFromInterface();
 	String IndependentTSList= __IndependentTSList_JComboBox.getSelected();
 	String IndependentTSID = getIndependentTSIDFromInterface();
-	String AnalysisMethod = getAnalysisMethodFromInterface();
-	String Transformation = getTransformationFromInterface();
-	String NumberOfEquations = __NumberOfEquations_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
-	String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
-	String MinimumR = __MinimumR_JTextField.getText().trim();
-	String BestFitIndicator = __BestFitIndicator_JComboBox.getSelected();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
-	String Intercept = __Intercept_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// Commit the values to the command object.
@@ -574,17 +515,10 @@ private void commitEdits ()
 	__command.setCommandParameter ("DependentTSID"    , DependentTSID    );
 	__command.setCommandParameter ("IndependentTSList", IndependentTSList);
 	__command.setCommandParameter ("IndependentTSID"  , IndependentTSID  );
-	__command.setCommandParameter ("AnalysisMethod"   , AnalysisMethod   );
-	__command.setCommandParameter ("Transformation"   , Transformation   );
-	__command.setCommandParameter ("NumberOfEquations", NumberOfEquations);
 	__command.setCommandParameter ("AnalysisStart"    , AnalysisStart    );
 	__command.setCommandParameter ("AnalysisEnd"      , AnalysisEnd      );
-	__command.setCommandParameter ("MinimumDataCount" , MinimumDataCount );
-	__command.setCommandParameter ("MinimumR"         , MinimumR         );
-	__command.setCommandParameter ("BestFitIndicator" , BestFitIndicator );
 	__command.setCommandParameter ("FillStart"        , FillStart 	     );
 	__command.setCommandParameter ("FillEnd"          , FillEnd          );
-	__command.setCommandParameter ("Intercept"        , Intercept        );
 	__command.setCommandParameter ("OutputFile"       , OutputFile       );
 }
 
@@ -632,16 +566,10 @@ throws Throwable
 	__IndependentTSID_SimpleJList = null;
 	__IndependentTS_JPopupMenu	= null;
 
-	__AnalysisMethod_SimpleJList = null;
-	__NumberOfEquations_JComboBox = null;
-	__Transformation_SimpleJList = null;
-
 	__AnalysisStart_JTextField = null;
 	__AnalysisEnd_JTextField = null;
-	__BestFitIndicator_JComboBox = null;
 	__FillStart_JTextField = null;
 	__FillEnd_JTextField = null;
-	__Intercept_JTextField = null;
 
 	__OutputFile_JTextField	 = null;
 
@@ -662,26 +590,6 @@ throws Throwable
 }
 
 /**
-Return a comma-delimited string containing the AnalysisMethods, built from
-the selected items. 
-*/
-private String getAnalysisMethodFromInterface()
-{
-	String AnalysisMethod = "";
-
-	List analysis = __AnalysisMethod_SimpleJList.getSelectedItems();
-	StringBuffer buffer = new StringBuffer();
-	for ( int i = 0; i < analysis.size(); i++ ) {
-		if ( i > 0 ) buffer.append ( ",");
-		buffer.append ( analysis.get( i ) );
-	}
-	AnalysisMethod = buffer.toString();
-	buffer = null;
-
-	return AnalysisMethod;
-}
-
-/**
 Return a comma-delimited string containing the DependentTSIDs, built from the
 selected items. 
 */
@@ -690,7 +598,7 @@ private String getDependentTSIDFromInterface()
 	String DependentTSID = "";
 
 	String DependentTSList = __DependentTSList_JComboBox.getSelected();
-/*
+
 	if (	DependentTSList.equalsIgnoreCase(__command._AllTS) ||
 		DependentTSList.equalsIgnoreCase(__command._SelectedTS) ) {
 		// Don't need...
@@ -712,7 +620,7 @@ private String getDependentTSIDFromInterface()
 			DependentTSID = buffer.toString();
 		}
 	}
-	*/
+	
 	return DependentTSID;
 }
 
@@ -725,7 +633,7 @@ private String getIndependentTSIDFromInterface()
 	String IndependentTSID = "";
 
 	String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
-/*
+
 	if (	IndependentTSList.equalsIgnoreCase(__command._AllTS) ||
 		IndependentTSList.equalsIgnoreCase(__command._SelectedTS) ) {
 		// Don't need...
@@ -747,29 +655,10 @@ private String getIndependentTSIDFromInterface()
 			IndependentTSID = buffer.toString();
 		}
 	}
-	*/
+	
 	return IndependentTSID;
 }
 
-/**
-Return a comma-delimited string containing the Transformation, built from
-the selected items. 
-*/
-private String getTransformationFromInterface()
-{
-	String Transformation = "";
-
-	List transformation = __Transformation_SimpleJList.getSelectedItems();
-	StringBuffer buffer = new StringBuffer();
-	for ( int i = 0; i < transformation.size(); i++ ) {
-		if ( i > 0 ) buffer.append ( ",");
-		buffer.append ( transformation.get( i ) );
-	}
-	Transformation = buffer.toString();
-	buffer = null;
-
-	return Transformation;
-}
 
 /**
 Instantiates the GUI components.
@@ -777,7 +666,7 @@ Instantiates the GUI components.
 @param command Vector of String containing the command.
 */
 private void initialize ( JFrame parent, Command command )
-{	String mthd = "fillMixedStation_JDialog.initialize", mssg;
+{	String mthd = "fillPrincipalComponentAnalysis_JDialog.initialize", mssg;
 
 	__command = (FillPrincipalComponentAnalysis_Command) command;
 	CommandProcessor processor = __command.getCommandProcessor();
@@ -787,7 +676,7 @@ private void initialize ( JFrame parent, Command command )
 	if ( __command.isCommandMode() ) {
 		setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	} else {
-		setTitle ( "Mixed Station Analysis" );
+		setTitle ( "Principal Component Analysis" );
 	}
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
@@ -990,54 +879,6 @@ private void initialize ( JFrame parent, Command command )
 		new JScrollPane(__IndependentTSID_SimpleJList),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
 
-	// Analysis method
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis method(s):"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	List av = new Vector();
-	__AnalysisMethod_SimpleJList = new SimpleJList (av);
-	__AnalysisMethod_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
-	__AnalysisMethod_SimpleJList.setVisibleRowCount ( 2 );
-	__AnalysisMethod_SimpleJList.select ( 0 );
-	__AnalysisMethod_SimpleJList.addListSelectionListener ( this );
-
-	JGUIUtil.addComponent( main_JPanel,
-		new JScrollPane(__AnalysisMethod_SimpleJList),
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-	// Number of equation (Cyclicity in the original Multiple Station Model
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number of equations:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
-	JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-	// Transformation
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation(s):" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	List tv = new Vector();
-	__Transformation_SimpleJList = new SimpleJList (tv);
-	__Transformation_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
-	__Transformation_SimpleJList.setVisibleRowCount ( 2 );
-	__Transformation_SimpleJList.select ( 0 );
-	__Transformation_SimpleJList.addListSelectionListener ( this );
-	__Transformation_SimpleJList.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel,
-			new JScrollPane(__Transformation_SimpleJList),
-			1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	
-	// Intercept
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Intercept_JTextField = new JTextField ( 10 );
-	__Intercept_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __Intercept_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Blank or 0.0 are allowed, used only with Transformation=None)."),
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
 	// Analysis period
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1067,39 +908,6 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-	// Minimum Data Count
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum Data Count:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__MinimumDataCount_JTextField = new JTextField ( 10 );
-	__MinimumDataCount_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __MinimumDataCount_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Minimum number of overlapping points required for analysis."),
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-	// Minimum R
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum R:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__MinimumR_JTextField = new JTextField ( 10 );
-	__MinimumR_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __MinimumR_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Minimum correlation required for a best fit. (default = 0.5)"),
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-	// Best fit indicator
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Best Fit:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__BestFitIndicator_JComboBox = new SimpleJComboBox ( false );
-	__BestFitIndicator_JComboBox.addItemListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __BestFitIndicator_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Best fit indicator, for ranking output."),
-	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
 	// File to save results.
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Output file:" ),
@@ -1400,7 +1208,7 @@ List readTextFile ( String fileName )
 /**
 Refresh the command from the other text field contents:
 <pre>
-fillMixedStation ( DependentTSList="...",
+fillPrincipalComponentAnalysis ( DependentTSList="...",
 		   DependentTSList="X,Y,...",
 		   IndependentTSList="...",
 		   IndependentTSList="X,Y,...",
@@ -1428,17 +1236,10 @@ private void refresh()
 	String IndependentTSList= ""; // How to get list of independ time series
 	String IndependentTSID  = ""; // Independent Time series.
 
-	String AnalysisMethod	= "";
-	String NumberOfEquations= "";
-	String Transformation	= "";
 	String AnalysisStart	= "";
 	String AnalysisEnd	= "";
-	String MinimumDataCount	= "";
-	String MinimumR		= "";
-	String BestFitIndicator = "";
 	String FillStart 	= "";
 	String FillEnd 		= "";
-	String Intercept	= "";
 	String OutputFile	= "";
 
 	__error_wait = false;
@@ -1455,17 +1256,10 @@ private void refresh()
 		DependentTSID     = props.getValue ( "DependentTSID"    );
 		IndependentTSList = props.getValue ( "IndependentTSList");
 		IndependentTSID   = props.getValue ( "IndependentTSID"  );
-		AnalysisMethod	  = props.getValue ( "AnalysisMethod"   );
-		NumberOfEquations = props.getValue ( "NumberOfEquations");
-		Transformation	  = props.getValue ( "Transformation"   );
 		AnalysisStart	  = props.getValue ( "AnalysisStart"    );
 		AnalysisEnd	  = props.getValue ( "AnalysisEnd"      );
-		MinimumDataCount  = props.getValue ( "MinimumDataCount" );
-		MinimumR  	  = props.getValue ( "MinimumR"         );
-		BestFitIndicator  = props.getValue ( "BestFitIndicator" );
 		FillStart	  = props.getValue ( "FillStart"        );
 		FillEnd		  = props.getValue ( "FillEnd"          );
-		Intercept	  = props.getValue ( "Intercept"        );
 		OutputFile	  = props.getValue ( "OutputFile"       );
 
 		// Make sure the DependentTSList option is valid
@@ -1611,119 +1405,6 @@ private void refresh()
 			}
 		}
 
-
-		// Check AnalysisMethod and
-		// highlight the one that match the command being edited
-		if ( AnalysisMethod != null ) {
-			v = StringUtil.breakStringList (
-				AnalysisMethod, ",",
-				StringUtil.DELIM_SKIP_BLANKS );
-			int pos = 0;
-			List selected = new Vector();
-			String analysis = "";
-			for ( int i = 0; i < v.size(); i++ ) {
-				analysis = (String) v.get(i);
-				if ( (pos = JGUIUtil.indexOf(
-					__AnalysisMethod_SimpleJList,
-					analysis, false, true)) >= 0 ) {
-					// It in the command and the list...
-					selected.add ( "" + pos );
-				} else {
-					Message.printWarning ( 1, mthd,
-						"Existing command references"
-						+ " a non-existent\n"
-						+ " Analysis Method\""
-						+ analysis
-						+ "\".  Select a\n"
-						+ "different Analysis Method "
-						+ "or Cancel.");
-					this.requestFocus();
-					__error_wait = true;
-				}
-			}
-
-			// Select the matched AnalysisMethod...
-			// Make sure to use setSelectedIndices to select multiply
-			// rows.
-			if ( selected.size() > 0  ) {
-				int [] iselected = new int[selected.size()];
-				for ( int j = 0; j < selected.size(); j++ ){
-					iselected[j] = StringUtil.atoi (
-						(String)selected.get(j));
-					__AnalysisMethod_SimpleJList.
-						setSelectedIndices(
-							iselected );
-				}
-			}
-		}
-
-		// Check NumberOfEquations and
-		// highlight the one that match the command being edited
-		if ( NumberOfEquations == null ) {
-			// Select default...
-			__NumberOfEquations_JComboBox.select ( 0 );
-		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__NumberOfEquations_JComboBox,
-				NumberOfEquations, JGUIUtil.NONE, null, null )) {
-				__NumberOfEquations_JComboBox.select (
-				NumberOfEquations);
-			}
-			else {	Message.printWarning ( 1, mthd,
-				"Existing command " +
-				"references an invalid\n" +
-				"NumberOfEquations value \"" + NumberOfEquations +
-				"\".  Select a different value or Cancel.");
-				this.requestFocus();
-				__error_wait = true;
-			}
-		}
-
-		// Check Transformation and
-		// highlight the one that match the command being edited
-		if ( Transformation != null ) {
-			v = StringUtil.breakStringList (
-				Transformation, ",",
-				StringUtil.DELIM_SKIP_BLANKS );
-			int pos = 0;
-			List selected = new Vector();
-			String transformation = "";
-			for ( int i = 0; i < v.size(); i++ ) {
-				transformation = (String) v.get(i);
-				if ( (pos = JGUIUtil.indexOf(
-					__Transformation_SimpleJList,
-					transformation, false, true)) >= 0 ) {
-					// It in the command and the list...
-					selected.add ( "" + pos );
-				} else {
-					Message.printWarning ( 1, mthd,
-						"Existing command references"
-						+ " a non-existent\n"
-						+ " Transformation \""
-						+ transformation
-						+ "\".  Select a\n"
-						+ "different Transformation "
-						+ "or Cancel.");
-					this.requestFocus();
-					__error_wait = true;
-				}
-			}
-
-			// Select the matched Transformation...
-			// Make sure to use setSelectedIndices to select multiply
-			// rows.
-			if ( selected.size() > 0  ) {
-				int [] iselected = new int[selected.size()];
-				for ( int j = 0; j < selected.size(); j++ ){
-					iselected[j] = StringUtil.atoi (
-						(String)selected.get(j));
-					__Transformation_SimpleJList.
-						setSelectedIndices(
-							iselected );
-				}
-			}
-		}
-
 		// Check AnalysisStart and update the text field
 		if ( AnalysisStart == null ) {
 			__AnalysisStart_JTextField.setText ( "" );
@@ -1738,43 +1419,6 @@ private void refresh()
 			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
 		}
 
-		// Check MinimumDataCount and update the text field
-		if ( MinimumDataCount == null || MinimumDataCount.equals("") ) {
-			__MinimumDataCount_JTextField.setText ( "" );
-		} else {
-			__MinimumDataCount_JTextField.setText(MinimumDataCount);
-		}
-
-		// Check MinimumR and update the text field
-		if ( MinimumR == null || MinimumR.equals("") ) {
-			__MinimumR_JTextField.setText( "" );
-		} else {
-			__MinimumR_JTextField.setText( MinimumR );
-		}
-
-		// Check BestFitIndicator
-		// highlight the one that match the command being edited
-		if ( BestFitIndicator == null ) {
-			// Select default...
-			__BestFitIndicator_JComboBox.select ( 0 );
-		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__BestFitIndicator_JComboBox,
-				BestFitIndicator, JGUIUtil.NONE, null, null )) {
-				__BestFitIndicator_JComboBox.select (
-				BestFitIndicator);
-			}
-			else {
-				Message.printWarning ( 1, mthd,
-				"Existing command " +
-				"references an invalid\n" +
-				"BestFitIndicator value \"" + BestFitIndicator +
-				"\".  Select a different value or Cancel.");
-				this.requestFocus();
-				__error_wait = true;
-			}
-		}
-
 		// Check FillStart and and update the text field
 		if ( FillStart == null ) {
 			__FillStart_JTextField.setText ( "" );
@@ -1787,13 +1431,6 @@ private void refresh()
 			__FillEnd_JTextField.setText ( "" );
 		} else {
 			__FillEnd_JTextField.setText ( FillEnd );
-		}
-
-		// Check Intercept and update the text field
-		if ( Intercept == null ) {
-			__Intercept_JTextField.setText ( "" );
-		} else {
-			__Intercept_JTextField.setText ( Intercept );
 		}
 
 		// Check OutputFile and update the text field
@@ -1821,17 +1458,10 @@ private void refresh()
 	DependentTSID    = getDependentTSIDFromInterface();
 	IndependentTSList= __IndependentTSList_JComboBox.getSelected();
 	DependentTSID    = getDependentTSIDFromInterface();
-	AnalysisMethod   = getAnalysisMethodFromInterface();
-	Transformation   = getTransformationFromInterface();
-	NumberOfEquations= __NumberOfEquations_JComboBox.getSelected();
 	AnalysisStart    = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd      = __AnalysisEnd_JTextField.getText().trim();
-	MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
-	MinimumR         = __MinimumR_JTextField.getText().trim();
-	BestFitIndicator = __BestFitIndicator_JComboBox.getSelected();
 	FillStart        = __FillStart_JTextField.getText().trim();
 	FillEnd          = __FillEnd_JTextField.getText().trim();
-	Intercept        = __Intercept_JTextField.getText().trim();
 	OutputFile       = __OutputFile_JTextField.getText().trim();
 
 	// And set the command properties.
@@ -1840,17 +1470,10 @@ private void refresh()
 	props.add ( "DependentTSID="     + DependentTSID    );
 	props.add ( "IndependentTSList=" + IndependentTSList);
 	props.add ( "DependentTSID="     + DependentTSID    );
-	props.add ( "AnalysisMethod="    + AnalysisMethod   );
-	props.add ( "Transformation="    + Transformation   );
-	props.add ( "NumberOfEquations=" + NumberOfEquations);
 	props.add ( "AnalysisStart="     + AnalysisStart    );
 	props.add ( "AnalysisEnd="       + AnalysisEnd      );
-	props.add ( "MinimumDataCount="  + MinimumDataCount );
-	props.add ( "MinimumR="          + MinimumR         );
-	props.add ( "BestFitIndicator="  + BestFitIndicator );
 	props.add ( "FillStart="         + FillStart        );
 	props.add ( "FillEnd="           + FillEnd          );
-	props.add ( "Intercept="         + Intercept        );
 	props.add ( "OutputFile="        + OutputFile       );
 
 	// Update the __Command_JTextArea if running under the command mode. 
@@ -2005,4 +1628,4 @@ public void windowDeiconified	( WindowEvent evt ){;}
 public void windowIconified	( WindowEvent evt ){;}
 public void windowOpened	( WindowEvent evt ){;}
 
-} // end fillMixedStation_JDialog
+} // end fillPrincipalComponentAnalysis_JDialog

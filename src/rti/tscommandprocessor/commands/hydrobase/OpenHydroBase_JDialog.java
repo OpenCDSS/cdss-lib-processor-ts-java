@@ -730,38 +730,44 @@ private void retrieveDatabaseNames(String server) {
 		return;
 	}
 
-	String[] unms = new String[2];
-	String[] pws = new String[2];
-	int[] ports = new int[2];
+	String[] unms = new String[3];
+	String[] pws = new String[3];
+	int[] ports = new int[3];
 
 	// FIXME SAM 2009-04-12 Need to obfuscate this
 	String s = __UseStoredProcedures_JComboBox.getSelected();
 	if (s.trim().equals("") || s.trim().equalsIgnoreCase("true")) {
 		unms[0] = "cdss";
 		pws[0] = "cdss%tools";
-		ports[0] = 	21784;
+		ports[0] = 	5758;
 		
-		unms[1] = "cdss";	
-		pws[1] = "cdss%tools";  
-		ports[1] = 	1433;	
+		unms[1] = "cdss";
+		pws[1] = "cdss%tools";
+		ports[1] = 	21784;
+		
+		unms[2] = "cdss";	
+		pws[2] = "cdss%tools";  
+		ports[2] = 	1433;	
 	} 
 	else {
 		unms[0] = "crdss";	
 		pws[0] = "crdss3nt";    
-		ports[0] = 	21784;
-
+		ports[0] = 	5758;
+		
 		unms[1] = "crdss";	
 		pws[1] = "crdss3nt";    
-		ports[1] = 1433;
+		ports[1] = 	21784;
+
+		unms[2] = "crdss";	
+		pws[2] = "crdss3nt";    
+		ports[2] = 1433;
 	}
 
 	GenericDMI dmi = null;
 
-	int i = 0;
-
-	for (; i < 2; i++) {
+	for ( int i = 0; i < unms.length; i++) {
 		try {
-			dmi = new GenericDMI("SQLServer2000", server, "master", ports[i], unms[i], pws[i]);
+			dmi = new GenericDMI("SQLServer", server, "master", ports[i], unms[i], pws[i]);
 			dmi.open();
 		}
 		catch (Exception e) {
@@ -770,7 +776,7 @@ private void retrieveDatabaseNames(String server) {
 		}
 
 		if (dmi != null) {
-			i = 5;
+			break;
 			// The DMI is closed below after database information is read from it.
 		}
 	}
@@ -800,7 +806,7 @@ private void retrieveDatabaseNames(String server) {
 		s = null;
 		int count = 0;
 		List v3 = new Vector();
-		for (i = 0; i < size; i++) {
+		for (int i = 0; i < size; i++) {
 			v2 = (List)v.get(i);
 			s = (String)v2.get(0);
 			s = s.trim();

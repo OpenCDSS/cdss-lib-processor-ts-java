@@ -148,7 +148,7 @@ throws Exception {
 	super ( databaseEngine, databaseServer, databaseName, port, systemLogin, systemPassword );
     if ( databaseEngine == null ) {
         // Use the default...
-        setDatabaseEngine("SQLServer2005");
+        setDatabaseEngine("SQLServer");
     }
     if ( databaseServer == null ) {
         // Use the default...

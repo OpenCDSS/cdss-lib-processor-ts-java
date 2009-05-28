@@ -135,6 +135,7 @@ import rti.tscommandprocessor.commands.ts.FillHistMonthAverage_Command;
 import rti.tscommandprocessor.commands.ts.FillHistYearAverage_Command;
 import rti.tscommandprocessor.commands.ts.FillInterpolate_Command;
 import rti.tscommandprocessor.commands.ts.FillMixedStation_Command;
+import rti.tscommandprocessor.commands.ts.FillPrincipalComponentAnalysis_Command;
 import rti.tscommandprocessor.commands.ts.FillMOVE2_Command;
 import rti.tscommandprocessor.commands.ts.FillPattern_Command;
 import rti.tscommandprocessor.commands.ts.FillProrate_Command;
@@ -397,6 +398,9 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(commandString,"FillPattern") ) {
         return new FillPattern_Command ();
     }
+	else if ( StringUtil.startsWithIgnoreCase(commandString,"FillPrincipalComponentAnalysis") ) {
+		return new FillPrincipalComponentAnalysis_Command ();
+	}
     else if ( StringUtil.startsWithIgnoreCase(commandString,"FillProrate") ) {
         return new FillProrate_Command ();
     }

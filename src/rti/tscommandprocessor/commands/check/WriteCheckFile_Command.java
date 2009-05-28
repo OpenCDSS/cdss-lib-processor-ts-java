@@ -349,20 +349,7 @@ private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, St
     
     String heading = "Command Problem Summary";
     html.heading(2, heading);
-    html.paragraphStart();
-    html.write("Total number of failures: " +
-        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE, false ));
-    html.breakLine();
-    html.write("Total number of commands with failures: " +
-        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE, true ));
-    html.breakLine();
-    html.write("Total number of warnings: " +
-        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING, false ));
-    html.breakLine();
-    html.write("Total number of commands with warnings: " +
-        CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING, true ));
-    html.breakLine();
-    html.paragraphEnd( );
+    htmlWriteProblemCounts ( html );
     if ( logRecordList.size() > 0 ) {
         // table start
         html.tableStart();
@@ -420,6 +407,28 @@ private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, St
         }
         html.tableEnd();
     }
+}
+
+/**
+Write the command problem counts.
+*/
+private void htmlWriteProblemCounts ( HTMLWriter html )
+throws Exception
+{
+	html.paragraphStart();
+	html.write("Total number of failures: " +
+	    CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE, false ));
+	html.breakLine();
+	html.write("Total number of commands with failures: " +
+	    CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.FAILURE, true ));
+	html.breakLine();
+	html.write("Total number of warnings: " +
+	    CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING, false ));
+	html.breakLine();
+	html.write("Total number of commands with warnings: " +
+	    CommandStatusUtil.getSeverityCount ( getCommandProcessor().getCommands(), CommandStatusType.WARNING, true ));
+	html.breakLine();
+	html.paragraphEnd( );
 }
 
 /**
@@ -700,7 +709,7 @@ throws Exception {
             logRecord = (CommandLogRecord)data.get(i);
             
             line[0] = StringUtil.formatString(logRecord.getSeverity().toString(), formats[0]).trim();
-            String className = logRecord.getClass().getSimpleName();
+            //String className = logRecord.getClass().getSimpleName();
             String type = CommandStatusUtil.getCommandLogRecordDisplayName ( logRecord );
             line[1] = StringUtil.formatString(type, formats[1]).trim();
             CommandStatusProvider csp = logRecord.getCommandStatusProvider();

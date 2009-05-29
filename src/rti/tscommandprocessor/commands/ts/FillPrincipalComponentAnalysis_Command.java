@@ -44,6 +44,8 @@ import RTi.Util.Time.DateTime;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
 Implement the FillPrincipalComponentAnalysis() command.
@@ -398,7 +400,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command )
 throws 	InvalidCommandSyntaxException,
 	InvalidCommandParameterException
-{	String mthd = "fillMixedStation_Command.parseCommand", mssg;
+{	String rtn = "fillMixedStation_Command.parseCommand", mssg;
 	int warning_level = 2;
 
 	List tokens = StringUtil.breakStringList ( command,
@@ -407,19 +409,19 @@ throws 	InvalidCommandSyntaxException,
 		// Must have at least the command name and the InputFile
 		mssg = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level, mthd, mssg);
+		Message.printWarning ( warning_level, rtn, mssg);
 		throw new InvalidCommandSyntaxException ( mssg );
 	}
 
 	// Get the input needed to process the file...
 	try {
 		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.get(1), mthd, "," ) );
+			(String)tokens.get(1), rtn, "," ) );
 	}
 	catch ( Exception e ) {
 		mssg = "Syntax error in \"" + command +
 			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level, mthd, mssg);
+		Message.printWarning ( warning_level, rtn, mssg);
 		throw new InvalidCommandSyntaxException ( mssg );
 	}
 }
@@ -456,7 +458,7 @@ public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String mthd = "fillMixedStation_Command.runCommand", mssg = "";
+{	String rtn = "fillMixedStation_Command.runCommand", mssg = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
 	int log_level = 3;	// For warnings not shown to user
@@ -507,7 +509,7 @@ throws InvalidCommandParameterException,
 				+ DependentTSID + "\".";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
-					command_tag, ++warning_count), mthd, mssg );
+					command_tag, ++warning_count), rtn, mssg );
 		}
 		dependentTSList = new Vector( tsCount );
 		for ( int nTS = 0; nTS < tsCount; nTS++ ) {
@@ -522,7 +524,7 @@ throws InvalidCommandParameterException,
 					catch ( Exception e ) {
 						Message.printWarning(log_level,
 								MessageUtil.formatMessageTag( command_tag, ++warning_count),
-								mthd, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
+								rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
 								"\" from processor." );
 					}
 					PropList bean_PropList = bean.getResultsPropList();
@@ -530,7 +532,7 @@ throws InvalidCommandParameterException,
 					if ( prop_contents == null ) {
 						Message.printWarning(warning_level,
 							MessageUtil.formatMessageTag( command_tag, ++warning_count),
-							mthd, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+							rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
 							"\") returned from processor." );
 					}
 					else {	dependentTS = (TS)prop_contents;
@@ -562,7 +564,7 @@ throws InvalidCommandParameterException,
 			Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(
 					command_tag, ++warning_count),
-					mthd,message);
+					rtn,message);
 		}
 		
 		List dependentTSID_Vector = StringUtil.breakStringList (
@@ -591,7 +593,7 @@ throws InvalidCommandParameterException,
 				+ IndependentTSID + "\".";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
-					command_tag, ++warning_count), mthd, mssg );
+					command_tag, ++warning_count), rtn, mssg );
 		}
 		independentTSList = new Vector( tsCount );
 		TS independentTS = null;
@@ -607,7 +609,7 @@ throws InvalidCommandParameterException,
 				catch ( Exception e ) {
 					Message.printWarning(log_level,
 							MessageUtil.formatMessageTag( command_tag, ++warning_count),
-							mthd, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
+							rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
 							"\" from processor." );
 				}
 				PropList bean_PropList = bean.getResultsPropList();
@@ -615,7 +617,7 @@ throws InvalidCommandParameterException,
 				if ( prop_contents == null ) {
 					Message.printWarning(warning_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						mthd, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+						rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
 						"\") returned from processor." );
 				}
 				else {	independentTS = (TS)prop_contents;
@@ -642,11 +644,11 @@ throws InvalidCommandParameterException,
 				tsObjects = (List)o;
 		}
 		catch ( Exception e ){
-			String message = "Cannot get time series list to process.";
+			mssg = "Cannot get time series list to process.";
 			Message.printWarning ( warning_level,
 					MessageUtil.formatMessageTag(
 					command_tag, ++warning_count),
-					mthd,message);
+					rtn,mssg);
 		}
 		
 		List independentTSID_Vector = StringUtil.breakStringList (
@@ -655,22 +657,19 @@ throws InvalidCommandParameterException,
 			tsObjects, independentTSID_Vector, null );
 	}
 
-	// Do not set these properties if they are "" (empty).
-	// PrincipalComponentAnalysis expects "null" when calling getValue()
-	// for these properties to set the internal defaults.
 	if ( AnalysisStart != null && AnalysisStart.length() > 0  ) {
             try {
-                AnalysisStartDateTime = new DateTime(DateFormat.getDateTimeInstance().parse(AnalysisStart));
-            } catch (ParseException ex) {
-                Logger.getLogger(FillPrincipalComponentAnalysis_Command.class.getName()).log(Level.SEVERE, null, ex);
+                AnalysisStartDateTime = DateTime.parse(AnalysisStart);
+            } catch (Exception ex) {
+                Message.printWarning (log_level, rtn, "Problems setting start date (" + AnalysisStart + ")");
             }
 	}
 	
 	if ( AnalysisEnd != null && AnalysisEnd.length() > 0  ) {
             try {
-                AnalysisEndDateTime = new DateTime(DateFormat.getDateTimeInstance().parse(AnalysisEnd));
-            } catch (ParseException ex) {
-                Logger.getLogger(FillPrincipalComponentAnalysis_Command.class.getName()).log(Level.SEVERE, null, ex);
+                AnalysisEndDateTime = DateTime.parse(AnalysisEnd);
+            } catch (Exception ex) {
+                Message.printWarning (log_level, rtn, "Problems setting end date (" + AnalysisEnd + ")");
             }
 	}
 
@@ -723,7 +722,7 @@ throws InvalidCommandParameterException,
 		// is called by actionPerformed and it is not allowing me 
 		// to declare "Throws Exception". How to fix this?
 		mssg = "Unexpected error performing principal component analysis (" + e + ").";
-		Message.printWarning (1, mthd, mssg );
+		Message.printWarning (1, rtn, mssg );
 	} 
 
 	// Throw CommandWarningException in case of problems.
@@ -732,7 +731,7 @@ throws InvalidCommandParameterException,
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 				command_tag, ++warning_count ),
-			mthd, mssg );
+			rtn, mssg );
 		throw new CommandWarningException ( mssg );
 	}
 }

@@ -805,8 +805,8 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __DependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the dependent time series to fill."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		"Required - How to get the dependent time series to fill."),
+		7, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	// Dependent time series list.
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -846,8 +846,8 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __IndependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the independent time series."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		"Required - How to get the independent time series."),
+		7, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	// Independent time series list
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -896,6 +896,8 @@ private void initialize ( JFrame parent, Command command )
 	__AnalysisEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - "),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Fill Period
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill period:" ),
@@ -918,6 +920,8 @@ private void initialize ( JFrame parent, Command command )
 	__MaxCombinations_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __MaxCombinations_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Number of returned equations."),
+		7, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// File to save results.
 	JGUIUtil.addComponent(main_JPanel, new JLabel (

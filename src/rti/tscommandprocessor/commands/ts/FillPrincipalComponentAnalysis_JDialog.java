@@ -1448,7 +1448,7 @@ private void refresh()
 		if ( MaxCombinations == null ) {
 			__MaxCombinations_JTextField.setText ( "" );
 		} else {
-			__MaxCombinations_JTextField.setText ( FillEnd );
+			__MaxCombinations_JTextField.setText ( MaxCombinations );
 		}
 
 		// Check OutputFile and update the text field

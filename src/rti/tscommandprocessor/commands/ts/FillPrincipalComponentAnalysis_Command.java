@@ -695,7 +695,7 @@ throws InvalidCommandParameterException,
             }
 	}
 
-    int maxCombinationsInt = MaxCombinations == null? _maxCombinationsDefault :
+    int maxCombinationsInt = (MaxCombinations == null || MaxCombinations.length() == 0) ? _maxCombinationsDefault :
         Integer.parseInt(MaxCombinations);
 
 	// Run the PrincipalComponentAnalysis.

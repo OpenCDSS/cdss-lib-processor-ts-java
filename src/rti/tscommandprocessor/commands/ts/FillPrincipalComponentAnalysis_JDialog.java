@@ -110,6 +110,8 @@ private JTextField	__AnalysisStart_JTextField = null,
 			__FillStart_JTextField = null,
 			__FillEnd_JTextField   = null;
 						// Text fields for fill period.
+private JTextField __MaxCombinations_JTextField = null;
+                        // Indicates number of combinations to calculate
 private JTextField	__OutputFile_JTextField	 = null;
 						// File to save output
 
@@ -441,6 +443,7 @@ private void checkInput ()
 	String AnalysisEnd      = __AnalysisEnd_JTextField.getText().trim();
 	String FillStart        = __FillStart_JTextField.getText().trim();
 	String FillEnd          = __FillEnd_JTextField.getText().trim();
+	String MaxCombinations  = __MaxCombinations_JTextField.getText().trim();
 	String OutputFile       = __OutputFile_JTextField.getText().trim();
 
 	// Put together the list of parameters to check...
@@ -477,6 +480,10 @@ private void checkInput ()
 	if ( FillEnd != null && FillEnd.length() > 0 ) {
 		props.set( "FillEnd", FillEnd );
 	}
+	// MaxCombinations
+	if ( MaxCombinations != null && MaxCombinations.length() > 0 ) {
+		props.set( "MaxCombinations", MaxCombinations );
+	}
 	// OutputFile
 	if ( OutputFile != null && OutputFile.length() > 0 ) {
 		props.set( "OutputFile", OutputFile );
@@ -494,8 +501,8 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  Mkae sure the command parameters have
-already been checked and no errors were detected (chack input).
+Commit the edits to the command.  Make sure the command parameters have
+already been checked and no errors were detected (check input).
 */
 private void commitEdits ()
 {
@@ -508,6 +515,7 @@ private void commitEdits ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
+	String MaxCombinations = __MaxCombinations_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// Commit the values to the command object.
@@ -519,6 +527,7 @@ private void commitEdits ()
 	__command.setCommandParameter ("AnalysisEnd"      , AnalysisEnd      );
 	__command.setCommandParameter ("FillStart"        , FillStart 	     );
 	__command.setCommandParameter ("FillEnd"          , FillEnd          );
+	__command.setCommandParameter ("MaxCombinations"  , MaxCombinations  );
 	__command.setCommandParameter ("OutputFile"       , OutputFile       );
 }
 
@@ -570,6 +579,8 @@ throws Throwable
 	__AnalysisEnd_JTextField = null;
 	__FillStart_JTextField = null;
 	__FillEnd_JTextField = null;
+
+	__MaxCombinations_JTextField = null;
 
 	__OutputFile_JTextField	 = null;
 
@@ -734,13 +745,10 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-	// Create the vector containing the identifiers needed to populate the 
+	// Create a list containing the identifiers needed to populate the
 	// dependent and independent time series controls. 
 	// REVISIT [LT 2006-06-01] Allow edits? Maybe in the future, if reimplemented
 	// as AnalyzePattern_JDialog
-	// LT1 - REVISIT [LT 2006-06-01] The "" and "* can be added here, if we decide
-	// to replace the SimpleJList by JComboBox.
-	// (see AnalyzePattern_JDialog)
 	List tsids = null;
 	if ( __command.isCommandMode() ) {
 		
@@ -755,10 +763,6 @@ private void initialize ( JFrame parent, Command command )
 		catch ( Exception e ) {
 				String message = "Cannot get time series list to process.";
 				Message.printWarning ( 3, mthd, message );
-						// FIXME SAM 2007-02-16 Need to review dialog
-						//MessageUtil.formatMessageTag(
-						//command_tag, ++warning_count),
-						//routine,message);
 		}
 		// Create a vector containing the ts identifiers.
 		if ( tsObjects != null ) {
@@ -813,15 +817,14 @@ private void initialize ( JFrame parent, Command command )
 	for ( int i = 0; i < size; i++ ) {
 		dts.add( (String) tsids.get(i) );
 	}
-	dts.add( (String) "*" ); // See LT1 REVISIT above.
+	dts.add( (String) "*" );
 
 	__DependentTSID_SimpleJList = new SimpleJList (dts);
 	__DependentTSID_SimpleJList.setSelectionMode(
 		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__DependentTSID_SimpleJList.setVisibleRowCount       ( 2 );
 	// Make sure to set the flag ignoreValueChanged to false and
-	// then back to true when executing the select()
-	// methods.
+	// then back to true when executing the select() methods.
 	ignoreValueChanged = true;
 	__DependentTSID_SimpleJList.select 		     ( 0 );
 	ignoreValueChanged = false;
@@ -907,6 +910,14 @@ private void initialize ( JFrame parent, Command command )
 	__FillEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+	// MaxCombinations
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum Combinations:" ),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__MaxCombinations_JTextField = new JTextField ( "", 25 );
+	__MaxCombinations_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __MaxCombinations_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// File to save results.
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -1212,17 +1223,11 @@ fillPrincipalComponentAnalysis ( DependentTSList="...",
 		   DependentTSList="X,Y,...",
 		   IndependentTSList="...",
 		   IndependentTSList="X,Y,...",
-		   AnalysisMethod="OLSRegression",
-		   NumberOfEquations="OneEquation",
-		   Transformation="None",
 		   AnalysisStart="...",
 		   AnalysisEnd="...",
-		   MinimumDataCount="..."
-		   MinimumR="..."
-		   BestFitIndicator="SEP",
 		   FillStart="...",
 		   FillEnd="...",
-		   Intercept="..."
+		   MaxCombinations="..."
 		   OutputFile="...")
 </pre>
 */
@@ -1240,6 +1245,7 @@ private void refresh()
 	String AnalysisEnd	= "";
 	String FillStart 	= "";
 	String FillEnd 		= "";
+	String MaxCombinations = "";
 	String OutputFile	= "";
 
 	__error_wait = false;
@@ -1260,6 +1266,7 @@ private void refresh()
 		AnalysisEnd	  = props.getValue ( "AnalysisEnd"      );
 		FillStart	  = props.getValue ( "FillStart"        );
 		FillEnd		  = props.getValue ( "FillEnd"          );
+		MaxCombinations = props.getValue ( "MaxCombinations"  );
 		OutputFile	  = props.getValue ( "OutputFile"       );
 
 		// Make sure the DependentTSList option is valid
@@ -1433,6 +1440,13 @@ private void refresh()
 			__FillEnd_JTextField.setText ( FillEnd );
 		}
 
+		// Check MaxCombinations and update the text field
+		if ( MaxCombinations == null ) {
+			__MaxCombinations_JTextField.setText ( "" );
+		} else {
+			__MaxCombinations_JTextField.setText ( FillEnd );
+		}
+
 		// Check OutputFile and update the text field
 		if ( OutputFile == null ) {
 			__OutputFile_JTextField.setText ( "" );
@@ -1462,6 +1476,7 @@ private void refresh()
 	AnalysisEnd      = __AnalysisEnd_JTextField.getText().trim();
 	FillStart        = __FillStart_JTextField.getText().trim();
 	FillEnd          = __FillEnd_JTextField.getText().trim();
+	MaxCombinations  = __MaxCombinations_JTextField.getText().trim();
 	OutputFile       = __OutputFile_JTextField.getText().trim();
 
 	// And set the command properties.
@@ -1474,6 +1489,7 @@ private void refresh()
 	props.add ( "AnalysisEnd="       + AnalysisEnd      );
 	props.add ( "FillStart="         + FillStart        );
 	props.add ( "FillEnd="           + FillEnd          );
+	props.add ( "MaxCombinations="   + MaxCombinations  );
 	props.add ( "OutputFile="        + OutputFile       );
 
 	// Update the __Command_JTextArea if running under the command mode. 

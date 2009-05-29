@@ -9,7 +9,6 @@ package rti.tscommandprocessor.commands.ts;
 import java.io.File;
 
 import java.io.FileNotFoundException;
-import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
@@ -41,11 +40,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
 Implement the FillPrincipalComponentAnalysis() command.
@@ -119,6 +114,7 @@ throws InvalidCommandParameterException
 	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
 	String FillStart 	= parameters.getValue ( "FillStart"        );
 	String FillEnd 		= parameters.getValue ( "FillEnd"          );
+	String MaxCombinations = parameters.getValue ( "MaxCombinations"   );
 	String OutputFile	= parameters.getValue ( "OutputFile"       );
 	
 	CommandProcessor processor = getCommandProcessor();
@@ -239,6 +235,13 @@ throws InvalidCommandParameterException
 				+ AnalysisEnd
 				+ "\".";
 		}
+	}
+
+	// Make sure MaxCombinations > 0
+	if ( MaxCombinations != null && Integer.parseInt(MaxCombinations)<=0)  {
+			warning += "\n Maximum Combinations \""
+				+ MaxCombinations
+				+ "\" must be a number greater than 0.";
 	}
 
 	// Output file
@@ -433,17 +436,11 @@ fillMixedStation ( DependentTSList="...",
 		   DependentTSList="X,Y,...",
 		   IndependentTSList="...",
 		   IndependentTSList="X,Y,...",
-		   AnalysisMethod="OLSRegression",
-		   NumberOfEquations="OneEquation",
-		   Transformation="None",
 		   AnalysisStart="...",
 		   AnalysisEnd="...",
-		   MinimumDataCount="..."
-		   MinimumR="..."
-		   BestFitIndicator="SEP",
 		   FillStart="...",
 		   FillEnd="...",
-		   Intercept="..."
+		   MaxCombinations="..."
 		   OutputFile="...")
 </pre>
 @param command_number Number of command in sequence.
@@ -754,6 +751,7 @@ public String toString ( PropList props )
 	String MinimumDataCount	= props.getValue ( "MinimumDataCount" );
 	String FillStart 	= props.getValue ( "FillStart"        );
 	String FillEnd 		= props.getValue ( "FillEnd"          );
+	String MaxCombinations = props.getValue ( "MaxCombinations"   );
 	String OutputFile	= props.getValue ( "OutputFile"       );
 
 	// Creating the command string
@@ -806,6 +804,12 @@ public String toString ( PropList props )
 	if ( FillEnd != null && FillEnd.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "FillEnd=" + FillEnd );
+	}
+
+	// Adding the MaxCombinations
+	if ( MaxCombinations != null && MaxCombinations.length() > 0 ) {
+		if ( b.length() > 0 ) b.append ( "," );
+		b.append ( "MaxCombinations=" + MaxCombinations );
 	}
 
 	// Adding the OutputFile

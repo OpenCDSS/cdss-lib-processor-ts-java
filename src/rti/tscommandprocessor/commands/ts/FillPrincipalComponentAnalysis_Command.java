@@ -41,6 +41,7 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 /**
 Implement the FillPrincipalComponentAnalysis() command.
@@ -284,8 +285,108 @@ Create the commands needed to fill the dependent time series using the best fit
 among the independent time series.
 */
 protected List createFillCommands ()
-{	
-	return null; // __PrincipalComponentAnalysis.createFillCommands ();
+{
+    List<String> commandList = new ArrayList<String>();
+    String command = "fillPrincipalComponentAnalysis";
+    StringBuffer b = new StringBuffer();
+    
+    PropList parameters = getCommandParameters();
+    String DependentTSList  = parameters.getValue ( "DependentTSList"  );
+	String DependentTSID    = parameters.getValue ( "DependentTSID"    );
+	String IndependentTSList= parameters.getValue ( "IndependentTSList");
+	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
+	String AnalysisStart	= parameters.getValue ( "AnalysisStart"    );
+	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
+	String FillStart 	= parameters.getValue ( "FillStart"        );
+	String FillEnd 		= parameters.getValue ( "FillEnd"          );
+	String OutputFile	= parameters.getValue ( "OutputFile"       );
+    String MaxCombinations = parameters.getValue ( "MaxCombinations" );
+    String AnalysisMonths = parameters.getValue("AnalysisMonths");
+    DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
+
+    // dependend TS
+    if ( DependentTSList != null && DependentTSList.length()>0) {
+        b.append("DependendTSList=" + DependentTSList);
+    }
+    if ( DependentTSID != null && DependentTSID.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DependentTSID=\"" + DependentTSID + "\"" );
+    }
+
+    // independent TS
+    if ( IndependentTSList != null && IndependentTSList.length()>0) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append("IndependendTSList=" + IndependentTSList);
+    }
+    if ( IndependentTSID != null && IndependentTSID.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IndependentTSID=\"" + IndependentTSID + "\"" );
+    }
+
+    // Analysis start
+    if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisStart=\"" + AnalysisStart + "\"" );
+    }
+
+	// AnalysisEnd
+    if ( AnalysisEnd != null && AnalysisEnd.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
+    }
+
+	// FillStart
+    if ( FillStart != null && FillStart.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillStart=\"" + FillStart + "\"" );
+    }
+
+	// FillEnd
+    if ( FillEnd != null && FillEnd.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillEnd=\"" + FillEnd + "\"" );
+    }
+
+	// OutputFile
+    if ( OutputFile != null && OutputFile.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+
+    // MaxCombinations
+    if ( MaxCombinations != null && MaxCombinations.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MaxCombinations=" + MaxCombinations );
+    }
+
+    // AnalysisMonths
+    if ( AnalysisMonths != null && AnalysisMonths.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisMonths=\"" + AnalysisMonths + "\"" );
+    }
+
+    commandList.add(command + "(" + b + ")");
+	return commandList;
 }
 
 /**
@@ -310,7 +411,7 @@ time series.
 */
 protected void fillDependents()
 {
-	// __PrincipalComponentAnalysis.fill();
+	__PrincipalComponentAnalysis.fill();
 }
 
 /**
@@ -432,7 +533,8 @@ throws 	InvalidCommandSyntaxException,
 /**
 Run the command:
 <pre>
-fillMixedStation ( DependentTSList="...",
+fillPrincipalComponentAnalysis (
+           DependentTSList="...",
 		   DependentTSList="X,Y,...",
 		   IndependentTSList="...",
 		   IndependentTSList="X,Y,...",
@@ -691,7 +793,7 @@ throws InvalidCommandParameterException,
             try {
                 out = new PrintWriter(OutputFile);
             } catch (FileNotFoundException ex) {
-                Logger.getLogger(FillPrincipalComponentAnalysis_Command.class.getName()).log(Level.SEVERE, null, ex);
+                Message.printWarning(2, rtn, "Error opening file " + OutputFile );
             }
 	}
 

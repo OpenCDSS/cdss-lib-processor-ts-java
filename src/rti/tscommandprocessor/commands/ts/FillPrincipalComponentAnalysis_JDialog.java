@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
+
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -41,6 +42,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
+import DWR.DMI.tstool.TSTool_JFrame;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -184,6 +186,7 @@ boolean ignoreValueChanged = false;
 private boolean	__error_wait = false;
 private boolean	__first_time = true;
 private boolean	__ok         = false;
+private TSTool_JFrame __parent_JFrame = null;
 
 /**
 Constructor when calling as a TSTool command.
@@ -329,7 +332,7 @@ public void actionPerformed( ActionEvent event )
 				 + " Please check the log file for details.";
 				Message.printWarning ( 1, mthd, mssg );	
 			}	
-			// Unable the runCommand dependent buttons.
+			// Enable the runCommand dependent buttons.
 			__view_JButton.setEnabled              ( true );
 			__createFillCommands_JButton.setEnabled( true );
 			__fillDependents_JButton.setEnabled    ( true );
@@ -537,7 +540,7 @@ among the independent time series.  This method
 */
 private void createFillCommands ()
 {
-	// __fillCommands_Vector = __command.createFillCommands ();
+	__fillCommands_Vector = __command.createFillCommands ();
 }
 
 /**
@@ -546,7 +549,7 @@ Add the vector of FillRegression and FillMOVE1 commands to the TSTool.
 private void copyCommandsToTSTool()
 {
 	// TODO SAM 2007-03-09 Need a reference to TSTool JFrame.
-	// __parent_JFrame.addCommands( __fillCommands_Vector );
+	// __parent_JFrame.commandList_NewCommand( __fillCommands_Vector.toString(), false );
 	// Make a request to the processor.
 }
 
@@ -556,7 +559,7 @@ time series.
 */
 private void fillDependents()
 {
-	// __command.fillDependents();
+	__command.fillDependents();
 	this.requestFocus();
 }
 
@@ -679,6 +682,7 @@ Instantiates the GUI components.
 private void initialize ( JFrame parent, Command command )
 {	String mthd = "fillPrincipalComponentAnalysis_JDialog.initialize", mssg;
 
+    __parent_JFrame = (TSTool_JFrame) parent;
 	__command = (FillPrincipalComponentAnalysis_Command) command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
@@ -698,7 +702,7 @@ private void initialize ( JFrame parent, Command command )
 
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
-	getContentPane().add ( "North", main_JPanel );
+	getContentPane().add ( "Center", main_JPanel );
 	int y = 0;
 
 	// Top comments
@@ -835,6 +839,8 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent( main_JPanel,
 		new JScrollPane(__DependentTSID_SimpleJList),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - Select one."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// How to get the independent time series.
 	++y;
@@ -880,7 +886,9 @@ private void initialize ( JFrame parent, Command command )
 	__IndependentTSID_SimpleJList.setEnabled(false);
 	JGUIUtil.addComponent(main_JPanel,
 		new JScrollPane(__IndependentTSID_SimpleJList),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+		1, y, 6, 1, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - Select all to include in analysis."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Analysis period
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ),
@@ -896,7 +904,7 @@ private void initialize ( JFrame parent, Command command )
 	__AnalysisEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - "),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Fill Period
@@ -912,6 +920,8 @@ private void initialize ( JFrame parent, Command command )
 	__FillEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// MaxCombinations
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum Combinations:" ),
@@ -920,7 +930,7 @@ private void initialize ( JFrame parent, Command command )
 	__MaxCombinations_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __MaxCombinations_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Number of returned equations."),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Number of equations returned."),
 		7, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// File to save results.
@@ -935,6 +945,8 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton.setToolTipText( "Browse to select analysis output file." );
 	JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - PCA analysis results."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Command - Currently showing only under the command mode
 	if ( __command.isCommandMode() ) {
@@ -949,7 +961,7 @@ private void initialize ( JFrame parent, Command command )
 		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
 			1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	} else {
-		// These control will initialially be invisible. Only when commands
+		// These controls will initialially be invisible. Only when commands
 		// are available they will be set visible.
 		__Command_JLabel = new JLabel ( "Fill Commands:" );
 		JGUIUtil.addComponent(main_JPanel, __Command_JLabel,
@@ -965,7 +977,7 @@ private void initialize ( JFrame parent, Command command )
 		__OutputFile_JTextField.setEditable ( true );
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
 		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
-			1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+			1, y, 6, 2, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 		__Command_JScrollPane.setVisible (false );
 		__Command_JTextArea.setVisible   ( false );
 	}
@@ -976,8 +988,9 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+    y++;
 	JGUIUtil.addComponent(main_JPanel, button_JPanel,
-		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.SOUTH);
 
 	if ( __command.isCommandMode() ) {
 		// Cancel button: used when running as a command

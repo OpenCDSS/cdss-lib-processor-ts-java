@@ -9,8 +9,6 @@ package rti.tscommandprocessor.commands.ts;
 import java.io.File;
 
 import java.io.FileNotFoundException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JFrame;
 import java.util.List;
 import java.util.Vector;
@@ -115,8 +113,10 @@ throws InvalidCommandParameterException
 	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
 	String FillStart 	= parameters.getValue ( "FillStart"        );
 	String FillEnd 		= parameters.getValue ( "FillEnd"          );
-	String MaxCombinations = parameters.getValue ( "MaxCombinations"   );
-	String OutputFile	= parameters.getValue ( "OutputFile"       );
+	String MaxCombinations        = parameters.getValue ( "MaxCombinations"   );
+	String RegressionEquationFill = parameters.getValue ( "RegressionEquationFill"   );
+	String PCAOutputFile          = parameters.getValue ( "PCAOutputFile"       );
+	String FilledTSOutputFile     = parameters.getValue ( "FilledTSOutputFile"  );
 	
 	CommandProcessor processor = getCommandProcessor();
 	                            
@@ -245,11 +245,18 @@ throws InvalidCommandParameterException
 				+ "\" must be a number greater than 0.";
 	}
 
+	// Make sure RegressionEquationFill > 0
+	if ( RegressionEquationFill != null && Integer.parseInt(RegressionEquationFill)<=0)  {
+			warning += "\n Regression Equation \""
+				+ RegressionEquationFill
+				+ "\" must be a number greater than 0.";
+	}
+
 	// Output file
-	if ( OutputFile != null && OutputFile.length() != 0 ) {
+	if ( PCAOutputFile != null && PCAOutputFile.length() != 0 ) {
 		try {
 			String adjusted_path = IOUtil.adjustPath (
-				 working_dir, OutputFile);
+				 working_dir, PCAOutputFile);
 			File f  = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -264,11 +271,12 @@ throws InvalidCommandParameterException
 			warning += "\nThe working directory:\n"
 				+ "    \"" + working_dir
 				+ "\"\ncannot be adjusted using:\n"
-				+ "    \"" + OutputFile;
+				+ "    \"" + PCAOutputFile;
 		}
 	} else {
-		warning += "\nThe Output File field is empty.";
+		warning += "\nThe PCA output file field is empty.";
 	}
+
 	
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
@@ -299,8 +307,10 @@ protected List createFillCommands ()
 	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
 	String FillStart 	= parameters.getValue ( "FillStart"        );
 	String FillEnd 		= parameters.getValue ( "FillEnd"          );
-	String OutputFile	= parameters.getValue ( "OutputFile"       );
+	String PCAOutputFile	= parameters.getValue ( "PCAOutputFile"       );
+	String FilledTSOutputFile	= parameters.getValue ( "FilledTSOutputFile"       );
     String MaxCombinations = parameters.getValue ( "MaxCombinations" );
+    String RegressionEquationFill = parameters.getValue ( "RegressionEquationFill" );
     String AnalysisMonths = parameters.getValue("AnalysisMonths");
     DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
 
@@ -361,12 +371,20 @@ protected List createFillCommands ()
         b.append ( "FillEnd=\"" + FillEnd + "\"" );
     }
 
-	// OutputFile
-    if ( OutputFile != null && OutputFile.length() > 0 ) {
+	// PCAOutputFile
+    if ( PCAOutputFile != null && PCAOutputFile.length() > 0 ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "OutputFile=\"" + OutputFile + "\"" );
+        b.append ( "PCAOutputFile=\"" + PCAOutputFile + "\"" );
+    }
+
+	// FilledTSOutputFile
+    if ( FilledTSOutputFile != null && FilledTSOutputFile.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FilledTSOutputFile=\"" + FilledTSOutputFile + "\"" );
     }
 
     // MaxCombinations
@@ -375,6 +393,14 @@ protected List createFillCommands ()
             b.append ( "," );
         }
         b.append ( "MaxCombinations=" + MaxCombinations );
+    }
+
+    // Regression Equation Fill
+    if ( RegressionEquationFill != null && RegressionEquationFill.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RegressionEquationFill=" + RegressionEquationFill );
     }
 
     // AnalysisMonths
@@ -411,7 +437,69 @@ time series.
 */
 protected void fillDependents()
 {
-	__PrincipalComponentAnalysis.fill();
+    String rtn = "FillPrincipalComponentAnalysis_Command_fillDependents", message;
+
+
+    if ( __PrincipalComponentAnalysis == null ) {
+        Message.printWarning(1, rtn, "Principal Component Analysis not available.");
+        return;
+    }
+
+    PropList parameters = getCommandParameters();
+    String DependentTSList  = parameters.getValue ( "DependentTSList"  );
+	String DependentTSID    = parameters.getValue ( "DependentTSID"    );
+	String IndependentTSList= parameters.getValue ( "IndependentTSList");
+	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
+    String RegressionEquationFill = parameters.getValue ( "RegressionEquationFill" );
+	String FilledTSOutputFile	= parameters.getValue ( "FilledTSOutputFile"       );
+    String FillStart 	= parameters.getValue ( "FillStart" );
+	String FillEnd 		= parameters.getValue ( "FillEnd" );
+
+    CommandProcessor processor = getCommandProcessor();
+    CommandStatus status = getCommandStatus();
+
+    // Filled TS Output file
+    // Get the working_dir from the command processor
+	String working_dir = null;
+	try { Object o = processor.getPropContents ( "WorkingDir" );
+		// Working directory is available so use it...
+		if ( o != null ) {
+			working_dir = (String)o;
+		}
+	}
+	catch ( Exception e ) {
+        message = "Error requesting WorkingDir from processor.";
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Software error - report the problem to support." ) );
+	}
+	if ( FilledTSOutputFile != null && FilledTSOutputFile.length() != 0 ) {
+		try {
+			String adjusted_path = IOUtil.adjustPath (
+				 working_dir, FilledTSOutputFile);
+			File f  = new File ( adjusted_path );
+			File f2 = new File ( f.getParent() );
+			if ( !f2.exists() ) {
+				message = "\nThe file parent directory "
+					+ " does not exist:\n"
+					+ adjusted_path;
+                Message.printWarning ( 2, rtn, message);
+			}
+			f  = null;
+			f2 = null;
+		}
+		catch ( Exception e ) {
+			message = "\nThe working directory:\n"
+				+ "    \"" + working_dir
+				+ "\"\ncannot be adjusted using:\n"
+				+ "    \"" + FilledTSOutputFile;
+             Message.printWarning ( 2, rtn, message);
+		}
+	} else {
+		 message = "\nThe Filled TS output file field is empty.";
+         Message.printWarning ( 2, rtn, message);
+	}
+
 }
 
 /**
@@ -423,6 +511,10 @@ throws Throwable
 	__PrincipalComponentAnalysis = null;
 	
 	super.finalize ();
+}
+
+public PrincipalComponentAnalysis getPrincipalComponentAnalysis() {
+    return __PrincipalComponentAnalysis;
 }
 
 /**
@@ -543,7 +635,9 @@ fillPrincipalComponentAnalysis (
 		   FillStart="...",
 		   FillEnd="...",
 		   MaxCombinations="..."
-		   OutputFile="...")
+		   RegressionEquationFill="..."
+		   PCAOutputFile="...",
+		   FilledTSOutputFile="...")
 </pre>
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
@@ -573,13 +667,11 @@ throws InvalidCommandParameterException,
 	String IndependentTSID  = parameters.getValue ( "IndependentTSID"  );
 	String AnalysisStart	= parameters.getValue ( "AnalysisStart"    );
 	String AnalysisEnd	= parameters.getValue ( "AnalysisEnd"      );
-	String FillStart 	= parameters.getValue ( "FillStart"        );
-	String FillEnd 		= parameters.getValue ( "FillEnd"          );
-	String OutputFile	= parameters.getValue ( "OutputFile"       );
+	String PCAOutputFile	= parameters.getValue ( "PCAOutputFile"       );
     String MaxCombinations = parameters.getValue ( "MaxCombinations" );
     String AnalysisMonths = parameters.getValue("AnalysisMonths");
     DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
-	
+
 	List v;
 	int [] tspos;
 	int tsCount;
@@ -789,11 +881,11 @@ throws InvalidCommandParameterException,
 	}
 	*/
 
-	if ( OutputFile != null && OutputFile.length() > 0  ) {
+	if ( PCAOutputFile != null && PCAOutputFile.length() > 0  ) {
             try {
-                out = new PrintWriter(OutputFile);
+                out = new PrintWriter(PCAOutputFile);
             } catch (FileNotFoundException ex) {
-                Message.printWarning(2, rtn, "Error opening file " + OutputFile );
+                Message.printWarning(2, rtn, "Error opening file " + PCAOutputFile );
             }
 	}
 
@@ -854,7 +946,9 @@ public String toString ( PropList props )
 	String FillStart 	= props.getValue ( "FillStart"        );
 	String FillEnd 		= props.getValue ( "FillEnd"          );
 	String MaxCombinations = props.getValue ( "MaxCombinations"   );
-	String OutputFile	= props.getValue ( "OutputFile"       );
+	String RegressionEquationFill = props.getValue ( "RegressionEquationFill"   );
+	String PCAOutputFile	= props.getValue ( "PCAOutputFile"       );
+	String FilledTSOutputFile	= props.getValue ( "FilledTSOutputFile"       );
 
 	// Creating the command string
 	// This StringBuffer will contain all parameters for the command.
@@ -914,10 +1008,22 @@ public String toString ( PropList props )
 		b.append ( "MaxCombinations=" + MaxCombinations );
 	}
 
-	// Adding the OutputFile
-	if ( OutputFile != null && OutputFile.length() > 0 ) {
+	// Adding the RegressionEquationFill
+	if ( RegressionEquationFill != null && RegressionEquationFill.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "OutputFile=" + OutputFile );
+		b.append ( "RegressionEquationFill=" + RegressionEquationFill );
+	}
+
+	// Adding the PCAOutputFile
+	if ( PCAOutputFile != null && PCAOutputFile.length() > 0 ) {
+		if ( b.length() > 0 ) b.append ( "," );
+		b.append ( "PCAOutputFile=" + PCAOutputFile );
+	}
+
+	// Adding the FilledTSOutputFile
+	if ( FilledTSOutputFile != null && FilledTSOutputFile.length() > 0 ) {
+		if ( b.length() > 0 ) b.append ( "," );
+		b.append ( "FilledTSOutputFile=" + FilledTSOutputFile );
 	}
 
 	return getCommandName() + "(" + b.toString() + ")";

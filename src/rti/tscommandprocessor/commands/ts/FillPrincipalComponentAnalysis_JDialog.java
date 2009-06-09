@@ -114,10 +114,15 @@ private JTextField	__AnalysisStart_JTextField = null,
 						// Text fields for fill period.
 private JTextField __MaxCombinations_JTextField = null;
                         // Indicates number of combinations to calculate
-private JTextField	__OutputFile_JTextField	 = null;
-						// File to save output
+private SimpleJComboBox __RegressionEquationFill_SimpleJComboBox = null;
+                        // Indicates number of regression equation to use for fill
+private JTextField	__PCAOutputFile_JTextField	 = null;
+						// File to save PCA output
+private JTextField	__FilledTSOutputFile_JTextField	 = null;
+						// File to save filled time series output
 
 private SimpleJButton	__browse_JButton = null;
+private SimpleJButton	__browseTS_JButton = null;
 private SimpleJButton	__view_JButton = null;
 private SimpleJButton	__cancel_JButton = null;
 private SimpleJButton	__close_JButton = null;
@@ -236,7 +241,7 @@ public void actionPerformed( ActionEvent event )
 	String s = event.getActionCommand();
 	Object o = event.getSource();
 
-	if ( o == __browse_JButton ) {
+	if ( o == __browse_JButton || o == __browseTS_JButton) {
 
 		String last_directory_selected =
 			JGUIUtil.getLastFileDialogDirectory();
@@ -263,7 +268,11 @@ public void actionPerformed( ActionEvent event )
 			}
 
 			if ( path != null ) {
-				__OutputFile_JTextField.setText( path );
+                if ( o == __browse_JButton) {
+                    __PCAOutputFile_JTextField.setText( path );
+                } else {
+                    __FilledTSOutputFile_JTextField.setText( path );
+                }
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -284,13 +293,13 @@ public void actionPerformed( ActionEvent event )
 		reportProp.set("PrintSize=7");
 		//reportProp.set("PageLength=100");
 		reportProp.set("PageLength=50000");
-		String outputFile = __OutputFile_JTextField.getText();
-		reportProp.set("Title = " + outputFile);
+		String PCAoutputFile = __PCAOutputFile_JTextField.getText();
+		reportProp.set("Title = " + PCAoutputFile);
 
 		// First add the content of the Output file, if any.
 		List strings = new Vector();
-		if ( !outputFile.equals("") ) {
-			strings = readTextFile ( outputFile );
+		if ( !PCAoutputFile.equals("") ) {
+			strings = readTextFile ( PCAoutputFile );
 		}
 
 		// End instantiate the Report viewer.
@@ -333,9 +342,21 @@ public void actionPerformed( ActionEvent event )
 				Message.printWarning ( 1, mthd, mssg );	
 			}	
 			// Enable the runCommand dependent buttons.
+            __FillEnd_JTextField.setEnabled        ( true );
+            __FillStart_JTextField.setEnabled      ( true );
 			__view_JButton.setEnabled              ( true );
 			__createFillCommands_JButton.setEnabled( true );
 			__fillDependents_JButton.setEnabled    ( true );
+			__FilledTSOutputFile_JTextField.setEnabled    ( true );
+			__browseTS_JButton.setEnabled    ( true );
+
+            // check how many regression equations are available and fill list...
+            __RegressionEquationFill_SimpleJComboBox.setEnabled(true);
+            int nEq = __command.getPrincipalComponentAnalysis().getNumberOfAvailableCombinations();
+            for ( int i=1; i<=nEq; i++ )
+                    __RegressionEquationFill_SimpleJComboBox.add(""+i);
+            if ( nEq > 0 )
+                __RegressionEquationFill_SimpleJComboBox.select( 0 );
 		}
 
 	}
@@ -447,7 +468,9 @@ private void checkInput ()
 	String FillStart        = __FillStart_JTextField.getText().trim();
 	String FillEnd          = __FillEnd_JTextField.getText().trim();
 	String MaxCombinations  = __MaxCombinations_JTextField.getText().trim();
-	String OutputFile       = __OutputFile_JTextField.getText().trim();
+    String RegressionEquationFill = __RegressionEquationFill_SimpleJComboBox.getSelected();
+	String PCAOutputFile       = __PCAOutputFile_JTextField.getText().trim();
+    String FilledTSOutputFile = __FilledTSOutputFile_JTextField.getText().trim();
 
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
@@ -487,9 +510,17 @@ private void checkInput ()
 	if ( MaxCombinations != null && MaxCombinations.length() > 0 ) {
 		props.set( "MaxCombinations", MaxCombinations );
 	}
-	// OutputFile
-	if ( OutputFile != null && OutputFile.length() > 0 ) {
-		props.set( "OutputFile", OutputFile );
+	// RegressionEquationFill
+	if ( RegressionEquationFill != null && RegressionEquationFill.length() > 0 ) {
+		props.set( "RegressionEquationFill", RegressionEquationFill );
+	}
+	// PCAOutputFile
+	if ( PCAOutputFile != null && PCAOutputFile.length() > 0 ) {
+		props.set( "PCAOutputFile", PCAOutputFile );
+	}
+	// FilledTSOutputFile
+	if ( FilledTSOutputFile != null && FilledTSOutputFile.length() > 0 ) {
+		props.set( "FilledTSOutputFile", FilledTSOutputFile );
 	}
 
 	// Check the list of Command Parameters.
@@ -519,7 +550,9 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String MaxCombinations = __MaxCombinations_JTextField.getText().trim();
-	String OutputFile = __OutputFile_JTextField.getText().trim();
+    String RegressionEquationFill = __RegressionEquationFill_SimpleJComboBox.getSelected();
+	String PCAOutputFile = __PCAOutputFile_JTextField.getText().trim();
+	String FilledTSOutputFile = __FilledTSOutputFile_JTextField.getText().trim();
 
 	// Commit the values to the command object.
 	__command.setCommandParameter ("DependentTSList"  , DependentTSList  );
@@ -531,7 +564,9 @@ private void commitEdits ()
 	__command.setCommandParameter ("FillStart"        , FillStart 	     );
 	__command.setCommandParameter ("FillEnd"          , FillEnd          );
 	__command.setCommandParameter ("MaxCombinations"  , MaxCombinations  );
-	__command.setCommandParameter ("OutputFile"       , OutputFile       );
+	__command.setCommandParameter ("RegressionEquationFill"  , RegressionEquationFill  );
+	__command.setCommandParameter ("PCAOutputFile"    , PCAOutputFile       );
+	__command.setCommandParameter ("FilledTSOutputFile"      , FilledTSOutputFile       );
 }
 
 /**
@@ -584,11 +619,14 @@ throws Throwable
 	__FillEnd_JTextField = null;
 
 	__MaxCombinations_JTextField = null;
+    __RegressionEquationFill_SimpleJComboBox = null;
 
-	__OutputFile_JTextField	 = null;
+	__PCAOutputFile_JTextField	 = null;
+	__FilledTSOutputFile_JTextField	 = null;
 
 	// Command Buttons
 	__browse_JButton = null;
+    __browseTS_JButton = null;
 	__cancel_JButton = null;
 	__ok_JButton = null;
 	__analyze_JButton = null;
@@ -869,7 +907,7 @@ private void initialize ( JFrame parent, Command command )
 	__IndependentTSID_SimpleJList = new SimpleJList (its);
 	__IndependentTSID_SimpleJList.setSelectionMode(
 		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
-	__IndependentTSID_SimpleJList.setVisibleRowCount       ( 2 );
+	__IndependentTSID_SimpleJList.setVisibleRowCount       ( 5 );
 	// Make sure to set the flag ignoreValueChanged to false and
 	// then back to true when executing the select()
 	// methods.
@@ -897,13 +935,13 @@ private void initialize ( JFrame parent, Command command )
 	__AnalysisStart_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel,
 		__AnalysisStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		2, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	__AnalysisEnd_JTextField = new JTextField ( "", 25 );
 	__AnalysisEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -912,14 +950,16 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillStart_JTextField = new JTextField ( "", 25 );
 	__FillStart_JTextField.addKeyListener ( this );
+	__FillStart_JTextField.setEnabled ( false );
 	JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		2, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	__FillEnd_JTextField = new JTextField ( "", 25 );
 	__FillEnd_JTextField.addKeyListener ( this );
+	__FillEnd_JTextField.setEnabled ( false );
 	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -932,20 +972,51 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Number of equations returned."),
 		7, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// File to save results.
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Output file:" ),
+
+	// regression equation to use for fill
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Regression Equation:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputFile_JTextField = new JTextField ( 50 );
-	__OutputFile_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+	__RegressionEquationFill_SimpleJComboBox = new SimpleJComboBox (new Vector());
+	__RegressionEquationFill_SimpleJComboBox.addItemListener(this);
+	__RegressionEquationFill_SimpleJComboBox.addKeyListener( this );
+	__RegressionEquationFill_SimpleJComboBox.addMouseListener( this );
+	__RegressionEquationFill_SimpleJComboBox.setEnabled(false);
+	JGUIUtil.addComponent(main_JPanel,
+		new JScrollPane(__RegressionEquationFill_SimpleJComboBox),
+		1, y, 2, 1, 1, 1, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required to fill - Select index of desired equation to use for filling missing data."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+	// File to save PCA results.
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"PCA Output file:" ),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__PCAOutputFile_JTextField = new JTextField ( 50 );
+	__PCAOutputFile_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(main_JPanel, __PCAOutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
 	__browse_JButton.setToolTipText( "Browse to select analysis output file." );
 	JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - PCA analysis results."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+	// File to save TS results.
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Filled TS Output file:" ),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__FilledTSOutputFile_JTextField = new JTextField ( 50 );
+	__FilledTSOutputFile_JTextField.addKeyListener ( this );
+	__FilledTSOutputFile_JTextField.setEnabled ( false );
+	JGUIUtil.addComponent(main_JPanel, __FilledTSOutputFile_JTextField,
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__browseTS_JButton = new SimpleJButton ( "Browse", this );
+	__browseTS_JButton.setToolTipText( "Browse to select filled time series output file." );
+	JGUIUtil.addComponent(main_JPanel, __browseTS_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __browseTS_JButton.setEnabled ( false );
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required to fill - filled time series results."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Command - Currently showing only under the command mode
@@ -971,10 +1042,10 @@ private void initialize ( JFrame parent, Command command )
 		__Command_JTextArea.setLineWrap		( true );
 		__Command_JTextArea.setWrapStyleWord	( true );
 		__Command_JTextArea.setEditable		( false );
-		__OutputFile_JTextField.setEditable	( false );
+		__PCAOutputFile_JTextField.setEditable	( false );
 		__Command_JTextArea.setBackground	(
-			__OutputFile_JTextField.getBackground());
-		__OutputFile_JTextField.setEditable ( true );
+			__PCAOutputFile_JTextField.getBackground());
+		__PCAOutputFile_JTextField.setEditable ( true );
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
 		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
 			1, y, 6, 2, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -1244,8 +1315,10 @@ fillPrincipalComponentAnalysis ( DependentTSList="...",
 		   AnalysisEnd="...",
 		   FillStart="...",
 		   FillEnd="...",
-		   MaxCombinations="..."
-		   OutputFile="...")
+		   MaxCombinations="...",
+           RegressionEquation="...",
+		   PCAOutputFile="...",
+           FilledTSOutputFile="...")
 </pre>
 */
 private void refresh()
@@ -1263,7 +1336,9 @@ private void refresh()
 	String FillStart 	= "";
 	String FillEnd 		= "";
 	String MaxCombinations = "";
-	String OutputFile	= "";
+	String RegressionEquationFill = "";
+	String PCAOutputFile	= "";
+	String FilledTSOutputFile	= "";
 
 	__error_wait = false;
 
@@ -1284,7 +1359,9 @@ private void refresh()
 		FillStart	  = props.getValue ( "FillStart"        );
 		FillEnd		  = props.getValue ( "FillEnd"          );
 		MaxCombinations = props.getValue ( "MaxCombinations"  );
-		OutputFile	  = props.getValue ( "OutputFile"       );
+		RegressionEquationFill = props.getValue ( "RegressionEquationFill"  );
+		PCAOutputFile	  = props.getValue ( "PCAOutputFile"       );
+		FilledTSOutputFile	  = props.getValue ( "FilledTSOutputFile"       );
 
 		// Make sure the DependentTSList option is valid
 		if ( DependentTSList == null ) {
@@ -1464,11 +1541,23 @@ private void refresh()
 			__MaxCombinations_JTextField.setText ( MaxCombinations );
 		}
 
-		// Check OutputFile and update the text field
-		if ( OutputFile == null ) {
-			__OutputFile_JTextField.setText ( "" );
+        // Check RegressionEquationFill and update the text field
+        if ( RegressionEquationFill != null ) {
+            __RegressionEquationFill_SimpleJComboBox.select(RegressionEquationFill);
+        }
+
+		// Check PCAOutputFile and update the text field
+		if ( PCAOutputFile == null ) {
+			__PCAOutputFile_JTextField.setText ( "" );
 		} else {
-			__OutputFile_JTextField.setText ( OutputFile );
+			__PCAOutputFile_JTextField.setText ( PCAOutputFile );
+		}
+
+		// Check FilledTSOutputFile and update the text field
+		if ( FilledTSOutputFile == null ) {
+			__FilledTSOutputFile_JTextField.setText ( "" );
+		} else {
+			__FilledTSOutputFile_JTextField.setText ( FilledTSOutputFile );
 		}
 
 	} else {
@@ -1494,7 +1583,9 @@ private void refresh()
 	FillStart        = __FillStart_JTextField.getText().trim();
 	FillEnd          = __FillEnd_JTextField.getText().trim();
 	MaxCombinations  = __MaxCombinations_JTextField.getText().trim();
-	OutputFile       = __OutputFile_JTextField.getText().trim();
+    RegressionEquationFill = __RegressionEquationFill_SimpleJComboBox.getSelected();
+	PCAOutputFile       = __PCAOutputFile_JTextField.getText().trim();
+	FilledTSOutputFile  = __FilledTSOutputFile_JTextField.getText().trim();
 
 	// And set the command properties.
 	props = new PropList ( __command.getCommandName() );
@@ -1507,7 +1598,9 @@ private void refresh()
 	props.add ( "FillStart="         + FillStart        );
 	props.add ( "FillEnd="           + FillEnd          );
 	props.add ( "MaxCombinations="   + MaxCombinations  );
-	props.add ( "OutputFile="        + OutputFile       );
+	props.add ( "RegressionEquationFill="   + RegressionEquationFill  );
+	props.add ( "PCAOutputFile="        + PCAOutputFile       );
+	props.add ( "FilledTSOutputFile="   + FilledTSOutputFile       );
 
 	// Update the __Command_JTextArea if running under the command mode. 
 	if ( __command.isCommandMode() ) {

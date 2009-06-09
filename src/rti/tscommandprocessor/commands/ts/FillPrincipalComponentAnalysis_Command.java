@@ -62,6 +62,7 @@ private boolean __commandMode = true;
 // This object is used to perform the analyze, create the fill commands and fill
 // the dependent time series.
 protected PrincipalComponentAnalysis __PrincipalComponentAnalysis = null;
+protected TS __filledTS;
 
 /**
 Command editor constructor.
@@ -435,10 +436,13 @@ public boolean editCommand ( JFrame parent )
 Fill the dependent time series using the best fit among the independent
 time series.
 */
-protected void fillDependents()
+protected void fillDependents() throws InvalidCommandParameterException
 {
     String rtn = "FillPrincipalComponentAnalysis_Command_fillDependents", message;
-
+    int warning_level = 1;
+    List v;
+	int [] tspos;
+	int tsCount;
 
     if ( __PrincipalComponentAnalysis == null ) {
         Message.printWarning(1, rtn, "Principal Component Analysis not available.");
@@ -454,10 +458,11 @@ protected void fillDependents()
 	String FilledTSOutputFile	= parameters.getValue ( "FilledTSOutputFile"       );
     String FillStart 	= parameters.getValue ( "FillStart" );
 	String FillEnd 		= parameters.getValue ( "FillEnd" );
+    DateTime fillStartDateTime=null, fillEndDateTime=null;
 
     CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-
+    
     // Filled TS Output file
     // Get the working_dir from the command processor
 	String working_dir = null;
@@ -473,6 +478,9 @@ protected void fillDependents()
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Software error - report the problem to support." ) );
 	}
+
+
+    message = "";
 	if ( FilledTSOutputFile != null && FilledTSOutputFile.length() != 0 ) {
 		try {
 			String adjusted_path = IOUtil.adjustPath (
@@ -499,6 +507,199 @@ protected void fillDependents()
 		 message = "\nThe Filled TS output file field is empty.";
          Message.printWarning ( 2, rtn, message);
 	}
+    if ( message.length() != 0 ) {
+        Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+				null, warning_level ),
+                message );
+        throw new InvalidCommandParameterException ( message );
+    }
+
+    // Get the list of dependent time series to process...
+    TS dependentTS = null;
+	List dependentTSList = null;
+	if ( __commandMode ) {
+
+		// Command Mode:
+		// Get the time series from the command list.
+		// The getTimeSeriesToProcess method will properly return the
+		// time series according to the settings of DependentTSList.
+        // There should be only 1 dependent time series.
+		v = getTimeSeriesToProcess( processor,
+			DependentTSList, DependentTSID );
+		List tslist = (List)v.get(0);
+		tspos = (int [])v.get(1);
+		tsCount = tslist.size();
+		if ( tsCount == 0 ) {
+			message = "Unable to find time series using DependentTSID \""
+				+ DependentTSID + "\".";
+			Message.printWarning ( 1, rtn, message );
+		}
+		dependentTSList = new Vector( tsCount );
+		for ( int nTS = 0; nTS < tsCount; nTS++ ) {
+			// Get the time series object.
+			try {
+					PropList request_params = new PropList ( "" );
+					request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+					CommandProcessorRequestResultsBean bean = null;
+					try { bean =
+						processor.processRequest( "GetTimeSeries", request_params);
+					}
+					catch ( Exception e ) {
+						Message.printWarning(1,
+								rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
+								"\" from processor." );
+					}
+					PropList bean_PropList = bean.getResultsPropList();
+					Object prop_contents = bean_PropList.getContents ( "TS" );
+					if ( prop_contents == null ) {
+						Message.printWarning(1,
+							rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+							"\") returned from processor." );
+					}
+					else {	dependentTS = (TS)prop_contents;
+					}
+
+				dependentTSList.add ( dependentTS );
+			} catch ( Exception e ) {
+				// TODO REVISIT SAM 2005-05-17 Ignore?
+				continue;
+			}
+		}
+		dependentTS = null;
+
+	} else {
+
+		// Tool Mode:
+		// Under the tool mode only _AllMatchingTSID can be specified,
+		// so the list if DependentTSID time series should contain all
+		// the time series needed for processing. Use the full list of
+		// resulting time series and the DependentTSID timeseries to
+		// get the list os selected time series objects.
+
+		List tsObjects = null;
+		try { Object o = processor.getPropContents( "TSResultsList" );
+				tsObjects = (List)o;
+		}
+		catch ( Exception e ){
+			message = "Cannot get time series list to process.";
+			Message.printWarning ( 1,rtn,message);
+		}
+
+		List dependentTSID_Vector = StringUtil.breakStringList (
+			DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+		dependentTSList = TSUtil.selectTimeSeries (
+			tsObjects, dependentTSID_Vector, null );
+        if ( dependentTSList.size() > 0 )
+            dependentTS = (TS) dependentTSList.get(0);
+	}
+
+    // Get the list of independent time series to process...
+	List independentTSList = null;
+	if ( __commandMode ) {
+
+		// Command Mode:
+		// Get the time series from the command list.
+		// The getTimeSeriesToProcess method will properly return the
+		// time series according to the settings of IndependentTSList.
+		v = getTimeSeriesToProcess( processor, IndependentTSList, IndependentTSID);
+
+		List tslist = (List)v.get(0);
+		tspos = (int [])v.get(1);
+		tsCount = tslist.size();
+		if ( tsCount == 0 ) {
+			message = "Unable to find time series using IndependentTSID \""
+				+ IndependentTSID + "\".";
+			Message.printWarning ( warning_level, rtn, message );
+		}
+		independentTSList = new Vector( tsCount );
+		TS independentTS = null;
+		for ( int nTS = 0; nTS < tsCount; nTS++ ) {
+			// Get the time series object.
+			try {
+				PropList request_params = new PropList ( "" );
+				request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+				CommandProcessorRequestResultsBean bean = null;
+				try { bean =
+					processor.processRequest( "GetTimeSeries", request_params);
+				}
+				catch ( Exception e ) {
+					Message.printWarning(1,
+							rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
+							"\" from processor." );
+				}
+				PropList bean_PropList = bean.getResultsPropList();
+				Object prop_contents = bean_PropList.getContents ( "TS" );
+				if ( prop_contents == null ) {
+					Message.printWarning(1,
+						rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+						"\") returned from processor." );
+				}
+				else {	independentTS = (TS)prop_contents;
+				}
+
+				independentTSList.add ( independentTS );
+			} catch ( Exception e ) {
+				// TODO SAM 2005-05-17 Ignore?
+				continue;
+			}
+		}
+		independentTS = null;
+
+	} else {
+		// Tool Mode:
+		// Under the tool mode only _AllMatchingTSID can be specified,
+		// so the list if IndependentTSID time series should contain all
+		// the time series needed for processing. Use the full list of
+		// resulting time series and the IndependentTSID timeseries to
+		// get the list of selected time series objects.
+
+		List tsObjects = null;
+		try { Object o = processor.getPropContents( "TSResultsList" );
+				tsObjects = (List)o;
+		}
+		catch ( Exception e ){
+			message = "Cannot get time series list to process.";
+			Message.printWarning ( 1,rtn,message);
+		}
+
+		List independentTSID_Vector = StringUtil.breakStringList (
+			IndependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+		independentTSList = TSUtil.selectTimeSeries (
+			tsObjects, independentTSID_Vector, null );
+	}
+
+    
+    int regressionEqIndex=0;
+    if ( RegressionEquationFill != null && RegressionEquationFill.length() > 0 ) {
+        regressionEqIndex = Integer.parseInt(RegressionEquationFill);
+    }
+
+
+	if ( FillStart != null && FillStart.length() > 0  ) {
+            try {
+                fillStartDateTime = DateTime.parse(FillStart);
+            } catch (Exception ex) {
+                Message.printWarning ( warning_level, rtn, "Unable to convert fill period (start) " + FillStart + " to DateTime.");
+            }
+	}
+
+
+	if ( FillEnd != null && FillEnd.length() > 0  ) {
+            try {
+                fillEndDateTime = DateTime.parse(FillEnd);
+            } catch (Exception ex) {
+                Message.printWarning ( warning_level, rtn, "Unable to convert fill period (end) " + FillEnd + " to DateTime.");
+            }
+	}
+
+    __filledTS = TSPrincipalComponentAnalysis.fill (
+			dependentTS,
+			independentTSList,
+            __PrincipalComponentAnalysis,
+            regressionEqIndex,
+			fillStartDateTime,
+            fillEndDateTime );
 
 }
 
@@ -864,22 +1065,7 @@ throws InvalidCommandParameterException,
             }
 	}
 
-    /*
-	if ( FillStart != null && FillStart.length() > 0  ) {
-		analysisProperties.set (	// FillRegression and FillMOVE2
-			"FillStart", FillStart );
-		analysisProperties.set (	// TSRegression
-			"FillPeriodStart", FillStart );
-	}
-
-	
-	if ( FillEnd != null && FillEnd.length() > 0  ) {
-		analysisProperties.set (	// FillRegression and FillMOVE2
-			"FillEnd", FillEnd );
-		analysisProperties.set (	// TSRegression
-			"FillPeriodEnd", FillEnd );
-	}
-	*/
+    
 
 	if ( PCAOutputFile != null && PCAOutputFile.length() > 0  ) {
             try {

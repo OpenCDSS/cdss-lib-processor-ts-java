@@ -7,6 +7,7 @@
 package rti.tscommandprocessor.commands.ts;
 
 
+import RTi.Util.IO.InvalidCommandParameterException;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -29,6 +30,8 @@ import java.util.Vector;
 import java.io.FileReader;
 import java.io.BufferedReader;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JDialog;
@@ -400,11 +403,11 @@ public void actionPerformed( ActionEvent event )
 	// changed after the analysis, or disable all the runCommand
 	// dependent buttons if the settings are changed. 
 	else if ( o == __fillDependents_JButton ) {
-	//	refresh();
-	//	checkInput();
-	//	if ( !__error_wait ) {
+	 	refresh();
+	 	checkInput();
+	 	if ( !__error_wait ) {
 			fillDependents();
-	//	}
+	 	}
 	}
 
 	// Select all time series in the dependent time series list
@@ -594,7 +597,11 @@ time series.
 */
 private void fillDependents()
 {
-	__command.fillDependents();
+    try {
+        __command.fillDependents();
+    } catch (InvalidCommandParameterException ex) {
+
+    }
 	this.requestFocus();
 }
 
@@ -983,7 +990,7 @@ private void initialize ( JFrame parent, Command command )
 	__RegressionEquationFill_SimpleJComboBox.setEnabled(false);
 	JGUIUtil.addComponent(main_JPanel,
 		new JScrollPane(__RegressionEquationFill_SimpleJComboBox),
-		1, y, 2, 1, 1, 1, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		1, y, 2, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required to fill - Select index of desired equation to use for filling missing data."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	

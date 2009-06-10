@@ -371,14 +371,14 @@ public void actionPerformed( ActionEvent event )
 	// changed after the analysis, or disable all the runCommand
 	// dependent buttons if the settings are changed. 
 	else if ( o == __createFillCommands_JButton ) {
-	//	refresh();
-	//	checkInput();
-	//	if ( !__error_wait ) {
+	  	refresh();
+	  	checkInput();
+	  	if ( !__error_wait ) {
 			createFillCommands();
 			updateFillCommandsControl();
 			// Unable the fill __copyFillCommandsToTSTool_JButton.
 			__copyFillCommandsToTSTool_JButton.setEnabled( true );
-	//	}
+	  	}
 
 	}
 
@@ -389,11 +389,11 @@ public void actionPerformed( ActionEvent event )
 	// changed after the analysis, or disable all the runCommand
 	// dependent buttons if the settings are changed. 
 	else if ( o == __copyFillCommandsToTSTool_JButton ) {
-	//	refresh();
-	//	checkInput();
-	//	if ( !__error_wait ) {
+	  	refresh();
+	  	checkInput();
+	  	if ( !__error_wait ) {
 			copyCommandsToTSTool();
-	//	}
+	  	}
 	}
 
 	// Fill dependents button - Active only under the tool mode
@@ -403,6 +403,7 @@ public void actionPerformed( ActionEvent event )
 	// changed after the analysis, or disable all the runCommand
 	// dependent buttons if the settings are changed. 
 	else if ( o == __fillDependents_JButton ) {
+        commitEdits ();
 	 	refresh();
 	 	checkInput();
 	 	if ( !__error_wait ) {
@@ -477,6 +478,7 @@ private void checkInput ()
 
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
+
 	// DependentTSList
 	if ( DependentTSList != null && DependentTSList.length() > 0 ) {
 		props.set( "DependentTSList", DependentTSList );
@@ -796,8 +798,6 @@ private void initialize ( JFrame parent, Command command )
 
 	// Create a list containing the identifiers needed to populate the
 	// dependent and independent time series controls. 
-	// REVISIT [LT 2006-06-01] Allow edits? Maybe in the future, if reimplemented
-	// as AnalyzePattern_JDialog
 	List tsids = null;
 	if ( __command.isCommandMode() ) {
 		

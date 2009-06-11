@@ -593,24 +593,35 @@ private void refresh ()
             // Select default...
             __HandleMissingHow_JComboBox.select ( 0 );
         }
-        else {  if (    JGUIUtil.isSimpleJComboBoxItem(
-                __HandleMissingHow_JComboBox,
-                HandleMissingHow, JGUIUtil.NONE, null, null )) {
-                __HandleMissingHow_JComboBox.select (
-                HandleMissingHow );
+        else {
+        	if ( JGUIUtil.isSimpleJComboBoxItem(
+                __HandleMissingHow_JComboBox, HandleMissingHow, JGUIUtil.NONE, null, null )) {
+                __HandleMissingHow_JComboBox.select ( HandleMissingHow );
             }
-            else {  Message.printWarning ( 1, routine,
-                "Existing command " +
-                "references an invalid\n" +
+            else {
+            	Message.printWarning ( 1, routine,
+                "Existing command references an invalid\n" +
                 "HandleMissingHow value \"" + HandleMissingHow +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
         }
-        if ( RecalcLimits != null &&
-            JGUIUtil.isSimpleJComboBoxItem( __RecalcLimits_JComboBox, 
-            RecalcLimits, JGUIUtil.NONE, null, null ) ) {
-            __RecalcLimits_JComboBox.select ( RecalcLimits );
+        if ( RecalcLimits == null ) {
+            // Select default...
+            __RecalcLimits_JComboBox.select ( 0 );
+        }
+        else {
+        	if ( JGUIUtil.isSimpleJComboBoxItem(
+                __RecalcLimits_JComboBox, RecalcLimits, JGUIUtil.NONE, null, null )) {
+                __RecalcLimits_JComboBox.select ( RecalcLimits );
+            }
+            else {
+            	Message.printWarning ( 1, routine,
+                "Existing command references an invalid\n" +
+                "RecalcLimits value \"" + RecalcLimits +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
         }
 	}
     // Regardless, reset the command from the fields...

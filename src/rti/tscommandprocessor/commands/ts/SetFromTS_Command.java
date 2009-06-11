@@ -167,13 +167,12 @@ throws InvalidCommandParameterException
     }
 
     if ( (RecalcLimits != null) && !RecalcLimits.equals("") &&
-            !RecalcLimits.equalsIgnoreCase( "true" ) && 
-            !RecalcLimits.equalsIgnoreCase("false") ) {
+        !RecalcLimits.equalsIgnoreCase( "true" ) && !RecalcLimits.equalsIgnoreCase("false") ) {
         message = "The RecalcLimits parameter must be blank, " + _False + " (default), or " + _True + ".";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or Auto." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a 1-character fill flag or Auto." ) );
     }
     
 	// Check for invalid parameters...

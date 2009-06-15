@@ -39,22 +39,22 @@ This class rely on the TSRegression object for the regression analysis.
 public class MixedStationAnalysis
 {
 
-private double __MISSING 	 = -999.99;
-private String __ANALYSIS_OLS    = "OLSRegression";
-//private String __ANALYSIS_MOVE2  = "MOVE2";
+private double __MISSING = -999.99;
+private String __ANALYSIS_OLS = "OLSRegression";
+//private String __ANALYSIS_MOVE2 = "MOVE2";
 
 private String __TRANSFORMATION_NONE = "None";
-//private String __TRANSFORMATION_LOG  = "Log";
+//private String __TRANSFORMATION_LOG = "Log";
 
-private String __NUM_OF_EQUATIONS_ONE_EQUATION      = "OneEquation";
+private String __NUM_OF_EQUATIONS_ONE_EQUATION = "OneEquation";
 private String __NUM_OF_EQUATIONS_MONTHLY_EQUATIONS = "MonthlyEquations";
 
-private String __BEST_FIT_R        = "r";
-private String __BEST_FIT_SEP      = "SEP";
+private String __BEST_FIT_R = "r";
+private String __BEST_FIT_SEP = "SEP";
 private String __BEST_FIT_SEPTOTAL = "SEPTotal";
 
-private final int __INT_BEST_FIT_R        = 0;
-private final int __INT_BEST_FIT_SEP      = 1;
+private final int __INT_BEST_FIT_R = 0;
+private final int __INT_BEST_FIT_SEP = 1;
 private final int __INT_BEST_FIT_SEPTOTAL = 2;
 
 private PropList __analysisProperties = null;
@@ -76,32 +76,32 @@ private List __dependentStatisticsVector = null;
 					// and all the independent time series.
 
 // Analysis properties listed in logical order
-private List   __AnalysisMethod_Vector = null;
+private List __AnalysisMethod_Vector = null;
 					// Stores the Analysis Methods to use
-private List   __Transformation_Vector = null;
+private List __Transformation_Vector = null;
 					// Stores the Transformations to use
-private String   __NumberOfEquations = null;
+private String __NumberOfEquations = null;
 					// Stores the Num Equations to use
-private boolean  __monthly;
+private boolean __monthly;
 private DateTime __AnalysisStart     = null;
 					// Stores the Analysis Start to use
 private DateTime __AnalysisEnd	     = null;
 					// Stores the Analysis End to use
-private String   __BestFitIndicator  = null;
+private String __BestFitIndicator  = null;
 					// Stores the Best Fit Indicator to use
-private int	 __intBestFitIndicator;	// Used to store a integer id for the
+private int __intBestFitIndicator;	// Used to store a integer id for the
 					// BestFitIndicator to be used in
 					// switchs
-private DateTime __FillStart         = null;
+private DateTime __FillStart = null;
 					// Stores the Fill Start to use
-private DateTime __FillEnd           = null;
+private DateTime __FillEnd = null;
 					// Stores the Fill End Start to use
-private String   __Intercept         = null;
+private String __Intercept = null;
 					// Stores the Intercept to use
-private String	 __MinimumDataCount  = null;
-private String	 __MinimumR          = null;
-private int	 __NumberOfBestRegressions;
-private String   __OutputFile        = null;
+private String __MinimumDataCount = null;
+private String __MinimumR = null;
+private int __NumberOfBestRegressions;
+private String __OutputFile = null;
 					// Stores the File name to output
 
 // Member used to store a reference to the caller object. It will be used to
@@ -115,10 +115,10 @@ private StringBuffer __sSummary;	// Created by createReportSummary
 
 private String __nl;
 String __format12p2f = "%12.2f";
-String __format8p2f  =  "%8.2f";
-String __format7d    =    "%7d";
-String __format12d   =   "%12d";
-String __format7p2f  =  "%7.2f";
+String __format8p2f = "%8.2f";
+String __format7d = "%7d";
+String __format12d = "%12d";
+String __format7p2f = "%7.2f";
 
 // Member populated by the method rank() and used by the method
 // createReportSummary() (and potentially others) to access the ranked
@@ -251,21 +251,18 @@ Transformation" is required or "Log,None" if both are required.</td>
 
 
 </table>
-//REVISIT [LT 2005-04-20] Need to revise how all this default values are
-//                        handled
+//REVISIT [LT 2005-04-20] Need to revise how all this default values are handled
 @throws Exception if an invalid results passed in.
 */
-public MixedStationAnalysis ( 	List dependentTSList,
-		List independentTSList,
-				PropList props )
+public MixedStationAnalysis ( List dependentTSList, List independentTSList, PropList props )
 throws Exception
 {
 	super ();
 
-	__dependentTSList   = dependentTSList;
+	__dependentTSList = dependentTSList;
 	__independentTSList = independentTSList;
-	__analysisProperties= new PropList ( props );
-	__parent            = null;
+	__analysisProperties = new PropList ( props );
+	__parent = null;
 
 	initialize ();
 	analyze();
@@ -285,17 +282,15 @@ plus the following extra parameter:
 @throws Exception if an invalid results passed in.
 */
 public MixedStationAnalysis ( FillMixedStation_JDialog parent,
-		List dependentTSList,
-		List independentTSList,
-				PropList props )
+		List dependentTSList, List independentTSList, PropList props )
 throws Exception
 {
 	super ();
 
-	__dependentTSList    = dependentTSList;
-	__independentTSList  = independentTSList;
+	__dependentTSList = dependentTSList;
+	__independentTSList = independentTSList;
 	__analysisProperties = new PropList ( props );
-	__parent             = parent;
+	__parent = parent;
 
 	initialize ();
 	analyze();
@@ -353,108 +348,87 @@ throws Exception
 
 		List dependentResults = null;
 
-		int initialCapacity = nIndependentTS
-				    * nAnalysisMethods
-				    * nTransformations;
+		int initialCapacity = nIndependentTS * nAnalysisMethods * nTransformations;
 
 		// Loop for each one of the dependent time series
 		for ( int nD = 0; nD < nDependentTS; nD++ ) {
-
 		    dependentTS = (TS) __dependentTSList.get(nD);
 		    dependentResults = new Vector( initialCapacity );
 
 		    // Loop for each one of the independent time series, except
-		    // the dependent times series if present in the independent
-		    // list.
+		    // the dependent times series if present in the independent list.
 		    for ( int nI = 0; nI < nIndependentTS; nI++ ) {
-
 		    	independentTS = (TS) __independentTSList.get(nI);
-
 		    	// Make sure the time series are not the same.
-			if ( independentTS == dependentTS) {
-				continue;
-			}
+    			if ( independentTS == dependentTS) {
+    				continue;
+    			}
 
-			// Make sure both time series have the same interval
-			if ( independentTS.getIdentifier().getInterval() !=
-			       dependentTS.getIdentifier().getInterval() ) {
+    			// Make sure both time series have the same interval
+    			if ( independentTS.getIdentifier().getInterval() != dependentTS.getIdentifier().getInterval() ) {
 			     	continue;
-			}
-
- 			// Loop for each analysis method, resetting the
-		    	// proplist to contain only one analysis method.
+    			}
+    
+     			// Loop for each analysis method, resetting the proplist to contain only one analysis method.
 		    	for ( int nA = 0; nA < nAnalysisMethods; nA++ ) {
 		    		// Reset properties for AnalysisMethod,
-		    		String AnalysisMethod = (String)
-		    			__AnalysisMethod_Vector.get(nA);
-		    		__analysisProperties.set(
-		    			"AnalysisMethod", AnalysisMethod );
+		    		String AnalysisMethod = (String)__AnalysisMethod_Vector.get(nA);
+		    		__analysisProperties.set("AnalysisMethod", AnalysisMethod );
 
-		    		// Loop for each transformation, resetting the
-		    		// proplist to contain only one transformation.
+		    		// Loop for each transformation, resetting the proplist to contain only one transformation.
 		    		for ( int nT = 0; nT < nTransformations; nT++ ) {
 		    		    // Reset properties for Transformation,
-		    		    String Transformation =  (String)
-		    		    	__Transformation_Vector.get(nT);
-		    		    __analysisProperties.set(
-		    		    	"Transformation", Transformation );
+		    		    String Transformation = (String)__Transformation_Vector.get(nT);
+		    		    __analysisProperties.set( "Transformation", Transformation );
 
-				    // Make sure to remove the property
-				    // Intercept from the prop list if the
-				    // transformation is not linear and the
-				    // the analysis method not OLS.
-				    // Otherwise set the property.
-				    if ( __Intercept != null ) {
-				    	if ( !Transformation.equalsIgnoreCase(
-				    		__TRANSFORMATION_NONE) ||
-					     !AnalysisMethod.equalsIgnoreCase(
-				    		__ANALYSIS_OLS) ) {
-				    		__analysisProperties.unSet(
-				    			"Intercept");
-				    	} else {
-				    		__analysisProperties.set(
-				    			"Intercept",
-				    			__Intercept );
-				    	}
-				    }
-
-				    // Status message
-				    mssg = "Computing regression - "
+    				    // Make sure to remove the property Intercept from the prop list if the
+    				    // transformation is not linear and the the analysis method not OLS.
+    				    // Otherwise set the property.
+    				    if ( __Intercept != null ) {
+    				    	if ( !Transformation.equalsIgnoreCase(__TRANSFORMATION_NONE) ||
+    					     !AnalysisMethod.equalsIgnoreCase(__ANALYSIS_OLS) ) {
+    				    		__analysisProperties.unSet("Intercept");
+    				    	}
+    				    	else {
+    				    		__analysisProperties.set( "Intercept", __Intercept );
+    				    	}
+    				    }
+    
+    				    // Status message
+    				    mssg = "Computing regression - "
 				        + "Dependent (" + (nD+1) + " out of "
 				    	+ nDependentTS
-				   	+ ") X Independent (" + (nI+1) + " of "
-				   	+ nIndependentTS + ")";
+				    	+ ") X Independent (" + (nI+1) + " of "
+				    	+ nIndependentTS + ")";
 			    	    setParentStatusText ( mssg );
 
 			    	    // Process the TSRegression
 			    	    previousSecCount = sw.getSeconds();
-				    sw.start();
+			    	    sw.start();
 			    	    try {
 			    	    	dependentResults.add (
 			    		    new TSRegression (
 			    			independentTS,
 			    			dependentTS,
-			    			new PropList(
-			    			   __analysisProperties) ) );
+			    			new PropList( __analysisProperties) ) );
 			    	    } catch ( Exception e ) {
 			    	    	Message.printWarning( 1, mthd, e );
 			    	    	++warningCount;
 			    	    }
 			    	    sw.stop();
 			    	    currentSecCount = sw.getSeconds();
-			    	    double elapsed =
-			    	    currentSecCount - previousSecCount;
+			    	    double elapsed = currentSecCount - previousSecCount;
 			    	    Message.printStatus ( 2, mthd,
 			    		"Dependent, Independent, Elapsed (sec) "
 			    		+ nD + ", " + nI + ", " + elapsed );
 			    	}
-			}
+		    	}
 		    }
 		    __dependentStatisticsVector.add ( dependentResults );
 		}
 	} catch ( Exception e ) {
 		// Error other than from the TSRegression object.
-		Message.printWarning( 1, mthd, e );
+		Message.printWarning( 2, mthd, e );
 		throw new Exception ( e );
 	}
 
@@ -471,19 +445,17 @@ throws Exception
 
 /**
 */
-private void appendTableHeader (StringBuffer buffer,
-				String depend,
-				PropList tsRegressionProps)
+private void appendTableHeader ( StringBuffer buffer, String depend, PropList tsRegressionProps)
 {
-	String AnalyzeForFilling		= null;
-	String DependentAnalysisStart	= null;
+	String AnalyzeForFilling = null;
+	String DependentAnalysisStart = null;
 	String DependentAnalysisEnd	= null;
-	String FillEnd			= null;
-	String FillStart			= null;
-	String Intercept			= null;
-	String NumberOfEquations		= null;
-	String MinimumDataCount			= null;
-	String BestFitIndicator			= null;
+	String FillEnd = null;
+	String FillStart = null;
+	String Intercept = null;
+	String NumberOfEquations = null;
+	String MinimumDataCount = null;
+	String BestFitIndicator = null;
 
 	buffer.append ( "Dependent Time Series: " + depend + __nl );
 
@@ -493,27 +465,24 @@ private void appendTableHeader (StringBuffer buffer,
 //	buffer.append ( "Analysis for filling: "+ AnalyzeForFilling + __nl );
 
 	// Dependent Period.
-	DependentAnalysisStart =
-	 	tsRegressionProps.getValue ( "DependentAnalysisStart" );
-	DependentAnalysisEnd =
-	 	tsRegressionProps.getValue ( "DependentAnalysisEnd" );
+	DependentAnalysisStart = tsRegressionProps.getValue ( "DependentAnalysisStart" );
+	DependentAnalysisEnd = tsRegressionProps.getValue ( "DependentAnalysisEnd" );
 	buffer.append ( "Dependent analysis period: from \""
-		+ DependentAnalysisStart + "\" to \""
-		+ DependentAnalysisEnd   + "\"" + __nl );
+		+ DependentAnalysisStart + "\" to \"" + DependentAnalysisEnd   + "\"" + __nl );
 
 	// Fill Period.
 	FillStart = tsRegressionProps.getValue ( "FillStart");
 	FillEnd   = tsRegressionProps.getValue ( "FillEnd"  );
 	// REVISIT [LT] FillEnd is returning null???
-	buffer.append ( "Fill period: from \"" + FillStart
-			+ "\" to \"" + FillEnd + "\"" + __nl );
+	buffer.append ( "Fill period: from \"" + FillStart + "\" to \"" + FillEnd + "\"" + __nl );
 
 	// Intercept
 	Intercept = tsRegressionProps.getValue ( "Intercept");
 	buffer.append ( "Intercept (only if OLS Linear): ");
 	if ( Intercept.equalsIgnoreCase( "-999.0" ) ) {
 		buffer.append ( __nl );
-	} else {
+	}
+	else {
 		buffer.append ( Intercept + __nl );
 	}
 
@@ -545,313 +514,279 @@ public List createFillCommands()
 
 	TS IndependentTS = null;
 	TS DependentTS   = null;
-	String Transformation           = "";
-	String AnalysisMethod           = "";
-	String NumberOfEquations        = "";
-	String DependentAnalysisStart   = "";
-	String DependentAnalysisEnd     = "";
+	String Transformation = "";
+	String AnalysisMethod = "";
+	String NumberOfEquations = "";
+	String DependentAnalysisStart = "";
+	String DependentAnalysisEnd = "";
 	String IndependentAnalysisStart = "";
-	String IndependentAnalysisEnd   = "";
-	String FillStart                = "";
-	String FillEnd                  = "";
-	String Intercept                = "";
+	String IndependentAnalysisEnd = "";
+	String FillStart = "";
+	String FillEnd = "";
+	String Intercept = "";
 
 	// __MinimumDataCount as integer.
-	int MinimumDataCount = StringUtil.atoi( __MinimumDataCount );
+	int MinimumDataCount = Integer.parseInt( __MinimumDataCount );
 
 	// __MinimumR as integer.
-	int MinimumR = StringUtil.atoi( __MinimumR );
+	int MinimumR = Integer.parseInt( __MinimumR );
 
 	List commands_Vector = new Vector();
 
-try {
-	// Loop for each one of the dependent time series
-	int nDependent = __dependentStatisticsVector.size();
+    try {
+    	// Loop for each one of the dependent time series
+    	int nDependent = __dependentStatisticsVector.size();
+    
+    	String fillCommand = null;
+    
+    	for ( int dep = 0; dep < nDependent; dep++ ) {
+    
+    		// Get the independent list (regressions) for this dependent
+    		List independentList = (List)__dependentStatisticsVector.get( dep );
+    		int nIndependent = independentList.size();
+    
+    		// Using the same code to deal with monthly and single equation
+    		// For single equation set the variable nMonth to 1.
+    		int nMonth = 1;
+    		if ( __monthly ) nMonth = 12;
+    
+    		for ( int month = 1; month <= nMonth; month++ ) {
+    
+    			// Loop through the regressions for this dependent, find the first best fit,
+    		    // fill the dependent and set the break from the independent loop.
+    
+    			for ( int ind = 0; ind < nIndependent; ind++ ) {
+    
+    				// Get the regression object.
+    				TSRegression tsRegression = null;
+    				tsRegression = (TSRegression)independentList.get(__sortedOrder[dep][month-1][ind]);
+    		  		PropList tsRegressionProps = tsRegression.getPropList();
+    
+    	    		// Use only if regression was properly analyzed
+    	    		if ( __monthly ) {
+    	    			if ( tsRegression.isAnalyzed( month ) == false ) {
+    	    			    continue;
+    	    			}
+    				}
+    	    		else {
+    					if ( tsRegression.isAnalyzed() == false ) {
+    					    continue;
+    					}
+    				}
+    
+    				// Use only if the number of data points used in the analysis was >= to MinimumDataCount
+    				int n;
+    				try {
+    	    	    	if ( __monthly ) {
+    						n = tsRegression.getN1( month );
+    					}
+    	    	    	else {
+    						n = tsRegression.getN1();
+    					}
+    				} catch ( Exception e ) {
+    				    // FIXME SAM 2009-06-15 Handle better
+    					continue;
+    				}
+    				if ( n < MinimumDataCount ) {
+    					continue;
+    				}
+    
+    				// Use only if the correlation coefficient is greater than the MinimumR
+    				double r;
+    				try {
+    	    	    	if ( __monthly ) {
+    						r = tsRegression.getCorrelationCoefficient( month );
+    					}
+    	    	    	else {
+    						r = tsRegression.getCorrelationCoefficient();
+    					}
+    				} catch ( Exception e ) {
+    				 // FIXME SAM 2009-06-15 Handle better
+    					continue;
+    				}
+    				if ( r < MinimumR ) {
+    					continue;
+    				}
+    
+    				// Get the Dependent time series
+    		    	DependentTS = tsRegression.getDependentTS();
+    		    	String DependentTSID = DependentTS.getAlias();
+    		    	if ( DependentTSID.length() == 0 ) {
+    		    		DependentTSID = DependentTS.getIdentifierString();
+    		    	}
+    
+    				// Get the Independent TS
+      	    		IndependentTS = tsRegression.getIndependentTS();
+    	    		String IndependentTSID=IndependentTS.getAlias();
+    	    		if ( IndependentTSID.length() == 0 ) {
+    	    			IndependentTSID = IndependentTS.getIdentifierString();
+    	    		}
+    
+    	    	    // Number of equations
+    			  	NumberOfEquations = tsRegressionProps.getValue ( "NumberOfEquations" );
+    
+    	    		// Get the Transformation
+    	    		Transformation = tsRegressionProps.getValue ("Transformation");
+    
+    	  		  	// Get AnalysisMethod
+      	    		AnalysisMethod = tsRegressionProps.getValue ("AnalysisMethod");
+    
+      	    		// Get the dependent analysis period start and end
+      	    		DependentAnalysisStart = tsRegressionProps.getValue ("DependentAnalysisStart");
+      	    		DependentAnalysisEnd = tsRegressionProps.getValue ("DependentAnalysisEnd");
+    
+      	    		// Get the independent analysis period start and end
+      	    		IndependentAnalysisStart = tsRegressionProps.getValue ("IndependentAnalysisStart");
+      	    		IndependentAnalysisEnd = tsRegressionProps.getValue ("IndependentAnalysisEnd");
+    
+      	    		// Get the fill period start and end
+      	    		FillStart = tsRegressionProps.getValue ("FillStart" );
+      	    		FillEnd = tsRegressionProps.getValue ("FillEnd" );
+    
+      	    		// Building the command (fillRegression or fillMove2)
+    				if ( AnalysisMethod.equalsIgnoreCase(__ANALYSIS_OLS ) ) {
+      	    			fillCommand = "fillRegression";
+      	    		}
+    				else {
+    				    fillCommand = "fillMOVE2";
+      	    		}
+    
+    				// StringBuffer for the command parameters
+    				StringBuffer b = new StringBuffer();
+    
+    				// Adding the DependentTSID
+    				if ( DependentTSID.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "DependentTSID=\"" + DependentTSID + "\"" );
+    				}
+    
+    				/// Adding the IndependentTSID
+    				if ( IndependentTSID.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "IndependentTSID=\"" + IndependentTSID + "\"" );
+    				}
+    
+    				// Adding the NumberOfEquations
+    				if ( NumberOfEquations.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "NumberOfEquations=" + NumberOfEquations );
+    				}
+    
+    				// Adding the AnalysisMonth
+    				if ( b.length() > 0 ) {
+    					b.append ( "," );
+    				}
+    				b.append ( "AnalysisMonth=" + String.valueOf(month) );
+    
+    				// Adding the Transformation
+    				if ( Transformation.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "Transformation=" + Transformation );
+    				}
+    
+    				if ( AnalysisMethod.equalsIgnoreCase(__ANALYSIS_OLS ) ) {
+    
+    				    // Adding the AnalysisStart
+    				    if ( DependentAnalysisStart.length() > 0 ) {
+    				    	if ( b.length() > 0 ) {
+    				    		b.append ( "," );
+    				    	}
+    				    	b.append ( "AnalysisStart=" + DependentAnalysisStart );
+    				    }
+    
+    				    // Adding the AnalysisEnd
+    				    if ( DependentAnalysisEnd.length() > 0 ) {
+    				    	if ( b.length() > 0 ) {
+    				    		b.append ( "," );
+    				    	}
+    				    	b.append ( "AnalysisEnd=" + DependentAnalysisEnd );
+    				    }
+    
+    				} else {
+    
+    				    // Adding the DependentAnalysisStart
+    				    if ( DependentAnalysisStart.length() > 0 ) {
+    				    	if ( b.length() > 0 ) {
+    				    		b.append ( "," );
+    				    	}
+    				    	b.append ( "DependentAnalysisStart=" + DependentAnalysisStart );
+    				    }
+    
+    				    // Adding the DependentAnalysisEnd
+    				    if ( DependentAnalysisEnd.length() > 0 ) {
+    				    	if ( b.length() > 0 ) {
+    				    		b.append ( "," );
+    				    	}
+    				    	b.append ( "DependentAnalysisEnd=" + DependentAnalysisEnd );
+    				    }
+    				    // Adding the IndependentAnalysisStart
+    				    if ( IndependentAnalysisStart.length()>0 ) {
+    				    	if ( b.length() > 0 ) {
+    				    		b.append ( "," );
+    				    	}
+    				    	b.append ( "IndependentAnalysisStart=" + IndependentAnalysisStart );
+    				    }
+    
+    				    // Adding the IndependentAnalysisEnd
+    				    if ( IndependentAnalysisEnd.length() > 0 ) {
+    				    	if ( b.length() > 0 ) {
+    				    		b.append ( "," );
+    				    	}
+    				    	b.append ( "IndependentAnalysisEnd=" + IndependentAnalysisEnd );
+    				    }
+    				}
+    
+    				// Adding the FillStart
+    				if ( FillStart.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "FillStart=" + FillStart );
+    				}
+    
+    				// Adding the FillEnd
+    				if ( FillEnd.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "FillEnd=" + FillEnd );
+    				}
+    
+    				// Adding the Intercept
+    				if ( Intercept.length() > 0 ) {
+    					if ( b.length() > 0 ) {
+    						b.append ( "," );
+    					}
+    					b.append ( "Intercept=" + Intercept );
+    				}
+    
+    	  	    	// Build the command, update the __command_Vector
+    				String command = fillCommand + "(" + b.toString() + ")";
+    				commands_Vector.add ( command );
+    				Message.printStatus ( 2, mthd, command );
+    
+      	    		// Done with this month (or all)
+      	    		break;
+    			}
+    	    }
+    	}
+    } catch ( Exception e ) {
+    	Message.printWarning( 3, mthd, e );
+    }
 
-	String fillCommand = null;
-
-	for ( int dep = 0; dep < nDependent; dep++ ) {
-
-		// Get the independent list (regressions) for this dependent
-		List independentList = (List)
-			__dependentStatisticsVector.get( dep );
-		int nIndependent = independentList.size();
-
-		// Using the same code to deal with monthly and single equation
-		// For single equation set the variable nMonth to 1.
-		int nMonth = 1;
-		if ( __monthly ) nMonth = 12;
-
-		for ( int month = 1; month <= nMonth; month++ ) {
-
-			// Loop throught the regressions for this dependent,
-			// find the first best fit, fill the dependent and set
-			// the break from the independent loop.
-
-			for ( int ind = 0; ind < nIndependent; ind++ ) {
-
-				// Get the regression object.
-				TSRegression tsRegression = null;
-				tsRegression = (TSRegression)
-		    			independentList.get(
-		    				__sortedOrder[dep][month-1][ind]);
-		  		PropList tsRegressionProps =
-		  			tsRegression.getPropList();
-
-	    	    		// Use only if regression was properly analyzed
-	    	    		if ( __monthly ) {
-	    	    			if ( tsRegression.isAnalyzed( month )
-	    	    				== false ) continue;
-				} else {
-					if ( tsRegression.isAnalyzed()
-						== false ) continue;
-				}
-
-				// Use only if the number of data points used
-				// in the analysis was >= to MinimumDataCount
-				int n;
-				try {
-	    	    			if ( __monthly ) {
-						n = tsRegression.getN1( month );
-					} else {
-						n = tsRegression.getN1();
-					}
-				} catch ( Exception e ) {
-					continue;
-				}
-				if ( n < MinimumDataCount ) {
-					continue;
-				}
-
-				// Use only if the correlation coefficient
-				// is greater than the MinimumR
-				double r;
-				try {
-	    	    			if ( __monthly ) {
-						r = tsRegression.
-						   getCorrelationCoefficient(
-						   month );
-					} else {
-						r = tsRegression.
-						   getCorrelationCoefficient();
-					}
-				} catch ( Exception e ) {
-					continue;
-				}
-				if ( r < MinimumR ) {
-						continue;
-				}
-
-				// Get the Dependent time series
-			    	DependentTS = tsRegression.getDependentTS();
-			    	String DependentTSID = DependentTS.getAlias();
-			    	if ( DependentTSID.length() == 0 ) {
-			    		DependentTSID = DependentTS.
-			    			getIdentifierString();
-			    	}
-
-				// Get the Independent TS
-	      	    		IndependentTS = tsRegression.getIndependentTS();
-	    	    		String IndependentTSID=IndependentTS.getAlias();
-	    	    		if ( IndependentTSID.length() == 0 ) {
-	    	    			IndependentTSID = IndependentTS.
-	    	    				getIdentifierString();
-	    	    		}
-
-	    	    		// Number of equations
-			  	NumberOfEquations = tsRegressionProps.getValue (
-			  	    	"NumberOfEquations" );
-
-	    	    		// Get the Transformation
-	    	    		Transformation = tsRegressionProps.getValue (
-	  	    			"Transformation");
-
-	  		  	// Get AnalysisMethod
-	  	    		AnalysisMethod = tsRegressionProps.getValue (
-	  	    			"AnalysisMethod");
-
-	  	    		// Get the dependent analysis period start and end
-	  	    		DependentAnalysisStart =
-	  	    			tsRegressionProps.getValue (
-	  	    			"DependentAnalysisStart");
-	  	    		DependentAnalysisEnd   =
-	  	    			tsRegressionProps.getValue (
-	  	    			"DependentAnalysisEnd");
-
-	  	    		// Get the independent analysis period start
-	  	    		// and end
-	  	    		IndependentAnalysisStart =
-	  	    		 	tsRegressionProps.getValue (
-	  	    			"IndependentAnalysisStart");
-	  	    		IndependentAnalysisEnd =
-	  	    		 	tsRegressionProps.getValue (
-	  	    			"IndependentAnalysisEnd");
-
-	  	    		// Get the fill period start and end
-	  	    		FillStart = tsRegressionProps.getValue (
-	  	    			"FillStart" );
-	  	    		FillEnd = tsRegressionProps.getValue (
-	  	    			"FillEnd" );
-
-	  	    		// Building the command
-	  	    		// (fillRegression or fillMove2)
-				if ( AnalysisMethod.equalsIgnoreCase(
-					__ANALYSIS_OLS ) ) {
-	  	    			fillCommand = "fillRegression";
-	  	    		} else {
-					fillCommand = "fillMOVE2";
-	  	    		}
-
-				// StringBuffer for the command parameters
-				StringBuffer b = new StringBuffer();
-
-				// Adding the DependentTSID
-				if ( DependentTSID.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "DependentTSID=\""
-						+ DependentTSID + "\"" );
-				}
-
-				/// Adding the IndependentTSID
-				if ( IndependentTSID.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "IndependentTSID=\""
-						+ IndependentTSID + "\"" );
-				}
-
-				// Adding the NumberOfEquations
-				if ( NumberOfEquations.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "NumberOfEquations="
-						+ NumberOfEquations );
-				}
-
-				// Adding the AnalysisMonth
-				if ( b.length() > 0 ) {
-					b.append ( "," );
-				}
-				b.append ( "AnalysisMonth="
-					+ String.valueOf(month) );
-
-				// Adding the Transformation
-				if ( Transformation.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "Transformation="
-						+ Transformation );
-				}
-
-				if ( AnalysisMethod.equalsIgnoreCase(
-					__ANALYSIS_OLS ) ) {
-
-				    // Adding the AnalysisStart
-				    if ( DependentAnalysisStart.length() > 0 ) {
-				    	if ( b.length() > 0 ) {
-				    		b.append ( "," );
-				    	}
-				    	b.append ( "AnalysisStart="
-				    		+ DependentAnalysisStart );
-				    }
-
-				    // Adding the AnalysisEnd
-				    if ( DependentAnalysisEnd.length() > 0 ) {
-				    	if ( b.length() > 0 ) {
-				    		b.append ( "," );
-				    	}
-				    	b.append ( "AnalysisEnd="
-				    		+ DependentAnalysisEnd );
-				    }
-
-				} else {
-
-				    // Adding the DependentAnalysisStart
-				    if ( DependentAnalysisStart.length() > 0 ) {
-				    	if ( b.length() > 0 ) {
-				    		b.append ( "," );
-				    	}
-				    	b.append ( "DependentAnalysisStart="
-				    		+ DependentAnalysisStart );
-				    }
-
-				    // Adding the DependentAnalysisEnd
-				    if ( DependentAnalysisEnd.length() > 0 ) {
-				    	if ( b.length() > 0 ) {
-				    		b.append ( "," );
-				    	}
-				    	b.append ( "DependentAnalysisEnd="
-				    		+ DependentAnalysisEnd );
-				    }
-				    // Adding the IndependentAnalysisStart
-				    if ( IndependentAnalysisStart.length()>0 ) {
-				    	if ( b.length() > 0 ) {
-				    		b.append ( "," );
-				    	}
-				    	b.append ( "IndependentAnalysisStart="
-				    		+ IndependentAnalysisStart );
-				    }
-
-				    // Adding the IndependentAnalysisEnd
-				    if ( IndependentAnalysisEnd.length() > 0 ) {
-				    	if ( b.length() > 0 ) {
-				    		b.append ( "," );
-				    	}
-				    	b.append ( "IndependentAnalysisEnd="
-				    		+ IndependentAnalysisEnd );
-				    }
-				}
-
-				// Adding the FillStart
-				if ( FillStart.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "FillStart=" + FillStart );
-				}
-
-				// Adding the FillEnd
-				if ( FillEnd.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "FillEnd=" + FillEnd );
-				}
-
-				// Adding the Intercept
-				if ( Intercept.length() > 0 ) {
-					if ( b.length() > 0 ) {
-						b.append ( "," );
-					}
-					b.append ( "Intercept=" + Intercept );
-				}
-
-	  	    		// Build the command, update the __command_Vector
-				String command =
-					fillCommand + "(" + b.toString() + ")";
-				commands_Vector.add ( command );
-				Message.printStatus ( 1, mthd, command );
-
-	  	    		// Done with this month (or all)
-	  	    		break;
-			}
-	        }
-	}
-} catch ( Exception e ) {
-	Message.printWarning( 1, mthd, e );
-}
-
-return commands_Vector;
+    return commands_Vector;
 }
 
 /**
-Create the report header, containing the description of the sections in the
-report
+Create the report header, containing the description of the sections in the report
 */
 private void createReportHeader ()
 {
@@ -865,85 +800,65 @@ private void createReportHeader ()
 		__sHeader.append ( "# Mixed Station Analysis Report Format:" + __nl );
 		__sHeader.append ( "#" + __nl );
 		__sHeader.append ( "# Mixed Station Analysis Summary" + __nl );
-		__sHeader.append (
-			  "#       Summary, listed by dependent time series, "
-			+ "with the top " + __NumberOfBestRegressions );
+		__sHeader.append ( "#       Summary, listed by dependent time series, with the top " + __NumberOfBestRegressions );
 		if ( __monthly ) {
-			__sHeader.append ( __nl
-			  + "#       best fit results"
-			  + " listed per dependent and month." + __nl);
-		} else {
-			__sHeader.append ( __nl
-			  + "#       best fit results"
-			  + " listed per dependent." + __nl);
+			__sHeader.append ( __nl + "#       best fit results listed per dependent and month." + __nl);
+		}
+		else {
+			__sHeader.append ( __nl + "#       best fit results listed per dependent." + __nl);
 		}
 		__sHeader.append ( "#" + __nl );
 		__sHeader.append ( "# Mixed Station Analysis Details" + __nl );
 		if ( __monthly ) {
+			__sHeader.append ( "#       This section contains three tables per dependent time series:" + __nl
+			+ "#          The first lists the number of points used in the analysis." + __nl
+			+ "#          The second lists the correlation coeficients." + __nl
+			+ "#          The third lists the SEP values." + __nl
+			+ "#       Each table lists the results per combination of independent," + __nl
+			+ "#       transformation and analysis method." + __nl );
+		}
+		else {
 			__sHeader.append (
-			"#       This section contains three tables per dependent"
-			+ " time series:"
-			+ __nl
-			+ "#          The first lists the number of points used "
-			+ "in the analysis."
-			+ __nl
-			+ "#          The second lists the correlation coeficients."
-			+ __nl
-			+ "#          The third lists the SEP values."
-			+ __nl
-			+ "#       Each table lists the results per combination"
-			+ " of independent,"
-			+ __nl
-			+ "#       transformation and analysis method."
-			+ __nl );
-		} else {
-			__sHeader.append (
-			  "#       This section contains one table per dependent "
-			+ "time series."
-			+ __nl
-			+ "#       It lists the results per combination of "
-			+ "independent,"
-			+ __nl
-			+ "#       transformation and analysis method."
-			+ __nl );
+			  "#       This section contains one table per dependent time series." + __nl
+			+ "#       It lists the results per combination of independent," + __nl
+			+ "#       transformation and analysis method." + __nl );
 		}
 
 		__sHeader.append ( __nl + __nl );
 
 	} catch ( Exception e ) {
-		Message.printWarning( 1, mthd, e );
+		Message.printWarning( 3, mthd, e );
 	}
 }
 
 /**
-Create the first section of the report, containing the statistics results from
-the Regressions.
+Create the first section of the report, containing the statistics results from the Regressions.
 */
 private void createReportStatistics()
 {
 	String mthd = "MixedStationAnalysis.createReportStatistics", mssg;
 
 	// TSRegression properties
-	String AnalysisMethod		= null;
-	String AnalysisMonth		= null;
-	String AnalyzeForFilling	= null;
-	String DependentAnalysisStart	= null;
+	String AnalysisMethod = null;
+	String AnalysisMonth = null;
+	String AnalyzeForFilling = null;
+	String DependentAnalysisStart = null;
 	String DependentAnalysisEnd	= null;
-	String FillEnd			= null;
-	String FillStart		= null;
-	String IndependentAnalysisEnd	= null;
+	String FillEnd = null;
+	String FillStart = null;
+	String IndependentAnalysisEnd = null;
 	String IndependentAnalysisStart	= null;
-	String Intercept		= null;
-	String NumberOfEquations	= null;
-	String Transformation		= null;
-	String MinimumDataCount		= null;
-	String MinimumR			= null;
-	String BestFitIndicator		= null;
+	String Intercept = null;
+	String NumberOfEquations = null;
+	String Transformation = null;
+	String MinimumDataCount = null;
+	String MinimumR = null;
+	String BestFitIndicator = null;
 
-	List independentList     = null;
-	TSRegression tsRegression  = null;
-	TS dependentTS		   = null;
-	TS independentTS	   = null;
+	List independentList = null;
+	TSRegression tsRegression = null;
+	TS dependentTS = null;
+	TS independentTS = null;
 	PropList tsRegressionProps = null;
 
 	String line;
@@ -951,391 +866,307 @@ private void createReportStatistics()
 	try {
 		__sStatistics = new StringBuffer ();
 
-		StringBuffer sDataCount   = null;
+		StringBuffer sDataCount = null;
 		StringBuffer sCorrelation = null;
-		StringBuffer sRMSE        = null;
+		StringBuffer sRMSE = null;
 
 		int dependentStatisticsSize = __dependentStatisticsVector.size();
 
 		for ( int dp = 0; dp < dependentStatisticsSize; dp++ ) {
-
-			sDataCount   = new StringBuffer ();
+			sDataCount = new StringBuffer ();
 			sCorrelation = new StringBuffer ();
-			sRMSE        = new StringBuffer ();
+			sRMSE = new StringBuffer ();
 
 			// Get the regression list for this dependent time series.
-			independentList = (List)
-				__dependentStatisticsVector.get( dp );
+			independentList = (List)__dependentStatisticsVector.get( dp );
 
-			// Find out the number of regression analysis for this
-			// dependent time series
+			// Find out the number of regression analysis for this dependent time series
 			int independentListSize = independentList.size();
 
-			// Loop throught the regression for this dependent time
-			// series and create the report.
-			tsRegression      = null;
+			// Loop through the regression for this dependent time series and create the report.
+			tsRegression = null;
 			boolean firstTime = true;
-			tsRegression      = null;
+			tsRegression = null;
 
-			sDataCount.append   ( __nl + __nl );
+			sDataCount.append ( __nl + __nl );
 			sCorrelation.append ( __nl  );
-			sRMSE.append        ( __nl  );
+			sRMSE.append ( __nl  );
 
 			String previousIndependent = "";
 
 			String endLine3Data = "";
 			String endLine3Corr = "";
-	    		String endLine3RMSE = "";
+	    	String endLine3RMSE = "";
 
 			for ( int rl = 0; rl < independentListSize; rl++ ) {
 
-	    			// Alternative to the report below.
-	    			//sCorrelation.append(tsRegression.toString());
+    			// Alternative to the report below.
+    			//sCorrelation.append(tsRegression.toString());
 
 				// Get the regression object.
-				tsRegression = (TSRegression)
-		    			independentList.get(rl);
+				tsRegression = (TSRegression)independentList.get(rl);
 		  		tsRegressionProps = tsRegression.getPropList();
 
-	    			// If first time create the header
+    			// If first time create the header
 				if ( firstTime ) {
+					// Using the TSRegression stored in the __dependentStatisticsVector
+					// create the analysis summary, saving it in the output file.
+					__sStatistics.append( __nl + "# Mixed Station Analysis Details");
+					__sStatistics.append( __nl + "# Landscape printing");
 
-					// Using the TSRegression stored in the
-					// __dependentStatisticsVector
-					// create the analysis summary, saving
-					// it in the output file.
-					__sStatistics.append( __nl +
-					      "# Mixed Station Analysis Details");
-					__sStatistics.append( __nl
-					    + "# Landscape printing");
-
-	    				// Dependent time series
-	    				dependentTS =
-	    					tsRegression.getDependentTS();
-	    				String depend = dependentTS.
-	    					getIdentifierString();
+    				// Dependent time series
+    				dependentTS = tsRegression.getDependentTS();
+    				String depend = dependentTS.getIdentifierString();
 	    			//	String depend = dependentTS.getAlias();
 	    			//	if ( depend.length() == 0 ) {
-	    			//		depend =
-	    			//		    dependentTS.getLocation();
+	    			//		depend = dependentTS.getLocation();
 	    			//	}
 
-			  	    	// Append the report header
-	    				appendTableHeader (sDataCount,
-	    					depend, tsRegressionProps );
+		  	    	// Append the report header
+    				appendTableHeader (sDataCount, depend, tsRegressionProps );
 
-	    				// Number of equations
-			  	    	NumberOfEquations  =
-			  	    		tsRegressionProps.getValue (
-			  	    		"NumberOfEquations");
+    				// Number of equations
+		  	    	NumberOfEquations = tsRegressionProps.getValue ("NumberOfEquations");
 
 	   				// Preparing for table headers
-	    				String monthsA = " ";
-	    				for ( int i = 1; i <= 12; i++ ) {
-	    					monthsA += "   "
-	    					+ TimeUtil.monthAbbreviation(i)
-	    					+ " ";
-	    				}
-	    				String monthsB = " ";
-	    				for ( int i = 1; i <= 12; i++ ) {
-	    					monthsB += "        "
-	    					+ TimeUtil.monthAbbreviation(i)
-	    					+ " ";
-	    				}
+    				String monthsA = " ";
+    				for ( int i = 1; i <= 12; i++ ) {
+    					monthsA += "   " + TimeUtil.monthAbbreviation(i) + " ";
+    				}
+    				String monthsB = " ";
+    				for ( int i = 1; i <= 12; i++ ) {
+    					monthsB += "        " + TimeUtil.monthAbbreviation(i) + " ";
+    				}
 
-	    				String endLine1Data = "";
-	    				String endLine2Data = "";
-	    				String endLine1Corr = "";
-	    				String endLine2Corr = "";
-	    				String endLine1RMSE = "";
-	    				String endLine2RMSE = "";
+    				String endLine1Data = "";
+    				String endLine2Data = "";
+    				String endLine1Corr = "";
+    				String endLine2Corr = "";
+    				String endLine1RMSE = "";
+    				String endLine2RMSE = "";
 
-	    				if ( __monthly ) {
+    				if ( __monthly ) {
+  	    				endLine1Data =  "    " + "Number of points (N1)" + __nl;
+  	    				endLine2Data = monthsA + __nl;
+  	    				endLine3Data = "-------------------------------------------------"
+    				    + "------------------------------------------------------------------"
+    				    + "--------------------------------" + __nl;
 
-	  	    				endLine1Data =  "    " +
-	  	    				"Number of points (N1)" + __nl;
-	  	    				endLine2Data = monthsA + __nl;
-	  	    				endLine3Data = "----------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "--------------------------------"
-	    				    + __nl;
+    				   	endLine1Corr = "    Correlation Coefficients (r)" + __nl;
+  	    				endLine2Corr = monthsA + __nl;
+  	    				endLine3Corr = "-------------------------------------------------"
+    				    + "------------------------------------------------------------------"
+    				    + "--------------------------------" + __nl;
 
-	    				    	endLine1Corr = "    " +
-	  	    				"Correlation Coefficients (r)"
-	  	    				+ __nl;
-	  	    				endLine2Corr = monthsA + __nl;
-	  	    				endLine3Corr = "----------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "--------------------------------"
-	    				    + __nl;
+  	    				endLine1RMSE =  "    SEP" + __nl;
+  	    				endLine2RMSE = monthsB + "|   SEP Total" + __nl;
+  	    				endLine3RMSE = "-------------------------------------------------"
+    				    + "------------------------------------------------------------------"
+    				    + "----------------------------------------------------------" + __nl;
+  	    			}
+    				else {
+  	    				endLine1Data = " # of points | Correlation |    SEP total" + __nl;
+    					endLine2Data = "        (N1) |  Coeff. (r) |            " + __nl;
+    					endLine3Data = "-----------------------------------------"
+    				    	+ "--------------------------------------------------------------" + __nl;
+  	    			}
 
-	  	    				endLine1RMSE =  "    " +
-	  	    				"SEP" + __nl;
-	  	    				endLine2RMSE = monthsB
-	  	    				+ "|   SEP Total" + __nl;
-	  	    				endLine3RMSE = "----------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "---------------------------------"
-	    				    + "-------------------------"
-	    				    + __nl;
+    				// --------- sDataCount Table header
+    				// First line
+    				sDataCount.append( "  Independent | Transfor-| Analysis |     Period |     Period |" + endLine1Data );
+    				// Second line
+    				sDataCount.append( "  Time Series |   mation |   Method |      start |        end |" + endLine2Data );
 
-	  	    			} else {
-	  	    				endLine1Data = " # of points |"
-	  	    					     + " Correlation |"
-	  	    				             + "    SEP total"
-	  	    				             + __nl;
-	    					endLine2Data = "        (N1) |"
-	    						     + "  Coeff. (r) |"
-	    					             + "            "
-	    					             + __nl;
-	    					endLine3Data = "--------------"
-	    				   	+ "---------------------------"
-	    				    	+ "---------------------------"
-	    				    	+ "---------------------------"
-	    				    	+ "--------" + __nl;
-	  	    			}
+    				if ( __monthly ) {
+  	    			    // ------- sCorrelation Table header
+  	    			    // First line
+    				    sCorrelation.append ( "  Independent | Transfor-| Analysis |     Period |     Period |" + endLine1Corr );
+    				    // Second line
+    				    sCorrelation.append ( "  Time Series |   mation |   Method |      start |        end |" + endLine2Corr );
 
-	    				// --------- sDataCount Table header
-	    				// First line
-	    				sDataCount.append( "  Independent |"
-	    				+ " Transfor-| Analysis |"
-	    				+ "     Period |     Period |"
-	    				+ endLine1Data );
-	    				// Second line
-	    				sDataCount.append( "  Time Series |"
-	    				+ "   mation |   Method |"
-	    				+ "      start |        end |"
-	    				+ endLine2Data );
+    				    // -------------- sRMSE Table header
+    				    // First line
+    				    sRMSE.append ( "  Independent |" + endLine1RMSE );
+    				    // Second line
+    				    sRMSE.append ( "  Time Series |" + endLine2RMSE );
+    				}
 
-	    				if ( __monthly ) {
+    				firstTime = false;
+	    		}
 
-	  	    			    // ------- sCorrelation Table header
-	  	    			    // First line
-	    				    sCorrelation.append (
-	    				      "  Independent |"
-	    				    + " Transfor-| Analysis |"
-	    				    + "     Period |     Period |"
-	    				    + endLine1Corr );
-	    				    // Second line
-	    				    sCorrelation.append (
-	    				      "  Time Series |"
-	    				    + "   mation |   Method |"
-	    				    + "      start |        end |"
-	    				    + endLine2Corr );
+  	    		// Get the independent TS
+  	    		independentTS = tsRegression.getIndependentTS();
+	    		String indep = independentTS.getAlias();
+	    		if ( indep.length() == 0 ) {
+	    			indep = independentTS.getLocation();
+	    		}
+	    	   	if(!previousIndependent.equalsIgnoreCase(indep)) {
+				    previousIndependent = indep;
+        			// Table header 3rd line & group divider
+        			sDataCount.append ( endLine3Data );
+    				sCorrelation.append ( endLine3Corr );
+    				sRMSE.append ( endLine3RMSE );
+    			}
 
-	    				    // -------------- sRMSE Table header
-	    				    // First line
-	    				    sRMSE.append ( "  Independent |"
-	    				    + endLine1RMSE );
-	    				    // Second line
-	    				    sRMSE.append ( "  Time Series |"
-	    				    + endLine2RMSE );
-	    				}
-
-	    				firstTime = false;
-	    	    		}
-
-	      	    		// Get the independent TS
-	      	    		independentTS = tsRegression.getIndependentTS();
-	    	    		String indep = independentTS.getAlias();
-	    	    		if ( indep.length() == 0 ) {
-	    	    			indep = independentTS.getLocation();
-	    	    		}
-	    	    		if(!previousIndependent.equalsIgnoreCase(indep))
-	    	    		{
-				      	previousIndependent = indep;
-					// Table header 3rd line & group divider
-					sDataCount  .append ( endLine3Data );
-	    				sCorrelation.append ( endLine3Corr );
-	    				sRMSE       .append ( endLine3RMSE );
-	    			}
-
-	    	    		// Add the independent TS to the line.
-	  	    		line= StringUtil.formatString( indep,"%13.13s" )
-	  	    			+ " |";
+    	    	// Add the independent TS to the line.
+  	    		line= StringUtil.formatString( indep,"%13.13s" ) + " |";
 
 				// Get the Transformation
-	    	    		Transformation = tsRegressionProps.getValue (
-	  	    			"Transformation");
+	    		Transformation = tsRegressionProps.getValue ("Transformation");
 				// Add Transformation to the correlation table
-	  		  	line += StringUtil.formatString(
-	  		  		Transformation,"   %6.6s |");
+	  		  	line += StringUtil.formatString(Transformation,"   %6.6s |");
 
 	  		  	// Get the AnalysisMethod
-	  	    		AnalysisMethod = tsRegressionProps.getValue (
-	  	    			"AnalysisMethod");
-	  	    		// Analysis Method to the correlation table
-	  	    		if ( AnalysisMethod.equalsIgnoreCase(
-	  	    			__ANALYSIS_OLS) ) {
-	  	    			line += "      OLS |";
-	  	    		} else {
-	  	    			line += "    MOVE2 |";
-	  	    		}
+  	    		AnalysisMethod = tsRegressionProps.getValue ("AnalysisMethod");
+  	    		// Analysis Method to the correlation table
+  	    		if ( AnalysisMethod.equalsIgnoreCase(__ANALYSIS_OLS) ) {
+  	    			line += "      OLS |";
+  	    		}
+  	    		else {
+  	    			line += "    MOVE2 |";
+  	    		}
 
 				// Add the independent time series period
-	  	    		IndependentAnalysisStart =
-	  	    		 	tsRegressionProps.getValue (
-	  	    			"IndependentAnalysisStart");
-	  	    		IndependentAnalysisEnd =
-	  	    		 	tsRegressionProps.getValue (
-	  	    			"IndependentAnalysisEnd");
-	  	    		line += StringUtil.formatString(
-	  		  		IndependentAnalysisStart,
-	  		  		" %10.10s |");
-	  		  	line += StringUtil.formatString(
-	  		  		IndependentAnalysisEnd,
-	  		  		" %10.10s |");
+  	    		IndependentAnalysisStart = tsRegressionProps.getValue ("IndependentAnalysisStart");
+  	    		IndependentAnalysisEnd = tsRegressionProps.getValue ("IndependentAnalysisEnd");
+  	    		line += StringUtil.formatString(IndependentAnalysisStart," %10.10s |");
+	  		  	line += StringUtil.formatString(IndependentAnalysisEnd," %10.10s |");
 
-				// Save this portion of the line for use also by
-				// the SDataCount table.
+				// Save this portion of the line for use also by the SDataCount table.
 				String dataCountLine = line;
 
-	  	    		if ( __monthly ) {
+  	    		if ( __monthly ) {
+  	    			// Adding Data Count
+  	    			for ( int m=1; m<=12; m++ ) {
+  	    			    try {
+  	    			        int n1 = tsRegression.getN1(m);
+  	    				    dataCountLine += StringUtil.formatString(n1, __format7d );
+  	    			    }
+  	    			    catch ( Exception e ) {
+  	    			        dataCountLine += "    ***";
+  	    			    }
+  	    			}
+  	    			dataCountLine += __nl;
+  	    			sDataCount.append (dataCountLine);
 
-	  	    			// Adding Data Count
-	  	    			for ( int m=1; m<=12; m++ ) {
-	  	    			    try {
-	  	    				int n1 = tsRegression.
-	  	    				   getN1(m);
-	  	    				dataCountLine +=
-	  	    				   StringUtil.formatString(
-	  	    					n1, __format7d );
-	  	    			    } catch ( Exception e ) {
-	  	    				dataCountLine += "    ***";
+  	    			// Adding Correlations Coefficients
+  	    			for ( int m=1; m<=12; m++ ) {
+  	    			    try {
+  	    			        if (tsRegression.isAnalyzed(m)) {
+      	    			        double cc = tsRegression.
+      	    				    getCorrelationCoefficient(m);
+      	    				    line += StringUtil.formatString(cc, __format7p2f );
 	  	    			    }
-	  	    			}
-	  	    			dataCountLine += __nl;
-	  	    			sDataCount.append (dataCountLine);
-
-	  	    			// Adding Correlations Coefficients
-	  	    			for ( int m=1; m<=12; m++ ) {
-	  	    			    try {
-	  	    			      if (tsRegression.isAnalyzed(m)) {
-	  	    				double cc = tsRegression.
-	  	    				   getCorrelationCoefficient(m);
-	  	    				line +=
-	  	    				   StringUtil.formatString(
-	  	    					cc, __format7p2f );
-	  	    			      } else {
+	  	    			    else {
 	  	    			      	line += "    ...";
-	  	    			      }
-	  	    			    } catch ( Exception e ) {
-	  	    				line += "    ***";
 	  	    			    }
-	  	    			}
-	  	    			line += __nl;
-	  	    			sCorrelation.append (line);
+  	    			    } catch ( Exception e ) {
+  	    			        line += "    ***";
+  	    			    }
+  	    			}
+  	    			line += __nl;
+  	    			sCorrelation.append (line);
 
-	  	    			// Adding the independent TS to the line
-	  	    			// for the RMSE table.
-	  	    			line = StringUtil.formatString(
-	  	    				indep, "%13.13s") + " |";
+  	    			// Adding the independent TS to the line for the RMSE table.
+  	    			line = StringUtil.formatString(indep, "%13.13s") + " |";
 
-	  	    			// Adding the monthly RMSE
-	  	    		    	for ( int m=1; m<=12; m++ ) {
-	  	    			    try {
-	  	    			      if (tsRegression.isAnalyzed(m)) {
-	  	    				double rmse = tsRegression.
+  	    			// Adding the monthly RMSE
+  	    		    for ( int m=1; m<=12; m++ ) {
+  	    			    try {
+  	    			        if (tsRegression.isAnalyzed(m)) {
+	  	    				    double rmse = tsRegression.
 	  	    					getRMSE(m);
-	  	    				line += StringUtil.formatString(
-	  	    					rmse, __format12p2f );
-	  	    			      } else {
-	  	    			      	line += "         ...";
-	  	    			      }
-	  	    			    } catch ( Exception e ) {
-	  	    			        line += "         ***";
+	  	    				    line += StringUtil.formatString(rmse, __format12p2f );
 	  	    			    }
-	  	    		        }
+  	    			        else {
+  	    			            line += "         ...";
+  	    			        }
+  	    			    }
+  	    			    catch ( Exception e ) {
+  	    			        line += "         ***";
+  	    			    }
+  	    		    }
 
-	  	    		        line += " |";
+    		        line += " |";
 
-	  	    		        // Adding the total RMSE
-	  	    		        try {
-	  	    		          if (tsRegression.isAnalyzed()) {
-	  	    			    double rmse = tsRegression.getRMSE();
-	  	    			    line += StringUtil.formatString(
-	  	    					rmse, __format12p2f );
-	  	    			  } else {
-	  	    			  	line += "         ...";
-	  	    			  }
-	  	    			} catch ( Exception e ) {
-	  	    			    line += "         ***";
-	  	    			}
+    		        // Adding the total RMSE
+    		        try {
+    		           if (tsRegression.isAnalyzed()) {
+    		               double rmse = tsRegression.getRMSE();
+    		               line += StringUtil.formatString(rmse, __format12p2f );
+    		           }
+    		           else {
+    		               line += "         ...";
+    		           }
+    		        } catch ( Exception e ) {
+    		            line += "         ***";
+    		        }
 
-	  	    			line += __nl;
-
-		    			sRMSE.append (line);
-
-	  	    		} else {
-
+  	    			line += __nl;
+	    			sRMSE.append (line);
+	  	    	}
+	  	    	else {
 					String f = "";
 
-	  	    			// Adding the Data Count
-	  	    			try {
-	  	    				f = __format12d +" |";
-	  	    			    int n1 = tsRegression.getN1();
-	  	    			    line += StringUtil.formatString(
-	  	    			    	n1, f );
-	  	    			} catch ( Exception e ) {
-	  	    			    line += "         *** |";
-	  	    			}
-	  	    			sDataCount.append (line);
+  	    			// Adding the Data Count
+  	    			try {
+  	    				f = __format12d +" |";
+  	    			    int n1 = tsRegression.getN1();
+  	    			    line += StringUtil.formatString(n1, f );
+  	    			}
+  	    			catch ( Exception e ) {
+  	    			    line += "         *** |";
+  	    			}
+  	    			sDataCount.append (line);
 
-	  	    			// Adding Correlation Coefficient
-	  	    			line="";
-	  	    			try {
-	  	    			  if ( tsRegression.isAnalyzed() ) {
-	  	    		 	    f = __format12p2f + " |";
-	  	    			    double cc = tsRegression.
-	  	    				   getCorrelationCoefficient();
-	  	    			    line += StringUtil.formatString(
-	  	    			    	cc, f );
-	  	    			  } else {
-	  	    			  	line += "         ... |";
-	  	    			  }
-	  	    			} catch ( Exception e ) {
-	  	    			    line += "         *** |";
-	  	    			}
-	  	    			sDataCount.append (line);
+  	    			// Adding Correlation Coefficient
+  	    			line="";
+  	    			try {
+  	    			    if ( tsRegression.isAnalyzed() ) {
+  	    		 	        f = __format12p2f + " |";
+  	    			        double cc = tsRegression.getCorrelationCoefficient();
+  	    			        line += StringUtil.formatString( cc, f );
+  	    			    }
+  	    			    else {
+  	    			  	    line += "         ... |";
+  	    			    }
+  	    			}
+  	    			catch ( Exception e ) {
+  	    			    line += "         *** |";
+  	    			}
+  	    			sDataCount.append (line);
 
-	  	    			// Adding the RMSE
-	  	    		    	line = "";
-	  	    		    	try {
-	  	    		    	    if ( tsRegression.isAnalyzed () ) {
-	  	    				double rmse = tsRegression.
-	  	    				   getRMSE();
-	  	    				line += StringUtil.formatString(
-	  	    			    	rmse, __format12p2f ) + __nl;
-	  	    			    } else {
-	  	    			    	line += "         ..." + __nl;
-	  	    			    }
-	  	    		    	} catch ( Exception e ) {
-	  	    				line += "         ***" + __nl;
-	  	    		    	}
-		    		    	sDataCount.append (line);
-	  	    		}
+  	    			// Adding the RMSE
+    		    	line = "";
+    		    	try {
+    		    	    if ( tsRegression.isAnalyzed () ) {
+    		    	        double rmse = tsRegression.getRMSE();
+    		    	        line += StringUtil.formatString(rmse, __format12p2f ) + __nl;
+  	    			    }
+  	    		    	else {
+  	    			    	line += "         ..." + __nl;
+  	    			    }
+    		    	} catch ( Exception e ) {
+    		    	    line += "         ***" + __nl;
+    		    	}
+    		    	sDataCount.append (line);
+  	    		}
 			}
 
 			// Append sDataCount to the __sStatistics table
 			// For the "all" case all the information is in the
 			// temporary sDataCount. for the monthly case the
 			// temporary sCorrelation and sRMSE need to be added.
-		    	__sStatistics.append ( sDataCount );
+	    	__sStatistics.append ( sDataCount );
 			if ( __monthly ) {
-		    		__sStatistics.append ( sCorrelation );
-		    		__sStatistics.append ( sRMSE );
+	    		__sStatistics.append ( sCorrelation );
+	    		__sStatistics.append ( sRMSE );
 			}
 			__sStatistics.append ( __nl );
 		}
-
 	} catch ( Exception e ) {
-		Message.printWarning( 1, mthd, e );
+	    // FIXME SAM 2009-06-15 Log it
+		Message.printWarning( 3, mthd, e );
 	}
 
 	__sStatistics.append ( __nl + __nl );
@@ -1349,185 +1180,156 @@ private void createReportSummary()
 	String mthd = "MixedStationAnalysis.createReportSummary", mssg;
 
 	// __MinimumDataCount as integer.
-	int MinimumDataCount = StringUtil.atoi( __MinimumDataCount );
+	int MinimumDataCount = Integer.parseInt( __MinimumDataCount );
 
 	// __MinimumR as double.
-	double MinimumR = StringUtil.atof( __MinimumR );
+	double MinimumR = Integer.parseInt( __MinimumR );
 
 	// TSRegression properties
-	String AnalysisMethod		= null;
-	String AnalysisMonth		= null;
-	String AnalyzeForFilling	= null;
-	String DependentAnalysisStart	= null;
+	String AnalysisMethod = null;
+	String AnalysisMonth = null;
+	String AnalyzeForFilling = null;
+	String DependentAnalysisStart = null;
 	String DependentAnalysisEnd	= null;
-	String FillEnd			= null;
-	String FillStart		= null;
-	String IndependentAnalysisEnd	= null;
+	String FillEnd = null;
+	String FillStart = null;
+	String IndependentAnalysisEnd = null;
 	String IndependentAnalysisStart	= null;
-	String Intercept		= null;
-	String NumberOfEquations	= null;
-	String Transformation		= null;
-	String BestFitIndicator		= null;
+	String Intercept = null;
+	String NumberOfEquations = null;
+	String Transformation = null;
+	String BestFitIndicator = null;
 
-	List independentList    = null;
+	List independentList = null;
 	TSRegression tsRegression = null;
 
-	TS dependentTS	= null;
-	TS independentTS= null;
+	TS dependentTS = null;
+	TS independentTS = null;
 
 	PropList tsRegressionProps = null;
 
 	String line;
 	String formatF12p2;
 
-try {
-	__sSummary = new StringBuffer ();
-
-	int nDependent = __dependentStatisticsVector.size();
-
-	String previousDependent = "";
-
-	// Loop the dependent objects
-	for ( int dep = 0; dep < nDependent; dep++ ) {
-
-		// Get the independent list (regressions) for this dependent
-		// time series.
-		independentList = (List)
-			__dependentStatisticsVector.get( dep );
-
-		int nIndependent = independentList.size();
-
-		// Using the same code to deal with monthly and single equation
-		// For single equation set the variable nMonth to 1.
-		int nMonth = 1;
-		if ( __monthly ) nMonth = 12;
-
-		int previousMonth = 0;
-		boolean firstTime = true;
-
-		mssg  =  __nl + "# Mixed Station Analysis Summary";
-		mssg +=  __nl + "# Landscape printing";
-		mssg +=  __nl + "# Top " + __NumberOfBestRegressions;
-		if ( __NumberOfBestRegressions > 1 ) {
-			mssg+= " independent best fit are listed per dependent";
-		} else {
-			mssg+= " independent best fit is listed per dependent";
-		}
-		if ( __monthly ) {
-			mssg += " and month" + __nl;
-		} else {
-			mssg += __nl;
-		}
-		mssg += __nl;
-
-		__sSummary.append ( mssg );
-
-		// Using TSRegression stored in the __dependentStatisticsVector
-		// create the analysis summary, saving it in the output file.
-		for ( int month = 1; month <= nMonth; month++ ) {
-			// Loop throught the regression for this dependent time
-			// series and create the report.
-			tsRegression = null;
-
-			boolean firstIndependent = true;
-			int independentCount = 0;
-
-			for ( int ind = 0; ind < nIndependent; ind++ ) {
-
-				// Get the regression object.
-				tsRegression = null;
-				tsRegression = (TSRegression)
-		    			independentList.get(
-		    				__sortedOrder[dep][month-1][ind]);
-		  		tsRegressionProps = tsRegression.getPropList();
-
-				// Dependent time series
+    try {
+    	__sSummary = new StringBuffer ();
+    
+    	int nDependent = __dependentStatisticsVector.size();
+    
+    	String previousDependent = "";
+    
+    	// Loop the dependent objects
+    	for ( int dep = 0; dep < nDependent; dep++ ) {
+    
+    		// Get the independent list (regressions) for this dependent time series.
+    		independentList = (List)__dependentStatisticsVector.get( dep );
+    
+    		int nIndependent = independentList.size();
+    
+    		// Using the same code to deal with monthly and single equation
+    		// For single equation set the variable nMonth to 1.
+    		int nMonth = 1;
+    		if ( __monthly ) nMonth = 12;
+    
+    		int previousMonth = 0;
+    		boolean firstTime = true;
+    
+    		mssg  =  __nl + "# Mixed Station Analysis Summary";
+    		mssg +=  __nl + "# Landscape printing";
+    		mssg +=  __nl + "# Top " + __NumberOfBestRegressions;
+    		if ( __NumberOfBestRegressions > 1 ) {
+    			mssg+= " independent best fit are listed per dependent";
+    		}
+    		else {
+    			mssg+= " independent best fit is listed per dependent";
+    		}
+    		if ( __monthly ) {
+    			mssg += " and month" + __nl;
+    		}
+    		else {
+    			mssg += __nl;
+    		}
+    		mssg += __nl;
+    
+    		__sSummary.append ( mssg );
+    
+    		// Using TSRegression stored in the __dependentStatisticsVector
+    		// create the analysis summary, saving it in the output file.
+    		for ( int month = 1; month <= nMonth; month++ ) {
+    			// Loop through the regression for this dependent time series and create the report.
+    			tsRegression = null;
+    
+    			boolean firstIndependent = true;
+    			int independentCount = 0;
+    
+    			for ( int ind = 0; ind < nIndependent; ind++ ) {
+    
+    				// Get the regression object.
+    				tsRegression = null;
+    				tsRegression = (TSRegression)independentList.get(__sortedOrder[dep][month-1][ind]);
+    		  		tsRegressionProps = tsRegression.getPropList();
+    
+    				// Dependent time series
 			    	dependentTS = tsRegression.getDependentTS();
 			    	String depend = dependentTS.getIdentifierString();
-			    //	String depend = dependentTS.getAlias();
-			    // if ( depend.length() == 0 ) {
-			    //		depend = dependentTS.getLocation();
-			    //	}
-
+    			    //	String depend = dependentTS.getAlias();
+    			    // if ( depend.length() == 0 ) {
+    			    //		depend = dependentTS.getLocation();
+    			    //	}
+    
 			    	// Append the report header
-				if ( !previousDependent.equalsIgnoreCase(
-					depend ) )
-				{
-					previousDependent = depend;
-					appendTableHeader ( __sSummary, depend,
-						tsRegressionProps );
-			    	}
-
-			    	// Number of equations
-			  	 NumberOfEquations  =
-			  	    	tsRegressionProps.getValue (
-			  	    		"NumberOfEquations" );
-
-		 		// If first time create the header
-				if ( firstTime ) {
-
+    				if ( !previousDependent.equalsIgnoreCase(depend ) ) {
+    					previousDependent = depend;
+    					appendTableHeader ( __sSummary, depend, tsRegressionProps );
+    			    }
+    
+    			    // Number of equations
+    			  	 NumberOfEquations = tsRegressionProps.getValue ("NumberOfEquations" );
+    
+    		 		// If first time create the header
+    				if ( firstTime ) {
 	    				// ---------- __sSummary Table header
 	    				// First line
-	    				__sSummary.append ( "     |"
-	    				+ "  Independent |"
-	    				+ " Transfor-| Analysis |"
-	    				+ "     Period |     Period |"
-	    				+ "        Analysis Summary" + __nl );
+	    				__sSummary.append ( "     |  Independent | Transfor-| Analysis |     Period |     Period |        Analysis Summary" + __nl );
 
 	    				// __sSummary Table Second line
-	    				__sSummary.append ( "     |"
-	    				+ "  Time Series |"
-	    				+ "   mation |   method |"
-	    				+ "      start |        end |"
-	    				+ "     N1       r         SEP"
-	    				+ "           A           B |"
-	    				+ "   SEP Total"
-	    				+ __nl);
-
+	    				__sSummary.append ( "     |  Time Series |   mation |   method |      start |        end |     N1       r         SEP           A           B |   SEP Total" + __nl);
 	    				firstTime = false;
-	    	    		}
-
-	    	    		// Table header 3rd line or month divider
-	    	    		if ( previousMonth != month ) {
-	    				__sSummary.append (  "--------"
-	    			    	+ "-------------------------"
-	    			    	+ "-----------------------------"
-	    			    	+ "-----------------------------"
-	    			    	+ "-----------------------------"
-	    			    	+ "--------------" + __nl);
-	    			    	previousMonth = month;
-	    			}
-
-	    	    		// List this independent only if the output list
-				// is still shorter than NumberOfBestRegressions
-				if( independentCount >=
-					__NumberOfBestRegressions ) {
+    	    		}
+    	    		// Table header 3rd line or month divider
+    	    		if ( previousMonth != month ) {
+    				__sSummary.append (  "--------------------------------------------------------------"
+    			    	+ "------------------------------------------------------------------------" + __nl);
+    			    	previousMonth = month;
+    	    	}
+    
+    	    	// List this independent only if the output list is still shorter than NumberOfBestRegressions
+				if( independentCount >= __NumberOfBestRegressions ) {
 					continue;
 				}
-
-	    	    		// List this independent only if the regression
-	    	    		// was properly analyzed.
-	    	    		if ( __monthly ) {
-	    	    			if ( tsRegression.isAnalyzed( month )
-	    	    				== false ) continue;
-				} else {
-					if ( tsRegression.isAnalyzed()
-						== false) continue;
+    
+    	    	// List this independent only if the regression was properly analyzed.
+	    		if ( __monthly ) {
+	    			if ( tsRegression.isAnalyzed( month ) == false ) {
+	    			    continue;
+	    			}
+    			}
+	    		else {
+					if ( tsRegression.isAnalyzed() == false) continue;
 				}
-
-				// List this independent only if the number of
-				// data points used to compute the regression
-	    	    		// was greater or equal to MinimumDataCount
-	    	    		if ( __monthly ) {
-					try {
-						int n = tsRegression.getN1(
-							month );
-						if ( n < MinimumDataCount ) {
-							continue;
-						}
-					} catch ( Exception e ) {
-						continue;
-					}
+    
+    			// List this independent only if the number of data points used to compute the regression
+	    		// was greater or equal to MinimumDataCount
+	    		if ( __monthly ) {
+    				try {
+    					int n = tsRegression.getN1(month );
+    					if ( n < MinimumDataCount ) {
+    						continue;
+    					}
+    				} catch ( Exception e ) {
+    				    // FIXME SAM 2009-06-15 log
+    					continue;
+    				}
 				} else {
 					try {
 						int n = tsRegression.getN1();
@@ -1535,46 +1337,44 @@ try {
 							continue;
 						}
 					} catch ( Exception e ) {
+                        // FIXME SAM 2009-06-15 log
 						continue;
 					}
 				}
-
-				// Use only if the correlation coefficient
-				// is greater than the MinimumR
-				double r;
-				try {
-	    	    			if ( __monthly ) {
-	    	    			  if(tsRegression.isAnalyzed( month )) {
-						r = tsRegression.
-						   getCorrelationCoefficient(
-						   	month );
-					  } else {
-					  	continue;
-					  }
-					} else {
-					  if(tsRegression.isAnalyzed()) {
-						r = tsRegression.
-						   getCorrelationCoefficient();
-					  } else {
-					  	continue;
-					  }
-					}
-				} catch ( Exception e ) {
-					continue;
-				}
-				if ( r < MinimumR ) {
-					continue;
-				}
-
-				line = "";
-
-	    	    		// Month or Year
-	    	    		if ( firstIndependent ) {
-					if ( __monthly ) {
-						line += " "
-						+ TimeUtil.monthAbbreviation(
-	    						month)
-	    					+ " |";
+    
+    				// Use only if the correlation coefficient
+    				// is greater than the MinimumR
+    				double r;
+    				try {
+    	    			if ( __monthly ) {
+	    	    			if(tsRegression.isAnalyzed( month )) {
+        						r = tsRegression.getCorrelationCoefficient(	month );
+        					}
+    	    	    		else {
+        					  	continue;
+        					}
+    					}
+    	    			else {
+    					    if(tsRegression.isAnalyzed()) {
+    						    r = tsRegression.getCorrelationCoefficient();
+    					    }
+    					    else {
+    					  	    continue;
+    					    }
+    					}
+    				} catch ( Exception e ) {
+    					continue;
+    				}
+    				if ( r < MinimumR ) {
+    					continue;
+    				}
+    
+    				line = "";
+    
+    	    		// Month or Year
+    	    		if ( firstIndependent ) {
+    					if ( __monthly ) {
+    						line += " " + TimeUtil.monthAbbreviation(month) + " |";
 	    				} else {
 	    					line += " All |";
 	    				}
@@ -1582,107 +1382,57 @@ try {
 	    			} else {
 	    				line += "     |";
 	    			}
+    
+      	    		// Get the independent TS
+      	    		independentTS = tsRegression.getIndependentTS();
+    	    		String indep = independentTS.getAlias();
+    	    		if ( indep.length() == 0 ) {
+    	    			indep = independentTS.getLocation();
+    	    		}
 
-	      	    		// Get the independent TS
-	      	    		independentTS = tsRegression.getIndependentTS();
-	    	    		String indep = independentTS.getAlias();
-	    	    		if ( indep.length() == 0 ) {
-	    	    			indep = independentTS.getLocation();
-	    	    		}
-
-	    	    		// Add the independent TS to the table
-	  	    		line += StringUtil.formatString( indep,"%13.13s")
-	  	    			+ " |";
-
-				// Get the Transformation
-	    	    		Transformation = tsRegressionProps.getValue (
-	  	    			"Transformation");
-				// Add Transformation to the table
-	  		  	line += StringUtil.formatString(
-	  		  		Transformation,"   %6.6s |");
-
-	  		  	// Get the AnalysisMethod
-	  	    		AnalysisMethod = tsRegressionProps.getValue (
-	  	    			"AnalysisMethod");
+    	    		// Add the independent TS to the table
+    	    		line += StringUtil.formatString( indep,"%13.13s") + " |";
+    
+    				// Get the Transformation
+    	    		Transformation = tsRegressionProps.getValue ("Transformation");
+    				// Add Transformation to the table
+    	  		  	line += StringUtil.formatString(Transformation,"   %6.6s |");
+    
+    	  		  	// Get the AnalysisMethod
+	  	    		AnalysisMethod = tsRegressionProps.getValue ("AnalysisMethod");
 	  	    		// Analysis Method to the table
-	  	    		if ( AnalysisMethod.equalsIgnoreCase(
-	  	    			__ANALYSIS_OLS) ) {
+	  	    		if ( AnalysisMethod.equalsIgnoreCase(__ANALYSIS_OLS) ) {
 	  	    			line += "      OLS |";
-	  	    		} else {
+	  	    		}
+	  	    		else {
 	  	    			line += "    MOVE2 |";
 	  	    		}
-
-				// Add the independent time series period
-				// to the table
-	  	    		IndependentAnalysisStart =
-	  	    		 	tsRegressionProps.getValue (
-	  	    			"IndependentAnalysisStart");
-	  	    		IndependentAnalysisEnd =
-	  	    		 	tsRegressionProps.getValue (
-	  	    			"IndependentAnalysisEnd");
-	  	    		line += StringUtil.formatString(
-	  		  			IndependentAnalysisStart,
-	  		  			" %10.10s |");
-	  		  	line += StringUtil.formatString(
-	  		  			IndependentAnalysisEnd,
-	  		  			" %10.10s |");
-
-	  	    		// Add the statistics
-	  	    		// (N1, r, SEP, A, B, SEP Total)
+    
+    				// Add the independent time series period to the table
+	  	    		IndependentAnalysisStart = tsRegressionProps.getValue ("IndependentAnalysisStart");
+	  	    		IndependentAnalysisEnd = tsRegressionProps.getValue ("IndependentAnalysisEnd");
+	  	    		line += StringUtil.formatString(IndependentAnalysisStart," %10.10s |");
+    	  		  	line += StringUtil.formatString(IndependentAnalysisEnd," %10.10s |");
+    
+	  	    		// Add the statistics (N1, r, SEP, A, B, SEP Total)
 	  	    		if ( __monthly ) {
-	  	    			line += getStatistics(
-	  	    				tsRegression, month );
+	  	    			line += getStatistics(tsRegression, month );
 	  	    		} else {
-	  	    			line += getStatistics(
-	  	    				tsRegression );
+	  	    			line += getStatistics(tsRegression );
 	  	    		}
-
-	  	    		// Done with this independent time series
-	  	    		// for the correlation table.
+    
+	  	    		// Done with this independent time series for the correlation table.
 	  	    		__sSummary.append (line);
 
 	  	    		independentCount++;
-			}
-
-		// This is the one	__sSummary.append ( __nl );
-	        }
-	}
-} catch ( Exception e ) {
-	Message.printWarning( 1, mthd, e );
-}
-
+    			}
+    			// This is the one	__sSummary.append ( __nl );
+    	    }
+    	}
+    } catch ( Exception e ) {
+    	Message.printWarning( 1, mthd, e );
+    }
 	__sSummary.append ( __nl + __nl );
-}
-
-/**
-Free memory for garbage collection.
-*/
-protected void finalize ()
-{
-	__independentTSList      = null;
-	__dependentTSList        = null;
-	__analysisProperties     = null;
-
-	__AnalysisMethod_Vector  = null;
-	__Transformation_Vector  = null;
-	__AnalysisStart          = null;
-	__AnalysisEnd	         = null;
-	__FillStart              = null;
-	__FillEnd                = null;
-
-	__BestFitIndicator	 = null;
-	__Intercept	 	 = null;
-	__MinimumDataCount	 = null;
-	__MinimumR	 	 = null;
-	__OutputFile	 	 = null;
-
-	__dependentStatisticsVector = null;
-
-	__sHeader     = null;
-	__sStatistics = null;
-	__sSummary    = null;
-
-	__nl = null;
 }
 
 /**
@@ -1701,18 +1451,18 @@ public void fill()
 {
 	String mthd = "MixedStationAnalysis.fill", mssg;
 
-	Message.printStatus ( 1, mthd, "Stating ..." );
+	Message.printStatus ( 2, mthd, "Starting ..." );
 
 	TS independentTS = null;
 	TS dependentTS   = null;
 	String Transformation = "";
 	String AnalysisMethod = "";
-	String DependentAnalysisStart   = "";
-	String DependentAnalysisEnd     = "";
+	String DependentAnalysisStart = "";
+	String DependentAnalysisEnd = "";
 	String IndependentAnalysisStart = "";
-	String IndependentAnalysisEnd   = "";
+	String IndependentAnalysisEnd = "";
 	String FillStart = "";
-	String FillEnd   = "";
+	String FillEnd = "";
 	int N1;
 	double r, RMSE, A, B;
 
@@ -1722,110 +1472,97 @@ public void fill()
 	// __MinimumR as integer.
 	double MinimumR = StringUtil.atof( __MinimumR );
 
-try {
-	// Loop for each one of the dependent time series
-	int nDependent = __dependentStatisticsVector.size();
-
-	for ( int dep = 0; dep < nDependent; dep++ ) {
-
-		// Get the independent list (regressions) for this dependent
-		List independentList = (List)
-			__dependentStatisticsVector.get( dep );
-		int nIndependent = independentList.size();
-
-		// Using the same code to deal with monthly and single equation
-		// For single equation set the variable nMonth to 1.
-		int nMonth = 1;
-		if ( __monthly ) nMonth = 12;
-
-		for ( int month = 1; month <= nMonth; month++ ) {
-
-			// Loop throught the regressions for this dependent,
-			// find the first best fit, fill the dependent and set
-			// the break from the independent loop.
-
-			for ( int ind = 0; ind < nIndependent; ind++ ) {
-
-				// Get the regression object.
-				TSRegression tsRegression = null;
-				tsRegression = (TSRegression)
-		    			independentList.get(
-		    				__sortedOrder[dep][month-1][ind]);
-		  		PropList tsRegressionProps =
-		  			tsRegression.getPropList();
-
-		  		// Dependent time series
+    try {
+    	// Loop for each one of the dependent time series
+    	int nDependent = __dependentStatisticsVector.size();
+    	for ( int dep = 0; dep < nDependent; dep++ ) {
+    		// Get the independent list (regressions) for this dependent
+    		List independentList = (List)__dependentStatisticsVector.get( dep );
+    		int nIndependent = independentList.size();
+    
+    		// Using the same code to deal with monthly and single equation
+    		// For single equation set the variable nMonth to 1.
+    		int nMonth = 1;
+    		if ( __monthly ) nMonth = 12;
+    
+    		for ( int month = 1; month <= nMonth; month++ ) {
+    			// Loop through the regressions for this dependent, find the first best fit,
+    		    // fill the dependent and set the break from the independent loop.
+    
+    			for ( int ind = 0; ind < nIndependent; ind++ ) {
+    				// Get the regression object.
+    				TSRegression tsRegression = null;
+    				tsRegression = (TSRegression)independentList.get(__sortedOrder[dep][month-1][ind]);
+    		  		PropList tsRegressionProps = tsRegression.getPropList();
+    
+    		  		// Dependent time series
 			    	dependentTS = tsRegression.getDependentTS();
 			    	String depend = dependentTS.getAlias();
 			    	if ( depend.length() == 0 ) {
 			    		depend = dependentTS.getLocation();
 			    	}
 
-	    	    		// Use only if regression was properly analyzed
-	    	    		if ( __monthly ) {
-	    	    			if ( tsRegression.isAnalyzed( month )
-	    	    				== false ) continue;
-				} else {
-					if ( tsRegression.isAnalyzed()
-						== false ) continue;
-				}
+    	    		// Use only if regression was properly analyzed
+    	    		if ( __monthly ) {
+    	    			if ( tsRegression.isAnalyzed( month ) == false ) {
+    	    			    continue;
+    	    			}
+    				}
+    	    		else {
+    					if ( tsRegression.isAnalyzed() == false ) {
+    					    continue;
+    					}
+    				}
 
-				// Use only if the number of data points used
-				// in the analysis was >= to MinimumDataCount
-
-				int n;
-				try {
-	    	    			if ( __monthly ) {
-						n = tsRegression.getN1( month );
-					} else {
-						n = tsRegression.getN1();
-					}
-				} catch ( Exception e ) {
-					continue;
-				}
-				if ( n < MinimumDataCount ) {
-					continue;
-				}
-
-				// Get the independent TS
-	      	    		independentTS = tsRegression.getIndependentTS();
-	    	    		String indep = independentTS.getAlias();
-	    	    		if ( indep.length() == 0 ) {
-	    	    			indep = independentTS.getLocation();
-	    	    		}
+    				// Use only if the number of data points used
+    				// in the analysis was >= to MinimumDataCount
+    
+    				int n;
+    				try {
+    	    	    	if ( __monthly ) {
+    						n = tsRegression.getN1( month );
+    					}
+    	    	    	else {
+    						n = tsRegression.getN1();
+    					}
+    				} catch ( Exception e ) {
+    					continue;
+    				}
+    				if ( n < MinimumDataCount ) {
+    					continue;
+    				}
+    
+    				// Get the independent TS
+      	    		independentTS = tsRegression.getIndependentTS();
+    	    		String indep = independentTS.getAlias();
+    	    		if ( indep.length() == 0 ) {
+    	    			indep = independentTS.getLocation();
+    	    		}
 
 	  	    		// Get fill time series period
-	  	    		FillStart = tsRegressionProps.getValue (
-	  	    			"FillStart");
-	  	    		FillEnd   = tsRegressionProps.getValue (
-	  	    			"FillEnd");
+	  	    		FillStart = tsRegressionProps.getValue ("FillStart");
+	  	    		FillEnd = tsRegressionProps.getValue ( "FillEnd");
 
-				// REVISIT [LT 2005-04-30] LT Comment from SAM
-				// TSRegression has an AnalysisMonth parameter
-				// that you could use to fill one month. I (SAM)
-				// may need to do some work in fillRegression()
-				// but the parameter is in place.
-				// DO I NEED TO DO ANYTHING DIFFERENT HERE?
-				DateTime fillStart = DateTime.parse(FillStart);
-				DateTime fillEnd = DateTime.parse(FillEnd);
-	  	    		TSUtil.fillRegress(dependentTS,
-	  	    				   independentTS,
-	  	    				   fillStart,
-	  	    				   fillEnd,
-	  	    				   tsRegressionProps );
-
+    				// TODO [LT 2005-04-30] LT Comment from SAM
+    				// TSRegression has an AnalysisMonth parameter
+    				// that you could use to fill one month. I (SAM)
+    				// may need to do some work in fillRegression() but the parameter is in place.
+    				// DO I NEED TO DO ANYTHING DIFFERENT HERE?
+    				DateTime fillStart = DateTime.parse(FillStart);
+    				DateTime fillEnd = DateTime.parse(FillEnd);
+	  	    		TSUtil.fillRegress(dependentTS, independentTS, fillStart, fillEnd, tsRegressionProps );
 	  	    		// Done with this month (or all)
 	  	    		break;
-			}
+    			}
 	        }
-	}
-} catch ( Exception e ) {
-	Message.printWarning( 1, mthd, e );
-}
+    	}
+    } catch ( Exception e ) {
+    	Message.printWarning( 1, mthd, e );
+    }
 }
 
 /**
-Retuns a string containing the number of data point used in the analysis,
+Returns a string containing the number of data point used in the analysis,
 the correlation coefficient, the SEP, A and B values.  This string is used
 by the method createReportSummary to prepare report lines.
 @param tsRegression the reference to the regression to get the statistics from.
@@ -1846,29 +1583,28 @@ private String getStatistics ( TSRegression tsRegression, int month )
 
 		// Coefficient of correlation (r)
 		try {
-			double cc = tsRegression.getCorrelationCoefficient(
-				month );
-			retString += StringUtil.formatString (
-				cc, __format8p2f );
-		} catch ( Exception e ) {
+			double cc = tsRegression.getCorrelationCoefficient(month );
+			retString += StringUtil.formatString (cc, __format8p2f );
+		}
+		catch ( Exception e ) {
 			retString += "     ???";
 		}
 
 		// SEP (RMSE)
 		try {
 			double rmse = tsRegression.getRMSE( month );
-			retString += StringUtil.formatString(
-				rmse, __format12p2f );
-		} catch ( Exception e ) {
+			retString += StringUtil.formatString(rmse, __format12p2f );
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 
 		// A
 		try {
 			double a = tsRegression.getA(month);
-			retString += StringUtil.formatString(
-				a, __format12p2f );
-		} catch ( Exception e ) {
+			retString += StringUtil.formatString(a, __format12p2f );
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 
@@ -1876,7 +1612,8 @@ private String getStatistics ( TSRegression tsRegression, int month )
 		try {
 			double b = tsRegression.getB(month);
 			retString += StringUtil.formatString( b, __format12p2f );
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 	} else {
@@ -1893,12 +1630,13 @@ private String getStatistics ( TSRegression tsRegression, int month )
 	try {
 		if ( tsRegression.isAnalyzed() ) {
 			double b = tsRegression.getRMSE();
-			retString += StringUtil.formatString(
-				b, __format12p2f );
-		} else {
+			retString += StringUtil.formatString(b, __format12p2f );
+		}
+		else {
 			retString += "         ...";
 		}
-	} catch ( Exception e ) {
+	}
+	catch ( Exception e ) {
 		retString += "         ???";
 	}
 
@@ -1908,7 +1646,7 @@ private String getStatistics ( TSRegression tsRegression, int month )
 }
 
 /**
-Retuns a string containing the number of data point used in the analysis,
+Returns a string containing the number of data point used in the analysis,
 the correlation coefficient, the SEP, A and B values.  This string is used
 by the method createReportSummary to prepare report lines.
 @param tsRegression the reference to the regression to get the statistics from.
@@ -1924,7 +1662,8 @@ private String getStatistics( TSRegression tsRegression )
 		try {
 			int n1 = tsRegression.getN1();
 			retString += StringUtil.formatString( n1, __format7d );
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "    ???";
 		}
 
@@ -1932,7 +1671,8 @@ private String getStatistics( TSRegression tsRegression )
 		try {
 			double cc = tsRegression.getCorrelationCoefficient();
 			retString += StringUtil.formatString( cc, __format8p2f );
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "     ???";
 		}
 
@@ -1940,7 +1680,8 @@ private String getStatistics( TSRegression tsRegression )
 		try {
 			double rmse = tsRegression.getRMSE();
 			retString += StringUtil.formatString( rmse, __format12p2f );
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 
@@ -1948,7 +1689,8 @@ private String getStatistics( TSRegression tsRegression )
 		try {
 			double a = tsRegression.getA();
 			retString += StringUtil.formatString( a, __format12p2f );
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 
@@ -1956,7 +1698,8 @@ private String getStatistics( TSRegression tsRegression )
 		try {
 			double b = tsRegression.getB();
 			retString += StringUtil.formatString( b, __format12p2f );
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 
@@ -1965,11 +1708,13 @@ private String getStatistics( TSRegression tsRegression )
 		try {
 			double b = tsRegression.getRMSE();
 			retString += StringUtil.formatString(b, __format12p2f);
-		} catch ( Exception e ) {
+		}
+		catch ( Exception e ) {
 			retString += "         ???";
 		}
 
-	} else {
+	}
+	else {
 		// The analysis was not performed for this month.
 		retString += "    ...";			// N1
 		retString += "     ...";		// r
@@ -2000,73 +1745,63 @@ throws Exception
 	// AnalyzeForFilling - Set to "true" since analysis is being
 	// done as part of a data filling process, in which case the
 	// FillStart and FillEnd can be specified.
-	String analyzeForFilling = __analysisProperties.getValue (
-		"AnalyzeForFilling" );
+	String analyzeForFilling = __analysisProperties.getValue ("AnalyzeForFilling" );
 	if ( analyzeForFilling == null ) {
-		__analysisProperties.set(
-			 "AnalyzeForFilling", "true" );
+		__analysisProperties.set( "AnalyzeForFilling", "true" );
 	}
 
-	// Dealling with properties expected to be passed in from the calling
-	// object.
+	// Dealing with properties expected to be passed in from the calling object.
 
 	// Populate the __AnalysisMethod_Vector from the __analysisProperties.
 	// This vector will be used to reset the AnalysisMethod property to
 	// contain only one value, during the analysis, before passing the
 	// __analysisProperties to the TSRegression.
-	String analysisMethod = __analysisProperties.getValue (
-		"AnalysisMethod" );
+	String analysisMethod = __analysisProperties.getValue ("AnalysisMethod" );
 	if ( analysisMethod == null ) {
 		// Set to default.
 		analysisMethod = __ANALYSIS_OLS;
 	}
-	__AnalysisMethod_Vector = StringUtil.breakStringList(
-		analysisMethod,	" ,", StringUtil.DELIM_SKIP_BLANKS);
+	__AnalysisMethod_Vector = StringUtil.breakStringList(analysisMethod," ,", StringUtil.DELIM_SKIP_BLANKS);
 
 	// Populate the __Transformation_Vector from the __analysisProperties.
 	// This vector will be used to reset the Transformation property to
 	// contain only one value, during the analysis, before passing the
 	// __analysisProperties to the TSRegression.
-	String transformation = __analysisProperties.getValue (
-		"Transformation" );
+	String transformation = __analysisProperties.getValue ("Transformation" );
 	if ( transformation == null ) {
 		// Set to default.
 		transformation = __TRANSFORMATION_NONE;
 	}
-	__Transformation_Vector = StringUtil.breakStringList(
-		transformation,	" ,", StringUtil.DELIM_SKIP_BLANKS);
+	__Transformation_Vector = StringUtil.breakStringList(transformation," ,", StringUtil.DELIM_SKIP_BLANKS);
 
 	// Number of equations. If MonthlyEquations there will be a need to
 	// execute on analysis per month.
-	__NumberOfEquations = __analysisProperties.getValue (
-		"NumberOfEquations" );
+	__NumberOfEquations = __analysisProperties.getValue ("NumberOfEquations" );
 	if ( __NumberOfEquations == null ) {
 		// Set to default.
 		__NumberOfEquations = __NUM_OF_EQUATIONS_ONE_EQUATION;
-		__analysisProperties.set(
-			 "NumberOfEquations", __NumberOfEquations );
+		__analysisProperties.set("NumberOfEquations", __NumberOfEquations );
 	}
-	// Using boolean as flags for __NumberOfEquations to improve efficience
+	// Using boolean as flags for __NumberOfEquations to improve efficiency
 	__monthly = false;
-	if ( __NumberOfEquations.equalsIgnoreCase(
-		__NUM_OF_EQUATIONS_MONTHLY_EQUATIONS ) ) {
+	if ( __NumberOfEquations.equalsIgnoreCase(__NUM_OF_EQUATIONS_MONTHLY_EQUATIONS ) ) {
 		__monthly = true;
 	}
 
 	// Best Fit Indicator ( not used in TSRegression ).
-	__BestFitIndicator = __analysisProperties.getValue (
-		"BestFitIndicator" );
+	__BestFitIndicator = __analysisProperties.getValue ("BestFitIndicator" );
 	if ( __BestFitIndicator == null ) {
 		// Set to default.
 		__BestFitIndicator = __BEST_FIT_SEP;
 	}
 	// Remove from the __analysisProperties
 	__analysisProperties.unSet ("BestFitIndicator");
-	// Using int as flags for ___BestFitIndicator to improve efficience
+	// Using int as flags for ___BestFitIndicator to improve efficiency
 	__intBestFitIndicator = __INT_BEST_FIT_SEP;
 	if ( __BestFitIndicator.equalsIgnoreCase( __BEST_FIT_R ) ) {
 		__intBestFitIndicator = __INT_BEST_FIT_R;
-	} else if ( __BestFitIndicator.equalsIgnoreCase(__BEST_FIT_SEPTOTAL) ) {
+	}
+	else if ( __BestFitIndicator.equalsIgnoreCase(__BEST_FIT_SEPTOTAL) ) {
 		__intBestFitIndicator = __INT_BEST_FIT_SEPTOTAL;
 	}
 
@@ -2087,18 +1822,16 @@ throws Exception
 	__analysisProperties.unSet ("MinimumR");
 
 	// Intercept
-	// REVISIT - This is confusing. Discuss with SAM. Comparing TSRegression
+	// TODO - This is confusing. Discuss with SAM. Comparing TSRegression
 	// and MixedStations documentation.
 	// DO NOT SET IF NULL.
 	__Intercept = __analysisProperties.getValue ( "Intercept" );
 
 	// NumberOfBestRegressions.
 	__NumberOfBestRegressions = 5;	// Default
-	String NumberOfBestRegressions = __analysisProperties.getValue (
-		"NumberOfBestRegressions");
+	String NumberOfBestRegressions = __analysisProperties.getValue ("NumberOfBestRegressions");
 	if ( NumberOfBestRegressions != null ) {
-		__NumberOfBestRegressions =
-			StringUtil.atoi(NumberOfBestRegressions);
+		__NumberOfBestRegressions = Integer.parseInt(NumberOfBestRegressions);
 	}
 
 	// OutputFile
@@ -2124,158 +1857,114 @@ private void rank()
 	int nDependent = __dependentStatisticsVector.size();
 	__sortedOrder  = new int [nDependent][][];
 
-try {
-	// Loop the dependent objects.
-	for ( int dep = 0; dep < nDependent; dep++ ) {
-
-	    	// Get the independent list ( regressions ) for this independent
-		independentList = (List)
-			__dependentStatisticsVector.get( dep );
-
-		int nIndependent = independentList.size();
-
-		values = new double [nIndependent];
-
-		if ( __monthly ) {
-
-			// Months (12 equations)
-			__sortedOrder[dep] = new int [12][nIndependent];
-
-	  	    	for ( int month = 1; month <= 12; month++ ) {
-
-	  	    		// Loop the independent objects, processing
-	  	    		// correlations coef. or RMSE values.
-	  	    		for ( int ind = 0; ind < nIndependent; ind++ ) {
-
-					// Get the regression object.
-		  	    		tsRegression = null;
-			    		tsRegression = (TSRegression)
-			       			independentList.get(ind);
-
-		  	    		try {
-		  	    		    switch ( __intBestFitIndicator ) {
-
-		  	    		       case __INT_BEST_FIT_R:
-		  	    			    values[ind]= tsRegression.
-		  	    			       getCorrelationCoefficient
-		  	    					( month );
-		  	    			    break;
-		  	    		       case __INT_BEST_FIT_SEP:
-		  	    			    values[ind]= tsRegression.
-		  	    			       getRMSE( month );
-		  	    			    break;
-		  	    		       case __INT_BEST_FIT_SEPTOTAL:
-		  	    		           // REVISIT[LT 2005-04-30] For
-		  	    		           // total we could do this
-		  	    		           // just once. The sort will be
-		  	    		           // the same for all months.
-		  	    		           // Keeping as is for now!
-		  	    			    values[ind]= tsRegression.
-		  	    			       getRMSE();
-		  	    			    break;
-		  	    	    	       default:
-		  	    	    	            values[ind]= tsRegression.
-		  	    			       getRMSE( month );
-		  	    			    break;
-		  	    		    }
-		  	    	    	} catch (Exception e ) {
-		  	    	    		// If something went wrong with
-		  	    	    		// the TSRegression, the getRMSE
-		  	    	    		// and getCorrelationCoefficient
-		  	    	    		// will throw and exception, but
-		  	    	    		// we still need to keep the
-		  	    	    		// independent in the list of
-		  	    	    		// values to be able to relate
-		  	    	    		// the sorted indexes to the
-		  	    	    		// TSRegressions references in
-		  	    	    		// the independentList vectors,
-		  	    	    		// so set it to -999.99.
-		  	    			values[ind]= __MISSING;
-		  	    		}
-		  		}
-		  		try {
-		  	    	   	MathUtil.sort ( values,
-		  	    	    	    MathUtil.SORT_QUICK,
-		  	    	    	    MathUtil.SORT_ASCENDING,
-		  	    	    	    __sortedOrder[dep][month-1],
-		  	    	    	    true );
-		  	    	} catch ( Exception e ) {
-		  	    		Message.printWarning (1,"",e);
-		  	    		mssg = "Error sorting!";
-		  	    		rankMessage (tsRegression,mssg);
-		  	    	}
-		  	}
-
-		} else {
-
-			// Year ( 1 equation )
-			__sortedOrder[dep] = new int [1][nIndependent];
-
-	  	    	// Loop the independent objects, processing
-	  	    	// correlations coef. or RMSE values.
-	  	    	for ( int ind = 0; ind < nIndependent; ind++ ) {
-
-				// Get the regression object.
-		  		tsRegression = null;
-				tsRegression = (TSRegression)
-					independentList.get(ind);
-
-		  		try {
-					switch ( __intBestFitIndicator ) {
-		  	    		    case __INT_BEST_FIT_R:
-		  	    		        values[ind]= tsRegression.
-		  	    			    getCorrelationCoefficient();
-		  	    			break;
-		  	    		    case __INT_BEST_FIT_SEP:
-		  	    		    	values[ind]= tsRegression.
-		  	    			    getRMSE();
-		  	    			break;
-		  	    		    case __INT_BEST_FIT_SEPTOTAL:
-		  	    		    values[ind]= tsRegression.
-		  	    			    getRMSE();
-		  	    			break;
-		  	    	    	    default:
-		  	    	    	        values[ind]= tsRegression.
-		  	    			    getRMSE();
-		  	    			break;
-		  	    		}
-		  	    	} catch (Exception e ) {
-		  	    		// If something went wrong with
-		  	    	    	// the TSRegression, the getRMSE
-		  	    	    	// and getCorrelationCoefficient
-		  	    	    	// will throw and exception, but
-		  	    	    	// we still need to keep the
-		  	    	    	// independent in the list of
-		  	    	    	// values to be able to relate
-		  	    	    	// the sorted indexes to the
-		  	    	    	// TSRegressions references in
-		  	    	    	// the independentList vectors,
-		  	    	    	// so set it to -999.99.
-		  	    		values[ind]= __MISSING;
-		  	    	}
-		  	}
-		  	try {
-		  	   	MathUtil.sort ( values,
-		  	    		MathUtil.SORT_QUICK,
-		  	    		MathUtil.SORT_ASCENDING,
-		  	    		__sortedOrder[dep][0],
-		  	    		true );
-		  	} catch ( Exception e ) {
-		  		Message.printWarning (1,"",e);
-		  		mssg = "Error sorting!";
-		  		rankMessage (tsRegression,mssg);
-		  	}
-		}
-	}
-} catch ( Exception e ) {
-		Message.printWarning( 1, mthd, e );
-}
+    try {
+    	// Loop the dependent objects.
+        for ( int dep = 0; dep < nDependent; dep++ ) {
+            // Get the independent list ( regressions ) for this independent
+            independentList = (List)__dependentStatisticsVector.get( dep );
+            int nIndependent = independentList.size();
+            values = new double [nIndependent];
+            
+            if ( __monthly ) {
+                // Months (12 equations)
+                __sortedOrder[dep] = new int [12][nIndependent];
+            
+            	for ( int month = 1; month <= 12; month++ ) {
+               		// Loop the independent objects, processing correlations coef. or RMSE values.
+            		for ( int ind = 0; ind < nIndependent; ind++ ) {
+            		    // Get the regression object.
+                		tsRegression = null;
+                		tsRegression = (TSRegression)independentList.get(ind);
+            
+                		try {
+                		    switch ( __intBestFitIndicator ) {
+                		        case __INT_BEST_FIT_R:
+                			        values[ind]= tsRegression.getCorrelationCoefficient ( month );
+                			        break;
+                		        case __INT_BEST_FIT_SEP:
+                		            values[ind]= tsRegression.getRMSE( month );
+                			    break;
+                		        case __INT_BEST_FIT_SEPTOTAL:
+                		            // TODO[LT 2005-04-30] For total we could do this just once.
+                		            // The sort will be the same for all months.  Keeping as is for now!
+                		            values[ind]= tsRegression.getRMSE();
+                		            break;
+                	    	    default:
+                	    	        values[ind]= tsRegression.getRMSE( month );
+                			        break;
+                		    }
+                	    }
+                		catch (Exception e ) {
+            	    		// If something went wrong with the TSRegression, the getRMSE
+            	    		// and getCorrelationCoefficient will throw and exception, but
+            	    		// still need to keep the independent in the list of values to be able to relate
+            	    		// the sorted indexes to the TSRegressions references in the independentList vectors,
+            	    		// so set it to -999.99.
+                			values[ind]= __MISSING;
+                		}
+                	}
+                	try {
+                    	MathUtil.sort ( values, MathUtil.SORT_QUICK, MathUtil.SORT_ASCENDING,
+            	    	    __sortedOrder[dep][month-1], true );
+                	} catch ( Exception e ) {
+                		Message.printWarning (3,"",e);
+                		mssg = "Error sorting!";
+              	    	rankMessage (tsRegression,mssg);
+              	    }
+              	}
+            }
+            else {
+            	// Year ( 1 equation )
+                __sortedOrder[dep] = new int [1][nIndependent];
+            
+            	// Loop the independent objects, processing correlations coef. or RMSE values.
+            	for ( int ind = 0; ind < nIndependent; ind++ ) {
+                	// Get the regression object.
+                	tsRegression = null;
+                	tsRegression = (TSRegression)independentList.get(ind);
+                
+                	try {
+                		switch ( __intBestFitIndicator ) {
+                		    case __INT_BEST_FIT_R:
+                		        values[ind]= tsRegression.getCorrelationCoefficient();
+                		        break;
+                		    case __INT_BEST_FIT_SEP:
+                		    	values[ind]= tsRegression.getRMSE();
+                		    	break;
+                		    case __INT_BEST_FIT_SEPTOTAL:
+                		        values[ind]= tsRegression.getRMSE();
+                		        break;
+            	    	    default:
+            	    	        values[ind]= tsRegression.getRMSE();
+                			    break;
+                		}
+                	} catch (Exception e ) {
+                		// If something went wrong with the TSRegression, the getRMSE
+            	    	// and getCorrelationCoefficient will throw and exception, but
+            	    	// still need to keep the independent in the list of values to be able to relate
+            	    	// the sorted indexes to the TSRegressions references in the independentList vectors,
+            	    	// so set it to -999.99.
+                		values[ind]= __MISSING;
+                	}
+                }
+                try {
+                   	MathUtil.sort ( values, MathUtil.SORT_QUICK, MathUtil.SORT_ASCENDING, __sortedOrder[dep][0], true );
+                }
+                catch ( Exception e ) {
+                    Message.printWarning (3,"",e);
+                    mssg = "Error sorting!";
+            		rankMessage (tsRegression,mssg);
+    		  	}
+    		}
+    	}
+    } catch ( Exception e ) {
+    		Message.printWarning( 1, mthd, e );
+    }
 }
 
 /**
 Update the status bar of the calling object, if that object instantiate this
-class using the construct overload and passin a valid not null reference to
-itself (this).
+class using the construct overload and pass in a valid not null reference to itself (this).
 */
 private void rankMessage ( TSRegression tsRegression, String text )
 {
@@ -2315,11 +2004,9 @@ Save all parts of the report created by different stages of the analysis.
 private void saveReport()
 {
 	String mthd = "MixedStationAnalysis.saveReport", mssg;
-
 	String full_fname = IOUtil.getPathUsingWorkingDir (__OutputFile);
 
 	try {
-
 		FileOutputStream fos = new FileOutputStream ( full_fname );
 		PrintWriter pw = new PrintWriter (fos);
 
@@ -2355,19 +2042,17 @@ private void saveReport()
 	}
 }
 
-// REVISIT [2005-04-20] This will not work if this class is moved to the TS
+// TODO [2005-04-20] This will not work if this class is moved to the TS
 // library, because it should not be allowed to import the class
 // fillMixedStation_JDialog, which resides in the TSTool application.
-// The solution may be to implement a listener with interface as it is done
-// in C++.
+// The solution may be to implement a listener with interface as it is done in C++.
 /**
 Update the status bar of the calling object, if that object instantiate this
-class using the construct overload and passin a valid not null reference to
-itself (this).
+class using the construct overload and pass in a valid not null reference to itself (this).
 */
 private void setParentStatusText( String text )
 {
 	if (__parent != null ) __parent.setStatusText (text);
 }
 
-} // end MixedStationAnalysis
+}

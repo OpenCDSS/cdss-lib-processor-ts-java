@@ -66,7 +66,7 @@ import RTi.Util.GUI.SimpleJMenuItem;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJList;
-import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandListUI;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -75,7 +75,7 @@ import RTi.Util.String.StringUtil;
 import RTi.TS.TS;
 
 public class FillMixedStation_JDialog extends JDialog
-	implements ActionListener,
+implements ActionListener,
 	 	   ItemListener,
 	 	   KeyListener,
 	 	   ListSelectionListener,
@@ -84,124 +84,98 @@ public class FillMixedStation_JDialog extends JDialog
 {
 
 // As currently coded the dependent and independent string must be different,
-private String __SELECT_ALL_DEPENDENT     = "Dependent - Select all";
-private String __DESELECT_ALL_DEPENDENT   = "Dependent - Deselect all";
-private String __SELECT_ALL_INDEPENDENT   = "Independent - Select all";
+private String __SELECT_ALL_DEPENDENT = "Dependent - Select all";
+private String __DESELECT_ALL_DEPENDENT = "Dependent - Deselect all";
+private String __SELECT_ALL_INDEPENDENT = "Independent - Select all";
 private String __DESELECT_ALL_INDEPENDENT = "Independent - Deselect all";
 
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
 
-private FillMixedStation_Command __command = null; // Command object.
-private String	__working_dir		   = null; // Working directory.
+private FillMixedStation_Command __command = null; // Command object used in command mode
+private CommandListUI __commandUI = null; // Used in tool mode to transfer tool commands to processor,
+    // recognizing main UI state
+private CommandProcessor __processor = null; // Used with tool mode to access time series results
+private String __working_dir = null; // Working directory.
 
-// Members controlling the execution mode. This class can run as a command or
-// as a tool from the tool menu.
-private JTextArea	__Command_JTextArea   = null; // Command as JTextArea
-private JLabel		__Command_JLabel      = null; // JLabel for Command line
+// Members controlling the execution mode. This class can run as a command or as a tool from the tool menu.
+private JTextArea __Command_JTextArea = null; // Command as JTextArea
+private JLabel __Command_JLabel = null; // JLabel for Command line
 private JScrollPane	__Command_JScrollPane = null; // ScrollPane
 
-private SimpleJComboBox	__DependentTSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
-private SimpleJList	 __DependentTSID_SimpleJList= null;
-private JPopupMenu	 __DependentTS_JPopupMenu   = null;
-						// Fields for the dependent time
-						// series identifiers
+private SimpleJComboBox	__DependentTSList_JComboBox = null; // Indicate how to get time series list.
+private SimpleJList __DependentTSID_SimpleJList = null;
+private JPopupMenu __DependentTS_JPopupMenu = null; // Fields for the dependent time series identifiers
 
-private SimpleJComboBox	__IndependentTSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
-private SimpleJList	 __IndependentTSID_SimpleJList= null;
-private JPopupMenu	 __IndependentTS_JPopupMenu   = null;
-						// Field for independent time
-						// series identifiers
+private SimpleJComboBox	__IndependentTSList_JComboBox = null; // Indicate how to get time series list.
+private SimpleJList __IndependentTSID_SimpleJList = null;
+private JPopupMenu __IndependentTS_JPopupMenu = null; // Field for independent time series identifiers
 
-private SimpleJList	__AnalysisMethod_SimpleJList  = null;
-						// Field for AnalysisMethod
+private SimpleJList	__AnalysisMethod_SimpleJList  = null; // Field for AnalysisMethod
 
-private SimpleJComboBox	__NumberOfEquations_JComboBox = null;
-						// OneEquation, MonthlyEquations
+private SimpleJComboBox	__NumberOfEquations_JComboBox = null; // OneEquation, MonthlyEquations
 
-private SimpleJList 	__Transformation_SimpleJList  = null;
-						// Field for Transformation
+private SimpleJList __Transformation_SimpleJList = null; // Field for Transformation
 
-private JTextField	__MinimumDataCount_JTextField;
-						// Field to the MinimumDataCount
-private JTextField	__MinimumR_JTextField;
-						// Field to the MinimumR
-private SimpleJComboBox	__BestFitIndicator_JComboBox = null; 	// SEP
+private JTextField __MinimumDataCount_JTextField; // Field to the MinimumDataCount
+private JTextField __MinimumR_JTextField; // Field to the MinimumR
+private SimpleJComboBox	__BestFitIndicator_JComboBox = null; // SEP
 
-private JTextField	__Intercept_JTextField = null;
-						// Intercept value as JTextField
-private JTextField	__AnalysisStart_JTextField = null,
-			__AnalysisEnd_JTextField   = null,
-						// Text fields for dependent
-						// time series analysis period.
+private JTextField __Intercept_JTextField = null; // Intercept value as JTextField
+private JTextField	__AnalysisStart_JTextField = null, // Text fields for dependent time series analysis period.
+			__AnalysisEnd_JTextField = null,
 			__FillStart_JTextField = null,
-			__FillEnd_JTextField   = null;
-						// Text fields for fill period.
-private JTextField	__OutputFile_JTextField	 = null;
-						// File to save output
+			__FillEnd_JTextField = null; // Text fields for fill period.
 
-private SimpleJButton	__browse_JButton = null;
-private SimpleJButton	__view_JButton = null;
-private SimpleJButton	__cancel_JButton = null;
-private SimpleJButton	__close_JButton = null;
-private SimpleJButton   __analyze_JButton    = null;
-private SimpleJButton   __ok_JButton = null;
-private SimpleJButton   __fillDependents_JButton = null;
+private JTextField	__OutputFile_JTextField = null; // File to save output						
 
-private String 		__view_String  = "View Results";
-private String		__view_Tip =
-	"View output containing the analysis results.";
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __view_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __close_JButton = null;
+private SimpleJButton __analyze_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __fillDependents_JButton = null;
+
+private String __view_String = "View Results";
+private String __view_Tip = "View output containing the analysis results.";
 
 private JTextField	__statusJTextField = null;
 
 // Cancel button: used when running as a TSTool command.
 
-private String 		__cancel_String  = "Cancel";
-private String		__cancel_Tip =
-	"Close the window, whitout returning the command to TSTool.";
+private String __cancel_String = "Cancel";
+private String __cancel_Tip = "Close the window, whitout returning the command to TSTool.";
 
 // Close button: used when running as a TSTool tool.
 
-private String 		__close_String  = "Close";
-private String		__close_Tip =
-	"Do not perform the analysis and close the window.";
+private String __close_String = "Close";
+private String __close_Tip = "Do not perform the analysis and close the window.";
 
 // OK button: used only when running as a TSTool command.
 
-private String 		__ok_String  = "OK";
-private String		__ok_Tip =
-	"Close the window, returning the command to TSTool.";
+private String __ok_String = "OK";
+private String __ok_Tip = "Close the window, returning the command to TSTool.";
 
 // Analyze button: used only when running as a TSTool tool.
 
-private String		__analyze_String = "Analyze";
-private String		__analyze_Tip =
-	"Perform the analysis and create the output file";
+private String __analyze_String = "Analyze";
+private String __analyze_Tip = "Perform the analysis and create the output file";
 
 // createFillCommands button: used only when running as a TSTool tool.
-private SimpleJButton   __createFillCommands_JButton = null;
-private String		__createFillCommands_String =
-	 "Create fill commands";
-private String		__createFillCommands_Tip =
-	"Create fill commands using the best fit.";
+private SimpleJButton __createFillCommands_JButton = null;
+private String __createFillCommands_String = "Create fill commands";
+private String __createFillCommands_Tip = "Create fill commands using the best fit.";
 
 // copyCommandsToTSTool button: used only when running as a TSTool tool.
-private SimpleJButton   __copyFillCommandsToTSTool_JButton = null;
-private String		__copyCommandsToTSTool_String =
-	 "Copy commands to TSTool";
-private String		__copyCommandsToTSTool_Tip =
-	"Copy fill commands using best fit to TSTool.";
+private SimpleJButton __copyFillCommandsToTSTool_JButton = null;
+private String __copyCommandsToTSTool_String = "Copy commands to TSTool";
+private String __copyCommandsToTSTool_Tip = "Copy fill commands using best fit to TSTool.";
 
 // fill button: used only when running as a TSTool tool.
 
-private String		__fillDependents_String =
-	"Fill Dependents";
-private String		__fillDependents_Tip =
-	"Fill dependents using best fit.";
+private String __fillDependents_String = "Fill Dependents";
+private String __fillDependents_Tip = "Fill dependents using best fit.";
 
 // Member initialized by the createFillCommands() method and used by the
 // the update FillCommandsControl() and copyCommandsToTSTool() methods.
@@ -212,7 +186,7 @@ boolean ignoreValueChanged = false;
 
 private boolean	__error_wait = false;
 private boolean	__first_time = true;
-private boolean	__ok         = false;
+private boolean	__ok = false;
 
 /**
 Constructor when calling as a TSTool command.
@@ -220,36 +194,32 @@ In this case the Dialog is modal: super( parent, true ).
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public FillMixedStation_JDialog ( JFrame parent, Command command )
+public FillMixedStation_JDialog ( JFrame parent, FillMixedStation_Command command )
 {
+    // Modal dialog
 	super( parent, true );
-
+	__command = command;
+	__processor = __command.getCommandProcessor();
+    __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__processor, __command );
 	// Initialize the dialog.
-	initialize ( parent, command );
+	initialize ( parent );
 }
 
 /**
-Constructor when calling as a TSTool tool.
-In this case the Dialog is no-modal: super( (JFrame) null, false );
+Constructor when calling as a TSTool tool.  In this case the Dialog is non-modal.
 @param parent JFrame class instantiating this class.
-@param command Command to parse.
-@param dummy used to differentiate between constructors.
+@param processor time series processor, needed by the tool to access time series for analyzing
+@param ui interface between main UI and other code.
 */
-public FillMixedStation_JDialog ( JFrame parent, Command command, int dummy )
+public FillMixedStation_JDialog ( JFrame parent, TSCommandProcessor processor, CommandListUI ui )
 {
-	// In this case the Dialog should be no-modal. The View button will be
-	// available for the user to inspect the results from the analysis.
-	// Make sure the parent is not passed here. Since this is a no-modal
-	// dialog, if the parent is passed the dialog will always be on top.
-	// The alternative are, either to pass a new JFrame as parent or a
-	// (JFrame) null parent.
-	// super( new JFrame(), false );
-	//super( (JFrame) null, false );
-	// TODO SAM 2007-03-12 Evaluate modality issue.
 	super( parent, false );
 
-	// Initialize the dialog.
-	initialize ( parent, command );
+	// Initialize the dialog - note that there is no command instance so initialize using other info
+	__commandUI = ui;
+	__processor = processor;
+	__working_dir = processor.getInitialWorkingDir();
+	initialize ( parent );
 }
 
 /**
@@ -264,15 +234,13 @@ public void actionPerformed( ActionEvent event )
 
 	if ( o == __browse_JButton ) {
 
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
-			fc = JFileChooserFactory.createJFileChooser(
-				last_directory_selected );
+			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(
-				__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select output file");
 		SimpleFileFilter sff;
@@ -349,25 +317,23 @@ public void actionPerformed( ActionEvent event )
 		refresh();
 		checkInput();
 		if ( !__error_wait ) {
-			// REVISIT [2005-06-01] What is the logic of command tag?
+			// TODO LT [2005-06-01] What is the logic of command tag?
 			try {
 				__command.runCommand( -1 );
 			} catch ( Exception e ) {
 				Message.printWarning ( 2, mthd, e );
-				mssg = "Error executing the analysis."
-				 + " Please check the log file for details.";
+				mssg = "Error executing the analysis.  Please check the log file for details.";
 				Message.printWarning ( 1, mthd, mssg );	
 			}	
 			// Unable the runCommand dependent buttons.
-			__view_JButton.setEnabled              ( true );
-			__createFillCommands_JButton.setEnabled( true );
-			__fillDependents_JButton.setEnabled    ( true );
+			__view_JButton.setEnabled ( true );
+			__createFillCommands_JButton.setEnabled ( true );
+			__fillDependents_JButton.setEnabled ( true );
 		}
-
 	}
 
 	// Create fill Commands button - Active only under the tool mode
-	// REVISIT [LT 2005-06-01] There may be room for improvements here:
+	// TODO [LT 2005-06-01] There may be room for improvements here:
 	// Either warn the user that the results of the analysis in memory
 	// may not reflect the setting in the interface (if the setting are
 	// changed after the analysis, or disable all the runCommand
@@ -381,11 +347,10 @@ public void actionPerformed( ActionEvent event )
 			// Unable the fill __copyFillCommandsToTSTool_JButton.
 			__copyFillCommandsToTSTool_JButton.setEnabled( true );
 	//	}
-
 	}
 
 	// Copy Commands To TSTool button - Active only under the tool mode
-	// REVISIT [LT 2005-06-01] There may be room for improvements here:
+	// TODO [LT 2005-06-01] There may be room for improvements here:
 	// Either warn the user that the results of the analysis in memory
 	// may not reflect the setting in the interface (if the setting are
 	// changed after the analysis, or disable all the runCommand
@@ -399,7 +364,7 @@ public void actionPerformed( ActionEvent event )
 	}
 
 	// Fill dependents button - Active only under the tool mode
-	// REVISIT [LT 2005-06-01] There may be room for improvements here:
+	// TODO [LT 2005-06-01] There may be room for improvements here:
 	// Either warn the user that the results of the analysis in memory
 	// may not reflect the setting in the interface (if the setting are
 	// changed after the analysis, or disable all the runCommand
@@ -444,13 +409,13 @@ public void actionPerformed( ActionEvent event )
 	}
 
 	// Unselect all time series in the dependent time series list
-	else if ( s.equals( __DESELECT_ALL_DEPENDENT  ) ) {
+	else if ( s.equals( __DESELECT_ALL_DEPENDENT ) ) {
 		__DependentTSID_SimpleJList.clearSelection();
 		refresh();
 	}
 
 	// Unselect all time series in the independent time series list
-	else if ( s.equals( __DESELECT_ALL_INDEPENDENT  ) ) {
+	else if ( s.equals( __DESELECT_ALL_INDEPENDENT ) ) {
 		__IndependentTSID_SimpleJList.clearSelection();
 		refresh();
 	}
@@ -464,22 +429,22 @@ private void checkInput ()
 	resetTimeSeriesID_JLists();
 
 	// Get the values from the interface.
-	String DependentTSList  = __DependentTSList_JComboBox.getSelected();
-	String DependentTSID    = getDependentTSIDFromInterface();
-	String IndependentTSList= __IndependentTSList_JComboBox.getSelected();
-	String IndependentTSID  = getIndependentTSIDFromInterface();
-	String AnalysisMethod   = getAnalysisMethodFromInterface();
-	String Transformation   = getTransformationFromInterface();
-	String NumberOfEquations= __NumberOfEquations_JComboBox.getSelected();
-	String AnalysisStart    = __AnalysisStart_JTextField.getText().trim();
-	String AnalysisEnd      = __AnalysisEnd_JTextField.getText().trim();
+	String DependentTSList = __DependentTSList_JComboBox.getSelected();
+	String DependentTSID = getDependentTSIDFromInterface();
+	String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
+	String IndependentTSID = getIndependentTSIDFromInterface();
+	String AnalysisMethod = getAnalysisMethodFromInterface();
+	String Transformation = getTransformationFromInterface();
+	String NumberOfEquations = __NumberOfEquations_JComboBox.getSelected();
+	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
-	String MinimumR         = __MinimumR_JTextField.getText().trim();
+	String MinimumR = __MinimumR_JTextField.getText().trim();
 	String BestFitIndicator = __BestFitIndicator_JComboBox.getSelected();
-	String FillStart        = __FillStart_JTextField.getText().trim();
-	String FillEnd          = __FillEnd_JTextField.getText().trim();
-	String Intercept        = __Intercept_JTextField.getText().trim();
-	String OutputFile       = __OutputFile_JTextField.getText().trim();
+	String FillStart = __FillStart_JTextField.getText().trim();
+	String FillEnd = __FillEnd_JTextField.getText().trim();
+	String Intercept = __Intercept_JTextField.getText().trim();
+	String OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
@@ -549,8 +514,16 @@ private void checkInput ()
 	}
 
 	// Check the list of Command Parameters.
-	try {	// This will warn the user...
-		__command.checkCommandParameters ( props, null, 1 );
+	try {
+	    // This will warn the user...
+	    if ( __command != null ) {
+	        __command.checkCommandParameters ( props, null, 1 );
+	    }
+	    else {
+	        // Create a temporary command and check the parameters.
+	        FillMixedStation_Command command = new FillMixedStation_Command();
+	        command.checkCommandParameters ( props, null, 1 );
+	    }
 		__error_wait = false;
 	} catch ( Exception e ) {
 		// The warning would have been printed in the check code.
@@ -560,8 +533,8 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  Mkae sure the command parameters have
-already been checked and no errors were detected (chack input).
+Commit the edits to the command.  Make sure the command parameters have
+already been checked and no errors were detected (check input).
 */
 private void commitEdits ()
 {
@@ -584,22 +557,22 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// Commit the values to the command object.
-	__command.setCommandParameter ("DependentTSList"  , DependentTSList  );
-	__command.setCommandParameter ("DependentTSID"    , DependentTSID    );
+	__command.setCommandParameter ("DependentTSList", DependentTSList);
+	__command.setCommandParameter ("DependentTSID", DependentTSID);
 	__command.setCommandParameter ("IndependentTSList", IndependentTSList);
-	__command.setCommandParameter ("IndependentTSID"  , IndependentTSID  );
-	__command.setCommandParameter ("AnalysisMethod"   , AnalysisMethod   );
-	__command.setCommandParameter ("Transformation"   , Transformation   );
+	__command.setCommandParameter ("IndependentTSID", IndependentTSID);
+	__command.setCommandParameter ("AnalysisMethod", AnalysisMethod);
+	__command.setCommandParameter ("Transformation", Transformation);
 	__command.setCommandParameter ("NumberOfEquations", NumberOfEquations);
-	__command.setCommandParameter ("AnalysisStart"    , AnalysisStart    );
-	__command.setCommandParameter ("AnalysisEnd"      , AnalysisEnd      );
-	__command.setCommandParameter ("MinimumDataCount" , MinimumDataCount );
-	__command.setCommandParameter ("MinimumR"         , MinimumR         );
-	__command.setCommandParameter ("BestFitIndicator" , BestFitIndicator );
-	__command.setCommandParameter ("FillStart"        , FillStart 	     );
-	__command.setCommandParameter ("FillEnd"          , FillEnd          );
-	__command.setCommandParameter ("Intercept"        , Intercept        );
-	__command.setCommandParameter ("OutputFile"       , OutputFile       );
+	__command.setCommandParameter ("AnalysisStart", AnalysisStart);
+	__command.setCommandParameter ("AnalysisEnd", AnalysisEnd);
+	__command.setCommandParameter ("MinimumDataCount", MinimumDataCount);
+	__command.setCommandParameter ("MinimumR", MinimumR);
+	__command.setCommandParameter ("BestFitIndicator", BestFitIndicator);
+	__command.setCommandParameter ("FillStart", FillStart);
+	__command.setCommandParameter ("FillEnd", FillEnd);
+	__command.setCommandParameter ("Intercept", Intercept);
+	__command.setCommandParameter ("OutputFile", OutputFile);
 }
 
 /**
@@ -622,8 +595,7 @@ private void copyCommandsToTSTool()
 }
 
 /**
-Fill the dependent time series using the best fit among the independent
-time series.
+Fill the dependent time series using the best fit among the independent time series.
 */
 private void fillDependents()
 {
@@ -676,8 +648,7 @@ throws Throwable
 }
 
 /**
-Return a comma-delimited string containing the AnalysisMethods, built from
-the selected items. 
+Return a comma-delimited string containing the AnalysisMethods, built from the selected items. 
 */
 private String getAnalysisMethodFromInterface()
 {
@@ -696,8 +667,7 @@ private String getAnalysisMethodFromInterface()
 }
 
 /**
-Return a comma-delimited string containing the DependentTSIDs, built from the
-selected items. 
+Return a comma-delimited string containing the DependentTSIDs, built from the selected items. 
 */
 private String getDependentTSIDFromInterface()
 {
@@ -705,19 +675,17 @@ private String getDependentTSIDFromInterface()
 
 	String DependentTSList = __DependentTSList_JComboBox.getSelected();
 
-	if (	DependentTSList.equalsIgnoreCase(__command._AllTS) ||
-		DependentTSList.equalsIgnoreCase(__command._SelectedTS) ) {
+	if ( DependentTSList.equalsIgnoreCase(FillMixedStation_Command._AllTS) ||
+		DependentTSList.equalsIgnoreCase(FillMixedStation_Command._SelectedTS) ) {
 		// Don't need...
 		DependentTSID = "";
 	}
-	else if ( DependentTSList.equalsIgnoreCase(
-			__command._AllMatchingTSID) ) {
+	else if ( DependentTSList.equalsIgnoreCase(FillMixedStation_Command._AllMatchingTSID) ) {
 		// Format from the selected identifiers...
 		DependentTSID = "";
 		if ( JGUIUtil.selectedSize(__DependentTSID_SimpleJList) > 0 ) {
 			// Get the selected and format...
-			List dependent =
-				__DependentTSID_SimpleJList.getSelectedItems();
+			List dependent = __DependentTSID_SimpleJList.getSelectedItems();
 			StringBuffer buffer = new StringBuffer();
 			for ( int i = 0; i < dependent.size(); i++ ) {
 				if ( i > 0 ) buffer.append ( ",");
@@ -731,8 +699,7 @@ private String getDependentTSIDFromInterface()
 }
 
 /**
-Return a comma-delimited string containing the IndependentTSIDs, built from the
-selected items. 
+Return a comma-delimited string containing the IndependentTSIDs, built from the selected items. 
 */
 private String getIndependentTSIDFromInterface()
 {
@@ -740,19 +707,17 @@ private String getIndependentTSIDFromInterface()
 
 	String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
 
-	if (	IndependentTSList.equalsIgnoreCase(__command._AllTS) ||
-		IndependentTSList.equalsIgnoreCase(__command._SelectedTS) ) {
+	if ( IndependentTSList.equalsIgnoreCase(FillMixedStation_Command._AllTS) ||
+		IndependentTSList.equalsIgnoreCase(FillMixedStation_Command._SelectedTS) ) {
 		// Don't need...
 		IndependentTSID = "";
 	}
-	else if ( IndependentTSList.equalsIgnoreCase(
-			__command._AllMatchingTSID) ) {
+	else if ( IndependentTSList.equalsIgnoreCase(FillMixedStation_Command._AllMatchingTSID) ) {
 		// Format from the selected identifiers...
 		IndependentTSID = "";
 		if ( JGUIUtil.selectedSize(__IndependentTSID_SimpleJList) > 0 ) {
 			// Get the selected and format...
-			List independent =
-				__IndependentTSID_SimpleJList.getSelectedItems();
+			List independent = __IndependentTSID_SimpleJList.getSelectedItems();
 			StringBuffer buffer = new StringBuffer();
 			for ( int i = 0; i < independent.size(); i++ ) {
 				if ( i > 0 ) buffer.append ( ",");
@@ -766,8 +731,7 @@ private String getIndependentTSIDFromInterface()
 }
 
 /**
-Return a comma-delimited string containing the Transformation, built from
-the selected items. 
+Return a comma-delimited string containing the Transformation, built from the selected items. 
 */
 private String getTransformationFromInterface()
 {
@@ -788,23 +752,20 @@ private String getTransformationFromInterface()
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param command Vector of String containing the command.
 */
-private void initialize ( JFrame parent, Command command )
-{	String mthd = "fillMixedStation_JDialog.initialize", mssg;
-
-	__command = (FillMixedStation_Command) command;
-	CommandProcessor processor = __command.getCommandProcessor();
+private void initialize ( JFrame parent )
+{	String mthd = getClass().getName() + ".initialize", mssg;
 
 	// GUI Title
 	String title = null;
-	if ( __command.isCommandMode() ) {
+	if ( __command != null ) {
+	    // Have a command to edit
 		setTitle ( "Edit " + __command.getCommandName() + "() Command" );
-	} else {
+	}
+	else {
+	    // Running the tool
 		setTitle ( "Mixed Station Analysis" );
 	}
-	
-	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
 	addWindowListener( this );
 
@@ -816,74 +777,67 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
 	// Top comments
-	if ( __command.isCommandMode() ) {
-		JGUIUtil.addComponent( main_JPanel,
-			new JLabel ( "This command finds"
-				+ " the best fit to fill the dependent time"
-				+ " series with data from the dependent time series."),
+	if ( __command != null ) {
+		JGUIUtil.addComponent( main_JPanel, new JLabel ( "This command finds the best fit to fill the dependent time"
+			+ " series with data from the dependent time series."),
 			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	} else {
-		JGUIUtil.addComponent( main_JPanel,
-			new JLabel (
-			    "This tool finds the best fit to fill the dependent time"
-				+ " series with data from the independent time series."),
+	}
+	else {
+		JGUIUtil.addComponent( main_JPanel, new JLabel (
+		    "This tool finds the best fit to fill the dependent time"
+			+ " series with data from the independent time series."),
 			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+      JGUIUtil.addComponent( main_JPanel, new JLabel (
+          "The results of the analysis can be converted to FillMixedStation() commands."),
+          0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The dependent and independent time series " +
-		"can be selected using the TS list parameters:"),
+		"The dependent and independent time series can be selected using the TS list parameters:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	if ( __command.isCommandMode() ) {	
-		JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
-		+ __command._AllTS
-		+ " - all previous time series."),
+	if ( __command != null ) {	
+		JGUIUtil.addComponent(main_JPanel, new JLabel ( "  " + FillMixedStation_Command._AllTS + " - all previous time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-		JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
-		+ __command._SelectedTS
+		JGUIUtil.addComponent(main_JPanel, new JLabel ( "  " + FillMixedStation_Command._SelectedTS
 		+ " - time series selected with selectTimeSeries() commands"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}	
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
-		+ __command._AllMatchingTSID
-		+ " - time series selected from the list below "
-		+ "(* will analyze all previous time series)"),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  " + FillMixedStation_Command._AllMatchingTSID
+		+ " - time series selected from the list below (* will analyze all previous time series)"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Right-click on the time series area to select or deselect all."
 		+ "  Active only if the TS list selection is \"MatchingTSID\""),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-		JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ),
+		JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
 	// Create the vector containing the identifiers needed to populate the 
 	// dependent and independent time series controls. 
-	// REVISIT [LT 2006-06-01] Allow edits? Maybe in the future, if reimplemented
-	// as AnalyzePattern_JDialog
-	// LT1 - REVISIT [LT 2006-06-01] The "" and "* can be added here, if we decide
+	// TODO [LT 2006-06-01] Allow edits? Maybe in the future, if reimplemented as AnalyzePattern_JDialog
+	// LT1 - TODO [LT 2006-06-01] The "" and "* can be added here, if we decide
 	// to replace the SimpleJList by JComboBox.
 	// (see AnalyzePattern_JDialog)
 	List tsids = null;
-	if ( __command.isCommandMode() ) {
-		
+	if ( __command != null ) {
 		tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 				(TSCommandProcessor)__command.getCommandProcessor(), __command );
-		
-	} else {
+	}
+	else {
+	    // Full tool...
 		List tsObjects = null;
-		try { Object o = processor.getPropContents ( "TSResultsList" );
+		try { Object o = __processor.getPropContents ( "TSResultsList" );
 			tsObjects = (List)o;
 		}
 		catch ( Exception e ) {
-				String message = "Cannot get time series list to process.";
-				Message.printWarning ( 3, mthd, message );
-						// FIXME SAM 2007-02-16 Need to review dialog
-						//MessageUtil.formatMessageTag(
-						//command_tag, ++warning_count),
-						//routine,message);
+			String message = "Cannot get time series list to process.";
+			Message.printWarning ( 3, mthd, message );
+					// FIXME SAM 2007-02-16 Need to review dialog
+					//MessageUtil.formatMessageTag(
+					//command_tag, ++warning_count),
+					//routine,message);
 		}
 		// Create a vector containing the ts identifiers.
 		if ( tsObjects != null ) {
@@ -909,13 +863,13 @@ private void initialize ( JFrame parent, Command command )
 		response ( false );
 	}
 
-	// Vector of options for both the dependent and independent TSList
+	// List of options for both the dependent and independent TSList
 	List tslist_Vector = new Vector();
-	if ( __command.isCommandMode() ) {
-		tslist_Vector.add ( __command._AllTS );
-		tslist_Vector.add ( __command._SelectedTS );
+	if ( __command != null ) {
+		tslist_Vector.add ( FillMixedStation_Command._AllTS );
+		tslist_Vector.add ( FillMixedStation_Command._SelectedTS );
 	}
-	tslist_Vector.add ( __command._AllMatchingTSID );
+	tslist_Vector.add ( FillMixedStation_Command._AllMatchingTSID );
 
 	// How to get the dependent time series list to fill.
 	JGUIUtil.addComponent(main_JPanel, new JLabel ("Dependent TS list:"),
@@ -930,29 +884,26 @@ private void initialize ( JFrame parent, Command command )
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	// Dependent time series list.
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Dependent time series:" ),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ("Dependent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
 	List dts = new Vector();
 	for ( int i = 0; i < size; i++ ) {
 		dts.add( (String) tsids.get(i) );
 	}
-	dts.add( (String) "*" ); // See LT1 REVISIT above.
+	dts.add( (String) "*" ); // See LT1 TODO above.
 
 	__DependentTSID_SimpleJList = new SimpleJList (dts);
-	__DependentTSID_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
+	__DependentTSID_SimpleJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__DependentTSID_SimpleJList.setVisibleRowCount       ( 2 );
 	// Make sure to set the flag ignoreValueChanged to false and
-	// then back to true when executing the select()
-	// methods.
+	// then back to true when executing the select() methods.
 	ignoreValueChanged = true;
-	__DependentTSID_SimpleJList.select 		     ( 0 );
+	__DependentTSID_SimpleJList.select ( 0 );
 	ignoreValueChanged = false;
 	__DependentTSID_SimpleJList.addListSelectionListener ( this );
-	__DependentTSID_SimpleJList.addKeyListener           ( this );
-	__DependentTSID_SimpleJList.addMouseListener         ( this );
+	__DependentTSID_SimpleJList.addKeyListener ( this );
+	__DependentTSID_SimpleJList.addMouseListener ( this );
 	__DependentTSID_SimpleJList.setEnabled(false);
 	JGUIUtil.addComponent( main_JPanel,
 		new JScrollPane(__DependentTSID_SimpleJList),
@@ -972,8 +923,7 @@ private void initialize ( JFrame parent, Command command )
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	// Independent time series list
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Independent time series:" ),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ("Independent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
 	List its = new Vector();
@@ -983,12 +933,10 @@ private void initialize ( JFrame parent, Command command )
 	its.add( (String) "*" ); // See LT1 REVISIT above.
 
 	__IndependentTSID_SimpleJList = new SimpleJList (its);
-	__IndependentTSID_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
+	__IndependentTSID_SimpleJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__IndependentTSID_SimpleJList.setVisibleRowCount       ( 2 );
 	// Make sure to set the flag ignoreValueChanged to false and
-	// then back to true when executing the select()
-	// methods.
+	// then back to true when executing the select() methods.
 	ignoreValueChanged = true;
 	if ( its.size() == 1 ) {
 		__IndependentTSID_SimpleJList.select ( 0 );
@@ -997,8 +945,8 @@ private void initialize ( JFrame parent, Command command )
 	}
 	ignoreValueChanged = false;
 	__IndependentTSID_SimpleJList.addListSelectionListener ( this );
-	__IndependentTSID_SimpleJList.addKeyListener           ( this );
-	__IndependentTSID_SimpleJList.addMouseListener         ( this );
+	__IndependentTSID_SimpleJList.addKeyListener ( this );
+	__IndependentTSID_SimpleJList.addMouseListener ( this );
 	__IndependentTSID_SimpleJList.setEnabled(false);
 	JGUIUtil.addComponent(main_JPanel,
 		new JScrollPane(__IndependentTSID_SimpleJList),
@@ -1008,49 +956,50 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis method(s):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	List av = new Vector();
-	av.add( __command._ANALYSIS_OLS   );
-	av.add( __command._ANALYSIS_MOVE2 );
+	av.add( FillMixedStation_Command._ANALYSIS_OLS );
+	av.add( FillMixedStation_Command._ANALYSIS_MOVE2 );
 	__AnalysisMethod_SimpleJList = new SimpleJList (av);
-	__AnalysisMethod_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
+	__AnalysisMethod_SimpleJList.setSelectionMode( ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__AnalysisMethod_SimpleJList.setVisibleRowCount ( 2 );
 	__AnalysisMethod_SimpleJList.select ( 0 );
 	__AnalysisMethod_SimpleJList.addListSelectionListener ( this );
-
 	JGUIUtil.addComponent( main_JPanel,
 		new JScrollPane(__AnalysisMethod_SimpleJList),
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - methods to use in analysis (default=" +
+        FillMixedStation_Command._ANALYSIS_OLS + ")."),
+            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Number of equation (Cyclicity in the original Multiple Station Model
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Number of equations:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
-	__NumberOfEquations_JComboBox.addItem (
-		__command._NUM_OF_EQUATIONS_ONE_EQUATION      );
-	__NumberOfEquations_JComboBox.addItem (
-		__command._NUM_OF_EQUATIONS_MONTHLY_EQUATIONS );
-	__NumberOfEquations_JComboBox.select  (
-		__command._NUM_OF_EQUATIONS_ONE_EQUATION      );
+	__NumberOfEquations_JComboBox.addItem ( FillMixedStation_Command._NUM_OF_EQUATIONS_ONE_EQUATION );
+	__NumberOfEquations_JComboBox.addItem ( FillMixedStation_Command._NUM_OF_EQUATIONS_MONTHLY_EQUATIONS );
+	__NumberOfEquations_JComboBox.select ( FillMixedStation_Command._NUM_OF_EQUATIONS_ONE_EQUATION );
 	__NumberOfEquations_JComboBox.addItemListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - number of equations to use in the analysis."),
+       3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Transformation
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation(s):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	List tv = new Vector();
-	tv.add( __command._TRANSFORMATION_NONE );
-	tv.add( __command._TRANSFORMATION_LOG    );
+	tv.add( FillMixedStation_Command._TRANSFORMATION_NONE );
+	tv.add( FillMixedStation_Command._TRANSFORMATION_LOG );
 	__Transformation_SimpleJList = new SimpleJList (tv);
-	__Transformation_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
+	__Transformation_SimpleJList.setSelectionMode( ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__Transformation_SimpleJList.setVisibleRowCount ( 2 );
 	__Transformation_SimpleJList.select ( 0 );
 	__Transformation_SimpleJList.addListSelectionListener ( this );
 	__Transformation_SimpleJList.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel,
-			new JScrollPane(__Transformation_SimpleJList),
-			1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Transformation_SimpleJList),
+		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+   JGUIUtil.addComponent(main_JPanel, new JLabel(
+       "Optional - transformations to use in analysis (default=" + FillMixedStation_Command._TRANSFORMATION_NONE + "."),
+       3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Intercept
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ),
@@ -1060,7 +1009,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __Intercept_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Blank or 0.0 are allowed, used only with Transformation=None)."),
+		"Optional - 0.0 is allowed with Transformation=None (default=no fixed intercept)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Analysis period
@@ -1068,8 +1017,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AnalysisStart_JTextField = new JTextField ( "", 25 );
 	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel,
-		__AnalysisStart_JTextField,
+	JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -1093,14 +1041,14 @@ private void initialize ( JFrame parent, Command command )
 		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Minimum Data Count
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum Data Count:" ),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum data count:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MinimumDataCount_JTextField = new JTextField ( 10 );
 	__MinimumDataCount_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __MinimumDataCount_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Minimum number of overlapping points required for analysis."),
+		"Optional - minimum number of overlapping points required for analysis (default=1)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Minimum R
@@ -1118,24 +1066,18 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Best Fit:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__BestFitIndicator_JComboBox = new SimpleJComboBox ( false );
-	__BestFitIndicator_JComboBox.addItem (
-		__command._BEST_FIT_R );
-	__BestFitIndicator_JComboBox.addItem (
-		__command._BEST_FIT_SEP );
-	__BestFitIndicator_JComboBox.addItem (
-		__command._BEST_FIT_SEPTOTAL );
-	__BestFitIndicator_JComboBox.select  (
-		__command._BEST_FIT_SEP );
+	__BestFitIndicator_JComboBox.addItem ( FillMixedStation_Command._BEST_FIT_R );
+	__BestFitIndicator_JComboBox.addItem ( FillMixedStation_Command._BEST_FIT_SEP );
+	__BestFitIndicator_JComboBox.addItem ( FillMixedStation_Command._BEST_FIT_SEPTOTAL );
+	__BestFitIndicator_JComboBox.select ( FillMixedStation_Command._BEST_FIT_SEP );
 	__BestFitIndicator_JComboBox.addItemListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __BestFitIndicator_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Best fit indicator, for ranking output."),
+	JGUIUtil.addComponent(main_JPanel, new JLabel( "Best fit indicator, for ranking output."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// File to save results.
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Output file:" ),
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -1147,7 +1089,7 @@ private void initialize ( JFrame parent, Command command )
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
 	// Command - Currently showing only under the command mode
-	if ( __command.isCommandMode() ) {
+	if ( __command != null ) {
 		__Command_JLabel = new JLabel ( "Command:" );
 		JGUIUtil.addComponent(main_JPanel, __Command_JLabel,
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -1158,20 +1100,19 @@ private void initialize ( JFrame parent, Command command )
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
 		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
 			1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	} else {
-		// These control will initialially be invisible. Only when commands
-		// are available they will be set visible.
+	}
+	else {
+		// These control will initially be invisible. Only when commands are available they will be set visible.
 		__Command_JLabel = new JLabel ( "Fill Commands:" );
 		JGUIUtil.addComponent(main_JPanel, __Command_JLabel,
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Command_JLabel.setVisible ( false );
 		__Command_JTextArea = new JTextArea (2,55);
-		__Command_JTextArea.setLineWrap		( true );
-		__Command_JTextArea.setWrapStyleWord	( true );
-		__Command_JTextArea.setEditable		( false );
+		__Command_JTextArea.setLineWrap ( true );
+		__Command_JTextArea.setWrapStyleWord ( true );
+		__Command_JTextArea.setEditable ( false );
 		__OutputFile_JTextField.setEditable	( false );
-		__Command_JTextArea.setBackground	(
-			__OutputFile_JTextField.getBackground());
+		__Command_JTextArea.setBackground ( __OutputFile_JTextField.getBackground());
 		__OutputFile_JTextField.setEditable ( true );
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
 		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
@@ -1181,7 +1122,9 @@ private void initialize ( JFrame parent, Command command )
 	}
 
 	// Refresh the contents...
-	refresh();
+    if ( __command != null ) {
+        refresh();
+    }
 
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
@@ -1189,28 +1132,30 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, button_JPanel,
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-	if ( __command.isCommandMode() ) {
+	if ( __command != null ) {
 		// Cancel button: used when running as a command
 		__cancel_JButton = new SimpleJButton( __cancel_String, this);
 		__cancel_JButton.setToolTipText( __cancel_Tip );
 		button_JPanel.add ( __cancel_JButton );
 
-	} else {
+	}
+	else {
 		// Close button: used when running as a tool
 		__close_JButton = new SimpleJButton( __close_String, this);
 		__close_JButton.setToolTipText( __close_Tip );
 		button_JPanel.add ( __close_JButton );
 	}
 
-	if ( __command.isCommandMode() ) {
+	if ( __command != null ) {
 		// OK button: used only when running as a TSTool command.
 		__ok_JButton = new SimpleJButton(__ok_String, this);
-		__ok_JButton .setToolTipText( __ok_Tip );
+		__ok_JButton.setToolTipText( __ok_Tip );
 		button_JPanel.add ( __ok_JButton );
-	} else {
+	}
+	else {
 		// Analyze button: used only when running as a TSTool tool.
 		__analyze_JButton = new SimpleJButton(__analyze_String, this);
-		__analyze_JButton .setToolTipText( __analyze_Tip );
+		__analyze_JButton.setToolTipText( __analyze_Tip );
 		button_JPanel.add ( __analyze_JButton );
 
 		// View button: used only when running as a TSTool tool.
@@ -1220,26 +1165,20 @@ private void initialize ( JFrame parent, Command command )
 		button_JPanel.add ( __view_JButton );
 
 		// createFillCommands button: used only when running as a tool.
-		__createFillCommands_JButton =
-			new SimpleJButton(__createFillCommands_String, this);
-		__createFillCommands_JButton .setToolTipText(
-			__createFillCommands_Tip );
+		__createFillCommands_JButton = new SimpleJButton(__createFillCommands_String, this);
+		__createFillCommands_JButton.setToolTipText(__createFillCommands_Tip );
 		__createFillCommands_JButton.setEnabled( false );
 		button_JPanel.add ( __createFillCommands_JButton );
 
 		// copyCommandsToTSTool button: used only when running as a tool.
-		__copyFillCommandsToTSTool_JButton =
-			new SimpleJButton(__copyCommandsToTSTool_String, this);
-		__copyFillCommandsToTSTool_JButton .setToolTipText(
-			__copyCommandsToTSTool_Tip );
+		__copyFillCommandsToTSTool_JButton = new SimpleJButton(__copyCommandsToTSTool_String, this);
+		__copyFillCommandsToTSTool_JButton .setToolTipText( __copyCommandsToTSTool_Tip );
 		__copyFillCommandsToTSTool_JButton.setEnabled( false );
 		button_JPanel.add ( __copyFillCommandsToTSTool_JButton );
 
 		// fillDependents button: used only when running as a tool.
-		__fillDependents_JButton =
-			new SimpleJButton(__fillDependents_String, this);
-		__fillDependents_JButton .setToolTipText(
-			__fillDependents_Tip );
+		__fillDependents_JButton = new SimpleJButton(__fillDependents_String, this);
+		__fillDependents_JButton.setToolTipText( __fillDependents_Tip );
 		__fillDependents_JButton.setEnabled( false );
 		button_JPanel.add ( __fillDependents_JButton );
 	}
@@ -1255,20 +1194,14 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "South", statusJPanel);
 
 	// Add the Dependent Pop-up menu to manipulate time series...
-	__DependentTS_JPopupMenu = new JPopupMenu(
-		"Dependent TS Actions");
-	__DependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__SELECT_ALL_DEPENDENT,   this) );
-	__DependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__DESELECT_ALL_DEPENDENT, this) );
+	__DependentTS_JPopupMenu = new JPopupMenu( "Dependent TS Actions");
+	__DependentTS_JPopupMenu.add( new SimpleJMenuItem ( __SELECT_ALL_DEPENDENT, this) );
+	__DependentTS_JPopupMenu.add( new SimpleJMenuItem ( __DESELECT_ALL_DEPENDENT, this) );
 
 	// Add the Independent Pop-up menu to manipulate time series...
-	__IndependentTS_JPopupMenu = new JPopupMenu(
-		"Independent TS Actions");
-	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__SELECT_ALL_INDEPENDENT, this));
-	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__DESELECT_ALL_INDEPENDENT, this));
+	__IndependentTS_JPopupMenu = new JPopupMenu("Independent TS Actions");
+	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (__SELECT_ALL_INDEPENDENT, this));
+	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (__DESELECT_ALL_INDEPENDENT, this));
 
 	// Visualize it...
 	if ( title != null ) {
@@ -1370,22 +1303,16 @@ public void mousePressed ( MouseEvent event )
 		// Dependent time series
 		if (event.getComponent() == __DependentTSID_SimpleJList) {
 			// Show this menu only if applicable (_AllMatchingTSID)
-			if ( __DependentTSList_JComboBox.getSelected()
-				.equalsIgnoreCase(__command._AllMatchingTSID)) {
-				__DependentTS_JPopupMenu.show (
-					event.getComponent(),
-					event.getX(), event.getY() );
+			if ( __DependentTSList_JComboBox.getSelected().equalsIgnoreCase(FillMixedStation_Command._AllMatchingTSID)) {
+				__DependentTS_JPopupMenu.show ( event.getComponent(), event.getX(), event.getY() );
 			}	
 		} 
 		
 		// Independent time series
 		else if (event.getComponent()==__IndependentTSID_SimpleJList) {
 			// Show this menu only if applicable (_AllMatchingTSID)
-			if ( __IndependentTSList_JComboBox.getSelected()
-				.equalsIgnoreCase (__command._AllMatchingTSID)) {
-				__IndependentTS_JPopupMenu.show (
-					event.getComponent(),
-					event.getX(), event.getY() );
+			if ( __IndependentTSList_JComboBox.getSelected().equalsIgnoreCase (FillMixedStation_Command._AllMatchingTSID)) {
+				__IndependentTS_JPopupMenu.show ( event.getComponent(), event.getX(), event.getY() );
 			}
 		}
 	}
@@ -1399,21 +1326,19 @@ public void mouseReleased ( MouseEvent event )
 }
 
 /**
-Read the content of a text file, returning a vector of strings,
-one string per line.
+Read the content of a text file, returning a vector of strings, one string per line.
 @param fileName - The file (path and file) to read.
 */
-List readTextFile ( String fileName )
+private List readTextFile ( String fileName )
 {
-	List 	_fileContent = new Vector();	// The return vector.
-	FileReader _fileReader;			// The actual file stream.
-	BufferedReader	_bufferedReader ;	// Used to read the file line by line.
+	List _fileContent = new Vector(); // The return vector.
+	FileReader _fileReader; // The actual file stream.
+	BufferedReader _bufferedReader ; // Used to read the file line by line.
 	String line;
 
 	try {
-		String adjusted_path = IOUtil.adjustPath (
-				 __working_dir, fileName);
-		_fileReader     = new FileReader ( new File( adjusted_path ) );
+		String adjusted_path = IOUtil.adjustPath ( __working_dir, fileName);
+		_fileReader = new FileReader ( new File( adjusted_path ) );
 		_bufferedReader = new BufferedReader( _fileReader );
 
 		do {
@@ -1431,48 +1356,34 @@ List readTextFile ( String fileName )
 }
 
 /**
-Refresh the command from the other text field contents:
-<pre>
-fillMixedStation ( DependentTSList="...",
-		   DependentTSList="X,Y,...",
-		   IndependentTSList="...",
-		   IndependentTSList="X,Y,...",
-		   AnalysisMethod="OLSRegression",
-		   NumberOfEquations="OneEquation",
-		   Transformation="None",
-		   AnalysisStart="...",
-		   AnalysisEnd="...",
-		   MinimumDataCount="..."
-		   MinimumR="..."
-		   BestFitIndicator="SEP",
-		   FillStart="...",
-		   FillEnd="...",
-		   Intercept="..."
-		   OutputFile="...")
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh()
 {
+    if ( __command == null ) {
+        // This does not apply when in tool mode
+        return;
+    }
 	String mthd = __command.getCommandName() + "_JDialog.refresh";
 
-	String DependentTSList  = "";  // How to get list of depend.  time series
-	String DependentTSID    = "";  // Dependent Time series.
+	String DependentTSList = "";  // How to get list of depend.  time series
+	String DependentTSID = "";  // Dependent Time series.
 
-	String IndependentTSList= ""; // How to get list of independ time series
-	String IndependentTSID  = ""; // Independent Time series.
+	String IndependentTSList = ""; // How to get list of independent time series
+	String IndependentTSID = ""; // Independent Time series.
 
-	String AnalysisMethod	= "";
-	String NumberOfEquations= "";
-	String Transformation	= "";
-	String AnalysisStart	= "";
-	String AnalysisEnd	= "";
+	String AnalysisMethod = "";
+	String NumberOfEquations = "";
+	String Transformation = "";
+	String AnalysisStart = "";
+	String AnalysisEnd = "";
 	String MinimumDataCount	= "";
-	String MinimumR		= "";
+	String MinimumR = "";
 	String BestFitIndicator = "";
-	String FillStart 	= "";
-	String FillEnd 		= "";
-	String Intercept	= "";
-	String OutputFile	= "";
+	String FillStart = "";
+	String FillEnd = "";
+	String Intercept = "";
+	String OutputFile = "";
 
 	__error_wait = false;
 
@@ -1484,40 +1395,36 @@ private void refresh()
 
 		// Get the properties from the command
 		props = __command.getCommandParameters();
-		DependentTSList   = props.getValue ( "DependentTSList"  );
-		DependentTSID     = props.getValue ( "DependentTSID"    );
+		DependentTSList = props.getValue ( "DependentTSList" );
+		DependentTSID = props.getValue ( "DependentTSID" );
 		IndependentTSList = props.getValue ( "IndependentTSList");
-		IndependentTSID   = props.getValue ( "IndependentTSID"  );
-		AnalysisMethod	  = props.getValue ( "AnalysisMethod"   );
+		IndependentTSID = props.getValue ( "IndependentTSID" );
+		AnalysisMethod = props.getValue ( "AnalysisMethod" );
 		NumberOfEquations = props.getValue ( "NumberOfEquations");
-		Transformation	  = props.getValue ( "Transformation"   );
-		AnalysisStart	  = props.getValue ( "AnalysisStart"    );
-		AnalysisEnd	  = props.getValue ( "AnalysisEnd"      );
-		MinimumDataCount  = props.getValue ( "MinimumDataCount" );
-		MinimumR  	  = props.getValue ( "MinimumR"         );
-		BestFitIndicator  = props.getValue ( "BestFitIndicator" );
-		FillStart	  = props.getValue ( "FillStart"        );
-		FillEnd		  = props.getValue ( "FillEnd"          );
-		Intercept	  = props.getValue ( "Intercept"        );
-		OutputFile	  = props.getValue ( "OutputFile"       );
+		Transformation = props.getValue ( "Transformation" );
+		AnalysisStart = props.getValue ( "AnalysisStart" );
+		AnalysisEnd = props.getValue ( "AnalysisEnd" );
+		MinimumDataCount = props.getValue ( "MinimumDataCount" );
+		MinimumR = props.getValue ( "MinimumR" );
+		BestFitIndicator = props.getValue ( "BestFitIndicator" );
+		FillStart = props.getValue ( "FillStart" );
+		FillEnd = props.getValue ( "FillEnd" );
+		Intercept = props.getValue ( "Intercept" );
+		OutputFile = props.getValue ( "OutputFile" );
 
 		// Make sure the DependentTSList option is valid
 		if ( DependentTSList == null ) {
 			// Select default...
 			__DependentTSList_JComboBox.select ( 0 );
-		} else {
-			if (	JGUIUtil.isSimpleJComboBoxItem(
-				__DependentTSList_JComboBox,
+		}
+		else {
+			if ( JGUIUtil.isSimpleJComboBoxItem( __DependentTSList_JComboBox,
 				DependentTSList, JGUIUtil.NONE, null, null ) ) {
-					__DependentTSList_JComboBox.select (
-						DependentTSList );
+				__DependentTSList_JComboBox.select ( DependentTSList );
 			}
 			else {
-				Message.printWarning ( 1, mthd,
-					  "Existing command references an "
-					+ "invalid\nDependentTSList value \""
-					+ DependentTSList + "\".  "
-					+ "Select a different value or Cancel.");
+				Message.printWarning ( 1, mthd, "Existing command references an invalid\nDependentTSList value \""
+				+ DependentTSList + "\".  Select a different value or Cancel.");
 				this.requestFocus();
 				__error_wait = true;
 			}
@@ -1527,19 +1434,15 @@ private void refresh()
 		if ( IndependentTSList == null ) {
 			// Select default ...
 			__IndependentTSList_JComboBox.select ( 0 );
-		} else {
-			if (	JGUIUtil.isSimpleJComboBoxItem(
-				__IndependentTSList_JComboBox,
+		}
+		else {
+			if ( JGUIUtil.isSimpleJComboBoxItem(__IndependentTSList_JComboBox,
 				IndependentTSList, JGUIUtil.NONE, null, null ) ) {
-					__IndependentTSList_JComboBox.select (
-						IndependentTSList );
+				__IndependentTSList_JComboBox.select ( IndependentTSList );
 			}
 			else {
-				Message.printWarning ( 1, mthd,
-					  "Existing command references an "
-					+ "invalid\nIndependentTSList value \""
-					+ IndependentTSList + "\".  "
-					+ "Select a different value or Cancel.");
+				Message.printWarning ( 1, mthd, "Existing command references an invalid\nIndependentTSList value \""
+				+ IndependentTSList + "\".  Select a different value or Cancel.");
 				this.requestFocus();
 				__error_wait = true;
 			}
@@ -1553,158 +1456,117 @@ private void refresh()
 
 		// Check all the items in the Dependent time series list and
 		// highlight the ones that match the command being edited...
-		if (    (DependentTSList != null) &&
-			DependentTSList.equalsIgnoreCase(
-				__command._AllMatchingTSID) &&
+		if ( (DependentTSList != null) && DependentTSList.equalsIgnoreCase(FillMixedStation_Command._AllMatchingTSID) &&
 			(DependentTSID != null) ) {
-			v = StringUtil.breakStringList (
-				DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+			v = StringUtil.breakStringList ( DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
 			int size = v.size();
 			int pos = 0;
 			List selected = new Vector();
 			String dependent = "";
 			for ( int i = 0; i < size; i++ ) {
 				dependent = (String)v.get(i);
-				if ( (pos = JGUIUtil.indexOf(
-					__DependentTSID_SimpleJList,
-					dependent, false, true))>= 0 ) {
-					// Select it because it is in the
-					// command and the list...
+				if ( (pos = JGUIUtil.indexOf(__DependentTSID_SimpleJList,dependent, false, true))>= 0 ) {
+					// Select it because it is in the command and the list...
 					selected.add ( "" + pos );
-				} else {
-					Message.printWarning ( 1, mthd,
-					"Existing " +
-					"command references a non-existent\n"+
-					"time series \"" + dependent +
-					"\".  Select a\n" +
-					"different time series or Cancel." );
+				}
+				else {
+					Message.printWarning ( 1, mthd, "Existing command references a non-existent\n"+
+					"time series \"" + dependent + "\".  Select a\ndifferent time series or Cancel." );
 					this.requestFocus();
 					__error_wait = true;
 				}
 			}
 
 			// Select the matched time series...
-			// Make sure to use setSelectedIndices to select multiply
-			// rows.
+			// Make sure to use setSelectedIndices to select multiply rows.
 			if ( selected.size() > 0  ) {
 				int [] iselected = new int[selected.size()];
 				for ( int is = 0; is < iselected.length; is++ ){
-					iselected[is] = StringUtil.atoi (
-					(String)selected.get(is));
+					iselected[is] = StringUtil.atoi ( (String)selected.get(is));
 				}
-				__DependentTSID_SimpleJList.setSelectedIndices(
-					iselected );
+				__DependentTSID_SimpleJList.setSelectedIndices(iselected );
 			}
 		}
 
 		// Check all the items in the Independent time series list and
 		// highlight the ones that match the command being edited...
-		if (	(IndependentTSList != null) &&
-			IndependentTSList.equalsIgnoreCase(
-				__command._AllMatchingTSID) &&
+		if ( (IndependentTSList != null) && IndependentTSList.equalsIgnoreCase(FillMixedStation_Command._AllMatchingTSID) &&
 			(IndependentTSID != null) ) {
-			v = StringUtil.breakStringList (
-				IndependentTSID, ",",
-				StringUtil.DELIM_SKIP_BLANKS );
+			v = StringUtil.breakStringList (IndependentTSID, ",",StringUtil.DELIM_SKIP_BLANKS );
 			int size = v.size();
 			int pos = 0;
 			List selected = new Vector();
 			String independent = "";
 			for ( int i = 0; i < size; i++ ) {
 				independent = (String)v.get(i);
-				if ( (pos = JGUIUtil.indexOf(
-					__IndependentTSID_SimpleJList,
-					independent, false, true))>= 0 ) {
-					// Select it because it is in the
-					// command and the list...
+				if ( (pos = JGUIUtil.indexOf( __IndependentTSID_SimpleJList, independent, false, true))>= 0 ) {
+					// Select it because it is in the command and the list...
 					selected.add ( "" + pos );
-				} else {
-					Message.printWarning ( 1, mthd,
-					"Existing " +
-					"command references a non-existent\n"+
-					"time series \"" + independent +
-					"\".  Select a\n" +
-					"different time series or Cancel." );
+				}
+				else {
+					Message.printWarning ( 1, mthd, "Existing command references a non-existent\n"+
+					"time series \"" + independent + "\".  Select a\ndifferent time series or Cancel." );
 					this.requestFocus();
 					__error_wait = true;
 				}
 			}
 
 			// Select the matched time series...
-			// Make sure to use setSelectedIndices to select multiply
-			// rows.
+			// Make sure to use setSelectedIndices to select multiply rows.
 			if ( selected.size() > 0  ) {
 				int [] iselected = new int[selected.size()];
 				for ( int is = 0; is < iselected.length; is++ ){
-					iselected[is] = StringUtil.atoi (
-					(String)selected.get(is));
+					iselected[is] = StringUtil.atoi ((String)selected.get(is));
 				}
-				__IndependentTSID_SimpleJList.setSelectedIndices(
-					iselected );
+				__IndependentTSID_SimpleJList.setSelectedIndices(iselected );
 			}
 		}
 
-
-		// Check AnalysisMethod and
-		// highlight the one that match the command being edited
+		// Check AnalysisMethod and highlight the one that match the command being edited
 		if ( AnalysisMethod != null ) {
-			v = StringUtil.breakStringList (
-				AnalysisMethod, ",",
-				StringUtil.DELIM_SKIP_BLANKS );
+			v = StringUtil.breakStringList (AnalysisMethod, ",",StringUtil.DELIM_SKIP_BLANKS );
 			int pos = 0;
 			List selected = new Vector();
 			String analysis = "";
 			for ( int i = 0; i < v.size(); i++ ) {
 				analysis = (String) v.get(i);
-				if ( (pos = JGUIUtil.indexOf(
-					__AnalysisMethod_SimpleJList,
-					analysis, false, true)) >= 0 ) {
+				if ( (pos = JGUIUtil.indexOf(__AnalysisMethod_SimpleJList,analysis, false, true)) >= 0 ) {
 					// It in the command and the list...
 					selected.add ( "" + pos );
-				} else {
-					Message.printWarning ( 1, mthd,
-						"Existing command references"
-						+ " a non-existent\n"
-						+ " Analysis Method\""
-						+ analysis
-						+ "\".  Select a\n"
-						+ "different Analysis Method "
-						+ "or Cancel.");
+				}
+				else {
+					Message.printWarning ( 1, mthd, "Existing command references a non-existent\n"
+						+ " Analysis Method\"" + analysis
+						+ "\".  Select a\ndifferent Analysis Method or Cancel.");
 					this.requestFocus();
 					__error_wait = true;
 				}
 			}
 
 			// Select the matched AnalysisMethod...
-			// Make sure to use setSelectedIndices to select multiply
-			// rows.
+			// Make sure to use setSelectedIndices to select multiply rows.
 			if ( selected.size() > 0  ) {
 				int [] iselected = new int[selected.size()];
 				for ( int j = 0; j < selected.size(); j++ ){
-					iselected[j] = StringUtil.atoi (
-						(String)selected.get(j));
-					__AnalysisMethod_SimpleJList.
-						setSelectedIndices(
-							iselected );
+					iselected[j] = StringUtil.atoi ((String)selected.get(j));
+					__AnalysisMethod_SimpleJList.setSelectedIndices(iselected );
 				}
 			}
 		}
 
-		// Check NumberOfEquations and
-		// highlight the one that match the command being edited
+		// Check NumberOfEquations and highlight the one that match the command being edited
 		if ( NumberOfEquations == null ) {
 			// Select default...
 			__NumberOfEquations_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__NumberOfEquations_JComboBox,
-				NumberOfEquations, JGUIUtil.NONE, null, null )) {
-				__NumberOfEquations_JComboBox.select (
-				NumberOfEquations);
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(
+				__NumberOfEquations_JComboBox, NumberOfEquations, JGUIUtil.NONE, null, null )) {
+				__NumberOfEquations_JComboBox.select (NumberOfEquations);
 			}
-			else {	Message.printWarning ( 1, mthd,
-				"Existing command " +
-				"references an invalid\n" +
+			else {
+			    Message.printWarning ( 1, mthd,
+				"Existing command references an invalid\n" +
 				"NumberOfEquations value \"" + NumberOfEquations +
 				"\".  Select a different value or Cancel.");
 				this.requestFocus();
@@ -1712,47 +1574,33 @@ private void refresh()
 			}
 		}
 
-		// Check Transformation and
-		// highlight the one that match the command being edited
+		// Check Transformation and highlight the one that match the command being edited
 		if ( Transformation != null ) {
-			v = StringUtil.breakStringList (
-				Transformation, ",",
-				StringUtil.DELIM_SKIP_BLANKS );
+			v = StringUtil.breakStringList ( Transformation, ",", StringUtil.DELIM_SKIP_BLANKS );
 			int pos = 0;
 			List selected = new Vector();
 			String transformation = "";
 			for ( int i = 0; i < v.size(); i++ ) {
 				transformation = (String) v.get(i);
-				if ( (pos = JGUIUtil.indexOf(
-					__Transformation_SimpleJList,
-					transformation, false, true)) >= 0 ) {
+				if ( (pos = JGUIUtil.indexOf(__Transformation_SimpleJList,transformation, false, true)) >= 0 ) {
 					// It in the command and the list...
 					selected.add ( "" + pos );
 				} else {
-					Message.printWarning ( 1, mthd,
-						"Existing command references"
-						+ " a non-existent\n"
-						+ " Transformation \""
-						+ transformation
-						+ "\".  Select a\n"
-						+ "different Transformation "
-						+ "or Cancel.");
+					Message.printWarning ( 1, mthd, "Existing command references a non-existent\n"
+						+ " Transformation \"" + transformation
+						+ "\".  Select a\ndifferent Transformation or Cancel.");
 					this.requestFocus();
 					__error_wait = true;
 				}
 			}
 
 			// Select the matched Transformation...
-			// Make sure to use setSelectedIndices to select multiply
-			// rows.
+			// Make sure to use setSelectedIndices to select multiply rows.
 			if ( selected.size() > 0  ) {
 				int [] iselected = new int[selected.size()];
 				for ( int j = 0; j < selected.size(); j++ ){
-					iselected[j] = StringUtil.atoi (
-						(String)selected.get(j));
-					__Transformation_SimpleJList.
-						setSelectedIndices(
-							iselected );
+					iselected[j] = StringUtil.atoi ((String)selected.get(j));
+					__Transformation_SimpleJList.setSelectedIndices(iselected );
 				}
 			}
 		}
@@ -1791,16 +1639,13 @@ private void refresh()
 			// Select default...
 			__BestFitIndicator_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__BestFitIndicator_JComboBox,
-				BestFitIndicator, JGUIUtil.NONE, null, null )) {
-				__BestFitIndicator_JComboBox.select (
-				BestFitIndicator);
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(
+				__BestFitIndicator_JComboBox, BestFitIndicator, JGUIUtil.NONE, null, null )) {
+				__BestFitIndicator_JComboBox.select ( BestFitIndicator);
 			}
 			else {
-				Message.printWarning ( 1, mthd,
-				"Existing command " +
-				"references an invalid\n" +
+				Message.printWarning ( 1, mthd, "Existing command references an invalid\n" +
 				"BestFitIndicator value \"" + BestFitIndicator +
 				"\".  Select a different value or Cancel.");
 				this.requestFocus();
@@ -1845,49 +1690,48 @@ private void refresh()
 	}
 
 	// Update the __DependentTSID_SimpleJList and
-	// __IndependentTSID_SimpleJList to have only the * selected, it the
-	// * is selected by the user.
+	// __IndependentTSID_SimpleJList to have only the * selected, it the * is selected by the user.
 	resetTimeSeriesID_JLists();
 
 	// Regardless, reset the command from the interface fields...
-	DependentTSList  = __DependentTSList_JComboBox.getSelected();
-	DependentTSID    = getDependentTSIDFromInterface();
-	IndependentTSList= __IndependentTSList_JComboBox.getSelected();
-	DependentTSID    = getDependentTSIDFromInterface();
-	AnalysisMethod   = getAnalysisMethodFromInterface();
-	Transformation   = getTransformationFromInterface();
-	NumberOfEquations= __NumberOfEquations_JComboBox.getSelected();
-	AnalysisStart    = __AnalysisStart_JTextField.getText().trim();
-	AnalysisEnd      = __AnalysisEnd_JTextField.getText().trim();
+	DependentTSList = __DependentTSList_JComboBox.getSelected();
+	DependentTSID = getDependentTSIDFromInterface();
+	IndependentTSList = __IndependentTSList_JComboBox.getSelected();
+	DependentTSID = getDependentTSIDFromInterface();
+	AnalysisMethod = getAnalysisMethodFromInterface();
+	Transformation = getTransformationFromInterface();
+	NumberOfEquations = __NumberOfEquations_JComboBox.getSelected();
+	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
+	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
-	MinimumR         = __MinimumR_JTextField.getText().trim();
+	MinimumR = __MinimumR_JTextField.getText().trim();
 	BestFitIndicator = __BestFitIndicator_JComboBox.getSelected();
-	FillStart        = __FillStart_JTextField.getText().trim();
-	FillEnd          = __FillEnd_JTextField.getText().trim();
-	Intercept        = __Intercept_JTextField.getText().trim();
-	OutputFile       = __OutputFile_JTextField.getText().trim();
+	FillStart = __FillStart_JTextField.getText().trim();
+	FillEnd = __FillEnd_JTextField.getText().trim();
+	Intercept = __Intercept_JTextField.getText().trim();
+	OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// And set the command properties.
 	props = new PropList ( __command.getCommandName() );
-	props.add ( "DependentTSList="   + DependentTSList  );
-	props.add ( "DependentTSID="     + DependentTSID    );
+	props.add ( "DependentTSList=" + DependentTSList );
+	props.add ( "DependentTSID=" + DependentTSID );
 	props.add ( "IndependentTSList=" + IndependentTSList);
-	props.add ( "DependentTSID="     + DependentTSID    );
-	props.add ( "AnalysisMethod="    + AnalysisMethod   );
-	props.add ( "Transformation="    + Transformation   );
+	props.add ( "DependentTSID=" + DependentTSID );
+	props.add ( "AnalysisMethod=" + AnalysisMethod );
+	props.add ( "Transformation=" + Transformation );
 	props.add ( "NumberOfEquations=" + NumberOfEquations);
-	props.add ( "AnalysisStart="     + AnalysisStart    );
-	props.add ( "AnalysisEnd="       + AnalysisEnd      );
-	props.add ( "MinimumDataCount="  + MinimumDataCount );
-	props.add ( "MinimumR="          + MinimumR         );
-	props.add ( "BestFitIndicator="  + BestFitIndicator );
-	props.add ( "FillStart="         + FillStart        );
-	props.add ( "FillEnd="           + FillEnd          );
-	props.add ( "Intercept="         + Intercept        );
-	props.add ( "OutputFile="        + OutputFile       );
+	props.add ( "AnalysisStart=" + AnalysisStart );
+	props.add ( "AnalysisEnd=" + AnalysisEnd );
+	props.add ( "MinimumDataCount=" + MinimumDataCount );
+	props.add ( "MinimumR=" + MinimumR );
+	props.add ( "BestFitIndicator=" + BestFitIndicator );
+	props.add ( "FillStart=" + FillStart );
+	props.add ( "FillEnd=" + FillEnd );
+	props.add ( "Intercept=" + Intercept );
+	props.add ( "OutputFile=" + OutputFile );
 
 	// Update the __Command_JTextArea if running under the command mode. 
-	if ( __command.isCommandMode() ) {
+	if ( __command != null ) {
 		__Command_JTextArea.setText( __command.toString(props) );
 	}
 }
@@ -1936,17 +1780,19 @@ private void resetTimeSeriesList()
 {
 	// Dependent time series list
 	if ( __DependentTSList_JComboBox.getSelected().equalsIgnoreCase
-		( __command._AllMatchingTSID ) ) {
+		( FillMixedStation_Command._AllMatchingTSID ) ) {
 		__DependentTSID_SimpleJList.setEnabled( true );
-	} else {
+	}
+	else {
 		__DependentTSID_SimpleJList.setEnabled( false );
 	}
 
 	// Independent time series list
 	if ( __IndependentTSList_JComboBox.getSelected().equalsIgnoreCase
-		( __command._AllMatchingTSID ) ) {
+		( FillMixedStation_Command._AllMatchingTSID ) ) {
 		__IndependentTSID_SimpleJList.setEnabled( true );
-	} else {
+	}
+	else {
 		__IndependentTSID_SimpleJList.setEnabled( false );
 	}
 }
@@ -1954,29 +1800,21 @@ private void resetTimeSeriesList()
 /**
 React to the user response.
 @param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed, if there is no error waiting, otherwise we are not
-ready to close, so simple return.
+and the dialog is closed.
 */
-public void response (  boolean ok  )
-{
-// REVISIT [LT 2005-06-01] Why commit the changes if there are errors? Why check
-// for errors anyway? Is't it true that the only way to get here with ok=true
-// is if the checkInput was called, succeded and the _error_wait flag was set 
-// to false (see ActionPerformed method)?
-// Make consistend, if modified, in all the other commands using the new scheme 
-// (JDialog and Command classes). 	
-	__ok = ok;
-	if ( ok ) {
-		// Commit the changes...
-		commitEdits ();
-		if ( __error_wait ) {
-			// Not ready to close out!
-			return;
-		}
-	}
-	// Now close out...
-	setVisible( false );
-	dispose();
+private void response ( boolean ok )
+{   __ok = ok;  // Save to be returned by ok()
+    if ( ok ) {
+        // Commit the changes...
+        commitEdits ();
+        if ( __error_wait ) {
+            // Not ready to close out!
+            return;
+        }
+    }
+    // Now close out...
+    setVisible( false );
+    dispose();
 }
 
 /**
@@ -2032,10 +1870,10 @@ public void windowClosing( WindowEvent event )
 }
 
 public void windowActivated	( WindowEvent evt ){;}
-public void windowClosed	( WindowEvent evt ){;}
-public void windowDeactivated	( WindowEvent evt ){;}
-public void windowDeiconified	( WindowEvent evt ){;}
+public void windowClosed ( WindowEvent evt ){;}
+public void windowDeactivated ( WindowEvent evt ){;}
+public void windowDeiconified ( WindowEvent evt ){;}
 public void windowIconified	( WindowEvent evt ){;}
-public void windowOpened	( WindowEvent evt ){;}
+public void windowOpened ( WindowEvent evt ){;}
 
-} // end fillMixedStation_JDialog
+}

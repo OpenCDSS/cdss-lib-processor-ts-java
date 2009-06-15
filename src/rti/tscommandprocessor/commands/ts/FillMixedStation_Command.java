@@ -473,10 +473,8 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -524,8 +522,7 @@ throws InvalidCommandParameterException,
 		// Get the time series from the command list.
 		// The getTimeSeriesToProcess method will properly return the
 		// time series according to the settings of DependentTSList.
-		v = getTimeSeriesToProcess( processor,
-			DependentTSList, DependentTSID );
+		v = getTimeSeriesToProcess( processor, DependentTSList, DependentTSID );
 		List tslist = (List)v.get(0);
 		tspos = (int [])v.get(1);
 		tsCount = tslist.size();
@@ -685,7 +682,7 @@ throws InvalidCommandParameterException,
 	// MixedStationAnalysis expects "null" when calling getValue()
 	// for these properties to set the internal defaults.
 	if ( AnalysisStart != null && AnalysisStart.length() > 0  ) {
-		// REVISIT [LT 2005-04-26] Here I am setting the properties as
+		// TODO [LT 2005-04-26] Here I am setting the properties as
 		// they are known by the different objects ( FillRegression, 
 		// TSRegression and FillMOVE2
 		analysisProperties.set (  // FillRegression
@@ -694,14 +691,14 @@ throws InvalidCommandParameterException,
 			"DependentAnalysisPeriodStart", AnalysisStart );
 		analysisProperties.set (  // FillMOVE2
 			"DependentAnalysisStart", AnalysisStart );
-		// REVISIT [LT 2005-05-27] Looks like, according to SAM's email
+		// TODO [LT 2005-05-27] Looks like, according to SAM's email
 		// the final name for this property will be 
 		// DependentAnalysisStart.
 		// Make sure to delete the other options after all is changed. 			
 	}
 	
 	if ( AnalysisEnd != null && AnalysisEnd.length() > 0  ) {
-		// REVISIT [LT 2005-04-26] Here I am setting the properties as
+		// TODO [LT 2005-04-26] Here I am setting the properties as
 		// they are known by the different objects (FillRegression, 
 		// TSRegression and FillMOVE2
 		analysisProperties.set (  // FillRegression 
@@ -710,7 +707,7 @@ throws InvalidCommandParameterException,
 			"DependentAnalysisPeriodEnd", AnalysisEnd );
 		analysisProperties.set (  // FillMOVE2
 			"DependentAnalysisEnd", AnalysisEnd );
-		// REVISIT [LT 2005-05-27] Looks like, according to SAM's email
+		// TODO [LT 2005-05-27] Looks like, according to SAM's email
 		// the final name for this property will be 
 		// IndependentAnalysisStart.
 		// Make sure to delete the other options after all is changed. 		

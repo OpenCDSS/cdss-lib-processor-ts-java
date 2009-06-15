@@ -7,8 +7,9 @@ import RTi.Util.IO.CommandListListener;
 
 /**
 This class provides a way for the Swing JList and other components to
-display time series commands that are managed in a TSCommandProcessor.
- */
+display time series commands that are managed in a TSCommandProcessor.  It allows the TSCommandProcessor
+to be the data model for the UI components.  Therefore, there is a single data model for UI and processing.
+*/
 public class TSCommandProcessorListModel extends AbstractListModel
 implements CommandListListener
 {
@@ -42,8 +43,7 @@ public void addElement ( Command command )
 Add a command at the end of the list using the string text.  This should currently only be
 used for commands that do not have command classes, which perform
 additional validation on the commands.  A GenericCommand instance will
-be instantiated to maintain the string and allow command status to be
-set.
+be instantiated to maintain the string and allow command status to be set.
 @param command_string Command string for command.
 */
 public void addElement ( String command_string )
@@ -93,8 +93,7 @@ throws Throwable
 }
 
 /**
-Get the Command at the requested position.  This simply calls
-get().
+Get the Command at the requested position.  This simply calls get().
 @param pos Command position, 0+.
 @return the Command instance at the requested position.
 */
@@ -125,8 +124,7 @@ public int getSize()
 Add a command using the string text.  This should currently only be
 used for commands that do not have command classes, which perform
 additional validation on the commands.  A GenericCommand instance will
-be instantiated to maintain the string and allow command status to be
-set.
+be instantiated to maintain the string and allow command status to be set.
 @param command_string Command string for command.
 @param index Position (0+) at which to add the command.
 */
@@ -136,8 +134,7 @@ public void insertElementAt ( String command_string, int index )
 }
 
 /**
-Add a command using a Command instance, for example as created
-from TSCommandFactory.
+Add a command using a Command instance, for example as created from TSCommandFactory.
 @param command Command to add.
 @param index Position (0+) at which to add the command.
 */
@@ -164,8 +161,7 @@ public void removeElementAt ( int index )
 }
 
 /**
-Get the number of Command objects being managed by the TSCommandProcessor.
-This method calls getSize().
+Get the number of Command objects being managed by the TSCommandProcessor.  This method calls getSize().
 @return the number of commands being managed by the command processor.
 */
 public int size()

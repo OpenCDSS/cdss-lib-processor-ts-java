@@ -51,9 +51,9 @@ public class FillPrincipalComponentAnalysis_Command extends AbstractCommand impl
 
 // Defines used by this class and its FillPrincipalComponentAnalysis_JDialog counterpart.
 // Use with DependentTSList and IndependentTSList
-protected final String _SelectedTS      = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-protected final String _AllTS           = "AllTS";
+public static final String _SelectedTS      = "SelectedTS";
+public static final String _AllMatchingTSID = "AllMatchingTSID";
+public static final String _AllTS           = "AllTS";
 public final int _maxCombinationsDefault = 20;
 
 // Run mode flag. 
@@ -425,11 +425,11 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	if ( isCommandMode() ) {
-		return ( new FillMixedStation_JDialog ( parent, this ) ).ok();
-	} else {
-		return ( new FillMixedStation_JDialog ( parent, this, 0 ) ).ok();
-	}	
+	//if ( isCommandMode() ) {
+		return ( new FillPrincipalComponentAnalysis_JDialog ( parent, this ) ).ok();
+	//} else {
+		//return ( new FillPrincipalComponentAnalysis_JDialog ( parent, this, 0 ) ).ok();
+	//}
 }
 
 /**

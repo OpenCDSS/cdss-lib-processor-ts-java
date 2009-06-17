@@ -99,6 +99,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 // Table commands.
 
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 
 // Time-related commands.
 
@@ -745,6 +746,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteSummary") ) {
 		return new WriteSummary_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTableToDelimitedFile") ) {
+        return new WriteTableToDelimitedFile_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTimeSeriesProperty") ) {
         return new WriteTimeSeriesProperty_Command ();
     }

@@ -12,6 +12,7 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -21,6 +22,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -59,8 +61,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -70,6 +71,7 @@ throws InvalidCommandParameterException
     String TableRowEnd = parameters.getValue ( "TableRowEnd" );
     String OutputStart = parameters.getValue ( "OutputStart" );
     String NewScenario = parameters.getValue ( "NewScenario" );
+    String Alias = parameters.getValue ( "Alias" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -81,16 +83,14 @@ throws InvalidCommandParameterException
 	if ( (TableID == null) || (TableID.length() == 0) ) {
 		message = "The table identifier must be specified.";
 		warning += "\n" + message;
-		status.addToLog ( CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify a table identifier." ) );
+		status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+			message, "Specify a table identifier." ) );
 	}
     if ( (TableColumn == null) || (TableColumn.length() == 0) ) {
         message = "The table column must be specified.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a table row for the year sequence." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify a table column name for the year sequence." ) );
     }
     /* TODO SAM Evaluate whether column numbers will be allowed or whether name is required
     else {
@@ -161,12 +161,12 @@ throws InvalidCommandParameterException
         }
     }
     */
-    if ( (NewScenario == null) || (NewScenario.length() == 0) ) {
-        message = "The new scenario must be specified to differentiate output from input time series.";
+    if ( ((NewScenario == null) || (NewScenario.length() == 0)) &&
+        ((Alias == null) || (Alias.length() == 0))) {
+        message = "The new scenario and/or alias must be specified to differentiate output from input time series.";
         warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a new scenario." ) );
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify a new scenario and/or alias." ) );
     }
 
 	// Check for invalid parameters...
@@ -181,6 +181,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "OutputStart" );
     //valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "NewScenario" );
+    valid_Vector.add ( "Alias" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -384,8 +385,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -407,6 +407,7 @@ CommandWarningException, CommandException
 	}
 	String TSID = parameters.getValue ( "TSID" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
+	String Alias = parameters.getValue("Alias");
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -582,22 +583,18 @@ CommandWarningException, CommandException
     catch ( Exception e ) {
         message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
         Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report problem to software support." ) );
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
     }
     bean_PropList = bean.getResultsPropList();
     Object o_Table = bean_PropList.getContents ( "Table" );
     if ( o_Table == null ) {
         message = "Unable to find table to process using TableID=\"" + TableID + "\".";
         Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report problem to software support." ) );
+        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
     }
     DataTable table = (DataTable)o_Table;
     
@@ -615,11 +612,9 @@ CommandWarningException, CommandException
         catch ( Exception e ) {
             message = "Unable to determine column number from column name \"" + TableColumn + "\".";
             Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the table has a column matching \"" + TableColumn + "\"." ) );
+            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the table has a column matching \"" + TableColumn + "\"." ) );
             throw new CommandException ( message );
         }
     }
@@ -632,16 +627,14 @@ CommandWarningException, CommandException
     int [] year_sequence = null;
     try {
         year_sequence = getTableColumn ( table, TableColumn_int, TableRowStart_int, TableRowEnd_int,
-                command_tag, warning_level, status );
+            command_tag, warning_level, status );
     }
     catch ( Exception e ) {
         message = "Error getting year sequence from table.";
         Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Check the table format and parameters that specify the cells to use." ) );
+        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Check the table format and parameters that specify the cells to use." ) );
         throw new CommandException ( message );
     }
 
@@ -661,14 +654,14 @@ CommandWarningException, CommandException
         if ( ts.getDataIntervalBase() != TimeInterval.MONTH ) {
             message = "Resequencing can currently only be applied to monthly time series.";
             Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify only monthly time series to the command." ) );
+            MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify only monthly time series to the command." ) );
         }
         newts = (TS)ts.clone();
-        newts.getIdentifier().setScenario(NewScenario);
+        if ( (NewScenario != null) && (NewScenario.length() > 0) ) {
+            newts.getIdentifier().setScenario(NewScenario);
+        }
         // Allocate space for the new time series, for the requested years...
         // Make sure that the start date is Jan 1 of the specified year
         DateTime OutputStart_new_DateTime = new DateTime(ts.getDate1());
@@ -685,6 +678,14 @@ CommandWarningException, CommandException
         newts.allocateDataSpace();
         // Set all data to missing so as to not confuse with old data...
         TSUtil.setConstant ( newts, newts.getMissing() );
+        // Reset the description because don't want any extra information like constant note
+        newts.setDescription ( ts.getDescription() );
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            // Set the alias to the desired string - this is impacted by the Scenario parameter
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, ts, Alias, status, CommandPhaseType.RUN);
+            newts.setAlias ( alias );
+        }
 
         // Now resequence the data...
         try {
@@ -701,11 +702,10 @@ CommandWarningException, CommandException
         catch ( Exception e ) {
             message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level, 
-                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
-            status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Check log file for details." ) );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Check log file for details." ) );
             throw new CommandException ( message );
         }
         
@@ -717,9 +717,7 @@ CommandWarningException, CommandException
     if ( warning_count > 0 ) {
         message = "There were " + warning_count + " warnings processing the command.";
         Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag(
-            command_tag, ++warning_count),
-            routine,message);
+            MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
         throw new CommandWarningException ( message );
     }
 	
@@ -744,6 +742,7 @@ public String toString ( PropList parameters )
     String OutputStart = parameters.getValue("OutputStart");
     //String OutputEnd = parameters.getValue("OutputEnd");
     String NewScenario = parameters.getValue ( "NewScenario" );
+    String Alias = parameters.getValue("Alias");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -803,6 +802,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "NewScenario=\"" + NewScenario + "\"" );
+    }
+    if ((Alias != null) && (Alias.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Alias=\"" + Alias + "\"");
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

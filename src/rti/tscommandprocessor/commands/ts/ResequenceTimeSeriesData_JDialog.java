@@ -58,6 +58,7 @@ private SimpleJComboBox __TableRowStart_JComboBox = null;
 private SimpleJComboBox __TableRowEnd_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;// Start of period for output
 private JTextField __NewScenario_JTextField = null;
+private JTextField __Alias_JTextField = null; // Alias to assign to result
 private boolean	__error_wait = false;	// Is there an error to be cleared up?
 private boolean	__first_time = true;
 private boolean	__ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -133,6 +134,7 @@ private void checkInput ()
     String TableRowEnd = __TableRowEnd_JComboBox.getSelected();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String NewScenario = __NewScenario_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -163,7 +165,11 @@ private void checkInput ()
     if ( NewScenario.length() > 0 ) {
         parameters.set ( "NewScenario", NewScenario );
     }
-	try {	// This will warn the user...
+    if (Alias.length() > 0) {
+        parameters.set("Alias", Alias);
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -187,6 +193,7 @@ private void commitEdits ()
     String TableRowEnd = __TableRowEnd_JComboBox.getSelected();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String NewScenario = __NewScenario_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -196,6 +203,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableRowEnd", TableRowEnd );
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "NewScenario", NewScenario );
+    __command.setCommandParameter("Alias", Alias);
 }
 
 /**
@@ -248,17 +256,15 @@ private void initialize ( JFrame parent, Command command )
         "Currently, only resequencing of monthly time series using calendar years is supported." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "An identifier for the table with the new year sequence must be specified."),
+        "An identifier for the table with the new year sequence must be specified, and each sequence of " +
+        "years must be provided in a column with a unique column heading."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The year sequence must be specified in a table having a column of years." ),
+        "The resulting time series will start in the indicated year and have a time series identifier that is " +
+        "the same as the original time series, additionally with the indicated scenario." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The results will start in the indicated year and be identified by the indicated scenario." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "A new scenario for the time series must be specified to differentiate the output from" +
-        " the input time series."),
+        "If not specified, the output start is taken from the global output start or the time series." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -306,6 +312,17 @@ private void initialize ( JFrame parent, Command command )
     __TableColumn_JComboBox.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableColumn_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column name for year sequence."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("New scenario:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewScenario_JTextField = new JTextField (10);
+    __NewScenario_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __NewScenario_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - for TSID of new time series."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("First row number in table for year sequence:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -317,8 +334,7 @@ private void initialize ( JFrame parent, Command command )
     __TableRowStart_JComboBox.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableRowStart_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Default is first row in column."),
+   JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is first row in column."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
             
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Last row number in table for year sequence:"),
@@ -331,8 +347,7 @@ private void initialize ( JFrame parent, Command command )
     __TableRowEnd_JComboBox.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TableRowEnd_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Default is last row in column."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is last row in column."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
@@ -342,16 +357,17 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Year for start of resequenced time series."),
+        "Optional - starting year of resequenced time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("New scenario:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewScenario_JTextField = new JTextField (10);
-    __NewScenario_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __NewScenario_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For TSID of new time series."),
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new JTextField ( 30 );
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location, %T for data type, %Z for scenario.");
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -444,6 +460,7 @@ private void refresh ()
     String TableRowEnd = "";
     String OutputStart = "";
     String NewScenario = "";
+    String Alias = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -459,6 +476,7 @@ private void refresh ()
         TableRowEnd = parameters.getValue ( "TableRowEnd" );
         OutputStart = parameters.getValue("OutputStart");
         NewScenario = parameters.getValue ( "NewScenario" );
+        Alias = parameters.getValue("Alias");
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( 0 );
@@ -582,6 +600,9 @@ private void refresh ()
         if ( NewScenario != null ) {
             __NewScenario_JTextField.setText(NewScenario);
         }
+        if (Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -592,6 +613,7 @@ private void refresh ()
     TableRowEnd = __TableRowEnd_JComboBox.getSelected();
     OutputStart = __OutputStart_JTextField.getText().trim();
     NewScenario = __NewScenario_JTextField.getText().trim();
+    Alias = __Alias_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "TSID=" + TSID );
@@ -601,6 +623,7 @@ private void refresh ()
     parameters.add ( "TableRowEnd=" + TableRowEnd );
     parameters.add ( "OutputStart=" + OutputStart );
     parameters.add ( "NewScenario=" + NewScenario );
+    parameters.add("Alias=" + Alias);
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }
 

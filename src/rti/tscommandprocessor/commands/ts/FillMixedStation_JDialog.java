@@ -36,12 +36,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.File;
 import java.util.List;
 import java.util.Vector;
-
-import java.io.FileReader;
-import java.io.BufferedReader;
 
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -758,7 +754,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 */
 private void initialize ( JFrame parent )
-{	String mthd = getClass().getName() + ".initialize", mssg;
+{	String mthd = getClass().getName() + ".initialize";
 
 	// GUI Title
 	if ( __command != null ) {
@@ -1350,36 +1346,6 @@ Handle mouse released event.
 */
 public void mouseReleased ( MouseEvent event )
 {
-}
-
-/**
-Read the content of a text file, returning a vector of strings, one string per line.
-@param fileName - The file (path and file) to read.
-*/
-private List readTextFile ( String fileName )
-{
-	List _fileContent = new Vector(); // The return vector.
-	FileReader _fileReader; // The actual file stream.
-	BufferedReader _bufferedReader ; // Used to read the file line by line.
-	String line;
-
-	try {
-		String adjusted_path = IOUtil.adjustPath ( __working_dir, fileName);
-		_fileReader = new FileReader ( new File( adjusted_path ) );
-		_bufferedReader = new BufferedReader( _fileReader );
-
-		do {
-			line = _bufferedReader.readLine();
-			if( line!=null ) _fileContent.add( line );
-		} while( line!=null  );
-
-	} catch( Exception e ) {
-		Message.printWarning ( 1, "", "Error reading file." );
-		this.requestFocus();
-		return null;
-	}
-
-	return _fileContent;
 }
 
 /**

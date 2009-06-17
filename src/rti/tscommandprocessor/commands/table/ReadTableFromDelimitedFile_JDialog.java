@@ -52,10 +52,10 @@ private boolean __first_time = true;	// Indicate first time display
 private JTextArea __command_JTextArea=null;// For command
 private JTextField  __TableID_JTextField = null;
 private JTextField __InputFile_JTextField = null;
-private JTextField __SkipRows_JTextField = null;
+private JTextField __SkipLines_JTextField = null;
 // FIXME SAM 2008-01-27 Enable later
 //private JTextField __SkipColumns_JTextField = null;
-private JTextField __HeaderRows_JTextField = null;
+private JTextField __HeaderLines_JTextField = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;	
 private SimpleJButton __browse_JButton = null;
@@ -110,17 +110,12 @@ public void actionPerformed(ActionEvent event)
 		response ( false );
 	}
 	else if ( o == __ok_JButton ) {
-        try {
 		refresh ();
 		checkInput ();
 		if ( !__error_wait ) {
 			// Command has been edited...
 			response ( true );
 		}
-        }
-        catch ( Exception e ) {
-            Message.printWarning(2, "", e);
-        }
 	}
 	else if ( o == __path_JButton ) {
 		if (__path_JButton.getText().equals( __AddWorkingDirectoryToFile)) {
@@ -150,9 +145,9 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
     String TableID = __TableID_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
-	String SkipRows = __SkipRows_JTextField.getText().trim();
+	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
-	String HeaderRows = __HeaderRows_JTextField.getText().trim();
+	String HeaderLines = __HeaderLines_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TableID.length() > 0 ) {
@@ -161,21 +156,22 @@ private void checkInput ()
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
-	if ( SkipRows.length() > 0 ) {
-		props.set ( "SkipRows", SkipRows );
+	if ( SkipLines.length() > 0 ) {
+		props.set ( "SkipLines", SkipLines );
 	}
 	//if ( SkipColumns.length() > 0 ) {
 	//	props.set ( "Columns", SkipColumns );
 	//}
-	if ( HeaderRows.length() > 0 ) {
-		props.set ( "HeaderRows", HeaderRows );
+	if ( HeaderLines.length() > 0 ) {
+		props.set ( "HeaderLines", HeaderLines );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
         Message.printWarning(2,"", e);
-		// The warning would have b;een printed in the check code.
+		// The warning would have been printed in the check code.
 		__error_wait = true;
 	}
 }
@@ -187,14 +183,14 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String TableID = __TableID_JTextField.getText().trim();
     String InputFile = __InputFile_JTextField.getText().trim();
-	String SkipRows = __SkipRows_JTextField.getText().trim();
+	String SkipLines = __SkipLines_JTextField.getText().trim();
 	//String SkipColumns = __SkipColumns_JTextField.getText().trim();
-	String HeaderRows = __HeaderRows_JTextField.getText().trim();
+	String HeaderLines = __HeaderLines_JTextField.getText().trim();
     __command.setCommandParameter ( "TableID", TableID );
 	__command.setCommandParameter ( "InputFile", InputFile );
-	__command.setCommandParameter ( "SkipRows", SkipRows );
+	__command.setCommandParameter ( "SkipLines", SkipLines );
 	//__command.setCommandParameter ( "SkipColumns", SkipColumns );
-	__command.setCommandParameter ( "HeaderRows", HeaderRows );
+	__command.setCommandParameter ( "HeaderLines", HeaderLines );
 }
 
 /**
@@ -203,7 +199,7 @@ Free memory for garbage collection.
 protected void finalize ()
 throws Throwable
 {	__InputFile_JTextField = null;
-	__SkipRows_JTextField = null;
+	__SkipLines_JTextField = null;
 	__browse_JButton = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
@@ -241,16 +237,33 @@ private void initialize ( JFrame parent, Command command )
 	int yy = 0;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-	"This command reads a table from a delimited file."),
+	"This command reads a table from a delimited file.  The table can then be used by other commands."),
 	0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(paragraph, new JLabel (
-                "The table can then be used by other commands."),
-	0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(paragraph, new JLabel (
-		"Columns should be delimited by commas (user-specified" +
-		" delimiters will be added in the future)."),
+		"Columns in the file should be delimited by commas (user-specified delimiters will be added " +
+		"in the future)."),
 		0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "An example data file is shown below (line and data row numbers are shown on the left for illustration):"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "<html><pre>\n" +
+        "   1     | # This is a comment\n" +
+        "   2     | # This is another comment\n" +
+        "   3     | # Double-quoted fields in the 1st non-comment line will be treated as headers (see also HeaderLines)\n" +
+        "   4     | \"Header1\",\"Header2\",\"Header3\"\n" +
+        "   5   1 | 1,1.0,1.5\n" +
+        "   6   2 | 2,2.0,3.0\n" +
+        "   7     | # Embedded comment will be skipped - the above data rows are 1-2 and the following data row is 3\n" +
+        "   8   3 | 3,3.0,4.5</pre></html>"),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Lines in the file starting with # are treated as comments and are skipped during the read.  " +
+        "Header lines and skipped lines are also not included as row data after the read."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(paragraph, new JLabel (
+        "Non-comment lines, once read, are called \"rows\" and are numbered 1+ for row-based processing."),
+        0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
 		"It is recommended that the location of the files be " +
 		"specified using a path relative to the working directory."),
@@ -272,8 +285,7 @@ private void initialize ( JFrame parent, Command command )
     __TableID_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TableID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Provide a unique identifier for the table."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - unique identifier for the table."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input file:"),
@@ -286,14 +298,14 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("File lines to skip:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SkipRows_JTextField = new JTextField (10);
-    __SkipRows_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
+    __SkipLines_JTextField = new JTextField (10);
+    __SkipLines_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SkipLines_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify as comma-separated numbers or ranges."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - comma-separated line numbers or ranges (e.g., 1,5-6)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
         /*
@@ -308,13 +320,14 @@ private void initialize ( JFrame parent, Command command )
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 		*/
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Row containing column names (header):"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("File line containing column names:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__HeaderRows_JTextField = new JTextField (10);
-	__HeaderRows_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __HeaderRows_JTextField,
+	__HeaderLines_JTextField = new JTextField (10);
+	__HeaderLines_JTextField.addKeyListener (this);
+        JGUIUtil.addComponent(main_JPanel, __HeaderLines_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify row number 1+." ),
+   	JGUIUtil.addComponent(main_JPanel,
+   	    new JLabel ( "Optional - specify line number 1+ (default=first row if double quoted)." ),
 		//"Specify as a range (e.g., \"5-7\")."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
@@ -342,11 +355,11 @@ private void initialize ( JFrame parent, Command command )
 		button_JPanel.add (__path_JButton);
 	}
 	__cancel_JButton = new SimpleJButton("Cancel", this);
-		button_JPanel.add (__cancel_JButton);
-		__cancel_JButton.setToolTipText ( "Close window without saving changes." );
-		__ok_JButton = new SimpleJButton("OK", this);
-		button_JPanel.add (__ok_JButton);
-		__ok_JButton.setToolTipText ( "Close window and save changes to command." );
+	button_JPanel.add (__cancel_JButton);
+	__cancel_JButton.setToolTipText ( "Close window without saving changes." );
+	__ok_JButton = new SimpleJButton("OK", this);
+	button_JPanel.add (__ok_JButton);
+	__ok_JButton.setToolTipText ( "Close window and save changes to command." );
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command");
 	setResizable (false);
@@ -399,48 +412,47 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	String TableID = "";
     String InputFile = "";
-	String SkipRows = "";
+	String SkipLines = "";
 	//String SkipColumns = "";
-	String HeaderRows = "";
+	String HeaderLines = "";
 	PropList props = __command.getCommandParameters();
 	if (__first_time) {
 		__first_time = false;
         TableID = props.getValue ( "TableID" );
 		InputFile = props.getValue ( "InputFile" );
-		SkipRows = props.getValue ( "SkipRows" );
+		SkipLines = props.getValue ( "SkipLines" );
 		//SkipColumns = props.getValue ( "SkipColumns" );
-		HeaderRows = props.getValue ( "HeaderRows" );
+		HeaderLines = props.getValue ( "HeaderLines" );
         if ( TableID != null ) {
             __TableID_JTextField.setText ( TableID );
         }
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
-		if ( SkipRows != null ) {
-			__SkipRows_JTextField.setText ( SkipRows );
+		if ( SkipLines != null ) {
+			__SkipLines_JTextField.setText ( SkipLines );
 		}
 		//if ( SkipColumns != null ) {
 		//	__SkipColumns_JTextField.setText ( SkipColumns );
 		//}
-		if ( HeaderRows != null ) {
-			__HeaderRows_JTextField.setText ( HeaderRows );
+		if ( HeaderLines != null ) {
+			__HeaderLines_JTextField.setText ( HeaderLines );
 		}
 	}
 	// Regardless, reset the command from the fields...
     TableID = __TableID_JTextField.getText().trim();
 	InputFile = __InputFile_JTextField.getText().trim();
-	SkipRows = __SkipRows_JTextField.getText().trim();
+	SkipLines = __SkipLines_JTextField.getText().trim();
 	//SkipColumns = __SkipColumns_JTextField.getText().trim();
-	HeaderRows = __HeaderRows_JTextField.getText().trim();
+	HeaderLines = __HeaderLines_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TableID=" + TableID );
 	props.add ( "InputFile=" + InputFile );
-	props.add ( "SkipRows=" + SkipRows );
+	props.add ( "SkipLines=" + SkipLines );
 	//props.add ( "SkiipColumns=" + SkipColumns );
-	props.add ( "HeaderRows=" + HeaderRows );
+	props.add ( "HeaderLines=" + HeaderLines );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if (__path_JButton != null) {
 		__path_JButton.setEnabled (true);
 		File f = new File (InputFile);
@@ -455,8 +467,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
@@ -481,8 +492,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class
-// implements WindowListener
+// The following methods are all necessary because this class implements WindowListener
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

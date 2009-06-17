@@ -55,16 +55,15 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String TableID = parameters.getValue ( "TableID" );
     String InputFile = parameters.getValue ( "InputFile" );
-	//String SkipRows = parameters.getValue ( "SkipRows" );
+	//String SkipLines = parameters.getValue ( "SkipLines" );
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
-	//String HeaderRows = parameters.getValue ( "HeaderRows" );
+	//String HeaderLines = parameters.getValue ( "HeaderLines" );
 	String warning = "";
     String message;
     
@@ -84,7 +83,8 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the table identifier." ) );
     }
-	try { Object o = processor.getPropContents ( "WorkingDir" );
+	try {
+	    Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
 			working_dir = (String)o;
@@ -174,9 +174,9 @@ throws InvalidCommandParameterException
 	List valid_Vector = new Vector();
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "InputFile" );
-    valid_Vector.add ( "SkipRows" );
+    valid_Vector.add ( "SkipLines" );
     valid_Vector.add ( "SkipColumns" );
-    valid_Vector.add ( "HeaderRows" );
+    valid_Vector.add ( "HeaderLines" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
@@ -186,53 +186,6 @@ throws InvalidCommandParameterException
 	}
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
-}
-
-/**
-Convert a properting containing a number sequence like "1,4-5,13" to zero offset like
-"0,3-4,12".  This method is used to convert user-based parameters that have values 1+
-with internal code values 0+.
-*/
-private String convertNumberSequenceToZeroOffset ( String sequence_param )
-{
-    if ( (sequence_param == null) || (sequence_param.length() == 0) ) {
-        return sequence_param;
-    }
-    StringBuffer b = new StringBuffer();
-    List v = StringUtil.breakStringList ( sequence_param, ", ", StringUtil.DELIM_SKIP_BLANKS );
-    int vsize = 0;
-    if ( v != null ) {
-        vsize = v.size();
-    }
-    for ( int i = 0; i < vsize; i++ ) {
-        String vi = (String)v.get(i);
-        if ( i != 0 ) {
-            b.append (",");
-        }
-        if ( StringUtil.isInteger(vi)) {
-            int index = Integer.parseInt(vi);
-            b.append ( "" + (index - 1) );
-        }
-        else {
-            int pos = vi.indexOf("-");
-            if ( pos >= 0 ) {
-                // Specifying a range of values...
-                int first_in_range = -1;
-                int last_in_range = -1;
-                if ( pos == 0 ) {
-                    // First index is 1 (will be decremented below)...
-                    first_in_range = 1;
-                }
-                else {
-                    // Get first to skip...
-                    first_in_range = Integer.parseInt(vi.substring(0,pos).trim());
-                }
-                last_in_range = Integer.parseInt(vi.substring(pos+1).trim());
-                b.append ( "" + (first_in_range - 1) + "-" + (last_in_range - 1));
-            }
-        }
-    }
-    return b.toString();
 }
 
 /**
@@ -259,7 +212,7 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   DataTable table = getDiscoveryTable();
-List v = null;
+    List v = null;
     if ( (table != null) && (c == table.getClass()) ) {
         v = new Vector();
         v.add ( table );
@@ -274,8 +227,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -286,10 +238,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -300,12 +250,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
@@ -329,19 +276,18 @@ CommandWarningException, CommandException
     String TableID = parameters.getValue ( "TableID" );
 	String InputFile = parameters.getValue ( "InputFile" );
 	//String SkipColumns = parameters.getValue ( "SkipColumns" );
-	String SkipRows = parameters.getValue ( "SkipRows" );
-	String HeaderRows = parameters.getValue ( "HeaderRows" );
-	Message.printStatus( 2, routine, "parameter SkipRows=\"" + SkipRows + "\"");
-	Message.printStatus( 2, routine, "parameter HeaderRows=\"" + HeaderRows + "\"");
+	String SkipLines = parameters.getValue ( "SkipLines" );
+	String HeaderLines = parameters.getValue ( "HeaderLines" );
+	Message.printStatus( 2, routine, "parameter SkipLines=\"" + SkipLines + "\"");
+	Message.printStatus( 2, routine, "parameter HeaderLines=\"" + HeaderLines + "\"");
 
 	String InputFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
 	if ( !IOUtil.fileExists(InputFile_full) ) {
 		message += "\nThe delimited table file \"" + InputFile_full + "\" does not exist.";
 		++warning_count;
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the delimited table file exists." ) );
+        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Verify that the delimited table file exists." ) );
 	}
 
     /* FIXME enable the code
@@ -415,15 +361,17 @@ CommandWarningException, CommandException
 	props.set ( "TrimInput=True" );		// Trim strings after reading.
 	props.set ( "TrimStrings=True" );	// Trim strings after parsing
 	//props.set ( "ColumnDataTypes=Auto" );  // Automatically determine column data types
-	if ( (SkipRows != null) && (SkipRows.length() > 0) ) {
-	    props.set ( "SkipRows=" + convertNumberSequenceToZeroOffset(SkipRows) );
+	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
+	    props.set ( "SkipLines=" + StringUtil.convertNumberSequenceToZeroOffset(SkipLines) );
 	}
-    if ( (HeaderRows != null) && (HeaderRows.length() > 0) ) {
-        props.set ( "HeaderRows=" + convertNumberSequenceToZeroOffset(HeaderRows) );
+    if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
+        props.set ( "HeaderLines=" + StringUtil.convertNumberSequenceToZeroOffset(HeaderLines) );
     }
-    Message.printStatus( 2, routine, "parameter zero index SkipRows=\"" + props.getValue("SkipRows") + "\"");
-    Message.printStatus( 2, routine, "parameter zero index HeaderRows=\"" + props.getValue("HeaderRows") + "\"");
+    Message.printStatus( 2, routine, "parameter zero index SkipLines=\"" + props.getValue("SkipLines") + "\"");
+    Message.printStatus( 2, routine, "parameter zero index HeaderLines=\"" + props.getValue("HeaderLines") + "\"");
 	try {
+	    // Always try to read object data types
+	    props.set("ColumnDataTypes=Auto");
         table = DataTable.parseFile ( InputFile_full, props );
         
         // Set the table identifier...
@@ -433,21 +381,16 @@ CommandWarningException, CommandException
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error read table from delimited file \"" + InputFile_full + "\" (" + e + ").";
-		Message.printWarning ( 2,
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),
-		routine,message );
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file exists and is readable." ) );
+		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
+        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Verify that the file exists and is readable." ) );
 		throw new CommandWarningException ( message );
 	}
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag, ++warning_count),
-			routine,message);
+			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine,message);
 		throw new CommandWarningException ( message );
 	}
     
@@ -493,9 +436,9 @@ public String toString ( PropList props )
 	}
     String TableID = props.getValue( "TableID" );
 	String InputFile = props.getValue( "InputFile" );
-	String SkipRows = props.getValue("SkipRows");
+	String SkipLines = props.getValue("SkipLines");
 	String SkipColumns = props.getValue("SkipColumns");
-	String HeaderRows = props.getValue("HeaderRows");
+	String HeaderLines = props.getValue("HeaderLines");
 	StringBuffer b = new StringBuffer ();
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -509,11 +452,11 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
-	if ( (SkipRows != null) && (SkipRows.length() > 0) ) {
+	if ( (SkipLines != null) && (SkipLines.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "SkipRows=\"" + SkipRows + "\"" );
+		b.append ( "SkipLines=\"" + SkipLines + "\"" );
 	}
 	if ( (SkipColumns != null) && (SkipColumns.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -521,11 +464,11 @@ public String toString ( PropList props )
 		}
 		b.append ( "SkipColumns=\"" + SkipColumns + "\"" );
 	}
-	if ( (HeaderRows != null) && (HeaderRows.length() > 0) ) {
+	if ( (HeaderLines != null) && (HeaderLines.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "HeaderRows=\"" + HeaderRows + "\"" );
+		b.append ( "HeaderLines=\"" + HeaderLines + "\"" );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

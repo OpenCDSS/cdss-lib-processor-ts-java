@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JDialog;
@@ -59,6 +60,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.TS.TS;
+import java.awt.Color;
 import rti.tscommandprocessor.core.TSListType;
 
 public class FillPrincipalComponentAnalysis_JDialog extends JDialog
@@ -125,6 +127,7 @@ private JTextField	__FilledTSOutputFile_JTextField	 = null;
 private SimpleJButton	__browse_JButton = null;
 private SimpleJButton	__browseTS_JButton = null;
 private SimpleJButton	__view_JButton = null;
+private SimpleJButton	__viewTS_JButton = null;
 private SimpleJButton	__cancel_JButton = null;
 private SimpleJButton	__close_JButton = null;
 private SimpleJButton   __analyze_JButton    = null;
@@ -282,7 +285,7 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 
-	if ( o == __view_JButton ) {
+	if ( o == __view_JButton || o == __viewTS_JButton ) {
 
 		PropList reportProp = new PropList("ReportJFrame.props");
 		reportProp.set("TotalWidth=750");
@@ -296,13 +299,13 @@ public void actionPerformed( ActionEvent event )
 		reportProp.set("PrintSize=7");
 		//reportProp.set("PageLength=100");
 		reportProp.set("PageLength=50000");
-		String PCAoutputFile = __PCAOutputFile_JTextField.getText();
-		reportProp.set("Title = " + PCAoutputFile);
+		String outputFile = o ==__view_JButton? __PCAOutputFile_JTextField.getText() : __FilledTSOutputFile_JTextField.getText();
+		reportProp.set("Title = " + outputFile);
 
 		// First add the content of the Output file, if any.
 		List strings = new Vector();
-		if ( !PCAoutputFile.equals("") ) {
-			strings = readTextFile ( PCAoutputFile );
+		if ( !outputFile.equals("") ) {
+			strings = readTextFile ( outputFile );
 		}
 
 		// End instantiate the Report viewer.
@@ -411,6 +414,7 @@ public void actionPerformed( ActionEvent event )
 	 	if ( !__error_wait ) {
 			fillDependents();
 	 	}
+        __viewTS_JButton.setEnabled( true );
 	}
 
 	// Select all time series in the dependent time series list
@@ -640,6 +644,7 @@ throws Throwable
 	__ok_JButton = null;
 	__analyze_JButton = null;
 	__view_JButton = null;
+	__viewTS_JButton = null;
 	__copyFillCommandsToTSTool_JButton = null;
 	__fillDependents_JButton = null;
 
@@ -752,66 +757,71 @@ private void initialize ( JFrame parent )
 	int y = 0, yMain=0;
 
 	// Top comments
-    /*
     JPanel mainNotes_JPanel = new JPanel();
     mainNotes_JPanel.setLayout ( new GridBagLayout());
-     * */
 	if ( __command.isCommandMode() ) {
-		JGUIUtil.addComponent( main_JPanel,
+		JGUIUtil.addComponent( mainNotes_JPanel,
 			new JLabel ( "This command finds"
 				+ " the best fit to fill the dependent time"
 				+ " series with data from the dependent time series."),
 			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	} else {
-		JGUIUtil.addComponent( main_JPanel,
+		JGUIUtil.addComponent( mainNotes_JPanel,
 			new JLabel (
 			    "This tool finds the best fit to fill the dependent time"
 				+ " series with data from the independent time series."),
 			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
 		"The dependent and independent time series " +
 		"can be selected using the TS list parameters:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
 		+ TSListType.ALL_MATCHING_TSID.toString()
 		+ " - time series that have identifiers matching the given TSID parameter "
 		+ "(* will analyze all listed time series)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
 		+ TSListType.ALL_TS.toString()
 		+ " - all time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
 		+ TSListType.FIRST_MATCHING_TSID.toString()
 		+ " - only the first time series matching the given TSID parameter."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
 		+ TSListType.LAST_MATCHING_TSID.toString()
 		+ " - only the last time series matching the given TSID parameter."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
 		+ TSListType.SELECTED_TS.toString()
 		+ " - time series selected with selectTimeSeries() commands."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
 		+ TSListType.SPECIFIED_TSID.toString()
 		+ " - time series selected from the list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
 		"Right-click on the time series area to select or deselect all."
-		+ "  Active only if the TS list selection is \"MatchingTSID\""),
+		+ "  Active only if the TS list selection is \"SpecifiedTSID\""),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-		JGUIUtil.addComponent(main_JPanel, new JLabel (
+		JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-    /*
     JGUIUtil.addComponent( main_JPanel, mainNotes_JPanel,
-        0, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    */
+    0, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    // Panel for analysis
+    y=0;
+    JPanel mainAnalysis_JPanel = new JPanel();
+    mainAnalysis_JPanel.setLayout( new GridBagLayout());
+    mainAnalysis_JPanel.setBorder( BorderFactory.createTitledBorder (
+            BorderFactory.createLineBorder(Color.black),"Analyze" ));
+    JGUIUtil.addComponent( main_JPanel, mainAnalysis_JPanel,
+        0, ++yMain, 1, 1, 0, .5, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// Create a list containing the identifiers needed to populate the
 	// dependent and independent time series controls. 
@@ -854,23 +864,22 @@ private void initialize ( JFrame parent )
 		response ( false );
 	}
 
-	// y=yMain;
 	// How to get the dependent time series list to fill.
-	JGUIUtil.addComponent(main_JPanel, new JLabel ("Dependent TS list:"),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ("Dependent TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DependentTSList_JComboBox = new SimpleJComboBox(false);
     List DepTSList_Vector = new Vector();
     DepTSList_Vector.add ( TSListType.FIRST_MATCHING_TSID.toString());
 	__DependentTSList_JComboBox.setData ( DepTSList_Vector );
 	__DependentTSList_JComboBox.addItemListener (this);
-	JGUIUtil.addComponent(main_JPanel, __DependentTSList_JComboBox,
+	JGUIUtil.addComponent(mainAnalysis_JPanel, __DependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel (
 		"Required - How to get the dependent time series to fill."),
 		7, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	// Dependent time series list.
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel (
 		"Dependent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
@@ -892,15 +901,15 @@ private void initialize ( JFrame parent )
 	__DependentTSID_SimpleJList.addKeyListener ( this );
 	__DependentTSID_SimpleJList.addMouseListener ( this );
 	__DependentTSID_SimpleJList.setEnabled(false);
-	JGUIUtil.addComponent( main_JPanel,
+	JGUIUtil.addComponent( mainAnalysis_JPanel,
 		new JScrollPane(__DependentTSID_SimpleJList),
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - Select one."),
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Required - Select one."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// How to get the independent time series.
 	++y;
-	JGUIUtil.addComponent(main_JPanel, new JLabel ("Independent TS list:"),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ("Independent TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IndependentTSList_JComboBox = new SimpleJComboBox(false);
     List IndepTSList_Vector = new Vector();
@@ -915,14 +924,14 @@ private void initialize ( JFrame parent )
     ignoreValueChanged = true;
     //__IndependentTSList_JComboBox.select(TSListType.SPECIFIED_TSID.toString());
     ignoreValueChanged = false;
-	JGUIUtil.addComponent(main_JPanel, __IndependentTSList_JComboBox,
+	JGUIUtil.addComponent(mainAnalysis_JPanel, __IndependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel (
 		"Required - How to get the independent time series."),
 		7, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	// Independent time series list
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel (
 		"Independent time series:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
@@ -949,136 +958,213 @@ private void initialize ( JFrame parent )
 	__IndependentTSID_SimpleJList.addKeyListener           ( this );
 	__IndependentTSID_SimpleJList.addMouseListener         ( this );
 	__IndependentTSID_SimpleJList.setEnabled(false);
-	JGUIUtil.addComponent(main_JPanel,
+	JGUIUtil.addComponent(mainAnalysis_JPanel,
 		new JScrollPane(__IndependentTSID_SimpleJList),
 		1, y, 6, 1, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - Select all to include in analysis."),
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Required - Select all to include in analysis."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     resetTimeSeriesList();
 
 	// Analysis period
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Analysis period:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AnalysisStart_JTextField = new JTextField ( "", 25 );
 	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel,
+	JGUIUtil.addComponent(mainAnalysis_JPanel,
 		__AnalysisStart_JTextField,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "to" ),
 		2, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 	__AnalysisEnd_JTextField = new JTextField ( "", 25 );
 	__AnalysisEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
+	JGUIUtil.addComponent(mainAnalysis_JPanel, __AnalysisEnd_JTextField,
 		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Optional."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	// Fill Period
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill period:" ),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__FillStart_JTextField = new JTextField ( "", 25 );
-	__FillStart_JTextField.addKeyListener ( this );
-	__FillStart_JTextField.setEnabled ( false );
-	JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ),
-		2, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__FillEnd_JTextField = new JTextField ( "", 25 );
-	__FillEnd_JTextField.addKeyListener ( this );
-	__FillEnd_JTextField.setEnabled ( false );
-	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
-		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional."),
-		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+	
 	// MaxCombinations
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum Combinations:" ),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Maximum Combinations:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MaxCombinations_JTextField = new JTextField ( "", 25 );
 	__MaxCombinations_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __MaxCombinations_JTextField,
+	JGUIUtil.addComponent(mainAnalysis_JPanel, __MaxCombinations_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - Number of equations returned."),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Optional - Number of equations returned."),
 		7, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	// regression equation to use for fill
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Regression Equation:" ),
+	
+	// File to save PCA results.
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel (
+		"PCA Output file:" ),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__PCAOutputFile_JTextField = new JTextField ( 50 );
+	__PCAOutputFile_JTextField.addKeyListener ( this );
+	JGUIUtil.addComponent(mainAnalysis_JPanel, __PCAOutputFile_JTextField,
+		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	__browse_JButton = new SimpleJButton ( "Browse", this );
+	__browse_JButton.setToolTipText( "Browse to select analysis output file." );
+	JGUIUtil.addComponent(mainAnalysis_JPanel, __browse_JButton,
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Required - PCA analysis results."),
+		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    if ( !__command.isCommandMode() ) {
+        JPanel buttonAnalyze_JPanel = new JPanel();
+        buttonAnalyze_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(mainAnalysis_JPanel, buttonAnalyze_JPanel,
+            0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+		// Analyze button: used only when running as a TSTool tool.
+		__analyze_JButton = new SimpleJButton(__analyze_String, this);
+		__analyze_JButton .setToolTipText( __analyze_Tip );
+		buttonAnalyze_JPanel.add ( __analyze_JButton );
+
+		// View button: used only when running as a TSTool tool.
+		__view_JButton = new SimpleJButton ( __view_String, this );
+		__view_JButton.setToolTipText( __view_Tip );
+		__view_JButton.setEnabled( false );
+		buttonAnalyze_JPanel.add ( __view_JButton );
+    }
+
+    JPanel mainFill_JPanel = new JPanel();
+    mainFill_JPanel.setLayout( new GridBagLayout() );
+    mainFill_JPanel.setBorder( BorderFactory.createTitledBorder (
+            BorderFactory.createLineBorder(Color.black),"Fill Using Analysis Results" ));
+    JGUIUtil.addComponent( main_JPanel, mainFill_JPanel,
+            0, ++yMain, 1, 1, 0, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+    // regression equation to use for fill
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel ("Regression Equation:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RegressionEquationFill_SimpleJComboBox = new SimpleJComboBox (false);
 	__RegressionEquationFill_SimpleJComboBox.addItemListener(this);
 	__RegressionEquationFill_SimpleJComboBox.addKeyListener( this );
 	__RegressionEquationFill_SimpleJComboBox.addMouseListener( this );
 	__RegressionEquationFill_SimpleJComboBox.setEnabled(false);
-	JGUIUtil.addComponent(main_JPanel,
+	JGUIUtil.addComponent(mainFill_JPanel,
 		new JScrollPane(__RegressionEquationFill_SimpleJComboBox),
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required to fill - Select index of desired equation to use for filling missing data."),
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Required to fill - Select index of desired equation to use for filling missing data."),
 		7, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// File to save PCA results.
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"PCA Output file:" ),
+
+    // Fill Period
+	JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill period:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__PCAOutputFile_JTextField = new JTextField ( 50 );
-	__PCAOutputFile_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __PCAOutputFile_JTextField,
-		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__browse_JButton = new SimpleJButton ( "Browse", this );
-	__browse_JButton.setToolTipText( "Browse to select analysis output file." );
-	JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - PCA analysis results."),
+	__FillStart_JTextField = new JTextField ( "", 25 );
+	__FillStart_JTextField.addKeyListener ( this );
+	__FillStart_JTextField.setEnabled ( false );
+	JGUIUtil.addComponent(mainFill_JPanel, __FillStart_JTextField,
+		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "to" ),
+		2, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+	__FillEnd_JTextField = new JTextField ( "", 25 );
+	__FillEnd_JTextField.addKeyListener ( this );
+	__FillEnd_JTextField.setEnabled ( false );
+	JGUIUtil.addComponent(mainFill_JPanel, __FillEnd_JTextField,
+		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Optional."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// File to save TS results.
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	JGUIUtil.addComponent(mainFill_JPanel, new JLabel (
 		"Filled TS Output file:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FilledTSOutputFile_JTextField = new JTextField ( 50 );
 	__FilledTSOutputFile_JTextField.addKeyListener ( this );
 	__FilledTSOutputFile_JTextField.setEnabled ( false );
-	JGUIUtil.addComponent(main_JPanel, __FilledTSOutputFile_JTextField,
+	JGUIUtil.addComponent(mainFill_JPanel, __FilledTSOutputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browseTS_JButton = new SimpleJButton ( "Browse", this );
 	__browseTS_JButton.setToolTipText( "Browse to select filled time series output file." );
-	JGUIUtil.addComponent(main_JPanel, __browseTS_JButton,
+	JGUIUtil.addComponent(mainFill_JPanel, __browseTS_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __browseTS_JButton.setEnabled ( false );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required to fill - filled time series results."),
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Required to fill - filled time series results."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    if ( !__command.isCommandMode() ) {
+        JPanel buttonFill_JPanel = new JPanel();
+        buttonFill_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(mainFill_JPanel, buttonFill_JPanel,
+            0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+        // fillDependents button: used only when running as a tool.
+		__fillDependents_JButton = new SimpleJButton(__fillDependents_String, this);
+		__fillDependents_JButton .setToolTipText( __fillDependents_Tip );
+		__fillDependents_JButton.setEnabled( false );
+		buttonFill_JPanel.add ( __fillDependents_JButton );
+
+        // View button: used only when running as a TSTool tool.
+		__viewTS_JButton = new SimpleJButton ( __view_String, this );
+		__viewTS_JButton.setToolTipText( __view_Tip );
+		__viewTS_JButton.setEnabled( false );
+		buttonFill_JPanel.add ( __viewTS_JButton );
+
+    }
+
+    JPanel mainTransfer_JPanel = new JPanel();
+    mainTransfer_JPanel.setLayout( new GridBagLayout() );
+    mainTransfer_JPanel.setBorder( BorderFactory.createTitledBorder (
+            BorderFactory.createLineBorder(Color.black),"Transfer Analysis Parameters/Results to Commands" ));
+    JGUIUtil.addComponent( main_JPanel, mainTransfer_JPanel,
+            0, ++yMain, 1, 1, 0, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+    y=0;
 	// Command - Currently showing only under the command mode
 	if ( __command.isCommandMode() ) {
 		__Command_JLabel = new JLabel ( "Command:" );
-		JGUIUtil.addComponent(main_JPanel, __Command_JLabel,
+		JGUIUtil.addComponent(mainTransfer_JPanel, __Command_JLabel,
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Command_JTextArea = new JTextArea (2,55);
+		__Command_JTextArea = new JTextArea (7,80);
 		__Command_JTextArea.setLineWrap ( true );
 		__Command_JTextArea.setWrapStyleWord ( true );
 		__Command_JTextArea.setEditable ( false );
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
-		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
+		JGUIUtil.addComponent(mainTransfer_JPanel, __Command_JScrollPane,
 			1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	} else {
 		// These controls will initialially be invisible. Only when commands
 		// are available they will be set visible.
+        JPanel buttonTransferTop_JPanel = new JPanel();
+        buttonTransferTop_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(mainTransfer_JPanel, buttonTransferTop_JPanel,
+            0, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+        // createFillCommands button: used only when running as a tool.
+		__createFillCommands_JButton = new SimpleJButton(__createFillCommands_String, this);
+		__createFillCommands_JButton .setToolTipText(__createFillCommands_Tip );
+		__createFillCommands_JButton.setEnabled( false );
+		buttonTransferTop_JPanel.add ( __createFillCommands_JButton );
+
 		__Command_JLabel = new JLabel ( "Fill Commands:" );
-		JGUIUtil.addComponent(main_JPanel, __Command_JLabel,
+		JGUIUtil.addComponent(mainTransfer_JPanel, __Command_JLabel,
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Command_JLabel.setVisible ( false );
-		__Command_JTextArea = new JTextArea (2,55);
-		__Command_JTextArea.setLineWrap		( true );
-		__Command_JTextArea.setWrapStyleWord	( true );
-		__Command_JTextArea.setEditable		( false );
-		__PCAOutputFile_JTextField.setEditable	( false );
-		__Command_JTextArea.setBackground	(
-			__PCAOutputFile_JTextField.getBackground());
+		__Command_JTextArea = new JTextArea (7,80);
+		__Command_JTextArea.setLineWrap ( true );
+		__Command_JTextArea.setWrapStyleWord ( true );
+		__Command_JTextArea.setEditable ( false );
+		__PCAOutputFile_JTextField.setEditable ( false );
+		__Command_JTextArea.setBackground (__PCAOutputFile_JTextField.getBackground());
 		__PCAOutputFile_JTextField.setEditable ( true );
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
-		JGUIUtil.addComponent(main_JPanel, __Command_JScrollPane,
-			1, y, 6, 2, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		JGUIUtil.addComponent(mainTransfer_JPanel, __Command_JScrollPane,
+			1, y, 9, 4, 1, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 		__Command_JScrollPane.setVisible (false );
 		__Command_JTextArea.setVisible   ( false );
+
+        y += 4;
+        JPanel buttonTransfer_JPanel = new JPanel();
+        buttonTransfer_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(mainTransfer_JPanel, buttonTransfer_JPanel,
+            0, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+		// copyCommandsToTSTool button: used only when running as a tool.
+		__copyFillCommandsToTSTool_JButton = new SimpleJButton(__copyCommandsToTSTool_String, this);
+		__copyFillCommandsToTSTool_JButton.setToolTipText( __copyCommandsToTSTool_Tip );
+		__copyFillCommandsToTSTool_JButton.setEnabled( false );
+		buttonTransfer_JPanel.add ( __copyFillCommandsToTSTool_JButton );
 	}
 
 	// Refresh the contents...
@@ -1109,50 +1195,15 @@ private void initialize ( JFrame parent )
 		__ok_JButton = new SimpleJButton(__ok_String, this);
 		__ok_JButton .setToolTipText( __ok_Tip );
 		button_JPanel.add ( __ok_JButton );
-	} else {
-		// Analyze button: used only when running as a TSTool tool.
-		__analyze_JButton = new SimpleJButton(__analyze_String, this);
-		__analyze_JButton .setToolTipText( __analyze_Tip );
-		button_JPanel.add ( __analyze_JButton );
-
-		// View button: used only when running as a TSTool tool.
-		__view_JButton = new SimpleJButton ( __view_String, this );
-		__view_JButton.setToolTipText( __view_Tip );
-		__view_JButton.setEnabled( false );
-		button_JPanel.add ( __view_JButton );
-
-		// createFillCommands button: used only when running as a tool.
-		__createFillCommands_JButton =
-			new SimpleJButton(__createFillCommands_String, this);
-		__createFillCommands_JButton .setToolTipText(
-			__createFillCommands_Tip );
-		__createFillCommands_JButton.setEnabled( false );
-		button_JPanel.add ( __createFillCommands_JButton );
-
-		// copyCommandsToTSTool button: used only when running as a tool.
-		__copyFillCommandsToTSTool_JButton =
-			new SimpleJButton(__copyCommandsToTSTool_String, this);
-		__copyFillCommandsToTSTool_JButton .setToolTipText(
-			__copyCommandsToTSTool_Tip );
-		__copyFillCommandsToTSTool_JButton.setEnabled( false );
-		button_JPanel.add ( __copyFillCommandsToTSTool_JButton );
-
-		// fillDependents button: used only when running as a tool.
-		__fillDependents_JButton =
-			new SimpleJButton(__fillDependents_String, this);
-		__fillDependents_JButton .setToolTipText(
-			__fillDependents_Tip );
-		__fillDependents_JButton.setEnabled( false );
-		button_JPanel.add ( __fillDependents_JButton );
 	}
+
 
 	// Set up the status bar.
 	__statusJTextField = new JTextField();
 	__statusJTextField.setEditable(false);
 	JPanel statusJPanel = new JPanel();
 	statusJPanel.setLayout(new GridBagLayout());
-	JGUIUtil.addComponent(statusJPanel, __statusJTextField,
-		0, 0, 1, 1, 1, 1,
+	JGUIUtil.addComponent(statusJPanel, __statusJTextField, 0, 0, 1, 1, 1, 1,
 		GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 	getContentPane().add ( "South", statusJPanel);
 

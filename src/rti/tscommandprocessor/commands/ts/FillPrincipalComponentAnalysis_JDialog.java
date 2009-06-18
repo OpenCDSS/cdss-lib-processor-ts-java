@@ -749,9 +749,13 @@ private void initialize ( JFrame parent )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "Center", main_JPanel );
-	int y = 0;
+	int y = 0, yMain=0;
 
 	// Top comments
+    /*
+    JPanel mainNotes_JPanel = new JPanel();
+    mainNotes_JPanel.setLayout ( new GridBagLayout());
+     * */
 	if ( __command.isCommandMode() ) {
 		JGUIUtil.addComponent( main_JPanel,
 			new JLabel ( "This command finds"
@@ -804,6 +808,10 @@ private void initialize ( JFrame parent )
 		"The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
+    /*
+    JGUIUtil.addComponent( main_JPanel, mainNotes_JPanel,
+        0, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    */
 
 	// Create a list containing the identifiers needed to populate the
 	// dependent and independent time series controls. 
@@ -846,7 +854,7 @@ private void initialize ( JFrame parent )
 		response ( false );
 	}
 
-	
+	// y=yMain;
 	// How to get the dependent time series list to fill.
 	JGUIUtil.addComponent(main_JPanel, new JLabel ("Dependent TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -904,7 +912,9 @@ private void initialize ( JFrame parent )
     IndepTSList_Vector.add ( TSListType.SPECIFIED_TSID.toString() );
 	__IndependentTSList_JComboBox.setData ( IndepTSList_Vector );
 	__IndependentTSList_JComboBox.addItemListener (this);
-    __IndependentTSList_JComboBox.select(TSListType.SPECIFIED_TSID.toString());
+    ignoreValueChanged = true;
+    //__IndependentTSList_JComboBox.select(TSListType.SPECIFIED_TSID.toString());
+    ignoreValueChanged = false;
 	JGUIUtil.addComponent(main_JPanel, __IndependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (

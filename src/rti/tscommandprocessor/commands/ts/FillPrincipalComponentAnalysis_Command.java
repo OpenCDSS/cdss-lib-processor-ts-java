@@ -6,15 +6,16 @@
 // ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
-import RTi.TS.TSException;
 import java.io.File;
-
 import java.io.FileNotFoundException;
-import javax.swing.JFrame;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Vector;
+import java.util.ArrayList;
+import javax.swing.JFrame;
 
 import RTi.TS.TS;
+import RTi.TS.TSException;
 import RTi.TS.TSPrincipalComponentAnalysis;
 import RTi.TS.TSUtil;
 
@@ -39,8 +40,8 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import java.io.PrintWriter;
-import java.util.ArrayList;
+import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSListType;
 
 /**
 Implement the FillPrincipalComponentAnalysis() command.
@@ -49,19 +50,13 @@ This command can run in command "batch" mode or in tool menu.
 public class FillPrincipalComponentAnalysis_Command extends AbstractCommand implements Command
 {
 
-// Defines used by this class and its FillPrincipalComponentAnalysis_JDialog counterpart.
-// Use with DependentTSList and IndependentTSList
-public static final String _SelectedTS      = "SelectedTS";
-public static final String _AllMatchingTSID = "AllMatchingTSID";
-public static final String _AllTS           = "AllTS";
-public final int _maxCombinationsDefault = 20;
-
 // Run mode flag. 
 private boolean __commandMode = true;
 
 // This object is used to perform the analyze, create the fill commands and fill
 // the dependent time series.
 protected TSPrincipalComponentAnalysis __TSPCA = null;
+public final int _maxCombinationsDefault = 20;
 protected TS __filledTS;
 
 /**
@@ -138,14 +133,18 @@ throws InvalidCommandParameterException
 	}
 		
 	// Make sure one or more time series are selected when AllMatchingTSID is selected.
-	if ( IndependentTSList.equalsIgnoreCase ( _AllMatchingTSID ) ) {
+	if ( IndependentTSList.equalsIgnoreCase ( TSListType.ALL_MATCHING_TSID.toString() ) ||
+         IndependentTSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ||
+         IndependentTSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ||
+         IndependentTSList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString())
+            ) {
 		if ( IndependentTSID != null ) {
 			List selectedV = StringUtil.breakStringList (
 				IndependentTSID, ",",
 				StringUtil.DELIM_SKIP_BLANKS );
 			if ( (selectedV == null) || (selectedV.size() == 0) ) {
                 message = "The IndependentTSID should not be empty when IndependentTSList="
-                    + _AllMatchingTSID 
+                    + IndependentTSList
                     + "\" is specified.";
 				warning += "\n" + message;
 
@@ -154,7 +153,7 @@ throws InvalidCommandParameterException
 			warning += "\n\"Independent TS list\" "
 				+ "should not be null when " 
 				+ "\"IndependentTSList = "
-				+ _AllMatchingTSID 
+				+ IndependentTSList
 				+ "\" is specified.";
 		}
 	}
@@ -193,52 +192,6 @@ throws InvalidCommandParameterException
 		}
 	}
 
-	// Make sure FillStart, if given, is a valid date
-	DateTime FillStartDate = null;
-	if ( FillStartDate != null && !FillStart.equals("") ) {
-		try {
-			FillStartDate = DateTime.parse( FillStart );
-		} catch ( Exception e ) {
-			warning += "\n Fill Start \""
-				+ FillStart
-				+ "\" is not a valid date.";
-		}
-	}
-
-	// Make sure FillEnd, if given, is a valid date
-	DateTime FillEndDate = null;
-	if ( FillEnd != null && !FillEnd.equals("") ) {
-		try {
-			FillEndDate = DateTime.parse( FillEnd );
-		} catch ( Exception e ) {
-			warning += "\n Fill End \""
-				+ FillEnd
-				+ "\" is not a valid date.";
-		}
-	}
-
-	// Make sure AnalysisStart preceeds FillStart
-	if ( AnalysisStartDate != null && FillStartDate != null ) {
-		if ( ! FillStartDate.greaterThanOrEqualTo( AnalysisStartDate ) ) {
-			warning += "\n Analysis Start \""
-				+ AnalysisStart
-				+ "\" should proceed Fill Start \""
-				+ FillStart
-				+ "\".";
-		}
-	}
-	
-	// Make sure FillEnd preceeds the AnalysisEnd
-	if ( AnalysisEndDate != null && FillEndDate != null ) {
-		if ( ! AnalysisEndDate.greaterThanOrEqualTo( FillEndDate ) ) {
-			warning += "\n Fill End \""
-				+ FillEnd
-				+ "\" should proceed Analysis End \""
-				+ AnalysisEnd
-				+ "\".";
-		}
-	}
-
 	// Make sure MaxCombinations > 0
 	if ( MaxCombinations != null && Integer.parseInt(MaxCombinations)<=0)  {
 			warning += "\n Maximum Combinations \""
@@ -246,12 +199,7 @@ throws InvalidCommandParameterException
 				+ "\" must be a number greater than 0.";
 	}
 
-	// Make sure RegressionEquationFill > 0
-	if ( RegressionEquationFill != null && Integer.parseInt(RegressionEquationFill)<=0)  {
-			warning += "\n Regression Equation \""
-				+ RegressionEquationFill
-				+ "\" must be a number greater than 0.";
-	}
+	
 
 	// Output file
 	if ( PCAOutputFile != null && PCAOutputFile.length() != 0 ) {
@@ -277,6 +225,85 @@ throws InvalidCommandParameterException
 	} else {
 		warning += "\nThe PCA output file field is empty.";
 	}
+
+    if ( __commandMode ) {
+        // Make sure FillStart, if given, is a valid date
+        DateTime FillStartDate = null;
+        if ( FillStartDate != null && !FillStart.equals("") ) {
+            try {
+                FillStartDate = DateTime.parse( FillStart );
+            } catch ( Exception e ) {
+                warning += "\n Fill Start \""
+                    + FillStart
+                    + "\" is not a valid date.";
+            }
+        }
+
+        // Make sure FillEnd, if given, is a valid date
+        DateTime FillEndDate = null;
+        if ( FillEnd != null && !FillEnd.equals("") ) {
+            try {
+                FillEndDate = DateTime.parse( FillEnd );
+            } catch ( Exception e ) {
+                warning += "\n Fill End \""
+                    + FillEnd
+                    + "\" is not a valid date.";
+            }
+        }
+
+        // Make sure AnalysisStart preceeds FillStart
+        if ( AnalysisStartDate != null && FillStartDate != null ) {
+            if ( ! FillStartDate.greaterThanOrEqualTo( AnalysisStartDate ) ) {
+                warning += "\n Analysis Start \""
+                    + AnalysisStart
+                    + "\" should proceed Fill Start \""
+                    + FillStart
+                    + "\".";
+            }
+        }
+
+        // Make sure FillEnd preceeds the AnalysisEnd
+        if ( AnalysisEndDate != null && FillEndDate != null ) {
+            if ( ! AnalysisEndDate.greaterThanOrEqualTo( FillEndDate ) ) {
+                warning += "\n Fill End \""
+                    + FillEnd
+                    + "\" should proceed Analysis End \""
+                    + AnalysisEnd
+                    + "\".";
+            }
+        }
+
+        if ( FilledTSOutputFile != null && FilledTSOutputFile.length() != 0 ) {
+		try {
+			String adjusted_path = IOUtil.adjustPath (
+				 working_dir, FilledTSOutputFile);
+			File f  = new File ( adjusted_path );
+			File f2 = new File ( f.getParent() );
+			if ( !f2.exists() ) {
+				warning += "\nThe file parent directory "
+					+ " does not exist:\n"
+					+ adjusted_path;
+			}
+			f  = null;
+			f2 = null;
+		}
+		catch ( Exception e ) {
+			warning += "\nThe working directory:\n"
+				+ "    \"" + working_dir
+				+ "\"\ncannot be adjusted using:\n"
+				+ "    \"" + FilledTSOutputFile;
+		}
+        } else {
+            warning += "\nThe filled ts output file field is empty.";
+        }
+
+        // Make sure RegressionEquationFill > 0
+        if ( RegressionEquationFill != null && Integer.parseInt(RegressionEquationFill)<=0)  {
+                warning += "\n Regression Equation \""
+                    + RegressionEquationFill
+                    + "\" must be a number greater than 0.";
+        }
+    }
 
 	
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -315,9 +342,9 @@ protected List createFillCommands ()
     String AnalysisMonths = parameters.getValue("AnalysisMonths");
     DateTime AnalysisStartDateTime = null, AnalysisEndDateTime = null;
 
-    // dependend TS
+    // dependent TS
     if ( DependentTSList != null && DependentTSList.length()>0) {
-        b.append("DependendTSList=" + DependentTSList);
+        b.append("DependentTSList=" + DependentTSList);
     }
     if ( DependentTSID != null && DependentTSID.length() > 0 ) {
         if ( b.length() > 0 ) {
@@ -331,7 +358,7 @@ protected List createFillCommands ()
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append("IndependendTSList=" + IndependentTSList);
+        b.append("IndependentTSList=" + IndependentTSList);
     }
     if ( IndependentTSID != null && IndependentTSID.length() > 0 ) {
         if ( b.length() > 0 ) {
@@ -508,7 +535,7 @@ protected void fillDependents() throws InvalidCommandParameterException
         throw new InvalidCommandParameterException ( message );
     }
 
-    int regressionEqIndex=0;
+    int regressionEqIndex=1;
     if ( RegressionEquationFill != null && RegressionEquationFill.length() > 0 ) {
         regressionEqIndex = Integer.parseInt(RegressionEquationFill);
     }
@@ -720,10 +747,21 @@ throws InvalidCommandParameterException,
 	int [] tspos;
 	int tsCount;
 	
-	CommandProcessor tsCP = getCommandProcessor();
-	CommandProcessor processor = tsCP;
+	TSCommandProcessor processor = (TSCommandProcessor) getCommandProcessor();
     PrintWriter out = null;
-	
+
+	String working_dir = null;
+	try { Object o = processor.getPropContents ( "WorkingDir" );
+		// Working directory is available so use it...
+		if ( o != null ) {
+			working_dir = (String)o;
+		}
+	}
+	catch ( Exception e ) {
+        Message.printWarning(warning_level,
+							MessageUtil.formatMessageTag( command_tag, ++warning_count),
+							rtn, "Error requesting WorkingDir from processor." );
+	}
 	// Get the list of dependent time series to process...
     TS dependentTS = null;
 	List dependentTSList = null; 
@@ -754,7 +792,7 @@ throws InvalidCommandParameterException,
 					request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
 					CommandProcessorRequestResultsBean bean = null;
 					try { bean =
-						tsCP.processRequest( "GetTimeSeries", request_params);
+						processor.processRequest( "GetTimeSeries", request_params);
 					}
 					catch ( Exception e ) {
 						Message.printWarning(log_level,
@@ -782,13 +820,9 @@ throws InvalidCommandParameterException,
 		dependentTS = null;	
 		
 	} else {
-		
+		//
 		// Tool Mode:
-		// Under the tool mode only _AllMatchingTSID can be specified,
-		// so the list if DependentTSID time series should contain all
-		// the time series needed for processing. Use the full list of
-		// resulting time series and the DependentTSID timeseries to
-		// get the list os selected time series objects.
+		//
 
 		List tsObjects = null;
 		try { Object o = processor.getPropContents( "TSResultsList" );
@@ -838,8 +872,7 @@ throws InvalidCommandParameterException,
 				PropList request_params = new PropList ( "" );
 				request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
 				CommandProcessorRequestResultsBean bean = null;
-				try { bean =
-					tsCP.processRequest( "GetTimeSeries", request_params);
+				try { bean = processor.processRequest( "GetTimeSeries", request_params);
 				}
 				catch ( Exception e ) {
 					Message.printWarning(log_level,
@@ -867,12 +900,9 @@ throws InvalidCommandParameterException,
 		independentTS = null;
 		 
 	} else {
+        //
 		// Tool Mode:
-		// Under the tool mode only _AllMatchingTSID can be specified,
-		// so the list if IndependentTSID time series should contain all
-		// the time series needed for processing. Use the full list of
-		// resulting time series and the IndependentTSID timeseries to
-		// get the list of selected time series objects.
+		//
 		
 		List tsObjects = null;
 		try { Object o = processor.getPropContents( "TSResultsList" );
@@ -912,9 +942,13 @@ throws InvalidCommandParameterException,
 
 	if ( PCAOutputFile != null && PCAOutputFile.length() > 0  ) {
             try {
-                out = new PrintWriter(PCAOutputFile);
+                // Convert to an absolute path if necessary...
+                String adjusted_path = IOUtil.adjustPath ( working_dir, PCAOutputFile);
+                out = new PrintWriter(adjusted_path);
             } catch (FileNotFoundException ex) {
                 Message.printWarning(2, rtn, "Error opening file " + PCAOutputFile );
+            } catch (Exception ex ) {
+                Message.printWarning(2, rtn, "Problem with file " + PCAOutputFile );
             }
 	}
 
@@ -925,7 +959,7 @@ throws InvalidCommandParameterException,
 	try {
 		// Instantiate the TSPrincipalComponentAnalysis	object
         __TSPCA = new TSPrincipalComponentAnalysis(
-			dependentTS, 
+			(TS) dependentTSList.get(0),
 			independentTSList,
 			AnalysisStartDateTime,
             AnalysisEndDateTime,
@@ -950,6 +984,10 @@ throws InvalidCommandParameterException,
 			rtn, mssg );
 		throw new CommandWarningException ( mssg );
 	}
+
+    if ( __commandMode ) {
+        fillDependents();
+    }
 }
 
 /**
@@ -962,6 +1000,7 @@ public String toString ( PropList props )
 	}
 	
 	// Get the properties
+	String DependentTSList  = props.getValue ( "DependentTSList"  );
 	String DependentTSID    = props.getValue ( "DependentTSID"    );
 	String IndependentTSList= props.getValue ( "IndependentTSList");
 	String IndependentTSID  = props.getValue ( "IndependentTSID"  );
@@ -978,6 +1017,12 @@ public String toString ( PropList props )
 	// Creating the command string
 	// This StringBuffer will contain all parameters for the command.
 	StringBuffer b = new StringBuffer();
+
+	// Adding the DependentTSList
+	if ( DependentTSList != null && DependentTSList.length() > 0 ) {
+		if ( b.length() > 0 ) b.append ( "," );
+		b.append ( "DependentTSList=\"" + DependentTSList + "\"" );
+	}
 
 	// Adding the DependentTSID
 	if ( DependentTSID != null && DependentTSID.length() > 0 ) {
@@ -1042,13 +1087,13 @@ public String toString ( PropList props )
 	// Adding the PCAOutputFile
 	if ( PCAOutputFile != null && PCAOutputFile.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "PCAOutputFile=" + PCAOutputFile );
+		b.append ( "PCAOutputFile=\"" + PCAOutputFile + "\"" );
 	}
 
 	// Adding the FilledTSOutputFile
 	if ( FilledTSOutputFile != null && FilledTSOutputFile.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "FilledTSOutputFile=" + FilledTSOutputFile );
+		b.append ( "FilledTSOutputFile=\"" + FilledTSOutputFile +"\"" );
 	}
 
 	return getCommandName() + "(" + b.toString() + ")";

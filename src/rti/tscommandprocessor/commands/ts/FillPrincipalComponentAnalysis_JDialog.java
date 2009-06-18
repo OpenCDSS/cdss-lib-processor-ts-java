@@ -6,9 +6,6 @@
 // ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
-
-import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.InvalidCommandSyntaxException;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -25,14 +22,11 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import java.util.List;
 import java.util.Vector;
 
-import java.io.FileReader;
-import java.io.BufferedReader;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JDialog;
@@ -58,12 +52,14 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJList;
 import RTi.Util.IO.CommandListUI;
-import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.TS.TS;
+import rti.tscommandprocessor.core.TSListType;
 
 public class FillPrincipalComponentAnalysis_JDialog extends JDialog
 	implements ActionListener,
@@ -375,6 +371,7 @@ public void actionPerformed( ActionEvent event )
 	// changed after the analysis, or disable all the runCommand
 	// dependent buttons if the settings are changed. 
 	else if ( o == __createFillCommands_JButton ) {
+        commitEdits();
 	  	refresh();
 	  	checkInput();
 	  	if ( !__error_wait ) {
@@ -393,6 +390,7 @@ public void actionPerformed( ActionEvent event )
 	// changed after the analysis, or disable all the runCommand
 	// dependent buttons if the settings are changed. 
 	else if ( o == __copyFillCommandsToTSTool_JButton ) {
+        commitEdits();
 	  	refresh();
 	  	checkInput();
 	  	if ( !__error_wait ) {
@@ -592,9 +590,7 @@ Add the vector of FillRegression and FillMOVE1 commands to the TSTool.
 */
 private void copyCommandsToTSTool()
 {
-	// TODO SAM 2007-03-09 Need a reference to TSTool JFrame.
-	// __parent_JFrame.commandList_NewCommand( __fillCommands_Vector.toString(), false );
-	// Make a request to the processor.
+    __commandUI.insertCommand( __command );
 }
 
 /**
@@ -664,12 +660,16 @@ private String getDependentTSIDFromInterface()
 
 	String DependentTSList = __DependentTSList_JComboBox.getSelected();
 
-	if ( DependentTSList.equalsIgnoreCase(FillPrincipalComponentAnalysis_Command._AllTS) ||
-		DependentTSList.equalsIgnoreCase(FillPrincipalComponentAnalysis_Command._SelectedTS) ) {
+	if ( DependentTSList.equalsIgnoreCase(TSListType.ALL_TS.toString()) ||
+		DependentTSList.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) ) {
 		// Don't need...
 		DependentTSID = "";
 	}
-	else if ( DependentTSList.equalsIgnoreCase( FillPrincipalComponentAnalysis_Command._AllMatchingTSID) ) {
+	else if ( DependentTSList.equalsIgnoreCase( TSListType.ALL_MATCHING_TSID.toString()) ||
+            DependentTSList.equalsIgnoreCase( TSListType.FIRST_MATCHING_TSID.toString()) ||
+            DependentTSList.equalsIgnoreCase( TSListType.LAST_MATCHING_TSID.toString()) ||
+            DependentTSList.equalsIgnoreCase( TSListType.SPECIFIED_TSID.toString())
+            ) {
 		// Format from the selected identifiers...
 		DependentTSID = "";
 		if ( JGUIUtil.selectedSize(__DependentTSID_SimpleJList) > 0 ) {
@@ -698,13 +698,16 @@ private String getIndependentTSIDFromInterface()
 
 	String IndependentTSList = __IndependentTSList_JComboBox.getSelected();
 
-	if (	IndependentTSList.equalsIgnoreCase(FillPrincipalComponentAnalysis_Command._AllTS) ||
-		IndependentTSList.equalsIgnoreCase(FillPrincipalComponentAnalysis_Command._SelectedTS) ) {
+	if (	IndependentTSList.equalsIgnoreCase(TSListType.ALL_TS.toString()) ||
+		IndependentTSList.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) ) {
 		// Don't need...
 		IndependentTSID = "";
 	}
-	else if ( IndependentTSList.equalsIgnoreCase(
-			FillPrincipalComponentAnalysis_Command._AllMatchingTSID) ) {
+	else if ( IndependentTSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ||
+            IndependentTSList.equalsIgnoreCase( TSListType.FIRST_MATCHING_TSID.toString()) ||
+            IndependentTSList.equalsIgnoreCase( TSListType.LAST_MATCHING_TSID.toString()) ||
+            IndependentTSList.equalsIgnoreCase( TSListType.SPECIFIED_TSID.toString())
+            ) {
 		// Format from the selected identifiers...
 		IndependentTSID = "";
 		if ( JGUIUtil.selectedSize(__IndependentTSID_SimpleJList) > 0 ) {
@@ -767,20 +770,30 @@ private void initialize ( JFrame parent )
 		"The dependent and independent time series " +
 		"can be selected using the TS list parameters:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	if ( __command.isCommandMode() ) {
-		JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
-		+ FillPrincipalComponentAnalysis_Command._AllTS
-		+ " - all previous time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-		JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
-		+ FillPrincipalComponentAnalysis_Command._SelectedTS
-		+ " - time series selected with selectTimeSeries() commands"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}	
 	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
-		+ FillPrincipalComponentAnalysis_Command._AllMatchingTSID
-		+ " - time series selected from the list below "
-		+ "(* will analyze all previous time series)"),
+		+ TSListType.ALL_MATCHING_TSID.toString()
+		+ " - time series that have identifiers matching the given TSID parameter "
+		+ "(* will analyze all listed time series)."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+		+ TSListType.ALL_TS.toString()
+		+ " - all time series."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+		+ TSListType.FIRST_MATCHING_TSID.toString()
+		+ " - only the first time series matching the given TSID parameter."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+		+ TSListType.LAST_MATCHING_TSID.toString()
+		+ " - only the last time series matching the given TSID parameter."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+		+ TSListType.SELECTED_TS.toString()
+		+ " - time series selected with selectTimeSeries() commands."),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "  "
+		+ TSListType.SPECIFIED_TSID.toString()
+		+ " - time series selected from the list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Right-click on the time series area to select or deselect all."
@@ -833,19 +846,14 @@ private void initialize ( JFrame parent )
 		response ( false );
 	}
 
-	// List of options for both the dependent and independent TSList
-	List tslist_Vector = new Vector();
-	if ( __command.isCommandMode() ) {
-		tslist_Vector.add ( FillPrincipalComponentAnalysis_Command._AllTS );
-		tslist_Vector.add ( FillPrincipalComponentAnalysis_Command._SelectedTS );
-	}
-	tslist_Vector.add ( FillPrincipalComponentAnalysis_Command._AllMatchingTSID );
-
+	
 	// How to get the dependent time series list to fill.
 	JGUIUtil.addComponent(main_JPanel, new JLabel ("Dependent TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__DependentTSList_JComboBox = new SimpleJComboBox(false);
-	__DependentTSList_JComboBox.setData ( tslist_Vector );
+    List DepTSList_Vector = new Vector();
+    DepTSList_Vector.add ( TSListType.FIRST_MATCHING_TSID.toString());
+	__DependentTSList_JComboBox.setData ( DepTSList_Vector );
 	__DependentTSList_JComboBox.addItemListener (this);
 	JGUIUtil.addComponent(main_JPanel, __DependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -887,8 +895,16 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(main_JPanel, new JLabel ("Independent TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IndependentTSList_JComboBox = new SimpleJComboBox(false);
-	__IndependentTSList_JComboBox.setData ( tslist_Vector );
+    List IndepTSList_Vector = new Vector();
+    IndepTSList_Vector.add ( TSListType.ALL_MATCHING_TSID.toString() );
+    IndepTSList_Vector.add ( TSListType.ALL_TS.toString() );
+    IndepTSList_Vector.add ( TSListType.FIRST_MATCHING_TSID.toString() );
+    IndepTSList_Vector.add ( TSListType.LAST_MATCHING_TSID.toString() );
+    IndepTSList_Vector.add ( TSListType.SELECTED_TS.toString() );
+    IndepTSList_Vector.add ( TSListType.SPECIFIED_TSID.toString() );
+	__IndependentTSList_JComboBox.setData ( IndepTSList_Vector );
 	__IndependentTSList_JComboBox.addItemListener (this);
+    __IndependentTSList_JComboBox.select(TSListType.SPECIFIED_TSID.toString());
 	JGUIUtil.addComponent(main_JPanel, __IndependentTSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -907,8 +923,7 @@ private void initialize ( JFrame parent )
 	its.add( (String) "*" ); // See LT1 REVISIT above.
 
 	__IndependentTSID_SimpleJList = new SimpleJList (its);
-	__IndependentTSID_SimpleJList.setSelectionMode(
-		ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
+	__IndependentTSID_SimpleJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 	__IndependentTSID_SimpleJList.setVisibleRowCount       ( 5 );
 	// Make sure to set the flag ignoreValueChanged to false and
 	// then back to true when executing the select()
@@ -980,16 +995,15 @@ private void initialize ( JFrame parent )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Regression Equation:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__RegressionEquationFill_SimpleJComboBox = new SimpleJComboBox (false);
-	// __RegressionEquationFill_SimpleJComboBox = new SimpleJComboBox (new Vector());
 	__RegressionEquationFill_SimpleJComboBox.addItemListener(this);
 	__RegressionEquationFill_SimpleJComboBox.addKeyListener( this );
 	__RegressionEquationFill_SimpleJComboBox.addMouseListener( this );
 	__RegressionEquationFill_SimpleJComboBox.setEnabled(false);
 	JGUIUtil.addComponent(main_JPanel,
 		new JScrollPane(__RegressionEquationFill_SimpleJComboBox),
-		1, y, 2, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required to fill - Select index of desired equation to use for filling missing data."),
-		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		7, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// File to save PCA results.
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -1247,9 +1261,9 @@ public void mousePressed ( MouseEvent event )
 
 		// Dependent time series
 		if (event.getComponent() == __DependentTSID_SimpleJList) {
-			// Show this menu only if applicable (_AllMatchingTSID)
-			if ( __DependentTSList_JComboBox.getSelected()
-				.equalsIgnoreCase(FillPrincipalComponentAnalysis_Command._AllMatchingTSID)) {
+			// Show this menu only if applicable (SPECIFIED_TSID)
+            String dependentList = __DependentTSList_JComboBox.getSelected();
+			if ( dependentList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString())) {
 				__DependentTS_JPopupMenu.show (
 					event.getComponent(),
 					event.getX(), event.getY() );
@@ -1258,9 +1272,9 @@ public void mousePressed ( MouseEvent event )
 		
 		// Independent time series
 		else if (event.getComponent()==__IndependentTSID_SimpleJList) {
-			// Show this menu only if applicable (_AllMatchingTSID)
-			if ( __IndependentTSList_JComboBox.getSelected()
-				.equalsIgnoreCase (FillPrincipalComponentAnalysis_Command._AllMatchingTSID)) {
+			// Show this menu only if applicable (SPECIFIED_TSID)
+            String independentList = __IndependentTSList_JComboBox.getSelected();
+			if ( independentList.equalsIgnoreCase (TSListType.SPECIFIED_TSID.toString())) {
 				__IndependentTS_JPopupMenu.show (
 					event.getComponent(),
 					event.getX(), event.getY() );
@@ -1327,8 +1341,9 @@ fillPrincipalComponentAnalysis ( DependentTSList="...",
 */
 private void refresh()
 {
-    if ( __command == null ) {
+    if (  !__command.isCommandMode() ) {
         // This does not apply when in tool mode
+        // CEN - is this correct?
         return;
     }
 	String mthd = __command.getCommandName() + "_JDialog.refresh";
@@ -1423,9 +1438,12 @@ private void refresh()
 
 		// Check all the items in the Dependent time series list and
 		// highlight the ones that match the command being edited...
-		if (    (DependentTSList != null) &&
-			DependentTSList.equalsIgnoreCase(
-				FillPrincipalComponentAnalysis_Command._AllMatchingTSID) &&
+		if ((DependentTSList != null) &&
+			(DependentTSList.equalsIgnoreCase(
+				TSListType.ALL_MATCHING_TSID.toString()) ||
+                DependentTSList.equalsIgnoreCase(
+				TSListType.ALL_MATCHING_TSID.toString())
+                ) &&
 			(DependentTSID != null) ) {
 			v = StringUtil.breakStringList (
 				DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
@@ -1471,7 +1489,7 @@ private void refresh()
 		// highlight the ones that match the command being edited...
 		if (	(IndependentTSList != null) &&
 			IndependentTSList.equalsIgnoreCase(
-				FillPrincipalComponentAnalysis_Command._AllMatchingTSID) &&
+				TSListType.SPECIFIED_TSID.toString()) &&
 			(IndependentTSID != null) ) {
 			v = StringUtil.breakStringList (
 				IndependentTSID, ",",
@@ -1654,21 +1672,29 @@ Enable or disable the selection of dependent time series according to
 the settings of DependentTSList parameter.
 Enable or disable the selection of independent time series according to
 the settings of IndependentTSList parameter.
-Enabled only if _AllMatchingTSID.
+Enabled only if ALL_MATCHING_TSID, FIRST_MATCHING_TSID, LAST_MATCHING_TSID or SPECIFIED_TSID.
 */
 private void resetTimeSeriesList()
 {
 	// Dependent time series list
-	if ( __DependentTSList_JComboBox.getSelected().equalsIgnoreCase
-		( FillPrincipalComponentAnalysis_Command._AllMatchingTSID ) ) {
+    String dependentIDList = __DependentTSList_JComboBox.getSelected();
+	if ( dependentIDList.equalsIgnoreCase( TSListType.ALL_MATCHING_TSID.toString()) ||
+         dependentIDList.equalsIgnoreCase( TSListType.FIRST_MATCHING_TSID.toString()) ||
+         dependentIDList.equalsIgnoreCase( TSListType.LAST_MATCHING_TSID.toString()) ||
+         dependentIDList.equalsIgnoreCase( TSListType.SPECIFIED_TSID.toString())
+            ) {
 		__DependentTSID_SimpleJList.setEnabled( true );
 	} else {
 		__DependentTSID_SimpleJList.setEnabled( false );
 	}
 
 	// Independent time series list
-	if ( __IndependentTSList_JComboBox.getSelected().equalsIgnoreCase
-		( FillPrincipalComponentAnalysis_Command._AllMatchingTSID ) ) {
+    String independentIDList = __IndependentTSList_JComboBox.getSelected();
+	if ( independentIDList.equalsIgnoreCase( TSListType.ALL_MATCHING_TSID.toString()) ||
+         independentIDList.equalsIgnoreCase( TSListType.FIRST_MATCHING_TSID.toString()) ||
+         independentIDList.equalsIgnoreCase( TSListType.LAST_MATCHING_TSID.toString()) ||
+         independentIDList.equalsIgnoreCase( TSListType.SPECIFIED_TSID.toString())
+            ) {
 		__IndependentTSID_SimpleJList.setEnabled( true );
 	} else {
 		__IndependentTSID_SimpleJList.setEnabled( false );

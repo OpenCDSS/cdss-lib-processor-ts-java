@@ -56,7 +56,7 @@ private boolean __commandMode = true;
 // This object is used to perform the analyze, create the fill commands and fill
 // the dependent time series.
 protected TSPrincipalComponentAnalysis __TSPCA = null;
-public final int _maxCombinationsDefault = 20;
+public static final int _maxCombinationsDefault = 20;
 protected TS __filledTS;
 
 /**
@@ -323,7 +323,7 @@ throws InvalidCommandParameterException
 protected List createFillCommands ()
 {
     List<String> commandList = new ArrayList<String>();
-    String command = "fillPrincipalComponentAnalysis";
+    String command = "FillPrincipalComponentAnalysis";
     StringBuffer b = new StringBuffer();
     
     PropList parameters = getCommandParameters();

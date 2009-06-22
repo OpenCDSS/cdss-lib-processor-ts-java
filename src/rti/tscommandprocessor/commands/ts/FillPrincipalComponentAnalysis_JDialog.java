@@ -135,6 +135,7 @@ private SimpleJButton   __ok_JButton = null;
 private SimpleJButton   __fillDependents_JButton = null;
 
 private String 		__view_String  = "View Results";
+private String 		__viewTS_String  = "View TS Results";
 private String		__view_Tip =
 	"View output containing the analysis results.";
 
@@ -167,7 +168,7 @@ private String		__analyze_Tip =
 // createFillCommands button: used only when running as a TSTool tool.
 private SimpleJButton   __createFillCommands_JButton = null;
 private String		__createFillCommands_String =
-	 "Create fill commands";
+	 "Create FillPrincipalComponentAnalysis() commands";
 private String		__createFillCommands_Tip =
 	"Create fill commands using the best fit.";
 
@@ -773,35 +774,35 @@ private void initialize ( JFrame parent )
 			0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
-		"The dependent and independent time series " +
-		"can be selected using the TS list parameters:"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
-		+ TSListType.ALL_MATCHING_TSID.toString()
-		+ " - time series that have identifiers matching the given TSID parameter "
-		+ "(* will analyze all listed time series)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
-		+ TSListType.ALL_TS.toString()
-		+ " - all time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
-		+ TSListType.FIRST_MATCHING_TSID.toString()
-		+ " - only the first time series matching the given TSID parameter."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
-		+ TSListType.LAST_MATCHING_TSID.toString()
-		+ " - only the last time series matching the given TSID parameter."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
-		+ TSListType.SELECTED_TS.toString()
-		+ " - time series selected with selectTimeSeries() commands."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
-		+ TSListType.SPECIFIED_TSID.toString()
-		+ " - time series selected from the list."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	   /*JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
+    "The dependent and independent time series " +
+    "can be selected using the TS list parameters:"),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
+    + TSListType.ALL_MATCHING_TSID.toString()
+    + " - time series that have identifiers matching the given TSID parameter "
+    + "(* will analyze all listed time series)."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
+    + TSListType.ALL_TS.toString()
+    + " - all time series."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
+    + TSListType.FIRST_MATCHING_TSID.toString()
+    + " - only the first time series matching the given TSID parameter."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
+    + TSListType.LAST_MATCHING_TSID.toString()
+    + " - only the last time series matching the given TSID parameter."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
+    + TSListType.SELECTED_TS.toString()
+    + " - time series selected with selectTimeSeries() commands."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "     "
+    + TSListType.SPECIFIED_TSID.toString()
+    + " - time series selected from the list."),
+    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);*/
 	JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
 		"Right-click on the time series area to select or deselect all."
 		+ "  Active only if the TS list selection is \"SpecifiedTSID\""),
@@ -846,6 +847,7 @@ private void initialize ( JFrame parent )
 			tsids = new Vector( size );
 			for ( int i = 0; i < size; i++ ) {
 				TS ts = (TS) tsObjects.get(i);
+				// tsids.add ( ts.getAlias() );
 				tsids.add ( ts.getIdentifier().toString(false) );
 			}
 		}
@@ -979,24 +981,24 @@ private void initialize ( JFrame parent )
 	__AnalysisEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(mainAnalysis_JPanel, __AnalysisEnd_JTextField,
 		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Optional."),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Optional.  Period to analyze (default=analyze all)."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	
 	// MaxCombinations
-	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Maximum Combinations:" ),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Maximum combinations:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__MaxCombinations_JTextField = new JTextField ( "", 25 );
 	__MaxCombinations_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(mainAnalysis_JPanel, __MaxCombinations_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Optional - Number of equations returned."),
+	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Optional - Number of equations returned (default=20)."),
 		7, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	
 	// File to save PCA results.
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel (
-		"PCA Output file:" ),
+		"PCA output file:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__PCAOutputFile_JTextField = new JTextField ( 50 );
 	__PCAOutputFile_JTextField.addKeyListener ( this );
@@ -1032,7 +1034,7 @@ private void initialize ( JFrame parent )
     mainFill_JPanel.setBorder( BorderFactory.createTitledBorder (
             BorderFactory.createLineBorder(Color.black),"Fill Using Analysis Results" ));
     JGUIUtil.addComponent( main_JPanel, mainFill_JPanel,
-            0, ++yMain, 1, 1, 0, 1, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     // regression equation to use for fill
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ("Regression Equation:" ),
@@ -1063,12 +1065,12 @@ private void initialize ( JFrame parent )
 	__FillEnd_JTextField.setEnabled ( false );
 	JGUIUtil.addComponent(mainFill_JPanel, __FillEnd_JTextField,
 		3, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Optional."),
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Optional.  Period to fill (default=fill all)."),
 		7, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// File to save TS results.
 	JGUIUtil.addComponent(mainFill_JPanel, new JLabel (
-		"Filled TS Output file:" ),
+		"Filled TS output file:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FilledTSOutputFile_JTextField = new JTextField ( 50 );
 	__FilledTSOutputFile_JTextField.addKeyListener ( this );
@@ -1096,7 +1098,7 @@ private void initialize ( JFrame parent )
 		buttonFill_JPanel.add ( __fillDependents_JButton );
 
         // View button: used only when running as a TSTool tool.
-		__viewTS_JButton = new SimpleJButton ( __view_String, this );
+		__viewTS_JButton = new SimpleJButton ( __viewTS_String, this );
 		__viewTS_JButton.setToolTipText( __view_Tip );
 		__viewTS_JButton.setEnabled( false );
 		buttonFill_JPanel.add ( __viewTS_JButton );
@@ -1175,7 +1177,7 @@ private void initialize ( JFrame parent )
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     y++;
 	JGUIUtil.addComponent(main_JPanel, button_JPanel,
-		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.SOUTH);
+		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.SOUTH);
 
 	if ( __command.isCommandMode() ) {
 		// Cancel button: used when running as a command
@@ -1208,20 +1210,14 @@ private void initialize ( JFrame parent )
 	getContentPane().add ( "South", statusJPanel);
 
 	// Add the Dependent Pop-up menu to manipulate time series...
-	__DependentTS_JPopupMenu = new JPopupMenu(
-		"Dependent TS Actions");
-	__DependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__SELECT_ALL_DEPENDENT,   this) );
-	__DependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__DESELECT_ALL_DEPENDENT, this) );
+	__DependentTS_JPopupMenu = new JPopupMenu("Dependent TS Actions");
+	__DependentTS_JPopupMenu.add( new SimpleJMenuItem (__SELECT_ALL_DEPENDENT,   this) );
+	__DependentTS_JPopupMenu.add( new SimpleJMenuItem (__DESELECT_ALL_DEPENDENT, this) );
 
 	// Add the Independent Pop-up menu to manipulate time series...
-	__IndependentTS_JPopupMenu = new JPopupMenu(
-		"Independent TS Actions");
-	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__SELECT_ALL_INDEPENDENT, this));
-	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (
-		__DESELECT_ALL_INDEPENDENT, this));
+	__IndependentTS_JPopupMenu = new JPopupMenu("Independent TS Actions");
+	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (__SELECT_ALL_INDEPENDENT, this));
+	__IndependentTS_JPopupMenu.add( new SimpleJMenuItem (__DESELECT_ALL_INDEPENDENT, this));
 
 	// Refresh the contents...
 	if ( __command.isCommandMode() ) {
@@ -1613,6 +1609,7 @@ private void refresh()
 		} else {
 			__FillStart_JTextField.setText ( FillStart );
 		}
+        __FillStart_JTextField.setEnabled(true);
 
 		// Check FillEnd and update the text field
 		if ( FillEnd == null ) {
@@ -1620,13 +1617,21 @@ private void refresh()
 		} else {
 			__FillEnd_JTextField.setText ( FillEnd );
 		}
+        __FillEnd_JTextField.setEnabled(true);
 
 		// Check MaxCombinations and update the text field
 		if ( MaxCombinations == null ) {
 			__MaxCombinations_JTextField.setText ( "" );
+            for ( int i=1; i<=FillPrincipalComponentAnalysis_Command._maxCombinationsDefault; i++ ) {
+                __RegressionEquationFill_SimpleJComboBox.add(""+i);
+            }
 		} else {
 			__MaxCombinations_JTextField.setText ( MaxCombinations );
+            for ( int i=1; i<=Integer.parseInt(MaxCombinations); i++ ) {
+                __RegressionEquationFill_SimpleJComboBox.add(""+i);
+            }
 		}
+        __RegressionEquationFill_SimpleJComboBox.setEnabled(true);
 
         // Check RegressionEquationFill and update the text field
         if ( RegressionEquationFill != null ) {
@@ -1646,6 +1651,7 @@ private void refresh()
 		} else {
 			__FilledTSOutputFile_JTextField.setText ( FilledTSOutputFile );
 		}
+        __FilledTSOutputFile_JTextField.setEnabled( true );
 
 	} else {
 		// Enable or disable the selection of dependent time series

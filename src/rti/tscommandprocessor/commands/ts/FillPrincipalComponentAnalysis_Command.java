@@ -303,6 +303,14 @@ throws InvalidCommandParameterException
                     + RegressionEquationFill
                     + "\" must be a number greater than 0.";
         }
+        // Make sure RegressionEquationFill is <= MaxCombinations
+        int mcombo = MaxCombinations == null ? _maxCombinationsDefault : Integer.parseInt(MaxCombinations);
+        if ( RegressionEquationFill != null && 
+                Integer.parseInt(RegressionEquationFill)>mcombo) {
+                warning += "\n Regression Equation \""
+                    + RegressionEquationFill
+                    + "\" must be a number less than or equal to " + mcombo + ".";
+        }
     }
 
 	
@@ -584,9 +592,6 @@ throws Throwable
 	super.finalize ();
 }
 
-public PrincipalComponentAnalysis getPrincipalComponentAnalysis() {
-    return __TSPCA.getPrincipalComponentAnalysis();
-}
 
 /**
 Get the time series to process.
@@ -647,6 +652,10 @@ private List getTimeSeriesToProcess ( CommandProcessor processor,
 	return data;
 }
 
+public PrincipalComponentAnalysis getPrincipalComponentAnalysis() {
+    return __TSPCA.getPrincipalComponentAnalysis();
+}
+
 /**
 Free memory for garbage collection.
 */
@@ -693,38 +702,16 @@ throws 	InvalidCommandSyntaxException,
 	}
 }
 
-/**
-Run the command:
-<pre>
-fillPrincipalComponentAnalysis (
-           DependentTSList="...",
-		   DependentTSList="X,Y,...",
-		   IndependentTSList="...",
-		   IndependentTSList="X,Y,...",
-		   AnalysisStart="...",
-		   AnalysisEnd="...",
-		   FillStart="...",
-		   FillEnd="...",
-		   MaxCombinations="..."
-		   RegressionEquationFill="..."
-		   PCAOutputFile="...",
-		   FilledTSOutputFile="...")
-</pre>
-@param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
-*/
-public void runCommand ( int command_number )
+/*
+ * Run the PCA Analysis.
+ */
+public void runAnalysis ( String command_tag )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
 {	String rtn = "fillMixedStation_Command.runCommand", mssg = "";
-	int warning_level = 2;
-	String command_tag = "" + command_number;	
+
+    int warning_level = 2;
 	int log_level = 3;	// For warnings not shown to user
             	
 	int warning_count = 0;
@@ -762,166 +749,117 @@ throws InvalidCommandParameterException,
 							MessageUtil.formatMessageTag( command_tag, ++warning_count),
 							rtn, "Error requesting WorkingDir from processor." );
 	}
-	// Get the list of dependent time series to process...
+
+    //
+	// Get the list of DEPENDENT time series to process...
+    //
     TS dependentTS = null;
 	List dependentTSList = null; 
-	if ( __commandMode ) {
 		
-		// Command Mode:
-		// Get the time series from the command list.
-		// The getTimeSeriesToProcess method will properly return the
-		// time series according to the settings of DependentTSList.
-        // There should be only 1 dependent time series.
-		v = getTimeSeriesToProcess( processor,
-			DependentTSList, DependentTSID );
-		List tslist = (List)v.get(0);
-		tspos = (int [])v.get(1);
-		tsCount = tslist.size();
-		if ( tsCount == 0 ) {
-			mssg = "Unable to find time series using DependentTSID \""
-				+ DependentTSID + "\".";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag, ++warning_count), rtn, mssg );
-		}
-		dependentTSList = new Vector( tsCount );
-		for ( int nTS = 0; nTS < tsCount; nTS++ ) {
-			// Get the time series object.
-			try {
-					PropList request_params = new PropList ( "" );
-					request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
-					CommandProcessorRequestResultsBean bean = null;
-					try { bean =
-						processor.processRequest( "GetTimeSeries", request_params);
-					}
-					catch ( Exception e ) {
-						Message.printWarning(log_level,
-								MessageUtil.formatMessageTag( command_tag, ++warning_count),
-								rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
-								"\" from processor." );
-					}
-					PropList bean_PropList = bean.getResultsPropList();
-					Object prop_contents = bean_PropList.getContents ( "TS" );
-					if ( prop_contents == null ) {
-						Message.printWarning(warning_level,
-							MessageUtil.formatMessageTag( command_tag, ++warning_count),
-							rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
-							"\") returned from processor." );
-					}
-					else {	dependentTS = (TS)prop_contents;
-					}
-							
-				dependentTSList.add ( dependentTS );	
-			} catch ( Exception e ) {
-				// TODO REVISIT SAM 2005-05-17 Ignore?
-				continue;
-			}
-		}
-		dependentTS = null;	
-		
-	} else {
-		//
-		// Tool Mode:
-		//
+    // Get the time series from the command list.
+    // The getTimeSeriesToProcess method will properly return the
+    // time series according to the settings of DependentTSList.
+    // It's like Highlander:  "There can be only 1" ... dependent time series.
+    v = getTimeSeriesToProcess( processor, DependentTSList, DependentTSID );
+    List tslist = (List)v.get(0);
+    tspos = (int [])v.get(1);
+    tsCount = tslist.size();
+    if ( tsCount == 0 ) {
+        mssg = "Unable to find time series using DependentTSID \""
+            + DependentTSID + "\".";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+                command_tag, ++warning_count), rtn, mssg );
+    }
+    dependentTSList = new Vector( tsCount );
+    for ( int nTS = 0; nTS < tsCount; nTS++ ) {
+        // Get the time series object.
+        try {
+                PropList request_params = new PropList ( "" );
+                request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+                CommandProcessorRequestResultsBean bean = null;
+                try { bean =
+                    processor.processRequest( "GetTimeSeries", request_params);
+                }
+                catch ( Exception e ) {
+                    Message.printWarning(log_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
+                            "\" from processor." );
+                }
+                PropList bean_PropList = bean.getResultsPropList();
+                Object prop_contents = bean_PropList.getContents ( "TS" );
+                if ( prop_contents == null ) {
+                    Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+                        "\") returned from processor." );
+                }
+                else {	dependentTS = (TS)prop_contents;
+                }
 
-		List tsObjects = null;
-		try { Object o = processor.getPropContents( "TSResultsList" );
-				tsObjects = (List)o;
-		}
-		catch ( Exception e ){
-			String message = "Cannot get time series list to process.";
-			Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(
-					command_tag, ++warning_count),
-					rtn,message);
-		}
-		
-		List dependentTSID_Vector = StringUtil.breakStringList (
-			DependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
-		dependentTSList = TSUtil.selectTimeSeries ( 
-			tsObjects, dependentTSID_Vector, null );
-        if ( dependentTSList.size() > 0 )
-            dependentTS = (TS) dependentTSList.get(0);
-	}
-	
-	// Get the list of independent time series to process...
+            dependentTSList.add ( dependentTS );
+        } catch ( Exception e ) {
+            // TODO REVISIT SAM 2005-05-17 Ignore?
+            continue;
+        }
+    }
+    dependentTS = null;
+
+    //
+	// Get the list of INDEPENDENT time series to process...
+    //
 	List independentTSList = null;
-	if ( __commandMode ) {
 		
-		// Command Mode:
-		// Get the time series from the command list.
-		// The getTimeSeriesToProcess method will properly return the
-		// time series according to the settings of IndependentTSList.
-		v = getTimeSeriesToProcess( processor, IndependentTSList, IndependentTSID);
-				
-		List tslist = (List)v.get(0);
-		tspos = (int [])v.get(1);
-		tsCount = tslist.size();
-		if ( tsCount == 0 ) {
-			mssg = "Unable to find time series using IndependentTSID \""
-				+ IndependentTSID + "\".";
-			Message.printWarning ( warning_level,
-				MessageUtil.formatMessageTag(
-					command_tag, ++warning_count), rtn, mssg );
-		}
-		independentTSList = new Vector( tsCount );
-		TS independentTS = null;
-		for ( int nTS = 0; nTS < tsCount; nTS++ ) {
-			// Get the time series object.
-			try {	
-				PropList request_params = new PropList ( "" );
-				request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
-				CommandProcessorRequestResultsBean bean = null;
-				try { bean = processor.processRequest( "GetTimeSeries", request_params);
-				}
-				catch ( Exception e ) {
-					Message.printWarning(log_level,
-							MessageUtil.formatMessageTag( command_tag, ++warning_count),
-							rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
-							"\" from processor." );
-				}
-				PropList bean_PropList = bean.getResultsPropList();
-				Object prop_contents = bean_PropList.getContents ( "TS" );
-				if ( prop_contents == null ) {
-					Message.printWarning(warning_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
-						"\") returned from processor." );
-				}
-				else {	independentTS = (TS)prop_contents;
-				}
-				
-				independentTSList.add ( independentTS );	
-			} catch ( Exception e ) {
-				// TODO SAM 2005-05-17 Ignore?
-				continue;
-			}
-		}
-		independentTS = null;
-		 
-	} else {
-        //
-		// Tool Mode:
-		//
-		
-		List tsObjects = null;
-		try { Object o = processor.getPropContents( "TSResultsList" );
-				tsObjects = (List)o;
-		}
-		catch ( Exception e ){
-			mssg = "Cannot get time series list to process.";
-			Message.printWarning ( warning_level,
-					MessageUtil.formatMessageTag(
-					command_tag, ++warning_count),
-					rtn,mssg);
-		}
-		
-		List independentTSID_Vector = StringUtil.breakStringList (
-			IndependentTSID, ",", StringUtil.DELIM_SKIP_BLANKS );
-		independentTSList = TSUtil.selectTimeSeries ( 
-			tsObjects, independentTSID_Vector, null );
-	}
+    // Get the time series from the command list.
+    // The getTimeSeriesToProcess method will properly return the
+    // time series according to the settings of IndependentTSList.
+    v = getTimeSeriesToProcess( processor, IndependentTSList, IndependentTSID);
+    tslist = (List)v.get(0);
+    tspos = (int [])v.get(1);
+    tsCount = tslist.size();
+    if ( tsCount == 0 ) {
+        mssg = "Unable to find time series using IndependentTSID \""
+            + IndependentTSID + "\".";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+                command_tag, ++warning_count), rtn, mssg );
+    }
+    independentTSList = new Vector( tsCount );
+    TS independentTS = null;
+    for ( int nTS = 0; nTS < tsCount; nTS++ ) {
+        // Get the time series object.
+        try {
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
+            CommandProcessorRequestResultsBean bean = null;
+            try { bean = processor.processRequest( "GetTimeSeries", request_params);
+            }
+            catch ( Exception e ) {
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        rtn, "Error requesting GetTimeSeries(Index=" + tspos[nTS] +
+                        "\" from processor." );
+            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "TS" );
+            if ( prop_contents == null ) {
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    rtn, "Null value for GetTimeSeries(Index=" + tspos[nTS] +
+                    "\") returned from processor." );
+            }
+            else {	independentTS = (TS)prop_contents;
+            }
 
+            independentTSList.add ( independentTS );
+        } catch ( Exception e ) {
+            // TODO SAM 2005-05-17 Ignore?
+            continue;
+        }
+    }
+    independentTS = null;
+		 
 	if ( AnalysisStart != null && AnalysisStart.length() > 0  ) {
             try {
                 AnalysisStartDateTime = DateTime.parse(AnalysisStart);
@@ -984,10 +922,51 @@ throws InvalidCommandParameterException,
 			rtn, mssg );
 		throw new CommandWarningException ( mssg );
 	}
+     
+}
 
-    if ( __commandMode ) {
-        fillDependents();
-    }
+/**
+Run the command:
+<pre>
+fillPrincipalComponentAnalysis (
+           DependentTSList="...",
+		   DependentTSList="X,Y,...",
+		   IndependentTSList="...",
+		   IndependentTSList="X,Y,...",
+		   AnalysisStart="...",
+		   AnalysisEnd="...",
+		   FillStart="...",
+		   FillEnd="...",
+		   MaxCombinations="..."
+		   RegressionEquationFill="..."
+		   PCAOutputFile="...",
+		   FilledTSOutputFile="...")
+</pre>
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more
+parameter values are invalid.
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+       CommandWarningException,
+       CommandException
+{	String rtn = "fillMixedStation_Command.runCommand", mssg = "";
+	String command_tag = "" + command_number;
+
+    // first run PCA analysis...
+    runAnalysis ( command_tag );
+
+    // now fill the dependent time series
+    fillDependents();
+}
+
+// commandMode true=command; false=tool
+public void setCommandMode(boolean commandMode) {
+    this.__commandMode = commandMode;
 }
 
 /**

@@ -61,6 +61,8 @@ import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.TS.TS;
 import java.awt.Color;
+import java.awt.GridLayout;
+import javax.swing.BoxLayout;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
@@ -194,6 +196,13 @@ private String		__fillDependents_String =
 private String		__fillDependents_Tip =
 	"Fill dependents using best fit.";
 
+private String      __AddWorkingDirectoryPCAFile_String = "Add Working Directory (PCA File)";
+private String      __AddWorkingDirectoryFillTSFile_String = "Add Working Directory (Filled TS File)";
+private String      __RemoveWorkingDirectoryPCAFile_String = "Remove Working Directory (PCA File)";
+private String      __RemoveWorkingDirectoryFillTSFile_String = "Remove Working Directory (Filled TS File)";
+private SimpleJButton __pathPCA_JButton = null,
+            __pathFillTS_JButton = null;
+
 // Member initialized by the createFillCommands() method and used by the
 // the update FillCommandsControl() and copyCommandsToTSTool() methods.
 List __fillCommands_Vector = null;
@@ -285,8 +294,10 @@ public void actionPerformed( ActionEvent event )
 			if ( path != null ) {
                 if ( o == __browse_JButton) {
                     __PCAOutputFile_JTextField.setText( path );
+                    __pathPCA_JButton.setEnabled(true);
                 } else {
                     __FilledTSOutputFile_JTextField.setText( path );
+                    __pathFillTS_JButton.setEnabled(true);
                 }
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
@@ -411,7 +422,45 @@ public void actionPerformed( ActionEvent event )
 	  	if ( !__error_wait ) {
 			copyCommandsToTSTool();
 	  	}
-	}
+	} else if ( o == __pathPCA_JButton ) {
+        if ( __pathPCA_JButton.getText().equals(__AddWorkingDirectoryPCAFile_String) ) {
+			__PCAOutputFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir,__PCAOutputFile_JTextField.getText() ) );
+            __pathPCA_JButton.setText(__RemoveWorkingDirectoryPCAFile_String);
+		}
+		else if ( __pathPCA_JButton.getText().equals(__RemoveWorkingDirectoryPCAFile_String) ) {
+			try {
+			    __PCAOutputFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __PCAOutputFile_JTextField.getText() ) );
+                __pathPCA_JButton.setText(__AddWorkingDirectoryPCAFile_String);
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,"compareFiles_JDialog",
+				"Error converting first file name to relative path." );
+			}
+		}
+        commitEdits();
+		refresh ();
+	} else if ( o == __pathFillTS_JButton ) {
+        if ( __pathFillTS_JButton.getText().equals(__AddWorkingDirectoryFillTSFile_String) ) {
+			__FilledTSOutputFile_JTextField.setText (
+			IOUtil.toAbsolutePath(__working_dir,__FilledTSOutputFile_JTextField.getText() ) );
+            __pathFillTS_JButton.setText(__RemoveWorkingDirectoryFillTSFile_String);
+		}
+		else if ( __pathFillTS_JButton.getText().equals(__RemoveWorkingDirectoryFillTSFile_String) ) {
+			try {
+			    __FilledTSOutputFile_JTextField.setText (
+				IOUtil.toRelativePath ( __working_dir, __FilledTSOutputFile_JTextField.getText() ) );
+                __pathFillTS_JButton.setText(__AddWorkingDirectoryFillTSFile_String);
+			}
+			catch ( Exception e ) {
+				Message.printWarning ( 1,"compareFiles_JDialog",
+				"Error converting first file name to relative path." );
+			}
+		}
+        commitEdits();
+		refresh ();
+    }
 
 	// Fill dependents button - Active only under the tool mode
 	// REVISIT [LT 2005-06-01] There may be room for improvements here:
@@ -1141,6 +1190,21 @@ private void initialize ( JFrame parent )
 		__Command_JScrollPane = new JScrollPane( __Command_JTextArea );
 		JGUIUtil.addComponent(mainTransfer_JPanel, __Command_JScrollPane,
 			1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+        // add buttons to add/remove working directory from PCA and TS output file names
+        JPanel buttonTransfer_JPanel = new JPanel();
+        buttonTransfer_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(mainTransfer_JPanel, buttonTransfer_JPanel,
+            0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        JPanel path_JPanel = new JPanel();
+        path_JPanel.setLayout ( new FlowLayout (FlowLayout.CENTER));
+        __pathPCA_JButton = new SimpleJButton(__RemoveWorkingDirectoryPCAFile_String, this);
+        __pathPCA_JButton.setEnabled ( false );
+        path_JPanel.add ( __pathPCA_JButton );
+        __pathFillTS_JButton = new SimpleJButton(__RemoveWorkingDirectoryFillTSFile_String, this);
+        __pathFillTS_JButton.setEnabled ( false );
+        path_JPanel.add ( __pathFillTS_JButton );
+        buttonTransfer_JPanel.add ( path_JPanel );
 	} else {
 		// These controls will initialially be invisible. Only when commands
 		// are available they will be set visible.
@@ -1178,11 +1242,23 @@ private void initialize ( JFrame parent )
         JGUIUtil.addComponent(mainTransfer_JPanel, buttonTransfer_JPanel,
             0, y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+        JPanel path_JPanel = new JPanel();
+        path_JPanel.setLayout ( new FlowLayout (FlowLayout.CENTER));
+        __pathPCA_JButton = new SimpleJButton(__RemoveWorkingDirectoryPCAFile_String, this);
+        __pathPCA_JButton.setEnabled ( false );
+        path_JPanel.add ( __pathPCA_JButton );
+        __pathFillTS_JButton = new SimpleJButton(__RemoveWorkingDirectoryFillTSFile_String, this);
+        __pathFillTS_JButton.setEnabled ( false );
+        path_JPanel.add ( __pathFillTS_JButton );
+        buttonTransfer_JPanel.add ( path_JPanel );
+
 		// copyCommandsToTSTool button: used only when running as a tool.
 		__copyFillCommandsToTSTool_JButton = new SimpleJButton(__copyCommandsToTSTool_String, this);
 		__copyFillCommandsToTSTool_JButton.setToolTipText( __copyCommandsToTSTool_Tip );
 		__copyFillCommandsToTSTool_JButton.setEnabled( false );
-		buttonTransfer_JPanel.add ( __copyFillCommandsToTSTool_JButton );
+        JGUIUtil.addComponent(mainTransfer_JPanel, __copyFillCommandsToTSTool_JButton,
+            0, ++y, 8, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+		// mainTransfer_JPanel.add ( __copyFillCommandsToTSTool_JButton );
 	}
 
 	// Refresh the contents...
@@ -1668,7 +1744,7 @@ private void refresh()
 			__FilledTSOutputFile_JTextField.setText ( FilledTSOutputFile );
 		}
         __FilledTSOutputFile_JTextField.setEnabled( true );
-       
+
         __browseTS_JButton.setEnabled(true);
 
 	} else {
@@ -1717,6 +1793,27 @@ private void refresh()
 	if ( __command.isCommandMode() ) {
 		__Command_JTextArea.setText( __command.toString(props) );
 	}
+    // Check the path and determine what the label on the path buttons should be...
+        if ( __pathPCA_JButton != null && PCAOutputFile != null ) {
+            __pathPCA_JButton.setEnabled ( true );
+            File f = new File ( PCAOutputFile );
+            if ( f.isAbsolute() ) {
+                __pathPCA_JButton.setText (__RemoveWorkingDirectoryPCAFile_String);
+            }
+            else {
+                __pathPCA_JButton.setText (__AddWorkingDirectoryPCAFile_String );
+            }
+        }
+        if ( __pathFillTS_JButton != null && FilledTSOutputFile != null ) {
+            __pathFillTS_JButton.setEnabled ( true );
+            File f = new File ( FilledTSOutputFile );
+            if ( f.isAbsolute() ) {
+                __pathFillTS_JButton.setText (__RemoveWorkingDirectoryFillTSFile_String);
+            }
+            else {
+                __pathFillTS_JButton.setText (__AddWorkingDirectoryFillTSFile_String );
+            }
+        }
 }
 
 /**

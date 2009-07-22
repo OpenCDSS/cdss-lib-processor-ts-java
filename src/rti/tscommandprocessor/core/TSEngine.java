@@ -930,9 +930,9 @@ which requires the working directory at that point of the workflow.
 private PropList __processor_PropList = null;
 
 /**
-RiversideDB DMI instance Vector, to allow more than one database instance to be open at a time.
+RiversideDB DMI instance list, to allow more than one database instance to be open at a time.
 */
-private List __rdmi_Vector = new Vector();
+private List<RiversideDB_DMI> __rdmi_Vector = new Vector();
 
 /**
 Reference date for year to date report (only use month and day).
@@ -951,8 +951,7 @@ A valid instance should be passed during construction.
 private TSCommandProcessor __ts_processor = null;
 
 /**
-Vector of time series vector that is the result of processing.
-This will always be non-null.
+Vector of time series vector that is the result of processing.  This will always be non-null.
 */
 private List __tslist = new Vector(50,50);
 
@@ -5495,7 +5494,7 @@ private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean )
 }
 
 /**
-Set a RiversideDB_DMI instance in the Vector that is being maintained for use.
+Set a RiversideDB_DMI instance in the list that is being maintained for use.
 The input name in the DMI is used to lookup the instance.  If a match is found,
 the old instance is optionally closed and the new instance is set in the same
 location.  If a match is not found, the new instance is added at the end.
@@ -5514,7 +5513,7 @@ protected void setRiversideDB_DMI ( RiversideDB_DMI rdmi, boolean close_old )
     String input_name = rdmi.getInputName();
     Message.printStatus(2, routine, "Saving RiversideDB_DMI connection \"" + input_name + "\"" );
     for ( int i = 0; i < size; i++ ) {
-        rdmi2 = (RiversideDB_DMI)__rdmi_Vector.get(i);
+        rdmi2 = __rdmi_Vector.get(i);
         if ( rdmi2.getInputName().equalsIgnoreCase(input_name)){
             // The input name of the current instance matches that of the instance in the Vector.
             // Replace the instance in the Vector by the new instance...

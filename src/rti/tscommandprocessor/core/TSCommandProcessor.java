@@ -3671,6 +3671,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
             __tsengine.setOutputYearType ( __tsengine._CALENDAR_YEAR );
         }
     }
+    else if ( prop.equalsIgnoreCase("RiversideDBDMI" ) ) {
+        __tsengine.setRiversideDB_DMI ( (RiversideDB_DMI)contents, true );
+    }
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (List)contents );
 	}

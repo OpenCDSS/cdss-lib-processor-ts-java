@@ -485,7 +485,7 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String ValueToCheck = parameters.getValue( "EnsembleID" );
+    String ValueToCheck = parameters.getValue( "ValueToCheck" );
     String CheckCriteria = parameters.getValue( "CheckCriteria" );
     String Value1 = parameters.getValue( "Value1" );
     String Value2 = parameters.getValue( "Value2" );

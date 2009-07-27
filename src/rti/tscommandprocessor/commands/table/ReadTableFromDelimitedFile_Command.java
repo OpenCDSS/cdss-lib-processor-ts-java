@@ -17,7 +17,6 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;

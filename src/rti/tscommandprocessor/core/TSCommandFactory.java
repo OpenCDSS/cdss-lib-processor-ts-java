@@ -98,6 +98,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 // Table commands.
 
+import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 
@@ -116,6 +117,7 @@ import rti.tscommandprocessor.commands.ts.AdjustExtremes_Command;
 import rti.tscommandprocessor.commands.ts.AnalyzePattern_Command;
 import rti.tscommandprocessor.commands.ts.ARMA_Command;
 import rti.tscommandprocessor.commands.ts.Blend_Command;
+import rti.tscommandprocessor.commands.ts.CalculateTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.ts.ChangeInterval_Command;
 import rti.tscommandprocessor.commands.ts.ChangePeriod_Command;
 import rti.tscommandprocessor.commands.ts.CompareTimeSeries_Command;
@@ -310,6 +312,9 @@ throws UnknownCommandException
 
 	// "C" commands...
 
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"CalculateTimeSeriesStatistic") ) {
+        return new CalculateTimeSeriesStatistic_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"ChangePeriod") ) {
         return new ChangePeriod_Command ();
     }
@@ -467,6 +472,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("NewPatternTimeSeries") ) {
 		return new NewPatternTimeSeries_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"NewTable") ) {
+        return new NewTable_Command ();
+    }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("NewTimeSeries") ) {
 		return new NewTimeSeries_Command ();
 	}

@@ -200,35 +200,47 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	String OutputFile_full = null;
-	try {
-        // Get the table information  
-	    String OutputFile = parameters.getValue ( "OutputFile" );
-	    OutputFile_full = OutputFile;
-        String TableID = parameters.getValue ( "TableID" );
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "TableID", TableID );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "GetTable", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report problem to software support." ) );
-        }
-        PropList bean_PropList = bean.getResultsPropList();
-        Object o_Table = bean_PropList.getContents ( "Table" );
-        if ( o_Table == null ) {
-            message = "Unable to find table to process using TableID=\"" + TableID + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report problem to software support." ) );
-        }
-        DataTable table = (DataTable)o_Table;
-    
+
+    // Get the table information  
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    OutputFile_full = OutputFile;
+    String TableID = parameters.getValue ( "TableID" );
+    PropList request_params = new PropList ( "" );
+    request_params.set ( "TableID", TableID );
+    CommandProcessorRequestResultsBean bean = null;
+    try {
+        bean = processor.processRequest( "GetTable", request_params);
+    }
+    catch ( Exception e ) {
+        message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+        Message.printWarning(warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Report problem to software support." ) );
+    }
+    PropList bean_PropList = bean.getResultsPropList();
+    Object o_Table = bean_PropList.getContents ( "Table" );
+    DataTable table = null;
+    if ( o_Table == null ) {
+        message = "Unable to find table to process using TableID=\"" + TableID + "\".";
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Verify that a table exists with the requested ID." ) );
+    }
+    else {
+        table = (DataTable)o_Table;
+    }
+        
+    if ( warning_count > 0 ) {
+        message = "There were " + warning_count + " warnings for command parameters.";
+        Message.printWarning ( 2,
+        MessageUtil.formatMessageTag(command_tag, ++warning_count),
+        routine,message);
+        throw new InvalidCommandParameterException ( message );
+    }
+        
+    try {
     	// Now try to write...
     
         OutputFile_full = OutputFile;

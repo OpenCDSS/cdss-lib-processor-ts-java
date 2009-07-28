@@ -74,6 +74,7 @@ throws InvalidCommandParameterException
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String Value1 = parameters.getValue ( "Value1" );
     String Value2 = parameters.getValue ( "Value2" );
+    String Value3 = parameters.getValue ( "Value3" );
     String warning = "";
     String message;
     
@@ -122,7 +123,7 @@ throws InvalidCommandParameterException
             }
         }
         
-        if ( nRequiredValues == 2 ) {
+        if ( nRequiredValues >= 2 ) {
             if ( (Value2 == null) || Value2.equals("") ) {
                 message = "Value2 must be specified for the statistic.";
                 warning += "\n" + message;
@@ -135,6 +136,28 @@ throws InvalidCommandParameterException
                 status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify Value2 as a number." ) );
             }
+        }
+        
+        if ( nRequiredValues == 3 ) {
+            if ( (Value3 == null) || Value3.equals("") ) {
+                message = "Value3 must be specified for the statistic.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Provide Value3." ) );
+            }
+            else if ( !StringUtil.isDouble(Value2) ) {
+                message = "Value3 (" + Value3 + ") is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify Value3 as a number." ) );
+            }
+        }
+
+        if ( nRequiredValues > 3 ) {
+            message = "A maximum of 3 values are supported as input to statistic computation.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Refer to documentation for statistic.  Contact software support if necessary." ) ); 
         }
     }
 
@@ -171,6 +194,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Statistic" );
     valid_Vector.add ( "Value1" );
     valid_Vector.add ( "Value2" );
+    valid_Vector.add ( "Value3" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "TableID" );
@@ -239,6 +263,11 @@ CommandWarningException, CommandException
     Double Value2_Double = null;
     if ( (Value2 != null) && !Value2.equals("") ) {
         Value2_Double = new Double(Value2);
+    }
+    String Value3 = parameters.getValue ( "Value3" );
+    Double Value3_Double = null;
+    if ( (Value3 != null) && !Value3.equals("") ) {
+        Value3_Double = new Double(Value3);
     }
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
@@ -448,7 +477,7 @@ CommandWarningException, CommandException
             try {
                 // Do the calculation...
                 TSUtil_CalculateTimeSeriesStatistic tsStatistic = new TSUtil_CalculateTimeSeriesStatistic(ts, Statistic,
-                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double );
+                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, Value3_Double );
                 tsStatistic.calculateTimeSeriesStatistic();
                 // Now set in the table
                 if ( TableID != null ) {
@@ -459,13 +488,14 @@ CommandWarningException, CommandException
                             tsid = ts.getIdentifierString();
                         }
                         TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
+                        int statisticColumn = table.getFieldIndex(TableStatisticColumn);
                         if ( rec != null ) {
                             // There is already a row for the TSID so just set the value in the table column...
+                            rec.setFieldValue(statisticColumn, tsStatistic.getStatisticResult());
                         }
                         else {
                             // There is no row in the table for the time series so add a row to the table...
                             int tsidColumn = table.getFieldIndex(TableTSIDColumn);
-                            int statisticColumn = table.getFieldIndex(TableStatisticColumn);
                             table.addRecord(table.emptyRecord().setFieldValue(tsidColumn, tsid).
                                 setFieldValue(statisticColumn, tsStatistic.getStatisticResult()));
                         }
@@ -518,6 +548,7 @@ public String toString ( PropList parameters )
     String Statistic = parameters.getValue( "Statistic" );
     String Value1 = parameters.getValue( "Value1" );
     String Value2 = parameters.getValue( "Value2" );
+    String Value3 = parameters.getValue( "Value3" );
     String AnalysisStart = parameters.getValue( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
     String IfNotFound = parameters.getValue ( "IfNotFound" );
@@ -562,6 +593,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Value2=" + Value2 );
+    }
+    if ( (Value3 != null) && (Value3.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Value3=" + Value3 );
     }
     if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
         if ( b.length() > 0 ) {

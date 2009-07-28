@@ -49,6 +49,7 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Statistic_JComboBox = null;
 private JTextField __Value1_JTextField = null;
 private JTextField __Value2_JTextField = null;
+private JTextField __Value3_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
@@ -128,6 +129,7 @@ private void checkInput ()
     String Statistic = __Statistic_JComboBox.getSelected();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String Value2 = __Value2_JTextField.getText().trim();
+	String Value3 = __Value3_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
@@ -152,6 +154,9 @@ private void checkInput ()
 	}
     if ( Value2.length() > 0 ) {
         parameters.set ( "Value2", Value2 );
+    }
+    if ( Value3.length() > 0 ) {
+        parameters.set ( "Value3", Value3 );
     }
 	if ( AnalysisStart.length() > 0 ) {
 		parameters.set ( "AnalysisStart", AnalysisStart );
@@ -189,6 +194,7 @@ private void commitEdits ()
     String Statistic = __Statistic_JComboBox.getSelected();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String Value2 = __Value2_JTextField.getText().trim();
+	String Value3 = __Value3_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
@@ -200,6 +206,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Statistic", Statistic );
 	__command.setCommandParameter ( "Value1", Value1 );
 	__command.setCommandParameter ( "Value2", Value2 );
+	__command.setCommandParameter ( "Value3", Value3 );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "TableID", TableID );
@@ -301,6 +308,16 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     __Value2_JTextField = new JTextField ( 10 );
     __Value2_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Value2_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - may be needed as input to calculate statistic."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value3:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Value3_JTextField = new JTextField ( 10 );
+    __Value3_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Value3_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - may be needed as input to calculate statistic."), 
@@ -434,6 +451,7 @@ private void refresh ()
     String Statistic = "";
 	String Value1 = "";
 	String Value2 = "";
+	String Value3 = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
 	String TableID = "";
@@ -449,6 +467,7 @@ private void refresh ()
         Statistic = props.getValue ( "Statistic" );
 		Value1 = props.getValue ( "Value1" );
 		Value2 = props.getValue ( "Value2" );
+		Value3 = props.getValue ( "Value3" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		TableID = props.getValue ( "TableID" );
@@ -519,6 +538,9 @@ private void refresh ()
         if ( Value2 != null ) {
             __Value2_JTextField.setText ( Value2 );
         }
+        if ( Value3 != null ) {
+            __Value3_JTextField.setText ( Value3 );
+        }
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText( AnalysisStart );
 		}
@@ -552,8 +574,9 @@ private void refresh ()
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     Statistic = __Statistic_JComboBox.getSelected();
+    Value1 = __Value1_JTextField.getText().trim();
     Value2 = __Value2_JTextField.getText().trim();
-	Value1 = __Value1_JTextField.getText().trim();
+	Value3 = __Value3_JTextField.getText().trim();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
@@ -566,6 +589,7 @@ private void refresh ()
     props.add ( "Statistic=" + Statistic );
     props.add ( "Value1=" + Value1 );
     props.add ( "Value2=" + Value2 );
+    props.add ( "Value3=" + Value3 );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
     props.add ( "TableID=" + TableID );

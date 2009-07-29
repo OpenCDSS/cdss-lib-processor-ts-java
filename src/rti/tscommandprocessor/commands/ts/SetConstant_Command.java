@@ -415,7 +415,7 @@ CommandWarningException, CommandException
 	// Constant value...
 
 	String ConstantValue = parameters.getValue("ConstantValue");
-	double ConstantValue_double = StringUtil.atod ( ConstantValue );
+	double ConstantValue_double = Double.parseDouble ( ConstantValue );
     
     String MonthValues = parameters.getValue("MonthValues");
     double [] MonthValues_double = null;
@@ -425,7 +425,7 @@ CommandWarningException, CommandException
         String val;
         for ( int i = 0; i < 12; i++ ) {
             val = ((String)v.get(i)).trim();
-            MonthValues_double[i] = StringUtil.atod ( val );
+            MonthValues_double[i] = Double.parseDouble ( val );
         }
     }
 
@@ -577,15 +577,15 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	ts = (TS)prop_contents;
+		else {
+		    ts = (TS)prop_contents;
 		}
 		
 		if ( ts == null ) {
 			// Skip time series.
             message = "Unable to set time series at position " + tspos[its] + " - null time series.";
 			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
+				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report the problem to software support." ) );
@@ -593,12 +593,15 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the setting...
-		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with constant " + ConstantValue + "." );
 		try {
             if ( MonthValues_double == null ) {
+                Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with constant " + ConstantValue +
+                    " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
                 TSUtil.setConstant ( ts, SetStart_DateTime, SetEnd_DateTime, ConstantValue_double );
             }
             else {
+                Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" with monthly constants " +
+                    MonthValues_double + " for period " + SetStart_DateTime + " to " + SetEnd_DateTime );
                 TSUtil.setConstantByMonth ( ts, SetStart_DateTime, SetEnd_DateTime, MonthValues_double );
             }
 		}

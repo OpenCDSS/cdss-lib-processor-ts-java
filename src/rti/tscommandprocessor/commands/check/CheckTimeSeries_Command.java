@@ -78,6 +78,7 @@ throws InvalidCommandParameterException
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String Value1 = parameters.getValue ( "Value1" );
     String Value2 = parameters.getValue ( "Value2" );
+    String MaxWarnings = parameters.getValue ( "MaxWarnings" );
     String warning = "";
     String message;
     
@@ -175,6 +176,13 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (MaxWarnings != null) && !StringUtil.isInteger(MaxWarnings) ) {
+        message = "MaxWarnings (" + MaxWarnings + ") is not an integer.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify MaxWarnings as an integer." ) );
+    }
+    
     // Check for invalid parameters...
     List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
@@ -187,6 +195,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "ProblemType" );
+    valid_Vector.add ( "MaxWarnings" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -254,6 +263,11 @@ CommandWarningException, CommandException
     String ProblemType = parameters.getValue ( "ProblemType" );
     if ( (ProblemType ==null) || ProblemType.equals("") ) {
         ProblemType = "Check"; // Default
+    }
+    String MaxWarnings = parameters.getValue ( "MaxWarnings" );
+    int MaxWarnings_int = -1;
+    if ( (MaxWarnings != null) && !MaxWarnings.equals("") ) {
+        MaxWarnings_int = Integer.parseInt(MaxWarnings);
     }
 
     // Figure out the dates to use for the analysis.
@@ -433,7 +447,20 @@ CommandWarningException, CommandException
                 check.checkTimeSeries();
                 List<String> problems = check.getProblems();
                 int problemsSize = problems.size();
-                for ( int iprob = 0; iprob < problemsSize; iprob++ ) {
+                int problemsSizeOutput = problemsSize;
+                if ( (MaxWarnings_int > 0) && (problemsSize > MaxWarnings_int) ) {
+                    // Limit the warnings to the maximum
+                    problemsSizeOutput = MaxWarnings_int;
+                }
+                if ( problemsSizeOutput < problemsSize ) {
+                    message = "Time series had " + problemsSize + " check warnings - only " + problemsSizeOutput + " are listed.";
+                    Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                    // No recommendation since it is a user-defined check
+                    // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
+                }
+                for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
                     message = problems.get(iprob);
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
@@ -492,6 +519,7 @@ public String toString ( PropList parameters )
     String AnalysisStart = parameters.getValue( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
     String ProblemType = parameters.getValue( "ProblemType" );
+    String MaxWarnings = parameters.getValue( "MaxWarnings" );
     String IfNotFound = parameters.getValue ( "IfNotFound" );
         
     StringBuffer b = new StringBuffer ();
@@ -555,6 +583,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ProblemType=\"" + ProblemType + "\"" );
+    }
+    if ( (MaxWarnings != null) && (MaxWarnings.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MaxWarnings=" + MaxWarnings  );
     }
     if ( IfNotFound != null && IfNotFound.length() > 0 ) {
         if ( b.length() > 0 ) {

@@ -52,7 +52,8 @@ private JTextField __Value1_JTextField = null;
 private JTextField __Value2_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
-private JTextField __ProblemType_JTextField = null;// Field for new units
+private JTextField __ProblemType_JTextField = null;// Field for problem type
+private JTextField __MaxWarnings_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -129,6 +130,7 @@ private void checkInput ()
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
+	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -161,6 +163,9 @@ private void checkInput ()
 	if ( ProblemType.length() > 0 ) {
 		parameters.set ( "ProblemType", ProblemType );
 	}
+    if ( MaxWarnings.length() > 0 ) {
+        parameters.set ( "MaxWarnings", MaxWarnings );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -186,6 +191,7 @@ private void commitEdits ()
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
+	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -196,6 +202,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "ProblemType", ProblemType );
+	__command.setCommandParameter ( "MaxWarnings", MaxWarnings );
 }
 
 /**
@@ -334,6 +341,16 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - problem type to use in output (default=" + __command._PROBLEM_TYPE_Check + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum warnings:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MaxWarnings_JTextField = new JTextField ( 10 );
+    __MaxWarnings_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MaxWarnings_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - maximum # of warnings/time series (default=no limit)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -421,6 +438,7 @@ private void refresh ()
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
 	String ProblemType = "";
+	String MaxWarnings = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -434,7 +452,8 @@ private void refresh ()
 		Value2 = props.getValue ( "Value2" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
-		ProblemType = props.getValue ( "NewUnits" );
+		ProblemType = props.getValue ( "ProblemType" );
+		MaxWarnings = props.getValue ( "MaxWarnings" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -524,6 +543,9 @@ private void refresh ()
 		if ( ProblemType != null ) {
 			__ProblemType_JTextField.setText ( ProblemType );
 		}
+        if ( MaxWarnings != null ) {
+            __MaxWarnings_JTextField.setText ( MaxWarnings );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -536,6 +558,7 @@ private void refresh ()
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	ProblemType = __ProblemType_JTextField.getText().trim();
+	MaxWarnings = __MaxWarnings_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -547,6 +570,7 @@ private void refresh ()
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "ProblemType=" + ProblemType );
+	props.add ( "MaxWarnings=" + MaxWarnings );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

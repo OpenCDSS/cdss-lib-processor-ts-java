@@ -153,7 +153,7 @@ throws InvalidCommandParameterException
 	// alias used by the original time series.  If so print a warning...
 	// TODO [LT 2005-05-26] Would this alternative be more appropriated?
 	// Notice: The version above is the one used by the others commands.
-	if ( (Alias != null) && TSID.equalsIgnoreCase( Alias ) ) {
+	if ( (Alias != null) && (TSID != null) && TSID.equalsIgnoreCase( Alias ) ) {
         message = "The alias \"" + Alias
         + "\" for the new time series is equal to the alias "
         + "of the original time series.";
@@ -191,7 +191,7 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify an old time scale."));
 	}
-	if ( 	!OldTimeScale.equalsIgnoreCase(MeasTimeScale.ACCM) &&
+	if ( OldTimeScale != null && !OldTimeScale.equalsIgnoreCase(MeasTimeScale.ACCM) &&
 		!OldTimeScale.equalsIgnoreCase(MeasTimeScale.MEAN) &&
 		!OldTimeScale.equalsIgnoreCase(MeasTimeScale.INST) ) {
 		message = "The old time scale (" + OldTimeScale + ") is invalid.";
@@ -206,14 +206,15 @@ throws InvalidCommandParameterException
 	// may edit the command without using the changeInterval_JDialog editor
 	// and try to run it, so this method should at least make sure the 
 	// NewTimeScale property is given.
-	if ( NewTimeScale != null && NewTimeScale.length() == 0 ) {
+	if ( (NewTimeScale != null) && NewTimeScale.length() == 0 ) {
         message = "The new time scale must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify a new time scale."));
 	}
-	if ( 	!NewTimeScale.equalsIgnoreCase(MeasTimeScale.ACCM) &&
+	if ( (NewTimeScale != null) &&
+	    !NewTimeScale.equalsIgnoreCase(MeasTimeScale.ACCM) &&
 		!NewTimeScale.equalsIgnoreCase(MeasTimeScale.MEAN) &&
 		!NewTimeScale.equalsIgnoreCase(MeasTimeScale.INST) ) {
         message = "The new time scale (" + OldTimeScale + ") is invalid.";

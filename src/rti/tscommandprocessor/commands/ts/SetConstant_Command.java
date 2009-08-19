@@ -415,7 +415,10 @@ CommandWarningException, CommandException
 	// Constant value...
 
 	String ConstantValue = parameters.getValue("ConstantValue");
-	double ConstantValue_double = Double.parseDouble ( ConstantValue );
+	double ConstantValue_double = 0.0;
+	if ( (ConstantValue != null) && !ConstantValue.equals("") ) {
+	    ConstantValue_double = Double.parseDouble ( ConstantValue );
+	}
     
     String MonthValues = parameters.getValue("MonthValues");
     double [] MonthValues_double = null;

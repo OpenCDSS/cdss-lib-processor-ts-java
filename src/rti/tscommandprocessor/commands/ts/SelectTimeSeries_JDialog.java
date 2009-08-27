@@ -279,7 +279,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example, 1,2,7-8 (positions are 1+)." ),
 		2, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        List select_all_first = new Vector ( 3 );
+    List select_all_first = new Vector ( 3 );
 	select_all_first.add ( "" );
 	select_all_first.add ( __command._False );
 	select_all_first.add ( __command._True );
@@ -290,7 +290,8 @@ private void initialize ( JFrame parent, Command command )
 	__DeselectAllFirst_JComboBox.addItemListener ( this );
     	JGUIUtil.addComponent(main_JPanel, __DeselectAllFirst_JComboBox,
 	1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Eliminates need for separate deselect."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - eliminates need for separate deselect (default=" +
+        __command._False + ")."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

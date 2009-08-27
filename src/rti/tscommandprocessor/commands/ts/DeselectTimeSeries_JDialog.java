@@ -284,7 +284,8 @@ private void initialize ( JFrame parent, Command command )
 	__SelectAllFirst_JComboBox.addItemListener ( this );
     	JGUIUtil.addComponent(main_JPanel, __SelectAllFirst_JComboBox,
 	1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Eliminates need for separate select."),
+    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - eliminates need for separate select (default=" +
+        __command._False + ")."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

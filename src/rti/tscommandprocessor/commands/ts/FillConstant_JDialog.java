@@ -380,34 +380,32 @@ private void refresh ()
 			// Select default...
 			__TSList_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__TSList_JComboBox, TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
 			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
-				"\".  Select a different value or Cancel.");
+			else {
+			    Message.printWarning ( 1, routine, "Existing command references an invalid\nTSList value \"" +
+				TSList + "\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {
+		    // Automatically add to the list after the blank...
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the blank...
+			else {
+			    // Select the blank...
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
-       if ( EnsembleID == null ) {
+        if ( EnsembleID == null ) {
             // Select default...
             __EnsembleID_JComboBox.select ( 0 );
         }

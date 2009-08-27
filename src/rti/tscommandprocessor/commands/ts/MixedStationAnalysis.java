@@ -1,17 +1,3 @@
-// ----------------------------------------------------------------------------
-// MixedStationAnalysis -
-// ----------------------------------------------------------------------------
-// History:
-//
-// 2005-04-08	Luiz Teixeira, RTi	Created initial version.
-// 2005-05-26	Luiz Teixeira, RTi	Copied the original class
-//					MixedStationAnalysis() from TSTool while
-//					copying fillMixedStation_JDialog and
-//					splitting it into the new
-//					fillMixedStation_JDialog() and
-//					fillMixedStation_Command().
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.io.PrintWriter;
@@ -34,7 +20,9 @@ import RTi.Util.Time.StopWatch;
 /**
 This class executes the Mixed Station Analysis computing a series of
 time series regressions between the dependent and independent time series.
-This class rely on the TSRegression object for the regression analysis.
+This class relies on the TSRegression object for the regression analysis.
+Multiple time series can be analyzed at the same time to promote bulk analysis, and
+a report can be created to summarize the results.
 */
 public class MixedStationAnalysis
 {
@@ -75,9 +63,12 @@ private List __dependentStatisticsVector = null;
 					// TSRegressions between the dependent
 					// and all the independent time series.
 
-// Analysis properties listed in logical order
+
+/**
+Analysis Methods to use (see ANALYSIS_METHOD).
+*/
 private List __AnalysisMethod_Vector = null;
-					// Stores the Analysis Methods to use
+
 private List __Transformation_Vector = null;
 					// Stores the Transformations to use
 private String __NumberOfEquations = null;
@@ -91,7 +82,7 @@ private String __BestFitIndicator  = null;
 					// Stores the Best Fit Indicator to use
 private int __intBestFitIndicator;	// Used to store a integer id for the
 					// BestFitIndicator to be used in
-					// switchs
+					// switches
 private DateTime __FillStart = null;
 					// Stores the Fill Start to use
 private DateTime __FillEnd = null;
@@ -129,7 +120,7 @@ private int [][][] __sortedOrder = null;
 Perform the mixed stations analysis and create the report.
 
 @param independentTSList The list of independent time series references (X).
-@param dependentTSList   The list of dependent time series references (Y).
+@param dependentTSList The list of dependent time series references (Y).
 @param props Property list indicating how the regression should be performed.
 Possible properties are listed in the table below:
 <p>
@@ -251,7 +242,6 @@ Transformation" is required or "Log,None" if both are required.</td>
 
 
 </table>
-//REVISIT [LT 2005-04-20] Need to revise how all this default values are handled
 @throws Exception if an invalid results passed in.
 */
 public MixedStationAnalysis ( List dependentTSList, List independentTSList, PropList props )
@@ -1183,7 +1173,7 @@ private void createReportSummary()
 	int MinimumDataCount = Integer.parseInt( __MinimumDataCount );
 
 	// __MinimumR as double.
-	double MinimumR = Integer.parseInt( __MinimumR );
+	double MinimumR = Double.parseDouble( __MinimumR );
 
 	// TSRegression properties
 	String AnalysisMethod = null;

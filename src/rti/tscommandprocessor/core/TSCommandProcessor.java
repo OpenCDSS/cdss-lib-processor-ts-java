@@ -3493,7 +3493,7 @@ protected void setCreateOutput ( Boolean CreateOutput_Boolean )
 
 /**
 Set the initial working directory for the processor.  This is typically the location
-of the commands file, or a temporary directory if the commands have not been saved.
+of the command file, or a temporary directory if the commands have not been saved.
 Also set the current working directory by calling setWorkingDir() with the same information.
 @param InitialWorkingDir The current working directory.
 */

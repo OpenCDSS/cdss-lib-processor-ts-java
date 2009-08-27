@@ -939,7 +939,7 @@ protected static List getTSIdentifiersFromCommands ( List commands, boolean incl
                 for ( int its = 0; its < tssize; its++ ) {
                     ts = (TS)list.get(its);
                     if ( !ts.getAlias().equals("") ) {
-                        // Use the alias if it is avaialble.
+                        // Use the alias if it is available.
                         v.add( ts.getAlias() );
                     }
                     else {

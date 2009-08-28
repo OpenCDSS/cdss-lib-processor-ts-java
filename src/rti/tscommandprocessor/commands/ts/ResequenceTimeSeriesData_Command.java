@@ -12,7 +12,6 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
-import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -22,7 +21,6 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
-import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -76,7 +74,6 @@ throws InvalidCommandParameterException
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
 
-	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
     
@@ -192,6 +189,7 @@ throws InvalidCommandParameterException
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
+// TODO SAM 2009-09-28 Enable reading the sequence from a row rather than a columns
 /**
 Get the year sequence as a row from the table.
 */
@@ -217,7 +215,7 @@ throws Exception
         else if ( o instanceof String ) {
             s = (String)o;
             if ( StringUtil.isInteger(s) ) {
-                year_sequence[ival] = StringUtil.atoi(s);
+                year_sequence[ival] = Integer.parseInt(s);
             }
             else {
                 message = "Column " + (icol + 1) + " value (" + s + ") is not an integer.";
@@ -243,23 +241,6 @@ throws Exception
         message = "There were " + warning_count + " errors getting the years from the table row.";
         throw new Exception ( message );
     }
-    /*
-    int [] year_sequence = new int[] //[nyears];
-                                   {1986,1942,1952,1987,1958,1995,1977,1988,
-                                  1940,1972,1991,1937,1979,1956,1986,
-                                  1943,1991,1973,1958,1992,1962,1976,
-                                  1963,1950,1970,1947,1947,1966,1984,
-                                  1942,1965,1996,1974,1963,1955,1994,
-                                  1984,1941,1944,1987,1997,1964,1939,
-                                  1992,1957,1968,1940,1954,1958,1972,
-                                  1961,1974,1991,1973,1972,1983,1987,
-                                  1992,1951,1951,1993,1975,1944,1949,
-                                  1976,1955,1986,1954,1955,1942,1970,
-                                  1966,1955,1974,1969,1986,1951,1966,
-                                  1989,1945,1960,1937,1972,1988,1994,
-                                  1972,1952,1962,1972,1995,1991,1968,
-                                  1993,1974,1957,1997,1989,1937,1950,1938 };
-                                  */
     return year_sequence;
 }
 
@@ -311,7 +292,7 @@ throws Exception
     Object o;
     int ival = 0;
     String s;
-    for ( int irow = TableRowStart_int; irow <+ TableRowEnd_int; irow++, ival++ ) {
+    for ( int irow = TableRowStart_int; irow <= TableRowEnd_int; irow++, ival++ ) {
         TableRecord rec = table.getRecord(irow);
         o = rec.getFieldValue(TableColumn_int);
         if ( o instanceof Integer ) {
@@ -321,7 +302,7 @@ throws Exception
         else if ( o instanceof String ) {
             s = (String)o;
             if ( StringUtil.isInteger(s) ) {
-                year_sequence[ival] = StringUtil.atoi(s);
+                year_sequence[ival] = Integer.parseInt(s);
             }
             else {
                 message = "Row " + (irow + 1) + " value (" + s + ") is not an integer.";
@@ -451,9 +432,9 @@ CommandWarningException, CommandException
 	}
     
     String OutputStart = parameters.getValue ( "OutputStart" );
-    String OutputEnd = parameters.getValue ( "OutputEnd" );
+    //String OutputEnd = parameters.getValue ( "OutputEnd" );
     DateTime OutputStart_DateTime = null;
-    DateTime OutputEnd_DateTime = null;
+    //DateTime OutputEnd_DateTime = null;
     if ( (OutputStart != null) && !OutputStart.equals("") ) {
         try {
         request_params = new PropList ( "" );
@@ -619,10 +600,10 @@ CommandWarningException, CommandException
         }
     }
     if ( TableRowStart != null ) {
-        TableRowStart_int = StringUtil.atoi ( TableRowStart );
+        TableRowStart_int = Integer.parseInt ( TableRowStart );
     }
     if ( TableRowEnd != null ) {
-        TableRowEnd_int = StringUtil.atoi ( TableRowEnd );
+        TableRowEnd_int = Integer.parseInt ( TableRowEnd );
     }
     int [] year_sequence = null;
     try {
@@ -663,7 +644,7 @@ CommandWarningException, CommandException
             newts.getIdentifier().setScenario(NewScenario);
         }
         // Allocate space for the new time series, for the requested years...
-        // Make sure that the start date is Jan 1 of the specified year
+        // Make sure that the start date is Jan 1 of the specified year and go to Dec 12 of the end year
         DateTime OutputStart_new_DateTime = new DateTime(ts.getDate1());
         if ( OutputStart_DateTime != null ) {
             OutputStart_new_DateTime.setYear(OutputStart_DateTime.getYear());
@@ -673,7 +654,7 @@ CommandWarningException, CommandException
         // The output end is the end of the year for the number of years...
         DateTime OutputEnd_new_DateTime = new DateTime(OutputStart_new_DateTime);
         OutputEnd_new_DateTime.addYear ( nyears - 1 );
-        OutputStart_new_DateTime.setMonth(12);
+        OutputEnd_new_DateTime.setMonth(12);
         newts.setDate2(OutputEnd_new_DateTime);
         newts.allocateDataSpace();
         // Set all data to missing so as to not confuse with old data...
@@ -697,7 +678,8 @@ CommandWarningException, CommandException
                 }
                 b.append ( "" + year_sequence[iy]);
             }
-            ts.addToGenesis( "Resequenced data using years: " + b.toString() );
+            newts.addToGenesis( "Resequenced data using " + year_sequence.length + " years (new period is " +
+                newts.getDate1() + " to " + newts.getDate2() + "): " + b.toString() );
         }
         catch ( Exception e ) {
             message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\" (" + e + ").";

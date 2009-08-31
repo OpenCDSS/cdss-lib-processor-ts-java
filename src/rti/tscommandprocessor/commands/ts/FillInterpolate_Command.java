@@ -497,11 +497,12 @@ CommandWarningException, CommandException
 	}
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
-		message = "Insufficient data to run command.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
 	}
 
 	// Now process the time series...

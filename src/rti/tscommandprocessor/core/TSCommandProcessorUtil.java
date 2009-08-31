@@ -21,13 +21,16 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
+import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.ProcessRunner;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Time.DateTime;
 
 /**
 This class contains static utility methods to support TSCommandProcessor.  These methods
@@ -486,11 +489,79 @@ public static boolean getCreateOutput ( CommandProcessor processor )
 }
 
 /**
+Get a date/time property from the processor, recognizing normal date/time strings and special strings
+like OutputPeriod.
+@param dateTime date/time string to process.
+@param parameterName name for parameter for messages.
+@param processor command processor from which to retrieve the date.
+@param status command status, to receive logging information.
+@param int warning_level level at which to log information.
+@param commandTag string tag for logging.
+@exception InvalidCommandParameterException if the parameter is not valid.
+*/
+public static DateTime getDateTime ( String dateTime, String parameterName, CommandProcessor processor,
+    CommandStatus status, int warningLevel, String commandTag )
+throws InvalidCommandParameterException
+{   String routine = "TSCommandProcessorUtil.getDateTime", message;
+    DateTime dt = null;
+    int logLevel = 3;
+    int warningCount = 0; // only has local scope and limited meaning
+    if ( dateTime == null ) {
+        return null;
+    }
+    try {
+        PropList request_params = new PropList ( "" );
+        request_params.set ( "DateTime", dateTime );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting " + parameterName + " DateTime(DateTime=" + dateTime +
+                "\") from processor.";
+            Message.printWarning(logLevel,
+                MessageUtil.formatMessageTag( commandTag, ++warningCount), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+
+        PropList bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for " + parameterName + " DateTime(DateTime=" + dateTime +
+                "\") returned from processor.";
+            Message.printWarning(logLevel,
+                MessageUtil.formatMessageTag( commandTag, ++warningCount),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time or OutputEnd." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+        else {
+            dt = (DateTime)prop_contents;
+        }
+    }
+    catch ( Exception e ) {
+        message = parameterName + " \"" + dateTime + "\" is invalid.";
+        Message.printWarning(warningLevel,
+            MessageUtil.formatMessageTag( commandTag, ++warningCount),
+            routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid date/time or OutputEnd." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
+    return dt;
+}
+
+/**
 Get a list of ensemble identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted..
 @param commands Commands to search.
-@return list of table identifiers or an empty non-null Vector if nothing
-found.
+@return list of table identifiers or an empty non-null list if nothing found.
 */
 private static List getEnsembleIdentifiersFromCommands ( List commands )
 {   // Default behavior...
@@ -550,11 +621,10 @@ protected static List getEnsembleIdentifiersFromCommands ( List commands, boolea
 
 /**
 Return the ensemble identifiers for commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of
-identifiers to editor dialogs.
+in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
-@return a Vector of String containing the ensemble identifiers, or an empty Vector.
+@return a list of String containing the ensemble identifiers, or an empty Vector.
 */
 public static List getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {   String routine = "TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand";
@@ -675,7 +745,7 @@ column names to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
 @param sort Indicates whether column names should be sorted (NOT YET IMPLEMENTED).
-@return a Vector of String containing the ensemble identifiers, or an empty Vector.
+@return a list of String containing the ensemble identifiers, or an empty Vector.
 */
 public static List getTableColumnNamesFromCommandsBeforeCommand(
         TSCommandProcessor processor, Command command, String table_id, boolean sort )
@@ -777,8 +847,7 @@ protected static List getTableIdentifiersFromCommands ( List commands, boolean s
 
 /**
 Return the table identifiers for commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of
-identifiers to editor dialogs.
+in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
 @return a Vector of String containing the table identifiers, or an empty Vector.
@@ -977,12 +1046,10 @@ protected static List getTSIdentifiersFromCommands ( List commands, boolean incl
 
 /**
 Return the time series identifiers for commands before a specific command
-in the TSCommandProcessor.  This is used, for example, to provide a list of
-identifiers to editor dialogs.
+in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
-@return a Vector of String containing the time series identifiers, or an empty
-Vector.
+@return a list of String containing the time series identifiers, or an empty list.
 */
 public static List getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {	String routine = "TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand";

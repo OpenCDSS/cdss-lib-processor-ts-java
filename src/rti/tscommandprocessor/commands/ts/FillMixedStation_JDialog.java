@@ -51,7 +51,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import rti.tscommandprocessor.core.TSCommandFactory;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
@@ -69,7 +68,10 @@ import RTi.Util.IO.CommandListUI;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.UnknownCommandException;
+import RTi.Util.Math.BestFitIndicatorType;
+import RTi.Util.Math.DataTransformationType;
+import RTi.Util.Math.NumberOfEquationsType;
+import RTi.Util.Math.RegressionType;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
@@ -176,8 +178,8 @@ private String __copyCommandsToTSTool_Tip = "Copy command(s) to TSTool.";
 
 // fill button: used only when running as a TSTool tool.
 
-private String __fillDependents_String = "Fill Dependents";
-private String __fillDependents_Tip = "Fill dependents using best fit.";
+//private String __fillDependents_String = "Fill Dependents";
+//private String __fillDependents_Tip = "Fill dependents using best fit.";
 
 // Member initialized by the createFillCommands() method and used by the
 // the update FillCommandsControl() and copyCommandsToTSTool() methods.
@@ -799,10 +801,10 @@ private void initialize ( JFrame parent )
     JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Best Fit:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __BestFitIndicator_JComboBox = new SimpleJComboBox ( false );
-    __BestFitIndicator_JComboBox.addItem ( FillMixedStation_Command._BEST_FIT_R );
-    __BestFitIndicator_JComboBox.addItem ( FillMixedStation_Command._BEST_FIT_SEP );
-    __BestFitIndicator_JComboBox.addItem ( FillMixedStation_Command._BEST_FIT_SEPTOTAL );
-    __BestFitIndicator_JComboBox.select ( FillMixedStation_Command._BEST_FIT_SEP );
+    __BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.R );
+    __BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP );
+    __BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP_TOTAL );
+    __BestFitIndicator_JComboBox.select ( "" + BestFitIndicatorType.SEP );
     __BestFitIndicator_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(mainAnalysis_JPanel, __BestFitIndicator_JComboBox,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -815,8 +817,8 @@ private void initialize ( JFrame parent )
 	JPanel analysisMethodJPanel = new JPanel(new GridLayout(0,1));
 	analysisMethodJPanel.setBorder ( new LineBorder(Color.black,1));
 	__AnalysisMethod_JCheckBox = new JCheckBox[2];
-	__AnalysisMethod_JCheckBox[0] = new JCheckBox(FillMixedStation_Command._ANALYSIS_OLS);
-	__AnalysisMethod_JCheckBox[1] = new JCheckBox(FillMixedStation_Command._ANALYSIS_MOVE2);
+	__AnalysisMethod_JCheckBox[0] = new JCheckBox("" + RegressionType.MOVE2);
+	__AnalysisMethod_JCheckBox[1] = new JCheckBox("" + RegressionType.OLS_REGRESSION);
 	for ( int i = 0; i < __AnalysisMethod_JCheckBox.length; i++ ) {
 	    analysisMethodJPanel.add( __AnalysisMethod_JCheckBox[i] );
 	    __AnalysisMethod_JCheckBox[i].addItemListener ( this );
@@ -825,22 +827,22 @@ private void initialize ( JFrame parent )
 		analysisMethodJPanel,
 		1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel("Optional - methods to use in analysis (default=" +
-        FillMixedStation_Command._ANALYSIS_OLS + ")."),
-            3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        RegressionType.OLS_REGRESSION + ")."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Number of equation (Cyclicity in the original Multiple Station Model
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Number of equations:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
     __NumberOfEquations_JComboBox.addItem ( "" );
-    __NumberOfEquations_JComboBox.addItem ( FillMixedStation_Command._NUM_OF_EQUATIONS_ONE_EQUATION );
-    __NumberOfEquations_JComboBox.addItem ( FillMixedStation_Command._NUM_OF_EQUATIONS_MONTHLY_EQUATIONS );
-    __NumberOfEquations_JComboBox.select ( FillMixedStation_Command._NUM_OF_EQUATIONS_ONE_EQUATION );
+    __NumberOfEquations_JComboBox.addItem ( "" + NumberOfEquationsType.ONE_EQUATION );
+    __NumberOfEquations_JComboBox.addItem ( "" + NumberOfEquationsType.MONTHLY_EQUATIONS );
+    __NumberOfEquations_JComboBox.select ( "" + NumberOfEquationsType.ONE_EQUATION );
     __NumberOfEquations_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(mainAnalysis_JPanel, __NumberOfEquations_JComboBox,
 		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel("Optional - number of equations to use in the analysis (default=" +
-       FillMixedStation_Command._NUM_OF_EQUATIONS_ONE_EQUATION + ")."),
+        NumberOfEquationsType.ONE_EQUATION + ")."),
        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Transformation
@@ -849,8 +851,8 @@ private void initialize ( JFrame parent )
     JPanel transformationJPanel = new JPanel(new GridLayout(0,1));
     transformationJPanel.setBorder ( new LineBorder(Color.black,1));
     __Transformation_JCheckBox = new JCheckBox[2];
-    __Transformation_JCheckBox[0] = new JCheckBox(FillMixedStation_Command._TRANSFORMATION_NONE);
-    __Transformation_JCheckBox[1] = new JCheckBox(FillMixedStation_Command._TRANSFORMATION_LOG);
+    __Transformation_JCheckBox[0] = new JCheckBox("" + DataTransformationType.LOG);
+    __Transformation_JCheckBox[1] = new JCheckBox("" + DataTransformationType.NONE);
     for ( int i = 0; i < __Transformation_JCheckBox.length; i++ ) {
         transformationJPanel.add( __Transformation_JCheckBox[i] );
         __Transformation_JCheckBox[i].addItemListener ( this );
@@ -858,7 +860,7 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(mainAnalysis_JPanel, transformationJPanel,
 		1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
-       "Optional - transformations to use in analysis (default=" + FillMixedStation_Command._TRANSFORMATION_NONE + ")."),
+       "Optional - transformations to use in analysis (default=" + DataTransformationType.NONE + ")."),
        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Intercept
@@ -908,7 +910,7 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(mainAnalysis_JPanel, __MinimumDataCount_JTextField,
 		1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
-		"Optional - minimum number of overlapping points required for analysis (default=1)."),
+		"Optional - minimum number of overlapping points required for analysis (default=10)."),
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Minimum R
@@ -1239,7 +1241,7 @@ private void refresh()
         
         if ( BestFitIndicator == null ) {
             // Select default...
-            __BestFitIndicator_JComboBox.select ( 0 );
+            __BestFitIndicator_JComboBox.select ( "" + BestFitIndicatorType.SEP );
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem(
@@ -1280,7 +1282,7 @@ private void refresh()
 
         if ( NumberOfEquations == null ) {
             // Select default...
-            __NumberOfEquations_JComboBox.select ( 0 );
+            __NumberOfEquations_JComboBox.select ( "" + NumberOfEquationsType.ONE_EQUATION );
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem(

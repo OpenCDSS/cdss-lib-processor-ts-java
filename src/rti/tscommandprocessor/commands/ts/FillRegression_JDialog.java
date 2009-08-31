@@ -70,6 +70,8 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
+import RTi.Util.Math.DataTransformationType;
+import RTi.Util.Math.NumberOfEquationsType;
 import RTi.Util.Message.Message;
 
 public class FillRegression_JDialog extends JDialog
@@ -134,7 +136,7 @@ Check the GUI state and make sure the proper components are enabled/disabled.
 */
 private void checkGUIState()
 {	String NumberOfEquations = __NumberOfEquations_JComboBox.getSelected();
-	if ( NumberOfEquations.equalsIgnoreCase(__command._MonthlyEquations) ) {
+	if ( NumberOfEquations.equalsIgnoreCase(""+NumberOfEquationsType.MONTHLY_EQUATIONS) ) {
 		JGUIUtil.setEnabled(__AnalysisMonth_JComboBox,true);
 	}
 	else {
@@ -142,7 +144,7 @@ private void checkGUIState()
 	}
 
 	String Transformation = __Transformation_JComboBox.getSelected();
-	if ( Transformation.equalsIgnoreCase(__command._None) || Transformation.equals("") ) {
+	if ( Transformation.equalsIgnoreCase(""+DataTransformationType.NONE) || Transformation.equals("") ) {
 		JGUIUtil.setEnabled(__Intercept_JTextField,true);
 	}
 	else {
@@ -310,14 +312,14 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
 	__NumberOfEquations_JComboBox.addItem ( "" );	// Default
-	__NumberOfEquations_JComboBox.addItem ( __command._OneEquation );
-	__NumberOfEquations_JComboBox.addItem ( __command._MonthlyEquations );
-	__NumberOfEquations_JComboBox.select ( __command._OneEquation );
+	__NumberOfEquations_JComboBox.addItem ( "" + NumberOfEquationsType.ONE_EQUATION );
+	__NumberOfEquations_JComboBox.addItem ( "" + NumberOfEquationsType.MONTHLY_EQUATIONS );
+	__NumberOfEquations_JComboBox.select ( 0 );
 	__NumberOfEquations_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - number of equations (default=" + __command._OneEquation + ")."), 
+		"Optional - number of equations (default=" + NumberOfEquationsType.ONE_EQUATION + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis month:"),
@@ -340,14 +342,14 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Transformation_JComboBox = new SimpleJComboBox ( false );
 	__Transformation_JComboBox.addItem ( "" );
-	__Transformation_JComboBox.addItem ( __command._None );
-	__Transformation_JComboBox.addItem ( __command._Log );
+	__Transformation_JComboBox.addItem ( "" + DataTransformationType.NONE );
+	__Transformation_JComboBox.addItem ( "" + DataTransformationType.LOG );
 	__Transformation_JComboBox.select ( 0 );
 	__Transformation_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - how to transform data before analysis (blank=" + __command._None + ")."), 
+		"Optional - how to transform data before analysis (blank=" + DataTransformationType.NONE + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ), 

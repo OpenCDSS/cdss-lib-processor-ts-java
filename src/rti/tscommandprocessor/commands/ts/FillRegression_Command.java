@@ -41,6 +41,9 @@ import RTi.TS.TS;
 import RTi.TS.TSRegression;
 import RTi.TS.TSUtil;
 
+import RTi.Util.Math.DataTransformationType;
+import RTi.Util.Math.NumberOfEquationsType;
+import RTi.Util.Math.RegressionType;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
@@ -73,11 +76,6 @@ public class FillRegression_Command extends AbstractCommand implements Command
 Protected data members shared with the dialog and other related classes.
 */
 protected final String _Linear = "Linear";	// obsolete... use None
-protected final String _Log = "Log";
-protected final String _None = "None";
-
-protected final String _MonthlyEquations = "MonthlyEquations";
-protected final String _OneEquation = "OneEquation";
 
 /**
 Constructor.
@@ -138,45 +136,47 @@ throws InvalidCommandParameterException
                         message, "Specify the independent time series identifier." ) );
 	}
 	if ( (NumberOfEquations != null) &&
-		!NumberOfEquations.equalsIgnoreCase(_OneEquation) &&
-		!NumberOfEquations.equalsIgnoreCase(_MonthlyEquations)) {
-        message = "The number of equations: \"" + NumberOfEquations +
-        "\"\nmust be blank, " + _OneEquation +
-        " (default), or " + _MonthlyEquations + ".";
+		!NumberOfEquations.equalsIgnoreCase(""+NumberOfEquationsType.ONE_EQUATION) &&
+		!NumberOfEquations.equalsIgnoreCase(""+NumberOfEquationsType.MONTHLY_EQUATIONS)) {
+        message = "The number of equations (" + NumberOfEquations +
+        ") must be " + NumberOfEquationsType.ONE_EQUATION + " (default) or " +
+        NumberOfEquationsType.MONTHLY_EQUATIONS + ".";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the number of equations as blank, " + _OneEquation +
-                        " (default), or " + _MonthlyEquations + ".") );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the number of equations as " + NumberOfEquationsType.ONE_EQUATION +
+                " (default) or " + NumberOfEquationsType.MONTHLY_EQUATIONS + ".") );
 	}
 	if ( AnalysisMonth != null ) {
 		if ( !StringUtil.isInteger(AnalysisMonth) ) {
             message = "The analysis month: \"" + AnalysisMonth + "\" is not an integer.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify an integer 1-12 for the analysis month.") );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify an integer 1-12 for the analysis month.") );
 		}
 		else if((StringUtil.atoi(AnalysisMonth) < 1) ||	(StringUtil.atoi(AnalysisMonth) > 12) ) {
             message = "The analysis month: \"" + AnalysisMonth + "\" must be in the range 1 to 12.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify an integer 1-12 for the analysis month.") );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify an integer 1-12 for the analysis month.") );
 		}
 	}
 	if ( Transformation != null ) {
 		if ( Transformation.equalsIgnoreCase(_Linear) ) {
 			// Convert old to new...
-			Transformation = _None;
+			Transformation = "" + DataTransformationType.NONE;
 		}
-		if ( !Transformation.equalsIgnoreCase(_Log) && !Transformation.equalsIgnoreCase(_None) ) {
-            message = "The transformation: \"" + Transformation +
-            "\"\nmust be blank, " + _Log + ", or " + _None + " (default).";
+		if ( !Transformation.equalsIgnoreCase(""+DataTransformationType.LOG) &&
+		    !Transformation.equalsIgnoreCase(""+DataTransformationType.NONE) ) {
+            message = "The transformation (" + Transformation +
+            ") must be  " + DataTransformationType.LOG + " or " + DataTransformationType.NONE + " (default).";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the transformation as blank, " + _Log + ", or " + _None + " (default).") );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the transformation as " + DataTransformationType.LOG + " or " +
+                    DataTransformationType.NONE + " (default).") );
 		}
 	}
 	if ( (Intercept != null) && !Intercept.equals("") ) {
@@ -195,11 +195,8 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify the intercept as a zero or blank.") );
 		}
-		if ( (Transformation != null) && Transformation.equals(_Log)){
-            message = "The intercept: \"" + Intercept +
-            "\" currently cannot be specified with log " +
-            "transformation.\nSpecify blank or change the "+
-            "transformation to None.";
+		if ( (Transformation != null) && Transformation.equals(""+DataTransformationType.LOG)){
+            message = "The intercept (" + Intercept + ") currently cannot be specified with log transformation.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -551,84 +548,70 @@ CommandWarningException, CommandException
                 message, "Verify that the independent TSID matches a time series." ) );
 	}
 
-	// Now set the fill properties for TSUtil.fillRegress()...
+	// Determine the fill properties for TSUtil.fillRegress()...
 
-	PropList props = new PropList ( "fillRegression" );
 	String NumberOfEquations = parameters.getValue ( "NumberOfEquations" );
-	if ( NumberOfEquations == null ) {
-		NumberOfEquations = _OneEquation;	// default
-	}
-	props.set ( "NumberOfEquations", NumberOfEquations );
+	NumberOfEquationsType numberOfEquations = NumberOfEquationsType.ONE_EQUATION; // Default
+    if ( (NumberOfEquations != null) && !NumberOfEquations.equals("") ) {
+        numberOfEquations = NumberOfEquationsType.valueOfIgnoreCase(NumberOfEquations);
+    }
 
+    // FIXME SAM 2009-08-30 Treat as list but dialog only allows single number
 	String AnalysisMonth = parameters.getValue("AnalysisMonth");
-	if ( AnalysisMonth != null ) {
-		props.set ( "AnalysisMonth", AnalysisMonth );
+	int [] analysisMonths = null;
+	if ( (AnalysisMonth != null) && !AnalysisMonth.equals("") ) {
+		analysisMonths = StringUtil.parseIntegerSequenceArray(AnalysisMonth, ", ", StringUtil.DELIM_SKIP_BLANKS);
 	}
 
-	String Transformation = parameters.getValue("Transformation");
-	if ( (Transformation == null) || Transformation.equalsIgnoreCase(_Linear) ) {
-		Transformation = _None;	// default (old _Linear is obsolete)
-	}
-	props.set ( "Transformation", Transformation );
-
-	// Check whether the MOVE2 algorithm should be used...
-
-	props.set ( "AnalysisMethod", "OLSRegression" );
-
-	/* TODO SAM 2005-05-05 Need to have a similar MOVE2 command and not include here..
-	if ( command.equalsIgnoreCase("fillMOVE1") ) {
-		props.set ( "AnalysisMethod", "MOVE1" );
-	}
-	else if ( command.equalsIgnoreCase("fillMOVE2") ) {
-		props.set ( "AnalysisMethod", "MOVE2" );
-	}
-	else {	// Ordinary least squares...
-		props.set ( "AnalysisMethod", "OLSRegression" );
-	}
-	*/
-
-	// Indicate that the analysis is being done for filling (this property
-	// is used in the TSRegression class).  The default for TSRegression to
-	// compute RMSE to compare time series (e.g., for calibration).  If
-	// filling is indicated, then RMSE is computed from the dependent and
-	// the estimated dependent...
-
-	props.set ( "AnalyzeForFilling", "true" );
+    String Transformation = parameters.getValue("Transformation");
+    DataTransformationType transformation = DataTransformationType.NONE; // Default
+    if ( (Transformation != null) && !Transformation.equals("") ) {
+        if ( Transformation.equalsIgnoreCase(_Linear)) { // Linear is obsolete
+            Transformation = "" + DataTransformationType.NONE;
+        }
+        transformation = DataTransformationType.valueOfIgnoreCase(Transformation);
+    }
 
 	// Set the analysis/fill periods...
 
 	String AnalysisStart = parameters.getValue("AnalysisStart");
-	if ( AnalysisStart != null ) {
-	    // Change the property name for called code.
-		props.set ( "DependentAnalysisStart", AnalysisStart );
-	}
+    DateTime dependentAnalysisStart = null;
+    if ( TimeUtil.isDateTime(AnalysisStart) ) {
+        try {
+            dependentAnalysisStart = DateTime.parse(AnalysisStart);
+        }
+        catch ( Exception e ) {
+            // Should not happen
+        }
+    }
 	String AnalysisEnd = parameters.getValue("AnalysisEnd");
-	if ( AnalysisEnd != null ) {
-	    // Change the property name for called code.
-		props.set ( "DependentAnalysisEnd", AnalysisEnd );
-	}
+    DateTime dependentAnalysisEnd = null;
+    if ( TimeUtil.isDateTime(AnalysisEnd) ) {
+        try {
+            dependentAnalysisEnd = DateTime.parse(AnalysisEnd);
+        }
+        catch ( Exception e ) {
+            // Should not happen
+        }
+    }
 
 	String FillStart = parameters.getValue("FillStart");
-	if ( FillStart != null ) {
-		props.set ( "FillStart", FillStart );
-	}
 	String FillEnd = parameters.getValue("FillEnd");
-	if ( FillEnd != null ) {
-		props.set ( "FillEnd", FillEnd );
-	}
-
 	String FillFlag = parameters.getValue("FillFlag");
-	if ( (FillFlag != null) && !FillFlag.equals("") ) {
-		props.set ( "FillFlag="+ FillFlag );
-	}
 
 	String Intercept = parameters.getValue("Intercept");
+	Double intercept = null;
 	if ( (Intercept != null) && !Intercept.equals("") ) {
-		props.set ( "Intercept="+ Intercept );
+		intercept = Double.parseDouble(Intercept);
 	}
 
 	if ( warning_count > 0 ) {
-		// Input error (e.g., missing time series)...
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
 	}
 
 	// Call the code that is used by both the old and new version...
@@ -736,29 +719,38 @@ CommandWarningException, CommandException
 	// This will result in the time series in the original data being modified...
 	try {
 	    TSRegression regress_results = TSUtil.fillRegress ( 
-			ts_to_fill, ts_independent, FillStart_DateTime,	FillEnd_DateTime, props );
-	    if ( NumberOfEquations.equalsIgnoreCase(_OneEquation)) {
+			ts_to_fill, ts_independent,
+			RegressionType.OLS_REGRESSION, numberOfEquations,
+            intercept,
+            analysisMonths,
+            transformation,
+            dependentAnalysisStart, dependentAnalysisEnd,
+            null, //independentAnalysisStart,
+            null, //independentAnalysisEnd,
+            FillStart_DateTime, FillEnd_DateTime,
+            FillFlag,
+            null );// descriptionString);
+	    if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
 	        if ( regress_results.getN1() == 0 ) {
 	            message = "Number of overlapping points is 0.";
 	            Message.printWarning ( warning_level,
-	            MessageUtil.formatMessageTag(
-	            command_tag,++warning_count), routine, message );
+	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
 	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.WARNING,
-	                            message, "Verify that time series have overlapping periods." ) );
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                        message, "Verify that time series have overlapping periods." ) );
 	        }
 	    }
 	    else {
 	        for ( int i = 1; i <= 12; i++ ) {
 	            if ( regress_results.getN1(i) == 0 ) {
-	                message = "Number of overlapping points in month " + i + "(" +
+	                message = "Number of overlapping points in month " + i + " (" +
                     TimeUtil.monthAbbreviation(i) + ") is 0.";
 	                Message.printWarning ( warning_level,
 	                MessageUtil.formatMessageTag(
 	                command_tag,++warning_count), routine, message );
 	                status.addToLog ( CommandPhaseType.RUN,
-	                        new CommandLogRecord(CommandStatusType.WARNING,
-	                                message, "Verify that time series have overlapping periods." ) );
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that time series have overlapping periods." ) );
 	            }
 	        }
 	    }
@@ -774,8 +766,8 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that time series have overlapping periods." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that time series have overlapping periods." ) );
 			throw new CommandException ( message );
 		}
 	}

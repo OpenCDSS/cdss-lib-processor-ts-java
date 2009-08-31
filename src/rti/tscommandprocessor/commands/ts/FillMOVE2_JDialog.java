@@ -58,6 +58,8 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
+import RTi.Util.Math.DataTransformationType;
+import RTi.Util.Math.NumberOfEquationsType;
 import RTi.Util.Message.Message;
 
 public class FillMOVE2_JDialog extends JDialog
@@ -380,9 +382,9 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
 	__NumberOfEquations_JComboBox.addItem ( "" );	// Default
-	__NumberOfEquations_JComboBox.addItem ( __command._OneEquation );
-	__NumberOfEquations_JComboBox.addItem ( __command._MonthlyEquations );
-	__NumberOfEquations_JComboBox.select ( __command._OneEquation );
+	__NumberOfEquations_JComboBox.addItem ( ""+NumberOfEquationsType.ONE_EQUATION );
+	__NumberOfEquations_JComboBox.addItem ( ""+NumberOfEquationsType.MONTHLY_EQUATIONS );
+	__NumberOfEquations_JComboBox.select ( 0 );
 	__NumberOfEquations_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(main_JPanel, __NumberOfEquations_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -413,8 +415,8 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Transformation_JComboBox = new SimpleJComboBox ( false );
 	__Transformation_JComboBox.addItem ( "" );
-	__Transformation_JComboBox.addItem ( __command._None );
-	__Transformation_JComboBox.addItem ( __command._Log );
+	__Transformation_JComboBox.addItem ( "" + DataTransformationType.NONE );
+	__Transformation_JComboBox.addItem ( "" + DataTransformationType.LOG );
 	__Transformation_JComboBox.select ( 0 );
 	__Transformation_JComboBox.addActionListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
@@ -635,7 +637,8 @@ private void refresh ()
 			JGUIUtil.NONE, null, null ) ) {
 			__TSID_JComboBox.select ( TSID );
 		}
-		else {	/* REVISIT SAM 2005-04-27 disable since this may
+		else {
+		    /* REVISIT SAM 2005-04-27 disable since this may
 			prohibit advanced users.
 			Message.printWarning ( 1,
 				"fillMOVE2_JDialog.refresh", "Existing " +
@@ -645,8 +648,7 @@ private void refresh ()
 			}
 			*/
 			if ( (TSID == null) || TSID.equals("") ) {
-				// For new command... Select the first item
-				// in the list...
+				// For new command... Select the first item in the list...
 				if ( __TSID_JComboBox.getItemCount() > 0 ) {
 					__TSID_JComboBox.select ( 0 );
 				}

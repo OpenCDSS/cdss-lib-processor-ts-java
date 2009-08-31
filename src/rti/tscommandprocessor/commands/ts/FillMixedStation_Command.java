@@ -1,21 +1,3 @@
-// ----------------------------------------------------------------------------
-// fillMixedStation_Command - Command class.
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History:
-// 2004-04-05	Luiz Teixeira, RTi	Converted from the add_JDialog class to
-//					the fill MixedStation_JDialog class.
-// 2005-04-11	Luiz Teixeira, RTi	Adding code to support the analysis.
-// 2005-04-22	Luiz Teixeira, RTi	Clean up
-// 2005-05-26	Luiz Teixeira, RTi	Copied the original class 
-//					fillMixedStation_JDialog() from TSTool
-//					and split the code into the new
-//					fillMixedStation_JDialog() and
-//					fillMixedStation_Command().
-// 2007-02-16	Steven A. Malers, RTi	Update to new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.io.File;
@@ -23,12 +5,10 @@ import java.io.File;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
-//import rti.tscommandprocessor.core.TSListType;
 
 import java.util.List;
 import java.util.Vector;
 
-//import RTi.TS.MixedStationAnalysis;
 import RTi.TS.TS;
 
 import RTi.Util.IO.AbstractCommand;
@@ -45,6 +25,10 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 
+import RTi.Util.Math.BestFitIndicatorType;
+import RTi.Util.Math.DataTransformationType;
+import RTi.Util.Math.NumberOfEquationsType;
+import RTi.Util.Math.RegressionType;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
@@ -57,20 +41,6 @@ This command can run in command "batch" mode or in tool menu.
 public class FillMixedStation_Command extends AbstractCommand implements Command
 {
 
-// Defines used by this class and its FillMixedStation_JDialog counterpart.
-public static final String _ANALYSIS_OLS = "OLSRegression";
-public static final String _ANALYSIS_MOVE2 = "MOVE2";
-
-public static final String _TRANSFORMATION_NONE = "None";
-public static final String _TRANSFORMATION_LOG = "Log";
-
-public static final String _NUM_OF_EQUATIONS_ONE_EQUATION = "OneEquation";
-public static final String _NUM_OF_EQUATIONS_MONTHLY_EQUATIONS = "MonthlyEquations";
-
-public static final String _BEST_FIT_SEP = "SEP";
-public static final String _BEST_FIT_R = "R";
-public static final String _BEST_FIT_SEPTOTAL = "SEPTotal";
-
 // Run mode flag. 
 private boolean __commandMode = true;
 
@@ -80,7 +50,7 @@ private boolean __commandMode = true;
 protected MixedStationAnalysis __MixedStationAnalysis = null; 
 
 /**
-Command editor constructor.
+Command constructor.
 */
 public FillMixedStation_Command ()
 {	
@@ -90,13 +60,12 @@ public FillMixedStation_Command ()
 }
 
 /**
-fillMixedStation_Command constructor.
+Command constructor.
 @param commandMode true for command mode, false for tool mode.
 */
 public FillMixedStation_Command ( boolean commandMode )
 {	
 	super();
-
 	__commandMode = commandMode;
 	setCommandName ( "FillMixedStation" );
 }
@@ -139,15 +108,16 @@ throws InvalidCommandParameterException
 	CommandProcessor processor = getCommandProcessor();
 	
 	if ( (BestFitIndicator != null) && !BestFitIndicator.equals("") &&
-	    !BestFitIndicator.equalsIgnoreCase(_BEST_FIT_SEP) &&
-	    !BestFitIndicator.equalsIgnoreCase(_BEST_FIT_R) &&
-	    !BestFitIndicator.equalsIgnoreCase(_BEST_FIT_SEPTOTAL)) {
+	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.SEP) &&
+	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.R) &&
+	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.SEP_TOTAL)) {
         message = "The best fit indicator (" + BestFitIndicator + ") is not valid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the best fit indicator as " + _BEST_FIT_SEP + " (default if blank), " +
-                _BEST_FIT_SEPTOTAL + ", or " + _BEST_FIT_R) );
+                message, "Specify the best fit indicator as " + BestFitIndicatorType.SEP +
+                " (default if blank), " +
+                BestFitIndicatorType.SEP_TOTAL + ", or " + BestFitIndicatorType.R) );
     }
 	
     if ( (AnalysisMethod != null) && !AnalysisMethod.equals("") ) {
@@ -155,27 +125,27 @@ throws InvalidCommandParameterException
            StringUtil.breakStringList(AnalysisMethod, ",", StringUtil.DELIM_SKIP_BLANKS);
        for ( int i = 0; i < analysisMethods.size(); i++ ) {
            String analysisMethod = analysisMethods.get(i);
-           if ( !analysisMethod.equalsIgnoreCase(_ANALYSIS_MOVE2) &&
-               !analysisMethod.equalsIgnoreCase(_ANALYSIS_OLS) ) {
+           if ( !analysisMethod.equalsIgnoreCase(""+RegressionType.MOVE2) &&
+               !analysisMethod.equalsIgnoreCase(""+RegressionType.OLS_REGRESSION) ) {
                message = "The analysis method (" + analysisMethod + ") is not valid.";
                warning += "\n" + message;
                status.addToLog ( CommandPhaseType.INITIALIZATION,
                    new CommandLogRecord(CommandStatusType.FAILURE,
-                       message, "Specify the analysis method as " + _ANALYSIS_OLS +
-                       " (default if blank), or " + _ANALYSIS_MOVE2) );
+                       message, "Specify the analysis method as " + RegressionType.OLS_REGRESSION +
+                       " (default if blank), or " + RegressionType.MOVE2) );
            }
        }
     }
     
     if ( (NumberOfEquations != null) && !NumberOfEquations.equals("") &&
-        !NumberOfEquations.equalsIgnoreCase(_NUM_OF_EQUATIONS_MONTHLY_EQUATIONS) &&
-        !NumberOfEquations.equalsIgnoreCase(_NUM_OF_EQUATIONS_ONE_EQUATION) ) {
+        !NumberOfEquations.equalsIgnoreCase(""+NumberOfEquationsType.MONTHLY_EQUATIONS) &&
+        !NumberOfEquations.equalsIgnoreCase(""+NumberOfEquationsType.ONE_EQUATION) ) {
         message = "The number of equations (" + NumberOfEquations + ") is not valid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the number of equations as " + _NUM_OF_EQUATIONS_ONE_EQUATION +
-                " (default if blank), or " + _NUM_OF_EQUATIONS_MONTHLY_EQUATIONS) );
+                message, "Specify the number of equations as " + NumberOfEquationsType.ONE_EQUATION +
+                " (default if blank), or " + NumberOfEquationsType.MONTHLY_EQUATIONS) );
     }
     
     if ( (Transformation != null) && !Transformation.equals("") ) {
@@ -183,14 +153,14 @@ throws InvalidCommandParameterException
             StringUtil.breakStringList(Transformation, ",", StringUtil.DELIM_SKIP_BLANKS);
         for ( int i = 0; i < transformations.size(); i++ ) {
             String transformation = transformations.get(i);
-            if ( !transformation.equalsIgnoreCase(_TRANSFORMATION_LOG) &&
-                !transformation.equalsIgnoreCase(_TRANSFORMATION_NONE) ) {
+            if ( !transformation.equalsIgnoreCase(""+DataTransformationType.LOG) &&
+                !transformation.equalsIgnoreCase(""+DataTransformationType.NONE) ) {
                 message = "The transformation (" + transformation + ") is not valid.";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the transformation as " + _TRANSFORMATION_NONE +
-                        " (default if blank), or " + _TRANSFORMATION_LOG) );
+                        message, "Specify the transformation as " + DataTransformationType.NONE +
+                        " (default if blank), or " + DataTransformationType.LOG) );
             }
         }
     }
@@ -577,21 +547,25 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String DependentTSID = parameters.getValue ( "DependentTSID" );
 	String IndependentTSList = parameters.getValue ( "IndependentTSList" );
 	String IndependentTSID = parameters.getValue ( "IndependentTSID" );
+	String BestFitIndicator = parameters.getValue ( "BestFitIndicator" );
+    if ( (BestFitIndicator == null) || BestFitIndicator.equals("") ) {
+        BestFitIndicator = "" + BestFitIndicatorType.SEP; // default
+    }
 	String AnalysisMethod = parameters.getValue ( "AnalysisMethod" );
 	if ( (AnalysisMethod == null) || AnalysisMethod.equals("") ) {
-	    AnalysisMethod = _ANALYSIS_OLS; // default
+	    AnalysisMethod = "" + RegressionType.OLS_REGRESSION; // default
 	}
 	String NumberOfEquations = parameters.getValue ( "NumberOfEquations");
 	if ( (NumberOfEquations == null) || NumberOfEquations.equals("") ) {
-	    NumberOfEquations = _NUM_OF_EQUATIONS_ONE_EQUATION; // default
+	    NumberOfEquations = "" + NumberOfEquationsType.ONE_EQUATION; // default
     }
 	String Transformation = parameters.getValue ( "Transformation" );
     if ( (Transformation == null) || Transformation.equals("") ) {
-        Transformation = _TRANSFORMATION_NONE; // default
+        Transformation = "" + DataTransformationType.NONE; // default
     }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
-	int MinimumDataCount_int = 1; // default
+	Integer MinimumDataCount_int = new Integer(10); // default
 	String MinimumDataCount = parameters.getValue ( "MinimumDataCount" );
 	if ( (MinimumDataCount != null) && !MinimumDataCount.equals("") ) {
 	    MinimumDataCount_int = Integer.parseInt(MinimumDataCount);
@@ -601,11 +575,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (MinimumR != null) && !MinimumR.equals("") ) {
         MinimumR_double = Double.parseDouble(MinimumR);
     }
-	String BestFitIndicator = parameters.getValue ( "BestFitIndicator" );
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
-	double Intercept_double = 0.0; // Required if Intercept is not missing
+	Double Intercept_double = null; // Required if Intercept is not missing
 	String Intercept = parameters.getValue ( "Intercept" );
+	if ( (Intercept != null) && !Intercept.equals("") ) {
+	    Intercept_double = Double.parseDouble(Intercept);
+	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
 	CommandProcessor tsCP = getCommandProcessor();
@@ -629,14 +605,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 	
     try {
-    	// Set the properties for the method ZZZZZ()!
-    	PropList analysisProperties = new PropList ( "MixedStationAnalysis" );
+    	// Convert parameters to necessary form for processing
+        BestFitIndicatorType bestFitIndicator = BestFitIndicatorType.valueOfIgnoreCase(BestFitIndicator);
+        
+        List<RegressionType> analysisMethodList = new Vector();
+        List<String>tokens = StringUtil.breakStringList(AnalysisMethod, ",", StringUtil.DELIM_SKIP_BLANKS);
+        for ( int i = 0; i < tokens.size(); i++ ) {
+            analysisMethodList.add ( RegressionType.valueOfIgnoreCase(tokens.get(i)));
+        }
+        
+        NumberOfEquationsType numberOfEquations = NumberOfEquationsType.valueOfIgnoreCase(NumberOfEquations);
+        
+        List<DataTransformationType> transformationList = new Vector();
+        tokens = StringUtil.breakStringList(Transformation, ",", StringUtil.DELIM_SKIP_BLANKS);
+        for ( int i = 0; i < tokens.size(); i++ ) {
+            transformationList.add ( DataTransformationType.valueOfIgnoreCase(tokens.get(i)));
+        }
     	
-    	analysisProperties.set ( "AnalysisMethod", AnalysisMethod );
-    	analysisProperties.set ( "NumberOfEquations", NumberOfEquations );
-    	analysisProperties.set ( "Transformation", Transformation );
-    	analysisProperties.set ( "MinimumDataCount", MinimumDataCount );
-    	
+        /* FIXME SAM 2009-08-28 This needs to be tight - improve by passing parameters, not PropList
     	// Do not set these properties if they are "" (empty).
     	// MixedStationAnalysis expects "null" when calling getValue()
     	// for these properties to set the internal defaults.
@@ -657,7 +643,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	}
     	
     	if ( AnalysisEnd != null && AnalysisEnd.length() > 0  ) {
-    		// TODO [LT 2005-04-26] Here I am setting the properties as
+    		// Set the properties as
     		// they are known by the different objects (FillRegression, 
     		// TSRegression and FillMOVE2
     		analysisProperties.set (  // FillRegression 
@@ -671,38 +657,51 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     		// IndependentAnalysisStart.
     		// Make sure to delete the other options after all is changed. 		
     	}
+    	*/
+
+        DateTime AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
+                status, warning_level, command_tag );
+        
+        DateTime AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
+            status, warning_level, command_tag );
+        
+    	DateTime FillStart_DateTime = TSCommandProcessorUtil.getDateTime ( FillStart, "FillStart", processor,
+                status, warning_level, command_tag );
     	
-    	if ( MinimumR != null && MinimumR.length() > 0  ) {
-    		analysisProperties.set ( "MinimumR", MinimumR );
-    	} else {
-    		analysisProperties.set ( "MinimumR", "0.5" );
-    	}
-    	analysisProperties.set ( "BestFitIndicator", BestFitIndicator );
-    	
-    	if ( FillStart != null && FillStart.length() > 0  ) {
-    		analysisProperties.set (	// FillRegression and FillMOVE2
-    			"FillStart", FillStart );
-    		analysisProperties.set (	// TSRegression
-    			"FillPeriodStart", FillStart );
-    	}
-    	
-    	if ( FillEnd != null && FillEnd.length() > 0  ) {
-    		analysisProperties.set (	// FillRegression and FillMOVE2
-    			"FillEnd", FillEnd );
-    		analysisProperties.set (	// TSRegression
-    			"FillPeriodEnd", FillEnd );
-    	}
-    	
-    	if ( Intercept != null && Intercept.length() > 0  ) {
-    		analysisProperties.set ( "Intercept", Intercept );
-    	}
-    	
+    	DateTime FillEnd_DateTime = TSCommandProcessorUtil.getDateTime ( FillEnd, "FillEnd", processor,
+    	    status, warning_level, command_tag );
+
+    	File outputFileFull = null;
     	if ( OutputFile != null && OutputFile.length() > 0  ) {
-    		analysisProperties.set ( "OutputFile", OutputFile );
+    	    outputFileFull = new File(IOUtil.verifyPathForOS(
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                        TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile))));
     	}
+    	
+        List<String> outputCommentsList = null;
+        try {
+            Object o = processor.getPropContents ( "OutputComments" );
+            // Comments are available so use them...
+            if ( o != null ) {
+                outputCommentsList = (List)o;
+            }
+        }
+        catch ( Exception e ) {
+            // Not fatal, but of use to developers.
+            mssg = "Error requesting OutputComments from processor - not using.";
+            Message.printDebug(10, mthd, mssg );
+        }
 
 		// Instantiate/run the MixedStationAnalysis	object
-		__MixedStationAnalysis = new MixedStationAnalysis( dependentTSList, independentTSList, analysisProperties );
+		__MixedStationAnalysis = new MixedStationAnalysis( dependentTSList, independentTSList,
+		    bestFitIndicator, analysisMethodList, numberOfEquations,
+		    AnalysisStart_DateTime, AnalysisEnd_DateTime, FillStart_DateTime, FillEnd_DateTime,
+		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double );
+		
+		__MixedStationAnalysis.analyzeAndRank();
+		
+		Integer maxResultsPerIndependent = null;
+		__MixedStationAnalysis.createReport ( outputFileFull, outputCommentsList, maxResultsPerIndependent );
 	}
     catch ( Exception e ) {
         mssg = "Unexpected error running Mixed Station Analysis (" + e + ").";

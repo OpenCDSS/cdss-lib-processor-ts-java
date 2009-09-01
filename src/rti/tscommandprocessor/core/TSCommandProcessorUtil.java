@@ -506,7 +506,7 @@ throws InvalidCommandParameterException
     DateTime dt = null;
     int logLevel = 3;
     int warningCount = 0; // only has local scope and limited meaning
-    if ( dateTime == null ) {
+    if ( (dateTime == null) || dateTime.equals("") ) {
         return null;
     }
     try {

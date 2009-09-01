@@ -5,6 +5,7 @@ import java.io.File;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.List;
 import java.util.Vector;
@@ -544,8 +545,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	// Get the properties from the propList parameters.
     String DependentTSList = parameters.getValue ( "DependentTSList" );
+    if ( (DependentTSList == null) || DependentTSList.equals("") ) {
+        DependentTSList = "" + TSListType.ALL_TS; // Default
+    }
 	String DependentTSID = parameters.getValue ( "DependentTSID" );
 	String IndependentTSList = parameters.getValue ( "IndependentTSList" );
+    if ( (IndependentTSList == null) || IndependentTSList.equals("") ) {
+        IndependentTSList = "" + TSListType.ALL_TS; // Default
+    }
 	String IndependentTSID = parameters.getValue ( "IndependentTSID" );
 	String BestFitIndicator = parameters.getValue ( "BestFitIndicator" );
     if ( (BestFitIndicator == null) || BestFitIndicator.equals("") ) {
@@ -584,8 +591,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
-	CommandProcessor tsCP = getCommandProcessor();
-	CommandProcessor processor = tsCP;
+	CommandProcessor processor = getCommandProcessor();
 	
 	// Get the list of dependent time series to process...
 	List<Object> tsdata = getTimeSeriesToProcess( processor, "dependent", DependentTSList, DependentTSID );
@@ -621,53 +627,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         for ( int i = 0; i < tokens.size(); i++ ) {
             transformationList.add ( DataTransformationType.valueOfIgnoreCase(tokens.get(i)));
         }
-    	
-        /* FIXME SAM 2009-08-28 This needs to be tight - improve by passing parameters, not PropList
-    	// Do not set these properties if they are "" (empty).
-    	// MixedStationAnalysis expects "null" when calling getValue()
-    	// for these properties to set the internal defaults.
-    	if ( AnalysisStart != null && AnalysisStart.length() > 0  ) {
-    		// TODO [LT 2005-04-26] Here I am setting the properties as
-    		// they are known by the different objects ( FillRegression, 
-    		// TSRegression and FillMOVE2
-    		analysisProperties.set (  // FillRegression
-    			"AnalysisStart", AnalysisStart );
-    		analysisProperties.set (  // TSRegression Until SAM remove the period.
-    			"DependentAnalysisPeriodStart", AnalysisStart );
-    		analysisProperties.set (  // FillMOVE2
-    			"DependentAnalysisStart", AnalysisStart );
-    		// TODO [LT 2005-05-27] Looks like, according to SAM's email
-    		// the final name for this property will be 
-    		// DependentAnalysisStart.
-    		// Make sure to delete the other options after all is changed. 			
-    	}
-    	
-    	if ( AnalysisEnd != null && AnalysisEnd.length() > 0  ) {
-    		// Set the properties as
-    		// they are known by the different objects (FillRegression, 
-    		// TSRegression and FillMOVE2
-    		analysisProperties.set (  // FillRegression 
-    			"AnalysisEnd", AnalysisEnd );
-    		analysisProperties.set (  // TSRegression
-    			"DependentAnalysisPeriodEnd", AnalysisEnd );
-    		analysisProperties.set (  // FillMOVE2
-    			"DependentAnalysisEnd", AnalysisEnd );
-    		// TODO [LT 2005-05-27] Looks like, according to SAM's email
-    		// the final name for this property will be 
-    		// IndependentAnalysisStart.
-    		// Make sure to delete the other options after all is changed. 		
-    	}
-    	*/
 
         DateTime AnalysisStart_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisStart, "AnalysisStart", processor,
-                status, warning_level, command_tag );
-        
+            status, warning_level, command_tag );
+
         DateTime AnalysisEnd_DateTime = TSCommandProcessorUtil.getDateTime ( AnalysisEnd, "AnalysisEnd", processor,
             status, warning_level, command_tag );
-        
+
     	DateTime FillStart_DateTime = TSCommandProcessorUtil.getDateTime ( FillStart, "FillStart", processor,
-                status, warning_level, command_tag );
-    	
+            status, warning_level, command_tag );
+
     	DateTime FillEnd_DateTime = TSCommandProcessorUtil.getDateTime ( FillEnd, "FillEnd", processor,
     	    status, warning_level, command_tag );
 
@@ -675,7 +644,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     	if ( OutputFile != null && OutputFile.length() > 0  ) {
     	    outputFileFull = new File(IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile))));
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile))));
     	}
     	
         List<String> outputCommentsList = null;
@@ -701,7 +670,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		__MixedStationAnalysis.analyzeAndRank();
 		
 		Integer maxResultsPerIndependent = null;
-		__MixedStationAnalysis.createReport ( outputFileFull, outputCommentsList, maxResultsPerIndependent );
+		if ( outputFileFull != null ) {
+		    // Print the results report
+		    __MixedStationAnalysis.createReport ( outputFileFull, outputCommentsList, maxResultsPerIndependent );
+		}
+		
+		// Fill the time series...
+		
+		__MixedStationAnalysis.fill();
 	}
     catch ( Exception e ) {
         mssg = "Unexpected error running Mixed Station Analysis (" + e + ").";

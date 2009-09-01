@@ -110,7 +110,6 @@ Minimum correlation coefficient value required for acceptable analysis.
 */
 private Double __minimumR = null;
 
-private String __nl;
 String __format12p2f = "%12.2f";
 String __format8p2f = "%8.2f";
 String __format7d = "%7d";
@@ -221,6 +220,9 @@ private void analyze()
 	for ( int iDependentTS = 0; iDependentTS < nDependentTS; iDependentTS++ ) {
 	    dependentTS = __dependentTSList.get(iDependentTS);
 	    dependentResults = new Vector( initialCapacity );
+	    // FIXME SAM 2009-08-30 need process listener
+	    //showStatus ( "Analyzing dependent time series \"" + dependentTS.getIdentifierString() +
+	     //   "\" (" + (iDependentTS + 1) + " of " + nDependentTS + ")." );
 
 	    // Loop for each one of the independent time series, but skip the the dependent times series
 	    // if present in the independent list so that a self-comparison does not occur.
@@ -258,6 +260,7 @@ private void analyze()
 				    mssg = "Computing regression - dependent (" + (iDependentTS+1) + " out of "
 			    	+ nDependentTS + ") X Independent (" + (iIndependentTS+1) + " out of " + nIndependentTS + ")";
 		    	    setParentStatusText ( mssg );
+		    	    Message.printStatus(2, mthd, mssg);
 
 		    	    // Process the TSRegression
 		    	    previousSecCount = sw.getSeconds();
@@ -282,12 +285,16 @@ private void analyze()
 		    	    sw.stop();
 		    	    currentSecCount = sw.getSeconds();
 		    	    double elapsed = currentSecCount - previousSecCount;
-		    	    Message.printStatus ( 2, mthd, "Dependent, Independent, Elapsed (sec) "
-		    		+ iDependentTS + ", " + iIndependentTS + ", " + elapsed );
+		    	    Message.printStatus ( 2, mthd, "Dependent \"" + dependentTS.getIdentifierString() +
+		    	        "\" (" + (iDependentTS + 1) + " of " + nDependentTS + "), Independent \"" +
+		    	        independentTS.getIdentifierString() + "\" ( " + (iIndependentTS + 1) + " of " +
+		    	        nIndependentTS + "), Elapsed (sec) " + StringUtil.formatString(elapsed,"%.3f") );
 		    	}
 	    	}
 	    }
 	    __dependentTSRegressionList.add ( dependentResults );
+	    Message.printStatus ( 2, mthd, "Have " + dependentResults.size() +
+	        " results to rank for dependent TS \"" + dependentTS.getIdentifierString() + "\"" );
 	}
 
 	if ( warningCount > 0 ) {
@@ -608,17 +615,22 @@ throws FileNotFoundException
 {
     // Original code was written to create parts of the report as string lists and then save at the end
     
-    StringBuffer header = createReportHeaderText( maxResultsPerIndependent );
-    StringBuffer statistics = createReportStatisticsText();
-    StringBuffer summary = createReportSummaryText( maxResultsPerIndependent );
-    saveReport( outputFileFull, header, statistics, summary );
+    String nl = System.getProperty ( "line.separator" );
+    StringBuffer header = createReportHeaderText( maxResultsPerIndependent, nl );
+    StringBuffer statistics = createReportStatisticsText(nl);
+    StringBuffer summary = createReportSummaryText( maxResultsPerIndependent, nl );
+    saveReportText( outputFileFull, outputCommentsList, header, statistics, summary, nl);
     
     // TODO SAM 2009-08-30 if implemented to use HTML, will write as formatting occurs
 }
 
 /**
+@param buffer the report buffer to append to
+@param depend identifier for dependent time series
+@param nl newline to use, based on environment
 */
-private void createReportAppendTableHeader ( StringBuffer buffer, String depend, TSRegression tsRegression )
+private void createReportAppendTableHeader ( StringBuffer buffer, String depend, TSRegression tsRegression,
+    String nl )
 {
     String AnalyzeForFilling = null;
     String DependentAnalysisStart = null;
@@ -630,7 +642,7 @@ private void createReportAppendTableHeader ( StringBuffer buffer, String depend,
     String MinimumDataCount = null;
     String BestFitIndicator = null;
 
-    buffer.append ( "Dependent Time Series: " + depend + __nl );
+    buffer.append ( "Dependent Time Series: " + depend + nl );
 
     // Analyze For Filling (not needed in the report)
 //  AnalyzeForFilling = tsRegressionProps.getValue ("AnalyzeForFilling");
@@ -640,55 +652,57 @@ private void createReportAppendTableHeader ( StringBuffer buffer, String depend,
     DependentAnalysisStart = "" + tsRegression.getDependentAnalysisStart();
     DependentAnalysisEnd = "" + tsRegression.getDependentAnalysisEnd();
     buffer.append ( "Dependent analysis period: from \""
-        + DependentAnalysisStart + "\" to \"" + DependentAnalysisEnd   + "\"" + __nl );
+        + DependentAnalysisStart + "\" to \"" + DependentAnalysisEnd   + "\"" + nl );
 
     // Fill Period.
     FillStart = "" + tsRegression.getFillStart();
     FillEnd = "" + tsRegression.getFillEnd();
     // REVISIT [LT] FillEnd is returning null???
-    buffer.append ( "Fill period: from \"" + FillStart + "\" to \"" + FillEnd + "\"" + __nl );
+    buffer.append ( "Fill period: from \"" + FillStart + "\" to \"" + FillEnd + "\"" + nl );
 
     // Intercept
     Intercept = "" + tsRegression.getIntercept();
-    buffer.append ( "Intercept (only if OLS Linear): ");
+    buffer.append ( "Intercept (only if OLS no transformation): ");
     if ( Intercept.equalsIgnoreCase( "-999.0" ) ) {
-        buffer.append ( __nl );
+        buffer.append ( nl );
     }
     else {
-        buffer.append ( Intercept + __nl );
+        buffer.append ( Intercept + nl );
     }
 
     // Number of equations
     NumberOfEquations = "" + tsRegression.getNumberOfEquations();
-    buffer.append ( "Number of equations: " + NumberOfEquations + __nl);
+    buffer.append ( "Number of equations: " + NumberOfEquations + nl);
 
     // Minimum data count
     // Not available from tsRegression since added by this class
-    buffer.append ( "Minimum data count: " + __minimumDataCount + __nl);
+    buffer.append ( "Minimum data count (N1): " + __minimumDataCount + nl);
 
     // Minimum R
     // Not available from tsRegression since added by this class
-    buffer.append ( "Minimum R: " + __minimumR + __nl);
+    buffer.append ( "Minimum r: " + __minimumR + nl);
 
     // Best fit indicator (used here only)
     // Not available from tsRegression since added by this class.
-    buffer.append ( "Best fit indicator: " + __bestFitIndicator + __nl + __nl);
+    buffer.append ( "Best fit indicator: " + __bestFitIndicator + nl + nl);
 }
 
 /**
 Create the report header, containing the description of the sections in the report
+@param maxResultsPerIndependent maximum number of results per independent time series to show
+@param nl newline to use, based on environment
 */
-private StringBuffer createReportHeaderText ( Integer maxResultsPerIndependent )
+private StringBuffer createReportHeaderText ( Integer maxResultsPerIndependent, String nl )
 {
 	String mthd = "MixedStationAnalysis.createReportHeader";
     StringBuffer header = new StringBuffer ();
-
+    String cnl = "#" + nl;
     try {
 		// Description of the reports.
-		header.append ( __nl + __nl + __nl );
-		header.append ( "# Mixed Station Analysis Report Format:" + __nl );
-		header.append ( "#" + __nl );
-		header.append ( "# Mixed Station Analysis Summary" + __nl );
+		header.append ( cnl + cnl );
+		header.append ( "# Mixed Station Analysis Report Format:" + nl );
+		header.append ( "#" + nl );
+		header.append ( "# Mixed Station Analysis Summary" + nl );
 		if ( maxResultsPerIndependent == null ) {
 		    header.append ( "#       Summary, listed by dependent time series" );
 		}
@@ -696,29 +710,29 @@ private StringBuffer createReportHeaderText ( Integer maxResultsPerIndependent )
 		    header.append ( "#       Summary, listed by dependent time series, with the top " + maxResultsPerIndependent );
 		}
 		if ( __numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
-			header.append ( __nl + "#       best fit results listed per dependent and month." + __nl);
+			header.append ( nl + "#       best fit results listed per dependent and month." + nl);
 		}
 		else {
-			header.append ( __nl + "#       best fit results listed per dependent." + __nl);
+			header.append ( nl + "#       best fit results listed per dependent." + nl);
 		}
-		header.append ( "#" + __nl );
-		header.append ( "# Mixed Station Analysis Details" + __nl );
+		header.append ( cnl );
+		header.append ( "# Mixed Station Analysis Details" + nl );
 		if ( __numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
-			header.append ( "#       This section contains three tables per dependent time series:" + __nl
-			+ "#          The first lists the number of points used in the analysis." + __nl
-			+ "#          The second lists the correlation coeficients." + __nl
-			+ "#          The third lists the SEP values." + __nl
-			+ "#       Each table lists the results per combination of independent," + __nl
-			+ "#       transformation and analysis method." + __nl );
+			header.append ( "#       This section contains three tables per dependent time series:" + nl
+			+ "#          The first lists the number of points used in the analysis." + nl
+			+ "#          The second lists the correlation coeficients." + nl
+			+ "#          The third lists the SEP values." + nl
+			+ "#       Each table lists the results per combination of independent," + nl
+			+ "#       transformation and analysis method." + nl );
 		}
 		else {
 			header.append (
-			  "#       This section contains one table per dependent time series." + __nl
-			+ "#       It lists the results per combination of independent," + __nl
-			+ "#       transformation and analysis method." + __nl );
+			  "#       This section contains one table per dependent time series." + nl
+			+ "#       It lists the results per combination of independent," + nl
+			+ "#       transformation and analysis method." + nl );
 		}
 
-		header.append ( __nl + __nl );
+		header.append ( nl + nl );
 		return header;
 	}
 	catch ( Exception e ) {
@@ -728,9 +742,10 @@ private StringBuffer createReportHeaderText ( Integer maxResultsPerIndependent )
 }
 
 /**
-Create the first section of the report, containing the statistics results from the Regressions.
+Create the first section of the report, containing the statistics results from the regressions.
+@param nl newline to use, based on environment
 */
-private StringBuffer createReportStatisticsText()
+private StringBuffer createReportStatisticsText ( String nl )
 {
 	String mthd = "MixedStationAnalysis.createReportStatistics", mssg;
 
@@ -784,9 +799,9 @@ private StringBuffer createReportStatisticsText()
 			boolean firstTime = true;
 			tsRegression = null;
 
-			sDataCount.append ( __nl + __nl );
-			sCorrelation.append ( __nl  );
-			sRMSE.append ( __nl  );
+			sDataCount.append ( nl + nl );
+			sCorrelation.append ( nl  );
+			sRMSE.append ( nl  );
 
 			String previousIndependent = "";
 
@@ -809,8 +824,7 @@ private StringBuffer createReportStatisticsText()
 				if ( firstTime ) {
 					// Using the TSRegression stored in the __dependentStatisticsVector
 					// create the analysis summary, saving it in the output file.
-					statistics.append( __nl + "# Mixed Station Analysis Details");
-					statistics.append( __nl + "# Landscape printing");
+					statistics.append( nl + "# Mixed Station Analysis Details");
 
     				// Dependent time series
     				dependentTS = tsRegression.getDependentTS();
@@ -821,7 +835,7 @@ private StringBuffer createReportStatisticsText()
 	    			//	}
 
 		  	    	// Append the report header
-    				createReportAppendTableHeader (sDataCount, depend, tsRegression );
+    				createReportAppendTableHeader (sDataCount, depend, tsRegression, nl );
 
 	   				// Preparing for table headers
     				String monthsA = " ";
@@ -841,29 +855,29 @@ private StringBuffer createReportStatisticsText()
     				String endLine2RMSE = "";
 
     				if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
-  	    				endLine1Data =  "    " + "Number of points (N1)" + __nl;
-  	    				endLine2Data = monthsA + __nl;
+  	    				endLine1Data =  "    " + "Number of points (N1)" + nl;
+  	    				endLine2Data = monthsA + nl;
   	    				endLine3Data = "-------------------------------------------------"
     				    + "------------------------------------------------------------------"
-    				    + "--------------------------------" + __nl;
+    				    + "--------------------------------" + nl;
 
-    				   	endLine1Corr = "    Correlation Coefficients (r)" + __nl;
-  	    				endLine2Corr = monthsA + __nl;
+    				   	endLine1Corr = "    Correlation Coefficients (r)" + nl;
+  	    				endLine2Corr = monthsA + nl;
   	    				endLine3Corr = "-------------------------------------------------"
     				    + "------------------------------------------------------------------"
-    				    + "--------------------------------" + __nl;
+    				    + "--------------------------------" + nl;
 
-  	    				endLine1RMSE =  "    SEP" + __nl;
-  	    				endLine2RMSE = monthsB + "|   SEP Total" + __nl;
+  	    				endLine1RMSE =  "    SEP" + nl;
+  	    				endLine2RMSE = monthsB + "|   SEP Total" + nl;
   	    				endLine3RMSE = "-------------------------------------------------"
     				    + "------------------------------------------------------------------"
-    				    + "----------------------------------------------------------" + __nl;
+    				    + "----------------------------------------------------------" + nl;
   	    			}
     				else {
-  	    				endLine1Data = " # of points | Correlation |    SEP total" + __nl;
-    					endLine2Data = "        (N1) |  Coeff. (r) |            " + __nl;
+  	    				endLine1Data = " # of points | Correlation |    SEP total" + nl;
+    					endLine2Data = "        (N1) |  Coeff. (r) |            " + nl;
     					endLine3Data = "-----------------------------------------"
-    				    	+ "--------------------------------------------------------------" + __nl;
+    				    	+ "--------------------------------------------------------------" + nl;
   	    			}
 
     				// --------- sDataCount Table header
@@ -941,7 +955,7 @@ private StringBuffer createReportStatisticsText()
   	    			        dataCountLine += "    ***";
   	    			    }
   	    			}
-  	    			dataCountLine += __nl;
+  	    			dataCountLine += nl;
   	    			sDataCount.append (dataCountLine);
 
   	    			// Adding Correlations Coefficients
@@ -959,7 +973,7 @@ private StringBuffer createReportStatisticsText()
   	    			        line += "    ***";
   	    			    }
   	    			}
-  	    			line += __nl;
+  	    			line += nl;
   	    			sCorrelation.append (line);
 
   	    			// Adding the independent TS to the line for the RMSE table.
@@ -997,7 +1011,7 @@ private StringBuffer createReportStatisticsText()
     		            line += "         ***";
     		        }
 
-  	    			line += __nl;
+  	    			line += nl;
 	    			sRMSE.append (line);
 	  	    	}
 	  	    	else {
@@ -1036,14 +1050,14 @@ private StringBuffer createReportStatisticsText()
     		    	try {
     		    	    if ( tsRegression.isAnalyzed () ) {
     		    	        double rmse = tsRegression.getRMSE();
-    		    	        line += StringUtil.formatString(rmse, __format12p2f ) + __nl;
+    		    	        line += StringUtil.formatString(rmse, __format12p2f ) + nl;
   	    			    }
   	    		    	else {
-  	    			    	line += "         ..." + __nl;
+  	    			    	line += "         ..." + nl;
   	    			    }
     		    	}
     		    	catch ( Exception e ) {
-    		    	    line += "         ***" + __nl;
+    		    	    line += "         ***" + nl;
     		    	}
     		    	sDataCount.append (line);
   	    		}
@@ -1058,7 +1072,7 @@ private StringBuffer createReportStatisticsText()
 	    		statistics.append ( sCorrelation );
 	    		statistics.append ( sRMSE );
 			}
-			statistics.append ( __nl );
+			statistics.append ( nl );
 		}
 	}
 	catch ( Exception e ) {
@@ -1066,15 +1080,16 @@ private StringBuffer createReportStatisticsText()
 		Message.printWarning( 3, mthd, e );
 	}
 
-	statistics.append ( __nl + __nl );
+	statistics.append ( nl + nl );
 	
 	return statistics;
 }
 
 /**
 Create the third section of the report, containing the final summary.
+@param nl newline to use, based on environment
 */
-private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent )
+private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent, String nl )
 {
 	String mthd = "MixedStationAnalysis.createReportSummary", mssg;
 
@@ -1133,22 +1148,21 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent )
     		int previousMonth = 0;
     		boolean firstTime = true;
     
-    		mssg  =  __nl + "# Mixed Station Analysis Summary";
-    		mssg +=  __nl + "# Landscape printing";
+    		mssg = nl + "# Mixed Station Analysis Summary";
             if ( maxResultsPerIndependent != null ) {
-                mssg +=  __nl + "# Top " + maxResultsPerIndependent +
+                mssg += nl + "# Top " + maxResultsPerIndependent +
                     " independent best fit relationships are listed per dependent";
     		}
     		else {
-    			mssg+= __nl + "# All independent best fit relationships are listed per dependent";
+    			mssg += nl + "# All independent best fit relationships are listed per dependent";
     		}
     		if ( __numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
-    			mssg += " and month" + __nl;
+    			mssg += " and month" + nl;
     		}
     		else {
-    			mssg += __nl;
+    			mssg += nl;
     		}
-    		mssg += __nl;
+    		mssg += nl;
     
     		summary.append ( mssg );
     
@@ -1178,7 +1192,7 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent )
 			    	// Append the report header
     				if ( !previousDependent.equalsIgnoreCase(depend ) ) {
     					previousDependent = depend;
-    					createReportAppendTableHeader ( summary, depend, tsRegression );
+    					createReportAppendTableHeader ( summary, depend, tsRegression, nl );
     			    }
     
     			    // Number of equations
@@ -1188,62 +1202,63 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent )
     				if ( firstTime ) {
 	    				// ---------- __sSummary Table header
 	    				// First line
-	    				summary.append ( "     |  Independent | Transfor-| Analysis |     Period |     Period |        Analysis Summary" + __nl );
+	    				summary.append ( "     |  Independent | Transfor-| Analysis |     Period |     Period |        Analysis Summary" + nl );
 
 	    				// __sSummary Table Second line
-	    				summary.append ( "     |  Time Series |   mation |   method |      start |        end |     N1       r         SEP           A           B |   SEP Total" + __nl);
+	    				summary.append ( "     |  Time Series |   mation |   method |      start |        end |     N1       r         SEP           A           B |   SEP Total" + nl);
 	    				firstTime = false;
     	    		}
     	    		// Table header 3rd line or month divider
     	    		if ( previousMonth != month ) {
-    				summary.append (  "--------------------------------------------------------------"
-    			    	+ "------------------------------------------------------------------------" + __nl);
+    	    		    summary.append (  "--------------------------------------------------------------"
+    			    	+ "------------------------------------------------------------------------" + nl);
     			    	previousMonth = month;
-    	    	}
+    	    		}
     
-    	    	// List this independent only if the output list is still shorter than NumberOfBestRegressions
-				if ( independentCount >= maxResultsPerIndependent.intValue() ) {
-					continue;
-				}
-    
-    	    	// List this independent only if the regression was properly analyzed.
-	    		if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
-	    			if ( !tsRegression.isAnalyzed( month ) ) {
-	    			    continue;
-	    			}
-    			}
-	    		else {
-					if ( !tsRegression.isAnalyzed() ) {
-					    continue;
-					}
-				}
-    
-    			// List this independent only if the number of data points used to compute the regression
-	    		// was greater or equal to MinimumDataCount
-	    		if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
-    				try {
-    					int n = tsRegression.getN1(month );
-    					if ( n < MinimumDataCount ) {
+        	    	// List this result only if not constrained by a maximum count on output results
+    				if ( (maxResultsPerIndependent != null) &&
+    				    (independentCount >= maxResultsPerIndependent.intValue()) ) {
+    					continue;
+    				}
+        
+        	    	// List this independent only if the regression was properly analyzed.
+    	    		if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
+    	    			if ( !tsRegression.isAnalyzed( month ) ) {
+    	    			    continue;
+    	    			}
+        			}
+    	    		else {
+    					if ( !tsRegression.isAnalyzed() ) {
+    					    continue;
+    					}
+    				}
+        
+        			// List this independent only if the number of data points used to compute the regression
+    	    		// was greater or equal to MinimumDataCount
+    	    		if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
+        				try {
+        					int n = tsRegression.getN1(month );
+        					if ( n < MinimumDataCount ) {
+        						continue;
+        					}
+        				}
+        				catch ( Exception e ) {
+        				    // FIXME SAM 2009-06-15 log
+        					continue;
+        				}
+    				}
+    	    		else {
+    					try {
+    						int n = tsRegression.getN1();
+    						if ( n < MinimumDataCount ) {
+    							continue;
+    						}
+    					}
+    					catch ( Exception e ) {
+                            // FIXME SAM 2009-06-15 log
     						continue;
     					}
     				}
-    				catch ( Exception e ) {
-    				    // FIXME SAM 2009-06-15 log
-    					continue;
-    				}
-				}
-	    		else {
-					try {
-						int n = tsRegression.getN1();
-						if ( n < MinimumDataCount ) {
-							continue;
-						}
-					}
-					catch ( Exception e ) {
-                        // FIXME SAM 2009-06-15 log
-						continue;
-					}
-				}
     
     				// Use only if the correlation coefficient is greater than the MinimumR
     				double r;
@@ -1339,33 +1354,37 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent )
     catch ( Exception e ) {
     	Message.printWarning( 2, mthd, e );
     }
-	summary.append ( __nl + __nl );
+	summary.append ( nl + nl );
 	return summary;
 }
 
 /**
 Fill the dependent time series using the dependent time series and regression
 parameter defined during the analysis.  This method will typically be called
-from the TSTool TSEngine object (do_fillMixedStation() method) after the
-MixedStationAnalysis is instantiated.  Notice that the Regression analysis is
-processed during the instantiation process.
+from the FillMixedStationAnalysis() command after the
+MixedStationAnalysis is run and results are ranked.
 
 All the information needed to fill the dependent time series can be obtained
 from the regressions. Notice yet that only one independent time series will
 be used to fill part of a dependent. The first one in the list satisfying the
 properties requirement will be used.
 */
-public void fill()
-{
-	String mthd = "MixedStationAnalysis.fill", mssg;
+public void fill ( )
+{   String mthd = "MixedStationAnalysis.fill", mssg;
 
-	Message.printStatus ( 2, mthd, "Starting..." );
+	Message.printStatus ( 2, mthd, "Start filling time series..." );
+	
+	if ( !rankCompleted() ) {
+	    mssg = "Mixed Station Analysis results have not been ranked.  Can't use for filling.";
+	    throw new RuntimeException ( mssg );
+	}
 
 	TS independentTS = null;
 	TS dependentTS = null;
 	DataTransformationType transformation;
 	NumberOfEquationsType numberOfEquations;
 	RegressionType analysisMethod;
+	Double intercept;
 	DateTime dependentAnalysisStart;
 	DateTime dependentAnalysisEnd;
 	DateTime independentAnalysisStart;
@@ -1407,12 +1426,27 @@ public void fill()
     				analysisMethod = tsRegression.getAnalysisMethod();
     				numberOfEquations = tsRegression.getNumberOfEquations();
     				transformation = tsRegression.getTransformation();
+    				intercept = tsRegression.getIntercept();
     
     		  		// Dependent time series
 			    	dependentTS = tsRegression.getDependentTS();
 			    	String depend = dependentTS.getAlias();
 			    	if ( depend.length() == 0 ) {
 			    		depend = dependentTS.getLocation();
+			    	}
+			    	
+			    	// If the dependent time series does not have any missing data in the fill period, then
+			    	// skip the relationship
+			    	
+			    	int nMissing = TSUtil.missingCount(dependentTS, tsRegression.getFillStart(),
+			    	    tsRegression.getFillEnd() );
+			    	if ( nMissing == 0 ) {
+			    	    continue;
+			    	}
+			    	else {
+			    	    Message.printStatus(2, mthd, "Dependent time series \"" +
+			    	        dependentTS.getIdentifierString() + "\" has " + nMissing +
+			    	        " missing values... will try to fill with the next regression relationship." );
 			    	}
 
     	    		// Use only if regression was properly analyzed
@@ -1479,20 +1513,19 @@ public void fill()
 	  	    		// analysis does not need to be performed again.
 	  	    		TSUtil.fillRegress(dependentTS, independentTS,
 	  	    		    analysisMethod, numberOfEquations,
-	  	    		    __intercept, null, // no analysis months specified
+	  	    		    intercept, null, // no analysis months specified
 	  	    		    transformation,
 	  	    		    dependentAnalysisStart, dependentAnalysisEnd,
 	  	    		    independentAnalysisStart, independentAnalysisEnd,
 	  	    		    fillStart, fillEnd,
 	  	    		    null, // No fill flag
 	  	    		    null ); // No description string
-	  	    		// Done with this month (or all if one equation)
-	  	    		break;
     			}
 	        }
     	}
     }
     catch ( Exception e ) {
+        // TODO SAM 2009-08-31 Evaluate error handling - log individual errors but process as much as possible
     	Message.printWarning( 3, mthd, e );
     }
 }
@@ -1502,7 +1535,7 @@ Returns a string containing the number of data point used in the analysis,
 the correlation coefficient, the SEP, A and B values.  This string is used
 by the method createReportSummary to prepare report lines.
 @param tsRegression the reference to the regression to get the statistics from.
-Returns the string.
+Returns the statistics string part of the report for a single month's relationship.
 */
 private String getStatistics ( TSRegression tsRegression, int month )
 {
@@ -1588,7 +1621,7 @@ Returns a string containing the number of data point used in the analysis,
 the correlation coefficient, the SEP, A and B values.  This string is used
 by the method createReportSummary to prepare report lines.
 @param tsRegression the reference to the regression to get the statistics from.
-Returns the string.
+Returns the statistics string part of the report for single equation regressions.
 */
 private String getStatistics( TSRegression tsRegression )
 {
@@ -1669,19 +1702,21 @@ private String getStatistics( TSRegression tsRegression )
 }
 
 /**
-Rank the TSRegression in ascending order based on the best fit indicator.
+Rank the TSRegression in ascending order based on the best fit indicator (best first first).
 */
 private void rank()
 {
 	String mthd = "MixedStationAnalysis.rank", mssg;
 
-	List independentList    = null;
+	List independentList = null;
 	TSRegression tsRegression = null;
 
 	double[] values;
 
 	int nDependent = __dependentTSRegressionList.size();
-	__sortedOrder  = new int [nDependent][][];
+	__sortedOrder = new int [nDependent][][];
+	
+	Message.printStatus ( 2, mthd, "Ranking fill results for " + nDependent + " dependent time series.");
 
     try {
     	// Loop over the dependent objects, which each have a list of statistics, stored in TSRegression objects.
@@ -1765,7 +1800,8 @@ private void rank()
             	    	        values[ind] = tsRegression.getRMSE();
                 			    break;
                 		}
-                	} catch (Exception e ) {
+                	}
+                	catch (Exception e ) {
                 		// If something went wrong with the TSRegression, the getRMSE
             	    	// and getCorrelationCoefficient will throw and exception, but
             	    	// still need to keep the independent in the list of values to be able to relate
@@ -1784,8 +1820,22 @@ private void rank()
     		  	}
     		}
     	}
-    } catch ( Exception e ) {
+    }
+    catch ( Exception e ) {
     		Message.printWarning( 1, mthd, e );
+    }
+}
+
+/**
+Indicate whether the ranking process has been completed.
+*/
+private boolean rankCompleted ()
+{
+    if ( __dependentTSRegressionList != null ) {
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
@@ -1825,23 +1875,31 @@ private void rankMessage ( TSRegression tsRegression, String text )
 
 /**
 Save all parts of the report created by different stages of the analysis.
+@param nl newline to use, based on environment
 */
-private void saveReport( File outputFileFull, StringBuffer header, StringBuffer statistics, StringBuffer summary )
+private void saveReportText( File outputFileFull, List<String>outputCommentsList,
+    StringBuffer header, StringBuffer statistics, StringBuffer summary, String nl )
 throws FileNotFoundException
 {
 	PrintWriter pw = null;
+	String cnl = "#" + nl;
 	try {
 		FileOutputStream fos = new FileOutputStream ( outputFileFull );
 		pw = new PrintWriter (fos);
 
 		IOUtil.printCreatorHeader ( pw, "#", 80, 0);
+		if ( outputCommentsList != null ) {
+		    for ( int i = 0; i < outputCommentsList.size(); i++ ) {
+		        pw.print( "# " + outputCommentsList.get(i) + nl );
+		    }
+		}
 
 		// Report header section
 		if ( header != null ) {
 			pw.print (header.toString());
 		}
 		else {
-			pw.print("\n\nMixed Station Analysis report header section is empty - an error has occurred.\n\n");
+			pw.print(cnl+cnl+"Mixed Station Analysis report header section is empty - an error has occurred.");
 		}
 
 		// Summary section
@@ -1849,7 +1907,7 @@ throws FileNotFoundException
 			pw.print (summary.toString());
 		}
 		else {
-			pw.print("\n\nMixed Station Analysis report summary section is empty - an error has occurred.\n\n");
+			pw.print(cnl+cnl+"Mixed Station Analysis report summary section is empty - an error has occurred.");
 		}
 
 		// Statistics section
@@ -1857,9 +1915,8 @@ throws FileNotFoundException
 			pw.print (statistics.toString());
 		}
 		else {
-			pw.print("\n\nMixed Station Analysis report statistics section is empty - an error has occurred.\n\n");
+			pw.print(cnl+cnl+"Mixed Station Analysis report statistics section is empty - an error has occurred.");
 		}
-
 	}
 	finally {
 	    if ( pw != null ) {

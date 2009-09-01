@@ -1050,6 +1050,7 @@ throws Exception
 {	return calculateTSAverageLimits ( getTimeSeriesSize(), ts );
 }
 
+static int calculateTSAverageLimits_warningPrintCount = 0;
 /**
 Calculate the average data limits for a time series using the averaging period
 if specified (otherwise use the available period).
@@ -1083,18 +1084,20 @@ throws Exception
 		try {
 		    if ( haveAveragingPeriod() ) {
 				// Get the average values from the averaging period...
-				if ( i <= 0 ) {
+				if ( calculateTSAverageLimits_warningPrintCount == 0 ) {
 					Message.printStatus ( 2, routine, "Specified averaging period is:  " +
 					getAverageStart() + " to " + getAverageEnd() );
+					++calculateTSAverageLimits_warningPrintCount;
 				}
 				average_limits = new MonthTSLimits( (MonthTS)ts, getAverageStart(), getAverageEnd(), limits_flag);
 			}
 			else {
 			    // Get the average values from the available period...
-				if ( i <= 0 ) {
+				if ( calculateTSAverageLimits_warningPrintCount == 0 ) {
 					// Print the message once...
 					Message.printStatus ( 2, routine,
-					"No averaging period specified.  Will use available period.");
+					    "No averaging period specified.  Will use available period to compute averages.");
+					++calculateTSAverageLimits_warningPrintCount;
 				}
 				average_limits = new MonthTSLimits( (MonthTS)ts, ts.getDate1(), ts.getDate2(), limits_flag );
 			}
@@ -1144,8 +1147,7 @@ throws Exception
 	    // as it is not a performance hit.
 		if ( Message.isDebugOn ) {
 			Message.printStatus ( 2, routine,
-			"Calculation of historic average limits for other " +
-			"than monthly and yearly data is not enabled: " +
+			"Calculation of historic average limits for other than monthly and yearly data is not enabled: " +
 			ts.getIdentifierString() + ")" );
 		}
 	}
@@ -1285,8 +1287,7 @@ Create a year to date report listing the total accumulation of water volume for
 each year to the specified date.  Handle real-time and historic.  But only CFS units.
 @param tslist list of time series to analyze.
 @param end_date Ending date for annual total (precision day!).
-@param props Properties to control output (currently the only property is
-SortTotals=true/false).
+@param props Properties to control output (currently the only property is SortTotals=true/false).
 */
 private List createYearToDateReport ( List tslist, DateTime end_date, PropList props )
 {	int size = tslist.size();

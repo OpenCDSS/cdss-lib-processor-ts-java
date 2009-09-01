@@ -57,6 +57,7 @@ import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.TS.TSUtil;
+import RTi.Util.GUI.GUIUtil;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.ReportJFrame;
@@ -217,19 +218,38 @@ obscure the main window.
 @param ui interface between main UI and other code.
 */
 public FillMixedStation_JDialog ( JFrame parent, TSCommandProcessor processor, CommandListUI ui )
-{
+{  
 	super( parent, false );
+	String routine = getClass().getName();
 
 	// Initialize the dialog
 	__commandUI = ui;
 	__processor = processor;
+	// TODO SAM 2009-08-31 The following is for troubleshooting and can be removed later
 	if ( processor == null ) {
-	    String routine = getClass().getName();
-	    Message.printStatus ( 2, routine, "processor is null for temporary command used with tool" );
+	    Message.printStatus ( 2, routine, "Processor is null for temporary command used with tool" );
+	}
+	else {
+	    Object o = null;
+	    try {
+	        o = processor.getPropContents("TSResultsList");
+	    }
+	    catch ( Exception e ) {
+	        Message.printWarning ( 3, routine,
+	            "Error getting results time series list from tool processor (" + e + ").");
+	    }
+	    if ( o == null ) {
+	        Message.printWarning ( 3, routine, "Time series list from tool processor is null.");
+	    }
+	    else {
+	        List tslist = (List)o;
+	        Message.printStatus ( 2, routine, "Processor in tool mode has " + tslist.size() + " time series.");
+	    }
 	}
 	// Create a command instance to save command parameters, etc.
+	Message.printStatus ( 2, routine, "Creating FillMixedStation command to hold tool data.");
 	__command = new FillMixedStation_Command(false); // to hold parameters
-	__command.setCommandProcessor ( processor ); // to get working directory, etc., but no data
+	__command.setCommandProcessor ( processor ); // to get working directory, etc., time series are in main GUI
 	__working_dir = processor.getInitialWorkingDir();
 	initialize ( parent );
 }
@@ -336,14 +356,21 @@ public void actionPerformed( ActionEvent event )
             // Commit to local command used to manage parameters
     		commitEdits ();
 			try {
-			    Message.printStatus(2, mthd, "Performing Mixed Station Analysis..." );
+			    mssg = "Running Mixed Station Analysis...";
+			    Message.printStatus(2, mthd, mssg );
+			    setStatusText ( mssg );
+			    GUIUtil.setWaitCursor(this, true);
 				__command.runCommand( -1 );
-				Message.printStatus(2, mthd, "...done performing Mixed Station Analysis." );
+				GUIUtil.setWaitCursor(this, false);
+				mssg = "...done running Mixed Station Analysis.";
+				Message.printStatus(2, mthd, mssg );
+				setStatusText ( mssg );
 			}
 			catch ( Exception e ) {
 				Message.printWarning ( 2, mthd, e );
 				mssg = "Error executing the analysis.  Please check the log file for details (" + e + ").";
-				Message.printWarning ( 1, mthd, mssg );	
+				Message.printWarning ( 1, mthd, mssg );
+				GUIUtil.setWaitCursor(this, false);
 			}	
 			// Enable the runCommand dependent buttons, even if an error occurred.
 			__view_JButton.setEnabled ( true );
@@ -959,7 +986,7 @@ private void initialize ( JFrame parent )
          // View button: used only when running as a TSTool tool.
         __view_JButton = new SimpleJButton ( __view_String, this );
         __view_JButton.setToolTipText( __view_Tip );
-        //__view_JButton.setEnabled( false );
+        __view_JButton.setEnabled( false ); // enabled as soon as a run is made, even if fails
         buttonAnalyze_JPanel.add ( __view_JButton );
 
         /* FIXME SAM 2009-08-26 Evaluate use
@@ -1085,8 +1112,8 @@ public void keyPressed ( KeyEvent event )
 {
 	int code = event.getKeyCode();
 
-	if ( code == KeyEvent.VK_ENTER ) {
-		// This is the same as the ActionPerformed code for the ok_JButton
+	if ( (__commandUI == null) && (code == KeyEvent.VK_ENTER) ) {
+		// This is the same as the ActionPerformed code for the ok_JButton, command editor only
 		refresh();
 		checkInput();
 		if ( !__error_wait ) {
@@ -1107,18 +1134,18 @@ public void keyReleased ( KeyEvent event )
 }
 
 /**
+*/
+public void keyTyped ( KeyEvent event )
+{	
+}
+
+/**
 Indicate if the user pressed OK (cancel otherwise).
 @return true if the edits were committed, false if the user cancelled.
 */
 public boolean ok ()
 {
-	return __ok;
-}
-
-/**
-*/
-public void keyTyped ( KeyEvent event )
-{	
+    return __ok;
 }
 
 /**

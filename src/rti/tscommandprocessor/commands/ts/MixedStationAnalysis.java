@@ -266,16 +266,22 @@ private void analyze()
 		    	    previousSecCount = sw.getSeconds();
 		    	    sw.start();
 		    	    try {
-		    	    	dependentResults.add (
-		    	    	    new TSRegression (independentTS, dependentTS,
-		    	    	            true, // analyze for filling
-		    	    	            analysisMethod,
-		    	    	            intercept, __numberOfEquations,
-		    	    	            null, // include all months in analysis
-		    	    	            transformation,
-		    	    	            __analysisStart, __analysisEnd, // Dependent analysis
-		    	    	            __analysisStart, __analysisEnd, // Independent analysis (same as dependent)
-		    	    	            __fillStart, __fillEnd ) );
+		    	        TSRegression tsRegression2 = new TSRegression (independentTS, dependentTS,
+                            true, // analyze for filling
+                            analysisMethod,
+                            intercept, __numberOfEquations,
+                            null, // include all months in analysis
+                            transformation,
+                            __analysisStart, __analysisEnd, // Dependent analysis
+                            __analysisStart, __analysisEnd, // Independent analysis (same as dependent)
+                            __fillStart, __fillEnd );
+		    	         if ( analyzeOkToAddResults(tsRegression2, __numberOfEquations, __minimumDataCount,
+		    	             __minimumR, true) ) {
+    		         	  	 dependentResults.add ( tsRegression2 );
+    		    	    	 // Free resources that won't be used - this is necessary because sometimes when
+    		    	    	 // processing many time series the memory runs out.
+    		    	    	 tsRegression2.freeResources();
+		    	         }
 		    	    }
 		    	    catch ( Exception e ) {
 		    	    	Message.printWarning( 3, mthd, e );
@@ -292,7 +298,7 @@ private void analyze()
 		    	}
 	    	}
 	    }
-	    __dependentTSRegressionList.add ( dependentResults );
+	    __dependentTSRegressionList.add ( dependentResults ); // List of TSRegression for the dependent
 	    Message.printStatus ( 2, mthd, "Have " + dependentResults.size() +
 	        " results to rank for dependent TS \"" + dependentTS.getIdentifierString() + "\"" );
 	}
@@ -314,6 +320,97 @@ public void analyzeAndRank ()
 {
     analyze();
     rank();
+}
+
+/**
+Evaluate whether a TSRegression relationship is OK to add to results or otherwise process, given filter
+criteria.
+@param partialOk if monthly an any values meet the cutoff, then add.  This is because monthly results are
+stored in one TSRegression object and good results will need to be extracted for specific months.
+*/
+public boolean analyzeOkToAddResults(TSRegression tsRegression, NumberOfEquationsType numberOfEquations,
+    Integer minimumDataCount, Double minimumR, boolean partialOk )
+{
+    boolean okToAdd = true;
+    // Use only if regression was properly analyzed
+    int monthOkCount = 0;
+    if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
+        for ( int imon = 1; imon <= 12; imon++ ) {
+            if ( tsRegression.isAnalyzed( imon ) ) {
+                ++monthOkCount;
+            }
+        }
+        if ( (partialOk && monthOkCount == 0) || (!partialOk && monthOkCount != 12) ) {
+            // Not enough data
+            okToAdd = false;
+        }
+    }
+    else {
+        if ( !tsRegression.isAnalyzed() ) {
+            okToAdd = false;
+        }
+    }
+    if ( !okToAdd ) {
+        return false;
+    }
+    
+    // Fill only if the minimum R is satisfied.
+    
+    monthOkCount = 0;
+    if ( minimumR != null  ) {
+        if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
+            for ( int imon = 1; imon <= 12; imon++ ) {
+                try {
+                    if ( tsRegression.getCorrelationCoefficient( imon ) >= minimumR.doubleValue()) {
+                        ++monthOkCount;
+                    }
+                }
+                catch ( Exception e ) {
+                    // Don't increment
+                }
+            }
+            if ( (partialOk && monthOkCount == 0) || (!partialOk && monthOkCount != 12) ) {
+                // Not enough data
+                okToAdd = false;
+            }
+        }
+        else {
+            if ( tsRegression.getCorrelationCoefficient() < minimumR.doubleValue() ) {
+                okToAdd = false;
+            }
+        }
+    }
+    if ( !okToAdd ) {
+        return false;
+    }
+
+    // Use only if the number of data points used in the analysis was >= to MinimumDataCount
+
+    monthOkCount = 0;
+    if ( minimumDataCount != null ) {
+        if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
+            for ( int imon = 1; imon <= 12; imon++ ) {
+                try {
+                    if ( tsRegression.getN1( imon ) >= minimumDataCount.intValue()) {
+                        ++monthOkCount;
+                    }
+                }
+                catch ( Exception e ) {
+                    // Don't increment OK count
+                }
+            }
+            if ( (partialOk && monthOkCount == 0) || (!partialOk && monthOkCount != 12) ) {
+                // Not enough data
+                okToAdd = false;
+            }
+        }
+        else {
+            if ( tsRegression.getN1() < minimumDataCount.intValue()) {
+                okToAdd = false;
+            }
+        }
+    }
+    return okToAdd;
 }
 
 // FIXME SAM 2009-08-29 Need to evaluate this - need to pass in the equation coefficients directly because
@@ -1403,10 +1500,13 @@ public void fill ( )
     try {
     	// Loop for each one of the dependent time series
     	int nDependent = __dependentTSRegressionList.size();
-    	for ( int dep = 0; dep < nDependent; dep++ ) {
+    	for ( int iDepResult = 0; iDepResult < nDependent; iDepResult++ ) {
     		// Get the independent list (regressions) for this dependent
-    		List independentList = (List)__dependentTSRegressionList.get( dep );
-    		int nIndependent = independentList.size();
+    		List depResultList = (List)__dependentTSRegressionList.get( iDepResult );
+    		int nDepResult = depResultList.size();
+    		dependentTS = __dependentTSList.get(iDepResult);
+    		Message.printStatus(2, mthd, "Independent time series \"" + dependentTS.getIdentifierString() +
+    		    "\" has " + nDepResult + " combinations of regression results to use for filling." );
     
     		// Using the same code to deal with monthly and single equation
     		// For single equation set the variable nMonth to 1.
@@ -1419,16 +1519,16 @@ public void fill ( )
     			// Loop through the regressions for this dependent, find the first best fit,
     		    // fill the dependent and set the break from the independent loop.
     
-    			for ( int ind = 0; ind < nIndependent; ind++ ) {
+    			for ( int ind = 0; ind < nDepResult; ind++ ) {
     				// Get the regression object.
     				TSRegression tsRegression = null;
-    				tsRegression = (TSRegression)independentList.get(__sortedOrder[dep][month-1][ind]);
+    				tsRegression = (TSRegression)depResultList.get(__sortedOrder[iDepResult][month-1][ind]);
     				analysisMethod = tsRegression.getAnalysisMethod();
     				numberOfEquations = tsRegression.getNumberOfEquations();
     				transformation = tsRegression.getTransformation();
     				intercept = tsRegression.getIntercept();
     
-    		  		// Dependent time series
+    		  		// Dependent time series from regression object
 			    	dependentTS = tsRegression.getDependentTS();
 			    	String depend = dependentTS.getAlias();
 			    	if ( depend.length() == 0 ) {
@@ -1446,7 +1546,8 @@ public void fill ( )
 			    	else {
 			    	    Message.printStatus(2, mthd, "Dependent time series \"" +
 			    	        dependentTS.getIdentifierString() + "\" has " + nMissing +
-			    	        " missing values... will try to fill with the next regression relationship." );
+			    	        " missing values... will try to fill with regression relationship " +
+			    	        (iDepResult + 1) + " of " + nDepResult );
 			    	}
 
     	    		// Use only if regression was properly analyzed
@@ -1506,12 +1607,16 @@ public void fill ( )
     	    		independentAnalysisEnd = tsRegression.getIndependentAnalysisEnd();
 	  	    		fillStart = tsRegression.getFillStart();
 	  	    		fillEnd = tsRegression.getFillEnd();
+	  	    		
+	  	    		// FIXME SAM 2009-09-01 Need to make sure thta only the high-ranking month is filled
+	  	    		// in the following by passing analysisMonths with one month.
 
     				// The following will recompute the statistics.  This is OK for now because it causes
 	  	    		// normal logging, etc. to occur.
 	  	    		// TODO SAM 2009-08-30 In the future, perhaps pass a TSRegression object so that the
 	  	    		// analysis does not need to be performed again.
 	  	    		TSUtil.fillRegress(dependentTS, independentTS,
+	  	    		    tsRegression, // Use this directly since don't want to recompute from filled data
 	  	    		    analysisMethod, numberOfEquations,
 	  	    		    intercept, null, // no analysis months specified
 	  	    		    transformation,

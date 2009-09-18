@@ -746,6 +746,7 @@ CommandWarningException, CommandException
 
 	try {
 	    TSRegression regress_results = TSUtil.fillRegress ( ts_to_fill, ts_independent,
+            null, // No previously computed TSRegression object
             RegressionType.MOVE2, numberOfEquations,
             null, //Double intercept,
             null, //int [] analysisMonths,

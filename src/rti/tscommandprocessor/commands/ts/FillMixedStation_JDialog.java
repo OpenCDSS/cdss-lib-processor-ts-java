@@ -1291,11 +1291,13 @@ private void refresh()
             v = StringUtil.breakStringList ( AnalysisMethod, ",", StringUtil.DELIM_SKIP_BLANKS );
             String analysisMethod = "";
             for ( int i = 0; i < v.size(); i++ ) {
-                analysisMethod = v.get(i);
+                analysisMethod = v.get(i).trim();
                 boolean found = false;
                 for ( int icb = 0; icb < __AnalysisMethod_JCheckBox.length; icb++ ) {
                     if ( analysisMethod.equalsIgnoreCase(__AnalysisMethod_JCheckBox[icb].getText())) {
                         __AnalysisMethod_JCheckBox[icb].setSelected(true);
+                        found = true;
+                        break;
                     }
                 }
                 if ( !found ){
@@ -1337,6 +1339,8 @@ private void refresh()
 				for ( int icb = 0; icb < __Transformation_JCheckBox.length; icb++ ) {
 				    if ( transformation.equalsIgnoreCase(__Transformation_JCheckBox[icb].getText())) {
 				        __Transformation_JCheckBox[icb].setSelected(true);
+                        found = true;
+                        break;
 				    }
 				}
 				if ( !found ){

@@ -34,10 +34,17 @@ implements Command
 {
 
 /**
-Data members used for parameter values.
+Data members used for parameter values (these have been replaced with _Warn, etc. instead).
 */
 protected final String _False = "False";
 protected final String _True = "True";
+
+/**
+Data members used for IfDifferent and IfSame parameters.
+*/
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+protected final String _Fail = "Fail";
 
 /**
 Constructor.
@@ -53,15 +60,14 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
-	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
-	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
+	String IfDifferent = parameters.getValue ( "IfDifferent" );
+	String IfSame = parameters.getValue ( "IfSame" );
 	String warning = "";
 	String message;
 
@@ -86,33 +92,31 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the second file name."));
 	}
-	if ( (WarnIfDifferent != null) && !WarnIfDifferent.equals("") ) {
-		if (	!WarnIfDifferent.equalsIgnoreCase(_False) &&
-			!WarnIfDifferent.equalsIgnoreCase(_True) ) {
-			message = "The WarnIfDifferent parameter \"" + WarnIfDifferent + "\" must be False or True.";
+	if ( (IfDifferent != null) && !IfDifferent.equals("") && !IfDifferent.equalsIgnoreCase(_Ignore) &&
+		!IfDifferent.equalsIgnoreCase(_Warn) && !IfDifferent.equalsIgnoreCase(_Fail) ) {
+			message = "The IfDifferent parameter \"" + IfDifferent + "\" is not a valid value.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Specify the parameter as False or True."));
-		}
+						message, "Specify the parameter as " + _Ignore + " (default), " +
+						_Warn + ", or " + _Fail + "."));
 	}
-	if ( (WarnIfSame != null) && !WarnIfSame.equals("") ) {
-		if (	!WarnIfSame.equalsIgnoreCase(_False) &&
-			!WarnIfSame.equalsIgnoreCase(_True) ) {
-			message = "The WarnIfSame parameter \"" + WarnIfSame + "\" must be False or True.";
-			warning += "\n" + message;
-			status.addToLog(CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-						message,"Specify the parameter as False or True."));
-		}
+	if ( (IfSame != null) && !IfSame.equals("") && !IfSame.equalsIgnoreCase(_Ignore) &&
+		!IfSame.equalsIgnoreCase(_Warn) && !IfSame.equalsIgnoreCase(_Fail) ) {
+		message = "The IfSame parameter \"" + IfSame + "\" is not a valid value.";
+		warning += "\n" + message;
+		status.addToLog(CommandPhaseType.INITIALIZATION,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Specify the parameter as " + _Ignore + " (default), " +
+					_Warn + ", or " + _Fail + "."));
 	}
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile1" );
 	valid_Vector.add ( "InputFile2" );
 	valid_Vector.add ( "CommentLineChar" );
-	valid_Vector.add ( "WarnIfDifferent" );
-	valid_Vector.add ( "WarnIfSame" );
+	valid_Vector.add ( "IfDifferent" );
+	valid_Vector.add ( "IfSame" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -137,18 +141,15 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "CompareFiles_Command.parseCommand", message;
 
-	List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+	List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 
 	CommandStatus status = getCommandStatus();
 	if ( (tokens == null) ) { //|| tokens.size() < 2 ) {}
@@ -162,8 +163,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Get the input needed to process the command...
 	if ( tokens.size() > 1 ) {
 		try {
-		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String)tokens.get(1), routine,"," ) );
+		    setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine,"," ) );
 		}
 		catch ( Exception e ) {
 			message = "Invalid syntax for \"" + command + "\".  Expecting CompareFiles(...).";
@@ -173,6 +173,24 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 						message, "Report the problem to support."));
 			throw new InvalidCommandSyntaxException ( message );
 		}
+	}
+	// Update old parameter names to new
+	// Change WarnIfDifferent=True to IfDifferent=Warn
+	// Change WarnIfSame=True to IfSame=Warn
+	PropList props = getCommandParameters();
+	String propValue = props.getValue ( "WarnIfDifferent" );
+	if ( propValue != null ) {
+		if ( propValue.equalsIgnoreCase(_True) ) {
+			props.set("IfDifferent",_Warn);
+		}
+		props.unSet("WarnIfDifferent");
+	}
+	propValue = props.getValue ( "WarnIfSame" );
+	if ( propValue != null ) {
+		if ( propValue.equalsIgnoreCase(_True) ) {
+			props.set("IfSame",_Warn);
+		}
+		props.unSet("WarnIfSame");
 	}
 }
 
@@ -207,10 +225,8 @@ private String readLine ( BufferedReader in, String CommentLineChar )
 /**
 Run the command.
 @param command_line Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -232,17 +248,27 @@ CommandWarningException, CommandException
 	if ( (CommentLineChar == null) || CommentLineChar.equals("") ) {
 	    CommentLineChar = "#";
 	}
-	String WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
-	String WarnIfSame = parameters.getValue ( "WarnIfSame" );
-	boolean WarnIfDifferent_boolean = false;	// Default
-	boolean WarnIfSame_boolean = false;		// Default
+	String IfDifferent = parameters.getValue ( "IfDifferent" );
+	CommandStatusType IfDifferent_CommandStatusType = CommandStatusType.UNKNOWN;
+	if ( IfDifferent == null ) {
+		IfDifferent = _Ignore; // default
+	}
+	else {
+		if ( !IfDifferent.equalsIgnoreCase(_Ignore) ) {
+			IfDifferent_CommandStatusType = CommandStatusType.parse(IfDifferent);
+		}
+	}
+	String IfSame = parameters.getValue ( "IfSame" );
+	CommandStatusType IfSame_CommandStatusType = CommandStatusType.UNKNOWN;
+	if ( IfSame == null ) {
+		IfSame = _Ignore; // default
+	}
+	else {
+		if ( !IfSame.equalsIgnoreCase(_Ignore) ) {
+			IfSame_CommandStatusType = CommandStatusType.parse(IfSame);
+		}
+	}
 	int diff_count = 0; // Number of lines that are different
-	if ( (WarnIfDifferent != null) && WarnIfDifferent.equalsIgnoreCase(_True)){
-		WarnIfDifferent_boolean = true;
-	}
-	if ( (WarnIfSame != null) && WarnIfSame.equalsIgnoreCase(_True)){
-		WarnIfSame_boolean = true;
-	}
 
 	String InputFile1_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
@@ -326,7 +352,8 @@ CommandWarningException, CommandException
 					message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
-	if ( WarnIfDifferent_boolean && (diff_count > 0) ) {
+	if ( (diff_count > 0) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+		(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
 		message = "" + diff_count + " lines were different, " +
 			StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
 			"% (compared " + lineCountCompared + " lines).";
@@ -334,17 +361,18 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );
 		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.WARNING,
+				new CommandLogRecord(IfDifferent_CommandStatusType,
 					message, "Check files because difference is not expected.") );
 		throw new CommandException ( message );
 	}
-	if ( WarnIfSame_boolean && (diff_count == 0) ) {
+	if ( (diff_count == 0) && ((IfSame_CommandStatusType == CommandStatusType.WARNING) ||
+			(IfSame_CommandStatusType == CommandStatusType.FAILURE))) {
 		message = "No lines were different (the files are the same).";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag( command_tag,++warning_count),
 		routine, message );
 		status.addToLog(CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.WARNING,
+				new CommandLogRecord(IfSame_CommandStatusType,
 					message, "Check files because match is not expected.") );
 		throw new CommandException ( message );
 	}
@@ -361,8 +389,8 @@ public String toString ( PropList parameters )
 	String InputFile1 = parameters.getValue("InputFile1");
 	String InputFile2 = parameters.getValue("InputFile2");
 	String CommentLineChar = parameters.getValue("CommentLineChar");
-	String WarnIfDifferent = parameters.getValue("WarnIfDifferent");
-	String WarnIfSame = parameters.getValue("WarnIfSame");
+	String IfDifferent = parameters.getValue("IfDifferent");
+	String IfSame = parameters.getValue("IfSame");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile1 != null) && (InputFile1.length() > 0) ) {
 		b.append ( "InputFile1=\"" + InputFile1 + "\"" );
@@ -379,17 +407,17 @@ public String toString ( PropList parameters )
         }
         b.append ( "CommentLineChar=\"" + CommentLineChar + "\"" );
     }
-	if ( (WarnIfDifferent != null) && (WarnIfDifferent.length() > 0) ) {
+	if ( (IfDifferent != null) && (IfDifferent.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "WarnIfDifferent=" + WarnIfDifferent );
+		b.append ( "IfDifferent=" + IfDifferent );
 	}
-	if ( (WarnIfSame != null) && (WarnIfSame.length() > 0) ) {
+	if ( (IfSame != null) && (IfSame.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "WarnIfSame=" + WarnIfSame );
+		b.append ( "IfSame=" + IfSame );
 	}
 	return getCommandName() + "(" + b.toString() + ")";
 }

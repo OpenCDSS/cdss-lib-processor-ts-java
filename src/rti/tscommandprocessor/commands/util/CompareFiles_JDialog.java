@@ -1,18 +1,3 @@
-// ----------------------------------------------------------------------------
-// compareFiles_JDialog - editor for compareFiles()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2006-05-01	Steven A. Malers, RTi	Initial version (copy and modify
-//					compareTimeSeries_JDialog).
-// 2006-05-03	SAM, RTi		Add WarnIfSame parameter.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.util;
 
 import java.awt.event.ActionEvent;
@@ -56,21 +41,21 @@ private final String __AddWorkingDirectoryFile2 = "Add Working Directory (File 2
 private final String __RemoveWorkingDirectoryFile1 = "Remove Working Directory (File 1)";
 private final String __RemoveWorkingDirectoryFile2 = "Remove Working Directory (File 2)";
 
-private SimpleJButton	__browse1_JButton = null,
-			__browse2_JButton = null,
-			__path1_JButton = null,
-			__path2_JButton = null,
-			__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
-private JTextField	__InputFile1_JTextField = null;	// First file
-private JTextField	__InputFile2_JTextField = null;	// Second file
-private JTextField  __CommentLineChar_JTextField = null;
-private SimpleJComboBox	__WarnIfDifferent_JComboBox =null;
-private SimpleJComboBox	__WarnIfSame_JComboBox =null;
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
-private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
+private SimpleJButton __browse1_JButton = null;
+private SimpleJButton __browse2_JButton = null;
+private SimpleJButton __path1_JButton = null;
+private SimpleJButton __path2_JButton = null;
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private JTextField __InputFile1_JTextField = null; // First file
+private JTextField __InputFile2_JTextField = null; // Second file
+private JTextField __CommentLineChar_JTextField = null;
+private SimpleJComboBox __IfDifferent_JComboBox =null;
+private SimpleJComboBox __IfSame_JComboBox =null;
+private JTextArea __command_JTextArea = null; // Command as JTextField
+private String __working_dir = null; // Working directory.
+private boolean __error_wait = false;
+private boolean __first_time = true;
 private CompareFiles_Command __command = null; // Command to edit
 private boolean __ok = false; // Indicates whether the user pressed OK to close the dialog.
 
@@ -205,8 +190,8 @@ private void checkInput ()
 	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
-	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
-	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	String IfDifferent = __IfDifferent_JComboBox.getSelected();
+	String IfSame = __IfSame_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile1.length() > 0 ) {
 		props.set ( "InputFile1", InputFile1 );
@@ -217,11 +202,11 @@ private void checkInput ()
     if ( CommentLineChar.length() > 0 ) {
         props.set ( "CommentLineChar", CommentLineChar );
     }
-	if ( WarnIfDifferent.length() > 0 ) {
-		props.set ( "WarnIfDifferent", WarnIfDifferent );
+	if ( IfDifferent.length() > 0 ) {
+		props.set ( "IfDifferent", IfDifferent );
 	}
-	if ( WarnIfSame.length() > 0 ) {
-		props.set ( "WarnIfSame", WarnIfSame );
+	if ( IfSame.length() > 0 ) {
+		props.set ( "IfSame", IfSame );
 	}
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -240,13 +225,13 @@ private void commitEdits ()
 {	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
-	String WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
-	String WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	String IfDifferent = __IfDifferent_JComboBox.getSelected();
+	String IfSame = __IfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile1", InputFile1 );
 	__command.setCommandParameter ( "InputFile2", InputFile2 );
 	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
-	__command.setCommandParameter ( "WarnIfDifferent", WarnIfDifferent );
-	__command.setCommandParameter ( "WarnIfSame", WarnIfSame );
+	__command.setCommandParameter ( "IfDifferent", IfDifferent );
+	__command.setCommandParameter ( "IfSame", IfSame );
 }
 
 /**
@@ -259,8 +244,8 @@ throws Throwable
 	__command = null;
 	__InputFile1_JTextField = null;
 	__InputFile2_JTextField = null;
-	__WarnIfDifferent_JComboBox = null;
-	__WarnIfSame_JComboBox = null;
+	__IfDifferent_JComboBox = null;
+	__IfSame_JComboBox = null;
 	__ok_JButton = null;
 	super.finalize ();
 }
@@ -331,32 +316,34 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=#)"), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if different?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__WarnIfDifferent_JComboBox = new SimpleJComboBox ( false );
-	__WarnIfDifferent_JComboBox.addItem ( "" );	// Default
-	__WarnIfDifferent_JComboBox.addItem ( __command._False );
-	__WarnIfDifferent_JComboBox.addItem ( __command._True );
-	__WarnIfDifferent_JComboBox.select ( 0 );
-	__WarnIfDifferent_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __WarnIfDifferent_JComboBox,
+	__IfDifferent_JComboBox = new SimpleJComboBox ( false );
+	__IfDifferent_JComboBox.addItem ( "" );	// Default
+	__IfDifferent_JComboBox.addItem ( __command._Ignore );
+	__IfDifferent_JComboBox.addItem ( __command._Warn );
+	__IfDifferent_JComboBox.addItem ( __command._Fail );
+	__IfDifferent_JComboBox.select ( 0 );
+	__IfDifferent_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Generate a warning if different? (default=false)"), 
+		"Action if files are different (default=" + __command._Ignore + ")"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Warn if same?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__WarnIfSame_JComboBox = new SimpleJComboBox ( false );
-	__WarnIfSame_JComboBox.addItem ( "" );	// Default
-	__WarnIfSame_JComboBox.addItem ( __command._False );
-	__WarnIfSame_JComboBox.addItem ( __command._True );
-	__WarnIfSame_JComboBox.select ( 0 );
-	__WarnIfSame_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __WarnIfSame_JComboBox,
+	__IfSame_JComboBox = new SimpleJComboBox ( false );
+	__IfSame_JComboBox.addItem ( "" );	// Default
+	__IfSame_JComboBox.addItem ( __command._Ignore );
+	__IfSame_JComboBox.addItem ( __command._Warn );
+	__IfSame_JComboBox.addItem ( __command._Fail );
+	__IfSame_JComboBox.select ( 0 );
+	__IfSame_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Generate a warning if same? (default=false)"), 
+		"Action if files are the same (default=" + __command._Ignore + ")"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -429,8 +416,8 @@ private void refresh ()
 	String InputFile1 = "";
 	String InputFile2 = "";
 	String CommentLineChar = "";
-	String WarnIfDifferent = "";
-	String WarnIfSame = "";
+	String IfDifferent = "";
+	String IfSame = "";
     PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -438,8 +425,8 @@ private void refresh ()
 		InputFile1 = parameters.getValue ( "InputFile1" );
 		InputFile2 = parameters.getValue ( "InputFile2" );
 		CommentLineChar = parameters.getValue ( "CommentLineChar" );
-		WarnIfDifferent = parameters.getValue ( "WarnIfDifferent" );
-		WarnIfSame = parameters.getValue ( "WarnIfSame" );
+		IfDifferent = parameters.getValue ( "IfDifferent" );
+		IfSame = parameters.getValue ( "IfSame" );
 		if ( InputFile1 != null ) {
 			__InputFile1_JTextField.setText ( InputFile1 );
 		}
@@ -450,40 +437,35 @@ private void refresh ()
             __CommentLineChar_JTextField.setText ( CommentLineChar );
         }
 		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__WarnIfDifferent_JComboBox, WarnIfDifferent,
+			__IfDifferent_JComboBox, IfDifferent,
 			JGUIUtil.NONE, null, null ) ) {
-			__WarnIfDifferent_JComboBox.select ( WarnIfDifferent );
+			__IfDifferent_JComboBox.select ( IfDifferent );
 		}
 		else {
-		    if ( (WarnIfDifferent == null) || WarnIfDifferent.equals("") ) {
+		    if ( (IfDifferent == null) || IfDifferent.equals("") ) {
 				// New command...select the default...
-				__WarnIfDifferent_JComboBox.select ( 0 );
+				__IfDifferent_JComboBox.select ( 0 );
 			}
 			else {
 			    // Bad user command...
-				Message.printWarning ( 1, routine,
-				"Existing command references an invalid\n"+
-				"WarnIfDifferent parameter \"" +
-				WarnIfDifferent +
-				"\".  Select a\ndifferent value or Cancel." );
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"fDifferent parameter \"" + IfDifferent + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__WarnIfSame_JComboBox, WarnIfSame,
+			__IfSame_JComboBox, IfSame,
 			JGUIUtil.NONE, null, null ) ) {
-			__WarnIfSame_JComboBox.select ( WarnIfSame );
+			__IfSame_JComboBox.select ( IfSame );
 		}
-		else {	if (	(WarnIfSame == null) ||
-				WarnIfSame.equals("") ) {
+		else {
+			if ( (IfSame == null) || IfSame.equals("") ) {
 				// New command...select the default...
-				__WarnIfSame_JComboBox.select ( 0 );
+				__IfSame_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
-				Message.printWarning ( 1, routine,
-				"Existing command references an invalid\n"+
-				"WarnIfSame parameter \"" +
-				WarnIfSame +
-				"\".  Select a\ndifferent value or Cancel." );
+			else {
+				// Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"IfSame parameter \"" + IfSame + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 	}
@@ -492,14 +474,14 @@ private void refresh ()
 	InputFile1 = __InputFile1_JTextField.getText().trim();
 	InputFile2 = __InputFile2_JTextField.getText().trim();
 	CommentLineChar = __CommentLineChar_JTextField.getText().trim();
-	WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
-	WarnIfSame = __WarnIfSame_JComboBox.getSelected();
+	IfDifferent = __IfDifferent_JComboBox.getSelected();
+	IfSame = __IfSame_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile1=" + InputFile1 );
 	props.add ( "InputFile2=" + InputFile2 );
 	props.add ( "CommentLineChar=" + CommentLineChar );
-	props.add ( "WarnIfDifferent=" + WarnIfDifferent );
-	props.add ( "WarnIfSame=" + WarnIfSame );
+	props.add ( "IfDifferent=" + IfDifferent );
+	props.add ( "IfSame=" + IfSame );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path1_JButton != null ) {

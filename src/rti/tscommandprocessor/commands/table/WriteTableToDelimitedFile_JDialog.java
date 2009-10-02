@@ -235,7 +235,7 @@ private void initialize ( JFrame parent, WriteTableToDelimitedFile_Command comma
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table to write:" ), 
          0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
      __TableID_JComboBox = new SimpleJComboBox ( false ); // Don't allow edits
-     List TableIDs = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+     List<String> TableIDs = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
          (TSCommandProcessor)__command.getCommandProcessor(), __command );
      __TableID_JComboBox.setData(TableIDs);
      __TableID_JComboBox.addItemListener ( this );
@@ -337,7 +337,9 @@ private void refresh ()
 		}
         if ( TableID == null ) {
             // Select default...
-            __TableID_JComboBox.select ( 0 );
+            if ( __TableID_JComboBox.getItemCount() > 0 ) {
+                __TableID_JComboBox.select ( 0 );
+            }
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {

@@ -36,6 +36,12 @@ import rti.tscommandprocessor.commands.datevalue.WriteDateValue_Command;
 
 import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 
+// Ensemble commands
+
+import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
+import rti.tscommandprocessor.commands.ensemble.CreateEnsemble_Command;
+import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
+
 // GRTS commands (time series products).
 
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
@@ -100,6 +106,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 
 // Time-related commands.
@@ -124,8 +131,6 @@ import rti.tscommandprocessor.commands.ts.CompareTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ComputeErrorTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.ConvertDataUnits_Command;
 import rti.tscommandprocessor.commands.ts.Copy_Command;
-import rti.tscommandprocessor.commands.ts.CopyEnsemble_Command;
-import rti.tscommandprocessor.commands.ts.CreateEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.CreateFromList_Command;
 import rti.tscommandprocessor.commands.ts.Cumulate_Command;
 import rti.tscommandprocessor.commands.ts.DeselectTimeSeries_Command;
@@ -151,7 +156,6 @@ import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewEndOfMonthTSFromDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
-import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeriesFromEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewTimeSeries_Command;
@@ -709,6 +713,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"TestCommand") ) {
 		return new TestCommand_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"TimeSeriesToTable") ) {
+        return new TimeSeriesToTable_Command ();
+    }
     
     // "V" commands...
 

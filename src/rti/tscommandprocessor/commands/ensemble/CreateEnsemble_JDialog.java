@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ts;
+package rti.tscommandprocessor.commands.ensemble;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;

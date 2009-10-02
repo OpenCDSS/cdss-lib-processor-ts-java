@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ts;
+package rti.tscommandprocessor.commands.ensemble;
 
 import java.util.List;
 import java.util.Vector;

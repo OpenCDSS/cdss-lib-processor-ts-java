@@ -310,7 +310,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - ending date/time (default=setOutputPeriod() end)."),
+		"Optional - ending date/time (default=SetOutputPeriod() end)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
@@ -331,7 +331,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__PatternValues_JTextArea),
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__PatternValues_JTextArea.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Required - separate by spaces or commas."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel("Required - separate by spaces or commas, blank for missing."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern flags:"),

@@ -160,7 +160,7 @@ throws InvalidCommandParameterException
 	if ( (PatternValues != null) && !PatternValues.equals("") ) {
 		// If pattern values are specified, make sure they are a sequence of numbers...
 		// Allow blanks if they want to allow missing to remain
-		List tokens = StringUtil.breakStringList(PatternValues, " ,", 0);
+		List<String> tokens = StringUtil.breakStringList(PatternValues, " ,", 0);
 		int size = 0;
 		if ( tokens != null ) {
 			size = tokens.size();
@@ -170,9 +170,13 @@ throws InvalidCommandParameterException
 			__PatternValues_double = new double[size];
 		}
 		for ( int i = 0; i < size; i++ ) {
-			token = (String)tokens.get(i);
-			if ( !StringUtil.isDouble(token) ) {
-                message = "Pattern value (" + (i + 1) + "): " + token + " is not a number.";
+			token = tokens.get(i).trim();
+			if ( token.length() == 0 ) {
+			    // Allow missing
+			    __PatternValues_double[i] = Double.NaN;
+			}
+			else if ( !StringUtil.isDouble(token) ) {
+                message = "Pattern value (" + (i + 1) + "): \"" + token + "\" is not a number.";
 				warning += "\n" + message;
                 status.addToLog(CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(

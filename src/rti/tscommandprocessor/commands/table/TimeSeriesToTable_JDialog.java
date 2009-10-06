@@ -28,6 +28,7 @@ import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.util.List;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
@@ -53,8 +54,8 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __DateTimeColumn_JTextField = null;
-private JTextField __DataColumn1_JTextField = null;
-private JTextField __DataRow1_JTextField = null;
+private TSFormatSpecifiersJPanel __DataColumn_JTextField = null;
+private JTextField __DataRow_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox __IfTableNotFound_JComboBox = null;
@@ -130,8 +131,8 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
-    String DataColumn1 = __DataColumn1_JTextField.getText().trim();
-    String DataRow1 = __DataRow1_JTextField.getText().trim();
+    String DataColumn = __DataColumn_JTextField.getText().trim();
+    String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String IfTableNotFound = __IfTableNotFound_JComboBox.getSelected();
@@ -152,11 +153,11 @@ private void checkInput ()
     if ( DateTimeColumn.length() > 0 ) {
         props.set ( "DateTimeColumn", DateTimeColumn );
     }
-    if ( DataColumn1.length() > 0 ) {
-        props.set ( "DataColumn1", DataColumn1 );
+    if ( DataColumn.length() > 0 ) {
+        props.set ( "DataColumn", DataColumn );
     }
-    if ( DataRow1.length() > 0 ) {
-        props.set ( "DataRow1", DataRow1 );
+    if ( DataRow.length() > 0 ) {
+        props.set ( "DataRow", DataRow );
     }
     if ( OutputStart.length() > 0 ) {
         props.set ( "OutputStart", OutputStart );
@@ -187,8 +188,8 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
-    String DataColumn1 = __DataColumn1_JTextField.getText().trim();
-    String DataRow1 = __DataRow1_JTextField.getText().trim();
+    String DataColumn = __DataColumn_JTextField.getText().trim();
+    String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
     String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String IfTableNotFound = __IfTableNotFound_JComboBox.getSelected();
@@ -197,8 +198,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DateTimeColumn", DateTimeColumn );
-    __command.setCommandParameter ( "DataColumn1", DataColumn1 );
-    __command.setCommandParameter ( "DataRow1", DataRow1 );
+    __command.setCommandParameter ( "DataColumn", DataColumn );
+    __command.setCommandParameter ( "DataRow", DataRow );
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "OutputEnd", OutputEnd );
     __command.setCommandParameter ( "IfTableNotFound", IfTableNotFound );
@@ -210,7 +211,7 @@ Free memory for garbage collection.
 protected void finalize ()
 throws Throwable
 {	__TSID_JComboBox = null;
-	__DataColumn1_JTextField = null;
+	__DataColumn_JTextField = null;
 	__DateTimeColumn_JTextField = null;
 	__cancel_JButton = null;
 	__command_JTextArea = null;
@@ -289,25 +290,26 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, __DateTimeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - column for date/times."),
+        "Required - column name for date/times."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel,new JLabel( "First column for data:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Column(s) for data:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataColumn1_JTextField = new JTextField ( "", 10 );
-    __DataColumn1_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __DataColumn1_JTextField,
+    __DataColumn_JTextField = new TSFormatSpecifiersJPanel(10);
+    __DataColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __DataColumn_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __DataColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data column for first time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data column name(s) for 1+ time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel,new JLabel( "First row for data:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataRow1_JTextField = new JTextField ( "", 10 );
-    __DataRow1_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __DataRow1_JTextField,
+    __DataRow_JTextField = new JTextField ( "", 10 );
+    __DataRow_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __DataRow_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - row (1+) for first data value."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - row number (1+) for first data value."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Output start date/time:"),
@@ -420,8 +422,8 @@ private void refresh ()
     String EnsembleID = "";
     String TableID = "";
     String DateTimeColumn = "";
-    String DataColumn1 = "";
-    String DataRow1 = "";
+    String DataColumn = "";
+    String DataRow = "";
     String OutputStart = "";
     String OutputEnd = "";
     String IfTableNotFound = "";
@@ -436,8 +438,8 @@ private void refresh ()
         OutputStart = props.getValue ( "OutputStart" );
         OutputEnd = props.getValue ( "OutputEnd" );
         DateTimeColumn = props.getValue ( "DateTimeColumn" );
-        DataColumn1 = props.getValue ( "DataColumn1" );
-        DataRow1 = props.getValue ( "DataRow1" );
+        DataColumn = props.getValue ( "DataColumn" );
+        DataRow = props.getValue ( "DataRow" );
         IfTableNotFound = props.getValue ( "IfTableNotFound" );
         if ( TSList == null ) {
             // Select default...
@@ -504,11 +506,11 @@ private void refresh ()
         if ( DateTimeColumn != null ) {
             __DateTimeColumn_JTextField.setText ( DateTimeColumn );
         }
-        if ( DataColumn1 != null ) {
-            __DataColumn1_JTextField.setText ( DataColumn1 );
+        if ( DataColumn != null ) {
+            __DataColumn_JTextField.setText ( DataColumn );
         }
-        if ( DataRow1 != null ) {
-            __DataRow1_JTextField.setText ( DataRow1 );
+        if ( DataRow != null ) {
+            __DataRow_JTextField.setText ( DataRow );
         }
         if ( OutputStart != null ) {
             __OutputStart_JTextField.setText ( OutputStart );
@@ -540,8 +542,8 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     TableID = __TableID_JComboBox.getSelected();
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
-    DataColumn1 = __DataColumn1_JTextField.getText().trim();
-    DataRow1 = __DataRow1_JTextField.getText().trim();
+    DataColumn = __DataColumn_JTextField.getText().trim();
+    DataRow = __DataRow_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
     OutputEnd = __OutputEnd_JTextField.getText().trim();
     IfTableNotFound = __IfTableNotFound_JComboBox.getSelected();
@@ -551,8 +553,8 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "TableID=" + TableID );
     props.add ( "DateTimeColumn=" + DateTimeColumn );
-    props.add ( "DataColumn1=" + DataColumn1 );
-    props.add ( "DataRow1=" + DataRow1 );
+    props.add ( "DataColumn=" + DataColumn );
+    props.add ( "DataRow=" + DataRow );
     props.add ( "Transformation=" + IfTableNotFound );
     props.add ( "OutputStart=" + OutputStart );
     props.add ( "OutputEnd=" + OutputEnd );

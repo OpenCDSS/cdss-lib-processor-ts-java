@@ -72,8 +72,8 @@ throws InvalidCommandParameterException
 	String TSID = parameters.getValue ( "TSID" );
 	String TableID = parameters.getValue ( "TableID" );
     String DateTimeColumn = parameters.getValue ( "DateTimeColumn" );
-    String DataColumn1 = parameters.getValue ( "DataColumn1" );
-    String DataRow1 = parameters.getValue ( "DataRow1" );
+    String DataColumn = parameters.getValue ( "DataColumn" );
+    String DataRow = parameters.getValue ( "DataRow" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String IfTableNotFound = parameters.getValue ( "IfTableNotFound" );
@@ -127,26 +127,26 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify DateTimeColumn as table column name." ) );
     }
-    if ( (DataColumn1 == null) || (DataColumn1.length() == 0) ) {
-        message = "The DataColumn1 is required but has not been specified.";
+    if ( (DataColumn == null) || (DataColumn.length() == 0) ) {
+        message = "The DataColumn is required but has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify DataColumn1 as table column name." ) );
+                message, "Specify DataColumn as table column name." ) );
     }
-    if ( (DataRow1 == null) || (DataRow1.length() == 0) ) {
-        message = "The DataRow1 is required but has not been specified.";
+    if ( (DataRow == null) || (DataRow.length() == 0) ) {
+        message = "The DataRow is required but has not been specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify DataRow1 as table row number (1+)." ) );
+                message, "Specify DataRow as table row number (1+)." ) );
     }
-    else if ( !StringUtil.isInteger(DataRow1) ) {
-        message = "The DataRow1 (" + DataRow1 + ") is not a valid integer.";
+    else if ( !StringUtil.isInteger(DataRow) ) {
+        message = "The DataRow (" + DataRow + ") is not a valid integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify DataRow1 as table row number (1+)." ) );
+                message, "Specify DataRow as table row number (1+)." ) );
     }
 	if ( (OutputStart != null) && !OutputStart.equals("") && !OutputStart.equalsIgnoreCase("OutputStart")){
 		try {
@@ -174,11 +174,19 @@ throws InvalidCommandParameterException
 	}
 	if ( (IfTableNotFound != null) && !IfTableNotFound.equals("") &&
 	    !IfTableNotFound.equalsIgnoreCase(_Create) && !IfTableNotFound.equalsIgnoreCase(_Warn)) {
-        message = "The Transformation parameter is invalid.";
+        message = "The IfTableNotFound parameter is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify as blank or " + _Warn + "." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as blank, " + _Create + ", or " + _Warn + " (default)." ) );
+	}
+	// Put this in for now since don't know how to modify an existing table
+	if ( (IfTableNotFound == null) || !IfTableNotFound.equalsIgnoreCase(_Create) ) {
+        message = "The IfTableNotFound currently must be " + _Create;
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _Create + "." ) );   
 	}
     
 	// Check for invalid parameters...
@@ -188,8 +196,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "DateTimeColumn" );
-    valid_Vector.add ( "DataColumn1" );
-    valid_Vector.add ( "DataRow1" );
+    valid_Vector.add ( "DataColumn" );
+    valid_Vector.add ( "DataRow" );
     valid_Vector.add ( "OutputStart" );
     valid_Vector.add ( "OutputEnd" );
     valid_Vector.add ( "IfTableNotFound" );
@@ -212,19 +220,44 @@ Create a blank table to contain the time series.
 @return A new table with columns set up to receive the time series.
 */
 private DataTable createTable ( List<TS> tslist, String tableID, String dateTimeColumn,
-        String dataColumn1, int dataRow1 )
+        List<String> dataColumns, int DataRow )
 {   // Create the table
     List<TableField> tableFields = new Vector(3);
     tableFields.add ( new TableField ( TableField.DATA_TYPE_DATE, dateTimeColumn, 12 ) );
     for ( int i = 0; i < tslist.size(); i++ ) {
-        // TODO SAM 2009-10-01 Evaluate how to set precision on table columns from time series.
-        // FIXME SAM 2009-10-01 allow %L etc in the column name
-        tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, dataColumn1, 0, 2 ) );
+        // The data column includes wildcards and will be expanded
+        tableFields.add ( new TableField ( TableField.DATA_TYPE_DOUBLE, dataColumns.get(i),
+            dataColumns.get(i).length(), 2 ) );
     }
-
     // Now define table with one simple call...
     DataTable table = new DataTable ( tableFields );
     return table;
+}
+
+/**
+Determine the time series data table column names.
+*/
+private List<String> determineDataColumnNames ( List<TS> tslist, String dataColumn )
+{
+    List<String> dataColumnNames = new Vector();
+    for ( int i = 0; i < tslist.size(); i++ ) {
+        TS ts = tslist.get(i);
+        // TODO SAM 2009-10-01 Evaluate how to set precision on table columns from time series.
+        if ( dataColumn.indexOf("%") >= 0 ) {
+            // The data column includes wildcards and will be expanded
+            dataColumnNames.add ( ts.formatLegend(dataColumn) );
+        }
+        else {
+            // No wildcards so use the same column name +1 from the first
+            if ( i == 0 ) {
+                dataColumnNames.add ( dataColumn );
+            }
+            else {
+                dataColumnNames.add ( dataColumn + i );
+            }
+        }
+    }
+    return dataColumnNames;
 }
 
 /**
@@ -320,6 +353,9 @@ CommandWarningException, CommandException
     DateTime OutputStart_DateTime = null;
     DateTime OutputEnd_DateTime = null;
     boolean createTable = false;
+    int DateTimeColumn_int = -1;
+    int [] DataColumn_int = null; // Determined below.  Columns 0+ for each time series data
+    int DataRow_int = -1; // Determined below.  Row 0+ for first data value.
     String TableID = parameters.getValue("TableID");
     String IfTableNotFound = parameters.getValue("IfTableNotFound");
     if ( (IfTableNotFound == null) || IfTableNotFound.equals("") ) {
@@ -565,12 +601,20 @@ CommandWarningException, CommandException
     	}
         
         String DateTimeColumn = parameters.getValue("DateTimeColumn");
-        String DataColumn1 = parameters.getValue("DataColumn1");
-        String DataRow1 = parameters.getValue("DataRow1");
-        int DataRow1_int = Integer.parseInt(DataRow1);
+        String DataColumn = parameters.getValue("DataColumn");
+        String DataRow = parameters.getValue("DataRow");
+        DataRow_int = Integer.parseInt(DataRow) - 1; // Zero offset
         if ( createTable ) {
             // No existing table was found and a new table should be created
-            table = createTable(tslist, TableID, DateTimeColumn, DataColumn1, DataRow1_int );
+            table = createTable(tslist, TableID, DateTimeColumn,
+                determineDataColumnNames(tslist, DataColumn), DataRow_int );
+            // Date/time column is 0;
+            DateTimeColumn_int = 0;
+            // Since creating, the data columns are 1+ (0 is date/time).
+            DataColumn_int = new int[tslist.size()];
+            for ( int i = 0; i < DataColumn_int.length; i++ ) {
+                DataColumn_int[i] = i + 1;
+            }
             table.setTableID(TableID);
             setDiscoveryTable(table);
         }
@@ -592,8 +636,8 @@ CommandWarningException, CommandException
     		// Convert to a table...
     		Message.printStatus ( 2, routine, "Copying " + tslist.size() + " time series to table \"" +
     		    TableID + "\"." );
-    		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist,
-    		    OutputStart_DateTime, OutputEnd_DateTime);
+    		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist, DateTimeColumn_int,
+    		    DataColumn_int, DataRow_int, OutputStart_DateTime, OutputEnd_DateTime, true );
     		tsu.timeSeriesToTable();
     		List<String> problems = tsu.getProblems();
             for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
@@ -665,8 +709,8 @@ public String toString ( PropList props )
     String EnsembleID = props.getValue( "EnsembleID" );
 	String TableID = props.getValue( "TableID" );
     String DateTimeColumn = props.getValue( "DateTimeColumn" );
-    String DataColumn1 = props.getValue( "DataColumn1" );
-    String DataRow1 = props.getValue( "DataRow1" );
+    String DataColumn = props.getValue( "DataColumn" );
+    String DataRow = props.getValue( "DataRow" );
 	String OutputStart = props.getValue("OutputStart");
 	String OutputEnd = props.getValue("OutputEnd");
 	String IfTableNotFound = props.getValue("IfTableNotFound");
@@ -698,17 +742,17 @@ public String toString ( PropList props )
         }
         b.append ( "DateTimeColumn=" + DateTimeColumn );
     }
-    if ( (DataColumn1 != null) && (DataColumn1.length() > 0) ) {
+    if ( (DataColumn != null) && (DataColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataColumn1=" + DataColumn1 );
+        b.append ( "DataColumn=" + DataColumn );
     }
-    if ( (DataRow1 != null) && (DataRow1.length() > 0) ) {
+    if ( (DataRow != null) && (DataRow.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataRow1=" + DataRow1 );
+        b.append ( "DataRow=" + DataRow );
     }
 	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
 		if ( b.length() > 0 ) {

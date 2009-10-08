@@ -32,10 +32,10 @@ import RTi.Util.IO.PropList;
 
 /**
 <p>
-This class initializes, checks, and runs the CreateEnsemble() command.
+This class initializes, checks, and runs the CreateEnsembleFromOneTimeSeries() command.
 </p>
 */
-public class CreateEnsemble_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class CreateEnsembleFromOneTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -52,9 +52,9 @@ private TSEnsemble __tsensemble = null;
 /**
 Constructor.
 */
-public CreateEnsemble_Command ()
+public CreateEnsembleFromOneTimeSeries_Command ()
 {	super();
-	setCommandName ( "CreateEnsemble" );
+	setCommandName ( "CreateEnsembleFromOneTimeSeries" );
 }
 
 /**
@@ -63,8 +63,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -188,11 +187,11 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new CreateEnsemble_JDialog ( parent, this )).ok();
+	return (new CreateEnsembleFromOneTimeSeries_JDialog ( parent, this )).ok();
 }
 
 /**
-Return the table that is read by this class when run in discovery mode.
+Return the ensemble that is created by this class when run in discovery mode.
 */
 private TSEnsemble getDiscoveryEnsemble()
 {
@@ -200,7 +199,7 @@ private TSEnsemble getDiscoveryEnsemble()
 }
 
 /**
-Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+Return a list of objects of the requested type.  This class only keeps a list of TSEnsemble objects.
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
@@ -254,7 +253,7 @@ not produce output).
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "CreateEnsemble_Command.runCommandInternal", message;
+{	String routine = "CreateEnsembleFromOneTimeSeries_Command.runCommandInternal", message;
 	int warning_level = 2;
     int log_level = 3;  // Non-user warning level
 	String command_tag = "" + command_number;

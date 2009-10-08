@@ -32,40 +32,39 @@ import java.util.Vector;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Command editor dialog for the CreateEnsemble() command.
+Command editor dialog for the CreateEnsembleFromOneTimeSeries() command.
 */
-public class CreateEnsemble_JDialog extends JDialog
+public class CreateEnsembleFromOneTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private CreateEnsemble_Command __command = null;// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextField
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private CreateEnsembleFromOneTimeSeries_Command __command = null;// Command to edit
+private JTextArea __command_JTextArea=null;// Command as JTextField
 private SimpleJComboBox __TSID_JComboBox = null;// Field for time series IDs
-private JTextField  __InputStart_JTextField;// Text fields for query period, both versions.
-private JTextField  __InputEnd_JTextField;
-private JTextField  __EnsembleID_JTextField;
-private JTextField  __EnsembleName_JTextField;
-private SimpleJComboBox	__ShiftDataHow_JComboBox = null;// Indicates how to handle shift.
-private JTextField	__ReferenceDate_JTextField = null; // Reference date.
-private JTextField	__TraceLength_JTextField=null; // Total period length.
+private JTextField __InputStart_JTextField;// Text fields for query period, both versions.
+private JTextField __InputEnd_JTextField;
+private JTextField __EnsembleID_JTextField;
+private JTextField __EnsembleName_JTextField;
+private SimpleJComboBox __ShiftDataHow_JComboBox = null;// Indicates how to handle shift.
+private JTextField __ReferenceDate_JTextField = null; // Reference date.
+private JTextField __TraceLength_JTextField=null; // Total period length.
 
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private boolean     __ok = false;  // Has the users pressed OK to close the dialog.
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private boolean __ok = false;  // Has the users pressed OK to close the dialog.
 
 /**
 Command dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public CreateEnsemble_JDialog ( JFrame parent, Command command )
+public CreateEnsembleFromOneTimeSeries_JDialog ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -186,8 +185,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (CreateEnsemble_Command)command;
+private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -199,7 +198,8 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create an ensemble of time series traces from a time series."),
+		"Create an ensemble of time series traces from a single time series, for example to split the " +
+		"time series into overlapping historical traces."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Each trace will start on the reference date and will be as long as specified."),
@@ -249,8 +249,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel,
-        new JLabel ( "Ensemble ID:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __EnsembleID_JTextField = new JTextField ( "", 20 );
     __EnsembleID_JTextField.addKeyListener ( this );
@@ -439,7 +438,7 @@ private void refresh ()
             }
             else {
                 Message.printWarning ( 1,
-                "CreateEnsemble_JDialog.refresh", "Existing command references an invalid\n"+
+                "CreateEnsembleFromOneTimeSeries_JDialog.refresh", "Existing command references an invalid\n"+
                 "ShiftDataHow \"" + ShiftDataHow + "\".  Select a\ndifferent value or Cancel." );
             }
         }

@@ -336,6 +336,24 @@ throws InvalidCommandParameterException,
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        if ( ts == null ) {
+            try {
+                // Create a time series and set the identifier
+                TS tsd = new TS ();
+                tsd.setIdentifier(TSID);
+                tslist.add ( tsd );
+            }
+            catch ( Exception e ) {
+                message = "Error adding time series for discovery " +
+                	"(time series identifier may not be visible to other commands).";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Confirm that the TSID is in valid format." ) );
+            }
+        }
         setDiscoveryTSList ( tslist );
     }
 

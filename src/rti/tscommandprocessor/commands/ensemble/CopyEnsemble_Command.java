@@ -248,7 +248,7 @@ CommandWarningException, CommandException
         Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
         TSEnsemble tsensemble = null;
         if ( o_TSEnsemble == null ) {
-            message = "Null TS requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
+            message = "Null ensemble requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );

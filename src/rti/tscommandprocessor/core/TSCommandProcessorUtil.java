@@ -430,8 +430,8 @@ Get the commands above an index position.
 @param pos Index (0+) before which to get commands.  The command at the indicated
 position is NOT included in the search.
 */
-private static List getCommandsBeforeIndex ( TSCommandProcessor processor, int pos )
-{	List commands = new Vector();
+private static List<Command> getCommandsBeforeIndex ( TSCommandProcessor processor, int pos )
+{	List<Command> commands = new Vector();
 	int size = processor.size();
 	if ( pos > size ) {
 		pos = size;
@@ -626,7 +626,7 @@ in the TSCommandProcessor.  This is used, for example, to provide a list of iden
 @param command the command above which time series identifiers are needed.
 @return a list of String containing the ensemble identifiers, or an empty Vector.
 */
-public static List getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {   String routine = "TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
@@ -636,7 +636,7 @@ public static List getEnsembleIdentifiersFromCommandsBeforeCommand( TSCommandPro
         return new Vector();
     }
     // Find the commands above the position...
-    List commands = getCommandsBeforeIndex ( processor, pos );
+    List<Command> commands = getCommandsBeforeIndex ( processor, pos );
     // Get the time series identifiers from the commands...
     return getEnsembleIdentifiersFromCommands ( commands );
 }

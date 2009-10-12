@@ -39,7 +39,9 @@ import rti.tscommandprocessor.commands.delimited.ReadDelimitedFile_Command;
 // Ensemble commands
 
 import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
-import rti.tscommandprocessor.commands.ensemble.CreateEnsemble_Command;
+import rti.tscommandprocessor.commands.ensemble.CreateEnsembleFromOneTimeSeries_Command;
+import rti.tscommandprocessor.commands.ensemble.InsertTimeSeriesIntoEnsemble_Command;
+import rti.tscommandprocessor.commands.ensemble.NewEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
 
 // GRTS commands (time series products).
@@ -108,6 +110,10 @@ import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
+
+// Template commands
+
+import rti.tscommandprocessor.commands.template.ExpandTemplateFile_Command;
 
 // Time-related commands.
 
@@ -347,8 +353,13 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("Copy") ) {
 		return new Copy_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"CreateEnsembleFromOneTimeSeries") ) {
+        // The command name changed...
+        return new CreateEnsembleFromOneTimeSeries_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"CreateEnsemble") ) {
-        return new CreateEnsemble_Command ();
+        // The command name changed...
+        return new CreateEnsembleFromOneTimeSeries_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"CreateFromList") ) {
         return new CreateFromList_Command ();
@@ -378,6 +389,9 @@ throws UnknownCommandException
 	    StringUtil.startsWithIgnoreCase(commandString,"Exit")) {
 		return new Exit_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"ExpandTemplateFile") ) {
+        return new ExpandTemplateFile_Command ();
+    }
 
 	// "F" commands...
 
@@ -436,6 +450,12 @@ throws UnknownCommandException
         return new FreeEnsemble_Command ();
     }
     */
+    
+    // "I" commands...
+    
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"InsertTimeSeriesIntoEnsemble") ) {
+        return new InsertTimeSeriesIntoEnsemble_Command ();
+    }
 	
 	// "L" commands...
 
@@ -462,6 +482,9 @@ throws UnknownCommandException
     }
     else if ( isTScommand && TScommand.equalsIgnoreCase("NewEndOfMonthTSFromDayTS") ) {
         return new NewEndOfMonthTSFromDayTS_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"NewEnsemble") ) {
+        return new NewEnsemble_Command ();
     }
     // Put the following before the shorter NewStatisticTimeSeries() command.
     else if ( isTScommand && TScommand.equalsIgnoreCase("NewStatisticTimeSeriesFromEnsemble") ) {

@@ -167,7 +167,7 @@ private List __patternTS_Vector = new Vector();
 /**
 The list of TSEnsemble managed by this command processor, guaranteed to be non-null.
 */
-private List __TSEnsemble_Vector = new Vector();
+private List<TSEnsemble> __TSEnsemble_Vector = new Vector();
 
 /**
 The initial working directory for processing, typically the location of the commands
@@ -2879,13 +2879,15 @@ throws Exception
     // Remove the time series.
     __tsengine.removeTimeSeries ( Index.intValue() );
     // Remove the time series from ensembles and remove ensembles if empty.
+    // Time series are only removed if the time series reference in the ensemble matches the
+    // removed time series (identifiers are not checked).
     for ( int i = 0; i < __TSEnsemble_Vector.size(); i++ ) {
-        TSEnsemble ensemble = (TSEnsemble)__TSEnsemble_Vector.get(i);
+        TSEnsemble ensemble = __TSEnsemble_Vector.get(i);
         if ( ensemble.remove ( ts ) ) {
             // Time series was in the ensemble
             // Also remove empty ensembles
             if ( FreeEnsembleIfEmpty_Boolean.booleanValue() && (ensemble.size() == 0) ) {
-                Message.printStatus(2, routine, "Ensemble is empty, removing." );
+                Message.printStatus(2, routine, "Ensemble is empty, removing ensemble." );
                 __TSEnsemble_Vector.remove(i);
             }
         }

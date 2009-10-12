@@ -138,6 +138,20 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time." ) );
 		}
 	}
+	if ( (InputStart != null) && !InputStart.equals("") ) {
+	    message = "The input start parameter is currently disabled due to technical issues.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Change the period before using the command or contact software support if this feature is needed." ) );
+	}
+    if ( (InputEnd != null) && !InputEnd.equals("") ) {
+        message = "The input end parameter is currently disabled due to technical issues.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Change the period before using the command orontact software support if this feature is needed." ) );
+    }
 	
     if ( (CopyTimeSeries != null) && !CopyTimeSeries.equals("") &&
         !CopyTimeSeries.equalsIgnoreCase(_True) &&
@@ -157,6 +171,14 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify CopyTimeSeries as " + _True + " or don't set the input period." ) );
+    }
+    
+    if ( (CopyTimeSeries != null) && !CopyTimeSeries.equals("") ) {
+        message = "The ability to copy time series into the ensemble is currently disabled due to technical issues.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Change the period before using the command or contact software support if this feature is needed." ) );
     }
     
 	// Check for invalid parameters...
@@ -268,7 +290,8 @@ CommandWarningException, CommandException
         setDiscoveryEnsemble ( null );
     }
     
-    List<TS> tslist = null;
+    List<TS> tslist = null; // Time series to add to the new ensemble
+    int nts = 0; // Number of time series
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
     String NewEnsembleID = parameters.getValue("NewEnsembleID");
@@ -284,81 +307,84 @@ CommandWarningException, CommandException
     if ( CopyTimeSeries.equalsIgnoreCase(_True) ) {
         CopyTimeSeries_boolean = true;
     }
+    // FIXME SAM 2009-10-10 Always make false until technical issues can be resolved
+    CopyTimeSeries_boolean = false;
 
     if ( commandPhase == CommandPhaseType.RUN ) {
         // Get all the necessary data
     	String TSList = parameters.getValue ( "TSList" );
         if ( (TSList == null) || TSList.equals("") ) {
-            TSList = TSListType.ALL_TS.toString();
+            TSList = null;  // Default is don't add time series
         }
     	String TSID = parameters.getValue ( "TSID" );
         String EnsembleID = parameters.getValue ( "EnsembleID" );
     
     	// Get the time series to process...
     	
-    	PropList request_params = new PropList ( "" );
-    	request_params.set ( "TSList", TSList );
-    	request_params.set ( "TSID", TSID );
-        request_params.set ( "EnsembleID", EnsembleID );
-    	CommandProcessorRequestResultsBean bean = null;
-    	try {
-            bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
-    	}
-    	catch ( Exception e ) {
-            message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-            "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-    		Message.printWarning(warning_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
-            status.addToLog ( commandPhase,
+        if ( TSList != null ) {
+        	PropList request_params = new PropList ( "" );
+        	request_params.set ( "TSList", TSList );
+        	request_params.set ( "TSID", TSID );
+            request_params.set ( "EnsembleID", EnsembleID );
+        	CommandProcessorRequestResultsBean bean = null;
+        	try {
+                bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+        	}
+        	catch ( Exception e ) {
+                message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+                "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+        		Message.printWarning(warning_level,
+        				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+        				routine, message );
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+        	}
+        	PropList bean_PropList = bean.getResultsPropList();
+        	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+        	if ( o_TSList == null ) {
+                message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+                "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+        		Message.printWarning ( warning_level,
+        		MessageUtil.formatMessageTag(
+        		command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-    	}
-    	PropList bean_PropList = bean.getResultsPropList();
-    	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    	if ( o_TSList == null ) {
-            message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-    		Message.printWarning ( warning_level,
-    		MessageUtil.formatMessageTag(
-    		command_tag,++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
-    	}
-    	else {
-            tslist = (List)o_TSList;
+                        message, "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+        	}
+        	else {
+                tslist = (List)o_TSList;
+                /* TODO SAM 2009-10-08 For now this is OK
+        		if ( tslist.size() == 0 ) {
+        			message = "Unable to find time series to process using TSList=\"" + TSList +
+        			"\" TSID=\"" + TSID + "\".";
+        			Message.printWarning ( warning_level,
+        			    MessageUtil.formatMessageTag(
+        			        command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                            message,
+                            "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+        		}
+        		*/
+        	}
+        	if ( tslist != null ) {
+        		nts = tslist.size();
+        	}
             /* TODO SAM 2009-10-08 For now this is OK
-    		if ( tslist.size() == 0 ) {
-    			message = "Unable to find time series to process using TSList=\"" + TSList +
-    			"\" TSID=\"" + TSID + "\".";
-    			Message.printWarning ( warning_level,
-    			    MessageUtil.formatMessageTag(
-    			        command_tag,++warning_count), routine, message );
+        	if ( nts == 0 ) {
+                message = "Unable to find indices for time series to process using TSList=\"" + TSList +
+                "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
+        		Message.printWarning ( warning_level,
+        		MessageUtil.formatMessageTag(
+        		command_tag,++warning_count), routine, message );
                 status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.WARNING,
                         message,
                         "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
-    		}
-    		*/
-    	}
-        /* TODO SAM 2009-10-08 For now this is OK
-    	int nts = 0;
-    	if ( tslist != null ) {
-    		nts = tslist.size();
-    	}
-    	if ( nts == 0 ) {
-            message = "Unable to find indices for time series to process using TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
-    		Message.printWarning ( warning_level,
-    		MessageUtil.formatMessageTag(
-    		command_tag,++warning_count), routine, message );
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message,
-                    "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
-    	}
-    	*/
+        	}
+        	*/
+        }
     
     	// Input period...
     
@@ -369,9 +395,9 @@ CommandWarningException, CommandException
     
     	try {
     	if ( InputStart != null ) {
-    		request_params = new PropList ( "" );
+    		PropList request_params = new PropList ( "" );
     		request_params.set ( "DateTime", InputStart );
-    		bean = null;
+    		CommandProcessorRequestResultsBean bean = null;
     		try {
                 bean = processor.processRequest( "DateTime", request_params);
     		}
@@ -386,7 +412,7 @@ CommandWarningException, CommandException
     			throw new InvalidCommandParameterException ( message );
     		}
     
-    		bean_PropList = bean.getResultsPropList();
+    		PropList bean_PropList = bean.getResultsPropList();
     		Object prop_contents = bean_PropList.getContents ( "DateTime" );
     		if ( prop_contents == null ) {
     			message = "Null value for InputStart DateTime(DateTime=" + InputStart + "\") returned from processor.";
@@ -415,9 +441,9 @@ CommandWarningException, CommandException
     	
     	try {
     	if ( InputEnd != null ) {
-    		request_params = new PropList ( "" );
+    		PropList request_params = new PropList ( "" );
     		request_params.set ( "DateTime", InputEnd );
-    		bean = null;
+    		CommandProcessorRequestResultsBean bean = null;
     		try {
                 bean = processor.processRequest( "DateTime", request_params);
     		}
@@ -432,7 +458,7 @@ CommandWarningException, CommandException
     			throw new InvalidCommandParameterException ( message );
     		}
     
-    		bean_PropList = bean.getResultsPropList();
+    		PropList bean_PropList = bean.getResultsPropList();
     		Object prop_contents = bean_PropList.getContents ( "DateTime" );
     		if ( prop_contents == null ) {
     			message = "Null value for InputEnd DateTime(DateTime=" + InputEnd +	"\") returned from processor.";
@@ -481,7 +507,7 @@ CommandWarningException, CommandException
         }
         else if ( commandPhase == CommandPhaseType.RUN ) {
     		// Convert time series to ensemble...
-    		Message.printStatus ( 2, routine, "Using " + tslist.size() + " time series to create ensemble \"" +
+    		Message.printStatus ( 2, routine, "Using " + nts + " time series to create ensemble \"" +
     		    NewEnsembleID + "\"." );
     		TSUtil_NewEnsemble tsu = new TSUtil_NewEnsemble( NewEnsembleID, NewEnsembleName, tslist,
     		     InputStart_DateTime, InputEnd_DateTime, CopyTimeSeries_boolean );

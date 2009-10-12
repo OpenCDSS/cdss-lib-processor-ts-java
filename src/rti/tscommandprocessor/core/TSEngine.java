@@ -2321,9 +2321,9 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
 	// Loop through the time series in memory...
 	int count = 0;
 	TS ts = null;
-	Message.printStatus( 2, "", "TSList=\"" + TSList + "\" TSID=\"" + TSID +
-            "\", EnsembleID=\"" + EnsembleID + "\", TSPosition=\"" + TSPosition + "\"" );
-   if ( TSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ) {
+	Message.printStatus( 2, "", "Getting list of time series to processing using TSList=\"" + TSList +
+	    "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\", TSPosition=\"" + TSPosition + "\"" );
+    if ( TSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ) {
         // Search forwards for the first single matching time series...
         for ( int its = 0; its < nts; its++ ) {
             try {
@@ -2360,6 +2360,8 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
                 }
             }
         }
+        // Return empty list since no match
+        return v;
     }
 	else if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
 		// Search backwards for the last single matching time series...
@@ -2398,9 +2400,14 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
 				}
 			}
 		}
+		// Return empty list since no match
+        return v;
 	}
     else if ( TSList.equalsIgnoreCase(TSListType.ENSEMBLE_ID.toString()) ) {
-        // Return a list of all time series in an ensemble.
+        // Return a list of all time series in an ensemble
+        // FIXME SAM 2009-10-10 Need to fix issue of index positions being found in ensemble but
+        // then not matching the main TS list (in case where time series were copied to ensemble).
+        // For now, do not allow time series to be copied to ensemble (e.g., in NewEnsemble() command).
         TSEnsemble ensemble = __ts_processor.getEnsemble ( EnsembleID );
         if ( ensemble == null ) {
             Message.printStatus( 3, routine, "Unable to find ensemble \"" + EnsembleID + "\" to get time series.");
@@ -2430,9 +2437,12 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
                     }
                 }
                 if ( !found ) {
+                    // This will happen when time series are copied to ensembles in order to protect the
+                    // data from further modification.  Time series will then always need to be accessed via
+                    // the ensemble.
                     Message.printStatus( 3, routine, "Unable to find ensemble \"" + EnsembleID + "\" time series \"" +
                             ts.getIdentifier() + "\" - setting index to -1.");
-                    tspos[count++] = -1;    // Should never happen - will trigger problem that need to fix other code
+                    tspos[count++] = -1; // TODO SAM 2009-10-08 - will this impact other code?
                 }
             }
         }
@@ -2562,57 +2572,62 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
         }
         return v;
     }
-	// Else loop through all the time series from first to last and find matches...
-	boolean found = false;
-	for ( int its = 0; its < nts; its++ ) {
-		found = false;
-		try {
-            ts = getTimeSeries ( its );
-		}
-		catch ( Exception e ) {
-			// Don't add...
-			continue;
-		}
-		if ( TSList.equalsIgnoreCase(TSListType.ALL_TS.toString()) ) {
-			found = true;
-		}
-		else if( TSList.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) && ts.isSelected() ) {
-			found = true;
-		}
-		else if ( TSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ) {
-			if ( TSID.indexOf("~") > 0 ) {
-				// Include the input type...
-				if (ts.getIdentifier().matches(TSID,true,true)){
-					found = true;
-				}
-			}
-			else {
-                // Just check the main information...
-				if(ts.getIdentifier().matches(TSID,true,false)){
-					found = true;
-				}
-			}
-		}
-		if ( found ) {
-			// Add the time series and increment the count...
-			tslist.add ( ts );
-			tspos[count++] = its;
-		}
-	}
-	// Trim down the "tspos" array to only include matches so that other
-	// code does not mistakenly iterate through a longer array...
-	if ( count == 0 ) {
-		v.set ( 1, new int[0] );
-	}
-	else {
-		int [] tspos2 = new int[count];
-		for ( int i = 0; i < count; i++ ) {
-			tspos2[i] = tspos[i];
-		}
-		v.set ( 1, tspos2 );
-	}
-	//Message.printStatus( 2, routine, tslist.toString() );
-	return v;
+    else {
+    	// Else loop through all the time series from first to last and find matches.  This is for:
+        // TSList = AllTS
+        // TSList = SELECTED_TS
+        // TSList = ALL_MATCHING_TSID
+    	boolean found = false;
+    	for ( int its = 0; its < nts; its++ ) {
+    		found = false;
+    		try {
+                ts = getTimeSeries ( its );
+    		}
+    		catch ( Exception e ) {
+    			// Don't add...
+    			continue;
+    		}
+    		if ( TSList.equalsIgnoreCase(TSListType.ALL_TS.toString()) ) {
+    			found = true;
+    		}
+    		else if( TSList.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) && ts.isSelected() ) {
+    			found = true;
+    		}
+    		else if ( TSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ) {
+    			if ( TSID.indexOf("~") > 0 ) {
+    				// Include the input type...
+    				if (ts.getIdentifier().matches(TSID,true,true)){
+    					found = true;
+    				}
+    			}
+    			else {
+                    // Just check the main information...
+    				if(ts.getIdentifier().matches(TSID,true,false)){
+    					found = true;
+    				}
+    			}
+    		}
+    		if ( found ) {
+    			// Add the time series and increment the count...
+    			tslist.add ( ts );
+    			tspos[count++] = its;
+    		}
+    	}
+    	// Trim down the "tspos" array to only include matches so that other
+    	// code does not mistakenly iterate through a longer array...
+    	if ( count == 0 ) {
+    		v.set ( 1, new int[0] );
+    	}
+    	else {
+    		int [] tspos2 = new int[count];
+    		for ( int i = 0; i < count; i++ ) {
+    			tspos2[i] = tspos[i];
+    		}
+    		v.set ( 1, tspos2 );
+    	}
+    	//Message.printStatus( 2, routine, tslist.toString() );
+    	return v;
+    }
 }
 
 /**

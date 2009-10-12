@@ -229,7 +229,7 @@ public static int addTSListToEditorDialogPanel (
         label = new JLabel ("TS list:");
     }
     JGUIUtil.addComponent(panel, label, 0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List TSList_Vector = new Vector();
+    List<String> TSList_Vector = new Vector();
     TSList_Vector.add ( "" );
     TSList_Vector.add ( TSListType.ALL_MATCHING_TSID.toString() );
     TSList_Vector.add ( TSListType.ALL_TS.toString() );

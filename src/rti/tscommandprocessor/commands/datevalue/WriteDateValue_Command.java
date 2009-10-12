@@ -236,7 +236,6 @@ Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -314,6 +313,7 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
+	boolean haveTS = true;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
@@ -326,6 +326,7 @@ CommandWarningException, CommandException
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
+		haveTS = false;
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -355,8 +356,8 @@ CommandWarningException, CommandException
 	if ( OutputStart != null ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputStart );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
@@ -379,11 +380,14 @@ CommandWarningException, CommandException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Report problem to software support." ) );
 		}
-		else {	OutputStart_DateTime = (DateTime)prop_contents;
+		else {
+		    OutputStart_DateTime = (DateTime)prop_contents;
 		}
 	}
-	else {	// Get from the processor (can be null)...
-		try {	Object o_OutputStart = processor.getPropContents ( "OutputStart" );
+	else {
+	    // Get from the processor (can be null)...
+		try {
+		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
 			if ( o_OutputStart != null ) {
 				OutputStart_DateTime = (DateTime)o_OutputStart;
 			}
@@ -401,8 +405,8 @@ CommandWarningException, CommandException
 	if ( OutputEnd != null ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputEnd );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
@@ -425,11 +429,14 @@ CommandWarningException, CommandException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Report problem to software support." ) );
 		}
-		else {	OutputEnd_DateTime = (DateTime)prop_contents;
+		else {
+		    OutputEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
-	else {	// Get from the processor...
-		try {	Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
+	else {
+	    // Get from the processor...
+		try {
+		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
 			if ( o_OutputEnd != null ) {
 				OutputEnd_DateTime = (DateTime)o_OutputEnd;
 			}
@@ -462,7 +469,8 @@ CommandWarningException, CommandException
     // Get the comments to add to the top of the file.
 
     List OutputComments_Vector = null;
-    try { Object o = processor.getPropContents ( "OutputComments" );
+    try {
+        Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
             OutputComments_Vector = (List)o;
@@ -475,7 +483,9 @@ CommandWarningException, CommandException
         Message.printDebug(10, routine, message );
     }
     
-    if ( (tslist != null) && (tslist.size() > 0) ) {
+    // Write the time series file even if no time series are available.  This is useful for
+    // troubleshooting and testing (in cases where no time series are available.
+    //if ( (tslist != null) && (tslist.size() > 0) ) {
         String OutputFile_full = OutputFile;
         try {
             // Convert to an absolute path...
@@ -498,7 +508,7 @@ CommandWarningException, CommandException
 						message, "Check log file for details." ) );
             throw new CommandException ( message );
         }
-    }
+    //}
 	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }

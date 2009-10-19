@@ -28,7 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
-import RTi.TS.TSStatistic;
+import RTi.TS.TSUtil_NewStatisticTimeSeries;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -36,7 +36,6 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Time.TimeInterval;
 
 public class NewStatisticTimeSeriesFromEnsemble_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -333,13 +332,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Statistic_JComboBox = new SimpleJComboBox(false);
-	__Statistic_JComboBox.setData ( TSStatistic.getStatisticChoicesForSimpleSample ( TimeInterval.YEAR, null ) );
+	__Statistic_JComboBox.setData ( TSUtil_NewStatisticTimeSeries.getStatisticChoicesAsStrings() );
 	__Statistic_JComboBox.select ( 0 );
 	__Statistic_JComboBox.addActionListener (this);
 	JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Statistic to generate."),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic to generate."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
         /*

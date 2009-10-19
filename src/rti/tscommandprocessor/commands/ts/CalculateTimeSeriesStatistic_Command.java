@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -88,76 +89,95 @@ throws InvalidCommandParameterException
             message, "Provide the statistic to calculate." ) );
     }
     else {
-        // Make sure that it is in the supported list
-        List<String> statisticsSupported = TSUtil_CalculateTimeSeriesStatistic.getStatisticChoices();
-        boolean found = false;
-        for ( int i = 0; i < statisticsSupported.size(); i++ ) {
-           if ( statisticsSupported.get(i).equalsIgnoreCase(Statistic) ) {
-               found = true;
-               break;
-           }
+        // Make sure that the statistic is known in general
+        boolean supported = false;
+        TSStatisticType statisticType = null;
+        try {
+            statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+            supported = true;
         }
-        if ( !found ) {
+        catch ( Exception e ) {
             message = "The statistic (" + Statistic + ") is not recognized.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Select a supported statistic using the command editor." ) );
         }
         
+        // Make sure that it is in the supported list
+        
+        if ( supported ) {
+            supported = false;
+            List<TSStatisticType> statistics = TSUtil_CalculateTimeSeriesStatistic.getStatisticChoices();
+            for ( int i = 0; i < statistics.size(); i++ ) {
+                if ( statisticType == statistics.get(i) ) {
+                    supported = true;
+                }
+            }
+            if ( !supported ) {
+                message = "The statistic (" + Statistic + ") is not supported by this command.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported statistic using the command editor." ) );
+            }
+        }
+       
         // Additional checks that depend on the statistic
         
-        int nRequiredValues = TSUtil_CalculateTimeSeriesStatistic.getRequiredNumberOfValuesForStatistic ( Statistic );
-        
-        if ( nRequiredValues >= 1 ) {
-            if ( (Value1 == null) || Value1.equals("") ) {
-                message = "Value1 must be specified for the statistic.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Provide Value1." ) );
+        if ( supported ) {
+            int nRequiredValues =
+                TSUtil_CalculateTimeSeriesStatistic.getRequiredNumberOfValuesForStatistic ( statisticType );
+            
+            if ( nRequiredValues >= 1 ) {
+                if ( (Value1 == null) || Value1.equals("") ) {
+                    message = "Value1 must be specified for the statistic.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Provide Value1." ) );
+                }
+                else if ( !StringUtil.isDouble(Value1) ) {
+                    message = "Value1 (" + Value1 + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify Value1 as a number." ) );
+                }
             }
-            else if ( !StringUtil.isDouble(Value1) ) {
-                message = "Value1 (" + Value1 + ") is not a number.";
+            
+            if ( nRequiredValues >= 2 ) {
+                if ( (Value2 == null) || Value2.equals("") ) {
+                    message = "Value2 must be specified for the statistic.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Provide Value2." ) );
+                }
+                else if ( !StringUtil.isDouble(Value2) ) {
+                    message = "Value2 (" + Value2 + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify Value2 as a number." ) );
+                }
+            }
+            
+            if ( nRequiredValues == 3 ) {
+                if ( (Value3 == null) || Value3.equals("") ) {
+                    message = "Value3 must be specified for the statistic.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Provide Value3." ) );
+                }
+                else if ( !StringUtil.isDouble(Value2) ) {
+                    message = "Value3 (" + Value3 + ") is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify Value3 as a number." ) );
+                }
+            }
+    
+            if ( nRequiredValues > 3 ) {
+                message = "A maximum of 3 values are supported as input to statistic computation.";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify Value1 as a number." ) );
+                    message, "Refer to documentation for statistic.  Contact software support if necessary." ) ); 
             }
-        }
-        
-        if ( nRequiredValues >= 2 ) {
-            if ( (Value2 == null) || Value2.equals("") ) {
-                message = "Value2 must be specified for the statistic.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Provide Value2." ) );
-            }
-            else if ( !StringUtil.isDouble(Value2) ) {
-                message = "Value2 (" + Value2 + ") is not a number.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify Value2 as a number." ) );
-            }
-        }
-        
-        if ( nRequiredValues == 3 ) {
-            if ( (Value3 == null) || Value3.equals("") ) {
-                message = "Value3 must be specified for the statistic.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Provide Value3." ) );
-            }
-            else if ( !StringUtil.isDouble(Value2) ) {
-                message = "Value3 (" + Value3 + ") is not a number.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify Value3 as a number." ) );
-            }
-        }
-
-        if ( nRequiredValues > 3 ) {
-            message = "A maximum of 3 values are supported as input to statistic computation.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Refer to documentation for statistic.  Contact software support if necessary." ) ); 
         }
     }
 
@@ -476,7 +496,8 @@ CommandWarningException, CommandException
             
             try {
                 // Do the calculation...
-                TSUtil_CalculateTimeSeriesStatistic tsStatistic = new TSUtil_CalculateTimeSeriesStatistic(ts, Statistic,
+                TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+                TSUtil_CalculateTimeSeriesStatistic tsStatistic = new TSUtil_CalculateTimeSeriesStatistic(ts, statisticType,
                     AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, Value3_Double );
                 tsStatistic.calculateTimeSeriesStatistic();
                 // Now set in the table

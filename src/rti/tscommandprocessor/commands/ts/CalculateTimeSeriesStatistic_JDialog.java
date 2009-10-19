@@ -283,10 +283,9 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Statistic to calculate:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Statistic_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
-    List<String> statisticChoices = TSUtil_CalculateTimeSeriesStatistic.getStatisticChoices();
-    __Statistic_JComboBox.setData ( statisticChoices );
+    __Statistic_JComboBox.setData ( TSUtil_CalculateTimeSeriesStatistic.getStatisticChoicesAsStrings() );
     __Statistic_JComboBox.addItemListener ( this );
-    __Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
+    //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
@@ -342,7 +341,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     tableIDChoices.add(0,""); // Add blank to ignore table
     __TableID_JComboBox.setData ( tableIDChoices );
     __TableID_JComboBox.addItemListener ( this );
-    __TableID_JComboBox.setMaximumRowCount(statisticChoices.size());
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
     JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
@@ -355,8 +354,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     __TableTSIDColumn_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TableTSIDColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required if using table - column name for TSID."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for TSID."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table statistic column:" ), 

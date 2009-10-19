@@ -25,6 +25,8 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSAnalyst;
+import RTi.TS.TSStatisticType;
+import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -69,8 +71,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -118,6 +119,39 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a statistic." ) );
+	}
+	else {
+        // Make sure that the statistic is known in general
+        boolean supported = false;
+        TSStatisticType statisticType = null;
+        try {
+            statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+            supported = true;
+        }
+        catch ( Exception e ) {
+            message = "The statistic (" + Statistic + ") is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported statistic using the command editor." ) );
+        }
+        
+        // Make sure that it is in the supported list
+        
+        if ( supported ) {
+            supported = false;
+            List<TSStatisticType> statistics = TSUtil_CalculateTimeSeriesStatistic.getStatisticChoices();
+            for ( int i = 0; i < statistics.size(); i++ ) {
+                if ( statisticType == statistics.get(i) ) {
+                    supported = true;
+                }
+            }
+            if ( !supported ) {
+                message = "The statistic (" + Statistic + ") is not supported by this command.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported statistic using the command editor." ) );
+            }
+        }
 	}
 	if ( (TestValue != null) && !TestValue.equals("") ) {
 		// If a test value is specified, for now make sure it is a
@@ -317,15 +351,14 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "newStatisticYearTS.runCommand", message;
+{	String routine = "NewStatisticYearTS.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -617,7 +650,8 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
 	TS stats_ts = null;
-	try {	TSAnalyst tsa = new TSAnalyst ();
+	try {
+	    TSAnalyst tsa = new TSAnalyst ();
 		PropList tsa_props = new PropList ( "TSAnalyst" );
 		if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 			tsa_props.set ( "NewTSID", NewTSID );	// Optional

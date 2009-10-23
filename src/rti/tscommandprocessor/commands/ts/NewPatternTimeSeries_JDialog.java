@@ -116,6 +116,15 @@ public void actionPerformed( ActionEvent event )
 }
 
 /**
+Check the GUI state and adjust settings based on user selections.
+*/
+private void checkUIState()
+{
+    // FIXME SAM 2009-10-20 Need to enable check on whether NewTSID contains "Irr",
+    // then enable the irregular interval
+}
+
+/**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */

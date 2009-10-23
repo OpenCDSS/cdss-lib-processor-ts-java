@@ -63,8 +63,11 @@ throws InvalidCommandParameterException
 	String Statistic = parameters.getValue ( "Statistic" );
 	String TestValue = parameters.getValue ( "TestValue" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+    String OutputStart = parameters.getValue ( "OutputStart" );
+    String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String SearchStart = parameters.getValue ( "SearchStart" );
 	String warning = "";
     String message;
@@ -87,8 +90,8 @@ throws InvalidCommandParameterException
 						message, "Specify a time series identifier." ) );
 	}
 	// TODO SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support
-	// wildcards.
+	// Need to decide whether to check NewTSID - it might need to support wildcards.
+
 	if ( (Statistic == null) || Statistic.equals("") ) {
 		message = "The statistic must be specified.";
 		warning += "\n" + message;
@@ -152,8 +155,10 @@ throws InvalidCommandParameterException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Specify an integer for AllowMissingCount." ) );
 		}
-		else {	// Make sure it is an allowable value >= 0...
-			if ( StringUtil.atoi(AllowMissingCount) < 0 ) {
+		else {
+		    // Make sure it is an allowable value >= 0...
+		    int i = Integer.parseInt(AllowMissingCount);
+			if ( i < 0 ) {
 				message = "The AllowMissingCount value (" +	AllowMissingCount + ") must be >= 0.";
 				warning += "\n" + message;
 				status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -162,6 +167,28 @@ throws InvalidCommandParameterException
 			}
 		}
 	}
+	
+    if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
+        if ( !StringUtil.isInteger(MinimumSampleSize) ) {
+            message = "The MinimumSampleSize value (" + MinimumSampleSize + ") is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an integer for MinimumSampleSize." ) );
+        }
+        else {
+            // Make sure it is an allowable value >= 0...
+            int i = Integer.parseInt(MinimumSampleSize);
+            if ( i <= 0 ) {
+                message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be >= 1.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a value >= 1." ) );
+            }
+        }
+    }
+	
 	if (	(AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") &&
 		!AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
@@ -188,19 +215,34 @@ throws InvalidCommandParameterException
 							message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
-	if (	(SearchStart != null) && !SearchStart.equals("") &&
-		!SearchStart.equalsIgnoreCase("OutputStart") &&
-		!SearchStart.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( SearchStart );
-		}
-		catch ( Exception e ) {
-			message = "The search start date \"" + SearchStart + "\" is not a valid date/time.";
-			warning += "\n" + message;
-			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
-		}
-	}
+	
+   if (    (OutputStart != null) && !OutputStart.equals("") &&
+       !OutputStart.equalsIgnoreCase("OutputStart") &&
+       !OutputStart.equalsIgnoreCase("OutputEnd") ) {
+       try {
+           DateTime.parse(OutputStart);
+       }
+       catch ( Exception e ) {
+           message = "The output start \"" + OutputStart + "\" is not a valid date/time.";
+           warning += "\n" + message;
+           status.addToLog ( CommandPhaseType.INITIALIZATION,
+                   new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+       }
+   }
+   if (    (OutputEnd != null) && !OutputEnd.equals("") &&
+       !OutputEnd.equalsIgnoreCase("OutputStart") &&
+       !OutputEnd.equalsIgnoreCase("OutputEnd") ) {
+       try {   DateTime.parse( OutputEnd );
+       }
+       catch ( Exception e ) {
+           message = "The output end \"" + OutputEnd + "\" is not a valid date/time.";
+           warning += "\n" + message;
+           status.addToLog ( CommandPhaseType.INITIALIZATION,
+                   new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+       }
+   }
 	
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
@@ -210,15 +252,16 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "Statistic" );
 	//valid_Vector.add ( "TestValue" );
 	valid_Vector.add ( "AllowMissingCount" );
+	valid_Vector.add ( "MinimumSampleSize" );
 	valid_Vector.add ( "AnalysisStart" );
 	valid_Vector.add ( "AnalysisEnd" );
-	//valid_Vector.add ( "SearchStart" );
+    valid_Vector.add ( "OutputStart" );
+    valid_Vector.add ( "OutputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 	
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
@@ -240,7 +283,6 @@ Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -302,10 +344,8 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -327,13 +367,23 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String Statistic = parameters.getValue ( "Statistic" );
+	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
 	//TODO SAM 2007-11-05 Enable later with counts
 	//String TestValue = parameters.getValue ( "TestValue" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+	Integer AllowMissingCount_Integer = null;
+    if ( (AllowMissingCount != null) && StringUtil.isInteger(AllowMissingCount) ) {
+        AllowMissingCount_Integer = new Integer(AllowMissingCount);
+    }
+    String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
+    Integer MinimumSampleSize_Integer = null;
+    if ( (MinimumSampleSize != null) && StringUtil.isInteger(MinimumSampleSize) ) {
+        MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
+    }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
-	//TODO SAM 2007-11-05 Probably not needed
-	//String SearchStart = parameters.getValue ( "SearchStart" );
+    String OutputStart = parameters.getValue ( "OutputStart" );
+    String OutputEnd = parameters.getValue ( "OutputEnd" );
 
 	// Figure out the dates to use for the analysis...
 
@@ -375,58 +425,44 @@ CommandWarningException, CommandException
 			else {	AnalysisStart_DateTime = (DateTime)prop_contents;
 			}
 		}
+	}
+	catch ( Exception e ) {
+		message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
+		Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify the AnalysisStart information." ) );
+		throw new InvalidCommandParameterException ( message );
+	}
+	
+	try {
+	if ( AnalysisEnd != null ) {
+		PropList request_params = new PropList ( "" );
+		request_params.set ( "DateTime", AnalysisEnd );
+		CommandProcessorRequestResultsBean bean = null;
+		try { bean =
+			processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
-			message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
-			Message.printWarning(warning_level,
+			message = "Error requesting AnalysisEnd DateTime(DateTime=" +
+			AnalysisEnd + "\" from processor.";
+			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
 			status.addToLog ( CommandPhaseType.RUN,
 					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify the AnalysisStart information." ) );
+							message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		
-		try {
-		if ( AnalysisEnd != null ) {
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", AnalysisEnd );
-			CommandProcessorRequestResultsBean bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting AnalysisEnd DateTime(DateTime=" +
-				AnalysisEnd + "\" from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
 
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for AnalysisEnd DateTime(DateTime=" +
-				AnalysisStart +	") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify the AnalysisEnd information." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
-			}
-		}
-		}
-		catch ( Exception e ) {
-			message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
-			Message.printWarning(warning_level,
+		PropList bean_PropList = bean.getResultsPropList();
+		Object prop_contents = bean_PropList.getContents ( "DateTime" );
+		if ( prop_contents == null ) {
+			message = "Null value for AnalysisEnd DateTime(DateTime=" +
+			AnalysisStart +	") returned from processor.";
+			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 			status.addToLog ( CommandPhaseType.RUN,
@@ -434,24 +470,118 @@ CommandWarningException, CommandException
 							message, "Verify the AnalysisEnd information." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
+		else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
+		}
+	}
+	}
+	catch ( Exception e ) {
+		message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
+		Message.printWarning(warning_level,
+			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+			routine, message );
+		status.addToLog ( CommandPhaseType.RUN,
+				new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify the AnalysisEnd information." ) );
+		throw new InvalidCommandParameterException ( message );
+	}
 	
-	// TODO SAM 2007-02-13 Need to enable SearchStart or remove
-	/*DateTime SearchStart_DateTime = null;
-	if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-		try {	// The following works with MM/DD and MM-DD
-			SearchStart_DateTime =
-				DateTime.parse ( SearchStart,
-				DateTime.FORMAT_MM_SLASH_DD );
-		}
-		catch ( Exception e ) {
-			message = "SearchStart \"" + SearchStart +
-				"\" is invalid.  Expecting MM-DD or MM/DD";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-			throw new InvalidCommandParameterException ( message );
-		}
-	}*/
+	DateTime OutputStart_DateTime = null;
+    DateTime OutputEnd_DateTime = null;
+    try {
+        if ( OutputStart != null ) {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", OutputStart );
+            CommandProcessorRequestResultsBean bean = null;
+            try { bean =
+                processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting OutputStart DateTime(DateTime=" +
+                OutputStart + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for OutputStart DateTime(DateTime=" +
+                OutputStart + ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify the OutputStart information." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {  OutputStart_DateTime = (DateTime)prop_contents;
+            }
+        }
+    }
+    catch ( Exception e ) {
+        message = "OutputStart \"" + OutputStart + "\" is invalid.";
+        Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the OutputStart information." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
+    
+    try {
+    if ( OutputEnd != null ) {
+        PropList request_params = new PropList ( "" );
+        request_params.set ( "DateTime", OutputEnd );
+        CommandProcessorRequestResultsBean bean = null;
+        try { bean =
+            processor.processRequest( "DateTime", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting OutputEnd DateTime(DateTime=" +
+            OutputEnd + "\" from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+
+        PropList bean_PropList = bean.getResultsPropList();
+        Object prop_contents = bean_PropList.getContents ( "DateTime" );
+        if ( prop_contents == null ) {
+            message = "Null value for OutputEnd DateTime(DateTime=" +
+            OutputStart + ") returned from processor.";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the OutputEnd information." ) );
+            throw new InvalidCommandParameterException ( message );
+        }
+        else {  OutputEnd_DateTime = (DateTime)prop_contents;
+        }
+    }
+    }
+    catch ( Exception e ) {
+        message = "OutputEnd \"" + OutputEnd + "\" is invalid.";
+        Message.printWarning(warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the OutputEnd information." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
 
 	// Get the time series to process.  The time series list is searched backwards until the first match...
 
@@ -502,35 +632,12 @@ CommandWarningException, CommandException
 
 	TS stats_ts = null;
 	try {
-        TSAnalyst tsa = new TSAnalyst ();
-		PropList tsa_props = new PropList ( "TSAnalyst" );
-		if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-			tsa_props.set ( "NewTSID", NewTSID );	// Optional
-		}
-		tsa_props.set ( "Statistic", Statistic );	// Required
-		/*
-		if ( (TestValue != null) && (TestValue.length() > 0) ) {
-			tsa_props.set ( "TestValue", TestValue);// Optional
-		}
-		*/
-		if (	(AllowMissingCount != null) &&
-			(AllowMissingCount.length() > 0) ) {
-			tsa_props.set ( "AllowMissingCount",
-				AllowMissingCount);	// Optional
-		}
-		/*
-		if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-			tsa_props.set ( "SearchStart", SearchStart);
-								// Optional
-		}
-		*/
-		stats_ts = tsa.createStatisticTimeSeries ( ts,
-				AnalysisStart_DateTime, AnalysisEnd_DateTime,
-				null, null,
-				tsa_props );
-		stats_ts.setAlias ( Alias );	// Do separate because setting
-						// the NewTSID might cause the
-						// alias set to fail below.
+        TSUtil_NewStatisticTimeSeries tsu = new TSUtil_NewStatisticTimeSeries ( ts, AnalysisStart_DateTime,
+            AnalysisEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime, NewTSID, statisticType,
+            AllowMissingCount_Integer, MinimumSampleSize_Integer );
+		stats_ts = tsu.newStatisticTimeSeries ();
+		stats_ts.setAlias ( Alias ); // Do separate because setting
+						// the NewTSID might cause the alias set to fail below.
 	}
 	catch ( Exception e ) {
 		message ="Unexpected error generating the statistic time series from \""+
@@ -575,8 +682,11 @@ public String toString ( PropList props )
 	String Statistic = props.getValue( "Statistic" );
 	//String TestValue = props.getValue( "TestValue" );
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
+	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
 	String AnalysisStart = props.getValue( "AnalysisStart" );
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
+    String OutputStart = props.getValue( "OutputStart" );
+    String OutputEnd = props.getValue( "OutputEnd" );
 	//String SearchStart = props.getValue( "SearchStart" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
@@ -611,6 +721,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "AllowMissingCount=" + AllowMissingCount );
 	}
+    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
+    }
 	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -623,14 +739,19 @@ public String toString ( PropList props )
 		}
 		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
 	}
-	/*
-	if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "SearchStart=\"" + SearchStart + "\"" );
-	}
-	*/
+    if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputStart=\"" + OutputStart + "\"" );
+    }
+    if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
+    }
+
 	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
 }
 

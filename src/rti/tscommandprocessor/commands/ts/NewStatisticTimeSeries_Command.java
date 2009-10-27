@@ -8,7 +8,6 @@ import java.util.Vector;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
-import RTi.TS.TSAnalyst;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_NewStatisticTimeSeries;
 
@@ -68,7 +67,6 @@ throws InvalidCommandParameterException
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String OutputStart = parameters.getValue ( "OutputStart" );
     String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String SearchStart = parameters.getValue ( "SearchStart" );
 	String warning = "";
     String message;
 	
@@ -687,7 +685,6 @@ public String toString ( PropList props )
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
     String OutputStart = props.getValue( "OutputStart" );
     String OutputEnd = props.getValue( "OutputEnd" );
-	//String SearchStart = props.getValue( "SearchStart" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		if ( b.length() > 0 ) {

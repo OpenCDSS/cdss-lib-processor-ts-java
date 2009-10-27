@@ -506,6 +506,7 @@ private void refresh ()
 	String Statistic = "";
 	//String TestValue = "";
 	String AllowMissingCount = "";
+	String MinimumSampleSize = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
     String OutputStart = "";
@@ -521,6 +522,7 @@ private void refresh ()
 		Statistic = props.getValue ( "Statistic" );
 		//TestValue = props.getValue ( "TestValue" );
 		AllowMissingCount = props.getValue ( "AllowMissingCount" );
+		MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
         OutputStart = props.getValue ( "OutputStart" );
@@ -569,6 +571,9 @@ private void refresh ()
 		if ( AllowMissingCount != null ) {
 			__AllowMissingCount_JTextField.setText ( AllowMissingCount );
 		}
+        if ( MinimumSampleSize != null ) {
+            __MinimumSampleSize_JTextField.setText ( MinimumSampleSize );
+        }
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText( AnalysisStart );
 		}
@@ -589,6 +594,7 @@ private void refresh ()
 	Statistic = __Statistic_JComboBox.getSelected();
 	//TestValue = __TestValue_JTextField.getText();
 	AllowMissingCount = __AllowMissingCount_JTextField.getText();
+	MinimumSampleSize = __MinimumSampleSize_JTextField.getText();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
@@ -601,6 +607,7 @@ private void refresh ()
 	props.add ( "Statistic=" + Statistic );
 	//props.add ( "TestValue=" + TestValue );
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
+	props.add ( "MinimumSampleSize=" + MinimumSampleSize );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
     props.add ( "OutputStart=" + OutputStart );

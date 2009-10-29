@@ -190,9 +190,7 @@ throws InvalidCommandParameterException
 		}
         else {
 			percentileCount = percentileV.size();
-			// Make sure to add one for the upper limit of the
-			// classes (0.0,1.0).
-			__percentileArray = new double [ percentileCount + 1 ];
+			__percentileArray = new double [percentileCount];
 			String percentileStr;
 			double previousP = 0, currentP;
 			for ( int n = 0; n < percentileCount; n++ ) {
@@ -205,7 +203,7 @@ throws InvalidCommandParameterException
                                      message, "Specify the percentile value as a number." ) );
 				}
 				// Percentile must be between 0 and 1.
-				currentP = StringUtil.atof( percentileStr );
+				currentP = Double.parseDouble( percentileStr );
 				if ( currentP <= 0 || currentP >= 1 ) {
                     message = "Percentile \"" + percentileStr + "\" is not between (0 and 1).";
 					warning += "\n" + message;
@@ -226,7 +224,6 @@ throws InvalidCommandParameterException
 				__percentileArray[n] = currentP;
 				previousP = currentP;
 			}
-			__percentileArray[ percentileCount ] = 1.0;
 		}
 	}
 
@@ -359,15 +356,14 @@ throws Exception
     columnList.add ( new TableField(TableField.DATA_TYPE_STRING, "Time Series",30) );
     for ( int month = 1; month <= 12; month++ ) {
         // List of percentiles in output is one less than the pattern identifiers
-        // Subtract 2 because 1.0 was automatically added to the percentile array as an upper limit
-        for ( int i = 0; i < (percentileArray.length - 1); i++ ) {
-            if ( i < (percentileArray.length - 2) ) {
+        for ( int i = 0; i < percentileArray.length; i++ ) {
+            if ( i == (percentileArray.length - 1) ) {
                 columnList.add ( new TableField(TableField.DATA_TYPE_DOUBLE,
-                    TimeUtil.monthAbbreviation(month) + " last value < " + percentileArray[i], 12, 2) );
+                        TimeUtil.monthAbbreviation(month) + " first value > " + percentileArray[i], 12, 2) );
             }
             else {
                 columnList.add ( new TableField(TableField.DATA_TYPE_DOUBLE,
-                    TimeUtil.monthAbbreviation(month) + " first value > " + percentileArray[i], 12, 2) );
+                        TimeUtil.monthAbbreviation(month) + " last value < " + percentileArray[i], 12, 2) );
             }
         }
     }
@@ -404,7 +400,7 @@ throws Exception
         table.setFieldValue(i, 0, ts.formatExtendedLegend(tsLabelFormat.toString()), true );
         int colCount = 1;
         for ( int month = 1; month <= 12; month++ ) {
-            for ( int j = 0; j < (percentileArray.length - 1); j++ ) {
+            for ( int j = 0; j < percentileArray.length; j++ ) {
                 table.setFieldValue(i, colCount, new Double(tsPercentiles[i][month - 1][j]), true );
                 ++colCount;
             }
@@ -814,7 +810,7 @@ throws CommandWarningException, CommandException
     
     					if ( analysisTS.isDataMissing(analysisTS.getDataValue(_date) ) ) {
 					    	if ( Message.isDebugOn ) {
-					    		message = "(" + (n + 1) + ") " + _date + " " + analysisTS.getDataValue(_date);
+					    		message = "(nTotal=" + (n + 1) + ") " + _date + " " + analysisTS.getDataValue(_date);
     							Message.printDebug(	dl, routine, message );
     						}
     						
@@ -831,7 +827,8 @@ throws CommandWarningException, CommandException
     				
     				if ( Message.isDebugOn ) {
     					message = "missing: " + missingCount + " non-missing: " + non_missingCount +
-    					    " cutoff=" + currentUpperLimit;
+    					    ", nTotal cutoff=" + currentUpperLimit + ", nNonMissing cutoff=" +
+    					    (currentUpperLimit - missingCount);
     					Message.printDebug (2, routine, message );
     				}
     
@@ -856,33 +853,39 @@ throws CommandWarningException, CommandException
     					    check = n;
     					}
     					if ( check >= currentUpperLimit ) {
-    					    // Save the bin values for the statistic.  Remember that __percentileArray has
-    					    // an artificial 1.0 added at the end, which is not a true cutoff.
-    					    if ( percentileIndex < (__percentileArray.length - 1) ) {
-    					        // Save the last value in the bin
-    					        tsPercentiles[nTS][month - 1][percentileIndex] = values[n - 1];
+    					    // Save the bin values for the statistic.
+    					    if ( percentileIndex == __percentileArray.length - 1 ) {
+                                // Last bin so save the first value
+                                tsPercentiles[nTS][month - 1][percentileIndex] = values[n];
     					    }
-    					    else {
-    					        // Last bin so save the first value
-    					        tsPercentiles[nTS][month - 1][percentileIndex] = values[n];
+    					    else if ( percentileIndex < __percentileArray.length - 1) {
+                                // Save the last value in the bin
+                                tsPercentiles[nTS][month - 1][percentileIndex] = values[n - 1];
     					    }
-                            percentileIndex +=1;
-    					    if ( percentileIndex < __percentileArray.length ) {
-    					        // Have another bin to put values in...
-    					        // Otherwise will be done
-        						currentUpperLimit = missingCount + non_missingCount * __percentileArray[percentileIndex ];
-        						currentPatternID = __patternIDArray[percentileIndex ];
-        						if ( Message.isDebugOn ) {
-        	                        Message.printDebug( dl, routine, "New cutoff: " + currentUpperLimit );
-        	                    }
+    					    // Increment because it is used for the pattern ID in the last bin (and have one
+    					    // more patterns than percentiles, but don't need to increment the cutoff
+    					    percentileIndex += 1;
+    					    if ( percentileIndex == __percentileArray.length ) {
+    					        // Artificial upper bound (was not set by command parameter)
+    					        currentUpperLimit = nValues + 1;
     					    }
+    					    else if ( percentileIndex < __percentileArray.length ){
+    					        currentUpperLimit = missingCount + non_missingCount * __percentileArray[percentileIndex];
+    					    }
+    						currentPatternID = __patternIDArray[percentileIndex];
+    						if ( Message.isDebugOn ) {
+    	                        Message.printDebug( dl, routine, "nTotal=" + n + ", new nTotal cutoff= " +
+    	                            currentUpperLimit + ", nNonMissing cutoff=" +
+    	                            (currentUpperLimit - missingCount) + ", percentileIndex=" + percentileIndex);
+    	                    }
     					}
     
     					// Set the date and value in the TS
     					stringMonthTS.setDataValue (date, currentPatternID );
     					
     					if ( Message.isDebugOn ) {
-    						message = "(" + (n + 1) + ") " + date + " " + analysisTS.getDataValue ( date )
+    						message = "(nTotal=" + (n + 1) + ", nNonMissing=" + (n + 1 - missingCount) +
+    						") " + date + " " + analysisTS.getDataValue ( date )
     		   				+ " " + stringMonthTS.getDataValueAsString ( date );
     						Message.printDebug (dl, routine, message );
     					}

@@ -35,7 +35,7 @@ public class NewTable_Command extends AbstractCommand implements Command, Comman
 {
     
 /**
-The table that is read.
+The table that is created.
 */
 private DataTable __table = null;
 

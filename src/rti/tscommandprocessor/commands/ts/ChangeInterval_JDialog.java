@@ -59,77 +59,58 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.MeasTimeScale;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.Command;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.TimeInterval;
 
 public class ChangeInterval_JDialog extends JDialog
-	implements ActionListener,
-		   ItemListener, 
-		   KeyListener, 
-		   WindowListener
+	implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
 private ChangeInterval_Command __command = null;// Command object.
 
 private JTextField	__Alias_JTextField = null;
-						// Field for time series alias
 private SimpleJComboBox	__TSID_JComboBox = null;
-						// Time series available to
-						// operate on.
 private SimpleJComboBox	__NewInterval_JComboBox = null;
-						// New time interval for result.
 private SimpleJComboBox	__OldTimeScale_JComboBox = null;
-						// Old time scale for time
-						// series.
 private SimpleJComboBox	__NewTimeScale_JComboBox = null;
-private JTextField	__NewDataType_JTextField = null;
-private JTextField  __NewUnits_JTextField = null;// Field for new units
-private JLabel	__Tolerance_JLabel = null;
-private JTextField	__Tolerance_JTextField = null;
-private JLabel     	__HandleEndpointsHow_JLabel = null;
-private SimpleJComboBox	__HandleEndpointsHow_JComboBox = null;
-private JLabel  	__AllowMissingCount_JLabel = null;
-private JTextField	__AllowMissingCount_JTextField = null;
-						// Number of missing to allow
-						// in input when converting.
+private JTextField __NewDataType_JTextField = null;
+private JTextField __NewUnits_JTextField = null;
+private JLabel __Tolerance_JLabel = null;
+private JTextField __Tolerance_JTextField = null;
+private JLabel __HandleEndpointsHow_JLabel = null;
+private SimpleJComboBox __HandleEndpointsHow_JComboBox = null;
+private JLabel __AllowMissingCount_JLabel = null;
+private JTextField __AllowMissingCount_JTextField = null;
 /* TODO SAM 2005-02-18 may enable later
-private JTextField	__AllowMissingPercent_JTextField = null;
-						// Percent of missing to allow
-						// in input when converting.
+private JTextField	__AllowMissingPercent_JTextField = null; // % missing to allow in input when converting.
 */
-private JLabel      	__OutputFillMethod_JLabel = null;
-private SimpleJComboBox	__OutputFillMethod_JComboBox = null;
-						// Fill method when going from
-						// large to small interval.
-private JLabel  	__HandleMissingInputHow_JLabel = null;
+private JLabel __OutputFillMethod_JLabel = null;
+private SimpleJComboBox	__OutputFillMethod_JComboBox = null; // Fill method when going from large to small interval.
+private JLabel __HandleMissingInputHow_JLabel = null;
 private SimpleJComboBox	__HandleMissingInputHow_JComboBox = null;
-						// How to handle missing data
-						// in input time series.
-private JTextArea	__Command_JTextArea   = null;
+						// How to handle missing data in input time series.
+private JTextArea __Command_JTextArea   = null;
 private JScrollPane	__Command_JScrollPane = null;
-						// Command JTextArea and
-						// related controls
-private SimpleJButton	__cancel_JButton = null;// Cancel Button
+private SimpleJButton __cancel_JButton = null;
 private String __cancel_String  = "Cancel";
 private String __cancel_Tip = "Close the window, without returning the command.";
-private SimpleJButton	__ok_JButton 	 = null;// Ok Button
+private SimpleJButton __ok_JButton = null;
 private String __ok_String  = "OK";
 private String __ok_Tip = "Close the window, returning the command.";
 
-private JTextField	__statusJTextField = null; // Status bar					
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-private boolean		__ok         = false;						
+private JTextField __statusJTextField = null; // Status bar					
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false;						
 
 /**
-changeInterval_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to parse.
 */
-public ChangeInterval_JDialog ( JFrame parent, Command command )
+public ChangeInterval_JDialog ( JFrame parent, ChangeInterval_Command command )
 {	
 	super(parent, true);
 	
@@ -182,7 +163,8 @@ private void checkGUIState ()
         __Tolerance_JTextField.setEnabled( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
         __HandleMissingInputHow_JComboBox.setEnabled ( true );
-    } else if (( oldTimeScale.startsWith(MeasTimeScale.MEAN) || oldTimeScale.startsWith(MeasTimeScale.ACCM)) &&
+    }
+    else if (( oldTimeScale.startsWith(MeasTimeScale.MEAN) || oldTimeScale.startsWith(MeasTimeScale.ACCM)) &&
             newTimeScale.startsWith(MeasTimeScale.MEAN) || newTimeScale.startsWith(MeasTimeScale.ACCM)) {
         __AllowMissingCount_JLabel.setEnabled ( true );
         __AllowMissingCount_JTextField.setEnabled ( true );
@@ -192,10 +174,12 @@ private void checkGUIState ()
         __OutputFillMethod_JComboBox.setEnabled ( true );
         __HandleEndpointsHow_JLabel.setEnabled ( true );
         __HandleEndpointsHow_JComboBox.setEnabled ( true );
-    } else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.INST)) {
+    }
+    else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.INST)) {
         __HandleMissingInputHow_JLabel.setEnabled ( true );
         __HandleMissingInputHow_JComboBox.setEnabled ( true );
-    } else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.MEAN)) {
+    }
+    else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.MEAN)) {
         __AllowMissingCount_JLabel.setEnabled ( true );
         __AllowMissingCount_JTextField.setEnabled ( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
@@ -229,43 +213,34 @@ private void checkInput ()
 	
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
-	// Alias
 	if ( Alias != null && Alias.length() > 0 ) {
 		props.set( "Alias", Alias );
 	}
-	// TSID
 	if ( TSID != null && TSID.length() > 0 ) {
 		props.set( "TSID", TSID );
 	}
-	// NewInterval
 	if ( NewInterval != null && NewInterval.length() > 0 ) {
 		props.set( "NewInterval", NewInterval );
 	}
-	// OldTimeScale
 	if ( OldTimeScale != null && OldTimeScale.length() > 0 ) {
 		props.set( "OldTimeScale", OldTimeScale );
 	}
-	// NewTimeScale
 	if ( NewTimeScale != null && NewTimeScale.length() > 0 ) {
 		props.set( "NewTimeScale", NewTimeScale );
 	}
-	// NewDataType
 	if ( NewDataType != null && NewDataType.length() > 0 ) {
 		props.set( "NewDataType", NewDataType );
 	}
 	if ( NewUnits != null && NewUnits.length() > 0 ) {
 	     props.set( "NewUnits", NewUnits );
 	}
-    // Tolerance
     if ( Tolerance != null && Tolerance.length() > 0 ) {
 	     props.set( "Tolerance", Tolerance );
 	}
-    // HandleEndpointsHow
 	if ( HandleEndpointsHow != null &&
 	     HandleEndpointsHow.length() > 0 ) {
 		props.set( "HandleEndpointsHow", HandleEndpointsHow );
 	}
-	// AllowMissingCount
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
 		props.set( "AllowMissingCount", AllowMissingCount );
 	}
@@ -274,21 +249,21 @@ private void checkInput ()
 	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
 		props.set( "AllowMissingPercent", AllowMissingPercent );
 	} */
-	// OutputFillMethod
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
 		props.set( "OutputFillMethod", OutputFillMethod );
 	}
-	// HandleMissingInputHow
 	if ( HandleMissingInputHow != null &&
 	     HandleMissingInputHow.length() > 0 ) {
 		props.set( "HandleMissingInputHow", HandleMissingInputHow );
 	}
 	
 	// Check the list of Command Parameters.
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 		__error_wait = false;
-	} catch ( Exception e ) {
+	}
+	catch ( Exception e ) {
 		// The warning would have been printed in the check code.		
 		__error_wait = true;
 	}
@@ -369,9 +344,9 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Vector of String containing the command.
 */
-private void initialize ( JFrame parent, Command command )
+private void initialize ( JFrame parent, ChangeInterval_Command command )
 {		
-	__command = (ChangeInterval_Command) command;
+	__command = command;
 	
 	// GUI Title
 	String title = "Edit " + __command.getCommandName() + "() Command";
@@ -430,8 +405,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewInterval_JComboBox = new SimpleJComboBox ( false );
 	__NewInterval_JComboBox.setData (
-		TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE,
-			TimeInterval.YEAR,false,-1));
+		TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1));
 	// Select a default...
 	__NewInterval_JComboBox.select ( 0 );
 	__NewInterval_JComboBox.addItemListener ( this );
@@ -628,14 +602,14 @@ private void initialize ( JFrame parent, Command command )
 	}
 	
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
-        
-        __statusJTextField.setText ( " Ready" );      
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
+    
+    __statusJTextField.setText ( " Ready" );      
 }
 
-/** Done
+/**
 Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
@@ -687,7 +661,7 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {	
-	String mthd = "changeInterval_JDialog.refresh", mssg;
+	String mthd = "ChangeInterval_JDialog.refresh", mssg;
 	
 	String Alias = "";
 	String TSID = "";
@@ -730,10 +704,7 @@ private void refresh ()
 		OutputFillMethod = props.getValue( "OutputFillMethod" );
 		HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
 		
-		// Update Alias text field
-		if ( Alias == null ) {
-			__Alias_JTextField.setText ( "" );
-		} else {
+		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
 		
@@ -746,14 +717,12 @@ private void refresh ()
             }
 		} 
 		else { 
-			if ( JGUIUtil.isSimpleJComboBoxItem(	__TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
 				__TSID_JComboBox.select ( TSID );
 			}
             else {	
-				mssg = "Existing command references a "
-					+ "non-existent\n" + "time series \""
-					+ TSID + "\".  Select a\n"
-					+ "different time series or Cancel.";
+				mssg = "Existing command references a non-existent\n" + "time series \""
+					+ TSID + "\".  Select a\ndifferent time series or Cancel.";
 				Message.printWarning ( 1, mthd, mssg );
 			}
 		}
@@ -765,16 +734,11 @@ private void refresh ()
 			__NewInterval_JComboBox.select ( 0 );
 		} 
 		else {
-			if (	JGUIUtil.isSimpleJComboBoxItem(
-				__NewInterval_JComboBox, NewInterval,
-				JGUIUtil.NONE, null, null ) ) {
+			if ( JGUIUtil.isSimpleJComboBoxItem( __NewInterval_JComboBox, NewInterval, JGUIUtil.NONE, null, null ) ) {
 				__NewInterval_JComboBox.select ( NewInterval );
-			} else {
-				mssg = "Existing " + __command.getCommandName()
-					+ "() references an "
-					+ "invalid\n"
-					+ "NewInterval \""
-					+ NewInterval + "\".  "
+			}
+			else {
+				mssg = "Existing command references an invalid\nNewInterval \"" + NewInterval + "\".  "
 					+"Select a different choice or Cancel.";
 				Message.printWarning ( 1, mthd, mssg );
 			}
@@ -785,19 +749,14 @@ private void refresh ()
 		if ( OldTimeScale == null || OldTimeScale.equals("") ) {
 			// Select default...
 			__OldTimeScale_JComboBox.select ( 0 );
-		} else {
+		}
+		else {
 			try {	
-				JGUIUtil.selectTokenMatches (
-					__OldTimeScale_JComboBox,
-					true, " ", 0, 0,
-					OldTimeScale, null );
+				JGUIUtil.selectTokenMatches ( __OldTimeScale_JComboBox, true, " ", 0, 0, OldTimeScale, null );
 			}
 			catch ( Exception e ) {
-				mssg = "Existing " + __command.getCommandName()
-					+ "() references an unrecognized\n"
-					+ "OldTimeScale value \""
-					+ OldTimeScale
-					+ "\".  Using the user value.";
+				mssg = "Existing command references an unrecognized\nOldTimeScale value \""
+					+ OldTimeScale + "\".  Using the user value.";
 				Message.printWarning ( 2, mthd, mssg );
 				__OldTimeScale_JComboBox.setText (OldTimeScale);
 			}
@@ -808,35 +767,25 @@ private void refresh ()
 		if ( NewTimeScale == null || NewTimeScale.equals("") ) {
 			// Select default...
 			__NewTimeScale_JComboBox.select ( 0 );
-		} else {
+		}
+		else {
 			try {	
-				JGUIUtil.selectTokenMatches (
-					__NewTimeScale_JComboBox,
-					true, " ", 0, 0,
-					NewTimeScale, null );
+				JGUIUtil.selectTokenMatches ( __NewTimeScale_JComboBox, true, " ", 0, 0, NewTimeScale, null );
 			}
 			catch ( Exception e ) {
-				mssg = "Existing " + __command.getCommandName()
-					+ "() references an unrecognized\n"
-					+ "NewTimeScale value \""
-					+ NewTimeScale
-					+ "\".  Using the user value.";
+				mssg = "Existing command references an unrecognized\nNewTimeScale value \""
+					+ NewTimeScale + "\".  Using the user value.";
 				Message.printWarning ( 2, mthd, mssg );
 				__NewTimeScale_JComboBox.setText (NewTimeScale);
 			}
 		}
 		
-		// Update NewDataType text field
 		if ( NewDataType != null ) {
 			__NewDataType_JTextField.setText ( NewDataType);
 		}
-
-        // Update new units text field
         if ( NewUnits != null ) {
             __NewUnits_JTextField.setText ( NewUnits );
         }
-
-        // Update tolerance text field
         if ( Tolerance != null ) {
             __Tolerance_JTextField.setText ( Tolerance );
         }
@@ -847,27 +796,20 @@ private void refresh ()
 			// Select default...
 			__HandleEndpointsHow_JComboBox.select ( 0 );
 		}
-		else {	try {	JGUIUtil.selectTokenMatches (
-				__HandleEndpointsHow_JComboBox,
-					true, " ", 0, 0,
-					HandleEndpointsHow, null );
+		else {
+		    try {
+		        JGUIUtil.selectTokenMatches ( __HandleEndpointsHow_JComboBox, true, " ", 0, 0, HandleEndpointsHow, null );
 			}
 			catch ( Exception e ) {
-				mssg = "Existing " + __command.getCommandName()
-					+ "() references an unrecognized\n"
-					+ "HandleEndpointsHow value \""
-					+ HandleEndpointsHow
-					+ "\".  Using the user value.";
+				mssg = "Existing command references an unrecognized\nHandleEndpointsHow value \""
+					+ HandleEndpointsHow + "\".  Using the user value.";
 				Message.printWarning ( 2, mthd, mssg );
-				__HandleEndpointsHow_JComboBox.
-					setText ( HandleEndpointsHow );
+				__HandleEndpointsHow_JComboBox.setText ( HandleEndpointsHow );
 			}
 		}
 
-		// Update AllowMissingCount text field
 		if ( AllowMissingCount != null ) {
-			__AllowMissingCount_JTextField.setText (
-				AllowMissingCount );
+			__AllowMissingCount_JTextField.setText ( AllowMissingCount );
 		}
 		
 		// Update AllowMissingPercent text field
@@ -882,22 +824,16 @@ private void refresh ()
 		if ( OutputFillMethod == null ) {
 			// Select default...
 			__OutputFillMethod_JComboBox.select ( 0 );
-		} else {
+		}
+		else {
 			try {	
-				JGUIUtil.selectTokenMatches (
-					__OutputFillMethod_JComboBox,
-					true, " ", 0, 0,
-					OutputFillMethod, null );
+				JGUIUtil.selectTokenMatches ( __OutputFillMethod_JComboBox, true, " ", 0, 0, OutputFillMethod, null );
 			}
 			catch ( Exception e ) {
-				mssg = "Existing " + __command.getCommandName()
-					+  "() references an unrecognized\n"
-					+ "OutputFillMethod value \""
-					+ OutputFillMethod
-					+ "\".  Using the user value.";
+				mssg = "Existing command references an unrecognized\nOutputFillMethod value \""
+					+ OutputFillMethod + "\".  Using the user value.";
 				Message.printWarning ( 2, mthd, mssg );
-				__OutputFillMethod_JComboBox.setText (
-					OutputFillMethod );
+				__OutputFillMethod_JComboBox.setText ( OutputFillMethod );
 			}
 		}
 		
@@ -907,20 +843,16 @@ private void refresh ()
 			// Select default...
 			__HandleMissingInputHow_JComboBox.select ( 0 );
 		}
-		else {	try {	JGUIUtil.selectTokenMatches (
-				__HandleMissingInputHow_JComboBox,
-					true, " ", 0, 0,
-					HandleMissingInputHow, null );
+		else {
+		    try {
+		        JGUIUtil.selectTokenMatches (
+				__HandleMissingInputHow_JComboBox, true, " ", 0, 0, HandleMissingInputHow, null );
 			}
 			catch ( Exception e ) {
-				mssg = "Existing " + __command.getCommandName()
-					+ "() references an unrecognized\n"
-					+ "HandleMissingInputHow value \""
-					+ HandleMissingInputHow
-					+ "\".  Using the user value.";
+				mssg = "Existing command references an unrecognized\nHandleMissingInputHow value \""
+					+ HandleMissingInputHow + "\".  Using the user value.";
 				Message.printWarning ( 2, mthd, mssg );
-				__HandleMissingInputHow_JComboBox.
-					setText ( HandleMissingInputHow );
+				__HandleMissingInputHow_JComboBox.setText ( HandleMissingInputHow );
 			}
 		}
 	}
@@ -993,10 +925,10 @@ public void windowClosing( WindowEvent event )
 }
 
 public void windowActivated	( WindowEvent evt ){;}
-public void windowClosed	( WindowEvent evt ){;}
-public void windowDeactivated	( WindowEvent evt ){;}
-public void windowDeiconified	( WindowEvent evt ){;}
+public void windowClosed ( WindowEvent evt ){;}
+public void windowDeactivated ( WindowEvent evt ){;}
+public void windowDeiconified ( WindowEvent evt ){;}
 public void windowIconified	( WindowEvent evt ){;}
-public void windowOpened	( WindowEvent evt ){;}
+public void windowOpened ( WindowEvent evt ){;}
 
-} // end changeInterval_JDialog
+}

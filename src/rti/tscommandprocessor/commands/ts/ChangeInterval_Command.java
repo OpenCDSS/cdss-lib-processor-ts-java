@@ -63,14 +63,14 @@ public class ChangeInterval_Command extends AbstractCommand implements Command
 // Defines used by this class and its changeInterval_Dialog counterpart.
 protected final String _Interpolate = "Interpolate";
 protected final String _KeepMissing = "KeepMissing";
-protected final String _Repeat      = "Repeat";
-protected final String _SetToZero   = "SetToZero";
-public final String _IncFirstOnly   = "IncludeFirstOnly";
-public final String _AvgEndpoints   = "AverageEndpoints";
+protected final String _Repeat = "Repeat";
+protected final String _SetToZero = "SetToZero";
+public final String _IncFirstOnly = "IncludeFirstOnly";
+public final String _AvgEndpoints = "AverageEndpoints";
 
-private final boolean  __read_one    = true;	// For now only enable the TS Alias notation.
+private final boolean __read_one = true;	// For now only enable the TS Alias notation.
 /**
-changeInterval_Command constructor.
+Command constructor.
 */
 public ChangeInterval_Command ()
 {	
@@ -84,8 +84,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -97,22 +96,21 @@ throws InvalidCommandParameterException
 	
 	// Get the properties from the PropList parameters.
 	String Alias = parameters.getValue( "Alias" );
-	String TSID = parameters.getValue( "TSID"  );
-	String NewInterval = parameters.getValue( "NewInterval"  );
-	String OldTimeScale = parameters.getValue( "OldTimeScale"  );
-	String NewTimeScale = parameters.getValue( "NewTimeScale"  );
-	String Tolerance = parameters.getValue( "Tolerance"  );
-	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow"  );
-	String AllowMissingCount  = parameters.getValue("AllowMissingCount"  );
+	String TSID = parameters.getValue( "TSID" );
+	String NewInterval = parameters.getValue( "NewInterval" );
+	String OldTimeScale = parameters.getValue( "OldTimeScale" );
+	String NewTimeScale = parameters.getValue( "NewTimeScale" );
+	String Tolerance = parameters.getValue( "Tolerance" );
+	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
+	String AllowMissingCount = parameters.getValue("AllowMissingCount" );
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent= parameters.getValue("AllowMissingPercent");
 	*/
-	String OutputFillMethod =	parameters.getValue( "OutputFillMethod" );
-	String HandleMissingInputHow =	parameters.getValue( "HandleMissingInputHow" );
+	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
+	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
 
 	// Alias must be specified.
-	// TODO [LT 2005-05-24] How about the __read_one issue
-	//			   (see parseCommand() method)
+	// TODO [LT 2005-05-24] How about the __read_one issue (see parseCommand() method)
 	if ( Alias == null || Alias.length() == 0 ) {
         message = "The time series alias must be specified.";
         warning += "\n" + message;
@@ -141,12 +139,10 @@ throws InvalidCommandParameterException
 	// alias used by one of the time series in memory.
 	// If so print a warning...
 	// TODO [LT 2005-05-26] This is used in all other command but it 
-	// is not working here.  Why?	Temporarely using the alternative below.
-	/*	Vector tsids = (Vector) getCommandProcessor().getPropContents (
-			"TSIDListNoInput" );
+	// is not working here.  Why?	Temporarily using the alternative below.
+	/*	Vector tsids = (Vector) getCommandProcessor().getPropContents ( "TSIDListNoInput" );
 	if ( StringUtil.indexOf( tsids, Alias ) >= 0 ) {
-		warning += "\nTime series alias \""
-			+ Alias + "\" is already used above.";
+		warning += "\nTime series alias \"" + Alias + "\" is already used above.";
 	}
 	 */		
 	// Check if the alias for the new time series is the same as the 
@@ -155,8 +151,7 @@ throws InvalidCommandParameterException
 	// Notice: The version above is the one used by the others commands.
 	if ( (Alias != null) && (TSID != null) && TSID.equalsIgnoreCase( Alias ) ) {
         message = "The alias \"" + Alias
-        + "\" for the new time series is equal to the alias "
-        + "of the original time series.";
+        + "\" for the new time series is equal to the alias of the original time series.";
 		warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
@@ -277,7 +272,7 @@ throws InvalidCommandParameterException
 	
 	// If the OutputFillMethod is specified, make sure it is valid.
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
-		if (	!OutputFillMethod.equalsIgnoreCase( _Repeat      ) &&
+		if ( !OutputFillMethod.equalsIgnoreCase( _Repeat ) &&
 			!OutputFillMethod.equalsIgnoreCase( _Interpolate ) ) {
             message = "The OutputFillMethod (" + OutputFillMethod + ") parameter is invalid.";
 			warning += "\n" + message;
@@ -290,9 +285,9 @@ throws InvalidCommandParameterException
 
 	// If the HandleMissingInputHow is specified, make sure it is valid.
 	if ( HandleMissingInputHow!=null && HandleMissingInputHow.length()>0 ) {
-		if (	!HandleMissingInputHow.equalsIgnoreCase(_KeepMissing)&&
-			!HandleMissingInputHow.equalsIgnoreCase(_Repeat     )&&
-			!HandleMissingInputHow.equalsIgnoreCase(_SetToZero  )){
+		if ( !HandleMissingInputHow.equalsIgnoreCase(_KeepMissing)&&
+			!HandleMissingInputHow.equalsIgnoreCase(_Repeat)&&
+			!HandleMissingInputHow.equalsIgnoreCase(_SetToZero )){
             message = "The HandleMissingInputHow (" + HandleMissingInputHow + ") parameter is invalid.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -322,8 +317,7 @@ throws InvalidCommandParameterException
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+				command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -356,13 +350,11 @@ Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
-throws 	InvalidCommandSyntaxException,
-	InvalidCommandParameterException
+throws 	InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String mthd = "changeInterval_Command.parseCommand", mssg;
 	int warning_level = 2;
 
@@ -385,11 +377,9 @@ throws 	InvalidCommandSyntaxException,
 			// TS X = changeInterval (...)
 			pos = command.indexOf('=');
 			substring = command.substring(0,pos).trim();
-			List v = StringUtil.breakStringList (
-				substring, " ",
-				StringUtil.DELIM_SKIP_BLANKS ); 
+			List<String> v = StringUtil.breakStringList ( substring, " ", StringUtil.DELIM_SKIP_BLANKS ); 
 			// First field has format "TS X"
-			Alias = ((String)v.get(1)).trim();		
+			Alias = (v.get(1)).trim();		
 		}
 		
 		// Substring, eliminating "TS X =" when __read_one is true.
@@ -399,7 +389,7 @@ throws 	InvalidCommandSyntaxException,
 			
 		// Split the substring into two parts: the command name and 
 		// the parameters list within the parenthesis.
-		List tokens = StringUtil.breakStringList ( substring, "()", 0 );
+		List<String> tokens = StringUtil.breakStringList ( substring, "()", 0 );
 		if ( tokens == null ) {
 			// Must have at least the command name and the parameter list.
 			mssg = "Syntax error in \"" + command + "\".";
@@ -410,10 +400,8 @@ throws 	InvalidCommandSyntaxException,
 		// Parse the parameters (second token in the tokens vector)
 		// needed to process the command.
 		try {
-			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-				(String) tokens.get(1), mthd, "," ) );
-			// If the Alias was found in the command added it to the
-			// parameters propList.	
+			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), mthd, "," ) );
+			// If the Alias was found in the command added it to the parameters propList.	
 			if ( Alias != null && Alias.length() > 0 ) {
 				setCommandParameter( "Alias", Alias );
 				
@@ -424,8 +412,7 @@ throws 	InvalidCommandSyntaxException,
 			} 	
 		}
 		catch ( Exception e ) {
-			mssg = "Syntax error in \"" + command
-				+ "\".  Not enough tokens.";
+			mssg = "Syntax error in \"" + command + "\".  Not enough tokens.";
 			Message.printWarning ( warning_level, mthd, mssg );
 			throw new InvalidCommandSyntaxException ( mssg );
 		}
@@ -437,15 +424,12 @@ Run the command.
 @param command_number Number of command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {
 	String routine = getCommandName() + ".runCommand";
 	String message = "";
@@ -467,11 +451,11 @@ throws InvalidCommandParameterException,
 	String NewUnits = parameters.getValue( "NewUnits" );
 	String Tolerance = parameters.getValue( "Tolerance" );
 	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
-	String AllowMissingCount = parameters.getValue("AllowMissingCount"  );
+	String AllowMissingCount = parameters.getValue("AllowMissingCount" );
 	/* TODO SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
 	*/
-	String OutputFillMethod  =	parameters.getValue( "OutputFillMethod"      );
+	String OutputFillMethod  =	parameters.getValue( "OutputFillMethod" );
 	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
 	
 	// Set the properties for the method TSUtil.changeInterval()!
@@ -500,8 +484,7 @@ throws InvalidCommandParameterException,
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0  ) {
 		props.set ( "OutputFillMethod", OutputFillMethod );
 	}
-	if ( HandleMissingInputHow != null &&
-	     HandleMissingInputHow.length() > 0  ) {
+	if ( HandleMissingInputHow != null && HandleMissingInputHow.length() > 0  ) {
 		props.set ( "HandleMissingInputHow", HandleMissingInputHow );
 	}
 	
@@ -514,12 +497,11 @@ throws InvalidCommandParameterException,
 	request_params.set ( "CommandTag", command_tag );
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesForTSID", request_params);
+	try {
+	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
 	}
 	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\") from processor.";
+		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -597,16 +579,15 @@ throws InvalidCommandParameterException,
 	}
 
 	// Clean up
-	original_ts   = null;
-	result_ts     = null;
+	original_ts = null;
+	result_ts = null;
 	
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-				command_tag, ++warning_count ),
-			routine, message );
+				command_tag, ++warning_count ), routine, message );
 		throw new CommandWarningException ( message );
 	}
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
@@ -642,31 +623,26 @@ public String toString ( PropList props )
 	// This StringBuffer will contain all parameters for the command.
 	StringBuffer b = new StringBuffer();
 
-	// Adding the TSID
 	if ( TSID != null && TSID.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
 
-	// Adding the NewInterval
 	if ( NewInterval != null && NewInterval.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewInterval=" + NewInterval );
 	}
 
-	// Adding the OldTimeScale
 	if ( OldTimeScale != null && OldTimeScale.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "OldTimeScale=" + OldTimeScale );
 	}
 
-	// Adding the NewTimeScale
 	if ( NewTimeScale != null && NewTimeScale.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewTimeScale=" + NewTimeScale  );
 	}
 
-	// Adding the NewDataType
 	if ( NewDataType != null && NewDataType.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewDataType=" + NewDataType );
@@ -687,7 +663,6 @@ public String toString ( PropList props )
         b.append ( "HandleEndpointsHow=" + HandleEndpointsHow );
     }
 
-	// Adding the AllowMissingCount
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "AllowMissingCount=" + AllowMissingCount );
@@ -700,13 +675,11 @@ public String toString ( PropList props )
 		b.append ( "AllowMissingPercent=" + AllowMissingPercent );
 	} */
 	
-	// Adding the OutputFillMethod
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "OutputFillMethod=" + OutputFillMethod );
 	}
 	
-	// Adding the HandleMissingInputHow
 	if ( HandleMissingInputHow != null && HandleMissingInputHow.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "HandleMissingInputHow=" + HandleMissingInputHow );
@@ -720,4 +693,4 @@ public String toString ( PropList props )
 	return commandString;
 }
 
-} // end changeInterval_Command
+}

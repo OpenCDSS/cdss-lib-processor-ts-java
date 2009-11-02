@@ -1335,7 +1335,7 @@ private List createYearToDateReport ( List tslist, DateTime end_date, PropList p
 		if ( ts.getDataIntervalBase() == TimeInterval.IRREGULAR ) {
 			// Convert to a daily time series...
 		    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval ();
-			ts = tsu.OLDchangeToDayTS ( (IrregularTS)ts, 1, null );
+			ts = tsu.OLDchangeToDayTS ( (IrregularTS)ts, 1 );
 		}
 
 		int interval_base = ts.getDataIntervalBase();

@@ -245,6 +245,10 @@ CommandWarningException, CommandException
 	String Alias = parameters.getValue ( "Alias" );
 	String DayTSID = parameters.getValue ( "DayTSID" );
 	String Bracket = parameters.getValue ( "Bracket" );
+	Integer bracket = null;
+	if ( (Bracket != null) && !Bracket.equals("") ) {
+	    bracket = new Integer(Bracket);
+	}
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
@@ -302,15 +306,13 @@ CommandWarningException, CommandException
 
 	MonthTS monthts = null;
 	try {
-	    PropList changeprops = new PropList ( "newEndOfMonthTSFromDayTS" );
-	    changeprops.set ( "UseNearestToEnd", Bracket );
-	    Message.printStatus ( 1, routine, "Changing interval..." );
+	    Message.printStatus ( 2, routine, "Changing interval..." );
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
-	    monthts = tsu.OLDchangeToMonthTS ( (DayTS)ts, 1, changeprops );
+	    monthts = tsu.OLDchangeToMonthTS ( (DayTS)ts, 1, bracket );
 		monthts.setAlias ( Alias );
 	}
 	catch ( Exception e ) {
-		message = "Unexpected processing daily time series \"" + ts.getIdentifier() + "\" (" + e + ").";
+		message = "Unexpected error processing daily time series \"" + ts.getIdentifier() + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

@@ -37,6 +37,9 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil_ChangeInterval;
+import RTi.TS.TSUtil_ChangeInterval_HandleEndpointsHowType;
+import RTi.TS.TSUtil_ChangeInterval_HandleMissingInputHowType;
+import RTi.TS.TSUtil_ChangeInterval_OutputFillMethodType;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
@@ -50,12 +53,13 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
-import RTi.Util.IO.MeasTimeScale;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeScaleType;
 
 public class ChangeInterval_Command extends AbstractCommand implements Command
 {
@@ -186,14 +190,25 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify an old time scale."));
 	}
-	if ( OldTimeScale != null && !OldTimeScale.equalsIgnoreCase(MeasTimeScale.ACCM) &&
-		!OldTimeScale.equalsIgnoreCase(MeasTimeScale.MEAN) &&
-		!OldTimeScale.equalsIgnoreCase(MeasTimeScale.INST) ) {
-		message = "The old time scale (" + OldTimeScale + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
+	if ( OldTimeScale != null && !OldTimeScale.equals("") ) {
+	    try {
+	        TimeScaleType.valueOfIgnoreCase(OldTimeScale);
+	    }
+	    catch ( Exception e ) {
+    		message = "The old time scale (" + OldTimeScale + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<TimeScaleType> values = TimeScaleType.getTimeScaleChoices();
+            for ( TimeScaleType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
-                CommandStatusType.FAILURE, message, "Valid values are ACCM (accumulated), MEAN, and INST (instantaneous)."));
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+	    }
 	}
 	
 	// NewTimeScale - NewTimeScale will always be set from the 
@@ -208,15 +223,25 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify a new time scale."));
 	}
-	if ( (NewTimeScale != null) &&
-	    !NewTimeScale.equalsIgnoreCase(MeasTimeScale.ACCM) &&
-		!NewTimeScale.equalsIgnoreCase(MeasTimeScale.MEAN) &&
-		!NewTimeScale.equalsIgnoreCase(MeasTimeScale.INST) ) {
-        message = "The new time scale (" + OldTimeScale + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
+	if ( (NewTimeScale != null) && !NewTimeScale.equals("") ) {
+       try {
+            TimeScaleType.valueOfIgnoreCase(NewTimeScale);
+        }
+        catch ( Exception e ) {
+            message = "The new time scale (" + NewTimeScale + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<TimeScaleType> values = TimeScaleType.getTimeScaleChoices();
+            for ( TimeScaleType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
-                CommandStatusType.FAILURE, message, "Valid values are ACCM (accumulated), MEAN, and INST (instantaneous)."));
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
 	}
 	
 	// If the AllowMissingCount is specified, it should be an integer.
@@ -445,47 +470,54 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID"  );
 	String NewInterval = parameters.getValue( "NewInterval"  );
+	TimeInterval newInterval = null;
+	try {
+	    newInterval = TimeInterval.parseInterval(NewInterval);
+	}
+	catch ( Exception e ) {
+        message = "New interval \"" + NewInterval + "\" is not valid.";
+        Message.printWarning(log_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a valid new interval for the time series - see documentation." ) );
+	}
 	String OldTimeScale = parameters.getValue( "OldTimeScale" );
+	TimeScaleType oldTimeScale = TimeScaleType.valueOfIgnoreCase(OldTimeScale);
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
+	TimeScaleType newTimeScale = TimeScaleType.valueOfIgnoreCase(NewTimeScale);
 	String NewDataType = parameters.getValue( "NewDataType" );
 	String NewUnits = parameters.getValue( "NewUnits" );
 	String Tolerance = parameters.getValue( "Tolerance" );
+	Double tolerance = null;
+	if ( StringUtil.isDouble(Tolerance) ) {
+	    tolerance = new Double(tolerance);
+	}
 	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
+	TSUtil_ChangeInterval_HandleEndpointsHowType handleEndpointsHow = null;
+	if ( (HandleEndpointsHow != null) && !HandleEndpointsHow.equals("") ) {
+	    handleEndpointsHow =
+	        TSUtil_ChangeInterval_HandleEndpointsHowType.valueOfIgnoreCase(HandleEndpointsHow);
+	}
 	String AllowMissingCount = parameters.getValue("AllowMissingCount" );
+	Integer allowMissingCount = null;
+	if ( StringUtil.isInteger(AllowMissingCount) ) {
+	    allowMissingCount = new Integer(AllowMissingCount);
+	}
 	/* TODO SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
 	*/
-	String OutputFillMethod  =	parameters.getValue( "OutputFillMethod" );
+	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
+	TSUtil_ChangeInterval_OutputFillMethodType outputFillMethod = null;
+	if ( (OutputFillMethod != null) && !OutputFillMethod.equals("") ) {
+	    outputFillMethod = TSUtil_ChangeInterval_OutputFillMethodType.valueOfIgnoreCase(OutputFillMethod);
+	}
 	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
-	
-	// Set the properties for the method TSUtil.changeInterval()!
-	PropList props = new PropList ( "TSUtil.changeInterval" );
-	props.set ( "OldTimeScale", OldTimeScale );
-	props.set ( "NewTimeScale", NewTimeScale );
-	
-	// Do not set these properties if they are "" (empty).
-	// TSUtil.changeInterval expects "null" when calling getValue()
-	// for these properties to set the internal defaults.
-	if ( NewDataType != null && NewDataType.length() > 0  ) {
-		props.set ( "NewDataType", NewDataType );
-	}
-    if ( NewUnits != null && NewUnits.length() > 0  ) {
-        props.set ( "NewUnits", NewUnits );
-    }
-    if ( Tolerance != null && Tolerance.length() > 0  ) {
-        props.set ( "Tolerance", Tolerance );
-    }
-    if ( HandleEndpointsHow != null && HandleEndpointsHow.length() > 0  ) {
-        props.set ( "HandleEndpointsHow", HandleEndpointsHow );
-    }
-	if ( AllowMissingCount != null && AllowMissingCount.length() > 0  ) {
-		props.set ( "AllowMissingCount", AllowMissingCount );
-	}
-	if ( OutputFillMethod != null && OutputFillMethod.length() > 0  ) {
-		props.set ( "OutputFillMethod", OutputFillMethod );
-	}
-	if ( HandleMissingInputHow != null && HandleMissingInputHow.length() > 0  ) {
-		props.set ( "HandleMissingInputHow", HandleMissingInputHow );
+	TSUtil_ChangeInterval_HandleMissingInputHowType handleMissingInputHow = null;
+	if ( (HandleMissingInputHow != null) && !HandleMissingInputHow.equals("") ) {
+	    handleMissingInputHow =
+	        TSUtil_ChangeInterval_HandleMissingInputHowType.valueOfIgnoreCase(HandleMissingInputHow);
 	}
 	
 	// Get the reference (original_ts) to the time series to change interval
@@ -513,8 +545,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	Object o_TS = bean_PropList.getContents ( "TS");
 	TS original_ts = null;
 	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\") from processor.";
+		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -529,20 +560,32 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( original_ts == null ){
 		message = "Cannot determine the time series to process for TSID=\"" + TSID + "\".";
 		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-          status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message);
 	}
 	
-	// Change interval
-	TS result_ts = null;		// Result time series
+    if ( warning_count > 0 ) {
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
+    }
+	
+	// If here, have enough input to attempt the changing the interval
+	TS result_ts = null; // Result time series
 	try {
 		// Process the change of interval
-	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
-		result_ts = tsu.changeInterval(original_ts,NewInterval,props);	
+	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
+            oldTimeScale, newTimeScale, NewDataType, NewUnits, tolerance, handleEndpointsHow,
+            outputFillMethod, handleMissingInputHow, allowMissingCount,
+            null ); // AllowMissingPercent (not implemented in command)
+		result_ts = tsu.changeInterval();	
 		
 		// Update the newly created time series alias.
 		TSIdent tsIdent = result_ts.getIdentifier();
@@ -550,20 +593,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		result_ts.setIdentifier( tsIdent );
 
 		// Add the newly created time series to the software memory.
-		
-        // Update the data to the processor so that appropriate actions are taken...
 
         TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
 	}
-    catch ( InvalidCommandParameterException e ) {
+    catch ( IllegalArgumentException e ) {
       message = "Error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 		Message.printWarning ( log_level, routine, e );
         status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Consult documentation for available time scale combinations." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Consult documentation for available parameter combinations." ) );
         throw new CommandWarningException ( message );
     }
 	catch ( Exception e ) {

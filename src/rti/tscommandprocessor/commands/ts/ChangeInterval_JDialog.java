@@ -57,11 +57,11 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.MeasTimeScale;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.TimeScaleType;
 
 public class ChangeInterval_JDialog extends JDialog
 	implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -157,15 +157,17 @@ private void checkGUIState ()
     __HandleMissingInputHow_JComboBox.setEnabled ( false );
 
     String oldTimeScale = __OldTimeScale_JComboBox.getSelected();
+    TimeScaleType oldTimeScaleType = TimeScaleType.valueOfIgnoreCase(oldTimeScale);
     String newTimeScale = __NewTimeScale_JComboBox.getSelected();
-    if ( oldTimeScale.startsWith(MeasTimeScale.MEAN) && newTimeScale.startsWith(MeasTimeScale.INST)) {
+    TimeScaleType newTimeScaleType = TimeScaleType.valueOfIgnoreCase(newTimeScale);
+    if ( (oldTimeScaleType == TimeScaleType.MEAN) && (newTimeScaleType == TimeScaleType.INST) ) {
         __Tolerance_JLabel.setEnabled( true );
         __Tolerance_JTextField.setEnabled( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
         __HandleMissingInputHow_JComboBox.setEnabled ( true );
     }
-    else if (( oldTimeScale.startsWith(MeasTimeScale.MEAN) || oldTimeScale.startsWith(MeasTimeScale.ACCM)) &&
-            newTimeScale.startsWith(MeasTimeScale.MEAN) || newTimeScale.startsWith(MeasTimeScale.ACCM)) {
+    else if (( (oldTimeScaleType == TimeScaleType.MEAN) || (oldTimeScaleType == TimeScaleType.ACCM)) &&
+        (newTimeScaleType == TimeScaleType.MEAN) || (newTimeScaleType == TimeScaleType.ACCM)) {
         __AllowMissingCount_JLabel.setEnabled ( true );
         __AllowMissingCount_JTextField.setEnabled ( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
@@ -175,11 +177,11 @@ private void checkGUIState ()
         __HandleEndpointsHow_JLabel.setEnabled ( true );
         __HandleEndpointsHow_JComboBox.setEnabled ( true );
     }
-    else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.INST)) {
+    else if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.INST) ) {
         __HandleMissingInputHow_JLabel.setEnabled ( true );
         __HandleMissingInputHow_JComboBox.setEnabled ( true );
     }
-    else if ( oldTimeScale.startsWith(MeasTimeScale.INST) && newTimeScale.startsWith(MeasTimeScale.MEAN)) {
+    else if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) ) {
         __AllowMissingCount_JLabel.setEnabled ( true );
         __AllowMissingCount_JTextField.setEnabled ( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
@@ -418,9 +420,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Old time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OldTimeScale_JComboBox = new SimpleJComboBox ( false );
-	List scale_Vector = MeasTimeScale.getTimeScaleChoices(true);
-	//scale_Vector.insertElementAt("",0);	// Blank to not select.
-	__OldTimeScale_JComboBox.setData ( scale_Vector );
+	__OldTimeScale_JComboBox.setData ( TimeScaleType.getTimeScaleChoicesAsStrings(true) );
 	__OldTimeScale_JComboBox.select ( 0 );	// Default
 	__OldTimeScale_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OldTimeScale_JComboBox,
@@ -432,7 +432,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("New time scale:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTimeScale_JComboBox = new SimpleJComboBox ( false );
-	__NewTimeScale_JComboBox.setData ( MeasTimeScale.getTimeScaleChoices(true) );
+	__NewTimeScale_JComboBox.setData ( TimeScaleType.getTimeScaleChoicesAsStrings(true) );
 	__NewTimeScale_JComboBox.select ( 0 );	// Default
 	__NewTimeScale_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewTimeScale_JComboBox,

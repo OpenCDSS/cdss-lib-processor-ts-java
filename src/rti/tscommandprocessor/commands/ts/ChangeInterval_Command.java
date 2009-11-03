@@ -60,6 +60,7 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeScaleType;
+import RTi.Util.Time.YearType;
 
 public class ChangeInterval_Command extends AbstractCommand implements Command
 {
@@ -104,6 +105,7 @@ throws InvalidCommandParameterException
 	String NewInterval = parameters.getValue( "NewInterval" );
 	String OldTimeScale = parameters.getValue( "OldTimeScale" );
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	String Tolerance = parameters.getValue( "Tolerance" );
 	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
 	String AllowMissingCount = parameters.getValue("AllowMissingCount" );
@@ -244,6 +246,27 @@ throws InvalidCommandParameterException
         }
 	}
 	
+    if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+        try {
+            YearType.valueOfIgnoreCase(OutputYearType);
+        }
+        catch ( Exception e ) {
+            message = "The output year type (" + OutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
+    }
+	
 	// If the AllowMissingCount is specified, it should be an integer.
 	if ( AllowMissingCount!=null && (AllowMissingCount.length()>0) &&
 		!StringUtil.isInteger(AllowMissingCount) ) {
@@ -329,6 +352,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "NewInterval" );
     valid_Vector.add ( "OldTimeScale" );
     valid_Vector.add ( "NewTimeScale" );
+    valid_Vector.add ( "OutputYearType" );
     valid_Vector.add ( "NewDataType" );
     valid_Vector.add ( "NewUnits" );
     valid_Vector.add ( "Tolerance" );
@@ -447,11 +471,9 @@ throws 	InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -487,6 +509,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	TimeScaleType oldTimeScale = TimeScaleType.valueOfIgnoreCase(OldTimeScale);
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
 	TimeScaleType newTimeScale = TimeScaleType.valueOfIgnoreCase(NewTimeScale);
+	String OutputYearType = parameters.getValue( "OutputYearType" );
+	YearType outputYearType = YearType.CALENDAR;
+	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+	    outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
+	}
 	String NewDataType = parameters.getValue( "NewDataType" );
 	String NewUnits = parameters.getValue( "NewUnits" );
 	String Tolerance = parameters.getValue( "Tolerance" );
@@ -582,7 +609,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 		// Process the change of interval
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
-            oldTimeScale, newTimeScale, NewDataType, NewUnits, tolerance, handleEndpointsHow,
+            oldTimeScale, newTimeScale, outputYearType, NewDataType, NewUnits, tolerance, handleEndpointsHow,
             outputFillMethod, handleMissingInputHow, allowMissingCount,
             null ); // AllowMissingPercent (not implemented in command)
 		result_ts = tsu.changeInterval();	
@@ -649,6 +676,7 @@ public String toString ( PropList props )
 	String NewInterval = props.getValue( "NewInterval" );
 	String OldTimeScale = props.getValue( "OldTimeScale" );
 	String NewTimeScale = props.getValue( "NewTimeScale" );
+	String OutputYearType = props.getValue("OutputYearType");
 	String NewDataType = props.getValue( "NewDataType" );
 	String NewUnits = props.getValue( "NewUnits" );
 	String Tolerance = props.getValue( "Tolerance" );
@@ -683,6 +711,11 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewTimeScale=" + NewTimeScale  );
 	}
+	
+    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "OutputYearType=" + OutputYearType );
+    }
 
 	if ( NewDataType != null && NewDataType.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );

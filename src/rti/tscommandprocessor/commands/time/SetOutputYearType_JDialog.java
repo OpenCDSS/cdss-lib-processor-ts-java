@@ -26,6 +26,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.YearType;
 
 public class SetOutputYearType_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -153,12 +154,14 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputYearType_JComboBox = new SimpleJComboBox ( false );
-	__OutputYearType_JComboBox.add ( __command._Calendar );
-	__OutputYearType_JComboBox.add ( __command._Water );
-	__OutputYearType_JComboBox.add ( __command._NovToOct );
+    __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
+    __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
+    __OutputYearType_JComboBox.add ( "" + YearType.WATER );
 	__OutputYearType_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - global output year type."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

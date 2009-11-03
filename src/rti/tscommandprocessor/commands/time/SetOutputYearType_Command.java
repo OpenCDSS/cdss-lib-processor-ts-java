@@ -22,6 +22,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.YearType;
 
 /**
 This class initializes, checks, and runs the SetOutputYearType() command.
@@ -29,10 +30,6 @@ This class initializes, checks, and runs the SetOutputYearType() command.
 public class SetOutputYearType_Command extends AbstractCommand
 implements Command
 {
-    
-protected final String _Water = "Water";
-protected final String _Calendar = "Calendar";
-protected final String _NovToOct = "NovToOct";
 
 /**
 Constructor.
@@ -48,8 +45,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -60,21 +56,25 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	// The existence of the file to remove is not checked during initialization
-	// because files may be created dynamically at runtime.
-
 	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
-		if ( !OutputYearType.equalsIgnoreCase(_Calendar) &&
-			!OutputYearType.equalsIgnoreCase(_Water) &&
-			!OutputYearType.equalsIgnoreCase(_NovToOct)) {
-			message = "The OutputYearType parameter \"" + OutputYearType + "\" must be " + _Calendar +
-			" (default), " + _Water + " (Oct to Sep) or " + _NovToOct + ".";
-			warning += "\n" + message;
-			status.addToLog(CommandPhaseType.INITIALIZATION,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Specify the parameter as " + _Calendar + ", " + _Water + ", or " +
-					_NovToOct + "."));
-		}
+        try {
+            YearType.valueOfIgnoreCase(OutputYearType);
+        }
+        catch ( Exception e ) {
+            message = "The output year type (" + OutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
 	}
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();

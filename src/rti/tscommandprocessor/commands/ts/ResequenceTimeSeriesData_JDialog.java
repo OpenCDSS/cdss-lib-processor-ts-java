@@ -35,6 +35,7 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.YearType;
 
 /**
 Command editor dialog for the ResequenceTimeSeriesData() command.
@@ -57,6 +58,7 @@ private SimpleJComboBox __TableColumn_JComboBox = null;
 private SimpleJComboBox __TableRowStart_JComboBox = null;
 private SimpleJComboBox __TableRowEnd_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;// Start of period for output
+private SimpleJComboBox __OutputYearType_JComboBox = null;
 private JTextField __NewScenario_JTextField = null;
 private JTextField __Alias_JTextField = null; // Alias to assign to result
 private boolean	__error_wait = false;	// Is there an error to be cleared up?
@@ -99,8 +101,8 @@ private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -133,6 +135,7 @@ private void checkInput ()
     String TableRowStart = __TableRowStart_JComboBox.getSelected();
     String TableRowEnd = __TableRowEnd_JComboBox.getSelected();
     String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String NewScenario = __NewScenario_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
 
@@ -161,6 +164,9 @@ private void checkInput ()
     }
     if ( OutputStart.length() > 0 ) {
         parameters.set ( "OutputStart", OutputStart );
+    }
+    if ( OutputYearType.length() > 0 ) {
+        parameters.set ( "OutputYearType", OutputYearType );
     }
     if ( NewScenario.length() > 0 ) {
         parameters.set ( "NewScenario", NewScenario );
@@ -192,6 +198,7 @@ private void commitEdits ()
     String TableRowStart = __TableRowStart_JComboBox.getSelected();
     String TableRowEnd = __TableRowEnd_JComboBox.getSelected();
     String OutputStart = __OutputStart_JTextField.getText().trim();
+    String OutputYearType = __OutputYearType_JComboBox.getSelected();
     String NewScenario = __NewScenario_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
@@ -202,6 +209,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableRowStart", TableRowStart );
     __command.setCommandParameter ( "TableRowEnd", TableRowEnd );
     __command.setCommandParameter ( "OutputStart", OutputStart );
+    __command.setCommandParameter ( "OutputYearType", OutputYearType );
     __command.setCommandParameter ( "NewScenario", NewScenario );
     __command.setCommandParameter("Alias", Alias);
 }
@@ -252,9 +260,6 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Resequence time series data by \"shuffling\" the original years of data, creating new time series." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Currently, only resequencing of monthly time series using calendar years is supported." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "An identifier for the table with the new year sequence must be specified, and each sequence of " +
         "years must be provided in a column with a unique column heading."),
@@ -349,6 +354,20 @@ private void initialize ( JFrame parent, Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is last row in column."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputYearType_JComboBox = new SimpleJComboBox ( false );
+    __OutputYearType_JComboBox.add ( "" );
+    __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
+    __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
+    __OutputYearType_JComboBox.add ( "" + YearType.WATER );
+    __OutputYearType_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - output year type (default=" +
+        YearType.CALENDAR + ")."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -357,7 +376,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - starting year of resequenced time series."),
+        "Optional - starting year of resequenced time series, consistent with output year type."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
@@ -458,6 +477,7 @@ private void refresh ()
     String TableColumn = "";
     String TableRowStart = "";
     String TableRowEnd = "";
+    String OutputYearType = "";
     String OutputStart = "";
     String NewScenario = "";
     String Alias = "";
@@ -474,6 +494,7 @@ private void refresh ()
         TableColumn = parameters.getValue ( "TableColumn" );
         TableRowStart = parameters.getValue ( "TableRowStart" );
         TableRowEnd = parameters.getValue ( "TableRowEnd" );
+        OutputYearType = parameters.getValue ( "OutputYearType" );
         OutputStart = parameters.getValue("OutputStart");
         NewScenario = parameters.getValue ( "NewScenario" );
         Alias = parameters.getValue("Alias");
@@ -594,6 +615,21 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( OutputYearType == null ) {
+            // Select default...
+            __OutputYearType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __OutputYearType_JComboBox,OutputYearType, JGUIUtil.NONE, null, null ) ) {
+                __OutputYearType_JComboBox.select ( OutputYearType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nOutputYearType value \"" + OutputYearType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( OutputStart != null ) {
             __OutputStart_JTextField.setText ( OutputStart );
         }
@@ -611,6 +647,7 @@ private void refresh ()
     TableColumn = __TableColumn_JComboBox.getSelected();
     TableRowStart = __TableRowStart_JComboBox.getSelected();
     TableRowEnd = __TableRowEnd_JComboBox.getSelected();
+    OutputYearType = __OutputYearType_JComboBox.getSelected();
     OutputStart = __OutputStart_JTextField.getText().trim();
     NewScenario = __NewScenario_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
@@ -622,6 +659,7 @@ private void refresh ()
     parameters.add ( "TableRowStart=" + TableRowStart );
     parameters.add ( "TableRowEnd=" + TableRowEnd );
     parameters.add ( "OutputStart=" + OutputStart );
+    parameters.add ( "OutputYearType=" + OutputYearType );
     parameters.add ( "NewScenario=" + NewScenario );
     parameters.add("Alias=" + Alias);
 	__command_JTextArea.setText( __command.toString ( parameters ) );

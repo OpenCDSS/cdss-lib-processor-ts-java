@@ -29,6 +29,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.YearType;
 
 /**
 <p>
@@ -67,6 +68,7 @@ throws InvalidCommandParameterException
     String TableColumn = parameters.getValue ( "TableColumn" );
     String TableRowStart = parameters.getValue ( "TableRowStart" );
     String TableRowEnd = parameters.getValue ( "TableRowEnd" );
+    String OutputYearType = parameters.getValue ( "OutputYearType" );
     String OutputStart = parameters.getValue ( "OutputStart" );
     String NewScenario = parameters.getValue ( "NewScenario" );
     String Alias = parameters.getValue ( "Alias" );
@@ -136,6 +138,26 @@ throws InvalidCommandParameterException
                             message, "Specify an integer (1+) for the ending table row." ) );
         }
     }
+    if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+        try {
+            YearType.valueOfIgnoreCase(OutputYearType);
+        }
+        catch ( Exception e ) {
+            message = "The output year type (" + OutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
+    }
     if ( (OutputStart != null) && !OutputStart.equals("") && !StringUtil.isInteger(OutputStart)) {
         message = "The output start \"" + OutputStart + "\" is not an integer.";
         warning += "\n" + message;
@@ -175,6 +197,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TableColumn" );
     valid_Vector.add ( "TableRowStart" );
     valid_Vector.add ( "TableRowEnd" );
+    valid_Vector.add ( "OutputYearType" );
     valid_Vector.add ( "OutputStart" );
     //valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "NewScenario" );
@@ -339,8 +362,9 @@ the year sequence as the map.
 @param oldts Old time series with data to transfer to the new time series.
 @param newts New time series receiving the data.
 @param year_sequence Sequence of years from the old time series to transfer to the new time series.
+@param outputYearType the output year type, indicating the span of months to resequence
 */
-private void resequenceData ( TS oldts, TS newts, int [] year_sequence )
+private void resequenceData ( TS oldts, TS newts, int [] year_sequence, YearType outputYearType )
 {
     //
     int base = newts.getDataIntervalBase();
@@ -349,12 +373,20 @@ private void resequenceData ( TS oldts, TS newts, int [] year_sequence )
     int iyear = 0;
     DateTime dateold = null;    // Date in old data, reset in loop when month = 1
     double oldval;
+    int outputYearTypeFirstMonth = outputYearType.getStartMonth();
+    // This will iterate in the output year type that was requested, with the month being at the
+    // start of an output year.
     for ( DateTime date = new DateTime(newts.getDate1()); date.lessThanOrEqualTo(date2);
         date.addInterval(base,mult), dateold.addInterval(base,mult)) {
-        if ( date.getMonth() == 1 ) {
+        if ( date.getMonth() == outputYearTypeFirstMonth ) {
             // Reset the year to get the specified data...
             dateold = new DateTime(date);
-            dateold.setYear ( year_sequence[iyear++] );
+            // Account for calendar and non-calendar years...
+            // For calendar, the first month is 1 and the offset is zero.
+            // For water year, the first month is 10 and the offset is -1 so the correct 12 months will
+            // be shifted.
+            dateold.setMonth ( outputYearType.getStartMonth() );
+            dateold.setYear ( year_sequence[iyear++] + outputYearType.getStartYearOffset() );
         }
         oldval = oldts.getDataValue ( dateold );
         newts.setDataValue( date, oldval );
@@ -431,6 +463,11 @@ CommandWarningException, CommandException
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
     
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
+	YearType outputYearType = YearType.CALENDAR;
+	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+	    outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
+	}
     String OutputStart = parameters.getValue ( "OutputStart" );
     //String OutputEnd = parameters.getValue ( "OutputEnd" );
     DateTime OutputStart_DateTime = null;
@@ -633,28 +670,31 @@ CommandWarningException, CommandException
         // Create a copy of the original, but with the new scenario.
         ts = (TS)tslist.get(i);
         if ( ts.getDataIntervalBase() != TimeInterval.MONTH ) {
-            message = "Resequencing can currently only be applied to monthly time series.";
+            message = "Resequencing currently only can be applied to monthly time series.";
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify only monthly time series to the command." ) );
+                message, "Specify only monthly time series as input to the command." ) );
         }
         newts = (TS)ts.clone();
         if ( (NewScenario != null) && (NewScenario.length() > 0) ) {
             newts.getIdentifier().setScenario(NewScenario);
         }
         // Allocate space for the new time series, for the requested years...
-        // Make sure that the start date is Jan 1 of the specified year and go to Dec 12 of the end year
+        // For calendar year type, make sure that the start date is Jan of the specified year and go to
+        // Dec of the end year.  For other year types, make sure that the period spans full years.
         DateTime OutputStart_new_DateTime = new DateTime(ts.getDate1());
         if ( OutputStart_DateTime != null ) {
-            OutputStart_new_DateTime.setYear(OutputStart_DateTime.getYear());
+            OutputStart_new_DateTime.setYear(OutputStart_DateTime.getYear() + outputYearType.getStartYearOffset());
         }
-        OutputStart_new_DateTime.setMonth(1);
+        // Make sure that the start lines up with the month
+        OutputStart_new_DateTime.setMonth(outputYearType.getStartMonth());
         newts.setDate1(OutputStart_new_DateTime);
         // The output end is the end of the year for the number of years...
         DateTime OutputEnd_new_DateTime = new DateTime(OutputStart_new_DateTime);
-        OutputEnd_new_DateTime.addYear ( nyears - 1 );
-        OutputEnd_new_DateTime.setMonth(12);
+        // Make sure to account for case where output year type spans two years
+        OutputEnd_new_DateTime.addYear ( nyears - 1 + (-1*outputYearType.getStartYearOffset()));
+        OutputEnd_new_DateTime.setMonth(outputYearType.getEndMonth());
         newts.setDate2(OutputEnd_new_DateTime);
         newts.allocateDataSpace();
         // Set all data to missing so as to not confuse with old data...
@@ -670,7 +710,7 @@ CommandWarningException, CommandException
 
         // Now resequence the data...
         try {
-            resequenceData ( ts, newts, year_sequence );
+            resequenceData ( ts, newts, year_sequence, outputYearType );
             StringBuffer b = new StringBuffer ();
             for ( int iy = 0; iy < year_sequence.length; iy++ ) {
                 if ( iy != 0 ) {
@@ -678,8 +718,8 @@ CommandWarningException, CommandException
                 }
                 b.append ( "" + year_sequence[iy]);
             }
-            newts.addToGenesis( "Resequenced data using " + year_sequence.length + " years (new period is " +
-                newts.getDate1() + " to " + newts.getDate2() + "): " + b.toString() );
+            newts.addToGenesis( "Resequenced data using " + outputYearType + " " + year_sequence.length +
+                " years (new period is " + newts.getDate1() + " to " + newts.getDate2() + "): " + b.toString() );
         }
         catch ( Exception e ) {
             message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -721,6 +761,7 @@ public String toString ( PropList parameters )
     String TableColumn = parameters.getValue ( "TableColumn" );
     String TableRowStart = parameters.getValue ( "TableRowStart" );
     String TableRowEnd = parameters.getValue ( "TableRowEnd" );
+    String OutputYearType = parameters.getValue("OutputYearType");
     String OutputStart = parameters.getValue("OutputStart");
     //String OutputEnd = parameters.getValue("OutputEnd");
     String NewScenario = parameters.getValue ( "NewScenario" );
@@ -764,6 +805,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableRowEnd=\"" + TableRowEnd + "\"" );
+    }
+    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputYearType=" + OutputYearType );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

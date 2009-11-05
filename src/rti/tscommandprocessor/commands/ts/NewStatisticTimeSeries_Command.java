@@ -625,6 +625,15 @@ CommandWarningException, CommandException
 				message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
+	
+    if ( warning_count > 0 ) {
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
+    }
 
 	// Now process the time series...
 

@@ -1,19 +1,3 @@
-//------------------------------------------------------------------------------
-// newStatisticYearTS - handle the TS Alias = newStatisticYearTS() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-09-08	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					copy().
-// 2005-09-22	SAM, RTi		Add AllowMissingCount parameter.
-// 2007-02-12	SAM, RTi		Remove direct dependence on TSCommandProcessor.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -24,9 +8,8 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSAnalyst;
 import RTi.TS.TSStatisticType;
-import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
+import RTi.TS.TSUtil_NewStatisticYearTS;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -47,6 +30,7 @@ import RTi.Util.IO.PropList;
 
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
 /**
@@ -80,6 +64,7 @@ throws InvalidCommandParameterException
 	String Statistic = parameters.getValue ( "Statistic" );
 	String TestValue = parameters.getValue ( "TestValue" );
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
@@ -107,12 +92,8 @@ throws InvalidCommandParameterException
 	}
 	// TODO SAM 2005-08-29
 	// Need to decide whether to check NewTSID - it might need to support wildcards.
-	if ( warning.length() > 0 ) {
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
-		throw new InvalidCommandParameterException ( warning );
-	}
+	
+    TSStatisticType statisticType = null;
 	if ( (Statistic == null) || Statistic.equals("") ) {
         message = "The statistic must be specified.";
         warning += "\n" + message;
@@ -123,7 +104,6 @@ throws InvalidCommandParameterException
 	else {
         // Make sure that the statistic is known in general
         boolean supported = false;
-        TSStatisticType statisticType = null;
         try {
             statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
             supported = true;
@@ -139,7 +119,8 @@ throws InvalidCommandParameterException
         
         if ( supported ) {
             supported = false;
-            List<TSStatisticType> statistics = TSUtil_CalculateTimeSeriesStatistic.getStatisticChoices();
+            List<TSStatisticType> statistics =
+               TSUtil_NewStatisticYearTS.getStatisticChoicesForInterval(TimeInterval.UNKNOWN, null);
             for ( int i = 0; i < statistics.size(); i++ ) {
                 if ( statisticType == statistics.get(i) ) {
                     supported = true;
@@ -165,8 +146,17 @@ throws InvalidCommandParameterException
                                 message, "Specify the test value as a number." ) );
 		}
 	}
-	// TODO SAM 2005-09-12
-	// Need to evaluate whether the test value is needed, depending on the statistic
+	else {
+	    // Test value not specified...
+        if ( (statisticType != null) && TSUtil_NewStatisticYearTS.isTestValueNeeded(statisticType)) {
+            message = "The test value is required for the " + statisticType + " statistic.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the test value as a number." ) ); 
+        }
+	}
+	
 	if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
 		if ( !StringUtil.isInteger(AllowMissingCount) ) {
             message = "The AllowMissingCount value (" + AllowMissingCount + ") is not an integer.";
@@ -186,6 +176,28 @@ throws InvalidCommandParameterException
 			}
 		}
 	}
+	
+    if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
+        if ( !StringUtil.isInteger(MinimumSampleSize) ) {
+            message = "The MinimumSampleSize value (" + MinimumSampleSize + ") is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an integer for MinimumSampleSize." ) );
+        }
+        else {
+            // Make sure it is an allowable value >= 0...
+            int i = Integer.parseInt(MinimumSampleSize);
+            if ( i <= 0 ) {
+                message = "The MinimumSampleSize value (" + MinimumSampleSize + ") must be >= 1.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a value >= 1." ) );
+            }
+        }
+    }
+	
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") &&
 		!AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
@@ -255,8 +267,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Statistic" );
     valid_Vector.add ( "TestValue" );
     valid_Vector.add ( "AllowMissingCount" );
-    valid_Vector.add ( "TestStart" );
-    valid_Vector.add ( "TestEnd" );
+    valid_Vector.add ( "MinimumSampleSize" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "AnalysisWindowStart" );
@@ -290,7 +301,6 @@ Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -302,21 +312,19 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Get the part of the command after the TS Alias =...
 	int pos = command.indexOf ( "=" );
 	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	String token0 = command.substring ( 0, pos ).trim();
 	String token1 = command.substring ( pos + 1 ).trim();
 	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewStatisticYearTS(...)";
@@ -324,7 +332,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	String Alias = (String)v.get(1);
-	List tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and its parameters...
 		message = "Syntax error in \"" + command + "\".  Not enough tokens.";
@@ -332,8 +340,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the file...
-	try {	 PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.get(1), routine, "," );
+	try {
+	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, (String)tokens.get(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -375,8 +383,22 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String Statistic = parameters.getValue ( "Statistic" );
+	TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+	Double TestValue_Double = null; // Default
 	String TestValue = parameters.getValue ( "TestValue" );
+    if ( StringUtil.isDouble(TestValue) ) {
+        TestValue_Double = new Double(TestValue);
+    }
 	String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+	Integer AllowMissingCount_Integer = new Integer(-1); // Default
+	if ( StringUtil.isInteger(AllowMissingCount) ) {
+	    AllowMissingCount_Integer = new Integer(AllowMissingCount);
+	}
+	Integer MinimumSampleSize_Integer = null; // Default - no minimum
+	String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
+    if ( StringUtil.isInteger(MinimumSampleSize) ) {
+        MinimumSampleSize_Integer = new Integer(MinimumSampleSize);
+    }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
@@ -420,22 +442,23 @@ CommandWarningException, CommandException
                                 message, "Verify the AnalysisStart information." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	AnalysisStart_DateTime = (DateTime)prop_contents;
+			else {
+			    AnalysisStart_DateTime = (DateTime)prop_contents;
 			}
 		}
-		}
-		catch ( Exception e ) {
-			message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the AnalysisStart information." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		
-		try {
+	}
+	catch ( Exception e ) {
+		message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
+		Message.printWarning(warning_level,
+				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+				routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the AnalysisStart information." ) );
+		throw new InvalidCommandParameterException ( message );
+	}
+	
+	try {
 		if ( AnalysisEnd != null ) {
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", AnalysisEnd );
@@ -471,133 +494,130 @@ CommandWarningException, CommandException
 			else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
 			}
 		}
-		}
-		catch ( Exception e ) {
-			message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
-			Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify the AnalysisEnd information." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
+	}
+	catch ( Exception e ) {
+		message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
+		Message.printWarning(warning_level,
+			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+			routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the AnalysisEnd information." ) );
+		throw new InvalidCommandParameterException ( message );
+	}
 		
-	  DateTime AnalysisWindowStart_DateTime = null;
-	    DateTime AnalysisWindowEnd_DateTime = null;
-	    try {
-	        if ( AnalysisWindowStart != null ) {
-	            PropList request_params = new PropList ( "" );
-	            request_params.set ( "DateTime", AnalysisWindowStart );
-	            CommandProcessorRequestResultsBean bean = null;
-	            try { bean =
-	                processor.processRequest( "DateTime", request_params);
-	            }
-	            catch ( Exception e ) {
-	                message = "Error requesting AnalysisWindowStart DateTime(DateTime=" +
-	                AnalysisWindowStart + ") from processor.";
-	                Message.printWarning(log_level,
-	                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                        routine, message );
-	                status.addToLog ( CommandPhaseType.RUN,
-	                        new CommandLogRecord(CommandStatusType.FAILURE,
-	                                message, "Report the problem to software support." ) );
-	                throw new InvalidCommandParameterException ( message );
-	            }
+    DateTime AnalysisWindowStart_DateTime = null;
+	DateTime AnalysisWindowEnd_DateTime = null;
+    try {
+        if ( AnalysisWindowStart != null ) {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", AnalysisWindowStart );
+            CommandProcessorRequestResultsBean bean = null;
+            try { bean =
+                processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting AnalysisWindowStart DateTime(DateTime=" +
+                AnalysisWindowStart + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
 
-	            PropList bean_PropList = bean.getResultsPropList();
-	            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-	            if ( prop_contents == null ) {
-	                message = "Null value for AnalysisWindowStart DateTime(DateTime=" +
-	                AnalysisWindowStart + ") returned from processor.";
-	                Message.printWarning(log_level,
-	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                    routine, message );
-	                status.addToLog ( CommandPhaseType.RUN,
-	                        new CommandLogRecord(CommandStatusType.FAILURE,
-	                                message, "Verify the AnalysisWindowStart information." ) );
-	                throw new InvalidCommandParameterException ( message );
-	            }
-	            else {  AnalysisWindowStart_DateTime = (DateTime)prop_contents;
-	            }
-	        }
-	        }
-	        catch ( Exception e ) {
-	            message = "AnalysisWindowStart \"" + AnalysisWindowStart + "\" is invalid.";
-	            Message.printWarning(warning_level,
-	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                    routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Verify the AnalysisWindowStart information." ) );
-	            throw new InvalidCommandParameterException ( message );
-	        }
-	        
-	        try {
-	        if ( AnalysisWindowEnd != null ) {
-	            PropList request_params = new PropList ( "" );
-	            request_params.set ( "DateTime", AnalysisWindowEnd );
-	            CommandProcessorRequestResultsBean bean = null;
-	            try { bean =
-	                processor.processRequest( "DateTime", request_params);
-	            }
-	            catch ( Exception e ) {
-	                message = "Error requesting AnalysisWindowEnd DateTime(DateTime=" +
-	                AnalysisWindowEnd + ") from processor.";
-	                Message.printWarning(log_level,
-	                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                        routine, message );
-	                status.addToLog ( CommandPhaseType.RUN,
-	                        new CommandLogRecord(CommandStatusType.FAILURE,
-	                                message, "Report the problem to software support." ) );
-	                throw new InvalidCommandParameterException ( message );
-	            }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for AnalysisWindowStart DateTime(DateTime=" +
+                AnalysisWindowStart + ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify the AnalysisWindowStart information." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {  AnalysisWindowStart_DateTime = (DateTime)prop_contents;
+            }
+        }
+    }
+    catch ( Exception e ) {
+        message = "AnalysisWindowStart \"" + AnalysisWindowStart + "\" is invalid.";
+        Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the AnalysisWindowStart information." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
+    
+    try {
+        if ( AnalysisWindowEnd != null ) {
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", AnalysisWindowEnd );
+            CommandProcessorRequestResultsBean bean = null;
+            try { bean =
+                processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting AnalysisWindowEnd DateTime(DateTime=" +
+                AnalysisWindowEnd + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
 
-	            PropList bean_PropList = bean.getResultsPropList();
-	            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-	            if ( prop_contents == null ) {
-	                message = "Null value for AnalysisWindowEnd DateTime(DateTime=" +
-	                AnalysisStart + ") returned from processor.";
-	                Message.printWarning(log_level,
-	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                    routine, message );
-	                status.addToLog ( CommandPhaseType.RUN,
-	                        new CommandLogRecord(CommandStatusType.FAILURE,
-	                                message, "Verify the AnalysisWindowEnd information." ) );
-	                throw new InvalidCommandParameterException ( message );
-	            }
-	            else {  AnalysisWindowEnd_DateTime = (DateTime)prop_contents;
-	            }
-	        }
-	        }
-	        catch ( Exception e ) {
-	            message = "AnalysisWindowEnd \"" + AnalysisWindowEnd + "\" is invalid.";
-	            Message.printWarning(warning_level,
-	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Verify the AnalysisWindowEnd information." ) );
-	            throw new InvalidCommandParameterException ( message );
-	        }
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for AnalysisWindowEnd DateTime(DateTime=" +
+                AnalysisStart + ") returned from processor.";
+                Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify the AnalysisWindowEnd information." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {  AnalysisWindowEnd_DateTime = (DateTime)prop_contents;
+            }
+        }
+    }
+    catch ( Exception e ) {
+        message = "AnalysisWindowEnd \"" + AnalysisWindowEnd + "\" is invalid.";
+        Message.printWarning(warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+            routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the AnalysisWindowEnd information." ) );
+        throw new InvalidCommandParameterException ( message );
+    }
 	
-	// TODO SAM 2007-02-13 Need to enable SearchStart or remove
-	/*DateTime SearchStart_DateTime = null;
+	DateTime SearchStart_DateTime = null;
 	if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-		try {	// The following works with MM/DD and MM-DD
-			SearchStart_DateTime =
-				DateTime.parse ( SearchStart,
-				DateTime.FORMAT_MM_SLASH_DD );
+		try {
+		    // The following works with ISO formats...
+			SearchStart_DateTime = DateTime.parse ( "0000-" + SearchStart );
 		}
 		catch ( Exception e ) {
-			message = "SearchStart \"" + SearchStart +
-				"\" is invalid.  Expecting MM-DD or MM/DD";
+			message = "SearchStart \"" + SearchStart + "\" is invalid.  Expecting MM, MM-DD, MM-DD HH";
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
 			throw new InvalidCommandParameterException ( message );
 		}
-	}*/
+	}
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
@@ -646,33 +666,41 @@ CommandWarningException, CommandException
                         message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
+	
+    if ( warning_count > 0 ) {
+        // Input error...
+        message = "Insufficient data to run command.";
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
+        Message.printWarning(3, routine, message );
+        throw new CommandException ( message );
+    }
 
 	// Now process the time series...
 
-	TS stats_ts = null;
 	try {
-	    TSAnalyst tsa = new TSAnalyst ();
-		PropList tsa_props = new PropList ( "TSAnalyst" );
-		if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-			tsa_props.set ( "NewTSID", NewTSID );	// Optional
-		}
-		tsa_props.set ( "Statistic", Statistic );	// Required
-		if ( (TestValue != null) && (TestValue.length() > 0) ) {
-			tsa_props.set ( "TestValue", TestValue);// Optional
-		}
-		if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
-			tsa_props.set ( "AllowMissingCount",AllowMissingCount);	// Optional
-		}
-		if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
-			tsa_props.set ( "SearchStart", SearchStart);// Optional
-		}
-		stats_ts = tsa.createStatisticYearTS ( ts,
-				AnalysisStart_DateTime, AnalysisEnd_DateTime,
-				AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime,
-				tsa_props );
-		stats_ts.setAlias ( Alias );	// Do separate because setting
-						// the NewTSID might cause the
-						// alias set to fail below.
+	    // Make sure that the statistic is allowed for the time series interval.
+	    if ( !TSUtil_NewStatisticYearTS.isStatisticSupported(statisticType, ts.getDataIntervalBase(), null) ) {
+	        message = "Statistic \"" + statisticType + "\" is not supported the interval for \"" +
+            ts.getIdentifier() + "\".";
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count),routine,message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Refer to documentation to determine supported statistics." ) );
+	    }
+	    else {
+    	    TSUtil_NewStatisticYearTS tsu = new TSUtil_NewStatisticYearTS ( ts, NewTSID, statisticType,
+    	        TestValue_Double, AllowMissingCount_Integer, MinimumSampleSize_Integer,
+                AnalysisStart_DateTime, AnalysisEnd_DateTime,
+                AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
+    		TS stats_ts = tsu.newStatisticYearTS ();
+    		stats_ts.setAlias ( Alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
+    
+    		// Update the data to the processor so that appropriate actions are taken...
+    	    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
+	    }
 	}
 	catch ( Exception e ) {
 		message ="Unexpected error generating the statistic time series from \""+
@@ -685,10 +713,6 @@ CommandWarningException, CommandException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "See the log file for details." ) );
 	}
-
-	// Update the data to the processor so that appropriate actions are taken...
-    
-    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -715,6 +739,7 @@ public String toString ( PropList props )
 	String Statistic = props.getValue( "Statistic" );
 	String TestValue = props.getValue( "TestValue" );
 	String AllowMissingCount = props.getValue( "AllowMissingCount" );
+	String MinimumSampleSize = props.getValue( "MinimumSampleSize" );
 	String AnalysisStart = props.getValue( "AnalysisStart" );
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
 	String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
@@ -751,6 +776,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "AllowMissingCount=" + AllowMissingCount );
 	}
+    if ( (MinimumSampleSize != null) && (MinimumSampleSize.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MinimumSampleSize=" + MinimumSampleSize );
+    }
 	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

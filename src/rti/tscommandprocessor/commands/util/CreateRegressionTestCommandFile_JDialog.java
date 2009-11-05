@@ -26,7 +26,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -57,20 +56,20 @@ private SimpleJButton	__browseSearchFolder_JButton = null,
 			__pathSearchFolder_JButton = null,
 			__pathOutputFile_JButton = null,
 			__pathSetupCommandFile_JButton = null,
-			__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
-private JTextField	__SearchFolder_JTextField = null;	// Top folder to start search
-private JTextField	__FilenamePattern_JTextField = null;	// Pattern for file names
-private JTextField	__OutputFile_JTextField = null;	// Resulting commands file
-private JTextField  __SetupCommandFile_JTextField = null; // Resulting commands file
-private SimpleJComboBox	__Append_JComboBox = null;
-private JTextField  __IncludeTestSuite_JTextField = null;
-private JTextField  __IncludeOS_JTextField = null;
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
-private String		__working_dir = null;	// Working directory.
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private CreateRegressionTestCommandFile_Command __command = null;	// Command to edit
+			__cancel_JButton = null,
+			__ok_JButton = null;
+private JTextField __SearchFolder_JTextField = null;	// Top folder to start search
+private JTextField __FilenamePattern_JTextField = null;	// Pattern for file names
+private JTextField __OutputFile_JTextField = null;	// Resulting command file
+private JTextField __SetupCommandFile_JTextField = null; // Setup command file
+private SimpleJComboBox __Append_JComboBox = null;
+private JTextField __IncludeTestSuite_JTextField = null;
+private JTextField __IncludeOS_JTextField = null;
+private JTextArea __command_JTextArea = null;
+private String __working_dir = null;
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private CreateRegressionTestCommandFile_Command __command = null;
 private boolean __ok = false; // Indicates whether the user has pressed OK to close the dialog.
 
 /**
@@ -78,7 +77,7 @@ Dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CreateRegressionTestCommandFile_JDialog ( JFrame parent, Command command )
+public CreateRegressionTestCommandFile_JDialog ( JFrame parent, CreateRegressionTestCommandFile_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -256,7 +255,7 @@ private void checkInput ()
 	String Append = __Append_JComboBox.getSelected();
 	String IncludeTestSuite = __IncludeTestSuite_JTextField.getText().trim();
 	String IncludeOS = __IncludeOS_JTextField.getText().trim();
-	__error_wait = false;
+
 	if ( SearchFolder.length() > 0 ) {
 		props.set ( "SearchFolder", SearchFolder );
 	}
@@ -281,6 +280,7 @@ private void checkInput ()
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
+		__error_wait = false;
 	}
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
@@ -330,8 +330,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (CreateRegressionTestCommandFile_Command)command;
+private void initialize ( JFrame parent, CreateRegressionTestCommandFile_Command command )
+{	__command = command;
 	CommandProcessor processor =__command.getCommandProcessor();
 	
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );

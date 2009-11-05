@@ -222,6 +222,14 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "IncludeTestSuite" );
 	valid_Vector.add ( "IncludeOS" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+
+    // Throw an InvalidCommandParameterException in case of errors.
+    if ( warning.length() > 0 ) {       
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+                command_tag, warning_level ), warning );
+        throw new InvalidCommandParameterException ( warning );
+    }
     
     status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
@@ -445,7 +453,7 @@ Include the setup command file in the regression test command file.
 */
 private void includeSetupCommandFile ( PrintWriter out, String SetupCommandFile_full )
 throws IOException
-{   String routine = getClass().getName() + ".includeSetupCommandFile";
+{   //String routine = getClass().getName() + ".includeSetupCommandFile";
     if ( SetupCommandFile_full == null ) {
         return;
     }

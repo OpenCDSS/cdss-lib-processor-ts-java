@@ -321,7 +321,7 @@ CommandWarningException, CommandException
     
     	// Get the time series to process...
     	
-        if ( TSList != null ) {
+        if ( (TSList != null) && !TSList.equals("") ) {
         	PropList request_params = new PropList ( "" );
         	request_params.set ( "TSList", TSList );
         	request_params.set ( "TSID", TSID );
@@ -354,7 +354,6 @@ CommandWarningException, CommandException
         	}
         	else {
                 tslist = (List)o_TSList;
-                /* TODO SAM 2009-10-08 For now this is OK
         		if ( tslist.size() == 0 ) {
         			message = "Unable to find time series to process using TSList=\"" + TSList +
         			"\" TSID=\"" + TSID + "\".";
@@ -366,15 +365,13 @@ CommandWarningException, CommandException
                             message,
                             "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
         		}
-        		*/
         	}
         	if ( tslist != null ) {
         		nts = tslist.size();
         	}
-            /* TODO SAM 2009-10-08 For now this is OK
         	if ( nts == 0 ) {
-                message = "Unable to find indices for time series to process using TSList=\"" + TSList +
-                "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
+                message = "Unable to find time series to process using TSList=\"" + TSList +
+                "\" TSID=\"" + TSID + "\".";
         		Message.printWarning ( warning_level,
         		MessageUtil.formatMessageTag(
         		command_tag,++warning_count), routine, message );
@@ -383,7 +380,6 @@ CommandWarningException, CommandException
                         message,
                         "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
         	}
-        	*/
         }
     
     	// Input period...

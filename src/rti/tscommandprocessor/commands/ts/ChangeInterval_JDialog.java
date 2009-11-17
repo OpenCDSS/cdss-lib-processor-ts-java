@@ -403,7 +403,8 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		"Create a new time series by changing the data interval of an existing time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the alias to reference the new time series."),
+		"Use the alias to reference the new time series - " +
+        "other time series information will be copied from the original."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The conversion process depends on whether the original and "
@@ -413,8 +414,9 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		"The time scales must be specified (they are not automatically determined from the data type)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Other time series information will be copied from the original."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Many of the advanced parameters depend on the data interval, which can only be confirmed at runtime, " +
+        "and are mainly for intervals less than a day - see the documentation."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Time series alias
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 

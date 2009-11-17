@@ -1,24 +1,3 @@
-// ----------------------------------------------------------------------------
-// readStateModB_JDialog - editor for readStateModBB()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2004-03-16	Steven A. Malers, RTi	Initial version (copy and modify
-//					readStateMod_JDialog).
-// 2004-07-20	SAM, RTi		* Make sure that an input file is
-//					  specified.
-//					* The filter was listing "stm" but not
-//					  StateMod binary files.
-//					* Change the note to indicate that
-//					  all fields can be wildcarded.
-// 2005-09-29	SAM, RTi		Move from TSTool to StateMod package.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-03-01	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.statemod;
 
 import java.awt.FlowLayout;
@@ -47,6 +26,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -60,35 +40,27 @@ import RTi.Util.Message.Message;
 public class ReadStateModB_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and
-						// absolute paths.
+private SimpleJButton __browse_JButton = null; // File browse button
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private SimpleJButton __path_JButton = null; // Convert between relative and absolute paths.
 private ReadStateModB_Command __command = null; // Command to edit
-private JTextArea	__command_JTextArea=null;// Command as TextField
-private String		__working_dir = null;	// Working directory.
-private JTextField	__InputFile_JTextField = null;// Field for input file. 
-private JTextField	__InputStart_JTextField = null;
-						// Start of period for input
-private JTextField	__InputEnd_JTextField = null;
-						// End of period for input
-private JTextField	__TSID_JTextField = null;// Field for time series
-						// identifier
-private JTextField	__Version_JTextField = null;
-						// Field for StateMod version
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
+private JTextArea __command_JTextArea=null;// Command as TextField
+private String __working_dir = null;	// Working directory.
+private JTextField __InputFile_JTextField = null;// Field for input file. 
+private JTextField __InputStart_JTextField = null;
+private JTextField __InputEnd_JTextField = null;
+private JTextField __TSID_JTextField = null;
+private JTextField __Version_JTextField = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
+private boolean __error_wait = false; // Is there an error waiting to be cleared up or Cancel?
+private boolean __first_time = true;
 // TODO SAM 2007-02-18 Evaluate whether to support alias
 //private boolean		__use_alias = false;	// If true, then the syntax is
 						// TS Alias = readStateMod().
 						// If false, it is:
 						// readStateMod().
-private boolean		__ok = false;		// Indicates whether OK was
-						// pressed when closing the
-						// dialog.
+private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
 
 /**
 Command editor constructor.
@@ -184,6 +156,7 @@ private void checkInput ()
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -200,7 +173,11 @@ private void checkInput ()
 	if ( Version.length() > 0 ) {
 		props.set ( "Version", Version );
 	}
-	try {	// This will warn the user...
+    if (Alias.length() > 0) {
+        props.set("Alias", Alias);
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -219,11 +196,13 @@ private void commitEdits ()
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String Version = __Version_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "InputStart", InputStart );
 	__command.setCommandParameter ( "InputEnd", InputEnd );
 	__command.setCommandParameter ( "Version", Version );
+	__command.setCommandParameter ( "Alias", Alias );
 }
 
 /**
@@ -271,16 +250,16 @@ private void initialize ( JFrame parent, Command command )
 		"Read time series from a StateMod binary output file, "+
 		"using information in the file to assign the identifier."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Due to the large number of time series in StateMod binary files, the list of time series " +
-        "identifiers in the file will NOT be available in other command editors." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    //JGUIUtil.addComponent(main_JPanel, new JLabel (
+    //    "Due to the large number of time series in StateMod binary files, the list of time series " +
+    //    "identifiers in the file will NOT be available in other command editors." ), 
+    //    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( 
+               "The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -290,7 +269,7 @@ private void initialize ( JFrame parent, Command command )
 		"  Use blank or * to read all time series." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"  Use A* to read all time series with alias or location starting with A." ),
+		"  Use A* to read all time series location starting with A." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"  Use *.*.XXXXX.*.* to read all time series with data type XXXXX." ),
@@ -345,6 +324,17 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - for files prior to StateMod version 11 (default is current version)"), 
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -421,6 +411,7 @@ private void refresh ()
 	String InputStart = "";
 	String InputEnd = "";
 	String Version="";
+    String Alias = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -431,6 +422,7 @@ private void refresh ()
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Version = props.getValue ( "Version" );
+        Alias = props.getValue("Alias");
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText (InputFile);
 		}
@@ -446,6 +438,9 @@ private void refresh ()
 		if ( Version != null ) {
 			__Version_JTextField.setText (Version);
 		}
+        if (Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
@@ -453,15 +448,16 @@ private void refresh ()
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	Version = __Version_JTextField.getText().trim();
+	Alias = __Alias_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "TSID=" + TSID );
 	props.add ( "InputStart=" + InputStart );
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "Version=" + Version );
+	props.add ( "Alias=" + Alias );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
@@ -509,4 +505,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end readStateModB_JDialog
+}

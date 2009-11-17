@@ -83,7 +83,7 @@ Indicates whether the TS Alias version of the command is being used.
 protected boolean _use_alias = false;
 
 /**
-List of time series read during discovery.  These are TS objects but with maintly the
+List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
 private List __discovery_TS_Vector = null;
@@ -102,8 +102,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -144,7 +143,8 @@ throws InvalidCommandParameterException
 			}
 	
 		try {
-            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile));
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
                 File f = new File ( adjusted_path );
                 if ( !f.exists() ) {
                     message = "The input file does not exist:  \"" + adjusted_path + "\".";
@@ -232,6 +232,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "Alias" );
     valid_Vector.add ( "Interval" );
     valid_Vector.add ( "SpatialAggregation" );
     valid_Vector.add ( "ParcelYear" );
@@ -369,9 +370,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run method internal to this class, to handle running in discovery and run mode.
 @param command_number Command number 1+ from processor.
-@param command_phase Command phase being executed (RUN or DISCOVERY).
+@param commandPhase Command phase being executed (RUN or DISCOVERY).
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {
     String routine = "ReadStateMod_Command.runCommandInternal", message;
@@ -381,7 +382,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     int log_level = 3;  // Log level for non-user warnings
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
+    status.clearLog(commandPhase);
     CommandProcessor processor = getCommandProcessor();
 
     PropList parameters = getCommandParameters();
@@ -389,7 +390,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String InputStart = parameters.getValue ( "InputStart" );
     DateTime InputStart_DateTime = null;
     String InputEnd = parameters.getValue ( "InputEnd" );
+    String Alias = parameters.getValue("Alias");
     String Interval = parameters.getValue ( "Interval" );
+    if ( (Interval == null) || Interval.equals("") ) {
+        Interval = "Year"; // Default
+    }
     String SpatialAggregation = parameters.getValue ( "SpatialAggregation" );
     String ParcelYear = parameters.getValue ( "ParcelYear" );
     DateTime InputEnd_DateTime = null;
@@ -407,7 +412,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
@@ -420,7 +425,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the specified date/time is valid." ) );
             throw new InvalidCommandParameterException ( message );
@@ -433,7 +438,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid date/time for the input start, " +
                         "or InputStart for the global input start." ) );
@@ -451,7 +456,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
@@ -472,7 +477,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -486,7 +491,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the end date/time is valid." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -499,7 +504,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time for the input end, " +
                             "or InputEnd for the global input start." ) );
@@ -517,7 +522,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
             }
@@ -552,11 +557,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     String InputFile_full = InputFile;
     try {
         boolean read_data = true;
-        if ( command_phase == CommandPhaseType.DISCOVERY ){
+        if ( commandPhase == CommandPhaseType.DISCOVERY ){
             read_data = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
         Message.printStatus ( 2, routine, "Reading StateMod file \"" + InputFile_full + "\"" );
     
         List tslist = null;
@@ -564,19 +570,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             message = "StateMod file \"" + InputFile_full + "\" is not found or accessible.";
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
-                    status.addToLog(command_phase,
+                    status.addToLog(commandPhase,
                         new CommandLogRecord( CommandStatusType.FAILURE, message,
                             "Verify that the file exists and is readable."));
             throw new CommandException ( message );
         }
         if ( StateMod_DiversionRight.isDiversionRightFile(InputFile_full)) {
-            if ( (Interval == null) || Interval.equals("") ) {
-                Interval = "Year";
-            }
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the diversion rights file and convert to time series
             // (default is to sum time series at a location).
-            List ddr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List ddr_Vector = StateMod_DiversionRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     ddr_Vector,        // raw water rights
@@ -584,21 +587,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     SpatialAggregation_int,          // Where to summarize time series
                     ParcelYear_int,         // Parcel year for filter
                     true,               // Create a data set total
-                    null,              // time series start
-                    null,              // time series end
+                    InputStart_DateTime, // time series start
+                    InputEnd_DateTime, // time series end
                     999999.00000,   // No special free water rights
                     null,           // ...
                     null,           // ...
                     read_data );            // do read data
         }
         else if ( StateMod_InstreamFlowRight.isInstreamFlowRightFile(InputFile_full)) {
-            if ( (Interval == null) || Interval.equals("") ) {
-                Interval = "Year";
-            }
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the instream flow rights file and convert to time series
             // (default is to sum time series at a location).
-            List ifr_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List ifr_Vector = StateMod_InstreamFlowRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     ifr_Vector,        // raw water rights
@@ -606,21 +606,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     SpatialAggregation_int,          // Where to summarize time series
                     ParcelYear_int,         // Parcel year for filter
                     true,               // Create a data set total
-                    null,              // time series start
-                    null,              // time series end
+                    InputStart_DateTime, // time series start
+                    InputEnd_DateTime, // time series end
                     999999.00000,   // No special free water rights
                     null,           // ...
                     null,           // ...
                     read_data );            // do read data
         }
         else if ( StateMod_ReservoirRight.isReservoirRightFile(InputFile_full)) {
-            if ( (Interval == null) || Interval.equals("") ) {
-                Interval = "Year";
-            }
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the reservoir rights file and convert to time series
             // (default is to sum time series at a location).
-            List rer_Vector = StateMod_WellRight.readStateModFile ( InputFile_full );
+            List rer_Vector = StateMod_ReservoirRight.readStateModFile ( InputFile_full );
             // Convert the rights to time series (one per location)...
             tslist = StateMod_Util.createWaterRightTimeSeriesList (
                     rer_Vector,        // raw water rights
@@ -628,17 +625,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     SpatialAggregation_int,          // Where to summarize time series
                     ParcelYear_int,         // Parcel year for filter
                     true,               // Create a data set total
-                    null,              // time series start
-                    null,              // time series end
+                    InputStart_DateTime, // time series start
+                    InputEnd_DateTime, // time series end
                     999999.00000,   // No special free water rights
                     null,           // ...
                     null,           // ...
                     read_data );            // do read data
         }
         else if ( StateMod_WellRight.isWellRightFile(InputFile_full)) {
-            if ( (Interval == null) || Interval.equals("") ) {
-                Interval = "Year";
-            }
             TimeInterval Interval_TimeInterval = TimeInterval.parseInterval( Interval );
             // Read the well rights file and convert to time series
             // (default is to sum time series at a location).
@@ -650,14 +644,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     SpatialAggregation_int,          // Where to summarize time series
                     ParcelYear_int,         // Parcel year for filter
                     true,               // Create a data set total
-                    null,              // time series start
-                    null,              // time series end
+                    InputStart_DateTime, // time series start
+                    InputEnd_DateTime, // time series end
                     999999.00000,   // No special free water rights
                     null,           // ...
                     null,           // ...
                     read_data );            // do read data
         }
-        else {  // Read a traditional time series file
+        else {
+            // Read a traditional time series file
             int interval = StateMod_TS.getFileDataInterval(InputFile_full);
 
             if ( (interval == TimeInterval.MONTH) || (interval == TimeInterval.DAY) ) {
@@ -672,7 +667,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the file being read is a StateMod file." ) );
                 throw new CommandException ( message );
@@ -682,11 +677,37 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         int size = 0;
         if ( tslist != null ) {
             size = tslist.size();
+            
+            List<String> aliasList = new Vector();
+            TS ts = null;
+            for (int i = 0; i < size; i++) {
+                ts = (TS)tslist.get(i);
+                if ( (Alias != null) && (Alias.length() > 0) ) {
+                    // Set the alias to the desired string - this is impacted by the Location parameter
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
+                    // Search for duplicate alias and warn
+                    int aliasListSize = aliasList.size();
+                    for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
+                        if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
+                            message = "Alias \"" + alias +
+                            "\" was also used for another time series read from the StateMod file.";
+                            Message.printWarning(log_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Consider using a more specific alias to uniquely identify the time series." ) );
+                        }
+                    }
+                    // Now add the new list to the alias...
+                    aliasList.add ( alias );
+                }
+            }
         }
         Message.printStatus ( 2, routine, "Read " + size + " StateMod time series." );
 
         // Now add the time series to the end of the normal list...
-        if ( command_phase == CommandPhaseType.RUN ) {
+        if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
                 // Further process the time series...
                 // This makes sure the period is at least as long as the output period...
@@ -697,7 +718,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
-                        status.addToLog ( command_phase,
+                        status.addToLog ( commandPhase,
                                 new CommandLogRecord(CommandStatusType.FAILURE,
                                         message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
@@ -711,14 +732,14 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,
                         ++warning_count), routine, message );
-                        status.addToLog ( command_phase,
+                        status.addToLog ( commandPhase,
                                 new CommandLogRecord(CommandStatusType.FAILURE,
                                         message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
                 }
             }
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
         }
 
@@ -730,7 +751,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
                 Message.printWarning ( 3, routine, e );
-                status.addToLog(command_phase,
+                status.addToLog(commandPhase,
                     new CommandLogRecord( CommandStatusType.FAILURE, message,
                         "Verify that the file exists and is readable."));
         throw new CommandException ( message );
@@ -741,13 +762,13 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning ( warning_level, 
         MessageUtil.formatMessageTag(command_tag, ++warning_count),
         routine, message );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "See log file for details." ) );
         throw new CommandException ( message );
     }
     
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -768,6 +789,7 @@ public String toString ( PropList props )
 	String InputFile = props.getValue("InputFile");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String Alias = props.getValue("Alias");
 	String Interval = props.getValue("Interval");
 	String SpatialAggregation = props.getValue("SpatialAggregation");
 	String ParcelYear = props.getValue("ParcelYear");
@@ -790,6 +812,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputEnd=\"" + InputEnd + "\"" );
 	}
+    if ((Alias != null) && (Alias.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Alias=\"" + Alias + "\"");
+    }
 	if ( (Interval != null) && (Interval.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

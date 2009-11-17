@@ -1,28 +1,3 @@
-// ----------------------------------------------------------------------------
-// readStateMod_JDialog - editor for readStateMod()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 28 Feb 2001	Steven A. Malers, RTi	Initial version (copy and modify
-//					writeDateValue).
-// 16 Apr 2001	SAM, RTi		Enable the Browse button.
-// 2002-04-23	SAM, RTi		Clean up the dialog and add the ability
-//					to add/remove the working directory.
-// 2003-10-29	SAM, RTi		Rename class from readStateMod_Dialog to
-//					readStateMod_JDialog and update to
-//					Swing.
-// 2004-02-17	SAM, RTi		Fix bug where directory from file
-//					selection was not getting set as the
-//					last dialog directory in JGUIUtil.
-// 2005-09-02	SAM, RTi		Move from TSTool to StateMod package and
-//					update to the new command class design.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-03-01	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.statemod;
 
 import java.awt.FlowLayout;
@@ -53,9 +28,14 @@ import java.io.File;
 import java.util.List;
 import java.util.Vector;
 
+import DWR.StateMod.StateMod_DiversionRight;
+import DWR.StateMod.StateMod_GUIUtil;
+import DWR.StateMod.StateMod_InstreamFlowRight;
+import DWR.StateMod.StateMod_ReservoirRight;
+import DWR.StateMod.StateMod_WellRight;
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
-import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
@@ -63,42 +43,39 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 
+/**
+Editor for ReadStateMod() command.
+*/
 public class ReadStateMod_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and
-						// absolute paths.
+private SimpleJButton __browse_JButton = null;// File browse button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null; // Convert input file between relative and absolute paths.
 private ReadStateMod_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as TextField
-private String		__working_dir = null;	// Working directory.
-private JTextField	__InputFile_JTextField = null;// Field for time series
-						// identifier
-private JTextField	__InputStart_JTextField = null;
-						// Start of period for input
-private JTextField	__InputEnd_JTextField = null;
-						// End of period for input
-private SimpleJComboBox	__Interval_JComboBox = null;
-						// Interval for water rights output.
-private SimpleJComboBox	__SpatialAggregation_JComboBox = null;
-						// aggregation for water rights output.
-private JTextField	__ParcelYear_JTextField = null;
-						// Parcel year for parcel total water rights
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
+private JTextArea __command_JTextArea=null;// Command as TextField
+private String __working_dir = null;	// Working directory.
+private JTextField __InputFile_JTextField = null;
+private JTextField __InputStart_JTextField = null;
+private JTextField __InputEnd_JTextField = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series.
+private JLabel __Interval_JLabel = null;
+private SimpleJComboBox __Interval_JComboBox = null; // Interval for water rights output.
+private JLabel __SpatialAggregation_JLabel = null;
+private SimpleJComboBox	__SpatialAggregation_JComboBox = null; // aggregation for water rights output.
+private JLabel __ParcelYear_JLabel = null;
+private JTextField __ParcelYear_JTextField = null; // Parcel year for parcel total water rights
+private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
 // TODO SAM 2007-02-18 Evaluate whether to support alias
 //private boolean		__use_alias = false;	// If true, then the syntax is
 						// TS Alias = readStateMod().
 						// If false, it is:
 						// readStateMod().
-private boolean		__ok = false;		// Indicates whether OK was
-						// pressed when closing the
-						// dialog.
+private boolean __ok = false; // Whether OK was pressed when closing the dialog.
 
 /**
 Command editor constructor.
@@ -126,10 +103,8 @@ public void actionPerformed( ActionEvent event )
 		else {
             fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
-		fc.setDialogTitle( "Select StateMod Time Series File");
-		// TODO - maybe need to list all recognized StateMod file extensions for data sets.
-		SimpleFileFilter sff = new SimpleFileFilter("stm", "StateMod Time Series File");
-		fc.addChoosableFileFilter(sff);
+		fc.setDialogTitle( "Select StateMod Time Series or Right File");
+		StateMod_GUIUtil.addTimeSeriesFilenameFilters(fc, TimeInterval.UNKNOWN, true);
 		
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
@@ -142,6 +117,7 @@ public void actionPerformed( ActionEvent event )
 	
 			if (path != null) {
 				__InputFile_JTextField.setText(path );
+		        checkGUIState(); // To enable/disable parameters
 				JGUIUtil.setLastFileDialogDirectory(directory);
 				refresh();
 			}
@@ -158,21 +134,15 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if (	__path_JButton.getText().equals(
-			"Add Working Directory") ) {
-			__InputFile_JTextField.setText (
-			IOUtil.toAbsolutePath(__working_dir,
-			__InputFile_JTextField.getText() ) );
+		if ( __path_JButton.getText().equals("Add Working Directory") ) {
+			__InputFile_JTextField.setText ( IOUtil.toAbsolutePath(__working_dir, __InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(
-			"Remove Working Directory") ) {
-			try {	__InputFile_JTextField.setText (
-				IOUtil.toRelativePath ( __working_dir,
-				__InputFile_JTextField.getText() ) );
+		else if ( __path_JButton.getText().equals("Remove Working Directory") ) {
+			try {
+			    __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir, __InputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,"readStateMod_JDialog",
-				"Error converting file to relative path." );
+				Message.printWarning ( 1,"readStateMod_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -183,9 +153,40 @@ public void actionPerformed( ActionEvent event )
 	else if ( (__SpatialAggregation_JComboBox != null) && (o == __SpatialAggregation_JComboBox) ) {
 		refresh ();
 	}
-	else {	// Other combo boxes, etc...
+	else {
+	    // Other combo boxes, etc...
 		refresh();
 	}
+}
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{   String inputFile = __InputFile_JTextField.getText().trim();
+    if ( StateMod_DiversionRight.isDiversionRightFile(inputFile) ||
+        StateMod_InstreamFlowRight.isInstreamFlowRightFile(inputFile) ||
+        StateMod_ReservoirRight.isReservoirRightFile(inputFile) ||
+        StateMod_WellRight.isWellRightFile(inputFile) ) {
+        JGUIUtil.setEnabled(__Interval_JLabel, true);
+        JGUIUtil.setEnabled(__Interval_JComboBox, true);
+        JGUIUtil.setEnabled(__SpatialAggregation_JLabel, true);
+        JGUIUtil.setEnabled(__SpatialAggregation_JComboBox, true);
+    }
+    else {
+        JGUIUtil.setEnabled(__Interval_JLabel, false);
+        JGUIUtil.setEnabled(__Interval_JComboBox, false);
+        JGUIUtil.setEnabled(__SpatialAggregation_JLabel, false);
+        JGUIUtil.setEnabled(__SpatialAggregation_JComboBox, false);
+    }
+    if ( StateMod_WellRight.isWellRightFile(inputFile) ) {
+        JGUIUtil.setEnabled(__ParcelYear_JLabel, true);
+        JGUIUtil.setEnabled(__ParcelYear_JTextField, true);
+    }
+    else {
+        JGUIUtil.setEnabled(__ParcelYear_JLabel, false);
+        JGUIUtil.setEnabled(__ParcelYear_JTextField, false); 
+    }
 }
 
 /**
@@ -198,6 +199,7 @@ private void checkInput ()
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
 	String Interval = __Interval_JComboBox.getSelected();
 	String SpatialAggregation = __SpatialAggregation_JComboBox.getSelected();
 	String ParcelYear = __ParcelYear_JTextField.getText().trim();
@@ -211,6 +213,9 @@ private void checkInput ()
 	if ( InputEnd.length() > 0 ) {
 		props.set ( "InputEnd", InputEnd );
 	}
+    if (Alias.length() > 0) {
+        props.set("Alias", Alias);
+    }
 	if ( Interval.length() > 0 ) {
 		props.set ( "Interval", Interval );
 	}
@@ -220,7 +225,8 @@ private void checkInput ()
 	if ( ParcelYear.length() > 0 ) {
 		props.set ( "ParcelYear", ParcelYear );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -237,6 +243,7 @@ private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String Alias = __Alias_JTextField.getText().trim();
 	String Interval = __Interval_JComboBox.getSelected();
 	String SpatialAggregation = __SpatialAggregation_JComboBox.getSelected();
 	String ParcelYear = __ParcelYear_JTextField.getText().trim();
@@ -246,6 +253,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Interval", Interval );
 	__command.setCommandParameter ( "SpatialAggregation", SpatialAggregation );
 	__command.setCommandParameter ( "ParcelYear", ParcelYear );
+	__command.setCommandParameter ( "Alias", Alias );
 }
 
 /**
@@ -297,101 +305,110 @@ private void initialize ( JFrame parent, Command command )
 		"Read all the time series from a StateMod time series or water right file, using " +
 		"information in the file to assign the identifier."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The data source and data type will be blank in the resulting "+
-		"time series identifier (TSID)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The data source and data type will be blank in the resulting time series identifier (TSID)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Specify the interval and parcel year only for well rights, based on how data will be used."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify the interval and parcel year only for well rights, as appropriate."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+      	JGUIUtil.addComponent(main_JPanel, new JLabel ("The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"StateMod file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("StateMod file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __InputFile_JTextField,
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
-        JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputStart_JTextField = new JTextField (20);
 	__InputStart_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global input start."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputEnd_JTextField = new JTextField (20);
 	__InputEnd_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global input end."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Interval:"),
+    __Interval_JLabel = new JLabel ("Interval:");
+    JGUIUtil.addComponent(main_JPanel, __Interval_JLabel,
       	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-     List Interval_Vector = new Vector();
-       	Interval_Vector.add ( "" );
-       	Interval_Vector.add ( __command._Day );
-       	Interval_Vector.add ( __command._Month );
-       	Interval_Vector.add ( __command._Year );
-    	// TODO SAM 2007-05-16 Evaluate whether needed
-       	//Interval_Vector.addElement ( __command._Irregular );
-       	__Interval_JComboBox = new SimpleJComboBox(false);
-       	__Interval_JComboBox.setData ( Interval_Vector );
-       	__Interval_JComboBox.select ( 0 );
-       	__Interval_JComboBox.addActionListener (this);
+    List Interval_Vector = new Vector();
+   	Interval_Vector.add ( "" );
+   	Interval_Vector.add ( __command._Day );
+   	Interval_Vector.add ( __command._Month );
+   	Interval_Vector.add ( __command._Year );
+	// TODO SAM 2007-05-16 Evaluate whether needed
+   	//Interval_Vector.addElement ( __command._Irregular );
+   	__Interval_JComboBox = new SimpleJComboBox(false);
+   	__Interval_JComboBox.setData ( Interval_Vector );
+   	__Interval_JComboBox.select ( 0 );
+   	__Interval_JComboBox.addActionListener (this);
     JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
     	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Interval for resulting time series when reading rights."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"Optional for rights - interval for resulting time series (default=" + __command._Year + ")."),
     	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Spatial aggregation:"),
-              	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        List SpatialAggregation_Vector = new Vector();
-               	SpatialAggregation_Vector.add ( "" );
-               	SpatialAggregation_Vector.add ( __command._Location );
-               	SpatialAggregation_Vector.add ( __command._Parcel );
-               	SpatialAggregation_Vector.add ( __command._None );
-               	__SpatialAggregation_JComboBox = new SimpleJComboBox(false);
-               	__SpatialAggregation_JComboBox.setData ( SpatialAggregation_Vector );
-               	__SpatialAggregation_JComboBox.select ( 0 );
-               	__SpatialAggregation_JComboBox.addActionListener (this);
-            JGUIUtil.addComponent(main_JPanel, __SpatialAggregation_JComboBox,
-            	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JGUIUtil.addComponent(main_JPanel, new JLabel (
-            	"Spatial aggregation when reading rights (default=Location)."),
-            	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __SpatialAggregation_JLabel = new JLabel ("Spatial aggregation:");
+    JGUIUtil.addComponent(main_JPanel, __SpatialAggregation_JLabel,
+       0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List SpatialAggregation_Vector = new Vector();
+   	SpatialAggregation_Vector.add ( "" );
+   	SpatialAggregation_Vector.add ( __command._Location );
+   	SpatialAggregation_Vector.add ( __command._Parcel );
+   	SpatialAggregation_Vector.add ( __command._None );
+   	__SpatialAggregation_JComboBox = new SimpleJComboBox(false);
+   	__SpatialAggregation_JComboBox.setData ( SpatialAggregation_Vector );
+   	__SpatialAggregation_JComboBox.select ( 0 );
+   	__SpatialAggregation_JComboBox.addActionListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SpatialAggregation_JComboBox,
+    	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"Optional for rights - spatial aggregation (default=" + __command._Location + ")."),
+    	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-       JGUIUtil.addComponent(main_JPanel, new JLabel ( "Parcel year:"), 
-       		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-       	__ParcelYear_JTextField = new JTextField (20);
-       	__ParcelYear_JTextField.addKeyListener (this);
-               JGUIUtil.addComponent(main_JPanel, __ParcelYear_JTextField,
-       		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-               JGUIUtil.addComponent(main_JPanel, new JLabel (
-       		"Use to only read a single irrigated lands year from a well right file."),
-       		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-       
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ParcelYear_JLabel = new JLabel ( "Parcel year:");
+    JGUIUtil.addComponent(main_JPanel, __ParcelYear_JLabel, 
+   		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+   	__ParcelYear_JTextField = new JTextField (20);
+   	__ParcelYear_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ParcelYear_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+	    "Optional for well rights - read a single irrigated lands year (default=read all)."),
+	    3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+   
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
@@ -402,24 +419,25 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
-		// Add the button to allow conversion to/from relative
-		// path...
+		// Add the button to allow conversion to/from relative path...
 		__path_JButton = new SimpleJButton(	"Remove Working Directory",this);
 		button_JPanel.add ( __path_JButton );
 	}
 	button_JPanel.add (__cancel_JButton = new SimpleJButton("Cancel",this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+	
+    checkGUIState();
+    refresh();  // Sets the __path_JButton status
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
     super.setVisible( true );
 }
 
@@ -439,7 +457,10 @@ public void keyPressed ( KeyEvent event )
 }
 
 public void keyReleased ( KeyEvent event )
-{	refresh();
+{	if ( event.getSource() == __InputFile_JTextField ) {
+        checkGUIState(); // To enable/disable parameters based on filename
+    }
+    refresh();
 }
 
 public void keyTyped ( KeyEvent event )
@@ -458,10 +479,11 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "readStateMod_JDialog.refresh";
+{	String routine = "ReadStateMod_JDialog.refresh";
 	String InputFile = "";
 	String InputStart = "";
 	String InputEnd = "";
+    String Alias = "";
 	String Interval = "";
 	String SpatialAggregation = "";
 	String ParcelYear = "";
@@ -473,6 +495,7 @@ private void refresh ()
 		InputFile = props.getValue ( "InputFile" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
+	    Alias = props.getValue ( "Alias" );
 		Interval = props.getValue ( "Interval" );
 		SpatialAggregation = props.getValue ( "SpatialAggregation" );
 		ParcelYear = props.getValue ( "ParcelYear" );
@@ -485,20 +508,21 @@ private void refresh ()
 		if ( InputEnd != null ) {
 			__InputEnd_JTextField.setText ( InputEnd );
 		}
+        if (Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
 		if ( Interval == null ) {
 			// Select the first item
 			__Interval_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__Interval_JComboBox,
-				Interval, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
 				__Interval_JComboBox.select ( Interval );
 			}
-			else {	Message.printWarning ( 1, routine,
-					"Existing command " +
-					"references an invalid\nInterval value \"" +
-					Interval +
-				"\".  Select a different value or Cancel.");
+			else {
+			    Message.printWarning ( 1, routine,
+					"Existing command references an invalid\nInterval value \"" +
+					Interval + "\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
 		}
@@ -506,27 +530,29 @@ private void refresh ()
 			// Select the first item
 			__SpatialAggregation_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__SpatialAggregation_JComboBox,
-				SpatialAggregation, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(
+				__SpatialAggregation_JComboBox, SpatialAggregation, JGUIUtil.NONE, null, null ) ) {
 				__SpatialAggregation_JComboBox.select ( SpatialAggregation );
 			}
-			else {	Message.printWarning ( 1, routine,
-					"Existing command " +
-					"references an invalid\nSpatialAggregation value \"" +
-					SpatialAggregation +
-				"\".  Select a different value or Cancel.");
+			else {
+			    Message.printWarning ( 1, routine,
+					"Existing command references an invalid\nSpatialAggregation value \"" +
+					SpatialAggregation + "\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
 		}
 		if ( ParcelYear != null ) {
 			__ParcelYear_JTextField.setText ( ParcelYear );
 		}
+		// Ensure that components are properly enabled/disabled...
+		checkGUIState();
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
+	Alias = __Alias_JTextField.getText().trim();
 	Interval = __Interval_JComboBox.getSelected();
 	SpatialAggregation = __SpatialAggregation_JComboBox.getSelected();
 	ParcelYear = __ParcelYear_JTextField.getText().trim();
@@ -534,19 +560,20 @@ private void refresh ()
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "InputStart=" + InputStart );
 	props.add ( "InputEnd=" + InputEnd );
+	props.add ( "Alias=" + Alias );
 	props.add ( "Interval=" + Interval );
 	props.add ( "SpatialAggregation=" + SpatialAggregation );
 	props.add ( "ParcelYear=" + ParcelYear );
 	__command_JTextArea.setText( __command.toString ( props ) );
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
 			__path_JButton.setText ( "Remove Working Directory" );
 		}
-		else {	__path_JButton.setText ( "Add Working Directory" );
+		else {
+		    __path_JButton.setText ( "Add Working Directory" );
 		}
 	}
 }
@@ -586,4 +613,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end readStateMod_JDialog
+}

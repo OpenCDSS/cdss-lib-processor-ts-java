@@ -25,10 +25,12 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TS;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -40,6 +42,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.IOUtil;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
@@ -51,12 +54,18 @@ import DWR.StateMod.StateMod_BTS;
 This class initializes, checks, and runs the ReadStateModB() command.
 </p>
 */
-public class ReadStateModB_Command extends AbstractCommand implements Command
+public class ReadStateModB_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 // Indicates whether the TS Alias version of the command is being used...
 
 protected boolean _use_alias = false;
+
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -111,7 +120,8 @@ throws InvalidCommandParameterException
                             message, "Report the problem to software support." ) );
 		}
         try {
-            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir, InputFile) );
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
                 File f = new File ( adjusted_path );
                 if ( !f.exists() ) {
                     message = "The input file does not exist:  \"" + adjusted_path + "\".";
@@ -174,6 +184,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Version" );
+    valid_Vector.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -198,11 +209,38 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private List getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    TS datats = (TS)discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    TS ts = new TS();
+    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -225,14 +263,37 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number The number of the command being run.
+@param commandPhase command phase that is being run.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "readStateModB_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -240,7 +301,7 @@ CommandWarningException, CommandException
 	int log_level = 3; // Level for non-user warning messages
 	
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
 
@@ -250,14 +311,16 @@ CommandWarningException, CommandException
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	String InputEnd = parameters.getValue ( "InputEnd" );
+	String Alias = parameters.getValue("Alias");
+
 	DateTime InputEnd_DateTime = null;
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		try {
 		PropList request_params = new PropList ( "" );
 		request_params.set ( "DateTime", InputStart );
 		CommandProcessorRequestResultsBean bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting InputStart DateTime(DateTime=" +
@@ -265,7 +328,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -279,12 +342,13 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the specified date/time is valid." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	InputStart_DateTime = (DateTime)prop_contents;
+		else {
+		    InputStart_DateTime = (DateTime)prop_contents;
 		}
 	}
 	catch ( Exception e ) {
@@ -292,7 +356,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid date/time for the input start, " +
                         "or InputStart for the global input start." ) );
@@ -310,7 +374,7 @@ CommandWarningException, CommandException
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
@@ -330,7 +394,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -344,7 +408,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the end date/time is valid." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -357,7 +421,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time for the input end, " +
                             "or InputEnd for the global input start." ) );
@@ -375,7 +439,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 			}
@@ -393,8 +457,13 @@ CommandWarningException, CommandException
 
     String InputFile_full = InputFile;
 	try {
+	    boolean readData = true;
+        if ( commandPhase == CommandPhaseType.DISCOVERY ){
+            readData = false;
+        }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),InputFile) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)) );
         Message.printStatus ( 2, routine, "Reading StateMod binary file \"" + InputFile_full + "\"" );
 
 		StateMod_BTS bts = null;
@@ -404,77 +473,70 @@ CommandWarningException, CommandException
 		else {
 		    bts = new StateMod_BTS ( InputFile_full );
 		}
-		List tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, true );
+		List tslist = bts.readTimeSeriesList ( TSID, InputStart_DateTime, InputEnd_DateTime, null, readData );
 		bts.close();
 		bts = null;
 
-		// Now add the time series to the end of the normal list...
-
-		if ( tslist != null ) {
-			List TSResultsList_Vector = null;
-			try {
-			    Object o = processor.getPropContents( "TSResultsList" );
-				TSResultsList_Vector = (List)o;
-			}
-			catch ( Exception e ){
-				message = "Cannot get time series list to add read time series.  Starting new list.";
-				Message.printWarning ( warning_level,
-						MessageUtil.formatMessageTag(
-						command_tag, ++warning_count),
-						routine,message);
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-				TSResultsList_Vector = new Vector();
-			}
-
-			// Further process the time series...
-			// This makes sure the period is at least as long as the
-			// output period...
-			int size = tslist.size();
-			Message.printStatus ( 2, routine, "Read " + size + " StateMod binary time series." );
-			PropList request_params = new PropList ( "" );
-			request_params.setUsingObject ( "TSList", tslist );
-			try {
-				processor.processRequest( "ReadTimeSeries2", request_params);
-			}
-			catch ( Exception e ) {
-				message =
-					"Error post-processing StateMod binary time series after read.";
-					Message.printWarning ( warning_level, 
-					MessageUtil.formatMessageTag(command_tag,
-					++warning_count), routine, message );
-					Message.printWarning(log_level, routine, e);
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report problem to software support." ) );
-					throw new CommandException ( message );
-			}
-
-			for ( int i = 0; i < size; i++ ) {
-				TSResultsList_Vector.add ( tslist.get(i) );
-			}
-			
-			// Now reset the list in the processor...
-			if ( TSResultsList_Vector != null ) {
-				try {
-                    processor.setPropContents ( "TSResultsList", TSResultsList_Vector );
-				}
-				catch ( Exception e ){
-					message = "Cannot set updated time series list.  Results may not be visible.";
-					Message.printWarning ( warning_level,
-						MessageUtil.formatMessageTag(
-						command_tag, ++warning_count),
-						routine,message);
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Report problem to software support." ) );
-				}
-			}
-		}
-
-		// Free resources from StateMod list...
-		tslist = null;
+        List<String> aliasList = new Vector();
+        if ( tslist != null ) {
+            int tscount = tslist.size();
+            message = "Read " + tscount + " time series from \"" + InputFile_full + "\"";
+            Message.printStatus ( 2, routine, message );
+            TS ts = null;
+            for (int i = 0; i < tscount; i++) {
+                ts = (TS)tslist.get(i);
+                if ( (Alias != null) && (Alias.length() > 0) ) {
+                    // Set the alias to the desired string - this is impacted by the Location parameter
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
+                    // Search for duplicate alias and warn
+                    int aliasListSize = aliasList.size();
+                    for ( int iAlias = 0; iAlias < aliasListSize; iAlias++ ) {
+                        if ( aliasList.get(iAlias).equalsIgnoreCase(alias)) {
+                            message = "Alias \"" + alias +
+                            "\" was also used for another time series read from the StateMod output file.";
+                            Message.printWarning(log_level,
+                                MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Consider using a more specific alias to uniquely identify the time series." ) );
+                        }
+                    }
+                    // Now add the new list to the alias...
+                    aliasList.add ( alias );
+                }
+            }
+        }
+	    if ( commandPhase == CommandPhaseType.RUN ) {
+	        if ( tslist != null ) {
+	            // Further process the time series...
+	            // This makes sure the period is at least as long as the output period...
+	            int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+	            if ( wc > 0 ) {
+	                message = "Error post-processing time series after read.";
+	                Message.printWarning ( warning_level, 
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+	                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Report the problem to software support." ) );
+	                throw new CommandException ( message );
+	            }
+	    
+	            // Now add the list in the processor...
+	            
+	            int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
+	            if ( wc2 > 0 ) {
+	                message = "Error adding time series after read.";
+	                Message.printWarning ( warning_level, 
+	                    MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
+	                status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Report the problem to software support." ) );
+	                throw new CommandException ( message );
+	            }
+	        }
+	    }
+	    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	        setDiscoveryTSList ( tslist );
+	    }
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
@@ -482,11 +544,29 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "See log file for details." ) );
+        status.addToLog ( commandPhase,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "See log file for details." ) );
 		throw new CommandException ( message );
 	}
+	
+	// Throw CommandWarningException in case of problems.
+    if ( warning_count > 0 ) {
+        message = "There were " + warning_count + " warnings processing the command.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(command_tag, ++warning_count ), routine, message );
+        throw new CommandWarningException ( message );
+    }
+    
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**
@@ -501,6 +581,7 @@ public String toString ( PropList props )
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
 	String Version = props.getValue("Version");
+	String Alias = props.getValue("Alias");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -532,6 +613,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "Version=\"" + Version + "\"" );
 	}
+    if ((Alias != null) && (Alias.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Alias=\"" + Alias + "\"");
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

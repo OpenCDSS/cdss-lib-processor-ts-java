@@ -239,7 +239,7 @@ throws InvalidCommandParameterException,
             }
         }
         catch ( TimeSeriesNotFoundException e ) {
-            message = "Time series could not be found using identifier \"" + TSID + "\".";
+            message = "Time series could not be found using identifier \"" + TSID + "\" (" + e + ").";
             if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                 status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -276,7 +276,7 @@ throws InvalidCommandParameterException,
                 message = "Time series could not be found using identifier \"" + TSID + "\".";
                 if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                     status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
+                        new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify that the identifier information is correct." ) );
                 }
                 else {
@@ -285,6 +285,38 @@ throws InvalidCommandParameterException,
                     status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.WARNING,
                                     message, "Verify that the identifier information is correct." ) );
+                }
+            }
+            // Always check for output period because required for default time series.
+            if ( IfNotFound.equalsIgnoreCase(_Default) &&
+                    ((processor.getPropContents("OutputStart") == null) ||
+                    (processor.getPropContents("OutputEnd") == null)) ) {
+                message = "Time series could not be found using identifier \"" + TSID + "\"." +
+                        "  Requesting default time series but no output period is defined.";
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Set the output period before calling this command." ) );
+            }
+        }
+        else if ( readData && (ts.getDate1() == null) && (ts.getDate2() == null) ) {
+            // Have time series but no data records
+            if ( !notFoundLogged ) {
+                // Only want to include a warning once.
+                // This is kind of ugly because currently there is not consistency between all
+                // time series readers in error handling, which is difficult to handle in this
+                // generic command.
+                message = "Time series \"" + TSID + "\" has no data.";
+                if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Verify that the identifier information is correct and that data exist." ) );
+                }
+                else {
+                    // Non-fatal - ignoring or defaulting time series.
+                    message += "  Non-fatal because IfNotFound=" + IfNotFound;
+                    status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that the identifier information is correct and that data exist." ) );
                 }
             }
             // Always check for output period because required for default time series.

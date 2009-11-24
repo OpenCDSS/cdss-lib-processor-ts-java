@@ -670,6 +670,8 @@ import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
+import us.co.state.dwr.ColoradoWaterSMS;
+import us.co.state.dwr.ColoradoWaterSMSAPI;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
@@ -4414,7 +4416,7 @@ throws Exception
 /**
 Read a time series from a database or file.  The following occur related to periods:
 <ol>
-<li>	If the query period has been specified, then it is used to limit the
+<li> If the query period has been specified, then it is used to limit the
 	read/query.  Otherwise, the full period is retrieved.  Normally the
 	query period is only specified to improve performance (e.g., to get
 	a short period of real-time data or a short period from a long
@@ -4548,7 +4550,20 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
-	if ( (inputType != null) && inputType.equalsIgnoreCase("DateValue") ) {
+    if ( (inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterSMS") ) {
+        // New style TSID~input_type~input_name
+        try {
+            ts = ColoradoWaterSMSAPI.readTimeSeries (
+                new ColoradoWaterSMS(), tsidentString2, readStart, readEnd, readData );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +
+                "\" from ColoradoWaterSMS web service." );
+            Message.printWarning ( 3, routine, te );
+            ts = null;
+        }
+    }
+	else if ( (inputType != null) && inputType.equalsIgnoreCase("DateValue") ) {
 		// New style TSID~input_type~input_name
 		try {
 		    ts = DateValueTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
@@ -4839,6 +4854,12 @@ throws Exception
             Message.printWarning ( 3, routine, te );
 			ts = null;
 		}
+	}
+	else {
+	    String message = "Unknown input type \"" + inputType + "\" for time series \"" +
+	    tsidentString + "\" - don't know how to read time series.";
+	    Message.printWarning( 3, routine, message );
+	    throw new TimeSeriesNotFoundException ( message );
 	}
 	return ts;
 }

@@ -319,7 +319,7 @@ should be included, indicated by "@testSuite ABC" tags in the comments of comman
 should be included, indicated by "@os Windows" and "@os UNIX" tags in the comments of command files.
 @throws IOException 
  */
-private void getMatchingFilenamesInTree ( List commandFileVector, File path, String pattern,
+private void getMatchingFilenamesInTree ( List<String> commandFileVector, File path, String pattern,
         String[] includedTestSuites, String[] includedOS ) 
 throws IOException
 {   String routine = getClass().getName() + ".getMatchingFilenamesInTree";
@@ -571,13 +571,15 @@ CommandWarningException, CommandException
 
 	try {
 	    // Get the list of files to run as test cases...
-		List files = new Vector();
+		List<String> files = new Vector();
         String [] includedTestSuitePatterns = new String[0];
         includedTestSuitePatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeTestSuitePattern,",",0));
         String [] includedOSPatterns = new String[0];
         includedOSPatterns = StringUtil.toArray(StringUtil.breakStringList(IncludeOSPattern,",",0));
         getMatchingFilenamesInTree ( files, new File(SearchFolder_full), FilenamePattern_Java,
             includedTestSuitePatterns, includedOSPatterns );
+        // Sort the list because it may not be sorted, due to dates on files
+        files = StringUtil.sortStringList(files);
         int size = files.size();
 		// Open the output file...
 		PrintWriter out = new PrintWriter(new FileOutputStream(OutputFile_full, Append_boolean));
@@ -612,7 +614,7 @@ CommandWarningException, CommandException
 		String commandFileToRun;
 		for ( int i = 0; i < size; i++ ) {
 			// The command files to run are relative to the commands file being created.
-			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), (String)files.get(i) );
+			commandFileToRun = IOUtil.toRelativePath ( OutputFile_full_File.getParent(), files.get(i) );
 			// Determine if the command file has @expectedStatus in it.  If so, define an ExpectedStatus
 			// parameter for the command.
 			out.println ( "RunCommands(InputFile=\"" + commandFileToRun + "\"" +

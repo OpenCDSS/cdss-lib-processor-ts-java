@@ -59,8 +59,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -218,10 +217,8 @@ private File getOutputFile ()
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -247,6 +244,10 @@ CommandWarningException, CommandException
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String PropertyName = parameters.getValue ( "PropertyName" );
 	String Append = parameters.getValue ( "Append" );
+    boolean Append_boolean = true;  // Default
+    if ( (Append != null) && Append.equalsIgnoreCase(_False)) {
+        Append_boolean = false;
+    }
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
@@ -270,21 +271,16 @@ CommandWarningException, CommandException
 	// Now try to write...
 
 	String OutputFile_full = OutputFile;
+	PrintWriter fout = null;
 	try {
-		boolean Append_boolean = true;	// Default
-		if ( (Append != null) && Append.equalsIgnoreCase(_False)) {
-			Append_boolean = false;
-		}
 		// Convert to an absolute path...
 		OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile) ) );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor, this, OutputFile) ) );
 		// Open the file...
-		PrintWriter fout = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
-		// Write the output (no output for now since it is mainly for testing)...
+		fout = new PrintWriter ( new FileOutputStream ( OutputFile_full, Append_boolean ) );
+		// Write the output...
 		fout.println ( PropertyName + "=\"" + Property_Object + "\"" );
-		// Close the file...
-		fout.close();
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
@@ -296,6 +292,11 @@ CommandWarningException, CommandException
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE, message, "Check log file for details." ) );
 		throw new CommandException ( message );
+	}
+	finally {
+	    if ( fout != null ) {
+	        fout.close();
+	    }
 	}
 	
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);

@@ -4627,15 +4627,21 @@ throws Exception
 		}
 	}
     else if ( source.equalsIgnoreCase("HEC-DSS") ) {
-        // Old style (scenario may or may not be used to find the file)...
-        try {
-            // Pass the full path to the read meethod.  The TSID string may still have a relative path.
-            ts = HecDssAPI.readTimeSeries ( new File(inputNameFull), tsidentString, readStart, readEnd, units, readData );
+        if ( IOUtil.isUNIXMachine() ) {
+            // Probably OK to warn and ignore - UI should not allow HEC-DSS commands to be used on UNIX/Linux
+            Message.printWarning ( 2, routine,
+                "HEC-DSS input type is not supported on UNIX/Linux - cannot read time series \"" + tsidentString + "\"." );
         }
-        catch ( Exception e ) {
-            Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from HEC-DSS file." );
-            Message.printWarning ( 3, routine, e );
-            ts = null;
+        else {
+            try {
+                // Pass the full path to the read meethod.  The TSID string may still have a relative path.
+                ts = HecDssAPI.readTimeSeries ( new File(inputNameFull), tsidentString, readStart, readEnd, units, readData );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 2, routine, "Error reading \"" + tsidentString + "\" from HEC-DSS file." );
+                Message.printWarning ( 3, routine, e );
+                ts = null;
+            }
         }
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("HydroBase") ) {

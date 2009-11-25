@@ -304,6 +304,15 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	
+    if ( IOUtil.isUNIXMachine() ) {
+        message = "The command is not enabled for UNIX/Linux.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+        status.addToLog(CommandPhaseType.RUN, new CommandLogRecord( CommandStatusType.FAILURE, message,
+            "Do not use the command on UNIX/Linux"));
+        throw new CommandException ( message );
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );

@@ -419,6 +419,15 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Location = parameters.getValue("Location");
 	String Alias = parameters.getValue("Alias");
 	
+    if ( IOUtil.isUNIXMachine() ) {
+        message = "The command is not enabled for UNIX/Linux.";
+        Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+        status.addToLog(command_phase, new CommandLogRecord( CommandStatusType.FAILURE, message,
+            "Do not use the command on UNIX/Linux"));
+        throw new CommandException ( message );
+    }
+	
     String InputFile_full = IOUtil.verifyPathForOS(
         IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
             TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));

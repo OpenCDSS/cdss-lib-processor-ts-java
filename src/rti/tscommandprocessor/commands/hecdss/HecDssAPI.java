@@ -70,86 +70,89 @@ anything else on the system.</li>
 */
 static 
 {   String routine = "HecDssAPI.static";
-    
-    boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path
-    String dll = "";
-    boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies
-    // TODO SAM 2009-04-15 This may not be needed - load problems were probably due to changing the "start in" folder
-    // for the app on Windows - keep for now.
-    int maxTries = 5; // Number of times to try loading a library - have seen some exceptions on servers due to locking?
-    int sleepMilliSeconds = 10;
-    
-    // Do each library separately to be able to better handle errors, but loop to avoid redundant code
-    String [] libnames = { "javaHeclib", "rmaUtil" };
-    UnsatisfiedLinkError [] libException = new UnsatisfiedLinkError[libnames.length]; // Default to null for each
-    for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
-        // If not loading the rmaUtil, skip the second iteration
-        if ( (ilib == 1) && !loadRmaUtil ) {
-            continue;
-        }
-        for ( int i = 0; i < maxTries; i++ ) {
-            try {
-                // This relies on the java.library.path to locate the javaHeclib.dll,
-                // which may be problematic since that configuration is outside the control
-                // of this software and may result in a version issue.
-                if ( loadUsingJavaLibraryPath ) {
-                    dll = libnames[ilib];
-                    System.loadLibrary(dll);
-                    // If successful, make sure the exception object is null and break out of the retries
-                    libException[ilib] = null;
-                    break;
-                }
-                else {
-                    // Instead, load the file explicitly knowing the application home and
-                    // assuming that the file exists in the bin folder.  This is safer in that a specific DLL version
-                    // can be loaded.  However, it may result in a duplicate load because the HEC software itself may try
-                    // to load the DLL using the above method, which does not look for the filename in the path,
-                    // but matches the requested dll by name, which won't match the path below, even though it is
-                    // already loaded.  Either approach may be OK as long as the application install controls the
-                    // Java run-time environment.
-                    dll = IOUtil.getApplicationHomeDir() + "/bin/" + libnames[ilib] + ".dll";
-                    Message.printStatus(2, routine, "Attempting to load library using System.load(" + dll + ")." );
-                    System.load( dll );
-                    Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
-                }
-                // Sleep for the next try...
-                TimeUtil.sleep(sleepMilliSeconds);
+
+    if ( !IOUtil.isUNIXMachine() ) {
+        // The DLLS won't load properly on UNIX/Linux
+        boolean loadUsingJavaLibraryPath = true; // Don't use full paths to libraries - rely on runtime load path
+        String dll = "";
+        boolean loadRmaUtil = true; // Quick way to turn on/off rmaUtil.dll load, for testing dependencies
+        // TODO SAM 2009-04-15 This may not be needed - load problems were probably due to changing the "start in" folder
+        // for the app on Windows - keep for now.
+        int maxTries = 5; // Number of times to try loading a library - have seen some exceptions on servers due to locking?
+        int sleepMilliSeconds = 10;
+        
+        // Do each library separately to be able to better handle errors, but loop to avoid redundant code
+        String [] libnames = { "javaHeclib", "rmaUtil" };
+        UnsatisfiedLinkError [] libException = new UnsatisfiedLinkError[libnames.length]; // Default to null for each
+        for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
+            // If not loading the rmaUtil, skip the second iteration
+            if ( (ilib == 1) && !loadRmaUtil ) {
+                continue;
             }
-            // Exceptions should only be thrown if the test environment or build process is incorrect and should be
-            // corrected on the developer side - users should never see an issue if the build process is correct.
-            catch ( UnsatisfiedLinkError e2 ) {
-                libException[ilib] = e2;
-                if ( loadUsingJavaLibraryPath ) {
-                    Message.printWarning ( 2, routine, "[Try " + (i + 1) +
-                        "] Unable to load " + dll + " using System.loadLibrary(" +
-                        dll + ") and java.library.path \"" + System.getProperty("java.library.path") + "\" (" + e2 + ")." );
+            for ( int i = 0; i < maxTries; i++ ) {
+                try {
+                    // This relies on the java.library.path to locate the javaHeclib.dll,
+                    // which may be problematic since that configuration is outside the control
+                    // of this software and may result in a version issue.
+                    if ( loadUsingJavaLibraryPath ) {
+                        dll = libnames[ilib];
+                        System.loadLibrary(dll);
+                        // If successful, make sure the exception object is null and break out of the retries
+                        libException[ilib] = null;
+                        break;
+                    }
+                    else {
+                        // Instead, load the file explicitly knowing the application home and
+                        // assuming that the file exists in the bin folder.  This is safer in that a specific DLL version
+                        // can be loaded.  However, it may result in a duplicate load because the HEC software itself may try
+                        // to load the DLL using the above method, which does not look for the filename in the path,
+                        // but matches the requested dll by name, which won't match the path below, even though it is
+                        // already loaded.  Either approach may be OK as long as the application install controls the
+                        // Java run-time environment.
+                        dll = IOUtil.getApplicationHomeDir() + "/bin/" + libnames[ilib] + ".dll";
+                        Message.printStatus(2, routine, "Attempting to load library using System.load(" + dll + ")." );
+                        System.load( dll );
+                        Message.printStatus(2, routine, "Successfully loaded library \"" + dll + "\"" );
+                    }
+                    // Sleep for the next try...
+                    TimeUtil.sleep(sleepMilliSeconds);
                 }
-                else {
-                    Message.printWarning ( 2, routine, "[Try " + (i + 1) +
-                        "] Unable to load " + dll + " using System.load(" + dll + ") (" + e2 + ")." );
+                // Exceptions should only be thrown if the test environment or build process is incorrect and should be
+                // corrected on the developer side - users should never see an issue if the build process is correct.
+                catch ( UnsatisfiedLinkError e2 ) {
+                    libException[ilib] = e2;
+                    if ( loadUsingJavaLibraryPath ) {
+                        Message.printWarning ( 2, routine, "[Try " + (i + 1) +
+                            "] Unable to load " + dll + " using System.loadLibrary(" +
+                            dll + ") and java.library.path \"" + System.getProperty("java.library.path") + "\" (" + e2 + ")." );
+                    }
+                    else {
+                        Message.printWarning ( 2, routine, "[Try " + (i + 1) +
+                            "] Unable to load " + dll + " using System.load(" + dll + ") (" + e2 + ")." );
+                    }
+                    Message.printWarning ( 3, routine, e2 );
                 }
-                Message.printWarning ( 3, routine, e2 );
             }
         }
-    }
-    // Now check for exceptions that still remain, indicating that the load could not occur even after retries.
-    // Individual failures will have been logged above.
-    StringBuffer b = new StringBuffer();
-    for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
-        if ( libException[ilib] != null ) {
-            b.append ( "Unable to load library \"" + libnames[ilib] + "\" after " + maxTries + " tries.");
+        // Now check for exceptions that still remain, indicating that the load could not occur even after retries.
+        // Individual failures will have been logged above.
+        StringBuffer b = new StringBuffer();
+        for ( int ilib = 0; ilib < libnames.length; ilib++ ) {
+            if ( libException[ilib] != null ) {
+                b.append ( "Unable to load library \"" + libnames[ilib] + "\" after " + maxTries + " tries.");
+            }
         }
+        if ( b.length() > 0 ) {
+            b.append ( "HEC-DSS features may not be functional." );
+            Message.printWarning ( 2, routine, b.toString() );
+            // Rethrow the error so it can be indicated as a command error
+            throw new RuntimeException ( b.toString() );
+        }
+       
+        // Set the message level to the maximum to track down issues.
+        
+        //HecDataManager.setMessageLevel ( 15 );
     }
-    if ( b.length() > 0 ) {
-        b.append ( "HEC-DSS features may not be functional." );
-        Message.printWarning ( 2, routine, b.toString() );
-        // Rethrow the error so it can be indicated as a command error
-        throw new RuntimeException ( b.toString() );
-    }
-   
-    // Set the message level to the maximum to track down issues.
-    
-    //HecDataManager.setMessageLevel ( 15 );
 }
 
 /**

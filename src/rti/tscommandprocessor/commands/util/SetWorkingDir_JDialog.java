@@ -185,7 +185,7 @@ Instantiates the GUI components.
 */
 private void initialize ( JFrame parent, Command command )
 {	__command = (SetWorkingDir_Command)command;
-	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( __command.getCommandProcessor(), __command );
 
 	addWindowListener( this );
 

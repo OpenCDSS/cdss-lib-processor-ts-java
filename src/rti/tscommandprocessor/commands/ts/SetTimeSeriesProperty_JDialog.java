@@ -243,7 +243,7 @@ private void initialize ( JFrame parent, Command command )
     __Description_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Option - often the location."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - often the location."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),

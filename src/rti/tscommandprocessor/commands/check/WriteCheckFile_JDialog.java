@@ -49,6 +49,7 @@ private SimpleJButton __browse_JButton = null;
 private SimpleJButton __path_JButton = null;
 private String __working_dir = null;    
 private JTextField __OutputFile_JTextField = null;
+private JTextField __Title_JTextField = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;  
@@ -138,9 +139,13 @@ private void checkInput () {
     // Put together a list of parameters to check...
     PropList props = new PropList ( "" );
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Title = __Title_JTextField.getText().trim();
     
     if (OutputFile.length() > 0) {
         props.set("OutputFile", OutputFile);
+    }
+    if (Title.length() > 0) {
+        props.set("Title", Title);
     }
 
     __error_wait = false;
@@ -162,7 +167,9 @@ already been checked and no errors were detected.
 private void commitEdits()
 {
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Title = __Title_JTextField.getText().trim();
     __command.setCommandParameter("OutputFile", OutputFile);
+    __command.setCommandParameter("Title", Title);
 }
 
 /**
@@ -235,7 +242,16 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browse_JButton = new SimpleJButton ("Browse", this);
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);   
+        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Title:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Title_JTextField = new JTextField (10);
+    __Title_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Title_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - title for output file."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -316,6 +332,7 @@ Refresh the command from the other text field contents.
 */
 private void refresh ()
 {   String OutputFile = "";
+	String Title = "";
     PropList props = null;
     
     if (__first_time) {
@@ -324,14 +341,20 @@ private void refresh ()
         // Get the properties from the command
         props = __command.getCommandParameters();
         OutputFile = props.getValue ( "OutputFile" );
+        Title = props.getValue ( "Title" );
         if ( OutputFile != null ) {
-            __OutputFile_JTextField.setText (OutputFile);
+            __OutputFile_JTextField.setText ( OutputFile );
+        }
+        if ( Title != null ) {
+            __Title_JTextField.setText ( Title );
         }
     }
     // Regardless, reset the command from the fields...
     props = new PropList(__command.getCommandName());
     OutputFile = __OutputFile_JTextField.getText().trim();
+    Title = __Title_JTextField.getText().trim();
     props.add("OutputFile=" + OutputFile);
+    props.add("Title=" + Title);
     __command_JTextArea.setText( __command.toString(props) );
     // Check the path and determine what the label on the path button should be...
     if (__path_JButton != null) {

@@ -192,7 +192,9 @@ Helper method to write the header section of the check file.
 @param html HTMLWriter object.
 @throws Exception
  */
-private void htmlWriteCheckFileIntro( HTMLWriter html, String title, CommandProcessor processor ) throws Exception
+private void htmlWriteCheckFileIntro( HTMLWriter html, String userTitle, CommandProcessor processor,
+	List<String> notes )
+throws Exception
 {
     // proplist provides an anchor link for this section used from the table of contents
     //PropList header_prop = new PropList("header");
@@ -200,7 +202,37 @@ private void htmlWriteCheckFileIntro( HTMLWriter html, String title, CommandProc
     
     html.heading(1, IOUtil.getProgramName() + " Check Results" );
     
-    html.heading(2, "Program/Environment Information" );
+    html.heading(2, userTitle );
+    
+    // Table of contents using same heading and section names as main content...
+    
+    html.heading(2, "Check File Table of Contents" );
+    
+    String environmentHeading = "Program/Environment Information";
+    String environmentLink = "environment";
+    String notesHeading = "Command File Comments";
+    String notesLink = "notes";
+    String detailsHeading = "Command Details";
+    String detailsLink = "commands";
+    String summaryHeading = "Command Problem Summary";
+    String summaryLink = "summary";
+    
+    html.link("#"+environmentLink, environmentHeading );
+    html.write ( " - generated at runtime");
+    html.breakLine();
+    html.link("#"+notesLink, notesHeading );
+    html.write ( " - as written to output file headers");
+    html.breakLine();
+    html.link("#"+detailsLink, detailsHeading );
+    html.write ( " - command run times and warning/failure counts");
+    html.breakLine();
+    html.link("#"+summaryLink, summaryHeading );
+    html.write ( " - command problem summary");
+    html.breakLine();
+    
+    // Environment section of the report...
+    
+    html.heading(2, environmentHeading, environmentLink );
     
     DateTime now = new DateTime(DateTime.DATE_CURRENT);
     Object o = processor.getPropContents("CommandFileName");
@@ -245,24 +277,35 @@ private void htmlWriteCheckFileIntro( HTMLWriter html, String title, CommandProc
     html.tableEnd();
     html.paragraphEnd();
     
-    html.heading(2, "Commands" );
+    // Notes
+    html.heading(2, notesHeading, notesLink );
+    html.preStart();
+    for ( String note : notes ) {
+    	html.write(note + "\n");
+    }
+    html.preEnd();
+
+    html.heading(2, detailsHeading, detailsLink );
+    htmlWriteProblemCounts ( html );
     htmlWriteCommands( html, processor.getCommands(), true ); // false to write text, true for table
 }
 
 /**
 Writes the commands from the processor in HTML using the <code> tag, with embedded anchors for each command so that
-other content can link to it.  This will
-force the output to match the command files text exactly.
+other content can link to it.  This will force the output to match the command files text exactly.
 @param html HTMLWriter object.
 @param writeTable indicates whether to write the commands as simple text or a table.
 @throws Exception
- */
+*/
 private void htmlWriteCommands( HTMLWriter html, List<Command> commands, boolean writeTable )
 throws Exception
 {
-    String [] tableHeaders = { "#", "Warnings", "Failures", "Command" };
+    String [] tableHeaders = { "#", "Time, sec.", "Warnings", "Failures", "Command" };
     html.paragraphStart();
     int size = commands.size();
+    long totalTime = 0;
+    int totalWarnings = 0;
+    int totalFailures = 0;
     if ( writeTable ) {
         html.tableStart();
         html.tableRowStart();
@@ -284,8 +327,13 @@ throws Exception
             // Row (command) number...
             td1[0] = "" + (iCommand + 1);
             html.tableCells( td1, null );
+            // Run time
+            td1[0] = "" + StringUtil.formatString(((double)command.getRunTime())/1000.0,"%.3f");
+            html.tableCells( td1, null );
+            totalTime += command.getRunTime();
             // Number of warnings
             countWarnings = CommandStatusUtil.getSeverityCount ( command, CommandStatusType.WARNING, false );
+            totalWarnings += countWarnings;
             td1[0] = "" + countWarnings;
             severityAttributes = null;
             if ( countWarnings > 0 ) {
@@ -294,6 +342,7 @@ throws Exception
             html.tableCells( td1, severityAttributes );
             // Number of failures
             countFailures = CommandStatusUtil.getSeverityCount ( command, CommandStatusType.FAILURE, false );
+            totalFailures += countFailures;
             td1[0] = "" + countFailures;
             severityAttributes = null;
             if ( countFailures > 0 ) {
@@ -308,6 +357,26 @@ throws Exception
             html.tableCellEnd();
             html.tableRowEnd();
         }
+        // Add the totals...
+        td1[0] = ""; // Don't show as "total" because want to keep all cells in column as number
+        html.tableCells( td1, null );
+        td1[0] = "" + StringUtil.formatString(((double)totalTime)/1000.0,"%.3f");
+        html.tableCells( td1, null );
+        td1[0] = "" + totalWarnings;
+        severityAttributes = null;
+        if ( totalWarnings > 0 ) {
+            severityAttributes = warningAttributes;
+        }
+        html.tableCells( td1, severityAttributes );
+        td1[0] = "" + totalFailures;
+        severityAttributes = null;
+        if ( totalFailures > 0 ) {
+            severityAttributes = failureAttributes;
+        }
+        html.tableCells( td1, severityAttributes );
+        td1[0] = "";
+        html.tableCells( td1, null );
+        // End the table
         html.tableEnd();
     }
     else {
@@ -348,7 +417,7 @@ private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, St
     // write the more component specific data
     
     String heading = "Command Problem Summary";
-    html.heading(2, heading);
+    html.heading(2, heading, "summary" );
     htmlWriteProblemCounts ( html );
     if ( logRecordList.size() > 0 ) {
         // table start
@@ -481,6 +550,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     PropList parameters = getCommandParameters();
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String Title = parameters.getValue ( "Title" );
 
     String OutputFile_full = OutputFile;
     try {
@@ -516,7 +586,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             writeListFile(OutputFile_full, ",", logRecordList, OutputComments_List );
         }
         else if ( StringUtil.endsWithIgnoreCase(OutputFile,"html") ) {
-            writeHtmlFile(IOUtil.getProgramName(), processor, OutputFile_full, ",", logRecordList, OutputComments_List );
+            writeHtmlFile(IOUtil.getProgramName(), processor, OutputFile_full, ",", logRecordList,
+            	OutputComments_List, Title );
         }
 
         // Set the filename for the FileGenerator interface
@@ -573,10 +644,11 @@ file.  Any strings in the body of the file that contain the field delimiter will
 @param delimiter the delimiter to use for separating field values.
 @param data the list of objects to write.  
 @param newComments list of comments to add at the top of the file.
+@param userTitle the output file title requested by the user
 @throws Exception if an error occurs.
 */
 public void writeHtmlFile( String appName, CommandProcessor processor, String filename, String delimiter,
-    List data, List newComments ) 
+    List data, List newComments, String userTitle ) 
 throws Exception {
     // Put together high-level properties for the report.
     
@@ -609,20 +681,24 @@ throws Exception {
     newComments2.add(1,appName + " check file containing all warning/failure messages from run.");
     newComments2.add(2,"");
 
-    String title = appName + " Check File (" + processor.getPropContents("CommandFileName") + ")";
+    String htmlTitle = userTitle;
+    if ( (userTitle == null) || (userTitle.length() == 0) ) {
+    	htmlTitle = appName + " Check File (" + processor.getPropContents("CommandFileName") + ")";
+    	userTitle = htmlTitle;
+    }
     
     // Write the HTML file
     
     try {
         // Open the filename but do not automatically create the head section (that is done below)
-        HTMLWriter html = new HTMLWriter( filename, title, false );
+        HTMLWriter html = new HTMLWriter( filename, htmlTitle, false );
         // Start the file and write the head section
         html.htmlStart();
-        htmlHead(html,title);
+        htmlHead(html,htmlTitle);
         // Start the body section
         html.bodyStart();
         // Write introduction information
-        htmlWriteCheckFileIntro( html, title, processor );
+        htmlWriteCheckFileIntro( html, userTitle, processor, newComments2 );
         // Write the main table that contains the problems
         htmlWriteCommandLogRecords( html, data, names );
         // Close the body section and file

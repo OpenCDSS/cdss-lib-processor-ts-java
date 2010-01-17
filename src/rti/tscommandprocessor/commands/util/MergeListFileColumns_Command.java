@@ -19,6 +19,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.FileGenerator;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.IOUtil;
@@ -32,12 +33,21 @@ import RTi.Util.Table.TableRecord;
 This class initializes, checks, and runs the MergeListFileColumns() command.
 </p>
 */
-public class MergeListFileColumns_Command extends AbstractCommand implements Command
+public class MergeListFileColumns_Command extends AbstractCommand implements Command, FileGenerator
 {
 
-// Columns as integer array, filled in checkCommandParameters() and used in
-// runCommand.
-private int [] __Columns_intArray = null;
+// Columns as integer array, filled in checkCommandParameters() and used in runCommand.
+private int [] __Columns_intArray = new int[0];
+
+/**
+Format used for the merged columns, set up in checkCommandParameters().
+*/
+String __SimpleMergeFormat2 = "";
+
+/**
+Output file that is created by this command.
+*/
+private File __OutputFile_File = null;
 
 /**
 Constructor.
@@ -53,8 +63,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -62,8 +71,7 @@ throws InvalidCommandParameterException
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String Columns = parameters.getValue ( "Columns" );
 	String NewColumnName = parameters.getValue ( "NewColumnName" );
-	// TODO SAM 2007-02-16 Need to enable the SimpleMergeFormat
-	//String SimpleMergeFormat = parameters.getValue ( "SimpleMergeFormat" );
+	String SimpleMergeFormat = parameters.getValue ( "SimpleMergeFormat" );
 	String warning = "";
     String message;
     
@@ -73,10 +81,10 @@ throws InvalidCommandParameterException
 	// If the input file does not exist, warn the user...
 
 	String working_dir = null;
-	
 	CommandProcessor processor = getCommandProcessor();
 	
-	try { Object o = processor.getPropContents ( "WorkingDir" );
+	try {
+		Object o = processor.getPropContents ( "WorkingDir" );
 		// Working directory is available so use it...
 		if ( o != null ) {
 			working_dir = (String)o;
@@ -86,16 +94,16 @@ throws InvalidCommandParameterException
         message = "Error requesting WorkingDir from processor.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report the problem to software support." ) );
 	}
 	
 	if ( ListFile.length() == 0 ) {
         message = "The input (list) file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an existing input file." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an existing input file." ) );
 	}
 	else {
         try {
@@ -105,8 +113,8 @@ throws InvalidCommandParameterException
                 message = "The input (list) file does not exist:  \"" + adjusted_path + "\".";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the input file exists - may be OK if created at run time." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the input file exists - may be OK if created at run time." ) );
 			}
 			f = null;
 		}
@@ -118,22 +126,22 @@ throws InvalidCommandParameterException
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that input file and working directory paths are compatible." ) );
+                    message, "Verify that input file and working directory paths are compatible." ) );
 		}
 	}
 
 	// Adjust the working directory that was passed in by the specified
-	// directory.  If the directory for the file does not exist, warn the
-	// user...
+	// directory.  If the directory for the file does not exist, warn the user...
 	if ( OutputFile.length() == 0 ) {
         message = "The output file must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an output file." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an output file." ) );
 	}
 	else {
-        try {	String adjusted_path = IOUtil.adjustPath ( working_dir, OutputFile);
+        try {
+        	String adjusted_path = IOUtil.adjustPath ( working_dir, OutputFile);
 			File f = new File ( adjusted_path );
 			File f2 = new File ( f.getParent() );
 			if ( !f2.exists() ) {
@@ -141,8 +149,8 @@ throws InvalidCommandParameterException
                 "    " + f.getParent() + ".";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Create the output folder." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Create the output folder." ) );
 			}
 			f = null;
 		}
@@ -154,69 +162,120 @@ throws InvalidCommandParameterException
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that output file and working directory paths are compatible." ) );
+                    message, "Verify that output file and working directory paths are compatible." ) );
 		}
 	}
 
 	if ( (Columns == null) || (Columns.length() == 0) ) {
-        message = "One or more columns must be specified";
+        message = "One or more columns with values 1+ must be specified";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the columns to merge." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the columns to merge." ) );
 	}
-	else {	// Check for integers...
-		List v = StringUtil.breakStringList ( Columns, ",", 0 );
+	else {
+		// Check for integers...
+		List<String> v = StringUtil.breakStringList ( Columns, ",", 0 );
 		String token;
 		if ( v == null ) {
-            message = "One or more columns must be specified";
+            message = "One or more columns with value 1+ must be specified";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the columns to merge." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the columns to merge." ) );
 		}
-		else {	int size = v.size();
+		else {
+			int size = v.size();
 			__Columns_intArray = new int[size];
 			for ( int i = 0; i < size; i++ ) {
-				token = (String)v.get(i);
+				token = v.get(i);
 				if ( !StringUtil.isInteger(token) ) {
                     message = "Column \"" + token + "\" is not a number";
 					warning += "\n" + message;
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the column as an integer >= 1." ) );
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the column as an integer >= 1." ) );
 				}
 				else {
-                    // Decrement by one to make zero-referended.
-					__Columns_intArray[i] = StringUtil.atoi(token) - 1;
+					int column = Integer.parseInt(token);
+					if ( column < 1 ) {
+	                    message = "Column \"" + token + "\" is < 1";
+						warning += "\n" + message;
+	                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                        new CommandLogRecord(CommandStatusType.FAILURE,
+	                            message, "Specify the column as an integer >= 1." ) );
+					}
+					else {
+	                    // Decrement by one to make zero-referenced.
+						__Columns_intArray[i] = column - 1;
+					}
 				}
 			}
 		}
 	}
  
-	if ( NewColumnName.length() == 0 ) {
-        message = "A new column name needs to be specified.";
+	if ( (NewColumnName == null) || (NewColumnName.length() == 0) ) {
+        message = "A new column name must be specified.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the new column name." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the new column name." ) );
 	}
 
-	// TODO SAM 2005-11-18 Check the format.
+	String token;
+	__SimpleMergeFormat2 = "";	// Initial value.
+	if ( (SimpleMergeFormat == null) || (SimpleMergeFormat.length() == 0) ) {
+		// Add defaults (treat as strings)...
+		for ( int i = 0; i < __Columns_intArray.length; i++ ) {
+			__SimpleMergeFormat2 += "%s";
+		}
+	}
+	else {
+		List v = StringUtil.breakStringList (	SimpleMergeFormat, ",", 0 );
+		int size = v.size();
+		if ( size != __Columns_intArray.length ) {
+			message = "The number of specifiers in the merge format (" + SimpleMergeFormat +
+			") does not match the number of columns (" + __Columns_intArray.length;
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the number of format specifiers matches the columns to merge." ) );
+		}
+		else {
+			for ( int i = 0; i < size; i++ ) {
+				token = (String)v.get(i);
+				if ( !StringUtil.isInteger(token) ) {
+					message = "The format specifier \"" + token + "\" is not an integer";
+					warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the format specifier as an integer." ) );
+				}
+				else {
+					if ( token.startsWith("0") ) {
+						// TODO SAM 2005-11-18 Need to enable 0 for %s in StringUtil. Assume integers...
+						__SimpleMergeFormat2 += "%" + token + "d";
+					}
+					else {
+                        __SimpleMergeFormat2 += "%" + token+ "." + token + "s";
+					}
+				}
+			}
+		}
+	}
     
 	//  Check for invalid parameters...
 	List valid_Vector = new Vector();
     valid_Vector.add ( "ListFile" );
     valid_Vector.add ( "OutputFile" );
     valid_Vector.add ( "Columns" );
-    valid_Vector.add ( "ColumnName" );
+    valid_Vector.add ( "NewColumnName" );
     valid_Vector.add ( "SimpleMergeFormat" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );    
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -251,21 +310,37 @@ public boolean editRunnableCommand ( JFrame parent )
 		)).ok();
 }
 
+/**
+Return the list of files that were created by this command.
+*/
+public List getGeneratedFileList ()
+{
+	List list = new Vector();
+	if ( getOutputFile() != null ) {
+		list.add ( getOutputFile() );
+	}
+	return list;
+}
+
+/**
+Return the output file generated by this file.  This method is used internally.
+*/
+private File getOutputFile ()
+{
+	return __OutputFile_File;
+}
+
 // Use base class parseCommand()
 
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "mergeListFileColumns_Command.runCommand",message = "";
 	int warning_level = 2;
 	String command_tag = "" + command_number;	
@@ -273,6 +348,10 @@ CommandWarningException, CommandException
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
+    
+	// Clear the output file
+	
+	setOutputFile ( null );
 
 	// Make sure there are time series available to operate on...
 	
@@ -282,7 +361,6 @@ CommandWarningException, CommandException
 	String ListFile = parameters.getValue ( "ListFile" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	String NewColumnName = parameters.getValue ( "NewColumnName" );
-	String SimpleMergeFormat = parameters.getValue ( "SimpleMergeFormat" );
 
 	String ListFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),ListFile) );
@@ -311,50 +389,6 @@ CommandWarningException, CommandException
         status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify columns to merge." ) );
-	}
-
-    // FIXME SAM 2007-11-29 Need to move the checks to checkCommandParameters()
-	String token;
-	String SimpleMergeFormat2 = "";	// Initial value.
-	if (	(SimpleMergeFormat == null) ||
-		(SimpleMergeFormat.length() == 0) ) {
-		// Add defaults (treat as strings)...
-		for ( int i = 0; i < __Columns_intArray.length; i++ ) {
-			SimpleMergeFormat2 += "%s";
-		}
-	}
-	else {	List v = StringUtil.breakStringList (	SimpleMergeFormat, ",", 0 );
-		int size = v.size();
-		if ( size != __Columns_intArray.length ) {
-			message +=
-			"\nThe number of specifiers in the merge " +
-			"format (" + SimpleMergeFormat +
-			") does not match the number of columns (" +
-			__Columns_intArray.length;
-			++warning_count;
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the number of format specifiers matches the columns to merge." ) );
-		}
-		else {	for ( int i = 0; i < size; i++ ) {
-				token = (String)v.get(i);
-				if ( !StringUtil.isInteger(token) ) {
-					message += "\nThe format specifier \""+	token +	"\" is not an integer";
-					++warning_count;
-                    status.addToLog ( CommandPhaseType.RUN,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the format specifier as an integer." ) );
-				}
-				else {	if ( token.startsWith("0") ) {
-						// TODO SAM 2005-11-18 Need to enable 0 for %s in StringUtil. Assume integers...
-						SimpleMergeFormat2 += "%" + token + "d";
-					}
-					else {
-                        SimpleMergeFormat2 += "%" + token+ "." + token + "s";
-					}
-				}
-			}
-		}
 	}
 
 	if ( warning_count > 0 ) {
@@ -392,7 +426,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 	
-	// Add a column to the table.  For now alwasy treat as a string...
+	// Add a column to the table.  For now always treat as a string...
 
 	table.addField ( new TableField(TableField.DATA_TYPE_STRING,NewColumnName) );
 
@@ -407,7 +441,8 @@ CommandWarningException, CommandException
 	int j;
 	for ( int i = 0; i < size; i++ ) {
 		v.clear();
-		try {	rec = table.getRecord(i);
+		try {
+			rec = table.getRecord(i);
 		}
 		catch ( Exception e ) {
 			message = "Error getting table record [" + i + "]";
@@ -428,8 +463,7 @@ CommandWarningException, CommandException
 			catch ( Exception e ) {
 				message = "Error getting table field [" + i + "][" + j + "]";
 				Message.printWarning ( 2,
-				MessageUtil.formatMessageTag(command_tag,
-				++warning_count),
+				MessageUtil.formatMessageTag(command_tag,++warning_count),
 				routine,message );
                 status.addToLog ( CommandPhaseType.RUN,
                         new CommandLogRecord(CommandStatusType.FAILURE,
@@ -437,8 +471,9 @@ CommandWarningException, CommandException
 				continue;
 			}
 		}
-		merged = StringUtil.formatString ( v, SimpleMergeFormat2 );
-		try {	rec.setFieldValue ( mergedcol, merged );
+		merged = StringUtil.formatString ( v, __SimpleMergeFormat2 );
+		try {
+			rec.setFieldValue ( mergedcol, merged );
 		}
 		catch ( Exception e ) {
 			message = "Error modifying table record [" + i + "]";
@@ -446,9 +481,9 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(command_tag,
 			++warning_count),
 			routine,message );
-              status.addToLog ( CommandPhaseType.RUN,
-                      new CommandLogRecord(CommandStatusType.FAILURE,
-                              message, "Report the problem to software support." ) );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Report the problem to software support." ) );
 			continue;
 		}
 	}
@@ -456,13 +491,17 @@ CommandWarningException, CommandException
 	// Write the new file...
 
 	Message.printStatus ( 2, routine, "Writing list file \"" + OutputFile_full + "\"" );
-	try {	table.writeDelimitedFile ( OutputFile_full,
+	try {
+		table.writeDelimitedFile ( OutputFile_full,
 			",",	// Delimiter
 			true,	// Write header
 			null );	// Comments for header
 		// TODO SAM 2005-11-18
 		// Need a general IOUtil method to format the header strings
 		// (and NOT also open the file).
+		
+		// Save the output file name...
+		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing table file \"" + OutputFile_full + "\" (" + e + ").";
@@ -484,6 +523,14 @@ CommandWarningException, CommandException
 	}
     
     status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the output file that is created by this command.  This is only used internally.
+*/
+private void setOutputFile ( File file )
+{
+	__OutputFile_File = file;
 }
 
 /**

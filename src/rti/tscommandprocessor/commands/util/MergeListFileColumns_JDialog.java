@@ -9,7 +9,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.awt.FlowLayout;
@@ -32,7 +31,6 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -50,29 +48,26 @@ private final String __RemoveWorkingDirectoryFromListFile = "Remove Working Dire
 private final String __AddWorkingDirectoryToOutputFile = "Add Working Directory To Output File";
 private final String __RemoveWorkingDirectoryFromOutputFile = "Remove Working Directory From Output File";
 
-private boolean		__error_wait = false;	// To track errors
-private boolean		__first_time = true;	// Indicate first time display
-private JFrame		__parent_JFrame = null;	// Parent JFrame
-private JTextArea	__command_JTextArea=null;// For command
-private JTextField	__ListFile_JTextField = null;// List file
-private JTextField	__OutputFile_JTextField = null;// Output list file
-private JTextField	__Columns_JTextField = null;	// Columns to merge 
-private JTextField	__NewColumnName_JTextField = null;// New merged column
-private JTextField	__SimpleMergeFormat_JTextField = null;
-							// Format widths for
-							// parts - integer for
-							// %s or 0N for zero-
-							// padded integers
-private SimpleJButton	__cancel_JButton = null;
-private SimpleJButton	__ok_JButton = null;	
-private SimpleJButton	__browse_JButton = null;
-private SimpleJButton	__browse2_JButton = null;
-private SimpleJButton	__path_JButton = null;
-private SimpleJButton	__path2_JButton = null;
-private String		__working_dir = null;	
+private boolean __error_wait = false; // To track errors
+private boolean __first_time = true; // Indicate first time display
+private JFrame __parent_JFrame = null; // Parent JFrame
+private JTextArea __command_JTextArea=null; // For command
+private JTextField __ListFile_JTextField = null; // List file
+private JTextField __OutputFile_JTextField = null; // Output list file
+private JTextField __Columns_JTextField = null; // Columns to merge 
+private JTextField __NewColumnName_JTextField = null; // New merged column
+private JTextField __SimpleMergeFormat_JTextField = null;
+	// Format widths for parts - integer for %s or 0N for zero-padded integers
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;	
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __browse2_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __path2_JButton = null;
+private String __working_dir = null;	
 private MergeListFileColumns_Command __command = null;
-private boolean		__runnable = false;
-private boolean		__ok = false;
+private boolean __runnable = false;
+private boolean __ok = false;
 
 /**
 Command editor constructor
@@ -80,7 +75,7 @@ Command editor constructor
 @param command Command to edit.
 @param runnable If true, the command can be run from the dialog, as a Tool.
 */
-public MergeListFileColumns_JDialog ( JFrame parent, Command command, boolean runnable )
+public MergeListFileColumns_JDialog ( JFrame parent, MergeListFileColumns_Command command, boolean runnable )
 {	super(parent, true);
 	initialize ( parent, command, runnable );
 }
@@ -103,11 +98,12 @@ public void actionPerformed(ActionEvent event)
 		    fc = JFileChooserFactory.createJFileChooser( __working_dir );
 		}
 		fc.setDialogTitle("Select List File");
-		fc.addChoosableFileFilter( new SimpleFileFilter("csv", "List File") );
+		SimpleFileFilter cff = new SimpleFileFilter("csv", "List File");
+		fc.addChoosableFileFilter(cff);
 		SimpleFileFilter sff = new SimpleFileFilter("lst", "List File");
 		fc.addChoosableFileFilter( sff );
 		fc.addChoosableFileFilter( new SimpleFileFilter("txt", "List File") );
-		fc.setFileFilter(sff);
+		fc.setFileFilter(cff);
 
 		if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
@@ -132,7 +128,7 @@ public void actionPerformed(ActionEvent event)
 		fc.addChoosableFileFilter(sff);
 		SimpleFileFilter cff = new SimpleFileFilter("csv", "List File");
 		fc.addChoosableFileFilter(cff);
-		fc.setFileFilter(sff);
+		fc.setFileFilter(cff);
 
 		if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 			String directory = fc.getSelectedFile().getParent();
@@ -288,11 +284,11 @@ Instantiates the GUI components.
 @param command Command to edit and possibly run.
 @param runnable If true, the command can be run from the dialog, as a Tool.
 */
-private void initialize ( JFrame parent, Command command, boolean runnable )
+private void initialize ( JFrame parent, MergeListFileColumns_Command command, boolean runnable )
 {	__parent_JFrame = parent;
-	__command = (MergeListFileColumns_Command)command;
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
-	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (CommandProcessor)processor, __command );
 	__runnable = runnable;
 
 	addWindowListener(this);
@@ -365,7 +361,7 @@ private void initialize ( JFrame parent, Command command, boolean runnable )
 	__Columns_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Columns_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Specify as comma-separated numbers."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - specify as comma-separated numbers."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("NewColumnName:"),
@@ -374,7 +370,7 @@ private void initialize ( JFrame parent, Command command, boolean runnable )
 	__NewColumnName_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __NewColumnName_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"New column will be added at end."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Required - new column that will be added at end."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Merge format:"),
@@ -383,7 +379,7 @@ private void initialize ( JFrame parent, Command command, boolean runnable )
 	__SimpleMergeFormat_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SimpleMergeFormat_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example 2,5 or 02,05 to pad with zeros."),
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - (e.g., 2,5 or 02,05 to pad with zeros)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 
@@ -582,8 +578,7 @@ public void windowClosing(WindowEvent event) {
 	response ( false );
 }
 
-// The following methods are all necessary because this class
-// implements WindowListener
+// The following methods are all necessary because this class implements WindowListener
 public void windowActivated(WindowEvent evt)	{}
 public void windowClosed(WindowEvent evt)	{}
 public void windowDeactivated(WindowEvent evt)	{}

@@ -328,7 +328,7 @@ CommandWarningException, CommandException
         String nl = System.getProperty("line.separator");
         b.append("<@normalizeNewlines>" + nl );
         b.append(StringUtil.toString(IOUtil.fileToStringList(InputFile_full),nl));
-        b.append("</@normalizeNewlines>" );
+        b.append(nl + "</@normalizeNewlines>" );
         Template template = null;
         boolean error = false;
         try {

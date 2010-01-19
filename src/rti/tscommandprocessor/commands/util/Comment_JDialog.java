@@ -238,11 +238,10 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	if ( __first_time ) {
 		__first_time = false;
-		// Fill the text area with the command text.  If a Vector with
+		// Fill the text area with the command text.  If a list with
 		// one blank string, don't do the following because it results
 		// in a blank line and the user must back up to edit the blank.
-		if (	(__command_Vector != null) &&
-			(__command_Vector.size() > 0) &&
+		if ( (__command_Vector != null) && (__command_Vector.size() > 0) &&
 			(((String)__command_Vector.get(0)).length() > 0)){
 			String text = StringUtil.toString(__command_Vector,	System.getProperty("line.separator") );
 			if ( text.length() > 0 ) {

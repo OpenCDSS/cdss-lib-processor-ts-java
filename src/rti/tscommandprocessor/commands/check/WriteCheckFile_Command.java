@@ -129,6 +129,7 @@ throws InvalidCommandParameterException
     // Check for invalid parameters...
     Vector valid_Vector = new Vector();
     valid_Vector.add ( "OutputFile" );
+    valid_Vector.add ( "Title" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
     // Throw an InvalidCommandParameterException in case of errors.
@@ -626,10 +627,17 @@ public String toString ( PropList parameters )
     }
 
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String Title = parameters.getValue ( "Title" );
 
     StringBuffer b = new StringBuffer ();
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+    if ( (Title != null) && (Title.length() > 0) ) {
+    	if ( b.length() > 0 ) {
+    		b.append ( "," );
+    	}
+        b.append ( "Title=\"" + Title + "\"" );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

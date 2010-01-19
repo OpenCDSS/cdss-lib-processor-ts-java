@@ -246,7 +246,7 @@ private void initialize ( JFrame parent, WriteCheckFile_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Title:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Title_JTextField = new JTextField (10);
+    __Title_JTextField = new JTextField (35);
     __Title_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __Title_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

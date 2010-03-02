@@ -734,19 +734,19 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "TableID=" + TableID );
+		b.append ( "TableID=\"" + TableID + "\"");
 	}
     if ( (DateTimeColumn != null) && (DateTimeColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DateTimeColumn=" + DateTimeColumn );
+        b.append ( "DateTimeColumn=\"" + DateTimeColumn + "\"" );
     }
     if ( (DataColumn != null) && (DataColumn.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataColumn=" + DataColumn );
+        b.append ( "DataColumn=\"" + DataColumn + "\"");
     }
     if ( (DataRow != null) && (DataRow.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -89,7 +89,7 @@ throws InvalidCommandParameterException
 	//String TSID = parameters.getValue ( "TSID" );
 	String InputStart = parameters.getValue ( "InputStart" );
 	String InputEnd = parameters.getValue ( "InputEnd" );
-	//String Version = parameters.getValue ( "Version" );
+	String Version = parameters.getValue ( "Version" );
 	String warning = "";
     String message;
 
@@ -166,16 +166,30 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time, InputStart, InputEnd, or blank to use the global input start." ) );
 		}
 	}
-	/*
-	Newer versions use NN.NN.NN format so might need to check more
-	if ( (Version != null) && !StringUtil.isDouble(Version) ) {
-        message = "The StateMod version must be a number.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                 new CommandLogRecord(CommandStatusType.FAILURE,
-                         message, "Specify a number Major.Minor for the StateMod version." ) );
+	// Newer versions use NN.NN.NN format but only allow major and minor versions in this parameter
+	// to simplify checks.
+	if ( Version != null ) {
+	    if ( !StringUtil.isDouble(Version) ) {
+            message = "The StateMod version must be a number like 09.01 or 10.02 (no third part).";
+    		warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a number Major.Minor for the StateMod version." ) );
+	    }
+	    else {
+	        // Make sure that values less than 10. are padded with a leading zero so that string
+	        // comparisons of versions work correctly.
+	        double version = Double.parseDouble(Version);
+	        if ( (version < 10.0) && (Version.charAt(0) != '0') ) {
+	            message = "The StateMod version must be a number like 09.01 or 10.02 (no third part).";
+	            warning += "\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Specify a number Major.Minor for the StateMod version, " +
+	                        "padded with leading zero if < version 10." ) );
+	        }
+	    }
 	}
-	*/
     
     // Check for invalid parameters...
 	List valid_Vector = new Vector();

@@ -322,7 +322,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __Version_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - for files prior to StateMod version 11 (default is current version)"), 
+		"Optional - NN.NN, for files prior to StateMod version 11 (default is current version)."), 
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),

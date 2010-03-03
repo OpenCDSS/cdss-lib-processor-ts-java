@@ -238,7 +238,7 @@ throws CommandWarningException, CommandException
 			}
 		}
 		if ( InputStart_DateTime != null ) {
-			// Set the value and contents...
+			// Set the value and contents, which may be used when setting the InputEnd below...
 			Prop prop = new Prop ( "InputStart",InputStart_DateTime,InputStart_DateTime.toString() );
 			dateprops.set ( prop );
 		}
@@ -266,7 +266,9 @@ throws CommandWarningException, CommandException
 			throw new InvalidCommandParameterException ( message );
 		}
 		processor.setPropContents ( "InputStart", InputStart_DateTime);
+        Message.printStatus(2, routine, "Input period start set to:  " + InputStart_DateTime );
 		processor.setPropContents ( "InputEnd", InputEnd_DateTime );
+        Message.printStatus(2, routine, "Input period end set to:  " + InputEnd_DateTime );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting input period in processor (" + e + ").";

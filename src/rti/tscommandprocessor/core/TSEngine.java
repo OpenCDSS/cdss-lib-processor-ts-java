@@ -3023,6 +3023,8 @@ throws Exception
 	Command command_prev = null;	// previous command in loop
 	// Indicat the state of the processor...
 	__ts_processor.setIsRunning ( true );
+	// Stopwatch to time each command...
+    StopWatch stopWatch = new StopWatch();
 	for ( i = 0; i < size; i++ ) {
 		// 1-offset comand count for messages
 		i_for_message = i + 1;
@@ -3065,6 +3067,9 @@ throws Exception
     		Message.printStatus ( 1, routine, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     		Message.printStatus ( 1, routine,
     			"Start processing command " + (i + 1) + " of " + size + ": \"" + command_String + "\" " );
+            stopWatch.clear();
+            stopWatch.start();
+            command.setRunTime( 0 );
     		// Notify any listeners that the command is running...
     		__ts_processor.notifyCommandProcessorListenersOfCommandStarted ( i, size, command );
     
@@ -3256,6 +3261,11 @@ throws Exception
     				Message.printWarning ( 3, routine, e );
     				continue;
     			}
+                finally {
+                    // Save the time spent running the command
+                    stopWatch.stop();
+                    command.setRunTime( stopWatch.getMilliseconds() );
+                }
     		}
 		} // Main catch
 		catch ( Exception e ) {
@@ -5347,9 +5357,10 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 	for ( int i = 0; i < size; i++ ) {
 		hbdmi2 = (HydroBaseDMI)__hbdmi_Vector.get(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
-			// The input name of the current instance matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the new instance...
-			if ( close_old ) {
+			// The input name of the current instance matches that of the instance in the list.
+			// Replace the instance in the list by the new instance...
+			if ( close_old && (hbdmi2 != hbdmi)) {
+			    // Close if different instances.
 				try {
 				    hbdmi2.close();
 				}

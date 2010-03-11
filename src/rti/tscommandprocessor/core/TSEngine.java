@@ -4504,7 +4504,7 @@ throws Exception
 		// Now do the second set of processing on the time series (e.g.,
 		// to guarantee a period that is at least as long as the output period.
 		// TODO SAM - passing tsident_string2 causes problems - the input is lost...
-		readTimeSeries2 ( ts, tsidentString, fullPeriod );
+        readTimeSeries2 ( ts, tsidentString, fullPeriod, readData );
 	}
 	return ts;
 }
@@ -5138,7 +5138,7 @@ This method does the following:
 If false, the output period will be queried.
 @exception Exception if there is an error processing the time series.
 */
-private void readTimeSeries2 ( TS ts, String tsident_string, boolean full_period )
+private void readTimeSeries2 ( TS ts, String tsident_string, boolean full_period, boolean readData )
 throws Exception
 {	String routine = "TSEngine.readTimeSeries2";
 	if ( ts == null ) {
@@ -5198,7 +5198,12 @@ throws Exception
 		v.add ( limits );
 		try {
             limits = TSUtil.getPeriodFromLimits( v, TSUtil.MAX_POR);
-			if ( limits.getDate1().lessThan(ts.getDate1()) || limits.getDate2().greaterThan(ts.getDate2()) ) {
+            // If in discovery mode in TSTool, don't want to do the following because it throws
+            // an exception.  The output period may be set in the processor from a previous run and
+            // when new commands are loaded, the "readData" check is necessary.
+			if ( readData &&
+			    (limits.getDate1().lessThan(ts.getDate1()) ||
+			    limits.getDate2().greaterThan(ts.getDate2())) ) {
 				ts.changePeriodOfRecord ( limits.getDate1(), limits.getDate2() );
 			}
 		}
@@ -5219,17 +5224,18 @@ full_period parameter having a value of true.  This version is called by read co
 */
 protected void readTimeSeries2 ( List tslist )
 throws Exception
-{	readTimeSeries2 ( tslist, true );
+{	readTimeSeries2 ( tslist, true, true );
 }
 
 /**
-Call readTimeSeries2() for every time series in the Vector.
+Call readTimeSeries2() for every time series in the list.
 @param tslist Vector of TS to process.
 @param full_period If true, indicates that the full period is to be queried.
 If false, the output period will be queried.
+@param readData if true, then the time series data are being read and appropriate processing should occur.
 @exception Exception if there is an error processing the time series.
 */
-private void readTimeSeries2 ( List tslist, boolean full_period )
+private void readTimeSeries2 ( List tslist, boolean full_period, boolean readData )
 throws Exception
 {	int size = 0;
 	if ( tslist != null ) {
@@ -5242,7 +5248,7 @@ throws Exception
 		if ( ts == null ) {
 			continue;
 		}
-		readTimeSeries2 ( ts, null, full_period );
+		readTimeSeries2 ( ts, null, full_period, readData );
 	}
 	ts = null;
 }

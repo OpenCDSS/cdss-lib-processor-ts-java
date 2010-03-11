@@ -1271,22 +1271,25 @@ public static String validateParameterNames ( List valid_Vector, Command command
 		return warning;
 	}
 	PropList parameters = command.getCommandParameters();
-	List warning_Vector = null;
+	List<String> warning_Vector = null;
 	try {
 	    // Validate the properties and discard any that are invalid (a message will be generated)
 	    // and will be displayed once.
 	    warning_Vector = parameters.validatePropNames (	valid_Vector, null, null, "parameter", true );
 	}
 	catch ( Exception e ) {
-		// Ignore.  Should not happen.
+		// Ignore.  Should not happen but print out just in case.
 		warning_Vector = null;
+		Message.printWarning ( 3, "TSCommandProcessorUtil.validateParameterNames",
+		    "Error checking parameter names (" + e + ")." );
+		Message.printWarning ( 3, "TSCommandProcessorUtil.validateParameterNames", e );
 	}
-	if ( warning_Vector != null ) {
+	if ( (warning_Vector != null) && (warning_Vector.size() > 0) ) {
 		int size = warning_Vector.size();
 		StringBuffer b = new StringBuffer();
 		for ( int i = 0; i < size; i++ ) {
-			warning += "\n" + (String)warning_Vector.get (i);
-			b.append ( (String)warning_Vector.get(i));
+			warning += "\n" + warning_Vector.get (i);
+			b.append ( warning_Vector.get(i));
 		}
 		if ( command instanceof CommandStatusProvider ) { 
 			CommandStatus status = ((CommandStatusProvider)command).getCommandStatus();
@@ -1295,7 +1298,7 @@ public static String validateParameterNames ( List valid_Vector, Command command
 					"Specify only valid parameters - see documentation."));
 		}
 	}
-	return warning;
+	return warning; // Return the original warning string with additional warnings if generated
 }
 
 }

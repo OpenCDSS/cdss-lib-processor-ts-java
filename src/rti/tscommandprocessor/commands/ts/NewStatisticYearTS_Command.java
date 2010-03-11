@@ -76,6 +76,7 @@ throws InvalidCommandParameterException
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
 	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
+	String SearchStart = parameters.getValue ( "SearchStart" );
 	String warning = "";
     String message;
     
@@ -284,6 +285,21 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (SearchStart != null) && !SearchStart.equals("") ) {
+        String searchStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + SearchStart;
+        try {
+            DateTime.parse( searchStart );
+        }
+        catch ( Exception e ) {
+            message = "The search start date \"" + SearchStart + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
+    
     // Check for invalid parameters...
 	List valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
@@ -298,12 +314,15 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "AnalysisWindowStart" );
     valid_Vector.add ( "AnalysisWindowEnd" );
+    valid_Vector.add ( "SearchStart" );
+    Message.printStatus ( 2, "SAM", "Valid_Vector=" + StringUtil.toString(valid_Vector,","));
+    Message.printStatus( 2, "SAM", "Props=" + parameters.toString());
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
+    Message.printStatus( 2, "SAM", "Warning=\"" + warning + "\"");
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -433,6 +452,7 @@ CommandWarningException, CommandException
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
 	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
+	String SearchStart = parameters.getValue ( "SearchStart" );
 
 	// Figure out the dates to use for the analysis...
 
@@ -567,6 +587,21 @@ CommandWarningException, CommandException
             throw new InvalidCommandParameterException ( message );
         }
     }
+    DateTime SearchStart_DateTime = null;
+    if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            SearchStart_DateTime = DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + SearchStart );
+        }
+        catch ( Exception e ) {
+            message = "SearchStart \"" + SearchStart +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
@@ -643,7 +678,7 @@ CommandWarningException, CommandException
     	    TSUtil_NewStatisticYearTS tsu = new TSUtil_NewStatisticYearTS ( ts, NewTSID, statisticType,
     	        TestValue_Double, AllowMissingCount_Integer, MinimumSampleSize_Integer,
     	        outputYearType, AnalysisStart_DateTime, AnalysisEnd_DateTime,
-                AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime );
+                AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
     		TS stats_ts = tsu.newStatisticYearTS ();
     		stats_ts.setAlias ( Alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
     
@@ -694,6 +729,7 @@ public String toString ( PropList props )
 	String AnalysisEnd = props.getValue( "AnalysisEnd" );
 	String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
 	String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
+	String SearchStart = props.getValue( "SearchStart" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -760,6 +796,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
+    }
+    if ( (SearchStart != null) && (SearchStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SearchStart=\"" + SearchStart + "\"" );
     }
 	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
 }

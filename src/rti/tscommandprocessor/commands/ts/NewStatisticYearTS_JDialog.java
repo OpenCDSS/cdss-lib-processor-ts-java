@@ -63,6 +63,7 @@ private JTextField __AnalysisEnd_JTextField = null;
 private JCheckBox __AnalysisWindow_JCheckBox = null;
 private DateTime_JPanel __AnalysisWindowStart_JPanel = null;  // Fields for analysis window within a year
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
+private JTextField __SearchStart_JTextField = null;
 private SimpleJButton __edit_JButton = null;	// Edit button
 private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
 private boolean __error_wait = false;	// Is there an error to be cleared up?
@@ -163,6 +164,7 @@ private void checkInput ()
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
+	String SearchStart = __SearchStart_JTextField.getText().trim();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -195,6 +197,9 @@ private void checkInput ()
 	if ( AnalysisEnd.length() > 0 ) {
 		props.set ( "AnalysisEnd", AnalysisEnd );
 	}
+    if ( SearchStart.length() > 0 ) {
+        props.set ( "SearchStart", SearchStart );
+    }
 	if ( __AnalysisWindow_JCheckBox.isSelected() ){
     	String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
         String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
@@ -230,6 +235,7 @@ private void commitEdits ()
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
+	String SearchStart = __SearchStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
@@ -246,6 +252,7 @@ private void commitEdits ()
 	    __command.setCommandParameter ( "AnalysisWindowStart", AnalysisWindowStart );
 	    __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
 	}
+	__command.setCommandParameter ( "SearchStart", SearchStart );
 }
 
 /**
@@ -441,6 +448,16 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - analysis window within input year (default=full year)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Search start:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SearchStart_JTextField = new JTextField (10);
+    __SearchStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SearchStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - search start (needed for some statistics, default=full year)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -529,6 +546,7 @@ private void refresh ()
 	String AnalysisEnd = "";
 	String AnalysisWindowStart = "";
 	String AnalysisWindowEnd = "";
+	String SearchStart = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -545,6 +563,7 @@ private void refresh ()
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
         AnalysisWindowEnd = props.getValue ( "AnalysisWindowEnd" );
+        SearchStart = props.getValue ( "SearchStart" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -641,6 +660,9 @@ private void refresh ()
         else {
             __AnalysisWindow_JCheckBox.setSelected ( false );
         }
+        if ( SearchStart != null ) {
+            __SearchStart_JTextField.setText( SearchStart );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	checkGUIState();
@@ -654,6 +676,7 @@ private void refresh ()
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
+	SearchStart = __SearchStart_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "TSID=" + TSID );
@@ -671,6 +694,7 @@ private void refresh ()
 	    props.add ( "AnalysisWindowStart=" + AnalysisWindowStart );
 	    props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
 	}
+	props.add ( "SearchStart=" + SearchStart );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

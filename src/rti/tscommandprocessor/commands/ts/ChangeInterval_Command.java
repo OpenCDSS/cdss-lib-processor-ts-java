@@ -36,6 +36,8 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
+import RTi.TS.TSStatisticType;
+import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.TS.TSUtil_ChangeInterval;
 import RTi.TS.TSUtil_ChangeInterval_HandleEndpointsHowType;
 import RTi.TS.TSUtil_ChangeInterval_HandleMissingInputHowType;
@@ -105,6 +107,7 @@ throws InvalidCommandParameterException
 	String NewInterval = parameters.getValue( "NewInterval" );
 	String OldTimeScale = parameters.getValue( "OldTimeScale" );
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
+    String Statistic = parameters.getValue ( "Statistic" );
 	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	String Tolerance = parameters.getValue( "Tolerance" );
 	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
@@ -192,9 +195,10 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify an old time scale."));
 	}
+	TimeScaleType oldTimeScaleType = null;
 	if ( OldTimeScale != null && !OldTimeScale.equals("") ) {
 	    try {
-	        TimeScaleType.valueOfIgnoreCase(OldTimeScale);
+	        oldTimeScaleType = TimeScaleType.valueOfIgnoreCase(OldTimeScale);
 	    }
 	    catch ( Exception e ) {
     		message = "The old time scale (" + OldTimeScale + ") is invalid.";
@@ -218,6 +222,7 @@ throws InvalidCommandParameterException
 	// may edit the command without using the changeInterval_JDialog editor
 	// and try to run it, so this method should at least make sure the 
 	// NewTimeScale property is given.
+	TimeScaleType newTimeScaleType = null;
 	if ( (NewTimeScale != null) && NewTimeScale.length() == 0 ) {
         message = "The new time scale must be specified.";
         warning += "\n" + message;
@@ -226,8 +231,8 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Specify a new time scale."));
 	}
 	if ( (NewTimeScale != null) && !NewTimeScale.equals("") ) {
-       try {
-            TimeScaleType.valueOfIgnoreCase(NewTimeScale);
+        try {
+            newTimeScaleType = TimeScaleType.valueOfIgnoreCase(NewTimeScale);
         }
         catch ( Exception e ) {
             message = "The new time scale (" + NewTimeScale + ") is invalid.";
@@ -245,6 +250,49 @@ throws InvalidCommandParameterException
                 CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
         }
 	}
+	
+    if ( (Statistic != null) && !Statistic.equals("") && (oldTimeScaleType != TimeScaleType.INST)&&
+        (newTimeScaleType != TimeScaleType.INST) ) {
+        message = "The statistic is only valid when converting from time scale " + TimeScaleType.INST +
+        " (small interval) to " + TimeScaleType.INST + " (big interval).";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Do not specify the statistic." ) );
+    }
+    else if ( (Statistic != null) && !Statistic.equals("") ) {
+        // Make sure that the statistic is known in general
+        boolean supported = false;
+        TSStatisticType statisticType = null;
+        try {
+            statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+            supported = true;
+        }
+        catch ( Exception e ) {
+            message = "The statistic (" + Statistic + ") is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported statistic using the command editor." ) );
+        }
+        
+        // Make sure that it is in the supported list
+        
+        if ( supported ) {
+            supported = false;
+            List<TSStatisticType> statistics = TSUtil_CalculateTimeSeriesStatistic.getStatisticChoices();
+            for ( TSStatisticType statistic : statistics ) {
+                if ( statisticType == statistic ) {
+                    supported = true;
+                    break;
+                }
+            }
+            if ( !supported ) {
+                message = "The statistic (" + Statistic + ") is not supported by this command.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported statistic using the command editor." ) );
+            }
+        }
+    }
 	
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         try {
@@ -352,6 +400,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "NewInterval" );
     valid_Vector.add ( "OldTimeScale" );
     valid_Vector.add ( "NewTimeScale" );
+    valid_Vector.add ( "Statistic" );
     valid_Vector.add ( "OutputYearType" );
     valid_Vector.add ( "NewDataType" );
     valid_Vector.add ( "NewUnits" );
@@ -509,6 +558,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	TimeScaleType oldTimeScale = TimeScaleType.valueOfIgnoreCase(OldTimeScale);
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
 	TimeScaleType newTimeScale = TimeScaleType.valueOfIgnoreCase(NewTimeScale);
+    String Statistic = parameters.getValue ( "Statistic" );
+    TSStatisticType statisticType = null;
+    if ( (Statistic != null) && (Statistic.length() > 0) ) {
+        statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
+    }
 	String OutputYearType = parameters.getValue( "OutputYearType" );
 	YearType outputYearType = YearType.CALENDAR;
 	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
@@ -609,8 +663,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	try {
 		// Process the change of interval
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
-            oldTimeScale, newTimeScale, outputYearType, NewDataType, NewUnits, tolerance, handleEndpointsHow,
-            outputFillMethod, handleMissingInputHow, allowMissingCount,
+            oldTimeScale, newTimeScale, statisticType, outputYearType, NewDataType, NewUnits, tolerance,
+            handleEndpointsHow, outputFillMethod, handleMissingInputHow, allowMissingCount,
             null ); // AllowMissingPercent (not implemented in command)
 		result_ts = tsu.changeInterval();	
 		
@@ -676,6 +730,7 @@ public String toString ( PropList props )
 	String NewInterval = props.getValue( "NewInterval" );
 	String OldTimeScale = props.getValue( "OldTimeScale" );
 	String NewTimeScale = props.getValue( "NewTimeScale" );
+	String Statistic = props.getValue( "Statistic" );
 	String OutputYearType = props.getValue("OutputYearType");
 	String NewDataType = props.getValue( "NewDataType" );
 	String NewUnits = props.getValue( "NewUnits" );
@@ -711,6 +766,11 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewTimeScale=" + NewTimeScale  );
 	}
+	
+    if ( Statistic != null && Statistic.length() > 0 ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "Statistic=" + Statistic  );
+    }
 	
     if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
         if ( b.length() > 0 ) b.append ( "," );

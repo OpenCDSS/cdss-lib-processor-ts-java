@@ -1,31 +1,3 @@
-// ----------------------------------------------------------------------------
-// changeInterval_JDialog - editor for TS X = changeInterval()
-//
-// TODO SAM 2005-02-12
-//		In the future may also support changeInterval() to operate on
-//		multiple time series.
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-02-16	Steven A. Malers, RTi	Initial version, initialized from
-//					normalize_JDialog().
-// 2005-02-18	SAM, RTi		Comment out AllowMissingPercent - it
-//					is causing problems in some of the
-//					computations so re-evaluate later.
-// 2005-03-14	SAM, RTi		Add OutputFillMethod and
-//					HandleMissingInputHow parameters.
-// 2005-05-24	Luiz Teixeira, RTi	Copied the original class 
-//					changeInterval_JDialog() from TSTool and
-//					split the code into the new
-//					changeInterval_JDialog() and
-//					changeInterval_Command().
-// 2005-05-26	Luiz Teixeira, RTi	Cleanup and documentation.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -54,6 +26,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSUtil_ChangeInterval;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -76,6 +49,8 @@ private SimpleJComboBox	__TSID_JComboBox = null;
 private SimpleJComboBox	__NewInterval_JComboBox = null;
 private SimpleJComboBox	__OldTimeScale_JComboBox = null;
 private SimpleJComboBox	__NewTimeScale_JComboBox = null;
+private JLabel __Statistic_JLabel = null;
+private SimpleJComboBox __Statistic_JComboBox = null;
 private JLabel  __OutputYearType_JLabel = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 private JTextField __NewDataType_JTextField = null;
@@ -165,6 +140,7 @@ private void checkGUIState ()
     TimeScaleType oldTimeScaleType = TimeScaleType.valueOfIgnoreCase(oldTimeScale);
     String newTimeScale = __NewTimeScale_JComboBox.getSelected();
     TimeScaleType newTimeScaleType = TimeScaleType.valueOfIgnoreCase(newTimeScale);
+    String statistic = __Statistic_JComboBox.getSelected().trim();
     String outputYearType0 = __OutputYearType_JComboBox.getSelected();
     YearType outputYearType = null;
     if ( (outputYearType0 != null) && !outputYearType0.equals("") ) {
@@ -222,6 +198,24 @@ private void checkGUIState ()
             __AllowMissingCount_JTextField.setEnabled ( true );
         }
     }
+    
+    // Statistic is only implemented for instantaneous to instantaneous time scale and impacts some parameters.
+    if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.INST) ) {
+        __Statistic_JLabel.setEnabled ( true );
+        __Statistic_JComboBox.setEnabled ( true );
+    }
+    else {
+        __Statistic_JLabel.setEnabled ( false );
+        __Statistic_JComboBox.setEnabled ( false );
+    }
+    
+    // If the statistic is enabled and has a value set, also allow the number of missing allowed to be set
+    if ( __Statistic_JComboBox.isEnabled() ) {
+        if ( (statistic != null) && (statistic.length() > 0) ) {
+            __AllowMissingCount_JLabel.setEnabled ( true );
+            __AllowMissingCount_JTextField.setEnabled ( true );
+        }
+    }
 }
 
 /**
@@ -234,6 +228,7 @@ private void checkInput ()
 	String NewInterval  = __NewInterval_JComboBox.getSelected();
 	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewTimeScale  = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+    String Statistic = __Statistic_JComboBox.getSelected();
     String OutputYearType = __OutputYearType_JComboBox.getSelected();
 	String NewDataType = __NewDataType_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -262,6 +257,9 @@ private void checkInput ()
 	if ( NewTimeScale != null && NewTimeScale.length() > 0 ) {
 		props.set( "NewTimeScale", NewTimeScale );
 	}
+    if ( Statistic.length() > 0 ) {
+        props.set ( "Statistic", Statistic );
+    }
     if ( OutputYearType.length() > 0 ) {
         props.set ( "OutputYearType", OutputYearType );
     }
@@ -318,6 +316,7 @@ private void commitEdits ()
 	String NewInterval = __NewInterval_JComboBox.getSelected();
 	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+    String Statistic = __Statistic_JComboBox.getSelected();
 	String OutputYearType = __OutputYearType_JComboBox.getSelected();
 	String NewDataType = __NewDataType_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -335,6 +334,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "NewInterval", NewInterval );
 	__command.setCommandParameter ( "OldTimeScale", OldTimeScale );
 	__command.setCommandParameter ( "NewTimeScale", NewTimeScale );
+    __command.setCommandParameter ( "Statistic", Statistic );
 	__command.setCommandParameter ( "OutputYearType", OutputYearType );
 	__command.setCommandParameter ( "NewDataType", NewDataType );
 	__command.setCommandParameter ( "NewUnits", NewUnits );
@@ -464,7 +464,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	__OldTimeScale_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OldTimeScale_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - indicates how to process data."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// New time scale
@@ -476,8 +476,24 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	__NewTimeScale_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __NewTimeScale_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - indicates how to process data."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __Statistic_JLabel = new JLabel ( "Statistic to calculate:" );
+    JGUIUtil.addComponent(main_JPanel, __Statistic_JLabel, 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Statistic_JComboBox = new SimpleJComboBox ( false );    // Do not allow edit
+    List<String> statisticList = TSUtil_ChangeInterval.getStatisticChoicesAsStrings();
+    statisticList.add ( 0, "" ); // Blank as default
+    __Statistic_JComboBox.setData ( statisticList );
+    __Statistic_JComboBox.addItemListener ( this );
+    //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __Statistic_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - limited support for " + TimeScaleType.INST + " to " + TimeScaleType.INST +
+        " (default statistic is from old/new time scale)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     __OutputYearType_JLabel = new JLabel ( "Output year type:" );
     JGUIUtil.addComponent(main_JPanel, __OutputYearType_JLabel, 
@@ -709,6 +725,7 @@ private void refresh ()
 	String NewInterval = "";
 	String OldTimeScale = "";
 	String NewTimeScale = "";
+    String Statistic = "";
 	String OutputYearType = "";
 	String NewDataType = "";
 	String NewUnits = "";
@@ -735,6 +752,7 @@ private void refresh ()
 		NewInterval = props.getValue( "NewInterval" );
 	    OldTimeScale = props.getValue( "OldTimeScale" );
 	    NewTimeScale = props.getValue( "NewTimeScale" );
+	    Statistic = props.getValue ( "Statistic" );
 		OutputYearType = props.getValue ( "OutputYearType" );
 		NewDataType = props.getValue( "NewDataType" );
 		NewUnits = props.getValue( "NewUnits" );
@@ -822,6 +840,21 @@ private void refresh ()
 				__NewTimeScale_JComboBox.setText (NewTimeScale);
 			}
 		}
+        if ( Statistic == null ) {
+            // Select default...
+            __Statistic_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Statistic_JComboBox,Statistic, JGUIUtil.NONE, null, null ) ) {
+                __Statistic_JComboBox.select ( Statistic );
+            }
+            else {
+                Message.printWarning ( 1, mthd,
+                "Existing command references an invalid\nStatistic value \"" + Statistic +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
         if ( OutputYearType == null ) {
             // Select default...
             __OutputYearType_JComboBox.select ( 0 );
@@ -921,6 +954,7 @@ private void refresh ()
 	NewInterval = __NewInterval_JComboBox.getSelected();
 	OldTimeScale = StringUtil.getToken(	__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
+    Statistic = __Statistic_JComboBox.getSelected();
 	OutputYearType = __OutputYearType_JComboBox.getSelected();
 	NewDataType = __NewDataType_JTextField.getText().trim();
 	NewUnits = __NewUnits_JTextField.getText().trim();
@@ -940,6 +974,9 @@ private void refresh ()
 	props.add ( "OldTimeScale=" + OldTimeScale );
 	props.add ( "OutputYearType=" + OutputYearType );
 	props.add ( "NewTimeScale=" + NewTimeScale );
+	if ( __Statistic_JComboBox.isEnabled() ) {
+	    props.add ( "Statistic=" + Statistic );
+	}
 	props.add ( "NewDataType=" + NewDataType );
 	props.add ( "NewUnits=" + NewUnits );
 	props.add ( "Tolerance=" + Tolerance );

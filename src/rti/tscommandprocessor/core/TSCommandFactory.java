@@ -214,6 +214,7 @@ import rti.tscommandprocessor.commands.util.SetProperty_Command;
 import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.TestCommand_Command;
+import rti.tscommandprocessor.commands.util.WebGet_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 
 /**
@@ -748,6 +749,9 @@ throws UnknownCommandException
 
 	// "W" commands...
 
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WebGet") ) {
+        return new WebGet_Command ();
+    }
     else if ( isTScommand && TScommand.equalsIgnoreCase("WeightTraces") ) {
         return new WeightTraces_Command ();
     }

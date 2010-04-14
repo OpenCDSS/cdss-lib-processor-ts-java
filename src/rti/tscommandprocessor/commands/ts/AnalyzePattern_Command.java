@@ -562,7 +562,9 @@ throws CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 
-   try {
+    try {
+        // Clear the output file
+        setOutputFile ( null );
         if ( commandPhase == CommandPhaseType.RUN ) {
             // Get the time series to process...
             
@@ -1014,7 +1016,6 @@ private void setOutputFile ( File file )
 {
     __OutputFile_File = file;
 }
-
 
 /**
 Return the string representation of the command.

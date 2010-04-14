@@ -72,10 +72,11 @@ protected final String _Interpolate = "Interpolate";
 protected final String _KeepMissing = "KeepMissing";
 protected final String _Repeat = "Repeat";
 protected final String _SetToZero = "SetToZero";
-public final String _IncFirstOnly = "IncludeFirstOnly";
-public final String _AvgEndpoints = "AverageEndpoints";
+protected final String _IncludeFirstOnly = "IncludeFirstOnly";
+protected final String _AverageEndpoints = "AverageEndpoints";
 
 private final boolean __read_one = true;	// For now only enable the TS Alias notation.
+
 /**
 Command constructor.
 */
@@ -168,19 +169,26 @@ throws InvalidCommandParameterException
                 "Specify different time series for input and output."));
 	}
 	
-	// NewInterval - NewInterval will always be set from the 
-	// changeInterval_JDialog when the OK button is pressed, but the user
-	// may edit the command without using the changeInterval_JDialog editor
-	// and try to run it, so this method should at least make sure the 
-	// NewInterval property is given.
-	// TODO [LT 2005-05-26] Better test may be put in place here, to make
-	// sure the given NewInterval is actually a valid value for interval.
-	if ( NewInterval != null && NewInterval.length() == 0 ) {
+    TimeInterval newInterval = null;
+	if ( NewInterval == null || (NewInterval.length() == 0) ) {
 		message = "The new interval must be specified.";
         warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify a new interval."));
+	}
+	else {
+	    try {
+	        newInterval = TimeInterval.parseInterval(NewInterval);
+	    }
+	    catch ( Exception e ) {
+	        // Should not happen because choices are valid
+	        message = "The new interval \"" + NewInterval + "\" is invalid.";
+	        warning += "\n" + message;
+	        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify a new interval using the command editor."));
+	    }
 	}
 	
 	// OldTimeScale - OldTimeScale will always be set from the 
@@ -340,14 +348,33 @@ throws InvalidCommandParameterException
 
     // If the HandleEndpointsHow is specified, make sure it is valid.
 	if ( HandleEndpointsHow!=null && HandleEndpointsHow.length()>0 ) {
-		if (!HandleEndpointsHow.equalsIgnoreCase(_IncFirstOnly)&&
-			!HandleEndpointsHow.equalsIgnoreCase(_AvgEndpoints)){
+		if (!HandleEndpointsHow.equalsIgnoreCase(_IncludeFirstOnly)&&
+			!HandleEndpointsHow.equalsIgnoreCase(_AverageEndpoints)){
             message = "The HandleEndpointsHow (" + HandleEndpointsHow + ") parameter is invalid.";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(
-                    CommandStatusType.FAILURE, message, "Valid values are \"" + _IncFirstOnly
-                        + ", and \"" + _AvgEndpoints + "\"."));
+                    CommandStatusType.FAILURE, message, "Valid values are \"" + _IncludeFirstOnly
+                        + ", and \"" + _AverageEndpoints + "\"."));
+		}
+		else {
+		    // Make sure that it is only specified for INST to MEAN
+		    if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) &&
+		        (newInterval.getBase() <= TimeInterval.DAY) ) {
+		        // OK
+		        // TODO SAM 2010-04-08 Also would like to check that the new interval is < Day but can't do at
+		        // initialization
+		    }
+		    else {
+		        // Combination is not allowed.
+	            message = "The HandleEndpointsHow (" + HandleEndpointsHow +
+	            ") parameter is not supported with the input combination.";
+	            warning += "\n" + message;
+	            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message, "Only specify the parameter when changing from " +
+                    TimeScaleType.INST + " to " + TimeScaleType.MEAN + " small to larger (day or less) interval."));
+		    }
 		}
 	}
 

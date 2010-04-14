@@ -119,7 +119,7 @@ public void actionPerformed( ActionEvent event )
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
 private void checkGUIState ()
-{
+{   String routine = "ChangeInterval_JDialog.checkGUIState";
     // initially set the following to gray and only enable based on input and output scale.
 
     __OutputYearType_JLabel.setEnabled ( false );
@@ -136,6 +136,14 @@ private void checkGUIState ()
     __HandleMissingInputHow_JComboBox.setEnabled ( false );
 
     String newInterval = __NewInterval_JComboBox.getSelected();
+    TimeInterval newIntervalObj = null;
+    try {
+        newIntervalObj = TimeInterval.parseInterval(newInterval);
+    }
+    catch ( Exception e ) {
+        // Should not happen because choices are valid
+        Message.printWarning ( 3, routine, e );
+    }
     String oldTimeScale = __OldTimeScale_JComboBox.getSelected();
     TimeScaleType oldTimeScaleType = TimeScaleType.valueOfIgnoreCase(oldTimeScale);
     String newTimeScale = __NewTimeScale_JComboBox.getSelected();
@@ -197,6 +205,35 @@ private void checkGUIState ()
             __AllowMissingCount_JLabel.setEnabled ( true );
             __AllowMissingCount_JTextField.setEnabled ( true );
         }
+    }
+    
+    // More specific handling of the HandleEndPointsHow parameter...
+    
+    if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) &&
+        (newIntervalObj.getBase() <= TimeInterval.DAY)  ) {
+        // Would also like to check the following but it is not available until runtime...
+        // && (oldIntervalBase < TimeInterval.DAY)
+        __HandleEndpointsHow_JLabel.setEnabled ( true );
+        __HandleEndpointsHow_JComboBox.setEnabled ( true );
+    }
+    else {
+        // Need to disable
+        __HandleEndpointsHow_JLabel.setEnabled ( false );
+        __HandleEndpointsHow_JComboBox.setEnabled ( false );
+    }
+    
+    // More specific handling of the OutputFillMethod parameter...
+    
+    if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) ) {
+        // Would also like to check the following but it is not available until runtime...
+        // && long to short
+        __OutputFillMethod_JLabel.setEnabled ( true );
+        __OutputFillMethod_JComboBox.setEnabled ( true );
+    }
+    else {
+        // Need to disable
+        __OutputFillMethod_JLabel.setEnabled ( false );
+        __OutputFillMethod_JComboBox.setEnabled ( false );
     }
     
     // Statistic is only implemented for instantaneous to instantaneous time scale and impacts some parameters.
@@ -414,8 +451,12 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		"The time scales must be specified (they are not automatically determined from the data type)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Many of the advanced parameters depend on the data interval, which can only be confirmed at runtime, " +
-        "and are mainly for intervals less than a day - see the documentation."),
+        "<html><b>Many of the advanced parameters depend on the input data interval, " +
+        "which can only be confirmed at run time,</b></html>."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>and are mainly for intervals less than a day.  " +  
+        "Parameters are enabled/disabled as much as possible but see the documentation for details.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Time series alias
@@ -549,15 +590,16 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	__HandleEndpointsHow_JComboBox = new SimpleJComboBox ( false );
 	List endpoints_Vector = new Vector(4);
 	endpoints_Vector.add ( "" );	// Blank is default
-	endpoints_Vector.add ( __command._AvgEndpoints );
-	endpoints_Vector.add ( __command._IncFirstOnly );
+	endpoints_Vector.add ( __command._AverageEndpoints );
+	endpoints_Vector.add ( __command._IncludeFirstOnly );
 	__HandleEndpointsHow_JComboBox.setData ( endpoints_Vector );
 	__HandleEndpointsHow_JComboBox.select ( 0 );	// Default
 	__HandleEndpointsHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleEndpointsHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - how to handle interval endpoint values in hourly or finer input (default=" + __command._AvgEndpoints + ")."),
+		"Optional - for INST to MEAN, small to large, new interval=day or less (default=" +
+		__command._AverageEndpoints + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Allow missing count
@@ -601,7 +643,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, __OutputFillMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - use when converting from large to small interval (default=" + __command._Repeat + ")."),
+		"Optional - use when converting from INST to MEAN, large to small interval (default=" + __command._Repeat + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Handle missing input how?
@@ -620,7 +662,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         JGUIUtil.addComponent(main_JPanel, __HandleMissingInputHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - indicate how to handle missing values in input (default=" + __command._KeepMissing + ")."),
+		"Optional - how to handle missing values in input (default=" + __command._KeepMissing + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Command
@@ -980,11 +1022,15 @@ private void refresh ()
 	props.add ( "NewDataType=" + NewDataType );
 	props.add ( "NewUnits=" + NewUnits );
 	props.add ( "Tolerance=" + Tolerance );
-	props.add ( "HandleEndpointsHow=" + HandleEndpointsHow );
+	if ( __HandleEndpointsHow_JComboBox.isEnabled() ) {
+	    props.add ( "HandleEndpointsHow=" + HandleEndpointsHow );
+	}
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	/* TODO LT 2005-05-24 may enable later	
 	props.add ( "AllowMissingPercent=" + AllowMissingPercent   ); */
-	props.add ( "OutputFillMethod=" + OutputFillMethod );
+	if ( __OutputFillMethod_JComboBox.isEnabled() ) {
+	    props.add ( "OutputFillMethod=" + OutputFillMethod );
+	}
 	props.add ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	
 	__Command_JTextArea.setText( __command.toString(props) );

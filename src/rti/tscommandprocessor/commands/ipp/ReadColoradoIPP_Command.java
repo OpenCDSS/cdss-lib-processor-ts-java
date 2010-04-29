@@ -597,7 +597,7 @@ CommandWarningException, CommandException
                 Method, SubMethod, Source, Scenario );
 		}
 		else if ( Subject.equalsIgnoreCase("Project")) {
-		    tslist0 = ippdmi.readIPPDataMetaDataList( SubjectName, DataType, SubDataType,
+		    tslist0 = ippdmi.readProjectDataMetaDataList( SubjectName, DataType, SubDataType,
                 Method, SubMethod, Source, Scenario );
 		}
 		else if ( Subject.equalsIgnoreCase("Provider")) {

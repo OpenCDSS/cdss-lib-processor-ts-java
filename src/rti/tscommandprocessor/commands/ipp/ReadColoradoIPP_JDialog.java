@@ -21,14 +21,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-
-import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 /**
 Editor for he ReadColoradoIPP() command.
@@ -36,38 +36,33 @@ Editor for he ReadColoradoIPP() command.
 public class ReadColoradoIPP_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton __cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private ReadColoradoIPP_Command __command = null; // Command to edit
-private JTextField	__Alias_JTextField=null,// Alias for time series, alias version
-            __Subject_JTextField,  // Location part of TSID, non-alias version
-			__SubjectName_JTextField,	// Location part of TSID, non-alias version
-			__DataSource_JTextField,// Data source part of TSID, non-alias version
-			__DataType_JTextField,	// Data type part of TSID, non-alias version
-			__SubDataType_JTextField,
-			__Method_JTextField,
-			__SubMethod_JTextField,
-			__Scenario_JTextField,
-			__InputName_JTextField,	// Input name part of TSID, non-alias version
-			__InputStart_JTextField,// Text fields for query period, both versions.
-			__InputEnd_JTextField;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private ReadColoradoIPP_Command __command = null;
+private SimpleJComboBox __Subject_JComboBox;
+private JTextField __SubjectName_JTextField; // Location part of TSID
+private JTextField __DataSource_JTextField;// Data source part of TSID
+private JTextField __DataType_JTextField;	// Data type part of TSID
+private JTextField __SubDataType_JTextField;
+private JTextField __Method_JTextField;
+private JTextField __SubMethod_JTextField;
+private JTextField __Scenario_JTextField;
+private JTextField __InputName_JTextField;	// Input name part of TSID
+private JTextField __InputStart_JTextField;
+private JTextField __InputEnd_JTextField;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			
-private JTextArea	__command_JTextArea = null;
-						// Command as JTextArea
+private JTextArea __command_JTextArea = null; // Command as JTextArea
 private List __input_filter_JPanel_Vector = new Vector();
 private InputFilter_JPanel __input_filter_HydroBase_structure_sfut_JPanel =null;
 						// InputFilter_JPanel for
 						// HydroBase structure time
 						// series - those that do use
 						// SFUT.
-private IppDMI	__ippdmi = null; // Colorado IPP DMI to do queries.
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK was
-						// pressed when closing the
-						// dialog.
+private IppDMI __ippdmi = null; // Colorado IPP DMI to do queries.
+private boolean __error_wait = false; // Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
 private int __numWhere = 0;//(HydroBaseDMI.getSPFlexMaxParameters() - 2); // Number of visible where fields
 
 /**
@@ -119,7 +114,7 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	__error_wait = false;
 	// Check parameters for the two command versions...
-    String Subject = __Subject_JTextField.getText().trim();
+    String Subject = __Subject_JComboBox.getSelected();
     if ( Subject.length() > 0 ) {
         props.set ( "Subject", Subject );
     }
@@ -188,7 +183,7 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String Subject = __Subject_JTextField.getText().trim();
+{	String Subject = __Subject_JComboBox.getSelected();
     __command.setCommandParameter ( "Subject", Subject );
     String SubjectName = __SubjectName_JTextField.getText().trim();
     __command.setCommandParameter ( "SubjectName", SubjectName );
@@ -300,11 +295,11 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Read one or more time series from the State of Colorado's IPP database."),
-	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	"Read one or more time series from the State of Colorado's IPP database."),
+    	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Constrain the query by specifying time series metadata." ), 
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	"Constrain the query by specifying time series metadata." ), 
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Refer to the Colorado IPP Database Input Type documentation for possible values." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -318,73 +313,82 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Subject_JTextField = new JTextField ( "" );
-    __Subject_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Subject_JTextField,
-    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    List<String> subjectList = null;
+    if ( __ippdmi == null ) {
+        subjectList = new Vector();
+    }
+    else {
+        subjectList = __ippdmi.getSubjectList();
+    }
+    subjectList.add ( 0, "" );
+    __Subject_JComboBox = new SimpleJComboBox( subjectList );
+    __Subject_JComboBox.select(0);
+    __Subject_JComboBox.addActionListener(this);
+    JGUIUtil.addComponent(main_JPanel, __Subject_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - main data object (Provider, Project, County)."),
-    3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject name:"),
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__SubjectName_JTextField = new JTextField ( "" );
+	__SubjectName_JTextField = new JTextField ( 20 );
 	__SubjectName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __SubjectName_JTextField,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example, provider, project, county name."),
-	3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data source:"),
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DataSource_JTextField = new JTextField ( "" );
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__DataSource_JTextField = new JTextField ( 20 );
 	__DataSource_JTextField.addKeyListener ( this );
    	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
-	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   	    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - source of data."),
-	3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	    3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DataType_JTextField = new JTextField ( "" );
+	__DataType_JTextField = new JTextField ( 20 );
 	__DataType_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example: WaterDemand."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data subtype:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SubDataType_JTextField = new JTextField ( "" );
+    __SubDataType_JTextField = new JTextField ( 20 );
     __SubDataType_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __SubDataType_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, __SubDataType_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example: Total."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Method:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Method_JTextField = new JTextField ( "" );
+    __Method_JTextField = new JTextField ( 20 );
     __Method_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Method_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, __Method_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example: observed, estimated."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Submethod:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SubMethod_JTextField = new JTextField ( "" );
+    __SubMethod_JTextField = new JTextField ( 20 );
     __SubMethod_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __SubMethod_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, __SubMethod_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - ."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Scenario:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Scenario_JTextField = new JTextField ( "" );
+    __Scenario_JTextField = new JTextField ( 20 );
     __Scenario_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Scenario_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, __Scenario_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example low, middle, high."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 /*
@@ -410,13 +414,12 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
-	/* TODO SAM 2004-08-29 - enable later -
-	right now it slows things down
-	try {	// Add input filters for stations...
+	/* TODO SAM 2004-08-29 - enable later - right now it slows things down
+	try {
+	    // Add input filters for stations...
 
 		__input_filter_HydroBase_station_JPanel = new
-			HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel (
-			__hbdmi );
+			HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel (__hbdmi );
    			JGUIUtil.addComponent(main_JPanel,
 			__input_filter_HydroBase_station_JPanel,
 			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
@@ -430,12 +433,12 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 2, routine,
-		"Unable to initialize input filter for HydroBase" +
-		" stations." );
+		"Unable to initialize input filter for HydroBase stations." );
 		Message.printWarning ( 2, routine, e );
 	}
 
-	try {	// Structure total (no SFUT)...
+	try {
+	    // Structure total (no SFUT)...
 
 		PropList filter_props = new PropList ( "" );
 		filter_props.set ( "NumFilterGroups=6" );
@@ -485,28 +488,34 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 	}
 	*/
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new JTextField ( 30 );
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - YYYY, override the global input start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - YYYY, override the global input end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "Optional - alias to assign to time series."),
-    3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -523,7 +532,7 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__cancel_JButton = new SimpleJButton( "Cancel", this);
@@ -561,7 +570,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -571,7 +580,7 @@ public boolean ok ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "readHydroBase_JDialog.refresh";
+{	//String routine = "ReadColoradoIPP_JDialog.refresh";
 	__error_wait = false;
 	String Subject = "";
 	String SubjectName = "";
@@ -605,8 +614,12 @@ private void refresh ()
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
-        if ( Subject != null ) {
-            __Subject_JTextField.setText(Subject);
+        if ( JGUIUtil.isSimpleJComboBoxItem( __Subject_JComboBox, Subject, JGUIUtil.NONE, null, null ) ) {
+            __Subject_JComboBox.select ( Subject );
+        }
+        else {
+            // Select the blank...
+            __Subject_JComboBox.select ( 0 );
         }
         if ( SubjectName != null ) {
             __SubjectName_JTextField.setText(SubjectName);
@@ -665,7 +678,7 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	InputName = __InputName_JTextField.getText().trim();
-	Subject = __Subject_JTextField.getText().trim();
+	Subject = __Subject_JComboBox.getSelected();
 	SubjectName = __SubjectName_JTextField.getText().trim();
 	DataSource = __DataSource_JTextField.getText().trim();
     DataType = __DataType_JTextField.getText().trim();
@@ -717,7 +730,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

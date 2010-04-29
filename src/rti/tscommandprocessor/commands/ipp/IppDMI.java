@@ -3,11 +3,13 @@ package rti.tscommandprocessor.commands.ipp;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
+import RTi.DMI.DMIUtil;
 import RTi.DMI.DMIWriteStatement;
 import RTi.DMI.DMIStatement;
 
@@ -18,6 +20,7 @@ import RTi.TS.YearTS;
 
 import RTi.Util.Message.Message;
 
+import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.IOUtil;
 
 import RTi.Util.Time.DateTime;
@@ -103,6 +106,41 @@ public final static long _VERSION_010000_20090312 = 1000020090312L;
 protected final static long _VERSION_LATEST = _VERSION_010000_20090312;
 
 /**
+List of valid subject types.
+*/
+private List<String> __subjectList = new Vector();
+
+/**
+Hashtable of unique method lists for each subject type.
+*/
+private Hashtable<IPPSubjectType,List<String>> __dataMetaDataMethodList = new Hashtable();
+
+/**
+Hashtable of unique data type lists for each subject type.
+*/
+private Hashtable<IPPSubjectType,List<String>> __dataMetaDataDataTypeList = new Hashtable();
+
+/**
+Hashtable of unique scenario lists for each subject type.
+*/
+private Hashtable<IPPSubjectType,List<String>> __dataMetaDataScenarioList = new Hashtable();
+
+/**
+Hashtable of unique data source lists for each subject type.
+*/
+private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSourceList = new Hashtable();
+
+/**
+Hashtable of unique subject ID lists for each subject type.
+*/
+private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSubjectIDList = new Hashtable();
+
+/**
+Hashtable of unique data subtype lists for each subject type.
+*/
+private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSubTypeList = new Hashtable();
+
+/**
 Flags for doing specific select, write and delete queries, sorted by 
 table name.  Descriptions of the actual queries are in the read*() methods.
 */
@@ -114,13 +152,25 @@ private final int _S_CountyDataMetaData = 1000;
 //private final int _W_CountyDataMetaData = 1001;
 //private final int _D_CountyDataMetaData = 1002;
 
+//Meta-data for county-related time series data
+private final int _S_CountyDataMetaDataDistinctDataType = 1010;
+private final int _S_CountyDataMetaDataDistinctMethod = 1011;
+private final int _S_CountyDataMetaDataDistinctScenario = 1012;
+private final int _S_CountyDataMetaDataDistinctSource = 1013;
+private final int _S_CountyDataMetaDataDistinctSubjectID = 1014;
+private final int _S_CountyDataMetaDataDistinctSubType = 1015;
+
 //IPPData (table)
 private final int _S_IPPData = 1800;
 
-// IPPDataMetaData (view)
-private final int _S_IPPDataMetaData = 2000;
-//private final int _W_IPPDataMetaData = 2001;
-//private final int _D_IPPDataMetaData = 2002;
+// Meta-data for project-related time series data (view)
+private final int _S_ProjectDataMetaData = 2200;
+private final int _S_ProjectDataMetaDataDistinctDataType = 2201;
+private final int _S_ProjectDataMetaDataDistinctMethod = 2202;
+private final int _S_ProjectDataMetaDataDistinctScenario = 2203;
+private final int _S_ProjectDataMetaDataDistinctSource = 2204;
+private final int _S_ProjectDataMetaDataDistinctSubjectID = 2205;
+private final int _S_ProjectDataMetaDataDistinctSubType = 2206;
 
 //ProviderData (table)
 private final int _S_ProviderData = 2500;
@@ -129,6 +179,14 @@ private final int _S_ProviderData = 2500;
 private final int _S_ProviderDataMetaData = 3000;
 //private final int _W_ProviderDataMetaData = 3001;
 //private final int _D_ProviderDataMetaData = 3002;
+
+//Meta-data for provider-related time series data
+private final int _S_ProviderDataMetaDataDistinctDataType = 3500;
+private final int _S_ProviderDataMetaDataDistinctMethod = 3501;
+private final int _S_ProviderDataMetaDataDistinctScenario = 3502;
+private final int _S_ProviderDataMetaDataDistinctSource = 3503;
+private final int _S_ProviderDataMetaDataDistinctSubjectID = 3504;
+private final int _S_ProviderDataMetaDataDistinctSubType = 3505;
 
 /** 
 Constructor for a database server and database name, to use an automatically created URL.
@@ -211,6 +269,42 @@ throws Exception
             select.addField ( "vCountyDataMetaData.scenario" );
             select.addTable ( "vCountyDataMetaData" );
             break;
+        case _S_CountyDataMetaDataDistinctDataType:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vCountyDataMetaData.dataType" );
+            select.addTable ( "vCountyDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_CountyDataMetaDataDistinctMethod:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vCountyDataMetaData.method" );
+            select.addTable ( "vCountyDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_CountyDataMetaDataDistinctScenario:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vCountyDataMetaData.scenario" );
+            select.addTable ( "vCountyDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_CountyDataMetaDataDistinctSource:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vCountyDataMetaData.source" );
+            select.addTable ( "vCountyDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_CountyDataMetaDataDistinctSubjectID:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vCountyDataMetaData.subjectID" );
+            select.addTable ( "vCountyDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_CountyDataMetaDataDistinctSubType:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vCountyDataMetaData.subType" );
+            select.addTable ( "vCountyDataMetaData" );
+            select.selectDistinct(true);
+            break;
         case _S_IPPData:
             select = (DMISelectStatement)statement;
             select.addField ( "tblIPPData.id" );
@@ -218,19 +312,55 @@ throws Exception
             select.addField ( "tblIPPData.value" );
             select.addTable ( "tblIPPData" );
             break;
-        case _S_IPPDataMetaData:
+        case _S_ProjectDataMetaData:
             select = (DMISelectStatement)statement;
-            select.addField ( "vIPPDataMetaData.id" );
-            select.addField ( "vIPPDataMetaData.subjectID" );
-            select.addField ( "vIPPDataMetaData.name" );
-            select.addField ( "vIPPDataMetaData.dataType" );
-            select.addField ( "vIPPDataMetaData.subType" );
-            select.addField ( "vIPPDataMetaData.units" );
-            select.addField ( "vIPPDataMetaData.method" );
-            select.addField ( "vIPPDataMetaData.subMethod" );
-            select.addField ( "vIPPDataMetaData.source" );
-            select.addField ( "vIPPDataMetaData.scenario" );
-            select.addTable ( "vIPPDataMetaData" );
+            select.addField ( "vProjectDataMetaData.id" );
+            select.addField ( "vProjectDataMetaData.subjectID" );
+            select.addField ( "vProjectDataMetaData.name" );
+            select.addField ( "vProjectDataMetaData.dataType" );
+            select.addField ( "vProjectDataMetaData.subType" );
+            select.addField ( "vProjectDataMetaData.units" );
+            select.addField ( "vProjectDataMetaData.method" );
+            select.addField ( "vProjectDataMetaData.subMethod" );
+            select.addField ( "vProjectDataMetaData.source" );
+            select.addField ( "vProjectDataMetaData.scenario" );
+            select.addTable ( "vProjectDataMetaData" );
+            break;
+        case _S_ProjectDataMetaDataDistinctDataType:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProjectDataMetaData.dataType" );
+            select.addTable ( "vProjectDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProjectDataMetaDataDistinctMethod:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProjectDataMetaData.method" );
+            select.addTable ( "vProjectDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProjectDataMetaDataDistinctScenario:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProjectDataMetaData.scenario" );
+            select.addTable ( "vProjectDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProjectDataMetaDataDistinctSource:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProjectDataMetaData.source" );
+            select.addTable ( "vProjectDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProjectDataMetaDataDistinctSubjectID:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProjectDataMetaData.subjectID" );
+            select.addTable ( "vProjectDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProjectDataMetaDataDistinctSubType:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProjectDataMetaData.subType" );
+            select.addTable ( "vProjectDataMetaData" );
+            select.selectDistinct(true);
             break;
         case _S_ProviderData:
             select = (DMISelectStatement)statement;
@@ -253,7 +383,42 @@ throws Exception
 			select.addField ( "vProviderDataMetaData.scenario" );
 			select.addTable ( "vProviderDataMetaData" );
 			break;
-
+        case _S_ProviderDataMetaDataDistinctDataType:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProviderDataMetaData.dataType" );
+            select.addTable ( "vProviderDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProviderDataMetaDataDistinctMethod:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProviderDataMetaData.method" );
+            select.addTable ( "vProviderDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProviderDataMetaDataDistinctScenario:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProviderDataMetaData.scenario" );
+            select.addTable ( "vProviderDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProviderDataMetaDataDistinctSource:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProviderDataMetaData.source" );
+            select.addTable ( "vProviderDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProviderDataMetaDataDistinctSubjectID:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProviderDataMetaData.subjectID" );
+            select.addTable ( "vProviderDataMetaData" );
+            select.selectDistinct(true);
+            break;
+        case _S_ProviderDataMetaDataDistinctSubType:
+            select = (DMISelectStatement)statement;
+            select.addField ( "vProviderDataMetaData.subType" );
+            select.addTable ( "vProviderDataMetaData" );
+            select.selectDistinct(true);
+            break;
 		default:
 			Message.printWarning ( 2, routine, "Unknown statement code: " + sqlNumber );
 			break;
@@ -276,13 +441,11 @@ throws Exception {
 	String routine = "IppDMI.canCreate";
 	int dl = 5;
 
-	Message.printDebug(dl, routine, "canCreate(" + DBUser_num + ", " 
-		+ DBGroup_num + ", " + permissions + ")");
+	Message.printDebug(dl, routine, "canCreate(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
 	boolean canCreate = false;
 /*
 	if (_dbuser.getLogin().trim().equalsIgnoreCase("root")) {
-		Message.printDebug(dl, routine, "Current user is root, can "
-			+ "always create.");
+		Message.printDebug(dl, routine, "Current user is root, can always create.");
 		// root can do ANYTHING
 		return true;
 	}
@@ -754,8 +917,7 @@ public List getDatabaseProperties ( int level )
 		v.add ( "Database server:  " + getDatabaseServer() );
 		v.add ( "Database name:  " + getDatabaseName() );
 	}
-	v.add ( "Database version appears to be (VVVVVVYYYYMMDD):  " +
-			getDatabaseVersion() );
+	v.add ( "Database version appears to be (VVVVVVYYYYMMDD):  " + getDatabaseVersion() );
 	v.add ( "" );
 	v.add ( "Database history (most recent at top):" );
 	v.add ( "" );
@@ -768,6 +930,54 @@ Returns "ColoradoIPP"
 */
 public String getDMIName() {
 	return "ColoradoIPP";
+}
+
+/**
+Return the unique list of data types for a subject type.
+*/
+public List<String> getDataMetaDataDataTypeList ( IPPSubjectType subjectType )
+{
+    return __dataMetaDataDataTypeList.get ( subjectType );
+}
+
+/**
+Return the unique list of methods for a subject type.
+*/
+public List<String> getDataMetaDataMethodList ( IPPSubjectType subjectType )
+{
+    return __dataMetaDataMethodList.get ( subjectType );
+}
+
+/**
+Return the unique list of scenarios for a subject type.
+*/
+public List<String> getDataMetaDataScenarioList ( IPPSubjectType subjectType )
+{
+    return __dataMetaDataScenarioList.get ( subjectType );
+}
+
+/**
+Return the unique list of data sources for a subject type.
+*/
+public List<String> getDataMetaDataSourceList ( IPPSubjectType subjectType )
+{
+    return __dataMetaDataSourceList.get ( subjectType );
+}
+
+/**
+Return the unique list of subject IDs for a subject type.
+*/
+public List<String> getDataMetaDataSubjectIDList ( IPPSubjectType subjectType )
+{
+    return __dataMetaDataSubjectIDList.get ( subjectType );
+}
+
+/**
+Return the unique list of data subtypes for a subject type.
+*/
+public List<String> getDataMetaDataSubTypeList ( IPPSubjectType subjectType )
+{
+    return __dataMetaDataSubTypeList.get ( subjectType );
 }
 
 /**
@@ -800,11 +1010,7 @@ Return the list of subject types.
 */
 public List getSubjectList ()
 {
-    List subjects = new Vector();
-    subjects.add ( "County" );
-    subjects.add ( "Poject" );
-    subjects.add ( "Provider" );
-    return subjects;
+    return __subjectList;
 }
 
 /**
@@ -829,16 +1035,8 @@ public String getTSSupplierName() {
 // R FUNCTIONS
 
 /**
-Read global data for the database, to keep in memory and improve performance.
-*/
-public void readGlobalData()
-{
-    
-}
-
-/**
-Reads all the ProviderDataMetaData view records that match the given constraints.
-@return a list of matching IPP_ProviderDataMetaData objects.
+Reads all the CountyDataMetaData view records that match the given constraints.
+@return a list of matching IPP_CountyDataMetaData objects.
 @throws Exception if an error occurs
 */
 public List readCountyDataMetaDataList( String name, String dataType, String subType,
@@ -874,38 +1072,293 @@ throws Exception {
 }
 
 /**
-Reads all the ProviderDataMetaData view records that match the given constraints.
-@return a list of matching IPP_ProviderDataMetaData objects.
+Read the distinct data meta-data data type strings.
+@param subjectType the subject type to which time series are connected.
+*/
+public List<String> readDataMetaDataDistinctDataTypeList ( IPPSubjectType subjectType )
+throws Exception
+{   String routine = getClass().getName() + ".readDataMetaDataDistinctDataTypeList";
+    DMISelectStatement q = new DMISelectStatement ( this );
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaDataDistinctDataType );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaDataDistinctDataType );
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        buildSQL ( q, _S_ProviderDataMetaDataDistinctDataType );
+    }
+    ResultSet rs = dmiSelect(q);
+    List<String> v = DMIUtil.toStringList (rs);
+    Message.printStatus ( 2, routine, "Got " + v.size() + " distinct data types for " + subjectType );
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Read the distinct data meta-data method strings.
+@param subjectType the subject type to which time series are connected.
+*/
+public List<String> readDataMetaDataDistinctMethodList ( IPPSubjectType subjectType )
+throws Exception
+{   String routine = getClass().getName() + ".readDataMetaDataDistinctMethodList";
+    DMISelectStatement q = new DMISelectStatement ( this );
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaDataDistinctMethod );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaDataDistinctMethod );
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        buildSQL ( q, _S_ProviderDataMetaDataDistinctMethod );
+    }
+    ResultSet rs = dmiSelect(q);
+    List<String> v = DMIUtil.toStringList (rs);
+    Message.printStatus ( 2, routine, "Got " + v.size() + " distinct methods for " + subjectType );
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Read the distinct data meta-data scenario strings.
+@param subjectType the subject type to which time series are connected.
+*/
+public List<String> readDataMetaDataDistinctScenarioList ( IPPSubjectType subjectType )
+throws Exception
+{   String routine = getClass().getName() + ".readDataMetaDataDistinctScenarioList";
+    DMISelectStatement q = new DMISelectStatement ( this );
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaDataDistinctScenario );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaDataDistinctScenario );
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        buildSQL ( q, _S_ProviderDataMetaDataDistinctScenario );
+    }
+    ResultSet rs = dmiSelect(q);
+    List<String> v = DMIUtil.toStringList (rs);
+    Message.printStatus ( 2, routine, "Got " + v.size() + " distinct scenarios for " + subjectType );
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Read the distinct data meta-data source strings.
+@param subjectType the subject type to which time series are connected.
+*/
+public List<String> readDataMetaDataDistinctSourceList ( IPPSubjectType subjectType )
+throws Exception
+{   String routine = getClass().getName() + ".readDataMetaDataDistinctSourceList";
+    DMISelectStatement q = new DMISelectStatement ( this );
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaDataDistinctSource );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaDataDistinctSource );
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        buildSQL ( q, _S_ProviderDataMetaDataDistinctSource );
+    }
+    ResultSet rs = dmiSelect(q);
+    List<String> v = DMIUtil.toStringList (rs);
+    Message.printStatus ( 2, routine, "Got " + v.size() + " distinct data sources for " + subjectType );
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Read the distinct data meta-data subject ID strings.
+@param subjectType the subject type to which time series are connected.
+*/
+public List<String> readDataMetaDataDistinctSubjectIDList ( IPPSubjectType subjectType )
+throws Exception
+{   String routine = getClass().getName() + ".readDataMetaDataDistinctSubjectIDList";
+    DMISelectStatement q = new DMISelectStatement ( this );
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaDataDistinctSubjectID );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaDataDistinctSubjectID );
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        buildSQL ( q, _S_ProviderDataMetaDataDistinctSubjectID );
+    }
+    ResultSet rs = dmiSelect(q);
+    List<String> v = DMIUtil.toStringList (rs);
+    Message.printStatus ( 2, routine, "Got " + v.size() + " distinct subject IDs for " + subjectType );
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Read the distinct data meta-data data subtype strings.
+@param subjectType the subject type to which time series are connected.
+*/
+public List<String> readDataMetaDataDistinctSubTypeList ( IPPSubjectType subjectType )
+throws Exception
+{   String routine = getClass().getName() + ".readDataMetaDataDistinctSubTypeList";
+    DMISelectStatement q = new DMISelectStatement ( this );
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaDataDistinctSubType );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaDataDistinctSubType );
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        buildSQL ( q, _S_ProviderDataMetaDataDistinctSubType );
+    }
+    ResultSet rs = dmiSelect(q);
+    List<String> v = DMIUtil.toStringList (rs);
+    Message.printStatus ( 2, routine, "Got " + v.size() + " distinct data subtypes for " + subjectType );
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Read global data for the database, to keep in memory and improve performance.
+*/
+public void readGlobalData()
+{   String routine = "IppDMI.readGlobalData";
+    // Subjects (data object) types that have time series
+    __subjectList = new Vector(); // Strings
+    __subjectList.add ( "" + IPPSubjectType.COUNTY );
+    //__subjectList.add ( "" + IPPSubjectType.BASIN );
+    //__subjectList.add ( "" + IPPSubjectType.STATE );
+    __subjectList.add ( "" + IPPSubjectType.PROVIDER );
+    __subjectList.add ( "" + IPPSubjectType.PROJECT );
+    
+    for ( IPPSubjectType subjectType : IPPSubjectType.values() ) {
+        // Distinct data sources and other filter choices for the different subject types
+        try {
+            __dataMetaDataDataTypeList.put( subjectType, readDataMetaDataDistinctDataTypeList ( subjectType ) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error reading distinct " + subjectType + " data types (" + e + ")." );
+        }
+        try {
+            __dataMetaDataMethodList.put( subjectType, readDataMetaDataDistinctMethodList ( subjectType ) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error reading distinct " + subjectType + " methods (" + e + ")." );
+        }
+        try {
+            __dataMetaDataScenarioList.put( subjectType, readDataMetaDataDistinctScenarioList ( subjectType ) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error reading distinct " + subjectType + " scenarios (" + e + ")." );
+        }
+        try {
+            __dataMetaDataSourceList.put( subjectType, readDataMetaDataDistinctSourceList ( subjectType ) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error reading distinct " + subjectType + " data sources (" + e + ")." );
+        }
+        try {
+            __dataMetaDataSubTypeList.put( subjectType, readDataMetaDataDistinctSubTypeList ( subjectType ) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error reading distinct " + subjectType + " data subtypes (" + e + ")." );
+        }
+        try {
+            __dataMetaDataSubjectIDList.put( subjectType, readDataMetaDataDistinctSubjectIDList ( subjectType ) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error reading distinct " + subjectType + " subject IDs (" + e + ")." );
+        }
+    }
+}
+
+/**
+Read IPP_IPPDataMetaData records for distinct data types, ordered by MeasLoc.identifier.
+@return a list of objects of type RiversideDB_MeasTypeMeasLocGeoloc.
+@param ifp An InputFilter_JPanel instance from which to retrieve where clause information.
 @throws Exception if an error occurs
 */
-public List readIPPDataMetaDataList( String name, String dataType, String subType,
+public List readDataMetaDataList ( InputFilter_JPanel ifp, IPPSubjectType subjectType ) 
+throws Exception
+{
+    DMISelectStatement q = new DMISelectStatement ( this );
+    // For now focus on the county data...
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_CountyDataMetaData );
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        buildSQL ( q, _S_ProjectDataMetaData );
+    }
+    else if ( subjectType == IPPSubjectType.COUNTY ) {
+        buildSQL ( q, _S_ProviderDataMetaData );
+    }
+    /* TODO SAM 2010-04-29 May do something like this if the Subject is passed in from external code
+    if ( (dataType != null) && (dataType.length() > 0) ) {
+        // Data type has been specified so add a where clause
+        q.addWhereClause("vCountyDataMetaData.dataType = '" + escape(dataType) + "'");
+    }
+    */
+    // Add where clauses for the input filter
+    if ( ifp != null ) {
+        List whereClauses = DMIUtil.getWhereClausesFromInputFilter(this, ifp);       
+        // Add additional where clauses...
+        if (whereClauses != null) {
+            q.addWhereClauses(whereClauses);
+        }
+    }
+    // Sort based on common use
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.subjectID" );
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.dataType" );
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.subType" );
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.method" );
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.subMethod" );
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.scenario" );
+    q.addOrderByClause ( "v" + subjectType + "DataMetaData.source" );
+    ResultSet rs = dmiSelect(q);
+    List v = null;
+    if ( subjectType == IPPSubjectType.COUNTY ) {
+        v = toCountyDataMetaDataList (rs);
+    }
+    else if ( subjectType == IPPSubjectType.PROJECT ) {
+        v = toProjectDataMetaDataList (rs);
+    }
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+        v = toProviderDataMetaDataList (rs);
+    }
+    closeResultSet(rs);
+    return v;
+}
+
+/**
+Reads all the ProjectDataMetaData view records that match the given constraints.
+@return a list of matching IPP_ProjectDataMetaData objects.
+@throws Exception if an error occurs
+*/
+public List readProjectDataMetaDataList( String name, String dataType, String subType,
     String method, String subMethod, String source, String scenario ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
-    buildSQL ( q, _S_IPPDataMetaData );
+    buildSQL ( q, _S_ProjectDataMetaData );
     if ( name != null ) {
-        q.addWhereClause("vIPPDataMetaData.name = '" + escape(name) + "'");
+        q.addWhereClause("vProjectDataMetaData.name = '" + escape(name) + "'");
     }
     if ( dataType != null ) {
-        q.addWhereClause("vIPPDataMetaData.dataType = '" + escape(dataType) + "'");
+        q.addWhereClause("vProjectDataMetaData.dataType = '" + escape(dataType) + "'");
     }
     if ( subType != null ) {
-        q.addWhereClause("vIPPDataMetaData.subType = '" + escape(subType) + "'");
+        q.addWhereClause("vProjectDataMetaData.subType = '" + escape(subType) + "'");
     }
     if ( method != null ) {
-        q.addWhereClause("vIPPDataMetaData.method = '" + escape(method) + "'");
+        q.addWhereClause("vProjectDataMetaData.method = '" + escape(method) + "'");
     }
     if ( subMethod != null ) {
-        q.addWhereClause("vIPPDataMetaData.subMethod = '" + escape(subMethod) + "'");
+        q.addWhereClause("vProjectDataMetaData.subMethod = '" + escape(subMethod) + "'");
     }
     if ( source != null ) {
-        q.addWhereClause("vIPPDataMetaData.source = '" + escape(source) + "'");
+        q.addWhereClause("vProjectDataMetaData.source = '" + escape(source) + "'");
     }
     if ( scenario != null ) {
-        q.addWhereClause("vIPPDataMetaData.scenario = '" + escape(scenario) + "'");
+        q.addWhereClause("vProjectDataMetaData.scenario = '" + escape(scenario) + "'");
     }
     ResultSet rs = dmiSelect(q);
-    List v = toIPPDataMetaDataList (rs);
+    List v = toProjectDataMetaDataList (rs);
     closeResultSet(rs);
     return v;
 }
@@ -946,213 +1399,6 @@ throws Exception {
 	closeResultSet(rs);
 	return v;
 }
-
-/**
-Reads all records from MeasType.
-@return a vector of objects of type RiversideDB_MeasType 
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeList() 
-throws Exception {
-	DMISelectStatement q = new DMISelectStatement ( this );
-	buildSQL ( q, _S_MEASTYPE);
-	ResultSet rs = dmiSelect(q);
-	List v = toMeasTypeList (rs);
-	closeResultSet(rs);
-	return v;
-}
-*/
-
-/**
-Reads all records from MeasType sorted by MeasLoc Identifier (location).
-@return a vector of objects of type RiversideDB_MeasType 
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeListByLocation( ) 
-throws Exception {
-	DMISelectStatement q = new DMISelectStatement ( this );
-	buildSQL ( q, _S_MEASTYPE);
-	//q.addTable( "MeasLoc" );
-	q.addWhereClause( "MeasType.MeasLoc_num = MeasLoc.MeasLoc_num" );
-	q.addOrderByClause( "MeasLoc.Identifier" );
-	ResultSet rs = dmiSelect(q);
-	List v = toMeasTypeList (rs);
-	closeResultSet(rs);
-	return v;
-}
-*/
-
-/**
-Read MeasType records for distinct data types, ordered by Data_type.
-@return a vector of objects of type RiversideDB_MeasType, with only the
-Data_type field filled in.
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeListForDistinctData_type () 
-throws Exception {
-	DMISelectStatement q = new DMISelectStatement ( this );
-	// Select from a join of MeasType and MeasLoc
-	q.addField ( "MeasType.Data_type" );
-	q.addTable ( "MeasType" );
-	q.selectDistinct(true);
-	q.addOrderByClause("MeasType.Data_type");
-	ResultSet rs = dmiSelect ( q );
-	// Transfer here...
-	List v = new Vector();
-	int index = 1;
-	String s;
-	RiversideDB_MeasType data = null;
-	while ( rs.next() ) {
-		data = new RiversideDB_MeasType();
-		s = rs.getString ( index );
-		if ( !rs.wasNull() ) {
-			data.setData_type ( s.trim() );
-		}
-		v.add ( data );
-	}
-	closeResultSet(rs);
-	return v;
-}
-*/
-
-/**
-Reads all records from MeasType that match the given MeasLoc_num.
-@param MeasLoc_num the value to match against
-@return a Vector of matching RiversideDB_MeasType objects.
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeListforMeasLoc_num(long MeasLoc_num) 
-throws Exception {
-	DMISelectStatement q = new DMISelectStatement(this);
-	buildSQL ( q, _S_MEASTYPE );
-	q.addWhereClause("MeasType.MeasLoc_num = " + MeasLoc_num);
-	ResultSet rs = dmiSelect(q);
-	List v = toMeasTypeList (rs);
-	closeResultSet(rs);
-	return v;
-}
-*/
-
-/**
-Reads all the records from MeasType that match the given tsident string.
-@param tsIdent a ts identifier string that will be split up and its values
-set in various where clauses
-@return a vector of RiversideDB_MeasType that match the tsident string.
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeListForTSIdent ( String tsIdent ) 
-throws Exception {
-	return readMeasTypeListForTSIdent(tsIdent,  null);
-}
-*/
-
-/**
-Reads all the records from MeasType that match the given tsident string, 
-ordered by MeasLoc.Identifier.
-@param tsIdent a ts identifier string that will be split up and its values
-set in various where clauses
-@return a Vector of RiversideDB_MeasType objects that match the tsident String.
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeListForTSIdentByLocation(String tsIdent)
-throws Exception {
-	return readMeasTypeListForTSIdent(tsIdent, "MeasLoc.Identifier");
-}
-*/
-
-/**
-executes a query on table MeasType, limiting values to a series of things,
-should any of them be set in the string passed in to the method.  The 
-where clause may set Data_type, Time_step_base, Identifier, Scenario. and/or
-Source_abbrev.
-@param tsIdent a ts identifier string that will be split up and its values
-set in various where clauses
-will have its own separate time series.
-@param sortField the field to sort on
-@return a vector of RiversideDB_MeasType objects filled with rows from the
-resultSet
-@throws Exception if an error occurs
-*/
-/*
-public List readMeasTypeListForTSIdent(String tsIdent, String sortField) 
-throws Exception {
-	DMISelectStatement q = new DMISelectStatement ( this );
-	buildSQL ( q, _S_MEASTYPE );
-
-	TSIdent id = new TSIdent(tsIdent.trim());
-	if (id.getMainType().length() > 0) {
-		q.addWhereClause("MeasType.Data_type = '"
-			+ escape(id.getMainType().toUpperCase()) + "'");
-	}
-
-	if (id.getSubType().length() > 0) {
-		q.addWhereClause("MeasType.Sub_type = '"
-			+ escape(id.getSubType().toUpperCase()) + "'");
-	}
-	if ( !id.getInterval().equals("") ) {
-		// TODO
-		// This does not work because the case or spelling may not
-		// match in the lookup...
-		// Need to get directly from the interval part.
-		//addWhereClause("MeasType.Time_step_base = " + 
-		//	TSInterval.getName(id.getIntervalBase()).toUpperCase());
-		TimeInterval interval = TimeInterval.parseInterval (
-			id.getInterval() );
-		q.addWhereClause("MeasType.Time_step_base = '"
-			+ escape(interval.getBaseString()) + "'" );
-
-		// The convention when defining MeasType records is to always
-		// include the multiplier.  However, it is not required and will
-		// not be present for IRREGULAR time step (for which there is
-		// no multiplier).  Because it is expected that the multiplier
-		// string in an identifer matches what is in the database, use
-		// the string that is passed in to determine the interval,
-		// rather that getting an interval string from the integer base.
-	
-		if ( !interval.getMultiplierString().equals("") ) {
-			q.addWhereClause("MeasType.Time_step_mult = " 
-				+ interval.getMultiplierString().toUpperCase());
-		}
-	}
-	if (id.getLocation().length() > 0) {
-		q.addWhereClause("MeasLoc.Identifier = '"
-			+ escape(id.getLocation().toUpperCase()) + "'");
-	}
-
-	if (id.getScenario().length() > 0) {
-		q.addWhereClause("MeasType.Scenario = '"
-			+ escape(id.getScenario().toUpperCase()) + "'");
-	}
-	String source = id.getSource().toUpperCase();
-	// REVISIT [LT] 2005-01-10 - Is this also version dependent ?????
-	// REVISIT [LT] 2005-02-02 - In discussion with MT it was decided that
-	//                           this check should not be done.
-	//			     Keep around, since I do not know if other
-	//			     application using this library is still 
-	//			     passing tsIdent with HYDROBASE. 
-	if (source == "HYDROBASE") {
-		source = id.getSubSource().toUpperCase();
-	}
-	if (source.length() > 0) {
-		q.addWhereClause("MeasType.Source_abbrev = '" 
-			+ escape(source) + "'");
-	}
-	if (sortField != null) {
-		q.addOrderByClause(sortField);
-	}
-
-	ResultSet rs = dmiSelect(q);
-	List v = toMeasTypeList (rs);
-	closeResultSet(rs);
-	return v;
-}
-*/
 
 /**
 Read a time series given the id of the time series (metadata are provided to simplify creating the time series).
@@ -1633,6 +1879,24 @@ throws Exception {
     while ( rs.next() ) {
         data = new IPP_IPPDataMetaData();
         data.setSubject( "IPP" );
+        toDataMetaData ( data, rs );
+        v.add(data);
+    }
+    return v;
+}
+
+/**
+Convert a ResultSet to a list of IPP_ProjectDataMetaData.
+@param rs ResultSet from a IPP_ProjectDataMetaData view query.
+@throws Exception if an error occurs
+*/
+private List toProjectDataMetaDataList ( ResultSet rs ) 
+throws Exception {
+    List v = new Vector();
+    IPP_ProjectDataMetaData data = null;
+    while ( rs.next() ) {
+        data = new IPP_ProjectDataMetaData();
+        data.setSubject( "Project" );
         toDataMetaData ( data, rs );
         v.add(data);
     }

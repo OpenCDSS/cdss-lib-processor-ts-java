@@ -202,7 +202,6 @@ CommandWarningException, CommandException
     }
     TS ts = null;
     for ( int i = 0; i < size; i++ ) {
-        // Create a copy of the original, but with the new scenario.
         ts = (TS)tslist.get(i);
         // Now set the data...
         try {

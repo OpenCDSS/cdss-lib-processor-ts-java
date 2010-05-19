@@ -1,11 +1,14 @@
 package rti.tscommandprocessor.commands.ipp;
 
+import java.security.InvalidParameterException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
+
+import rti.tscommandprocessor.core.TimeSeriesNotFoundException;
 
 import RTi.DMI.DMI;
 import RTi.DMI.DMISelectStatement;
@@ -23,6 +26,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.IOUtil;
 
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -161,7 +165,7 @@ private final int _S_CountyDataMetaDataDistinctSubjectID = 1014;
 private final int _S_CountyDataMetaDataDistinctSubType = 1015;
 
 //IPPData (table)
-private final int _S_IPPData = 1800;
+private final int _S_ProjectData = 1800;
 
 // Meta-data for project-related time series data (view)
 private final int _S_ProjectDataMetaData = 2200;
@@ -305,12 +309,12 @@ throws Exception
             select.addTable ( "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_IPPData:
+        case _S_ProjectData:
             select = (DMISelectStatement)statement;
-            select.addField ( "tblIPPData.id" );
-            select.addField ( "tblIPPData.year" );
-            select.addField ( "tblIPPData.value" );
-            select.addTable ( "tblIPPData" );
+            select.addField ( "tblProjectData.id" );
+            select.addField ( "tblProjectData.year" );
+            select.addField ( "tblProjectData.value" );
+            select.addTable ( "tblProjectData" );
             break;
         case _S_ProjectDataMetaData:
             select = (DMISelectStatement)statement;
@@ -1007,10 +1011,16 @@ public String[] getDatabaseVersionArray() {
 
 /**
 Return the list of subject types.
+@return the list of subject types.
 */
 public List getSubjectList ()
 {
-    return __subjectList;
+    // Make a copy
+    List<String> subjectList = new Vector();
+    for ( String subject: __subjectList ) {
+        subjectList.add ( subject );
+    }
+    return subjectList;
 }
 
 /**
@@ -1044,25 +1054,25 @@ public List readCountyDataMetaDataList( String name, String dataType, String sub
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
     buildSQL ( q, _S_CountyDataMetaData );
-    if ( name != null ) {
+    if ( (name != null) && !name.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.name = '" + escape(name) + "'");
     }
-    if ( dataType != null ) {
+    if ( (dataType != null) && !dataType.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.dataType = '" + escape(dataType) + "'");
     }
-    if ( subType != null ) {
+    if ( (subType != null) && !subType.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.subType = '" + escape(subType) + "'");
     }
-    if ( method != null ) {
+    if ( (method != null) && !method.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.method = '" + escape(method) + "'");
     }
-    if ( subMethod != null ) {
+    if ( (subMethod != null) && !subMethod.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.subMethod = '" + escape(subMethod) + "'");
     }
-    if ( source != null ) {
+    if ( (source != null) && !source.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.source = '" + escape(source) + "'");
     }
-    if ( scenario != null ) {
+    if ( (scenario != null) && !scenario.equals("") ) {
         q.addWhereClause("vCountyDataMetaData.scenario = '" + escape(scenario) + "'");
     }
     ResultSet rs = dmiSelect(q);
@@ -1286,7 +1296,7 @@ throws Exception
     else if ( subjectType == IPPSubjectType.PROJECT ) {
         buildSQL ( q, _S_ProjectDataMetaData );
     }
-    else if ( subjectType == IPPSubjectType.COUNTY ) {
+    else if ( subjectType == IPPSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaData );
     }
     /* TODO SAM 2010-04-29 May do something like this if the Subject is passed in from external code
@@ -1331,30 +1341,30 @@ Reads all the ProjectDataMetaData view records that match the given constraints.
 @return a list of matching IPP_ProjectDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readProjectDataMetaDataList( String name, String dataType, String subType,
+public List readProjectDataMetaDataList( String subjectID, String dataType, String subType,
     String method, String subMethod, String source, String scenario ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
     buildSQL ( q, _S_ProjectDataMetaData );
-    if ( name != null ) {
-        q.addWhereClause("vProjectDataMetaData.name = '" + escape(name) + "'");
+    if ( (subjectID != null) && !subjectID.equals("") ) {
+        q.addWhereClause("vProjectDataMetaData.subjectID = " + subjectID );
     }
-    if ( dataType != null ) {
+    if ( (dataType != null) && !dataType.equals("") ) {
         q.addWhereClause("vProjectDataMetaData.dataType = '" + escape(dataType) + "'");
     }
-    if ( subType != null ) {
+    if ( (subType != null) && !subType.equals("") ) {
         q.addWhereClause("vProjectDataMetaData.subType = '" + escape(subType) + "'");
     }
-    if ( method != null ) {
+    if ( (method != null) && !method.equals("") ) {
         q.addWhereClause("vProjectDataMetaData.method = '" + escape(method) + "'");
     }
-    if ( subMethod != null ) {
+    if ( (subMethod != null) && !subMethod.equals("") ) {
         q.addWhereClause("vProjectDataMetaData.subMethod = '" + escape(subMethod) + "'");
     }
-    if ( source != null ) {
+    if ( (source != null) && !source.equals("") ) {
         q.addWhereClause("vProjectDataMetaData.source = '" + escape(source) + "'");
     }
-    if ( scenario != null ) {
+    if ( (scenario != null) && !scenario.equals("") ) {
         q.addWhereClause("vProjectDataMetaData.scenario = '" + escape(scenario) + "'");
     }
     ResultSet rs = dmiSelect(q);
@@ -1368,30 +1378,30 @@ Reads all the ProviderDataMetaData view records that match the given constraints
 @return a list of matching IPP_ProviderDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readProviderDataMetaDataList( String name, String dataType, String subType,
+public List readProviderDataMetaDataList( String subjectID, String dataType, String subType,
     String method, String subMethod, String source, String scenario ) 
 throws Exception {
 	DMISelectStatement q = new DMISelectStatement ( this );
 	buildSQL ( q, _S_ProviderDataMetaData );
-    if ( name != null ) {
-        q.addWhereClause("vProviderDataMetaData.name = '" + escape(name) + "'");
+    if ( (subjectID != null) && !subjectID.equals("") ) {
+        q.addWhereClause("vProviderDataMetaData.subjectID = " + subjectID );
     }
-	if ( dataType != null ) {
+	if ( (dataType != null) && !dataType.equals("") ) {
 	    q.addWhereClause("vProviderDataMetaData.dataType = '" + escape(dataType) + "'");
 	}
-    if ( subType != null ) {
+    if ( (subType != null) && !subType.equals("") ) {
         q.addWhereClause("vProviderDataMetaData.subType = '" + escape(subType) + "'");
     }
-    if ( method != null ) {
+    if ( (method != null) && !method.equals("") ) {
         q.addWhereClause("vProviderDataMetaData.method = '" + escape(method) + "'");
     }
-    if ( subMethod != null ) {
+    if ( (subMethod != null) && !subMethod.equals("") ) {
         q.addWhereClause("vProviderDataMetaData.subMethod = '" + escape(subMethod) + "'");
     }
-    if ( source != null ) {
+    if ( (source != null) && !source.equals("") ) {
         q.addWhereClause("vProviderDataMetaData.source = '" + escape(source) + "'");
     }
-    if ( scenario != null ) {
+    if ( (scenario != null) && !scenario.equals("") ) {
         q.addWhereClause("vProviderDataMetaData.scenario = '" + escape(scenario) + "'");
     }
 	ResultSet rs = dmiSelect(q);
@@ -1401,24 +1411,27 @@ throws Exception {
 }
 
 /**
-Read a time series given the id of the time series (metadata are provided to simplify creating the time series).
+Read a time series given the id of the time series.  Other parameters specify metadata
+to simplify creating the time series).
+@param id the identifier for the "DataMetaData" (time series) record (this is NOT the subjectID!).
 */
 public TS readTimeSeries ( String subject, long id, String name, String source, String dataType,
         String subType, String units, String method, String subMethod, String scenario, 
         DateTime reqStart, DateTime reqEnd, boolean readData )
 throws Exception
 {   DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subject.equalsIgnoreCase("County")) {
+    // Query the time series data records...
+    if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY)) {
         buildSQL ( q, _S_CountyData );
         q.addWhereClause("tblCountyData.id = " + id );
         q.addOrderByClause("tblCountyData.year");
     }
-    else if ( subject.equalsIgnoreCase("IPP")) {
-        buildSQL ( q, _S_IPPData );
-        q.addWhereClause("tblIPPData.id = " + id );
-        q.addOrderByClause("tblIPPData.year");
+    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROJECT)) {
+        buildSQL ( q, _S_ProjectData );
+        q.addWhereClause("tblProjectData.id = " + id );
+        q.addOrderByClause("tblProjectData.year");
     }
-    else if ( subject.equalsIgnoreCase("Provider")) {
+    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROVIDER)) {
         buildSQL ( q, _S_ProviderData );
         q.addWhereClause("tblProviderData.id = " + id );
         q.addOrderByClause("tblProviderData.year");
@@ -1431,8 +1444,8 @@ throws Exception
         ts.setDataUnits ( units );
         ts.setDataUnitsOriginal ( units );
     }
-    TSIdent tsident = new TSIdent ( subject + ":" + name + "." + source + "." + dataType + "-" + subType +
-            ".Year." + method + "-" + subMethod + "-" + scenario );
+    TSIdent tsident = new TSIdent ( subject + ":" + name + "." + source + "." +
+            dataType + "-" + subType + "-" + method + "-" + subMethod + ".Year." + scenario );
     ts.setIdentifier( tsident );
     if ( (reqStart != null) && (reqEnd != null) ) {
         ts.setDate1 ( reqStart );
@@ -1466,312 +1479,76 @@ Read a time series matching a time series identifier.
 @return a time series or null if the time series is not defined in the database.
 If no data records are available within the requested period, a call to
 hasData() on the returned time series will return false.
-@param tsident_string TSIdent string identifying the time series.  
-Alternately, this can be a String representation of a Long value, in which
-case it is the MeasType_num of the time series to read.
-@param req_date1 Optional date to specify the start of the query (specify 
+@param tsidentString TSIdent string identifying the time series.
+@param reqStart Optional date to specify the start of the query (specify 
 null to read the entire time series).
-@param req_date2 Optional date to specify the end of the query (specify 
+@param reqEnd Optional date to specify the end of the query (specify 
 null to read the entire time series).
-@param req_units requested data units (specify null or blank string to 
-return units from the database).
-@param readData Indicates whether data should be read (specify false to 
-only read header information).
+@param reqUnits requested data units (specify null or blank string to return units from the database).
+@param readData Indicates whether data should be read (specify false to only read header information).
 @exception if there is an error reading the time series.
 */
-public TS readTimeSeries (String tsident_string, DateTime req_date1,
-			  DateTime req_date2, String req_units, boolean readData )
+public TS readTimeSeries (String tsidentString, DateTime reqStart,
+    DateTime reqEnd, String reqUnits, boolean readData )
 throws Exception
-{	// Read a time series from the database.
-	// IMPORTANT - BECAUSE WE CAN'T GET THE LAST RECORD FROM A ResultSet
-	// FOR TIME SERIES DATA RECORDS, WE CANNOT GET THE END DATES FOR MEMORY
-	// ALLOCATION UP FRONT.  THEREFORE, IT IS REQUIRED THAT THE ResultSet
-	// BE CONVERTED TO A VECTOR OF DATA OBJECTS, WHICH CAN THEN BE EXAMINED
-	// TO GET THE DATE.  IF THIS WERE NOT THE CASE, THE CODE COULD BE
-	// OPTIMIZED TO GO DIRECTLY FROM A ResultSet TO A TS.
-    TS ts = null;
-/*
-	// First determine the MeasType for the time series...
-	String routine = "RiversideDB_DMI.readTimeSeries";
-	RiversideDB_MeasType mt = null;
-	
-	boolean isMeasType_num_boolean = false;// True if TSID is a MeasType_num
-	if (StringUtil.isLong(tsident_string)) {
-		// If the TSIdentString is a long value, assume that it's a MeasType_num that was passed in.
-		mt = readMeasTypeForMeasType_num((new Long(tsident_string)).longValue());
-		if (mt == null) {
-			Message.printWarning(2, routine,
-				"Unable to read time series: no MeasType for MeasType_num \"" + tsident_string + "\".");
-			return null;
-		}
-		isMeasType_num_boolean = true;
-	}
-	else {
-		mt = readMeasTypeForTSIdent(tsident_string);
-		if (mt == null) {
-			Message.printWarning(2, routine,"Unable to read time series:  no MeasType for \"" + tsident_string + "\"");
-			return null;
-		}
-	}
-	
-	// Determine the table and format to read from...
-	int pos = RiversideDB_Tables.indexOf ( _RiversideDB_Tables_Vector, mt.getTable_num1() );
-
-	if ( pos < 0 ) {
-		Message.printWarning ( 2, routine, "Unable to read time series:  no Tables record for table number"
-		+ mt.getTable_num1() );
-		return null;
-	}
-	// Based on the table format, call the appropriate read method...
-	RiversideDB_Tables t = (RiversideDB_Tables)_RiversideDB_Tables_Vector.get(pos);
-	long table_layout = t.getTableLayout_num();
-	// First define the time series to be returned, based on the MeasType interval base and multiplier...
-	TS ts = null;
-	if ( mt._Time_step_base.equalsIgnoreCase("Min") || mt._Time_step_base.equalsIgnoreCase("Minute") ) {
-		ts = new MinuteTS ();
-		ts.setDataInterval ( TimeInterval.MINUTE,(int)mt.getTime_step_mult());
-	}
-	else if ( mt._Time_step_base.equalsIgnoreCase("Hour") ) {
-		ts = new HourTS ();
-		ts.setDataInterval ( TimeInterval.HOUR,(int)mt.getTime_step_mult());
-	}
-	else if ( mt._Time_step_base.equalsIgnoreCase("Day") ) {
-		ts = new DayTS ();
-		ts.setDataInterval ( TimeInterval.DAY,(int)mt.getTime_step_mult());
-	}
-	else if ( mt._Time_step_base.equalsIgnoreCase("Month") || mt._Time_step_base.equalsIgnoreCase("Mon") ) {
-		ts = new MonthTS ();
-		ts.setDataInterval ( TimeInterval.MONTH,(int)mt.getTime_step_mult());
-	}
-	/ * TODO SAM 2008-11-19 Add support eventually
-	else if ( mt._Time_step_base.equalsIgnoreCase("Second") || mt._Time_step_base.equalsIgnoreCase("Sec") ) {
-	    ts = new SecondTS ();
-	    ts.setDataInterval ( TimeInterval.SECOND,(int)mt.getTime_step_mult());
-	}
-	* /
-	else if ( mt._Time_step_base.equalsIgnoreCase("Year") ) {
-		ts = new YearTS ();
-		ts.setDataInterval ( TimeInterval.YEAR,(int)mt.getTime_step_mult());
-	}
-	else if (mt._Time_step_base.equalsIgnoreCase("Irreg") || mt._Time_step_base.equalsIgnoreCase("Irregular") ) {
-		ts = new IrregularTS ();
-	}
-	else {
-        String message = "Time step " + mt._Time_step_base + " is not supported.";
-        Message.printWarning ( 2, routine, message );
-		throw new Exception ( message );
-	}
-	if ( isMeasType_num_boolean ) {
-		// If a MeasType_num was used to identify the time series, set the TSID to a new string.
-		ts.setIdentifier ( mt.toTSIdent() ); 
-	}
-	else {
-        // If a full TSID was used to identify the time series, use
-		// the original string because it may have specific meaning to the calling code.
-		// TODO SAM 2006-10-12 Need to evaluate if the above can be used in all cases but
-		// do not have tests in place to check right now.
-		ts.setIdentifier ( tsident_string ); 
-	}
-	ts.setDescription ( mt.getDescription() );
-	ts.setDataType ( mt.getData_type() );
-	ts.setDataUnits ( mt.getUnits_abbrev() );
-	ts.setDataUnitsOriginal ( mt.getUnits_abbrev() );
-	if ( req_date1 != null ) {
-		ts.setDate1 ( req_date1 );
-	}
-	if ( req_date2 != null ) {
-		ts.setDate2 ( req_date2 );
-	}
-	// TODO - problem here - in order to read the header and get the
-	// dates, we really need to get the dates from somewhere.  Currently
-	// RiversideDB does not store the most current period dates in the
-	// database - this needs to be corrected.
-	if ( !readData ) {
-		return ts;
-	}
-	// Read the data...
-	// The layout numbers are static.  Use the following to get the data records...
-	DMISelectStatement q = new DMISelectStatement ( this );
-	String ts_table = t.getTable_name();
-	q.addTable ( ts_table );
-	// Always query the MeasType_num
-	q.addWhereClause ( ts_table + ".MeasType_num=" + mt.getMeasType_num() );
-	// Most time series tables have similar layout, with some having a few more columns.
-	// Put all of the recognized formats in the following and let unknown formats fall through
-	boolean monthRecord = false;   // True for 12-values per record
-	if ( (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE) ||
-        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE_WITH_DURATION) ||
-        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE_CREATION) ||
-        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_HOUR) ||
-        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_DAY) ||
-        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MONTH) ||
-        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_YEAR) ||
-        (table_layout == TABLE_LAYOUT_1MONTH) ) {
-	    // Set booleans to indicate which optional fields are used.
-	    boolean hasFlag = true; // Default is they all do
-	    boolean hasDuration = false;
-	    if ( table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE_WITH_DURATION ) {
-	        hasDuration = true;
-	    }
-	    // Table formats indicate revisions to data using either a revision number (sequential integer)
-	    // or creation time (date/time).  The records will need to be ordered by one of these to ensure
-	    // that the latest values are evident in the results.
-	    boolean hasRevisionNum = false;
-	    if ( (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE) ||
-            (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE_WITH_DURATION) ||
-	        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_HOUR) ||
-	        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_DAY) ||
-	        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MONTH) ||
-	        (table_layout == TABLE_LAYOUT_DATE_VALUE_TO_YEAR) ||
-	        (table_layout == TABLE_LAYOUT_1MONTH) ) {
-	        hasRevisionNum = true;
-	    }
-	    boolean hasCreationTime = false;
-        if ( table_layout == TABLE_LAYOUT_DATE_VALUE_TO_MINUTE_CREATION ) {
-            // No duration but has creation time
-            hasCreationTime = true;
-        }
-        if ( table_layout == TABLE_LAYOUT_1MONTH ) {
-            // 12 values per record, requires special handling in query and transfer of result set
-            monthRecord = true;
-        }
-        if ( monthRecord ) {
-            // 12 values per record
-            q.addField ( ts_table + ".Cal_year" );
-            q.addField ( ts_table + ".Month01" );
-            q.addField ( ts_table + ".Month02" );
-            q.addField ( ts_table + ".Month03" );
-            q.addField ( ts_table + ".Month04" );
-            q.addField ( ts_table + ".Month05" );
-            q.addField ( ts_table + ".Month06" );
-            q.addField ( ts_table + ".Month07" );
-            q.addField ( ts_table + ".Month08" );
-            q.addField ( ts_table + ".Month09" );
-            q.addField ( ts_table + ".Month10" );
-            q.addField ( ts_table + ".Month11" );
-            q.addField ( ts_table + ".Month12" );
-            // Order by revision number so that the latest values are visible in the time series,
-            // but won't include revision number in the final time series results
-            q.addField ( ts_table + ".Revision_num" );
-            q.addOrderByClause ( ts_table + ".Revision_num" );
-        }
-        else {
-            // More common date/value table layout
-            q.addField ( ts_table + ".Date_Time" );
-            q.addField ( ts_table + ".Val" );
-            q.addField ( ts_table + ".Quality_flag" );
-            if ( hasDuration ) {
-                q.addField ( ts_table + ".Duration" );
-            }
-            // Always sort by date/time of the data.
-            q.addOrderByClause ( ts_table + ".Date_Time" );
-            if ( hasRevisionNum ) {
-                // Order by revision number so that the latest values are visible in the time series,
-                // but won't include revision number in the final time series results
-                q.addField ( ts_table + ".Revision_num" );
-                q.addOrderByClause ( ts_table + ".Revision_num" );
-            }
-            else if ( hasCreationTime ) {
-                // Newer alternative to revision number - sort by the creation time so latest value is used
-                // in final result
-                q.addField ( ts_table + ".Creation_Time" );
-                q.addOrderByClause ( ts_table + ".Creation_Time" );
-            }
-            if ( req_date1 != null ) {
-                q.addWhereClause ( ts_table + ".Date_Time >= " + DMIUtil.formatDateTime( this, req_date1));
-            }
-            if ( req_date2 != null ) {
-                q.addWhereClause ( ts_table + ".Date_Time <= " + DMIUtil.formatDateTime( this, req_date2));
-            }
-        }
-		// Submit the query...
-		ResultSet rs = dmiSelect ( q );
-		// Convert the data to a Vector of records so we can get the first and last dates to allocate memory...
-		List v = null;
-		if ( monthRecord ) {
-		    v = toTSDateValueRecordListFromMonthData ( rs );
-		}
-		else {
-		    v = toTSDateValueRecordList ( hasDuration, hasCreationTime, rs );
-		}
-		closeResultSet(rs);
-		int size = 0;
-		if ( v != null ) {
-			size = v.size();
-		}
-		if ( size == 0 ) {
-			// Return the TS because there are no data to set dates.
-			// The header will be complete other than dates but no data will be filled in...
-			return ts;
-		}
-		RiversideDB_TSDateValueRecord data = null;
-
-		if ( (req_date1 != null) && (req_date2 != null) ) {
-			// Allocate the memory regardless of whether there was
-			// data.  If no data have been found then missing data will be initialized...
-			ts.setDate1(req_date1);
-			ts.setDate1Original(req_date1);
-			ts.setDate2(req_date2);
-			ts.setDate2Original(req_date2);
-            // All the minute data has flags.
-            ts.hasDataFlags(true, 4);
-			ts.allocateDataSpace();
-		}
-		else if ( size > 0 ) {
-			// Set the date from the records...
-			data = (RiversideDB_TSDateValueRecord)v.get(0);
-			if ( ts instanceof IrregularTS ) {
-			    // FIXME SAM 2008-11-19 Need precision of dates for irregular data in database
-			    // Set the precision to minute since it is unlikely that data values need
-			    // to be recorded to the second
-			    ts.setDate1(new DateTime(data._Date_Time, DateTime.PRECISION_MINUTE));
-			    ts.setDate1Original(new DateTime(data._Date_Time, DateTime.PRECISION_MINUTE));
-			}
-			else {
-			    // Precision will be set consistent with the time series interval when dates are set.
-			    ts.setDate1(data._Date_Time);
-			    ts.setDate1Original(data._Date_Time);
-			}
-
-			data = (RiversideDB_TSDateValueRecord)v.get(size - 1);
-			if ( ts instanceof IrregularTS ) {
-			    ts.setDate2(new DateTime(data._Date_Time, DateTime.PRECISION_MINUTE));
-			    ts.setDate2Original(new DateTime(data._Date_Time, DateTime.PRECISION_MINUTE));
-			}
-			else {
-	            ts.setDate2(data._Date_Time);
-	            ts.setDate2Original(data._Date_Time);
-			}
-			// All the minute data has flags.
-			if ( hasFlag ) {
-			    ts.hasDataFlags(true, 4);
-			}
-			ts.allocateDataSpace();
-		}
-		for ( int i = 0; i < size; i++ ) {
-			// Loop through and assign the data...
-			data = (RiversideDB_TSDateValueRecord)v.get(i);
-			// For now ignore the revision number because the newer creation date is easier to deal with...
-			if ( !DMIUtil.isMissing(data._Val) ) {
-                if ( hasFlag && hasDuration ) {
-                    // Need to set the duration and quality flag...
-                    ts.setDataValue ( data._Date_Time, data._Val, data._Quality_flag, data._Duration );
-                }
-                else if ( hasFlag ) {
-                    // Has flag but no duration.
-                    ts.setDataValue ( data._Date_Time, data._Val, data._Quality_flag, 0 );
-                }
-            }
-		}
-	}
-	else {
-        String message = "RiversideDB TableLayout " + table_layout + " is not supported.";
-        Message.printWarning ( 2, routine, message );
-        throw new Exception ( message );
-        // FIXME SAM 2007-12-21 Need to look up the table number from the table format table and not hard-code numbers.
-	}
-	*/
-	return ts;
+{	String routine = getClass().getName() + ".readTimeSeries";
+    String message;
+    // Declare a TSIdent object to do most of the parsing of the string...
+    TSIdent tsident = new TSIdent(tsidentString);
+    String subjectAndLocation = tsident.getLocation(); // Will be Subject:location
+    String subject = StringUtil.getToken(subjectAndLocation,":",0,0);
+    String location = StringUtil.getToken(subjectAndLocation,":",0,1);
+    String dataTypeAll = tsident.getType(); // Will be main-subtype-method-submethod
+    String dataType = null;
+    String subType = null;
+    String method = null;
+    String subMethod = null;
+    List<String>tokens = StringUtil.breakStringList(dataTypeAll,"-",0);
+    if ( tokens.size() > 0 ) {
+        dataType = tokens.get(0);
+    }
+    if ( tokens.size() > 1 ) {
+        subType = tokens.get(1);
+    }
+    if ( tokens.size() > 2 ) {
+        method = tokens.get(2);
+    }
+    if ( tokens.size() > 3 ) {
+        subMethod = tokens.get(3);
+    }
+    String source = tsident.getSource();
+    String scenario = tsident.getScenario();
+    // Read the database record for the time series metadata, to get the units and name
+    List<IPP_DataMetaData> dataList = null;
+    if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY) ) {
+        dataList = readCountyDataMetaDataList(location, dataType, subType, subMethod, subMethod, source, scenario);
+    }
+    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROJECT) ) {
+        dataList = readProjectDataMetaDataList(location, dataType, subType, subMethod, subMethod, source, scenario);
+    }
+    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROVIDER) ) {
+        dataList = readProviderDataMetaDataList(location, dataType, subType, subMethod, subMethod, source, scenario);
+    }
+    if ( dataList.size() == 0 ) {
+        message = "Time series identifier \"" + tsidentString + "\" does not match any " + subject +
+            " time series meta data - unable to read data.";
+        Message.printWarning(3, routine, message);
+        throw new TimeSeriesNotFoundException(message);
+    }
+    else if ( dataList.size() > 1 ) {
+        message = "Time series identifier \"" + tsidentString + "\" matches " + dataList.size() +
+            " time series - should only match one.";
+        Message.printWarning(3, routine, message);
+        throw new InvalidParameterException(message);
+    }
+    IPP_DataMetaData data = dataList.get(0);
+    // Get the internal data (time series) ID resulting from the time series
+    long id = data.getID();
+    // The following uses the id to read the time series.  All other parameters are provided to avoid
+    // a second query (or to use values exactly matching the TSID).
+    return readTimeSeries ( subject, id, data.getName(), source, dataType,
+        subType, reqUnits, method, subMethod, scenario, 
+        reqStart, reqEnd, readData );
 }
 
 /**
@@ -1865,24 +1642,6 @@ throws SQLException
     if ( !rs.wasNull() ) {
         data.setScenario ( s.trim() );
     }
-}
-
-/**
-Convert a ResultSet to a list of IPP_IPPDataMetaData.
-@param rs ResultSet from a IPP_ProviderDataMetaData view query.
-@throws Exception if an error occurs
-*/
-private List toIPPDataMetaDataList ( ResultSet rs ) 
-throws Exception {
-    List v = new Vector();
-    IPP_IPPDataMetaData data = null;
-    while ( rs.next() ) {
-        data = new IPP_IPPDataMetaData();
-        data.setSubject( "IPP" );
-        toDataMetaData ( data, rs );
-        v.add(data);
-    }
-    return v;
 }
 
 /**

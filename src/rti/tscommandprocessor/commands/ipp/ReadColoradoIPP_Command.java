@@ -81,51 +81,46 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String warning = "";
     String message;
+    
+    String Subject = parameters.getValue ( "Subject" );
+    String InputStart = parameters.getValue ( "InputStart" );
+    String InputEnd = parameters.getValue ( "InputEnd" );
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-    
-    /*
-    String DataType = parameters.getValue ( "DataType" );
-	if ( (DataType == null) || (DataType.length() == 0) ) {
-        message = "The data type must be specified.";
-		warning += "\n" + message;
+   
+    if ( (Subject == null) || Subject.equals("") ) {
+        message = "The subject must be specified.";
+        warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the data type." ) );
-	}
-	String Interval = parameters.getValue ( "Interval" );
-	if ( (Interval == null) || (Interval.length() == 0) ) {
-        message = "The data interval must be specified.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the data interval." ) );
-	}
-	else {
-	    try { TimeInterval.parseInterval (Interval);
-		}
-		catch ( Exception e ) {
-            message = "The data interval \"" + Interval + "\" is invalid";
-			warning += "\n" + message;
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the subject." ) );
+    }
+    else {
+        boolean found = false;
+        for ( IPPSubjectType subject: IPPSubjectType.values() ) {
+            if ( Subject.equalsIgnoreCase(""+subject)) {
+                found = true;
+                break;
+            }
+        }
+        if ( !found ) {
+            message = "The subject (" + Subject + ") is invalid.";
+            warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid data interval." ) );
-		}
-	}
-	*/
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the subject as " + IPPSubjectType.COUNTY + ", " +
+                    IPPSubjectType.PROJECT + ", or " + IPPSubjectType.PROVIDER + "." ) );
+        }
+    }
+
 	// InputName is optional.
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
 
-	// Used with both versions of the command...
-
-	String InputStart = parameters.getValue ( "InputStart" );
-	String InputEnd = parameters.getValue ( "InputEnd" );
-
-	if (	(InputStart != null) && !InputStart.equals("") &&
-		!InputStart.equalsIgnoreCase("InputStart") &&
-		!InputStart.equalsIgnoreCase("InputEnd") ) {
-		try {	DateTime.parse(InputStart);
+	if ( (InputStart != null) && !InputStart.equals("") &&
+		!InputStart.equalsIgnoreCase("InputStart") && !InputStart.equalsIgnoreCase("InputEnd") ) {
+		try {
+		    DateTime.parse(InputStart);
 		}
 		catch ( Exception e ) {
             message = "The input start date/time \"" + InputStart + "\" is not a valid date/time.";
@@ -135,71 +130,26 @@ throws InvalidCommandParameterException
                             message, "Specify a date/time or InputStart." ) );
 		}
 	}
-	if (	(InputEnd != null) && !InputEnd.equals("") &&
-		!InputEnd.equalsIgnoreCase("InputStart") &&
-		!InputEnd.equalsIgnoreCase("InputEnd") ) {
-		try {	DateTime.parse( InputEnd );
+	if ( (InputEnd != null) && !InputEnd.equals("") &&
+		!InputEnd.equalsIgnoreCase("InputStart") && !InputEnd.equalsIgnoreCase("InputEnd") ) {
+		try {
+		    DateTime.parse( InputEnd );
 		}
 		catch ( Exception e ) {
             message = "The input end date/time \"" + InputEnd + "\" is not a valid date/time.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a date/time or InputEnd." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a date/time or InputEnd." ) );
 		}
 	}
 
-	/* TODOD SAM 2006-04-27 As per Ray Bennett always do this.
-	String FillDailyDiv = parameters.getValue ( "FillDailyDiv" );
-	if ( (FillDailyDiv != null) && !FillDailyDiv.equals("") ) {
-		if (	!FillDailyDiv.equalsIgnoreCase(_True) &&
-			!FillDailyDiv.equalsIgnoreCase(_False) ) {
-			warning +=
-				"The FillDailyDiv parameter must be True " +
-				"(blank) or False";
-		}
-	}
-	String FillDailyDivFlag = parameters.getValue ( "FillDailyDivFlag" );
-	if ( (FillDailyDivFlag != null) && (FillDailyDivFlag.length() != 1) ) {
-		warning += "\nThe FillDailyDivFlag must be 1 character long.";
-	}
-	*/
-	String FillUsingDivComments = parameters.getValue ( "FillUsingDivComments" );
-	if ((FillUsingDivComments != null) && !FillUsingDivComments.equals("")){
-		if (	!FillUsingDivComments.equalsIgnoreCase(_True) &&
-			!FillUsingDivComments.equalsIgnoreCase(_False) ) {
-            message = "The FillUsingDivComments parameter \"" + FillUsingDivComments +
-            "\" must be True (blank) or False";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify False or True, or blank for default of False." ) );
-		}
-	}
-	String FillUsingDivCommentsFlag = parameters.getValue ( "FillUsingDivCommentsFlag" );
-	if ( (FillUsingDivCommentsFlag != null) && (FillUsingDivCommentsFlag.length() != 1) ) {
-        message = "The FillUsingDivCommentsFlag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                  new CommandLogRecord(CommandStatusType.FAILURE,
-                          message, "Specify a 1-character flag, or blank to not use flag." ) );
-	}
-	String IfMissing = parameters.getValue ( "IfMissing" );
-    if ( (IfMissing != null) && !IfMissing.equals("") &&
-            !IfMissing.equalsIgnoreCase(_Warn) && !IfMissing.equalsIgnoreCase(_Ignore) ) {
-            message = "The IfMissing parameter \"" + IfMissing +
-            "\" must be blank, " + _Ignore + ", or " + _Warn;
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify " + _Ignore + ", " + _Warn +
-                            ", or blank for default of " + _Warn + "." ) );
-        }
-    
     // Check for invalid parameters...
     List valid_Vector = new Vector();
     valid_Vector.add ( "Subject" );
+    valid_Vector.add ( "SubjectID" );
     valid_Vector.add ( "SubjectName" );
+    valid_Vector.add ( "DataSource" );
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "SubDataType" );
     valid_Vector.add ( "Interval" );
@@ -213,12 +163,12 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputName" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(command_tag,warning_level),
-		warning );
+		MessageUtil.formatMessageTag(command_tag,warning_level), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -295,10 +245,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,

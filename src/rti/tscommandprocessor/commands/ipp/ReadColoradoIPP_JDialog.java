@@ -320,7 +320,6 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
     else {
         subjectList = __ippdmi.getSubjectList();
     }
-    subjectList.add ( 0, "" );
     __Subject_JComboBox = new SimpleJComboBox( subjectList );
     __Subject_JComboBox.select(0);
     __Subject_JComboBox.addActionListener(this);

@@ -13,8 +13,7 @@ import RTi.Util.String.StringUtil;
 /**
 This class is an input filter for querying ColoradoIPP joined records from Count or Provider or Project.
 */
-public class IPP_DataMetaData_InputFilter_JPanel
-extends InputFilter_JPanel {
+public class IPP_DataMetaData_InputFilter_JPanel extends InputFilter_JPanel {
 
 /**
 Constructor.
@@ -108,7 +107,7 @@ public IPP_DataMetaData_InputFilter_JPanel(IppDMI dmi, IPPSubjectType subjectTyp
         StringUtil.TYPE_DOUBLE, null, null, false));*/
 		
 	PropList filterProps = new PropList("InputFilter");
-	filterProps.set("NumFilterGroups=3");
+	filterProps.set("NumFilterGroups=5");
 	filterProps.set("NumWhereRowsToDisplay=15"); // Display all without scrolling
 	setToolTipText("<html>ColoradoIPP queries can be filtered " 
 		+ "based on station and time series metadata.</html>");

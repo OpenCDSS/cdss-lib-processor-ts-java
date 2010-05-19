@@ -670,8 +670,8 @@ import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
-import us.co.state.dwr.ColoradoWaterSMS;
-import us.co.state.dwr.ColoradoWaterSMSAPI;
+import us.co.state.dwr.sms.ColoradoWaterSMS;
+import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
@@ -1861,6 +1861,32 @@ Return the average start, or null if all available data are to be used.
 */
 protected DateTime getAverageStart()
 {   return __AverageStart_DateTime;
+}
+
+/**
+Return the ColoradoIPP DMI that is requested.  Use a blank input name to get the default.
+@param inputName Input name for the DMI, can be blank.
+@return the RiversideDB_DMI that is being used (may return null).
+*/
+protected IppDMI getColoradoIppDMI ( String inputName )
+{   String routine = "TSEngine.getColoradoIppDMI";
+    Message.printStatus(2, routine, "Getting ColoradoIPP DMI connection \"" + inputName + "\"" );
+    int size = __ippdmi_Vector.size();
+    if ( inputName == null ) {
+        inputName = "";
+    }
+    IppDMI ippdmi = null;
+    for ( int i = 0; i < size; i++ ) {
+        ippdmi = (IppDMI)__ippdmi_Vector.get(i);
+        if ( ippdmi.getInputName().equalsIgnoreCase(inputName) ) {
+            if ( Message.isDebugOn ) {
+                Message.printDebug ( 1, "", "Returning IppDMI[" + i +"] InputName=\""+
+                ippdmi.getInputName() + "\"" );
+            }
+            return ippdmi;
+        }
+    }
+    return null;
 }
 
 /**
@@ -4560,7 +4586,27 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
-    if ( (inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterSMS") ) {
+    if ((inputType != null) && inputType.equalsIgnoreCase("ColoradoIPP") ) {
+        // New style TSID~input_type~input_name for ColoradoIPP...
+        IppDMI ippdmi = getColoradoIppDMI ( inputName );
+        if ( ippdmi == null ) {
+            Message.printWarning ( 3, routine, "Unable to get ColoradoIPP connection for " +
+            "input name \"" + inputName +  "\".  Unable to read time series." );
+            ts = null;
+        }
+        else {
+            try {
+                ts = ippdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
+            }
+            catch ( Exception te ) {
+                Message.printWarning ( 2, routine,"Error reading time series \""+tsidentString2 +
+                    "\" from ColoradoIPP database" );
+                Message.printWarning ( 3, routine, te );
+                ts = null;
+            }
+        }
+    }
+	else if ( (inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterSMS") ) {
         // New style TSID~input_type~input_name
         try {
             ts = ColoradoWaterSMSAPI.readTimeSeries (

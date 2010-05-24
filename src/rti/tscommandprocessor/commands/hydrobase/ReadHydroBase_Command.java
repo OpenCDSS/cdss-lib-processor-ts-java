@@ -80,9 +80,7 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
 
 /**
-<p>
 This class initializes, checks, and runs the ReadHydroBase() and Alias = ReadHydroBase() commands.
-</p>
 */
 public class ReadHydroBase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -839,19 +837,15 @@ CommandWarningException, CommandException
 			else if ( HydroBase_Util.isStructureSFUTTimeSeriesDataType ( hbdmi, DataType ) ) {
 				// Structures (with SFUT)...
 				is_StructureSFUT = true;
-				PropList filter_props = new PropList ( "" );
-				filter_props.set ( "NumFilterGroups=6" );
 				Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for structure SFUT." );
 				filter_panel = new HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-					hbdmi, true, filter_props );
+					hbdmi, true, 6, -1 );
 			}
 			else if ( HydroBase_Util.isStructureTimeSeriesDataType (hbdmi, DataType ) ) {
 				// Structures (no SFUT)...
 				is_Structure = true;
-				PropList filter_props = new PropList ( "" );
-				filter_props.set ( "NumFilterGroups=6" );
 				filter_panel = new HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-					hbdmi, false, filter_props );
+					hbdmi, false, 6, -1 );
 				Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure (no SFUT)." );
 			}
 			else if ( HydroBase_Util.isIrrigSummaryTimeSeriesDataType(hbdmi, DataType ) ) {

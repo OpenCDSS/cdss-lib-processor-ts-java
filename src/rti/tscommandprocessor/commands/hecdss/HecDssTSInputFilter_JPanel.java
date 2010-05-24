@@ -6,7 +6,6 @@ import java.util.Vector;
 
 import RTi.Util.GUI.InputFilter;
 import RTi.Util.GUI.InputFilter_JPanel;
-import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 // TODO Figure out if the HEC-DSS API should be in a more generic location separate from commands
@@ -86,10 +85,8 @@ throws Exception
         "F part", "F part",
         StringUtil.TYPE_STRING,
         new Vector(), null, true ) );
-	PropList filterProps = new PropList ( "InputFilter" );
-	filterProps.set ( "NumFilterGroups=" + numFilterGroups );
-	setToolTipText ( "<HTML>HEC-DSS queries can be filtered <BR>based on time series metadata.</HTML>" );
-	setInputFilters ( inputFilters, filterProps );
+	setToolTipText ( "<html>HEC-DSS queries can be filtered <br>based on time series metadata.</html>" );
+	setInputFilters ( inputFilters, numFilterGroups, -1 );
 }
 
 /**

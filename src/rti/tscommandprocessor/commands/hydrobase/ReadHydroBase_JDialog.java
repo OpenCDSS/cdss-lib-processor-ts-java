@@ -596,34 +596,29 @@ private void initialize ( JFrame parent, Command command )
 		}
 		*/
 
-		try {	// Structure with SFUT...
-
-			PropList filter_props = new PropList ( "" );
+		try {
+		    // Structure with SFUT...
 			// Number of filters is the maximum - 2 (data type and interval)
-			filter_props.set ( "NumFilterGroups=" + __numWhere );
 			__input_filter_HydroBase_structure_sfut_JPanel = new
 				HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				__hbdmi, true, filter_props );
+				__hbdmi, true, __numWhere, -1 );
        			JGUIUtil.addComponent(main_JPanel,
 				__input_filter_HydroBase_structure_sfut_JPanel,
 				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 				GridBagConstraints.WEST );
 			__input_filter_JPanel_Vector.add ( __input_filter_HydroBase_structure_sfut_JPanel);
-			__input_filter_HydroBase_structure_sfut_JPanel.
-				addEventListeners ( this );
+			__input_filter_HydroBase_structure_sfut_JPanel.addEventListeners ( this );
 		}
 		catch ( Exception e ) {
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase structures with SFUT." );
+			Message.printWarning ( 2, routine, "Unable to initialize input filter for HydroBase structures with SFUT." );
 			Message.printWarning ( 2, routine, e );
 		}
 
 		/* TODO SAM 2004-08-29 enable later
-		try {	// Structure irrig summary TS...
-
+		try {
+		    // Structure irrig summary TS...
 			__input_filter_HydroBase_irrigts_JPanel = new
-				HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel (
-				__hbdmi );
+				HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( __hbdmi );
        			JGUIUtil.addComponent(main_JPanel,
 				__input_filter_HydroBase_irrigts_JPanel,
 				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,

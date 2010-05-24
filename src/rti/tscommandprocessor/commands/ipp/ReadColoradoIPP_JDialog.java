@@ -6,12 +6,13 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -25,7 +26,6 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -34,36 +34,22 @@ import RTi.Util.Message.Message;
 Editor for he ReadColoradoIPP() command.
 */
 public class ReadColoradoIPP_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadColoradoIPP_Command __command = null;
-private SimpleJComboBox __Subject_JComboBox;
-private JTextField __SubjectName_JTextField; // Location part of TSID
-private JTextField __DataSource_JTextField;// Data source part of TSID
-private JTextField __DataType_JTextField;	// Data type part of TSID
-private JTextField __SubDataType_JTextField;
-private JTextField __Method_JTextField;
-private JTextField __SubMethod_JTextField;
-private JTextField __Scenario_JTextField;
-private JTextField __InputName_JTextField;	// Input name part of TSID
+//private JTextField __InputName_JTextField;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
-private List __input_filter_JPanel_Vector = new Vector();
-private InputFilter_JPanel __input_filter_HydroBase_structure_sfut_JPanel =null;
-						// InputFilter_JPanel for
-						// HydroBase structure time
-						// series - those that do use
-						// SFUT.
+private InputFilter_JPanel __inputFilter_JPanel =null;
 private IppDMI __ippdmi = null; // Colorado IPP DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
-private int __numWhere = 0;//(HydroBaseDMI.getSPFlexMaxParameters() - 2); // Number of visible where fields
 
 /**
 Command editor constructor.
@@ -113,44 +99,14 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	__error_wait = false;
-	// Check parameters for the two command versions...
-    String Subject = __Subject_JComboBox.getSelected();
-    if ( Subject.length() > 0 ) {
-        props.set ( "Subject", Subject );
-    }
-    String SubjectName = __SubjectName_JTextField.getText().trim();
-    if ( SubjectName.length() > 0 ) {
-        props.set ( "SubjectName", SubjectName );
-    }
-    String DataSource = __DataSource_JTextField.getText().trim();
-    if ( DataSource.length() > 0 ) {
-        props.set ( "DataSource", DataSource );
-    }
-    String DataType = __DataType_JTextField.getText().trim();
-	if ( DataType.length() > 0 ) {
-		props.set ( "DataType", DataType );
-	}
-    String SubDataType = __SubDataType_JTextField.getText().trim();
-    if ( SubDataType.length() > 0 ) {
-        props.set ( "SubDataType", SubDataType );
-    }
-	String Method = __Method_JTextField.getText().trim();
-	if ( Method.length() > 0 ) {
-		props.set ( "Method", Method );
-	}
-    String SubMethod = __SubMethod_JTextField.getText().trim();
-    if ( SubMethod.length() > 0 ) {
-        props.set ( "SubMethod", SubMethod );
-    }
-    String Scenario = __Scenario_JTextField.getText().trim();
-    if ( Scenario.length() > 0 ) {
-        props.set ( "Scenario", Scenario );
-    }
+	/*
 	String InputName = __InputName_JTextField.getText().trim();
 	if ( InputName.length() > 0 ) {
 		props.set ( "InputName", InputName );
 	}
-	for ( int i = 1; i <= __numWhere; i++ ) {
+	*/
+	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
+	for ( int i = 1; i <= numWhere; i++ ) {
 	    String where = getWhere ( i - 1 );
 	    if ( where.length() > 0 ) {
 	        props.set ( "Where" + i, where );
@@ -183,26 +139,11 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	String Subject = __Subject_JComboBox.getSelected();
-    __command.setCommandParameter ( "Subject", Subject );
-    String SubjectName = __SubjectName_JTextField.getText().trim();
-    __command.setCommandParameter ( "SubjectName", SubjectName );
-    String DataSource = __DataSource_JTextField.getText().trim();
-    __command.setCommandParameter ( "DataSource", DataSource );
-    String DataType = __DataType_JTextField.getText().trim();
-	__command.setCommandParameter ( "DataType", DataType );
-	String SubDataType = __SubDataType_JTextField.getText().trim();
-    __command.setCommandParameter ( "SubDataType", SubDataType );
-	String Method = __Method_JTextField.getText().trim();
-	__command.setCommandParameter ( "Method", Method );
-    String SubMethod = __SubMethod_JTextField.getText().trim();
-    __command.setCommandParameter ( "SubMethod", SubMethod );
-    String Scenario = __Scenario_JTextField.getText().trim();
-    __command.setCommandParameter ( "Scenario", Scenario );
-	String InputName = __InputName_JTextField.getText().trim();
-	__command.setCommandParameter ( "InputName", InputName );
+{	//String InputName = __InputName_JTextField.getText().trim();
+	//__command.setCommandParameter ( "InputName", InputName );
 	String delim = ";";
-	for ( int i = 1; i <= __numWhere; i++ ) {
+	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
+	for ( int i = 1; i <= numWhere; i++ ) {
 	    String where = getWhere ( i - 1 );
 	    if ( where.startsWith(delim) ) {
 	        where = "";
@@ -224,11 +165,7 @@ Free memory for garbage collection.
 protected void finalize ()
 throws Throwable
 {	__Alias_JTextField = null;
-	__SubjectName_JTextField = null;
-	__DataSource_JTextField = null;
-	__DataType_JTextField = null;
-	__Method_JTextField = null;
-	__InputName_JTextField = null;
+	//__InputName_JTextField = null;
 	__InputStart_JTextField = null;
 	__InputEnd_JTextField = null;
 	__cancel_JButton = null;
@@ -247,7 +184,7 @@ private String getWhere ( int ifg )
 {
 	// TODO SAM 2006-04-24 Need to enable other input filter panels
 	String delim = ";";	// To separate input filter parts
-	InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
+	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	String where = filter_panel.toString(ifg,delim).trim();
 	return where;
 }
@@ -298,194 +235,31 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
     	"Read one or more time series from the State of Colorado's IPP database."),
     	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Constrain the query by specifying time series metadata." ), 
+    	"Constrain the query by specifying time series metadata to match." ), 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Refer to the Colorado IPP Database Input Type documentation for possible values." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the period will limit data that are available " +
-		"for fill commands but can increase performance." ), 
+		"If not specified, the period defaults to the input period from SetInputPeriod()."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If not specified, the period defaults to the query period."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List<String> subjectList = null;
-    if ( __ippdmi == null ) {
-        subjectList = new Vector();
-    }
-    else {
-        subjectList = __ippdmi.getSubjectList();
-    }
-    __Subject_JComboBox = new SimpleJComboBox( subjectList );
-    __Subject_JComboBox.select(0);
-    __Subject_JComboBox.addActionListener(this);
-    JGUIUtil.addComponent(main_JPanel, __Subject_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - main data object (Provider, Project, County)."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject name:"),
-	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__SubjectName_JTextField = new JTextField ( 20 );
-	__SubjectName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SubjectName_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example, provider, project, county name."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data source:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DataSource_JTextField = new JTextField ( 20 );
-	__DataSource_JTextField.addKeyListener ( this );
-   	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
-   	    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - source of data."),
-   	    3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__DataType_JTextField = new JTextField ( 20 );
-	__DataType_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example: WaterDemand."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data subtype:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SubDataType_JTextField = new JTextField ( 20 );
-    __SubDataType_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SubDataType_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example: Total."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Method:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Method_JTextField = new JTextField ( 20 );
-    __Method_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Method_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example: observed, estimated."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Submethod:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SubMethod_JTextField = new JTextField ( 20 );
-    __SubMethod_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __SubMethod_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - ."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Scenario:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Scenario_JTextField = new JTextField ( 20 );
-    __Scenario_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Scenario_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - for example low, middle, high."),
-        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-/*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Interval_JTextField = new JTextField ( "" );
-	__Interval_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - currently always assumed to be Year."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-		*/
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input name:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputName_JTextField = new JTextField ( "" );
-	__InputName_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - Colorado IPP connection name (blank for default)."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
-	/* TODO SAM 2004-08-29 - enable later - right now it slows things down
 	try {
-	    // Add input filters for stations...
-
-		__input_filter_HydroBase_station_JPanel = new
-			HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel (__hbdmi );
-   			JGUIUtil.addComponent(main_JPanel,
-			__input_filter_HydroBase_station_JPanel,
+	    // Add input filters for IPP time series...
+		__inputFilter_JPanel = new IPP_DataMetaData_InputFilter_JPanel(__ippdmi, null, __command.getNumFilterGroups() );
+   			JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
 			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );
-		__input_filter_JPanel_Vector.addElement (
-			__input_filter_HydroBase_station_JPanel );
-		__input_filter_HydroBase_station_JPanel.
-			addEventListeners ( this );
-		__input_filter_HydroBase_station_JPanel.setVisible (
-			false );
+   		__inputFilter_JPanel.addEventListeners ( this );
+   	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject is required, otherwise optional query filters."),
+   	         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 2, routine,
-		"Unable to initialize input filter for HydroBase stations." );
+		Message.printWarning ( 2, routine, "Unable to initialize IPP input filter." );
 		Message.printWarning ( 2, routine, e );
 	}
-
-	try {
-	    // Structure total (no SFUT)...
-
-		PropList filter_props = new PropList ( "" );
-		filter_props.set ( "NumFilterGroups=6" );
-		__input_filter_HydroBase_structure_JPanel = new
-			HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-			__hbdmi, false, filter_props );
-   			JGUIUtil.addComponent(main_JPanel,
-			__input_filter_HydroBase_structure_JPanel,
-			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-			GridBagConstraints.WEST );
-		__input_filter_JPanel_Vector.addElement (
-			__input_filter_HydroBase_structure_JPanel);
-		__input_filter_HydroBase_structure_JPanel.
-			addEventListeners ( this );
-		__input_filter_HydroBase_structure_JPanel.setVisible (
-			false );
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 2, routine,
-		"Unable to initialize input filter for HydroBase" +
-		" structures." );
-		Message.printWarning ( 2, routine, e );
-	}
-	*/
-/*
-	try {
-	    // Structure with SFUT...
-
-		PropList filter_props = new PropList ( "" );
-		// Number of filters is the maximum - 2 (data type and interval)
-		filter_props.set ( "NumFilterGroups=" + __numWhere );
-		__input_filter_HydroBase_structure_sfut_JPanel = new
-			HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-			__ippdmi, true, filter_props );
-   			JGUIUtil.addComponent(main_JPanel,
-			__input_filter_HydroBase_structure_sfut_JPanel,
-			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-			GridBagConstraints.WEST );
-		__input_filter_JPanel_Vector.add ( __input_filter_HydroBase_structure_sfut_JPanel);
-		__input_filter_HydroBase_structure_sfut_JPanel.
-			addEventListeners ( this );
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 2, routine,
-		"Unable to initialize input filter for HydroBase structures with SFUT." );
-		Message.printWarning ( 2, routine, e );
-	}
-	*/
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -504,6 +278,18 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - YYYY, override the global input end."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    /* TODO SAM 2010-05-23 Currently only support one connection
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input name:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputName_JTextField = new JTextField ( "" );
+    __InputName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - Colorado IPP connection name (blank for default)."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        */
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -550,6 +336,14 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 }
 
 /**
+Handle ItemListener events.
+*/
+public void itemStateChanged ( ItemEvent event )
+{
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -579,18 +373,9 @@ public boolean ok ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	//String routine = "ReadColoradoIPP_JDialog.refresh";
+{	String routine = "ReadColoradoIPP_JDialog.refresh";
 	__error_wait = false;
-	String Subject = "";
-	String SubjectName = "";
-    String DataSource = "";
-	String DataType = "";
-	String SubDataType = "";
-    String Method = "";
-    String SubMethod = "";
-    String Scenario = "";
-	//String Interval = "";
-	String InputName = "";
+	//String InputName = "";
 	String filter_delim = ";";
 	String InputStart = "";
 	String InputEnd = "";
@@ -600,71 +385,30 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
-		Subject = props.getValue ( "Subject" );
-		SubjectName = props.getValue ( "SubjectName" );
-		DataSource = props.getValue ( "DataSource" );
-		DataType = props.getValue ( "DataType" );
-		SubDataType = props.getValue ( "SubDataType" );
-		Method = props.getValue ( "Method" );
-        SubMethod= props.getValue ( "SubMethod" );
-        Scenario= props.getValue ( "Scenario" );
 		//Interval = props.getValue ( "Interval" );
-		InputName = props.getValue ( "InputName" );
+		//InputName = props.getValue ( "InputName" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
-        if ( JGUIUtil.isSimpleJComboBoxItem( __Subject_JComboBox, Subject, JGUIUtil.NONE, null, null ) ) {
-            __Subject_JComboBox.select ( Subject );
+        InputFilter_JPanel filter_panel = __inputFilter_JPanel;
+        int nfg = filter_panel.getNumFilterGroups();
+        String where;
+        for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+            where = props.getValue ( "Where" + (ifg + 1) );
+            if ( (where != null) && (where.length() > 0) ) {
+                // Set the filter...
+                try {
+                    filter_panel.setInputFilter (ifg, where, filter_delim );
+                }
+                catch ( Exception e ) {
+                    Message.printWarning ( 1, routine, "Error setting where information using \"" + where + "\"" );
+                    Message.printWarning ( 3, routine, e );
+                }
+            }
         }
-        else {
-            // Select the blank...
-            __Subject_JComboBox.select ( 0 );
-        }
-        if ( SubjectName != null ) {
-            __SubjectName_JTextField.setText(SubjectName);
-        }
-        if ( DataSource != null ) {
-            __DataSource_JTextField.setText(DataSource);
-        }
-		if ( DataType != null ) {
-			__DataType_JTextField.setText(DataType);
-		}
-        if ( SubDataType != null ) {
-            __SubDataType_JTextField.setText(SubDataType);
-        }
-        if ( Method != null ) {
-            __Method_JTextField.setText(Method);
-        }
-        if ( SubMethod != null ) {
-            __SubMethod_JTextField.setText(SubMethod);
-        }
-        if ( Scenario != null ) {
-            __Scenario_JTextField.setText(Scenario);
-        }
-//		if ( Interval != null ) {
-//			__Interval_JTextField.setText(Interval);
-//		}
-		if ( InputName != null ) {
-			__InputName_JTextField.setText (InputName );
-		}
-		/*
-		InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
-		int nfg = filter_panel.getNumFilterGroups();
-		String where;
-		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-			where = props.getValue ( "Where" + (ifg + 1) );
-			if ( (where != null) && (where.length() > 0) ) {
-				// Set the filter...
-				try {	filter_panel.setInputFilter (ifg, where, filter_delim );
-				}
-				catch ( Exception e ) {
-					Message.printWarning ( 1, routine,
-					"Error setting where information using \"" + where + "\"" );
-					Message.printWarning ( 2, routine, e );
-				}
-			}
-		}
-		*/
+		//if ( InputName != null ) {
+		//	__InputName_JTextField.setText (InputName );
+		//}
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -676,34 +420,13 @@ private void refresh ()
         }
 	}
 	// Regardless, reset the command from the fields...
-	InputName = __InputName_JTextField.getText().trim();
-	Subject = __Subject_JComboBox.getSelected();
-	SubjectName = __SubjectName_JTextField.getText().trim();
-	DataSource = __DataSource_JTextField.getText().trim();
-    DataType = __DataType_JTextField.getText().trim();
-    SubDataType = __SubDataType_JTextField.getText().trim();
-    Method = __Method_JTextField.getText().trim();
-    SubMethod = __SubMethod_JTextField.getText().trim();
-    Scenario = __Scenario_JTextField.getText().trim();
-	//Interval = __Interval_JTextField.getText().trim();
+	//InputName = __InputName_JTextField.getText().trim();
+	//props.add ( "InputName=" + InputName );
 	Alias = __Alias_JTextField.getText().trim();
 	// Regardless, reset the command from the fields...
 	props = new PropList ( __command.getCommandName() );
-	props.add ( "Subject=" + Subject );
-	props.add ( "SubjectName=" + SubjectName );
-	props.add ( "DataSource=" + DataSource );
-    props.add ( "DataType=" + DataType );
-    props.add ( "SubDataType=" + SubDataType );
-    props.add ( "Method=" + Method );
-    props.add ( "SubMethod=" + SubMethod );
-    props.add ( "Scenario=" + Scenario );
-	//props.add ( "Interval=" + Interval );
-	props.add ( "InputName=" + InputName );
-	/*
-	// Add the where clause...
-	// TODO SAM 2004-08-26 eventually allow filter panels similar
-	// to main GUI - right now only do water class...
-	InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
+	// Add the where clause(s)...
+	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	int nfg = filter_panel.getNumFilterGroups();
 	String where;
 	String delim = ";";	// To separate input filter parts
@@ -714,7 +437,6 @@ private void refresh ()
 			props.add ( "Where" + (ifg + 1) + "=" + where );
 		}
 	}
-	*/
 	InputStart = __InputStart_JTextField.getText().trim();
 	props.add ( "InputStart=" + InputStart );
 	InputEnd = __InputEnd_JTextField.getText().trim();

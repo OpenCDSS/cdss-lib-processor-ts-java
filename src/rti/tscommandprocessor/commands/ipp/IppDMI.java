@@ -145,6 +145,14 @@ Hashtable of unique data subtype lists for each subject type.
 private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSubTypeList = new Hashtable();
 
 /**
+Database table/view owner prefix, which needs to be added to all queries.  This seems to be
+needed at the State, but is optional at Riverside (so put it in all the time).  If the need
+goes away, set the string to "".  Most SQL in this package uses simple table and view names
+and the prefix is prepended.  This allows flexibility for changing the prefix if necessary.
+*/
+private String __schemaPrefix = "ippadmin.";
+
+/**
 Flags for doing specific select, write and delete queries, sorted by 
 table name.  Descriptions of the actual queries are in the read*() methods.
 */
@@ -251,176 +259,177 @@ throws Exception
 	DMISelectStatement select;
 	//DMIWriteStatement write;
 	//DMIDeleteStatement del;
+	String schemaPrefix = getSchemaPrefix();
 	switch ( sqlNumber ) {
         case _S_CountyData:
             select = (DMISelectStatement)statement;
-            select.addField ( "tblCountyData.id" );
-            select.addField ( "tblCountyData.year" );
-            select.addField ( "tblCountyData.value" );
-            select.addTable ( "tblCountyData" );
+            select.addField ( schemaPrefix + "tblCountyData.id" );
+            select.addField ( schemaPrefix + "tblCountyData.year" );
+            select.addField ( schemaPrefix + "tblCountyData.value" );
+            select.addTable ( schemaPrefix + "tblCountyData" );
             break;
         case _S_CountyDataMetaData:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.id" );
-            select.addField ( "vCountyDataMetaData.subjectID" );
-            select.addField ( "vCountyDataMetaData.name" );
-            select.addField ( "vCountyDataMetaData.dataType" );
-            select.addField ( "vCountyDataMetaData.subType" );
-            select.addField ( "vCountyDataMetaData.units" );
-            select.addField ( "vCountyDataMetaData.method" );
-            select.addField ( "vCountyDataMetaData.subMethod" );
-            select.addField ( "vCountyDataMetaData.source" );
-            select.addField ( "vCountyDataMetaData.scenario" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.id" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.subjectID" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.name" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.dataType" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.subType" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.units" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.method" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.subMethod" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.source" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.scenario" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             break;
         case _S_CountyDataMetaDataDistinctDataType:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.dataType" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.dataType" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_CountyDataMetaDataDistinctMethod:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.method" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.method" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_CountyDataMetaDataDistinctScenario:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.scenario" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.scenario" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_CountyDataMetaDataDistinctSource:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.source" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.source" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_CountyDataMetaDataDistinctSubjectID:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.subjectID" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.subjectID" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_CountyDataMetaDataDistinctSubType:
             select = (DMISelectStatement)statement;
-            select.addField ( "vCountyDataMetaData.subType" );
-            select.addTable ( "vCountyDataMetaData" );
+            select.addField ( schemaPrefix + "vCountyDataMetaData.subType" );
+            select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProjectData:
             select = (DMISelectStatement)statement;
-            select.addField ( "tblProjectData.id" );
-            select.addField ( "tblProjectData.year" );
-            select.addField ( "tblProjectData.value" );
-            select.addTable ( "tblProjectData" );
+            select.addField ( schemaPrefix + "tblProjectData.id" );
+            select.addField ( schemaPrefix + "tblProjectData.year" );
+            select.addField ( schemaPrefix + "tblProjectData.value" );
+            select.addTable ( schemaPrefix + "tblProjectData" );
             break;
         case _S_ProjectDataMetaData:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.id" );
-            select.addField ( "vProjectDataMetaData.subjectID" );
-            select.addField ( "vProjectDataMetaData.name" );
-            select.addField ( "vProjectDataMetaData.dataType" );
-            select.addField ( "vProjectDataMetaData.subType" );
-            select.addField ( "vProjectDataMetaData.units" );
-            select.addField ( "vProjectDataMetaData.method" );
-            select.addField ( "vProjectDataMetaData.subMethod" );
-            select.addField ( "vProjectDataMetaData.source" );
-            select.addField ( "vProjectDataMetaData.scenario" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.id" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.subjectID" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.name" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.dataType" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.subType" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.units" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.method" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.subMethod" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.source" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.scenario" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             break;
         case _S_ProjectDataMetaDataDistinctDataType:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.dataType" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.dataType" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProjectDataMetaDataDistinctMethod:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.method" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.method" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProjectDataMetaDataDistinctScenario:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.scenario" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.scenario" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProjectDataMetaDataDistinctSource:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.source" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.source" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProjectDataMetaDataDistinctSubjectID:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.subjectID" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.subjectID" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProjectDataMetaDataDistinctSubType:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProjectDataMetaData.subType" );
-            select.addTable ( "vProjectDataMetaData" );
+            select.addField ( schemaPrefix + "vProjectDataMetaData.subType" );
+            select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProviderData:
             select = (DMISelectStatement)statement;
-            select.addField ( "tblProviderData.id" );
-            select.addField ( "tblProviderData.year" );
-            select.addField ( "tblProviderData.value" );
-            select.addTable ( "tblProviderData" );
+            select.addField ( schemaPrefix + "tblProviderData.id" );
+            select.addField ( schemaPrefix + "tblProviderData.year" );
+            select.addField ( schemaPrefix + "tblProviderData.value" );
+            select.addTable ( schemaPrefix + "tblProviderData" );
             break;
 		case _S_ProviderDataMetaData:
 			select = (DMISelectStatement)statement;
-			select.addField ( "vProviderDataMetaData.id" );
-			select.addField ( "vProviderDataMetaData.subjectID" );
-			select.addField ( "vProviderDataMetaData.name" );
-			select.addField ( "vProviderDataMetaData.dataType" );
-			select.addField ( "vProviderDataMetaData.subType" );
-			select.addField ( "vProviderDataMetaData.units" );
-			select.addField ( "vProviderDataMetaData.method" );
-			select.addField ( "vProviderDataMetaData.subMethod" );
-			select.addField ( "vProviderDataMetaData.source" );
-			select.addField ( "vProviderDataMetaData.scenario" );
-			select.addTable ( "vProviderDataMetaData" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.id" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.subjectID" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.name" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.dataType" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.subType" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.units" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.method" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.subMethod" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.source" );
+			select.addField ( schemaPrefix + "vProviderDataMetaData.scenario" );
+			select.addTable ( schemaPrefix + "vProviderDataMetaData" );
 			break;
         case _S_ProviderDataMetaDataDistinctDataType:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProviderDataMetaData.dataType" );
-            select.addTable ( "vProviderDataMetaData" );
+            select.addField ( schemaPrefix + "vProviderDataMetaData.dataType" );
+            select.addTable ( schemaPrefix + "vProviderDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProviderDataMetaDataDistinctMethod:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProviderDataMetaData.method" );
-            select.addTable ( "vProviderDataMetaData" );
+            select.addField ( schemaPrefix + "vProviderDataMetaData.method" );
+            select.addTable ( schemaPrefix + "vProviderDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProviderDataMetaDataDistinctScenario:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProviderDataMetaData.scenario" );
-            select.addTable ( "vProviderDataMetaData" );
+            select.addField ( schemaPrefix + "vProviderDataMetaData.scenario" );
+            select.addTable ( schemaPrefix + "vProviderDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProviderDataMetaDataDistinctSource:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProviderDataMetaData.source" );
-            select.addTable ( "vProviderDataMetaData" );
+            select.addField ( schemaPrefix + "vProviderDataMetaData.source" );
+            select.addTable ( schemaPrefix + "vProviderDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProviderDataMetaDataDistinctSubjectID:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProviderDataMetaData.subjectID" );
-            select.addTable ( "vProviderDataMetaData" );
+            select.addField ( schemaPrefix + "vProviderDataMetaData.subjectID" );
+            select.addTable ( schemaPrefix + "vProviderDataMetaData" );
             select.selectDistinct(true);
             break;
         case _S_ProviderDataMetaDataDistinctSubType:
             select = (DMISelectStatement)statement;
-            select.addField ( "vProviderDataMetaData.subType" );
-            select.addTable ( "vProviderDataMetaData" );
+            select.addField ( schemaPrefix + "vProviderDataMetaData.subType" );
+            select.addTable ( schemaPrefix + "vProviderDataMetaData" );
             select.selectDistinct(true);
             break;
 		default:
@@ -481,8 +490,7 @@ throws Exception {
 		canCreate = false;
 		Message.printDebug(dl, routine, "User num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "UC+", 0) > -1) {
-			Message.printDebug(dl, routine, "UC+ set, canCreate = "
-				+ "true");
+			Message.printDebug(dl, routine, "UC+ set, canCreate = true");
 			canCreate = true;
 		}
 		else {
@@ -495,8 +503,7 @@ throws Exception {
 }
 
 /**
-Determine whether the user can delete the database table/record, given a set of
-permissions.
+Determine whether the user can delete the database table/record, given a set of permissions.
 @param DBUser_num the DBUser_num that owns the table/record in the database
 @param DBGroup_num the GBGroup that owns the table/record in the database
 @param permissions the permissions string (see permissions documentation above)
@@ -509,13 +516,11 @@ throws Exception {
 	String routine = "IppDMI.canDelete";
 	int dl = 5;
 
-	Message.printDebug(dl, routine, "canDelete(" + DBUser_num + ", " 
-		+ DBGroup_num + ", " + permissions + ")");
+	Message.printDebug(dl, routine, "canDelete(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
 
 	boolean canDelete = false;
 	/*if (_dbuser.getLogin().trim().equalsIgnoreCase("root")) {
-		Message.printDebug(dl, routine, "Current user is root, can "
-			+ "always delete.");
+		Message.printDebug(dl, routine, "Current user is root, can always delete.");
 		// root can do ANYTHING
 		return true;
 	}
@@ -533,8 +538,7 @@ throws Exception {
 		canDelete = false;
 		Message.printDebug(dl, routine, "Group num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "GD+", 0) > -1) {
-			Message.printDebug(dl, routine, "GD+ set, canDelete = "
-				+ "true");
+			Message.printDebug(dl, routine, "GD+ set, canDelete = true");
 			canDelete = true;
 		}
 		else {
@@ -547,8 +551,7 @@ throws Exception {
 		canDelete = false;
 		Message.printDebug(dl, routine, "User num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "UD+", 0) > -1) {
-			Message.printDebug(dl, routine, "UD+ set, canDelete = "
-				+ "true");
+			Message.printDebug(dl, routine, "UD+ set, canDelete = true");
 			canDelete = true;
 		}
 		else {
@@ -561,8 +564,7 @@ throws Exception {
 }
 
 /**
-Determine whether the user can insert the database table/record, given a set of
-permissions.
+Determine whether the user can insert the database table/record, given a set of permissions.
 @param DBUser_num the DBUser_num that owns the table/record in the database
 @param DBGroup_num the GBGroup that owns the table/record in the database
 @param permissions the permissions string (see permissions documentation above)
@@ -575,14 +577,12 @@ throws Exception {
 	String routine = "IppDMI.canInsert";
 	int dl = 5;
 
-	Message.printDebug(dl, routine, "canInsert(" + DBUser_num + ", " 
-		+ DBGroup_num + ", " + permissions + ")");
+	Message.printDebug(dl, routine, "canInsert(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
 
 	boolean canInsert = false;
 	/*
 	if (_dbuser.getLogin().trim().equalsIgnoreCase("root")) {
-		Message.printDebug(dl, routine, "Current user is root, can "
-			+ "always insert.");
+		Message.printDebug(dl, routine, "Current user is root, can always insert.");
 		// root can do ANYTHING
 		return true;
 	}
@@ -600,8 +600,7 @@ throws Exception {
 		canInsert = false;
 		Message.printDebug(dl, routine, "Group num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "GI+", 0) > -1) {
-			Message.printDebug(dl, routine, "GI+ set, canInsert = "
-				+ "true");
+			Message.printDebug(dl, routine, "GI+ set, canInsert = true");
 			canInsert = true;
 		}
 		else {
@@ -614,8 +613,7 @@ throws Exception {
 		canInsert = false;
 		Message.printDebug(dl, routine, "User num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "UI+", 0) > -1) {
-			Message.printDebug(dl, routine, "UI+ set, canInsert = "
-				+ "true");
+			Message.printDebug(dl, routine, "UI+ set, canInsert = true");
 			canInsert = true;
 		}
 		else {
@@ -628,8 +626,7 @@ throws Exception {
 }
 
 /**
-Determine whether the user can read the database table/record, given a set of
-permissions.
+Determine whether the user can read the database table/record, given a set of permissions.
 @param DBUser_num the DBUser_num that owns the table/record in the database
 @param DBGroup_num the GBGroup that owns the table/record in the database
 @param permissions the permissions string (see permissions documentation above)
@@ -642,14 +639,12 @@ throws Exception {
 	String routine = "IppDMI.canRead";
 	int dl = 5;
 
-	Message.printDebug(dl, routine, "canRead(" + DBUser_num + ", " 
-		+ DBGroup_num + ", " + permissions + ")");
+	Message.printDebug(dl, routine, "canRead(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
 
 	boolean canRead = true;
 	/*
 	if (_dbuser.getLogin().trim().equalsIgnoreCase("root")) {
-		Message.printDebug(dl, routine, "Current user is root, can "
-			+ "always read.");
+		Message.printDebug(dl, routine, "Current user is root, can always read.");
 		// root can do ANYTHING
 		return true;
 	}
@@ -667,8 +662,7 @@ throws Exception {
 		canRead = false;
 		Message.printDebug(dl, routine, "Group num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "GR+", 0) > -1) {
-			Message.printDebug(dl, routine, "GR+ set, canRead = "
-				+ "true");
+			Message.printDebug(dl, routine, "GR+ set, canRead = true");
 			canRead = true;
 		}
 		else {
@@ -681,8 +675,7 @@ throws Exception {
 		canRead = false;
 		Message.printDebug(dl, routine, "User num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "UR+", 0) > -1) {
-			Message.printDebug(dl, routine, "UR+ set, canRead = "
-				+ "true");
+			Message.printDebug(dl, routine, "UR+ set, canRead = true");
 			canRead = true;
 		}
 		else {
@@ -695,8 +688,7 @@ throws Exception {
 }
 
 /**
-Determine whether the user can update the database table/record, given a set of
-permissions.
+Determine whether the user can update the database table/record, given a set of permissions.
 @param DBUser_num the DBUser_num that owns the table/record in the database
 @param DBGroup_num the GBGroup that owns the table/record in the database
 @param permissions the permissions string (see permissions documentation above)
@@ -709,14 +701,12 @@ throws Exception {
 	String routine = "IppDMI.canUpdate";
 	int dl = 5;
 
-	Message.printDebug(dl, routine, "canUpdate(" + DBUser_num + ", " 
-		+ DBGroup_num + ", " + permissions + ")");
+	Message.printDebug(dl, routine, "canUpdate(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
 
 	boolean canUpdate = false;
 	/*
 	if (_dbuser.getLogin().trim().equalsIgnoreCase("root")) {
-		Message.printDebug(dl, routine, "Current user is root, can "
-			+ "always read.");
+		Message.printDebug(dl, routine, "Current user is root, can always read.");
 		// root can do ANYTHING
 		return true;
 	}
@@ -734,8 +724,7 @@ throws Exception {
 		canUpdate = false;
 		Message.printDebug(dl, routine, "Group num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "GU+", 0) > -1) {
-			Message.printDebug(dl, routine, "GU+ set, canUpdate = "
-				+ "true");
+			Message.printDebug(dl, routine, "GU+ set, canUpdate = true");
 			canUpdate = true;
 		}
 		else {
@@ -748,8 +737,7 @@ throws Exception {
 		canUpdate = false;
 		Message.printDebug(dl, routine, "User num matches ...");
 		if (StringUtil.indexOfIgnoreCase(permissions, "UU+", 0) > -1) {
-			Message.printDebug(dl, routine, "UU+ set, canUpdate = "
-				+ "true");
+			Message.printDebug(dl, routine, "UU+ set, canUpdate = true");
 			canUpdate = true;
 		}
 		else {
@@ -764,8 +752,7 @@ throws Exception {
 Determine whether the user can write to the table/record, given a set of 
 permissions.  This method calls canInsert() and canUpdate() and returns true
 only if both methods return true.  This method is meant for data records but
-the canCreate() method may be needed to be called in cases where a high-level
-record is being created.
+the canCreate() method may be needed to be called in cases where a high-level record is being created.
 @param DBUser_num the DBUser_num that owns the table/record in the database
 @param DBGroup_num the GBGroup that owns the table/record in the database
 @param permissions the permissions string (see permissions documentation above)
@@ -775,8 +762,7 @@ for the table/record being checked
 */
 public boolean canWrite(int DBUser_num, int DBGroup_num, String permissions) 
 throws Exception {
-	return (canInsert(DBUser_num, DBGroup_num, permissions) && 
-		canUpdate(DBUser_num, DBGroup_num, permissions));
+	return (canInsert(DBUser_num, DBGroup_num, permissions) && canUpdate(DBUser_num, DBGroup_num, permissions));
 }
 
 // D FUNCTIONS
@@ -900,8 +886,8 @@ protected void finalize() throws Throwable {
 // G FUNCTIONS
 
 /**
-Return a Vector of String containing useful database property information.
-@return a Vector containing database properties as Strings.
+Return a list of String containing useful database property information.
+@return a list containing database properties as Strings.
 @param level A numerical value that can be used to control the amount
 of output.  A value of 3 returns full output, including database version,
 history of changes, server information (e.g., for use in a properties dialog);
@@ -916,7 +902,8 @@ public List getDatabaseProperties ( int level )
 	if ( getDatabaseName() == null ) {
 		v.add ( "Connect Method:  ODBC DSN" );
 	}
-	else {	v.add (
+	else {
+	    v.add (
 		"Connect Method:  JDBC using the following information  " );
 		v.add ( "Database server:  " + getDatabaseServer() );
 		v.add ( "Database name:  " + getDatabaseName() );
@@ -1010,6 +997,14 @@ public String[] getDatabaseVersionArray() {
 }
 
 /**
+Return the schema prefix for table and view names, necessary to function at the State with SQL Server 2005+.
+*/
+public String getSchemaPrefix()
+{
+    return __schemaPrefix;
+}
+
+/**
 Return the list of subject types.
 @return the list of subject types.
 */
@@ -1049,31 +1044,53 @@ Reads all the CountyDataMetaData view records that match the given constraints.
 @return a list of matching IPP_CountyDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readCountyDataMetaDataList( String name, String dataType, String subType,
-    String method, String subMethod, String source, String scenario ) 
+public List readCountyDataMetaDataList( String name, String source, String dataType, String subType,
+    String method, String subMethod, String scenario, boolean matchBlanks ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
     buildSQL ( q, _S_CountyDataMetaData );
+    String schemaPrefix = getSchemaPrefix();
     if ( (name != null) && !name.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.name = '" + escape(name) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.name = '" + escape(name) + "'");
+    }
+    else if ( (name == null) || name.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.name = '" + escape("") + "'");
     }
     if ( (dataType != null) && !dataType.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.dataType = '" + escape(dataType) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.dataType = '" + escape(dataType) + "'");
+    }
+    else if ( (dataType == null) || dataType.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.dataType = '" + escape("") + "'");
     }
     if ( (subType != null) && !subType.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.subType = '" + escape(subType) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.subType = '" + escape(subType) + "'");
+    }
+    else if ( (subType == null) || subType.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subType = '" + escape("") + "'");
     }
     if ( (method != null) && !method.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.method = '" + escape(method) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.method = '" + escape(method) + "'");
+    }
+    else if ( (method == null) || method.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.method = '" + escape("") + "'");
     }
     if ( (subMethod != null) && !subMethod.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.subMethod = '" + escape(subMethod) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.subMethod = '" + escape(subMethod) + "'");
+    }
+    else if ( (subMethod == null) || subMethod.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subMethod = '" + escape("") + "'");
     }
     if ( (source != null) && !source.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.source = '" + escape(source) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.source = '" + escape(source) + "'");
+    }
+    else if ( (source == null) || source.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.source = '" + escape("") + "'");
     }
     if ( (scenario != null) && !scenario.equals("") ) {
-        q.addWhereClause("vCountyDataMetaData.scenario = '" + escape(scenario) + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.scenario = '" + escape(scenario) + "'");
+    }
+    else if ( (scenario == null) || scenario.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape("") + "'");
     }
     ResultSet rs = dmiSelect(q);
     List v = toCountyDataMetaDataList (rs);
@@ -1306,6 +1323,7 @@ throws Exception
     }
     */
     // Add where clauses for the input filter
+    String schemaPrefix = getSchemaPrefix();
     if ( ifp != null ) {
         List whereClauses = DMIUtil.getWhereClausesFromInputFilter(this, ifp);       
         // Add additional where clauses...
@@ -1314,13 +1332,13 @@ throws Exception
         }
     }
     // Sort based on common use
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.subjectID" );
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.dataType" );
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.subType" );
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.method" );
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.subMethod" );
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.scenario" );
-    q.addOrderByClause ( "v" + subjectType + "DataMetaData.source" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.subjectID" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.dataType" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.subType" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.method" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.subMethod" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.scenario" );
+    q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.source" );
     ResultSet rs = dmiSelect(q);
     List v = null;
     if ( subjectType == IPPSubjectType.COUNTY ) {
@@ -1342,30 +1360,49 @@ Reads all the ProjectDataMetaData view records that match the given constraints.
 @throws Exception if an error occurs
 */
 public List readProjectDataMetaDataList( String subjectID, String dataType, String subType,
-    String method, String subMethod, String source, String scenario ) 
+    String method, String subMethod, String source, String scenario, boolean matchBlanks ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
     buildSQL ( q, _S_ProjectDataMetaData );
+    String schemaPrefix = getSchemaPrefix();
     if ( (subjectID != null) && !subjectID.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.subjectID = " + subjectID );
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subjectID = " + subjectID );
     }
     if ( (dataType != null) && !dataType.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.dataType = '" + escape(dataType) + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.dataType = '" + escape(dataType) + "'");
+    }
+    else if ( (dataType == null) || dataType.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.dataType = '" + escape("") + "'");
     }
     if ( (subType != null) && !subType.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.subType = '" + escape(subType) + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subType = '" + escape(subType) + "'");
+    }
+    else if ( (subType == null) || subType.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subType = '" + escape("") + "'");
     }
     if ( (method != null) && !method.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.method = '" + escape(method) + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.method = '" + escape(method) + "'");
+    }
+    else if ( (method == null) || method.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.method = '" + escape("") + "'");
     }
     if ( (subMethod != null) && !subMethod.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.subMethod = '" + escape(subMethod) + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subMethod = '" + escape(subMethod) + "'");
+    }
+    else if ( (subMethod == null) || subMethod.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subMethod = '" + escape("") + "'");
     }
     if ( (source != null) && !source.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.source = '" + escape(source) + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.source = '" + escape(source) + "'");
+    }
+    else if ( (source == null) || source.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.source = '" + escape("") + "'");
     }
     if ( (scenario != null) && !scenario.equals("") ) {
-        q.addWhereClause("vProjectDataMetaData.scenario = '" + escape(scenario) + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.scenario = '" + escape(scenario) + "'");
+    }
+    else if ( (scenario == null) || scenario.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape("") + "'");
     }
     ResultSet rs = dmiSelect(q);
     List v = toProjectDataMetaDataList (rs);
@@ -1375,34 +1412,55 @@ throws Exception {
 
 /**
 Reads all the ProviderDataMetaData view records that match the given constraints.
+@param matchBlanks if true, then blank parameters will be matched in the query (returning a
+more specific result); if false, more records will be returned
 @return a list of matching IPP_ProviderDataMetaData objects.
 @throws Exception if an error occurs
 */
 public List readProviderDataMetaDataList( String subjectID, String dataType, String subType,
-    String method, String subMethod, String source, String scenario ) 
+    String method, String subMethod, String source, String scenario, boolean matchBlanks ) 
 throws Exception {
 	DMISelectStatement q = new DMISelectStatement ( this );
 	buildSQL ( q, _S_ProviderDataMetaData );
+	String schemaPrefix = getSchemaPrefix();
     if ( (subjectID != null) && !subjectID.equals("") ) {
-        q.addWhereClause("vProviderDataMetaData.subjectID = " + subjectID );
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subjectID = " + subjectID );
     }
 	if ( (dataType != null) && !dataType.equals("") ) {
-	    q.addWhereClause("vProviderDataMetaData.dataType = '" + escape(dataType) + "'");
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.dataType = '" + escape(dataType) + "'");
 	}
+	else if ( (dataType == null) || dataType.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.dataType = '" + escape("") + "'");
+    }
     if ( (subType != null) && !subType.equals("") ) {
-        q.addWhereClause("vProviderDataMetaData.subType = '" + escape(subType) + "'");
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subType = '" + escape(subType) + "'");
+    }
+    else if ( (subType == null) || subType.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subType = '" + escape("") + "'");
     }
     if ( (method != null) && !method.equals("") ) {
-        q.addWhereClause("vProviderDataMetaData.method = '" + escape(method) + "'");
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.method = '" + escape(method) + "'");
+    }
+    else if ( (method == null) || method.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.method = '" + escape("") + "'");
     }
     if ( (subMethod != null) && !subMethod.equals("") ) {
-        q.addWhereClause("vProviderDataMetaData.subMethod = '" + escape(subMethod) + "'");
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subMethod = '" + escape(subMethod) + "'");
+    }
+    else if ( (subMethod == null) || subMethod.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subMethod = '" + escape("") + "'");
     }
     if ( (source != null) && !source.equals("") ) {
-        q.addWhereClause("vProviderDataMetaData.source = '" + escape(source) + "'");
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.source = '" + escape(source) + "'");
+    }
+    else if ( (source == null) || source.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.source = '" + escape("") + "'");
     }
     if ( (scenario != null) && !scenario.equals("") ) {
-        q.addWhereClause("vProviderDataMetaData.scenario = '" + escape(scenario) + "'");
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape(scenario) + "'");
+    }
+    else if ( (scenario == null) || scenario.equals("") && matchBlanks ) {
+        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape("") + "'");
     }
 	ResultSet rs = dmiSelect(q);
 	List v = toProviderDataMetaDataList (rs);
@@ -1420,21 +1478,22 @@ public TS readTimeSeries ( String subject, long id, String name, String source, 
         DateTime reqStart, DateTime reqEnd, boolean readData )
 throws Exception
 {   DMISelectStatement q = new DMISelectStatement ( this );
+    String schemaPrefix = getSchemaPrefix();
     // Query the time series data records...
     if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY)) {
         buildSQL ( q, _S_CountyData );
-        q.addWhereClause("tblCountyData.id = " + id );
-        q.addOrderByClause("tblCountyData.year");
+        q.addWhereClause(schemaPrefix+"tblCountyData.id = " + id );
+        q.addOrderByClause(schemaPrefix+"tblCountyData.year");
     }
     else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROJECT)) {
         buildSQL ( q, _S_ProjectData );
-        q.addWhereClause("tblProjectData.id = " + id );
-        q.addOrderByClause("tblProjectData.year");
+        q.addWhereClause(schemaPrefix+"tblProjectData.id = " + id );
+        q.addOrderByClause(schemaPrefix+"tblProjectData.year");
     }
     else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROVIDER)) {
         buildSQL ( q, _S_ProviderData );
-        q.addWhereClause("tblProviderData.id = " + id );
-        q.addOrderByClause("tblProviderData.year");
+        q.addWhereClause(schemaPrefix+"tblProviderData.id = " + id );
+        q.addOrderByClause(schemaPrefix+"tblProviderData.year");
     }
     ResultSet rs = dmiSelect(q);
     List v = toTSDataList (rs);
@@ -1521,13 +1580,13 @@ throws Exception
     // Read the database record for the time series metadata, to get the units and name
     List<IPP_DataMetaData> dataList = null;
     if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY) ) {
-        dataList = readCountyDataMetaDataList(location, dataType, subType, subMethod, subMethod, source, scenario);
+        dataList = readCountyDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
     else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROJECT) ) {
-        dataList = readProjectDataMetaDataList(location, dataType, subType, subMethod, subMethod, source, scenario);
+        dataList = readProjectDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
     else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROVIDER) ) {
-        dataList = readProviderDataMetaDataList(location, dataType, subType, subMethod, subMethod, source, scenario);
+        dataList = readProviderDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
     if ( dataList.size() == 0 ) {
         message = "Time series identifier \"" + tsidentString + "\" does not match any " + subject +

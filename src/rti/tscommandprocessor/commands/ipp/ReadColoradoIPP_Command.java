@@ -9,6 +9,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
 
+import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
@@ -25,6 +26,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
@@ -38,10 +40,10 @@ public class ReadColoradoIPP_Command extends AbstractCommand implements Command,
 {
 
 /**
-Number of where clauses shown in the editor and available as parameters - the HydroBase SPFlex maximum minus
-2 (data type and interval).
+Number of where clauses shown in the editor and available as parameters - enough to allow select on each
+time series identifier part, including sub-parts.
 */
-private int __numWhere = (HydroBaseDMI.getSPFlexMaxParameters() - 2);
+private int __numFilterGroups = 8;
 
 /**
 Data values for boolean parameters.
@@ -82,13 +84,25 @@ throws InvalidCommandParameterException
 {	String warning = "";
     String message;
     
-    String Subject = parameters.getValue ( "Subject" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
    
+    String Subject = null;
+    // Use an high number to ensure that all where parameters will be checked.
+    for ( int iWhere = 1; iWhere <= 100; iWhere++ ) {
+        String whereN = parameters.getValue ( "Where" + iWhere );
+        if ( whereN != null ) {
+            List<String> whereParts = StringUtil.breakStringList(whereN, ";", 0);
+            if ( whereParts.get(0).equalsIgnoreCase("Subject") ) {
+                // Found Subject
+                Subject = whereParts.get(2);
+                break;
+            }
+        }
+    }
     if ( (Subject == null) || Subject.equals("") ) {
         message = "The subject must be specified.";
         warning += "\n" + message;
@@ -181,6 +195,14 @@ Return the list of time series read in discovery phase.
 private List getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
+}
+
+/**
+Return the number of filter groups to display in the editor.
+*/
+public int getNumFilterGroups ()
+{
+    return __numFilterGroups;
 }
 
 /**
@@ -389,22 +411,14 @@ CommandWarningException, CommandException
 	try {
         // Read 1+ time series...
 		// Get the input needed to process the file...
-	    String Subject = parameters.getValue ( "Subject" );
-	    String SubjectName = parameters.getValue ( "SubjectName" );
-	    String Source = parameters.getValue ( "Source" );
-		String DataType = parameters.getValue ( "DataType" );
-		String SubDataType = parameters.getValue ( "SubDataType" );
-		String Method = parameters.getValue ( "Method" );
-		String SubMethod = parameters.getValue ( "SubMethod" );
-		String Scenario = parameters.getValue ( "Scenario" );
-		String InputName = parameters.getValue ( "InputName" );
-		if ( InputName == null ) {
-			InputName = "";
-		}
+		//String InputName = parameters.getValue ( "InputName" );
+		//if ( InputName == null ) {
+		//	InputName = "";
+		//}
 		List WhereN_Vector = new Vector ( 6 );
 		String WhereN;
 		int nfg = 0;	// Used below.
-		for ( nfg = 0; nfg < 1000; nfg++ ) {
+		for ( nfg = 0; nfg < 100; nfg++ ) {
 			WhereN = parameters.getValue ( "Where" + (nfg + 1) );
 			if ( WhereN == null ) {
 				break;	// No more where clauses
@@ -423,7 +437,7 @@ CommandWarningException, CommandException
 			throw new Exception ( message );
 		}
 		IppDMI ippdmi = (IppDMI)((List)o).get(0);
-		/*
+		/* TODO SAM 2010-05-23 Currently only support one IPP database connection
 		List ippdmi_Vector = (List)o;
 		IppDMI ippdmi = HydroBase_Util.lookupHydroBaseDMI ( ippdmi_Vector, InputName );
 		if ( ippdmi == null ) {
@@ -437,83 +451,13 @@ CommandWarningException, CommandException
 		*/
 
 		// Initialize an input filter based on the data type...
-/*
-		InputFilter_JPanel filter_panel = null;
-		boolean is_CASS = false;
-		boolean is_NASS = false;
-		boolean is_Station = false;
-		boolean is_Structure = false;
-		boolean is_StructureSFUT = false;
-		boolean is_StructureIrrigSummaryTS = false;
-		boolean is_SheetName = false;
 
-		int wdid_length = HydroBase_Util.getPreferredWDIDLength();
-
-		// Create the input filter panel...
-
-		if ( HydroBase_Util.isStationTimeSeriesDataType ( ippdmi, DataType ) ){
-			// Stations...
-			is_Station = true;
-			filter_panel = new HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel ( ippdmi );
-			Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for station." );
-		}
-		else if ( HydroBase_Util.isStructureSFUTTimeSeriesDataType ( ippdmi, DataType ) ) {
-			// Structures (with SFUT)...
-			is_StructureSFUT = true;
-			PropList filter_props = new PropList ( "" );
-			filter_props.set ( "NumFilterGroups=6" );
-			Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for structure SFUT." );
-			filter_panel = new HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				ippdmi, true, filter_props );
-		}
-		else if ( HydroBase_Util.isStructureTimeSeriesDataType (ippdmi, DataType ) ) {
-			// Structures (no SFUT)...
-			is_Structure = true;
-			PropList filter_props = new PropList ( "" );
-			filter_props.set ( "NumFilterGroups=6" );
-			filter_panel = new HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				ippdmi, false, filter_props );
-			Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure (no SFUT)." );
-		}
-		else if ( HydroBase_Util.isIrrigSummaryTimeSeriesDataType(ippdmi, DataType ) ) {
-			// Irrig summary TS...
-			is_StructureIrrigSummaryTS = true;
-			filter_panel = new HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( ippdmi );
-			Message.printStatus ( 2, routine, "Data type \"" + DataType + "\" is for structure irrig summary ts." );
-		}
-		else if ( HydroBase_Util.isAgriculturalCASSCropStatsTimeSeriesDataType ( ippdmi, DataType) ) {
-			is_CASS = true;
-			filter_panel = new
-			HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel (ippdmi );
-			Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for CASS." );
-		}
-		else if ( HydroBase_Util.isAgriculturalNASSCropStatsTimeSeriesDataType (	ippdmi, DataType ) ) {
-			// Data from agricultural_CASS_crop_statistics
-			// or agricultural_NASS_crop_statistics...
-			is_NASS = true;
-			filter_panel = new
-			HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel (ippdmi );
-			Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for NASS." );
-		}
-		else if( HydroBase_Util.isWISTimeSeriesDataType (ippdmi, DataType ) ) {
-			// Sheet name...
-			is_SheetName = true;
-			filter_panel = new
-			HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel ( ippdmi );
-			Message.printStatus ( 2, routine,"Data type \"" + DataType +"\" is for WIS." );
-		}
-		else {
-            message = "Data type \"" + DataType + "\" is not recognized as a HydroBase data type.";
-			Message.printWarning ( 2, routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the datatype can be used with HydroBase (see documentation)." ) );
-			throw new Exception ( message );
-		}
+		IPP_DataMetaData_InputFilter_JPanel filterPanel =
+		    new IPP_DataMetaData_InputFilter_JPanel(ippdmi, null, getNumFilterGroups());
 
 		// Populate with the where information from the command...
 
-		String filter_delim = ";";
+		String filterDelim = ";";
 		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
 			WhereN = (String)WhereN_Vector.get(ifg);
             if ( WhereN.length() == 0 ) {
@@ -521,7 +465,7 @@ CommandWarningException, CommandException
             }
 			// Set the filter...
 			try {
-                filter_panel.setInputFilter( ifg, WhereN, filter_delim );
+                filterPanel.setInputFilter( ifg, WhereN, filterDelim );
 			}
 			catch ( Exception e ) {
                 message = "Error setting where information using \""+WhereN+"\"";
@@ -533,25 +477,21 @@ CommandWarningException, CommandException
                         message, "Report the problem to software support - also see the log file." ) );
 			}
 		}
-	*/
+		
+		// Extract the 
+
 		// Read the list of objects from which identifiers can be obtained.  This code is similar to that in
 		// TSTool_JFrame.readHydroBaseHeaders...
 	
 		Message.printStatus ( 2, routine, "Getting the list of time series..." );
 	
 		List tslist0 = null;
-		if ( Subject.equalsIgnoreCase("County")) {
-		    tslist0 = ippdmi.readCountyDataMetaDataList( SubjectName, DataType, SubDataType,
-                Method, SubMethod, Source, Scenario );
-		}
-		else if ( Subject.equalsIgnoreCase("Project")) {
-		    tslist0 = ippdmi.readProjectDataMetaDataList( SubjectName, DataType, SubDataType,
-                Method, SubMethod, Source, Scenario );
-		}
-		else if ( Subject.equalsIgnoreCase("Provider")) {
-		    tslist0 = ippdmi.readProviderDataMetaDataList( SubjectName, DataType, SubDataType,
-	            Method, SubMethod, Source, Scenario );
-		}
+        IPPSubjectType subject = null;
+        List<String> input = ((InputFilter_JPanel)filterPanel).getInput("Subject", false, null );
+
+        //Message.printStatus(2, "", "Input is \"" + input.get(0) );
+        subject = IPPSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));
+        tslist0 = ippdmi.readDataMetaDataList( filterPanel, subject );
 		// Make sure that size is set...
 		int size = 0;
 		if ( tslist0 != null ) {
@@ -776,7 +716,7 @@ public String toString ( PropList props )
 		b.append ( "InputName=\"" + InputName + "\"" );
 	}
 	String delim = ";";
-    for ( int i = 1; i <= __numWhere; i++ ) {
+    for ( int i = 1; i <= __numFilterGroups; i++ ) {
     	String where = props.getValue("Where" + i);
     	if ( (where != null) && (where.length() > 0) && !where.startsWith(delim) ) {
     		if ( b.length() > 0 ) {

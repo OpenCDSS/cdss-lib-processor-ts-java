@@ -89,42 +89,44 @@ throws InvalidCommandParameterException
         message = "The input file must be specified.";
 		warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an input file." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an input file." ) );
 	}
 	else {
 	    String working_dir = null;
 	
-			try { Object o = processor.getPropContents ( "WorkingDir" );
-					// Working directory is available so use it...
-					if ( o != null ) {
-						working_dir = (String)o;
-					}
+		try {
+		    Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				working_dir = (String)o;
 			}
-			catch ( Exception e ) {
-				message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Software error - report problem to support." ) );
-			}
+		}
+		catch ( Exception e ) {
+			message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Software error - report problem to support." ) );
+		}
 	
 		try {
-            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, InputFile));
+            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir,
+                TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, InputFile)) );
 			File f = new File ( adjusted_path );
 			if ( !f.exists() ) {
                 message = "The input file does not exist: \"" + adjusted_path + "\".";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the command file to run exists." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the command file to run exists." ) );
             }
 			f = null;
 		}
 		catch ( Exception e ) {
             message = "The input file \"" + InputFile +
             "\" cannot be adjusted to an absolute path using the working directory \"" +
-            working_dir + "\".";
+            working_dir + "\" and processor properties.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -212,7 +214,8 @@ CommandWarningException, CommandException
 	String WorkingDir = TSCommandProcessorUtil.getWorkingDir(processor);
 	String InputFile_full = null;
 	try {
-        InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath ( WorkingDir, InputFile) );
+        InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath ( WorkingDir,
+            TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, InputFile)));
         if ( !IOUtil.fileExists(InputFile_full) ) {
             message = "Python script file \"" + InputFile_full + "\" does not exist.";
             status.addToLog ( CommandPhaseType.RUN,

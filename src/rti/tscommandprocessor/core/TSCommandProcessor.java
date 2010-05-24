@@ -60,6 +60,7 @@ import RTi.Util.IO.CommandStatusProvider;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandStatusUtil;
 import RTi.Util.IO.GenericCommand;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
@@ -3387,11 +3388,14 @@ public void removeCommandListListener ( CommandListListener listener )
 Reset the workflow global properties to defaults, necessary when a command processor is rerun.
 */
 private void resetWorkflowProperties ()
+throws Exception
 {   String routine = getClass().getName() + ".resetWorkflowProperties";
     Message.printStatus(2, routine, "Resetting workflow properties." );
     
     // First clear user-defined properties.
     __property_Hashtable.clear();
+    // Define some standard properties
+    __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
     // Now make sure that specific controlling properties are cleared out.
     // FIXME SAM 2008-07-15 Move data members to this class
     __tsengine.setIgnoreLEZero ( false );
@@ -3405,7 +3409,7 @@ private void resetWorkflowProperties ()
 
 /**
 Run the specified commands.  If no commands are specified, run all that are being managed.
-@param commands Vector of Command to process.
+@param commands list of Command to process.
 @param props Properties to control run.  See full list in TSEngine.processCommands.  This
 method only acts on the properties shown below.
 <td><b>Property</b></td>    <td><b>Description</b></td>
@@ -3465,8 +3469,8 @@ throws Exception
 }
 
 /**
-Request that processing be cancelled.  This sets a flag that is detected in the
-TSEngine.processCommands() method.  Processing will be cancelled as soon as the current command
+Request that processing be canceled.  This sets a flag that is detected in the
+TSEngine.processCommands() method.  Processing will be canceled as soon as the current command
 completes its processing.
 @param cancel_processing_requested Set to true to cancel processing.
 */
@@ -3560,13 +3564,13 @@ output period at read.
 
 <tr>
 <td><b>DataTestList</b></td>
-<td>A Vector of DataTest, to be processed when evaluating data.
+<td>A list of DataTest, to be processed when evaluating data.
 </td>
 </tr>
 
 <tr>
 <td><b>HydroBaseDMIList</b></td>
-<td>A Vector of open HydroBaseDMI, to be used by other code for reading data.
+<td>A list of open HydroBaseDMI, to be used by other code for reading data.
 </td>
 </tr>
 

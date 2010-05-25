@@ -48,6 +48,12 @@ public class ReadDelimitedFile_Command extends AbstractCommand implements Comman
 protected final String _False = "False";
 protected final String _True = "True";
 
+/**
+String that indicates that column names should be taken from the file.
+For example FC(1:) indicates columns 1 through the total number of columns.
+*/
+protected final String _FC = "FC(";
+
 // FIXME SAM 2007-12-19 Need to evaluate this - runtime versions may be different.
 /**
 Private data members shared between the checkCommandParameter() and the 
@@ -57,9 +63,17 @@ runCommand() methods (prevent code duplication parsing input).
 //private DateTime __InputEnd   = null;
 
 /**
-Column names for each time series being processed.
+Column names for each time series being processed, from the ColumnNames parameter.
+See also __columnNamesRuntime.
 */
 private List<String> __columnNames = new Vector();
+
+/**
+Column names for each time series being processed, from the ColumnNames parameter that
+has been expanded to reflect file column names.
+See also __columnNamesRuntime.
+*/
+private List<String> __columnNamesRuntime = new Vector();
 
 /**
 Data types for each time series being processed.
@@ -67,9 +81,14 @@ Data types for each time series being processed.
 private List<String> __dataType = new Vector();
 
 /**
-Date/time column name.
+Date/time column name, as specified in the parameter.
 */
 private String __dateTimeColumn = null;
+
+/**
+Date/time column name, expanded for runtime, consistent with the ColumnNames runtime values.
+*/
+private String __dateTimeColumnRuntime = null;
 
 /**
 Delimiter for parsing file data.
@@ -91,6 +110,11 @@ private TimeInterval __interval = null;
 Location ID for each time series being processed.
 */
 private List<String> __locationID = new Vector();
+
+/**
+Location ID for each time series being processed, expanded for runtime.
+*/
+private List<String> __locationIDRuntime = new Vector();
 
 /**
 Missing value strings that may be present in the file.
@@ -133,6 +157,11 @@ Column names for data values, for each time series being processed.
 private List<String> __valueColumns = new Vector();
 
 /**
+Column names for data values, for each time series being processed, expanded for runtime.
+*/
+private List<String> __valueColumnsRuntime = new Vector();
+
+/**
 Constructor.
 */
 public ReadDelimitedFile_Command ()
@@ -169,7 +198,10 @@ throws InvalidCommandParameterException
     // String DateColumn = parameters.getValue("DateColumn" ); // Not implemented
     // String TimeColumn = parameters.getValue("TimeColumn" ); // Not implemented
     String ValueColumn = parameters.getValue("ValueColumn" );
-    //String Comment = parameters.getValue("Comment" );  // No checks
+    String Comment = parameters.getValue("Comment" );  // No checks, but needed to process column names
+    if ( Comment == null ) {
+        Comment = "#"; // need default for checks
+    }
     String SkipRows = parameters.getValue("SkipRows" );
     String SkipRowsAfterComments = parameters.getValue("SkipRowsAfterComments" );
     String LocationID = parameters.getValue("LocationID" );
@@ -183,6 +215,7 @@ throws InvalidCommandParameterException
 	//String InputStart = parameters.getValue("InputStart");
 	//String InputEnd   = parameters.getValue("InputEnd");
 	
+    String InputFile_full = null;
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input file must be specified.";
         warning += "\n" + message;
@@ -209,11 +242,11 @@ throws InvalidCommandParameterException
             }
     
         try {
-            String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+            InputFile_full = IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                 TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
-            File f = new File ( adjusted_path );
+            File f = new File ( InputFile_full );
             if ( !f.exists() ) {
-                message = "The input file does not exist:  \"" + adjusted_path + "\".";
+                message = "The input file does not exist:  \"" + InputFile_full + "\".";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -257,65 +290,6 @@ throws InvalidCommandParameterException
         setTreatConsecutiveDelimitersAsOne ( Boolean.parseBoolean(TreatConsecutiveDelimitersAsOne) );
     }
     
-    List<String> columnNames = new Vector();
-    setColumnNames ( columnNames );
-    if ( (ColumnNames == null) || (ColumnNames.length() == 0) ) {
-        message = "The column names must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify column names for all columns in the file." ) );
-    }
-    else {
-        // Parse out the column names so that they can be used in checks below.
-        columnNames = StringUtil.breakStringList ( ColumnNames, ",", StringUtil.DELIM_ALLOW_STRINGS );
-        setColumnNames ( columnNames );
-    }
-    
-    setDateTimeColumn (null);
-    if ( (DateTimeColumn == null) || (DateTimeColumn.length() == 0) ) {
-        message = "The date/time column must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a date/time column as one of the values from ColumnNames." ) );
-    }
-    else {
-        if ( getColumnNumberFromName(DateTimeColumn, columnNames) < 0 ) {
-            message = "The DateTimeColumn (" + DateTimeColumn + ") is not a recognized column name.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a date/time column as one of the values from ColumnNames." ) );
-        }
-        else {
-            setDateTimeColumn ( DateTimeColumn );
-        }
-    }
-    
-    List<String> valueColumns = new Vector();
-    setValueColumns ( valueColumns );
-    if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
-        message = "The value column(s) must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify data column(s) as values from ColumnNames, separated by commas." ) );
-    }
-    else {
-        valueColumns = StringUtil.breakStringList ( ValueColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
-        for ( String valueColumn : valueColumns ) {
-            if ( getColumnNumberFromName(valueColumn, columnNames) < 0 ) {
-                message = "The ValueColumn (" + valueColumn + ") is not a recognized column name.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify value column(s) matching ColumnNames, separated by commas." ) );
-            }
-        }
-    }
-    setValueColumns(valueColumns);
-
     setSkipRows ( null );
     if ( (SkipRows != null) && !SkipRows.equals("") ) {
         try {
@@ -342,56 +316,215 @@ throws InvalidCommandParameterException
             setSkipRowsAfterComments ( Integer.parseInt(SkipRowsAfterComments) );
         }
     }
-
-    List<String> locationID = new Vector();
-    setLocationID( locationID );
-    if ( (LocationID != null) && !LocationID.equals("") ) {
-        // Can have one value that is re-used, or LocationID for each time series
-        List<String>tokens = StringUtil.breakStringList(LocationID, ",", 0);
-        if ( (tokens.size() != 1) && (tokens.size() != valueColumns.size()) ) {
-            message = "The number of LocationID strings (" + tokens.size() + ") is invalid.";
+    
+    // Column names need to be processed after the above have been specified
+    
+    List<String> columnNames = new Vector();
+    setColumnNames ( columnNames );
+    if ( (ColumnNames == null) || (ColumnNames.length() == 0) ) {
+        message = "The column names must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify column names for all columns in the file." ) );
+    }
+    else {
+        // Parse out the column names so that they can be used in checks below.
+        columnNames = StringUtil.breakStringList ( ColumnNames, ",", StringUtil.DELIM_ALLOW_STRINGS );
+        setColumnNames ( columnNames ); // As specified by user - see expanded runtime strings in next section
+    }
+    // If the column names include information from the file, get the column names from the file
+    List<String> columnNamesRuntime = new Vector();
+    setColumnNamesRuntime ( columnNamesRuntime );
+    if ( StringUtil.indexOfIgnoreCase(ColumnNames,_FC, 0) >= 0 ) {
+        // Original string used slice notation for column names in file
+        try {
+            columnNamesRuntime = readColumnNamesFromFile(InputFile_full, columnNames, Delimiter, Comment, getSkipRows(),
+                getSkipRowsAfterComments() );
+        }
+        catch ( Exception e ) {
+            message = "Error getting the column names to use for runtime processing (" + e + ").";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify 1 value or the same number as the value columns (" + valueColumns.size() +
+                    message, "Verify that the column names are specified using valid syntax." ) );
+            Message.printWarning( 3, routine, e );
+        }
+    }
+    else {
+        // Just use the column names as specified for runtime
+        columnNamesRuntime = columnNames;
+    }
+    setColumnNamesRuntime ( columnNamesRuntime );
+    
+    setDateTimeColumn (null);
+    setDateTimeColumnRuntime (null);
+    if ( (DateTimeColumn == null) || (DateTimeColumn.length() == 0) ) {
+        message = "The date/time column must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a date/time column as one of the values from ColumnNames." ) );
+    }
+    else {
+        setDateTimeColumn ( DateTimeColumn );
+        String dateTimeColumnRuntime = null;
+        setDateTimeColumnRuntime ( dateTimeColumnRuntime );
+        if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_FC, 0) >= 0 ) {
+            // Original string used slice notation for column name in file
+            try {
+                List<String> dateTimeColumnName = new Vector();
+                dateTimeColumnName.add ( DateTimeColumn ); // Only one
+                dateTimeColumnName = readColumnNamesFromFile(InputFile_full, dateTimeColumnName, Delimiter, Comment, getSkipRows(),
+                    getSkipRowsAfterComments() );
+                dateTimeColumnRuntime = dateTimeColumnName.get(0);
+            }
+            catch ( Exception e ) {
+                message = "Error getting the date/time column name to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the date/time column name is specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        else {
+            // Just use the column names as specified for runtime
+            dateTimeColumnRuntime = DateTimeColumn;
+        }
+        setDateTimeColumnRuntime ( dateTimeColumnRuntime );
+        // Now check the value of the date/time column versus the available columns
+        if ( getColumnNumberFromName(getDateTimeColumnRuntime(), getColumnNamesRuntime()) < 0 ) {
+            message = "The DateTimeColumn (" + getDateTimeColumnRuntime() + ") is not a recognized column name.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a date/time column as one of the values from ColumnNames." ) );
+        }
+    }
+    
+    List<String> valueColumns = new Vector();
+    setValueColumns ( valueColumns );
+    List<String> valueColumnsRuntime = new Vector();
+    setValueColumnsRuntime ( valueColumnsRuntime );
+    if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
+        message = "The value column(s) must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify data column(s) as values from ColumnNames, separated by commas." ) );
+    }
+    else {
+        valueColumns = StringUtil.breakStringList(ValueColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
+        setValueColumns ( valueColumns );
+        if ( StringUtil.indexOfIgnoreCase(ValueColumn,_FC, 0) >= 0 ) {
+            // Original string used slice notation for column name in file
+            try {
+                valueColumnsRuntime = readColumnNamesFromFile(InputFile_full, valueColumns, Delimiter, Comment, getSkipRows(),
+                    getSkipRowsAfterComments() );
+            }
+            catch ( Exception e ) {
+                message = "Error getting the value column name(s) to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the value column name(s) are specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        else {
+            // Just use the column names as specified for runtime
+            valueColumnsRuntime = valueColumns;
+        }
+        setValueColumnsRuntime ( valueColumnsRuntime );
+        // Now check for valid values...
+        for ( String valueColumnRuntime : valueColumnsRuntime ) {
+            if ( getColumnNumberFromName(valueColumnRuntime, getValueColumnsRuntime()) < 0 ) {
+                message = "The ValueColumn (" + valueColumnRuntime + ") is not a recognized column name.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify value column(s) matching ColumnNames, separated by commas." ) );
+            }
+        }
+    }
+
+    List<String> locationID = new Vector();
+    setLocationID( locationID );
+    List<String> locationIDRuntime = new Vector();
+    setLocationID( locationIDRuntime );
+    if ( (LocationID == null) || LocationID.equals("") ) {
+        message = "The location ID column(s) must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify location ID column(s) 1+ values from ColumnNames, separated by commas." ) );
+    }
+    else {
+        // Can have one value that is re-used, or LocationID for each time series
+        List<String>tokens = StringUtil.breakStringList(LocationID, ",", 0);
+        if ( StringUtil.indexOfIgnoreCase(LocationID,_FC, 0) >= 0 ) {
+            // Original string used slice notation for column name in file
+            try {
+                tokens = readColumnNamesFromFile(InputFile_full, tokens, Delimiter, Comment, getSkipRows(),
+                    getSkipRowsAfterComments() );
+            }
+            catch ( Exception e ) {
+                message = "Error getting the location ID(s) to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the location ID(s) are specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
+            message = "The number of LocationID strings (" + tokens.size() + ") is invalid - expecting " +
+                getValueColumnsRuntime().size();
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify 1 value or the same number as the value columns (" + getValueColumnsRuntime().size() +
                     "), separated by commas." ) );
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
-                locationID.add ( "" );
+            // Set to empty strings to simplify runtime error handling
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
+                locationIDRuntime.add ( "" );
             }
         }
         else {
             // Process the LocationID for each time series
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 if ( tokens.size() == 1 ) {
-                    locationID.add(tokens.get(0));
+                    locationIDRuntime.add(tokens.get(0));
                 }
                 else {
-                    locationID.add(tokens.get(i));
+                    locationIDRuntime.add(tokens.get(i));
                 }
             }
         }
     }
-    setLocationID ( locationID );
+    setLocationIDRuntime ( locationIDRuntime );
 
     List<String> provider = new Vector();
     setProvider ( provider );
     if ( (Provider != null) && !Provider.equals("") ) {
         // Can have one value that is re-used, or Provider for each time series
         List<String>tokens = StringUtil.breakStringList(Provider, ",", 0);
-        if ( (tokens.size() != 1) && (tokens.size() != valueColumns.size()) ) {
-            message = "The number of Provider strings (" + tokens.size() + ") is invalid.";
+        if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
+            message = "The number of Provider strings (" + tokens.size() + ") is invalid - expecting " +
+                getValueColumnsRuntime().size();
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify 1 value or the same number as the value columns (" + valueColumns.size() +
+                    message, "Specify 1 value or the same number as the value columns (" + getValueColumnsRuntime().size() +
                     "), separated by commas." ) );
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 provider.add ( "" );
             }
         }
         else {
             // Process the Provider for each time series
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 if ( tokens.size() == 1 ) {
                     provider.add(tokens.get(0));
                 }
@@ -402,7 +535,7 @@ throws InvalidCommandParameterException
         }
     }
     else {
-        for ( int i = 0; i < valueColumns.size(); i++ ) {
+        for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
             provider.add ( "" );
         }
     }
@@ -412,27 +545,28 @@ throws InvalidCommandParameterException
     setDataType ( dataType );
     if ( (DataType == null) || DataType.equals("") ) {
         // Set to the same as the value columns
-        for ( int i = 0; i < valueColumns.size(); i++ ) {
-            dataType.add ( valueColumns.get(i) );
+        for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
+            dataType.add ( getValueColumnsRuntime().get(i) );
         }
     }
     else {
         // Can have one value that is re-used, or DataType for each time series
         List<String>tokens = StringUtil.breakStringList(DataType, ",", 0);
-        if ( (tokens.size() != 1) && (tokens.size() != valueColumns.size()) ) {
-            message = "The number of DataType strings (" + tokens.size() + ") is invalid.";
+        if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
+            message = "The number of DataType strings (" + tokens.size() + ") is invalid - expecting " +
+                getValueColumnsRuntime().size();
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify 1 value or the same number as the value columns (" + valueColumns.size() +
+                    message, "Specify 1 value or the same number as the value columns (" + getValueColumnsRuntime().size() +
                     "), separated by commas." ) );
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 dataType.add ( "" );
             }
         }
         else {
             // Process the DataType for each time series
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 if ( tokens.size() == 1 ) {
                     dataType.add(tokens.get(0));
                 }
@@ -472,20 +606,21 @@ throws InvalidCommandParameterException
     if ( (Scenario != null) && !Scenario.equals("") ) {
         // Can have one value that is re-used, or Scenario for each time series
         List<String>tokens = StringUtil.breakStringList(Scenario, ",", 0);
-        if ( (tokens.size() != 1) && (tokens.size() != valueColumns.size()) ) {
-            message = "The number of Scenario strings (" + tokens.size() + ") is invalid.";
+        if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
+            message = "The number of Scenario strings (" + tokens.size() + ") is invalid - expecting " +
+                getValueColumnsRuntime().size();
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify 1 value or the same number as the value columns (" + valueColumns.size() +
+                    message, "Specify 1 value or the same number as the value columns (" + getValueColumnsRuntime().size() +
                     "), separated by commas." ) );
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 scenario.add ( "" );
             }
         }
         else {
             // Process the Scenario for each time series
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 if ( tokens.size() == 1 ) {
                     scenario.add(tokens.get(0));
                 }
@@ -496,7 +631,7 @@ throws InvalidCommandParameterException
         }
     }
     else {
-        for ( int i = 0; i < valueColumns.size(); i++ ) {
+        for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
             scenario.add ( "" );
         }
     }
@@ -507,20 +642,21 @@ throws InvalidCommandParameterException
     if ( (Units != null) && !Units.equals("") ) {
         // Can have one value that is re-used, or units for each time series
         List<String>tokens = StringUtil.breakStringList(Units, ",", 0);
-        if ( (tokens.size() != 1) && (tokens.size() != valueColumns.size()) ) {
-            message = "The number of units strings (" + tokens.size() + ") is invalid.";
+        if ( (tokens.size() != 1) && (tokens.size() != getValueColumnsRuntime().size()) ) {
+            message = "The number of units strings (" + tokens.size() + ") is invalid - expecting " +
+                getValueColumnsRuntime().size();
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify 1 value or the same number as the value columns (" + valueColumns.size() +
+                    message, "Specify 1 value or the same number as the value columns (" + getValueColumnsRuntime().size() +
                     "), separated by commas." ) );
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 units.add ( "" );
             }
         }
         else {
             // Process the units for each time series
-            for ( int i = 0; i < valueColumns.size(); i++ ) {
+            for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
                 if ( tokens.size() == 1 ) {
                     units.add(tokens.get(0));
                 }
@@ -531,7 +667,7 @@ throws InvalidCommandParameterException
         }
     }
     else {
-        for ( int i = 0; i < valueColumns.size(); i++ ) {
+        for ( int i = 0; i < getValueColumnsRuntime().size(); i++ ) {
             units.add ( "" );
         }
     }
@@ -601,15 +737,15 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "Delimiter" );
     valid_Vector.add ( "TreatConsecutiveDelimitersAsOne" );
+    valid_Vector.add ( "Comment" );
+    valid_Vector.add ( "SkipRows" );
+    valid_Vector.add ( "SkipRowsAfterComments" );
     valid_Vector.add ( "ColumnNames" );
     valid_Vector.add ( "DateTimeColumn" );
     valid_Vector.add ( "DateTimeFormat" );
     valid_Vector.add ( "DateColumn" );
     valid_Vector.add ( "TimeColumn" );
     valid_Vector.add ( "ValueColumn" );
-    valid_Vector.add ( "Comment" );
-    valid_Vector.add ( "SkipRows" );
-    valid_Vector.add ( "SkipRowsAfterComments" );
     valid_Vector.add ( "LocationID" );
     valid_Vector.add ( "Provider" );
     valid_Vector.add ( "DataType" );
@@ -625,9 +761,7 @@ throws InvalidCommandParameterException
 	// Throw an InvalidCommandParameterException in case of errors.
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+			MessageUtil.formatMessageTag(command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -671,7 +805,7 @@ throws FileNotFoundException, IOException
             // Ignore blank lines, comments, and HTML-enclosing tags.
             continue;
         }
-        tokens = StringUtil.breakStringList( string, delim, parseFlag );
+        tokens = StringUtil.breakStringList( string, delim, parseFlag | StringUtil.DELIM_ALLOW_STRINGS );
         // Set the date string - overwrite for each line until all the end lines are processed
         date2_string = tokens.get(dateTimePos);
     }
@@ -721,13 +855,23 @@ private List<String> getColumnNames()
 }
 
 /**
+Return the runtime column names list.
+*/
+private List<String> getColumnNamesRuntime()
+{
+    return __columnNamesRuntime;
+}
+
+/**
 Get the column number (0+) from the column names.
 @param columnName column name of interest
 @param columnName names of all the columns
 @return the column number (0+) corresponding to the column name, or -1 if not found.
 */
 private int getColumnNumberFromName ( String columnName, List<String> columnNames )
-{
+{   if ( (columnName == null) || (columnNames == null) ) {
+        return -1;
+    }
     for ( int i = 0; i < columnNames.size(); i++ ) {
         if ( columnName.equalsIgnoreCase(columnNames.get(i)) ) {
             return i;
@@ -769,6 +913,14 @@ private String getDateTimeColumn ()
 }
 
 /**
+Return the date/time column name expanded for runtime.
+*/
+private String getDateTimeColumnRuntime ()
+{
+    return __dateTimeColumnRuntime;
+}
+
+/**
 Return the delimiter that separates columns.
 */
 private String getDelimiter ()
@@ -798,6 +950,14 @@ Return the location ID list.
 private List<String> getLocationID()
 {
     return __locationID;
+}
+
+/**
+Return the location ID list, expanded for runtime.
+*/
+private List<String> getLocationIDRuntime()
+{
+    return __locationIDRuntime;
 }
 
 /**
@@ -875,11 +1035,19 @@ private List<String> getUnits()
 }
 
 /**
-Return the value columns list.
+Return the value column list.
 */
 private List<String> getValueColumns()
 {
     return __valueColumns;
+}
+
+/**
+Return the value column list, expanded for runtime.
+*/
+private List<String> getValueColumnsRuntime()
+{
+    return __valueColumnsRuntime;
 }
 
 /**
@@ -914,6 +1082,120 @@ private boolean needToSkipRow( int row, int firstNonHeaderRow, int[][] skipRows,
 
 // Use the base class parseCommand() method
 
+// TODO SAM 2010-05-24 Evaluate making code more modular so as to not repeat this code from main read method
+/**
+Read the column names from the file.  This code is essentially a copy of some of the code used when
+actually processing the time series and should be kept consistent.  It mainly is concerned with handling
+initial comments in the file, skipped rows, and reading the first non-comment record as a header.
+@param inputFileFull the full path to the input file.
+@param columnNames0 the value of the ColumnNames parameter before special handling
+*/
+protected List<String> readColumnNamesFromFile ( String inputFileFull, List<String> columnNames0, String delim,
+    String commentChar, int[][] skipRows, int skipRowsAfterComments )
+throws IOException
+{   String routine = getClass().getName() + ".readColumnNamesFromFile";
+    List<String> columnNames = new Vector();
+    BufferedReader in = null;
+    Message.printStatus(2, routine, "Getting the column names from file \"" + inputFileFull + "\"" );
+    in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
+    String s, sTrimmed;
+    List<String> tokens = null;
+    int ntokens = 0;
+    int row = 0;
+    boolean rowIsComment = false;
+    int firstNonHeaderRow = -1; // first line that is not a header comment (1+)
+    int dl = 10;
+    int breakFlag = 0;
+    while ( true ) {
+        // Read a line and deal with skipping
+        s = in.readLine();
+        if ( s == null ) {
+            // No more data
+            break;
+        }
+        // Else handle the line
+        ++row;
+        Message.printStatus(2, routine, "Processing line " + row + ": " + s );
+        if ( Message.isDebugOn ) {
+            Message.printDebug(dl, routine, "Processing line " + row + ": " + s );
+        }
+        rowIsComment = false;
+        sTrimmed = s.trim();
+        // Skip in the range of rows being skipped - this basically throws out rows without evaluating
+        // Don't even know if it is a comment.
+        if ( needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            Message.printStatus(2, routine, "1 Skipping row " + row );
+            continue;
+        }
+        if ( (sTrimmed.length() == 0) || (commentChar.indexOf(s.charAt(0)) >= 0) ) {
+            rowIsComment = true;
+        }
+        // Skip rows first, in particular user-specified skips before evaluating for the first non-comment row
+        if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            Message.printStatus(2, routine, "2 Skipping row " + row );
+            continue;
+        }
+        Message.printStatus(2, routine, "Line is not a comment and is not being skipped." );
+        if ( !rowIsComment ) {
+            if ( firstNonHeaderRow < 0 ) {
+                // This is the first non-comment data record
+                firstNonHeaderRow = row;
+                if ( Message.isDebugOn ) {
+                    Message.printDebug(dl, routine, "Found first non-comment (non-skipped) line at row " +
+                        firstNonHeaderRow + ": " + s );
+                }
+            }
+        }
+        // Check again in case the first non-header line is detected.
+        if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            continue;
+        }
+        // Else continue reading data records from the file - this will be the file header with column names...
+        // First break the row (allow quoted strings since headers)...
+        Message.printStatus(2, routine, "Parsing the line to get column names." );
+        tokens = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS );
+        if ( tokens == null ) {
+            ntokens = 0;
+        }
+        else {
+            ntokens = tokens.size();
+        }
+        // Loop through original column name tokens and, as requested. expand to what is in the file
+        for ( String columnName0 : columnNames0 ) {
+            if ( StringUtil.startsWithIgnoreCase(columnName0,_FC) ) {
+                // Need to process the column names from the file
+                int parenPos1 = columnName0.indexOf(_FC);
+                int parenPos2 = columnName0.indexOf(")");
+                if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
+                    // Need to interpret slice of field numbers in file
+                    int [] fileColPos = StringUtil.parseIntegerSlice(
+                        columnName0.substring((parenPos1 + _FC.length()),parenPos2), ":", 0, ntokens); // ntokens=num columns
+                    for ( int ipos = 0; ipos <fileColPos.length; ipos++ ) {
+                        // Positions are 1+ so need to decrement to get 0+ indices
+                        Message.printStatus(2, routine, "Adding file column name \"" + tokens.get(fileColPos[ipos] - 1).trim() + "\"" );
+                        columnNames.add ( tokens.get(fileColPos[ipos] - 1).trim() );
+                    }
+                }
+                else {
+                    // Use all the file field names
+                    for ( int ipos = 0; ipos <ntokens; ipos++ ) {
+                        Message.printStatus(2, routine, "Adding user column name \"" + tokens.get(ipos).trim() + "\"" );
+                        columnNames.add ( tokens.get(ipos).trim() );
+                    }
+                }
+            }
+            else {
+                // A literal string that can be used as is
+                columnNames.add ( columnName0 );
+            }
+        }
+        // Currently headers in files can only be one row so break out of reading
+        break;
+    }
+    in.close();
+    return columnNames;
+}
+
 /**
 Read a list of time series from a delimited file.
 @param inputFileFull the full path to the input file.
@@ -931,7 +1213,7 @@ Read a list of time series from a delimited file.
 */
 private List<TS> readTimeSeriesList ( String inputFileFull,
     String delim,  boolean treatConsecutiveDelimitersAsOne,
-    List<String> columnNames, String dateTimeColumn, List<String> valueColumns,
+    List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, List<String> valueColumns,
     String commentChar, int[][] skipRows, int skipRowsAfterComments,
     List<String> ids, List<String> providers, List<String> datatypes, TimeInterval interval,
     List<String> scenarios, List<String> units, List<String> missing,
@@ -1041,9 +1323,14 @@ throws IOException
             if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
                 continue;
             }
+            // If the Column Names contained __FC, then the first non-comment line is the file header.  This would
+            // have been read during command setup so just read and ignore here
+            if ( readColumnNamesFromFile ) {
+                continue;
+            }
             // Else continue reading data records from the file...
             // First break the row...
-            tokens = StringUtil.breakStringList ( s, delim, breakFlag );
+            tokens = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS);
             if ( tokens == null ) {
                 ntokens = 0;
             }
@@ -1565,10 +1852,14 @@ throws InvalidCommandParameterException,
         
         // Read everything in the file (one time series or traces).
         List<String> errorMessages = new Vector();
+        boolean readColumnNamesFromFile = false;
+        if ( StringUtil.indexOfIgnoreCase(parameters.getValue("ColumnNames"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
         tslist = readTimeSeriesList ( InputFile_full, getDelimiter(), getTreatConsecutiveDelimitersAsOne(),
-            getColumnNames(), getDateTimeColumn(), getValueColumns(),
+            getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(), getValueColumnsRuntime(),
             Comment, getSkipRows(), getSkipRowsAfterComments(),
-            getLocationID(), getProvider(), getDataType(), getInterval(), getScenario(),
+            getLocationIDRuntime(), getProvider(), getDataType(), getInterval(), getScenario(),
             getUnits(), getMissingValue(),
             InputStart_DateTime, InputEnd_DateTime, readData, errorMessages );
         
@@ -1666,6 +1957,14 @@ private void setColumnNames ( List<String> columnNames )
 }
 
 /**
+Set the runtime column names in the file.
+*/
+private void setColumnNamesRuntime ( List<String> columnNamesRuntime )
+{
+    __columnNamesRuntime = columnNamesRuntime;
+}
+
+/**
 Set the data type strings for each time series.
 */
 private void setDataType ( List<String> dataType )
@@ -1679,6 +1978,14 @@ Set date/time column.
 private void setDateTimeColumn ( String dateTimeColumn )
 {
     __dateTimeColumn = dateTimeColumn;
+}
+
+/**
+Set date/time column expanded for runtime.
+*/
+private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime )
+{
+    __dateTimeColumnRuntime = dateTimeColumnRuntime;
 }
 
 /**
@@ -1711,6 +2018,14 @@ Set the location ID strings for each time series.
 private void setLocationID ( List<String> locationID )
 {
     __locationID = locationID;
+}
+
+/**
+Set the location ID strings for each time series, expanded for runtime.
+*/
+private void setLocationIDRuntime ( List<String> locationIDRuntime )
+{
+    __locationIDRuntime = locationIDRuntime;
 }
 
 /**
@@ -1775,6 +2090,14 @@ Set the value column names for each time series.
 private void setValueColumns ( List<String> valueColumns )
 {
     __valueColumns = valueColumns;
+}
+
+/**
+Set the value column names for each time series, expanded for runtime.
+*/
+private void setValueColumnsRuntime ( List<String> valueColumnsRuntime )
+{
+    __valueColumnsRuntime = valueColumnsRuntime;
 }
 
 /**

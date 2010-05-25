@@ -120,7 +120,7 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
-
+try{
 	if ( o == __browse_JButton ) {
 		// Browse for the file to read...
 		JFileChooser fc = new JFileChooser();
@@ -178,6 +178,9 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+}catch ( Exception e ) {
+    Message.printWarning(2, "Action performed", e );
+}
 }
 
 /**
@@ -302,11 +305,13 @@ private void checkInput () {
 	}
 	*/
 
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	} 
 	catch ( Exception e ) {
 		// The warning would have been printed in the check code.
+	    Message.printWarning(3, "CheckInput", e);
 		__error_wait = true;
 	}
 }
@@ -469,6 +474,36 @@ private void initialize(JFrame parent, Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional (default=False)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Comment character(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Comment_JTextField = new JTextField (10);
+    __Comment_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Comment_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - character(s) that indicate comment lines (default=#)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip (by row number):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SkipRows_JTextField = new JTextField (10);
+    __SkipRows_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - comma-separated numbers (1+) and ranges (e.g., 1,3-7) (default=none)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip (after header comments):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SkipRowsAfterComments_JTextField = new JTextField (10);
+    __SkipRowsAfterComments_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SkipRowsAfterComments_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - number of rows to skip after header comments (default=0)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Column name(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -537,36 +572,6 @@ private void initialize(JFrame parent, Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - specify column names for time series values, separated by commas."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Comment character(s):"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Comment_JTextField = new JTextField (10);
-    __Comment_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Comment_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - character(s) that indicate comment lines (default=#)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip (by row number):"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SkipRows_JTextField = new JTextField (10);
-    __SkipRows_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - comma-separated numbers (1+) or ranges (a-b)."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Rows to skip (after header comments):"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SkipRowsAfterComments_JTextField = new JTextField (10);
-    __SkipRowsAfterComments_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SkipRowsAfterComments_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - number of rows to skip after header comments."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Location ID(s):"),

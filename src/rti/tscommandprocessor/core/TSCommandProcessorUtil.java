@@ -243,7 +243,11 @@ public static String expandParameterValue( CommandProcessor processor, Command c
             propvalString = "" + propval;
         }
         catch ( Exception e ) {
-            // Keep the original value
+            // Keep the original literal value to alert user that property could not be expanded
+            propvalString = delimStart + propval + delimEnd;
+        }
+        if ( propval == null ) {
+            // Keep the original literal value to alert user that property could not be expanded
             propvalString = delimStart + propval + delimEnd;
         }
         StringBuffer b = new StringBuffer();

@@ -167,8 +167,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "SubDataType" );
     valid_Vector.add ( "Interval" );
-    int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
-    for ( int i = 1; i <= numFilters; i++ ) { 
+    for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
     valid_Vector.add ( "Method" );

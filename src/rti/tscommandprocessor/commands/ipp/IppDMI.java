@@ -1054,43 +1054,43 @@ throws Exception {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.name = '" + escape(name) + "'");
     }
     else if ( (name == null) || name.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.name = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.name = '" + escape("") + "'");
     }
     if ( (dataType != null) && !dataType.equals("") ) {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.dataType = '" + escape(dataType) + "'");
     }
     else if ( (dataType == null) || dataType.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.dataType = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.dataType = '" + escape("") + "'");
     }
     if ( (subType != null) && !subType.equals("") ) {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.subType = '" + escape(subType) + "'");
     }
     else if ( (subType == null) || subType.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subType = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.subType = '" + escape("") + "'");
     }
     if ( (method != null) && !method.equals("") ) {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.method = '" + escape(method) + "'");
     }
     else if ( (method == null) || method.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.method = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.method = '" + escape("") + "'");
     }
     if ( (subMethod != null) && !subMethod.equals("") ) {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.subMethod = '" + escape(subMethod) + "'");
     }
     else if ( (subMethod == null) || subMethod.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subMethod = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.subMethod = '" + escape("") + "'");
     }
     if ( (source != null) && !source.equals("") ) {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.source = '" + escape(source) + "'");
     }
     else if ( (source == null) || source.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.source = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.source = '" + escape("") + "'");
     }
     if ( (scenario != null) && !scenario.equals("") ) {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.scenario = '" + escape(scenario) + "'");
     }
     else if ( (scenario == null) || scenario.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vCountyDataMetaData.scenario = '" + escape("") + "'");
     }
     ResultSet rs = dmiSelect(q);
     List v = toCountyDataMetaDataList (rs);
@@ -1359,8 +1359,8 @@ Reads all the ProjectDataMetaData view records that match the given constraints.
 @return a list of matching IPP_ProjectDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readProjectDataMetaDataList( String subjectID, String dataType, String subType,
-    String method, String subMethod, String source, String scenario, boolean matchBlanks ) 
+public List readProjectDataMetaDataList( String subjectID, String source, String dataType, String subType,
+    String method, String subMethod, String scenario, boolean matchBlanks ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
     buildSQL ( q, _S_ProjectDataMetaData );
@@ -1372,37 +1372,37 @@ throws Exception {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.dataType = '" + escape(dataType) + "'");
     }
     else if ( (dataType == null) || dataType.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.dataType = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.dataType = '" + escape("") + "'");
     }
     if ( (subType != null) && !subType.equals("") ) {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subType = '" + escape(subType) + "'");
     }
     else if ( (subType == null) || subType.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subType = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subType = '" + escape("") + "'");
     }
     if ( (method != null) && !method.equals("") ) {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.method = '" + escape(method) + "'");
     }
     else if ( (method == null) || method.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.method = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.method = '" + escape("") + "'");
     }
     if ( (subMethod != null) && !subMethod.equals("") ) {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subMethod = '" + escape(subMethod) + "'");
     }
     else if ( (subMethod == null) || subMethod.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.subMethod = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subMethod = '" + escape("") + "'");
     }
     if ( (source != null) && !source.equals("") ) {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.source = '" + escape(source) + "'");
     }
     else if ( (source == null) || source.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.source = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.source = '" + escape("") + "'");
     }
     if ( (scenario != null) && !scenario.equals("") ) {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.scenario = '" + escape(scenario) + "'");
     }
     else if ( (scenario == null) || scenario.equals("") && matchBlanks ) {
-        q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape("") + "'");
+        q.addWhereClause(schemaPrefix+"vProjectDataMetaData.scenario = '" + escape("") + "'");
     }
     ResultSet rs = dmiSelect(q);
     List v = toProjectDataMetaDataList (rs);
@@ -1417,8 +1417,8 @@ more specific result); if false, more records will be returned
 @return a list of matching IPP_ProviderDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readProviderDataMetaDataList( String subjectID, String dataType, String subType,
-    String method, String subMethod, String source, String scenario, boolean matchBlanks ) 
+public List readProviderDataMetaDataList( String subjectID, String source, String dataType, String subType,
+    String method, String subMethod, String scenario, boolean matchBlanks ) 
 throws Exception {
 	DMISelectStatement q = new DMISelectStatement ( this );
 	buildSQL ( q, _S_ProviderDataMetaData );
@@ -1503,9 +1503,19 @@ throws Exception
         ts.setDataUnits ( units );
         ts.setDataUnitsOriginal ( units );
     }
-    TSIdent tsident = new TSIdent ( subject + ":" + name + "." + source + "." +
+    TSIdent tsident = null;
+    if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY)) {
+        // The name can be used in the identifier
+        tsident = new TSIdent ( subject + ":" + name + "." + source + "." +
             dataType + "-" + subType + "-" + method + "-" + subMethod + ".Year." + scenario );
+    }
+    else {
+        // The name is cumbersome and no short string identifier has been defined so use the id.
+        tsident = new TSIdent ( subject + ":" + id + "." + source + "." +
+            dataType + "-" + subType + "-" + method + "-" + subMethod + ".Year." + scenario );
+    }
     ts.setIdentifier( tsident );
+    ts.setDescription ( name );
     if ( (reqStart != null) && (reqEnd != null) ) {
         ts.setDate1 ( reqStart );
         ts.setDate2 ( reqEnd );
@@ -1601,7 +1611,7 @@ throws Exception
         throw new InvalidParameterException(message);
     }
     IPP_DataMetaData data = dataList.get(0);
-    // Get the internal data (time series) ID resulting from the time series
+    // Get the internal data (time series) ID resulting from the time series (this is NOT the subjectID)
     long id = data.getID();
     // The following uses the id to read the time series.  All other parameters are provided to avoid
     // a second query (or to use values exactly matching the TSID).

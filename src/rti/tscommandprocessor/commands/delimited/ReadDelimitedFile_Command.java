@@ -52,7 +52,7 @@ protected final String _True = "True";
 String that indicates that column names should be taken from the file.
 For example FC(1:) indicates columns 1 through the total number of columns.
 */
-protected final String _FC = "FC(";
+protected final String _FC = "FC[";
 
 // FIXME SAM 2007-12-19 Need to evaluate this - runtime versions may be different.
 /**
@@ -61,12 +61,6 @@ runCommand() methods (prevent code duplication parsing input).
 */
 //private DateTime __InputStart = null;
 //private DateTime __InputEnd   = null;
-
-/**
-Column names for each time series being processed, from the ColumnNames parameter.
-See also __columnNamesRuntime.
-*/
-private List<String> __columnNames = new Vector();
 
 /**
 Column names for each time series being processed, from the ColumnNames parameter that
@@ -79,11 +73,6 @@ private List<String> __columnNamesRuntime = new Vector();
 Data types for each time series being processed.
 */
 private List<String> __dataType = new Vector();
-
-/**
-Date/time column name, as specified in the parameter.
-*/
-private String __dateTimeColumn = null;
 
 /**
 Date/time column name, expanded for runtime, consistent with the ColumnNames runtime values.
@@ -105,11 +94,6 @@ private List __discovery_TS_List = null;
 Interval for the time series.
 */
 private TimeInterval __interval = null;
-
-/**
-Location ID for each time series being processed.
-*/
-private List<String> __locationID = new Vector();
 
 /**
 Location ID for each time series being processed, expanded for runtime.
@@ -150,11 +134,6 @@ private boolean __treatConsecutiveDelimitersAsOne = false;
 Data units for each time series being processed.
 */
 private List<String> __units = new Vector();
-
-/**
-Column names for data values, for each time series being processed.
-*/
-private List<String> __valueColumns = new Vector();
 
 /**
 Column names for data values, for each time series being processed, expanded for runtime.
@@ -320,7 +299,6 @@ throws InvalidCommandParameterException
     // Column names need to be processed after the above have been specified
     
     List<String> columnNames = new Vector();
-    setColumnNames ( columnNames );
     if ( (ColumnNames == null) || (ColumnNames.length() == 0) ) {
         message = "The column names must be specified.";
         warning += "\n" + message;
@@ -331,7 +309,6 @@ throws InvalidCommandParameterException
     else {
         // Parse out the column names so that they can be used in checks below.
         columnNames = StringUtil.breakStringList ( ColumnNames, ",", StringUtil.DELIM_ALLOW_STRINGS );
-        setColumnNames ( columnNames ); // As specified by user - see expanded runtime strings in next section
     }
     // If the column names include information from the file, get the column names from the file
     List<String> columnNamesRuntime = new Vector();
@@ -357,8 +334,8 @@ throws InvalidCommandParameterException
     }
     setColumnNamesRuntime ( columnNamesRuntime );
     
-    setDateTimeColumn (null);
-    setDateTimeColumnRuntime (null);
+    String dateTimeColumnRuntime = null;
+    setDateTimeColumnRuntime (dateTimeColumnRuntime);
     if ( (DateTimeColumn == null) || (DateTimeColumn.length() == 0) ) {
         message = "The date/time column must be specified.";
         warning += "\n" + message;
@@ -367,9 +344,6 @@ throws InvalidCommandParameterException
                 message, "Specify a date/time column as one of the values from ColumnNames." ) );
     }
     else {
-        setDateTimeColumn ( DateTimeColumn );
-        String dateTimeColumnRuntime = null;
-        setDateTimeColumnRuntime ( dateTimeColumnRuntime );
         if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
@@ -404,7 +378,6 @@ throws InvalidCommandParameterException
     }
     
     List<String> valueColumns = new Vector();
-    setValueColumns ( valueColumns );
     List<String> valueColumnsRuntime = new Vector();
     setValueColumnsRuntime ( valueColumnsRuntime );
     if ( (ValueColumn == null) || (ValueColumn.length() == 0) ) {
@@ -416,7 +389,6 @@ throws InvalidCommandParameterException
     }
     else {
         valueColumns = StringUtil.breakStringList(ValueColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
-        setValueColumns ( valueColumns );
         if ( StringUtil.indexOfIgnoreCase(ValueColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
@@ -449,10 +421,8 @@ throws InvalidCommandParameterException
         }
     }
 
-    List<String> locationID = new Vector();
-    setLocationID( locationID );
     List<String> locationIDRuntime = new Vector();
-    setLocationID( locationIDRuntime );
+    setLocationIDRuntime( locationIDRuntime );
     if ( (LocationID == null) || LocationID.equals("") ) {
         message = "The location ID column(s) must be specified.";
         warning += "\n" + message;
@@ -847,14 +817,6 @@ throws Throwable
 }
 
 /**
-Return the column names list.
-*/
-private List<String> getColumnNames()
-{
-    return __columnNames;
-}
-
-/**
 Return the runtime column names list.
 */
 private List<String> getColumnNamesRuntime()
@@ -905,14 +867,6 @@ private List<String> getDataType()
 }
 
 /**
-Return the date/time column name.
-*/
-private String getDateTimeColumn ()
-{
-    return __dateTimeColumn;
-}
-
-/**
 Return the date/time column name expanded for runtime.
 */
 private String getDateTimeColumnRuntime ()
@@ -942,14 +896,6 @@ Return the data interval.
 private TimeInterval getInterval()
 {
     return __interval;
-}
-
-/**
-Return the location ID list.
-*/
-private List<String> getLocationID()
-{
-    return __locationID;
 }
 
 /**
@@ -1032,14 +978,6 @@ Return the data units list.
 private List<String> getUnits()
 {
     return __units;
-}
-
-/**
-Return the value column list.
-*/
-private List<String> getValueColumns()
-{
-    return __valueColumns;
 }
 
 /**
@@ -1165,13 +1103,14 @@ throws IOException
             if ( StringUtil.startsWithIgnoreCase(columnName0,_FC) ) {
                 // Need to process the column names from the file
                 int parenPos1 = columnName0.indexOf(_FC);
-                int parenPos2 = columnName0.indexOf(")");
+                int parenPos2 = columnName0.indexOf("]");
                 if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
                     // Need to interpret slice of field numbers in file
-                    int [] fileColPos = StringUtil.parseIntegerSlice(
-                        columnName0.substring((parenPos1 + _FC.length()),parenPos2), ":", 0, ntokens); // ntokens=num columns
+                    String slice = columnName0.substring((parenPos1 + _FC.length()),parenPos2);
+                    int [] fileColPos = StringUtil.parseIntegerSlice( slice, ":", 0, ntokens );
+                    Message.printStatus(2, routine, "Got " + fileColPos.length + " columns from slice \"" + slice + "\"" );
                     for ( int ipos = 0; ipos <fileColPos.length; ipos++ ) {
-                        // Positions are 1+ so need to decrement to get 0+ indices
+                        // Positions from parameter parsing are 1+ so need to decrement to get 0+ indices
                         Message.printStatus(2, routine, "Adding file column name \"" + tokens.get(fileColPos[ipos] - 1).trim() + "\"" );
                         columnNames.add ( tokens.get(fileColPos[ipos] - 1).trim() );
                     }
@@ -1179,13 +1118,14 @@ throws IOException
                 else {
                     // Use all the file field names
                     for ( int ipos = 0; ipos <ntokens; ipos++ ) {
-                        Message.printStatus(2, routine, "Adding user column name \"" + tokens.get(ipos).trim() + "\"" );
+                        Message.printStatus(2, routine, "Adding file column name \"" + tokens.get(ipos).trim() + "\"" );
                         columnNames.add ( tokens.get(ipos).trim() );
                     }
                 }
             }
             else {
                 // A literal string that can be used as is
+                Message.printStatus(2, routine, "Adding user-specified column name \"" + columnName0 + "\"" );
                 columnNames.add ( columnName0 );
             }
         }
@@ -1220,13 +1160,13 @@ private List<TS> readTimeSeriesList ( String inputFileFull,
     DateTime inputStart, DateTime inputEnd,
     boolean readData, List<String> errorMessages )
 throws IOException
-{   String routine = getClass().getName() + ".readTimeSeriesList", message;
+{   String routine = getClass().getName() + ".readTimeSeriesList";
     // Allocate the list
     List<TS> tslist = new Vector();
     // Open the file
     BufferedReader in = null;
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
-    // Translate column names to integer values to speed up processing below
+    // Translate column names to integer values to speed up processing below - these have been expanded for runtime
     int dateTimePos = getColumnNumberFromName(dateTimeColumn,columnNames);
     int [] valuePos = getColumnNumbersFromNames(valueColumns,columnNames);
     // Create the time series - at this time meta-data are not read from the file
@@ -1241,8 +1181,7 @@ throws IOException
         }
         catch ( Exception e ) {
             tsident = null;
-            errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e +
-                ") - will not read.");
+            errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
         }
         if ( tsident != null ) {
             try {
@@ -1253,12 +1192,12 @@ throws IOException
                 ts.setDataUnits ( units.get(its) );
                 ts.setDataUnitsOriginal ( units.get(its) );
                 ts.setMissing ( Double.NaN );
+                ts.setInputName ( inputFileFull );
             }
             catch ( Exception e ) {
                 // Set the TS to null to match the column positions but won't be able to set data below
                 ts = null;
-                errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e +
-                ") - will not read.");
+                errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
             }
         }
         // Always add, even if null
@@ -1323,12 +1262,15 @@ throws IOException
             if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
                 continue;
             }
-            // If the Column Names contained __FC, then the first non-comment line is the file header.  This would
-            // have been read during command setup so just read and ignore here
-            if ( readColumnNamesFromFile ) {
+            // If the ColumnNames contained _FC, then the first non-comment line is the file header.  This would
+            // have been read during command setup so just read and ignore here - this is not considered a data row
+            if ( readColumnNamesFromFile && (dataRowCount == 0) ) {
+                Message.printDebug(dl, routine, "Skipping the row since it has file headers." );
+                ++dataRowCount;
                 continue;
             }
             // Else continue reading data records from the file...
+            ++dataRowCount;
             // First break the row...
             tokens = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS);
             if ( tokens == null ) {
@@ -1357,6 +1299,33 @@ throws IOException
             }
             // Process the time series for the row
             for ( ival = 0; ival < valuePos.length; ival++ ) {
+                // Time series corresponding to value.
+                ts = tslist.get(ival);
+                // If the first row being processed, need to allocate the data space for all the time series
+                // This also requires reading from the end of the file to get the end date
+                if ( (readColumnNamesFromFile && (dataRowCount == 2)) ||
+                     (!readColumnNamesFromFile && dataRowCount == 1) ) {
+                    // The first date will be set from the first row of data
+                    ts.setDate1(dateTime);
+                    ts.setDate1Original(dateTime);
+                    ts.setDate2 ( determineEndDateTimeFromFile ( inputFileFull, dateTimePos, delim, breakFlag ) );
+                    ts.setDate2Original ( ts.getDate2() );
+                    ts.addToGenesis ( "Read time series from file \"" + inputFileFull + "\" for period " +
+                        ts.getDate1() + " to " + ts.getDate2() );
+                    if ( readData ) {
+                        // Allocate the data space
+                        ts.allocateDataSpace();
+                    }
+                    if ( Message.isDebugOn ) {
+                        Message.printDebug(dl, routine, "Set period of time series: " + ts.getDate1() +
+                            " to " + ts.getDate2() );
+                    }
+                }
+                if ( !readData ) {
+                    // No need to process data for this time series (and will break out of main loop below when
+                    // done with all time series).
+                    continue;
+                }
                 valueString = tokens.get(valuePos[ival] );
                 if ( valueString.equals("") || (StringUtil.indexOfIgnoreCase(missing, valueString) >= 0) ) {
                     // Missing so just let it remain missing in the time series.
@@ -1368,34 +1337,6 @@ throws IOException
                 }
                 else {
                     // Valid number so set in the time series
-                    ts = tslist.get(ival);
-                    // If the first value, need to allocate the data space for all the time series
-                    // This also requires reading from the end of the file to get the end date
-                    if ( dataRowCount == 0 ) {
-                        // The first date will be set from the first row of data
-                        for ( TS its : tslist ) {
-                            its.setDate1(dateTime);
-                            its.setDate1Original(dateTime);
-                            its.setDate2 ( determineEndDateTimeFromFile ( inputFileFull, dateTimePos, delim, breakFlag ) );
-                            its.setDate2Original ( its.getDate2() );
-                            its.addToGenesis ( "Read time series from file \"" + inputFileFull + "\" for period " +
-                                its.getDate1() + " to " + its.getDate2() );
-                            if ( readData ) {
-                                // Allocate the data space
-                                its.allocateDataSpace();
-                            }
-                        }
-                        if ( Message.isDebugOn ) {
-                            Message.printDebug(dl, routine, "Set period of time series: " + ts.getDate1() +
-                                " to " + ts.getDate2() );
-                        }
-                        // If reading the data, can break without allocating data and reading
-                        if ( !readData ) {
-                            // No need to continue...
-                            break;
-                        }
-                    }
-                    ++dataRowCount;
                     value = Double.parseDouble(valueString);
                     if ( Message.isDebugOn ) {
                         Message.printDebug(dl, routine, "Setting value of " + valueColumns.get(ival) + " at " +
@@ -1403,6 +1344,11 @@ throws IOException
                     }
                     ts.setDataValue ( dateTime, value );
                 }
+            }
+            // If reading the data, can break without allocating data and reading
+            if ( !readData ) {
+                // No need to continue...
+                break;
             }
         }
         return tslist;
@@ -1638,8 +1584,7 @@ throws IOException, FileNotFoundException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
@@ -1651,8 +1596,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command in discovery mode.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
@@ -1664,16 +1608,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 /**
 Run the command.
 @param command_number The number of the command being run.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-       CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "ReadDelimitedFile_Command.runCommand", message;
 	int warning_level = 2;
     //int log_level = 3;
@@ -1949,14 +1889,6 @@ throws InvalidCommandParameterException,
 }
 
 /**
-Set the column names in the file.
-*/
-private void setColumnNames ( List<String> columnNames )
-{
-    __columnNames = columnNames;
-}
-
-/**
 Set the runtime column names in the file.
 */
 private void setColumnNamesRuntime ( List<String> columnNamesRuntime )
@@ -1970,14 +1902,6 @@ Set the data type strings for each time series.
 private void setDataType ( List<String> dataType )
 {
     __dataType = dataType;
-}
-
-/**
-Set date/time column.
-*/
-private void setDateTimeColumn ( String dateTimeColumn )
-{
-    __dateTimeColumn = dateTimeColumn;
 }
 
 /**
@@ -2010,14 +1934,6 @@ Set the data interval for the time series.
 private void setInterval ( TimeInterval interval )
 {
     __interval = interval;
-}
-
-/**
-Set the location ID strings for each time series.
-*/
-private void setLocationID ( List<String> locationID )
-{
-    __locationID = locationID;
 }
 
 /**
@@ -2082,14 +1998,6 @@ Set the data units strings for each time series.
 private void setUnits ( List<String> units )
 {
     __units = units;
-}
-
-/**
-Set the value column names for each time series.
-*/
-private void setValueColumns ( List<String> valueColumns )
-{
-    __valueColumns = valueColumns;
 }
 
 /**

@@ -412,7 +412,16 @@ private void initialize(JFrame parent, Command command) {
         "provided information to assign the time series metadata."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "A delimiter in column one results in a blank first column." ), 
+        "Column names are defined by parameters or are determined from the file, " +
+        "and are then used by other parameters to read data." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The column name(s), date/time column, value column(s), and Location ID(s) columns can use the notation " +
+        "FC[start:stop] to read column headings from the first non-comment file line." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "For example, \"Date,FC[2:]\" defines the first column as \"Date\" and column names " +
+        "2+ will be read from the file." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
@@ -511,7 +520,7 @@ private void initialize(JFrame parent, Command command) {
     __ColumnNames_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __ColumnNames_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - user specified column names used below."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column names for file, used below to read data."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column:"),
@@ -646,7 +655,7 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - missing value indicator(s) for file data."),
+        "Optional - missing value indicator(s) for file data (default=blank values)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),

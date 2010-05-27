@@ -216,6 +216,10 @@ public TSCommandProcessor ()
 
 	// Create a TSEngine that works parallel to this class.
 	__tsengine = new TSEngine ( this );
+    // Define some standard properties
+	// TODO SAM 2010-05-26 Need to evaluate how to set important global properties up front but also
+	// dynamically in resetWorkflowProperties
+    __property_Hashtable.put ( "InstallDir", IOUtil.getApplicationHomeDir() );
 }
 
 /**
@@ -230,8 +234,7 @@ public void addCommand ( Command command )
 /**
 Add a command at the end of the list.
 @param command Command to add.
-@param notifyCommandListListeners Indicate whether registered CommandListListeners should
-be notified.
+@param notifyCommandListListeners Indicate whether registered CommandListListeners should be notified.
 */
 public void addCommand ( Command command, boolean notifyCommandListListeners )
 {	String routine = "TSCommandProcessor.addCommand";
@@ -266,8 +269,7 @@ public void addCommand ( String command_string )
 /**
 Add a CommandListListener, to be notified when commands are added, removed,
 or change (are edited or execution status is updated).
-If the listener has already been added, the listener will remain in
-the list in the original order.
+If the listener has already been added, the listener will remain in the list in the original order.
 */
 public void addCommandListListener ( CommandListListener listener )
 {
@@ -348,8 +350,7 @@ private void addCommandProcessorEventListener ( CommandProcessorEventListener li
 /**
 Add a CommandProcessorListener, to be notified when commands are started,
 progress made, and completed.  This is useful to allow calling software to report progress.
-If the listener has already been added, the listener will remain in
-the list in the original order.
+If the listener has already been added, the listener will remain in the list in the original order.
 */
 public void addCommandProcessorListener ( CommandProcessorListener listener )
 {

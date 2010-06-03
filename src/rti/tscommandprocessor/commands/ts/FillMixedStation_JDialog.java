@@ -1,23 +1,3 @@
-// ----------------------------------------------------------------------------
-// fillMixedStation_JDialog - editor for fillMixedStation()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History:
-// 2004-04-05	Luiz Teixeira, RTi	Converted from the add_JDialog class to
-//					the fill MixedStation_JDialog class.
-// 2005-04-11	Luiz Teixeira, RTi	Adding code to support the analysis.
-// 2005-04-22	Luiz Teixeira, RTi	Clean up
-// 2005-05-26	Luiz Teixeira, RTi	Copied the original class
-//					fillMixedStation_JDialog() from TSTool
-//					and split the code into the new
-//					fillMixedStation_JDialog() and
-//					fillMixedStation_Command().
-// 2007-02-16	Steven A. Malers, RTi	Update to new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-03-09	SAM, RTi			Work on code so an operational release can
-//					be made.
-// ----------------------------------------------------------------------------
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.Color;
@@ -108,11 +88,11 @@ private String __working_dir = null;
 // Members controlling the execution mode. This class can run as a command or as a tool from the tool menu.
 private JTextArea __Command_JTextArea = null; // Command as JTextArea
 
-private SimpleJComboBox	__DependentTSList_JComboBox = null; // Indicate how to get time series list.
+private SimpleJComboBox	__DependentTSList_JComboBox = null;
 private JLabel __DependentTSID_JLabel = null;
 private SimpleJComboBox __DependentTSID_JComboBox = null;
 
-private SimpleJComboBox	__IndependentTSList_JComboBox = null; // Indicate how to get time series list.
+private SimpleJComboBox	__IndependentTSList_JComboBox = null;
 private JLabel __IndependentTSID_JLabel = null;
 private SimpleJComboBox __IndependentTSID_JComboBox = null;
 
@@ -121,16 +101,16 @@ private JCheckBox[]	__AnalysisMethod_JCheckBox  = null;
 private SimpleJComboBox	__NumberOfEquations_JComboBox = null;
 private JCheckBox[] __Transformation_JCheckBox = null;
 
-private JTextField __MinimumDataCount_JTextField; // Field to the MinimumDataCount
-private JTextField __MinimumR_JTextField; // Field to the MinimumR
+private JTextField __MinimumDataCount_JTextField;
+private JTextField __MinimumR_JTextField;
 
-private JTextField __Intercept_JTextField = null; // Intercept value as JTextField
-private JTextField	__AnalysisStart_JTextField = null, // Text fields for dependent time series analysis period.
-			__AnalysisEnd_JTextField = null,
-			__FillStart_JTextField = null,
-			__FillEnd_JTextField = null; // Text fields for fill period.
+private JTextField __Intercept_JTextField = null;
+private JTextField __AnalysisStart_JTextField = null;
+private JTextField __AnalysisEnd_JTextField = null;
+private JTextField __FillStart_JTextField = null;
+private JTextField __FillEnd_JTextField = null;
 
-private JTextField	__OutputFile_JTextField = null; // File to save output						
+private JTextField __OutputFile_JTextField = null;						
 
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __view_JButton = null;
@@ -143,7 +123,7 @@ private SimpleJButton __fillDependents_JButton = null;
 private String __view_String = "View Output File";
 private String __view_Tip = "View output file containing the analysis results.";
 
-private JTextField	__statusJTextField = null;
+private JTextField __statusJTextField = null;
 
 // Cancel button: used when running as a TSTool command.
 
@@ -174,8 +154,8 @@ private String __analyze_Tip = "Perform the analysis and create the output file"
 
 // Used only when running as a TSTool tool.
 private SimpleJButton __copyCommandsToTSTool_JButton = null;
-private String __copyCommandsToTSTool_String = "Copy Command(s) to TSTool";
-private String __copyCommandsToTSTool_Tip = "Copy command(s) to TSTool.";
+private String __copyCommandsToTSTool_String = "Copy Command to TSTool";
+private String __copyCommandsToTSTool_Tip = "Copy command to TSTool.";
 
 // fill button: used only when running as a TSTool tool.
 
@@ -183,7 +163,9 @@ private String __copyCommandsToTSTool_Tip = "Copy command(s) to TSTool.";
 //private String __fillDependents_Tip = "Fill dependents using best fit.";
 
 // Member initialized by the createFillCommands() method and used by the
-// the update FillCommandsControl() and copyCommandsToTSTool() methods.
+// the updateFillCommandsControl() and copyCommandsToTSTool() methods.
+// The current design produces only one command since the tool is designed to
+// fill StateMod natural flow time series.
 List __fillCommands_Vector = null;
 
 // Member flag Used to prevent ValueChange method to execute refresh()
@@ -751,13 +733,13 @@ private void initialize ( JFrame parent )
 	int yNotes = 0;
     if ( __commandUI == null ) {
         JGUIUtil.addComponent( mainNotes_JPanel, new JLabel ( "This command finds the best fit to fill the dependent time"
-            + " series with data from the dependent time series, and performs the filling."),
+            + " series with data from the independent time series, and performs the filling."),
             0, yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     else {
         JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
             "This tool finds the best fit to fill the dependent time"
-            + " series with data from the independent time series, and generates commands to perform the filling."),
+            + " series with data from the independent time series, and generates a command to perform the filling."),
             0, yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 

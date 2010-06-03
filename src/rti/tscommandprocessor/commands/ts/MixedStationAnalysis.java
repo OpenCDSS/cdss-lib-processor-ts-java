@@ -191,6 +191,7 @@ all Analysis Methods and Transformations.
 private void analyze()
 {
 	String mthd = "MixedStationAnalysis.analyze", mssg;
+    printMemoryStats(mthd,"Before analyzing");
 
 	StopWatch sw = new StopWatch();
 	double previousSecCount;
@@ -302,6 +303,8 @@ private void analyze()
 	    Message.printStatus ( 2, mthd, "Have " + dependentResults.size() +
 	        " results to rank for dependent TS \"" + dependentTS.getIdentifierString() + "\"" );
 	}
+	
+	printMemoryStats(mthd,"After analyzing");
 
 	if ( warningCount > 0 ) {
 		// Try to save the partial report and throw an exception.
@@ -317,8 +320,7 @@ private void analyze()
 Analyze and rank the results.
 */
 public void analyzeAndRank ()
-{
-    analyze();
+{   analyze();
     rank();
 }
 
@@ -741,10 +743,6 @@ private void createReportAppendTableHeader ( StringBuffer buffer, String depend,
 
     buffer.append ( "Dependent Time Series: " + depend + nl );
 
-    // Analyze For Filling (not needed in the report)
-//  AnalyzeForFilling = tsRegressionProps.getValue ("AnalyzeForFilling");
-//  buffer.append ( "Analysis for filling: "+ AnalyzeForFilling + __nl );
-
     // Dependent Period.
     DependentAnalysisStart = "" + tsRegression.getDependentAnalysisStart();
     DependentAnalysisEnd = "" + tsRegression.getDependentAnalysisEnd();
@@ -754,13 +752,12 @@ private void createReportAppendTableHeader ( StringBuffer buffer, String depend,
     // Fill Period.
     FillStart = "" + tsRegression.getFillStart();
     FillEnd = "" + tsRegression.getFillEnd();
-    // REVISIT [LT] FillEnd is returning null???
     buffer.append ( "Fill period: from \"" + FillStart + "\" to \"" + FillEnd + "\"" + nl );
 
     // Intercept
     Intercept = "" + tsRegression.getIntercept();
     buffer.append ( "Intercept (only if OLS no transformation): ");
-    if ( Intercept.equalsIgnoreCase( "-999.0" ) ) {
+    if ( (tsRegression.getIntercept() == null) || Intercept.equalsIgnoreCase( "-999.0" ) ) {
         buffer.append ( nl );
     }
     else {
@@ -776,7 +773,7 @@ private void createReportAppendTableHeader ( StringBuffer buffer, String depend,
     buffer.append ( "Minimum data count (N1): " + __minimumDataCount + nl);
 
     // Minimum R
-    // Not available from tsRegression since added by this class
+    // Not available from tsRegression since added by this class - should always have a value
     buffer.append ( "Minimum r: " + __minimumR + nl);
 
     // Best fit indicator (used here only)
@@ -956,11 +953,11 @@ private StringBuffer createReportStatisticsText ( String nl )
   	    				endLine2Data = monthsA + nl;
   	    				endLine3Data = "-------------------------------------------------"
     				    + "------------------------------------------------------------------"
-    				    + "--------------------------------" + nl;
+    				    + "-------------------------------------" + nl;
 
     				   	endLine1Corr = "    Correlation Coefficients (r)" + nl;
   	    				endLine2Corr = monthsA + nl;
-  	    				endLine3Corr = "-------------------------------------------------"
+  	    				endLine3Corr = "------------------------------------------------------"
     				    + "------------------------------------------------------------------"
     				    + "--------------------------------" + nl;
 
@@ -971,24 +968,24 @@ private StringBuffer createReportStatisticsText ( String nl )
     				    + "----------------------------------------------------------" + nl;
   	    			}
     				else {
-  	    				endLine1Data = " # of points | Correlation |    SEP total" + nl;
+  	    				endLine1Data = " # of Points | Correlation |   SEP Total" + nl;
     					endLine2Data = "        (N1) |  Coeff. (r) |            " + nl;
-    					endLine3Data = "-----------------------------------------"
+    					endLine3Data = "----------------------------------------------"
     				    	+ "--------------------------------------------------------------" + nl;
   	    			}
 
     				// --------- sDataCount Table header
     				// First line
-    				sDataCount.append( "  Independent | Transfor-| Analysis |     Period |     Period |" + endLine1Data );
+    				sDataCount.append( "  Independent | Transfor-|      Analysis |   Analysis |   Analysis |" + endLine1Data );
     				// Second line
-    				sDataCount.append( "  Time Series |   mation |   Method |      start |        end |" + endLine2Data );
+    				sDataCount.append( "  Time Series |   mation |        Method |      Start |        End |" + endLine2Data );
 
     				if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
   	    			    // ------- sCorrelation Table header
   	    			    // First line
-    				    sCorrelation.append ( "  Independent | Transfor-| Analysis |     Period |     Period |" + endLine1Corr );
+    				    sCorrelation.append ( "  Independent | Transfor-|      Analysis |   Analysis |   Analysis |" + endLine1Corr );
     				    // Second line
-    				    sCorrelation.append ( "  Time Series |   mation |   Method |      start |        end |" + endLine2Corr );
+    				    sCorrelation.append ( "  Time Series |   mation |        Method |      Start |        End |" + endLine2Corr );
 
     				    // -------------- sRMSE Table header
     				    // First line
@@ -1017,20 +1014,15 @@ private StringBuffer createReportStatisticsText ( String nl )
     	    	// Add the independent TS to the line.
   	    		line = StringUtil.formatString( indep,"%13.13s" ) + " |";
 
-				// Get the Transformation
-	    		transformation = tsRegression.getTransformation();
 				// Add Transformation to the correlation table
-	  		  	line += StringUtil.formatString(""+Transformation,"   %6.6s |");
+                transformation = tsRegression.getTransformation();
+	  		  	line += StringUtil.formatString(""+transformation,"   %6.6s |");
 
 	  		  	// Get the AnalysisMethod
-  	    		analysisMethod = tsRegression.getAnalysisMethod();
-  	    		// Analysis Method to the correlation table
-  	    		if ( analysisMethod == RegressionType.OLS_REGRESSION ) {
-  	    			line += "      OLS |";
-  	    		}
-  	    		else if ( analysisMethod == RegressionType.MOVE2 ){
-  	    			line += "    MOVE2 |";
-  	    		}
+
+  	    		// Add the Analysis Method to the correlation table
+                analysisMethod = tsRegression.getAnalysisMethod();
+                line += StringUtil.formatString(""+analysisMethod," %13.13s |");
 
 				// Add the independent time series period
   	    		IndependentAnalysisStart = "" + tsRegression.getIndependentAnalysisStart();
@@ -1299,15 +1291,15 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent, 
     				if ( firstTime ) {
 	    				// ---------- __sSummary Table header
 	    				// First line
-	    				summary.append ( "     |  Independent | Transfor-| Analysis |     Period |     Period |        Analysis Summary" + nl );
+	    				summary.append ( "     |  Independent | Transfor-|      Analysis |   Analysis |   Analysis |        Analysis Summary" + nl );
 
 	    				// __sSummary Table Second line
-	    				summary.append ( "     |  Time Series |   mation |   method |      start |        end |     N1       r         SEP           A           B |   SEP Total" + nl);
+	    				summary.append ( "     |  Time Series |   mation |        Method |      Start |        End |     N1       r         SEP           A           B |   SEP Total" + nl);
 	    				firstTime = false;
     	    		}
     	    		// Table header 3rd line or month divider
     	    		if ( previousMonth != month ) {
-    	    		    summary.append (  "--------------------------------------------------------------"
+    	    		    summary.append (  "-------------------------------------------------------------------"
     			    	+ "------------------------------------------------------------------------" + nl);
     			    	previousMonth = month;
     	    		}
@@ -1415,15 +1407,9 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent, 
     				// Add Transformation to the table
     	  		  	line += StringUtil.formatString(""+transformation,"   %6.6s |");
     
-    	  		  	// Get the AnalysisMethod
+    	  		  	// Add the Analysis Method
 	  	    		analysisMethod = tsRegression.getAnalysisMethod();
-	  	    		// Analysis Method to the table
-	  	    		if ( analysisMethod == RegressionType.OLS_REGRESSION ) {
-	  	    			line += "      OLS |";
-	  	    		}
-	  	    		else if ( analysisMethod == RegressionType.MOVE2 ){
-	  	    			line += "    MOVE2 |";
-	  	    		}
+	  	    		line += StringUtil.formatString(""+analysisMethod," %13.13s |");
     
     				// Add the independent time series period to the table
 	  	    		IndependentAnalysisStart = tsRegression.getIndependentAnalysisStart();
@@ -1433,10 +1419,10 @@ private StringBuffer createReportSummaryText( Integer maxResultsPerIndependent, 
     
 	  	    		// Add the statistics (N1, r, SEP, A, B, SEP Total)
 	  	    		if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS  ) {
-	  	    			line += getStatistics(tsRegression, month );
+	  	    			line += getStatistics(tsRegression, month, nl );
 	  	    		}
 	  	    		else {
-	  	    			line += getStatistics(tsRegression );
+	  	    			line += getStatistics(tsRegression, nl );
 	  	    		}
     
 	  	    		// Done with this independent time series for the correlation table.
@@ -1470,6 +1456,7 @@ public void fill ( )
 {   String mthd = "MixedStationAnalysis.fill", mssg;
 
 	Message.printStatus ( 2, mthd, "Start filling time series..." );
+	printMemoryStats(mthd,"Before filling");
 	
 	if ( !rankCompleted() ) {
 	    mssg = "Mixed Station Analysis results have not been ranked.  Can't use for filling.";
@@ -1633,6 +1620,7 @@ public void fill ( )
         // TODO SAM 2009-08-31 Evaluate error handling - log individual errors but process as much as possible
     	Message.printWarning( 3, mthd, e );
     }
+    printMemoryStats(mthd,"After filling");
 }
 
 /**
@@ -1642,7 +1630,7 @@ by the method createReportSummary to prepare report lines.
 @param tsRegression the reference to the regression to get the statistics from.
 Returns the statistics string part of the report for a single month's relationship.
 */
-private String getStatistics ( TSRegression tsRegression, int month )
+private String getStatistics ( TSRegression tsRegression, int month, String nl )
 {
 	String retString = "";
 
@@ -1716,7 +1704,7 @@ private String getStatistics ( TSRegression tsRegression, int month )
 		retString += "         ???";
 	}
 
-	retString += "\n";
+	retString += nl;
 
 	return retString;
 }
@@ -1728,7 +1716,7 @@ by the method createReportSummary to prepare report lines.
 @param tsRegression the reference to the regression to get the statistics from.
 Returns the statistics string part of the report for single equation regressions.
 */
-private String getStatistics( TSRegression tsRegression )
+private String getStatistics( TSRegression tsRegression, String nl )
 {
 	String retString = "";
 
@@ -1801,9 +1789,27 @@ private String getStatistics( TSRegression tsRegression )
 		retString += "         ...";		// SEP Total
 	}
 
-	retString += "\n";
+	retString += nl;
 
 	return retString;
+}
+
+/**
+Print memory statistics to evaluate performance.
+*/
+private void printMemoryStats ( String routine, String message )
+{
+    Runtime runtime = Runtime.getRuntime();
+
+    long maxMemory = runtime.maxMemory();
+    long allocatedMemory = runtime.totalMemory();
+    long freeMemory = runtime.freeMemory();
+    long kb2mb = 1024*1024;
+
+    Message.printStatus(2,routine,message + " Free memory (MB): " + (freeMemory / kb2mb) );
+    Message.printStatus(2,routine,message + " Allocated memory (MB): " + (allocatedMemory / kb2mb) );
+    Message.printStatus(2,routine,message + " Current max memory (MB): " + (maxMemory / kb2mb) );
+    Message.printStatus(2,routine,message + " Upper limit on free memory (MB): " + ((freeMemory + (maxMemory - allocatedMemory)) / kb2mb) );
 }
 
 /**
@@ -1822,6 +1828,7 @@ private void rank()
 	__sortedOrder = new int [nDependent][][];
 	
 	Message.printStatus ( 2, mthd, "Ranking fill results for " + nDependent + " dependent time series.");
+    printMemoryStats(mthd,"Before ranking");
 
     try {
     	// Loop over the dependent objects, which each have a list of statistics, stored in TSRegression objects.
@@ -1927,8 +1934,9 @@ private void rank()
     	}
     }
     catch ( Exception e ) {
-    		Message.printWarning( 1, mthd, e );
+    		Message.printWarning( 3, mthd, e );
     }
+    printMemoryStats(mthd,"After ranking");
 }
 
 /**

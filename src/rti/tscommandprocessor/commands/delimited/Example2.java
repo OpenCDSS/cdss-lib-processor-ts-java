@@ -12,10 +12,8 @@ import java.io.StringReader;
 
 import RTi.TS.TS;
 import RTi.TS.TSException;
-import RTi.TS.TSUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -64,7 +62,7 @@ public class Example2 {
         // parse the header and print out what was parsed
         Map headerInfo = cursor.parseHeader();
         List types = (List) headerInfo.get("type");
-        List comments = (List) headerInfo.get("comment");
+        List<String> comments = (List) headerInfo.get("comment");
         // create an assembler for using the cursor and set the date column to the first column
         TimeSeriesAssembler assembler = new TimeSeriesAssembler(cursor).setDateColumn(0);
         // the last column is the "flag" column

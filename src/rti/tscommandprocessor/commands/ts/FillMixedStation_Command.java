@@ -110,6 +110,7 @@ throws InvalidCommandParameterException
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
 	String Intercept = parameters.getValue ( "Intercept" );
+	String FillFlag = parameters.getValue ( "FillFlag" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
 	CommandProcessor processor = getCommandProcessor();
@@ -384,6 +385,14 @@ throws InvalidCommandParameterException
                 message, "Verify that output file and working directory paths are compatible." ) );
         }
     }
+    
+    if ( (FillFlag != null) && !(FillFlag.equalsIgnoreCase("Auto")) && (FillFlag.length() != 1) ) {
+        message = "The fill flag must be 1 character long or set to Auto.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a 1-character fill flag or Auto." ) );
+    }
 	
     // Check for invalid parameters...
     List valid_Vector = new Vector();
@@ -405,6 +414,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
     valid_Vector.add ( "Intercept" );
+    valid_Vector.add ( "FillFlag" );
     valid_Vector.add ( "OutputFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -615,6 +625,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (Intercept != null) && !Intercept.equals("") ) {
 	    Intercept_double = Double.parseDouble(Intercept);
 	}
+	String FillFlag = parameters.getValue ( "FillFlag" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
 	CommandProcessor processor = getCommandProcessor();
@@ -693,7 +704,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		__MixedStationAnalysis = new MixedStationAnalysis( dependentTSList, independentTSList,
 		    bestFitIndicator, analysisMethodList, numberOfEquations,
 		    AnalysisStart_DateTime, AnalysisEnd_DateTime, FillStart_DateTime, FillEnd_DateTime,
-		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double );
+		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double, FillFlag );
 		
 		__MixedStationAnalysis.analyzeAndRank();
 		
@@ -762,6 +773,7 @@ public String toString ( PropList props )
 	String FillStart = props.getValue ( "FillStart" );
 	String FillEnd = props.getValue ( "FillEnd" );
 	String Intercept = props.getValue ( "Intercept" );
+	String FillFlag = props.getValue( "FillFlag" );
 	String OutputFile = props.getValue ( "OutputFile" );
 
 	StringBuffer b = new StringBuffer();
@@ -840,6 +852,13 @@ public String toString ( PropList props )
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "MinimumR="+ MinimumR );
 	}
+	
+    if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillFlag=\"" + FillFlag + "\"" );
+    }
 
 	if ( OutputFile != null && OutputFile.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );

@@ -109,11 +109,11 @@ private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __FillStart_JTextField = null;
 private JTextField __FillEnd_JTextField = null;
-
+private JTextField  __FillFlag_JTextField = null;
 private JTextField __OutputFile_JTextField = null;						
 
 private SimpleJButton __browse_JButton = null;
-private SimpleJButton __view_JButton = null;
+private SimpleJButton __viewOutputFile_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __close_JButton = null;
 private SimpleJButton __analyze_JButton = null;
@@ -276,7 +276,7 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 	}
-	else if ( o == __view_JButton ) {
+	else if ( o == __viewOutputFile_JButton ) {
 	    // View analysis results
         String outputFile = __OutputFile_JTextField.getText();
         String outputFileFull = outputFile;
@@ -354,8 +354,14 @@ public void actionPerformed( ActionEvent event )
 				Message.printWarning ( 1, mthd, mssg );
 				GUIUtil.setWaitCursor(this, false);
 			}	
-			// Enable the runCommand dependent buttons, even if an error occurred.
-			__view_JButton.setEnabled ( true );
+			// Enable the runCommand dependent buttons, even if an error occurred, but only if output exists.
+			if ( (__OutputFile_JTextField.getText() != null) && !__OutputFile_JTextField.getText().equals("") &&
+			    IOUtil.fileExists(getOutputFileFromInterface(true))) {
+			    __viewOutputFile_JButton.setEnabled ( true );
+			}
+			else {
+			    __viewOutputFile_JButton.setEnabled ( false );
+			}
 			//__createFillMixedStationCommand_JButton.setEnabled ( true );
 			//__fillDependents_JButton.setEnabled ( true );
 		}
@@ -452,6 +458,7 @@ private void checkInput ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String Intercept = __Intercept_JTextField.getText().trim();
+	String FillFlag = __FillFlag_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// Put together the list of parameters to check...
@@ -516,6 +523,9 @@ private void checkInput ()
 	if ( Intercept != null && Intercept.length() > 0 ) {
 		props.set( "Intercept", Intercept );
 	}
+    if ( FillFlag.length() > 0 ) {
+        props.set ( "FillFlag", FillFlag );
+    }
 	// OutputFile
 	if ( OutputFile != null && OutputFile.length() > 0 ) {
 		props.set( "OutputFile", OutputFile );
@@ -557,6 +567,7 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String Intercept = __Intercept_JTextField.getText().trim();
+	String FillFlag = __FillFlag_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
 	__command.setCommandParameter ("DependentTSList", DependentTSList);
@@ -574,6 +585,7 @@ private void commitEdits ()
 	__command.setCommandParameter ("FillStart", FillStart);
 	__command.setCommandParameter ("FillEnd", FillEnd);
 	__command.setCommandParameter ("Intercept", Intercept);
+	__command.setCommandParameter ( "FillFlag", FillFlag );
 	__command.setCommandParameter ("OutputFile", OutputFile);
 }
 
@@ -642,7 +654,7 @@ throws Throwable
 	__cancel_JButton = null;
 	__ok_JButton = null;
 	__analyze_JButton = null;
-	__view_JButton = null;
+	__viewOutputFile_JButton = null;
 	__copyCommandsToTSTool_JButton = null;
 	__fillDependents_JButton = null;
 
@@ -675,6 +687,20 @@ private String getAnalysisMethodFromInterface()
 		}
 	}
 	return AnalysisMethod.toString();
+}
+
+/**
+Get the output file from the interface.
+*/
+private String getOutputFileFromInterface ( boolean fullPath )
+{
+    String outputFile = __OutputFile_JTextField.getText().trim();
+    if ( fullPath ) {
+        String workingDir = TSCommandProcessorUtil.getWorkingDirForCommand ( __processor, __command );
+        outputFile = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(workingDir,
+            TSCommandProcessorUtil.expandParameterValue(__processor,__command,outputFile)));
+    }
+    return outputFile;
 }
 
 /**
@@ -744,7 +770,7 @@ private void initialize ( JFrame parent )
     }
 
     JGUIUtil.addComponent(mainNotes_JPanel, new JLabel (
-        "The dependent and independent time series can be selected using the TS list parameters:"),
+        "The dependent and independent time series can be selected using the TS list parameters."),
         0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
         JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "The working directory is: " + __working_dir ),
@@ -823,7 +849,8 @@ private void initialize ( JFrame parent )
 	// Analysis method
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Analysis method(s):"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	JPanel analysisMethodJPanel = new JPanel(new GridLayout(0,1));
+	// With only two choices, list horizontally to save vertical space
+	JPanel analysisMethodJPanel = new JPanel(new GridLayout(1,2));
 	analysisMethodJPanel.setBorder ( new LineBorder(Color.black,1));
 	__AnalysisMethod_JCheckBox = new JCheckBox[2];
 	__AnalysisMethod_JCheckBox[0] = new JCheckBox("" + RegressionType.MOVE2);
@@ -835,11 +862,11 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent( mainAnalysis_JPanel,
 		analysisMethodJPanel,
 		1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel("Optional - methods to use in analysis (default=" +
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel("Optional - method(s) to use in analysis (default=" +
         RegressionType.OLS_REGRESSION + ")."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	// Number of equation (Cyclicity in the original Multiple Station Model
+	// Number of equation (Cyclicity in the original Multiple Station Model)
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Number of equations:"),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __NumberOfEquations_JComboBox = new SimpleJComboBox ( false );
@@ -857,7 +884,8 @@ private void initialize ( JFrame parent )
 	// Transformation
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Transformation(s):" ),
 		0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    JPanel transformationJPanel = new JPanel(new GridLayout(0,1));
+	// With only two choices, list horizontally to save vertical space
+    JPanel transformationJPanel = new JPanel(new GridLayout(1,2));
     transformationJPanel.setBorder ( new LineBorder(Color.black,1));
     __Transformation_JCheckBox = new JCheckBox[2];
     __Transformation_JCheckBox[0] = new JCheckBox("" + DataTransformationType.LOG);
@@ -869,7 +897,7 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(mainAnalysis_JPanel, transformationJPanel,
 		1, yAnalysis, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
-       "Optional - transformations to use in analysis (default=" + DataTransformationType.NONE + ")."),
+       "Optional - transformation(s) to use in analysis (default=" + DataTransformationType.NONE + ")."),
        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
 	// Intercept
@@ -932,6 +960,16 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
 		"Optional - minimum correlation coefficient R required for a best fit (default = 0.5)."),
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Fill flag:" ), 
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillFlag_JTextField = new JTextField ( 5 );
+    __FillFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(mainAnalysis_JPanel, __FillFlag_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainAnalysis_JPanel,
+        new JLabel("Optional - 1-character (or \"Auto\") to indicate fill for value (default=no flag)."), 
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// File to save results.
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Output file:" ),
@@ -955,21 +993,21 @@ private void initialize ( JFrame parent )
         JGUIUtil.addComponent( main_JPanel, mainReview_JPanel,
             0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         
-        JPanel buttonAnalyze_JPanel = new JPanel();
-        buttonAnalyze_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(mainReview_JPanel, buttonAnalyze_JPanel,
+        JPanel analysis_JPanel = new JPanel();
+        analysis_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(mainReview_JPanel, analysis_JPanel,
             0, yReview, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
         
         // Analyze button: used only when running as a TSTool tool.
         __analyze_JButton = new SimpleJButton(__analyze_String, this);
         __analyze_JButton.setToolTipText( __analyze_Tip );
-        buttonAnalyze_JPanel.add ( __analyze_JButton );
+        analysis_JPanel.add ( __analyze_JButton );
         
          // View button: used only when running as a TSTool tool.
-        __view_JButton = new SimpleJButton ( __view_String, this );
-        __view_JButton.setToolTipText( __view_Tip );
-        __view_JButton.setEnabled( false ); // enabled as soon as a run is made, even if fails
-        buttonAnalyze_JPanel.add ( __view_JButton );
+        __viewOutputFile_JButton = new SimpleJButton ( __view_String, this );
+        __viewOutputFile_JButton.setToolTipText( __view_Tip );
+        __viewOutputFile_JButton.setEnabled( false ); // enabled as soon as a run is made, even if fails
+        analysis_JPanel.add ( __viewOutputFile_JButton );
 
         /* FIXME SAM 2009-08-26 Evaluate use
         // fillDependents button: used only when running as a tool.
@@ -987,7 +1025,7 @@ private void initialize ( JFrame parent )
     mainTransfer_JPanel.setLayout( new GridBagLayout() );
     if ( __commandUI != null ) {
         mainTransfer_JPanel.setBorder( BorderFactory.createTitledBorder (
-            BorderFactory.createLineBorder(Color.black),"Copy Command(s) to TSTool" ));
+            BorderFactory.createLineBorder(Color.black),__copyCommandsToTSTool_String ));
     }
     JGUIUtil.addComponent( main_JPanel, mainTransfer_JPanel,
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -1152,6 +1190,7 @@ private void refresh()
 	String FillStart = "";
 	String FillEnd = "";
 	String Intercept = "";
+	String FillFlag = "";
 	String OutputFile = "";
 
 	PropList props = null;
@@ -1177,6 +1216,7 @@ private void refresh()
 		FillStart = props.getValue ( "FillStart" );
 		FillEnd = props.getValue ( "FillEnd" );
 		Intercept = props.getValue ( "Intercept" );
+		FillFlag = props.getValue( "FillFlag" );
 		OutputFile = props.getValue ( "OutputFile" );
 
         if ( DependentTSList == null ) {
@@ -1389,6 +1429,10 @@ private void refresh()
 		else {
 			__Intercept_JTextField.setText ( Intercept );
 		}
+		
+	    if ( FillFlag != null ) {
+	        __FillFlag_JTextField.setText ( FillFlag );
+	    }
 
 		// Check OutputFile and update the text field
 		if ( OutputFile == null ) {
@@ -1415,6 +1459,7 @@ private void refresh()
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	Intercept = __Intercept_JTextField.getText().trim();
+    FillFlag = __FillFlag_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 
 	// And set the command properties.
@@ -1434,6 +1479,7 @@ private void refresh()
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "Intercept=" + Intercept );
+	props.add ( "FillFlag=" + FillFlag );
 	props.add ( "OutputFile=" + OutputFile );
 
 	// FIXME SAM 2009-08-26 Evaluate whether FillMixedStation() command should always be used or

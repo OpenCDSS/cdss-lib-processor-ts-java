@@ -706,6 +706,7 @@ import RTi.TS.ShefATS;
 import RTi.TS.TS;
 import RTi.TS.TSAnalyst;
 import RTi.TS.TSEnsemble;
+import RTi.TS.TSHtmlFormatter;
 import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
@@ -739,6 +740,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.StopWatch;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
+import RTi.Util.Time.YearType;
 
 public class TSEngine implements TSSupplier, WindowListener
 {
@@ -775,10 +777,11 @@ public final int OUTPUT_MONTH_TOTAL_SUMMARY_REPORT=21; // Monthly summary report
 public final int OUTPUT_RIVERWARE_FILE = 22;	// Output in RiverWare format.
 public final int OUTPUT_SHEFA_FILE = 23;	// Output SHEF .A format.
 public final int OUTPUT_NWSRFSESPTRACEENSEMBLE_FILE = 24; // Output NWSRFS ESP Trace Ensemble file
-public final int OUTPUT_TABLE = 25;		// Output a table (curently only for display).
+public final int OUTPUT_TABLE = 25;		// Output a table (currently only for display).
 public final int OUTPUT_POINT_GRAPH = 26;	// Point graph
 public final int OUTPUT_PredictedValue_GRAPH = 27;	// Predicted Value graph
 public final int OUTPUT_PredictedValueResidual_GRAPH = 28;  // Predicted Value Residual graph
+public final int OUTPUT_SUMMARY_HTML = 29; // Summary as HTML, annotated with fill information
 
 /**
 Filter indicating that output should be data (default).
@@ -886,7 +889,7 @@ Vector to save list of time series identifiers that are not found.
 */
 private List __missing_ts = new Vector();
 
-// TODO SAM 2007-02-18 need to reenable NDFD
+// TODO SAM 2007-02-18 need to re-enable NDFD
 /**
 NDFD Adapter instance list, to allow more than one database instance to be open at a time, used with openNDFD().
 */
@@ -953,9 +956,9 @@ A valid instance should be passed during construction.
 private TSCommandProcessor __ts_processor = null;
 
 /**
-Vector of time series vector that is the result of processing.  This will always be non-null.
+List of time series vector that is the result of processing.  This will always be non-null.
 */
-private List __tslist = new Vector(50,50);
+private List<TS> __tslist = new Vector(50,50);
 
 /**
 WindowListener for TSViewJFrame objects, used when calling application wants to listen for
@@ -1042,8 +1045,7 @@ Calculate the average values for a time series.
 @return the average data for a time series using the averaging and
 output period.  If a monthly time series, a MonthTSLimits will be returned.
 Otherwise, a TSLimits will be returned.
-The overloaded method is called with a time series counter having the return
-value of getTimeSeriesSize().
+The overloaded method is called with a time series counter having the return value of getTimeSeriesSize().
 @param ts Monthly time series to process.
 @exception Exception if there is an error getting the limits.
 */
@@ -1058,8 +1060,7 @@ Calculate the average data limits for a time series using the averaging period
 if specified (otherwise use the available period).
 @return the average data for a time series.
 If a monthly time series, a MonthTSLimits will be returned.
-@param i Counter for time series being processed (starting at zero), used to
-control printing of messages.
+@param i Counter for time series being processed (starting at zero), used to control printing of messages.
 @param ts Monthly time series to process.
 Currently only limits for monthly time series are supported.
 @exception Exception if there is an error getting the limits.
@@ -3674,7 +3675,7 @@ throws IOException
     // List of time series to output, determined from the time series in memory
     // and a list of selected array positions (e.g., from a GUI.
 
-    List tslist_output = null;
+    List<TS> tslist_output = null;
 
 	// Define a local proplist to better deal with null...
 	PropList props = proplist;
@@ -3705,10 +3706,8 @@ throws IOException
 			tslist_output = new Vector ( ts_indices_size );
 		}
 		else {
-		    // This does not work because if the Vector is passed
-			// to TSViewJFrame, etc., the Vector is reused but the
-			// contents will have changed.  Therefore, need to
-			// create a new Vector for each output product.  The
+		    // This does not work because if the list is passed to TSViewJFrame, etc., the list is reused but the
+			// contents will have changed.  Therefore, need to create a new list for each output product.  The
 			// time series themselves can be re-used.
 			//__tslist_output.removeAllElements();
 			tslist_output = new Vector ( ts_indices_size );
@@ -3778,6 +3777,9 @@ throws IOException
 		else if ( prop_value.equalsIgnoreCase("-osummary") ) {
 			output_format = OUTPUT_SUMMARY;
 		}
+        else if ( prop_value.equalsIgnoreCase("-osummaryhtml") ) {
+            output_format = OUTPUT_SUMMARY_HTML;
+        }
 		else if ( prop_value.equalsIgnoreCase("-otable") ) {
 			output_format = OUTPUT_TABLE;
 		}
@@ -3825,6 +3827,8 @@ throws IOException
 			setPreviewExportedOutput ( true );
 		}
 		else {
+		    // TODO SAM 2010-06-06 Why is this global in the class?
+		    // Probably gets reused OK in sequence but should be local?
             __output_file = prop_value;
 		}
 	}
@@ -4137,7 +4141,8 @@ throws IOException
     				List summary = TSUtil.formatOutput (__output_file, tslist_output, sumprops );	
     				// Just write the summary to the given file...
     				IOUtil.printStringList ( __output_file, summary);
-    			} catch ( Exception e ) {
+    			}
+    			catch ( Exception e ) {
     				Message.printWarning ( 1, routine,"Unable to print summary to file \"" + __output_file + "\" (" + e + ")." );
     			}
     		}
@@ -4174,6 +4179,58 @@ throws IOException
 			throw new IOException ( message );
 		}
 	}
+    else if ( output_format == OUTPUT_SUMMARY_HTML ) {
+        try {
+            TSHtmlFormatter formatter = new TSHtmlFormatter(tslist_output);
+            String html = formatter.toHTML ( "Time Series Summary", YearType.valueOfIgnoreCase(getOutputYearType()),
+                null, null, null );
+     
+            if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
+                PrintWriter ofp = null;
+                try {
+                    // Just write the summary to the given file...
+                    ofp = new PrintWriter ( new FileOutputStream(__output_file) );
+                    ofp.print ( html );
+                }
+                catch ( Exception e ) {
+                    Message.printWarning ( 1, routine, "Unable to print time series HTML summary to file \"" +
+                        __output_file + "\" (" + e + ")." );
+                }
+                finally {
+                    if ( ofp != null ) {
+                        ofp.close();
+                    }
+                }
+            }
+            else {
+                PrintWriter ofp = null;
+                try {
+                    // Write the content to a temporary file and then view
+                    String tempfile = IOUtil.tempFileName("ts", "html");
+                    ofp = new PrintWriter ( new FileOutputStream(tempfile) );
+                    ofp.print ( html );
+                    ofp.close();
+                    ofp = null;
+                    IOUtil.openURL( tempfile );
+                }
+                catch ( Exception e ) {
+                    Message.printWarning ( 1, routine, "Error displaying time series HTML summary (" + e + ")." );
+                    Message.printWarning ( 3, routine, e );
+                }
+                finally {
+                    if ( ofp != null ) {
+                        ofp.close();
+                    }
+                }
+            }
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, e );
+            message = "Error creating time series HTML summary (" + e + ").";
+            Message.printWarning ( 1, routine, message );
+            throw new IOException ( message );
+        }
+    }
 	else if ( output_format == OUTPUT_TABLE ) {
 		// A table output.  Just copy the graph code and change for table.  At some point,
         // need to initialize all the view data at the same time in case the user changes

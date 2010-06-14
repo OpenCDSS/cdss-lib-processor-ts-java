@@ -74,7 +74,9 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.YearType;
 
+import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
@@ -97,6 +99,8 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 // NWSRFS_DMI commands.
 
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
+import RTi.DataTest.DataTest;
+import RTi.GRTS.TSProductAnnotationProvider;
 
 // TS general commands.
 
@@ -1064,8 +1068,7 @@ public Object getPropContents ( String prop ) throws Exception
 
 /**
 Handle the AutoExtendPeriod property request.
-@return Boolean depending on whether time series periods should automatically
-be extended during reads.
+@return Boolean depending on whether time series periods should automatically be extended during reads.
 */
 private Boolean getPropContents_AutoExtendPeriod()
 {
@@ -1095,7 +1098,7 @@ private DateTime getPropContents_AverageStart()
 Handle the ColoradoIppDMIList property request.
 @return List of open IppDMI instances.
 */
-private List getPropContents_ColoradoIppDMIList()
+private List<IppDMI> getPropContents_ColoradoIppDMIList()
 {
     return __tsengine.getColoradoIppDMIList();
 }
@@ -1111,18 +1114,18 @@ private Boolean getPropContents_CreateOutput()
 
 /**
 Handle the DataTestList property request.
-@return Vector of DataTest instances.
+@return list of DataTest instances.
 */
-private List getPropContents_DataTestList()
+private List<DataTest> getPropContents_DataTestList()
 {
 	return __tsengine.getDataTestList();
 }
 
 /**
 Handle the EnsembleResultsList property request.
-@return The ensemble results list, as a List of DataTable.
+@return The ensemble results list, as a List of TSEnsemble.
 */
-private List getPropContents_EnsembleResultsList()
+private List<TSEnsemble> getPropContents_EnsembleResultsList()
 {
     return __TSEnsemble_Vector;
 }
@@ -1139,9 +1142,9 @@ private Boolean getPropContents_HaveOutputPeriod()
 
 /**
 Handle the HydroBaseDMIList property request.
-@return Vector of open HydroBaseDMI instances.
+@return list of open HydroBaseDMI instances.
 */
-private List getPropContents_HydroBaseDMIList()
+private List<HydroBaseDMI> getPropContents_HydroBaseDMIList()
 {
 	return __tsengine.getHydroBaseDMIList();
 }
@@ -1214,12 +1217,12 @@ private DateTime getPropContents_InputStart()
 Handle the OutputComments property request.  This includes, for example,
 the commands that are active and HydroBase version information that documents
 data available for a command.
-@return Vector of String containing comments for output.
+@return list of String containing comments for output.
 */
-private List getPropContents_OutputComments()
+private List<String> getPropContents_OutputComments()
 {
 	String [] array = __tsengine.formatOutputHeaderComments(getCommands());
-	List v = new Vector();
+	List<String> v = new Vector();
 	if ( array != null ) {
 		for ( int i = 0; i < array.length; i++ ) {
 			v.add( array[i]);
@@ -1248,9 +1251,9 @@ private DateTime getPropContents_OutputStart()
 
 /**
 Handle the OutputYearType property request.
-@return DateTime for OutputYearType, or null if not set.
+@return YearType for OutputYearType, should always be non-null (default is calendar).
 */
-private String getPropContents_OutputYearType()
+private YearType getPropContents_OutputYearType()
 {
 	return __tsengine.getOutputYearType();
 }
@@ -1259,7 +1262,7 @@ private String getPropContents_OutputYearType()
 Handle the PatternTSList property request.
 @return The pattern time series results list, as a List of StringMonthTS.
 */
-private List getPropContents_PatternTSList()
+private List<StringMonthTS> getPropContents_PatternTSList()
 {
     return __patternTS_Vector;
 }
@@ -1268,7 +1271,7 @@ private List getPropContents_PatternTSList()
 Handle the TableResultsList property request.
 @return The table results list, as a List of DataTable.
 */
-private List getPropContents_TableResultsList()
+private List<DataTable> getPropContents_TableResultsList()
 {
     return __Table_Vector;
 }
@@ -1287,16 +1290,16 @@ Handle the TSProductAnnotationProviderList property request.
 @return The time series product annotation provider list,
 as a Vector of TSProductAnnotationProvider.
 */
-private List getPropContents_TSProductAnnotationProviderList()
+private List<TSProductAnnotationProvider> getPropContents_TSProductAnnotationProviderList()
 {
 	return __tsengine.getTSProductAnnotationProviders();
 }
 
 /**
 Handle the TSResultsList property request.
-@return The time series results list, as a Vector of TS.
+@return The time series results list, as a list of TS.
 */
-private List getPropContents_TSResultsList()
+private List<TS> getPropContents_TSResultsList()
 {
 	return __tsengine.getTimeSeriesList(null);
 }
@@ -1469,8 +1472,7 @@ public void insertCommandAt ( String command_string, int index )
 /**
 Return a setWorkingDir(xxx) command where xxx is the initial working directory.
 This command should be prepended to the list of setWorkingDir() commands that
-are processed when determining the working directory for an edit dialog or other
-command-context action.
+are processed when determining the working directory for an edit dialog or other command-context action.
 */
 private Command newInitialSetWorkingDirCommand()
 {	// For now put in a generic command since no specific Command class is available...
@@ -1520,14 +1522,13 @@ private void notifyCommandListListenersOfRemove ( int index0, int index1 )
 }
 
 /**
-Notify registered CommandProcessorListeners about a command being cancelled.
-@param icommand The index (0+) of the command that is cancelled.
+Notify registered CommandProcessorListeners about a command being canceled.
+@param icommand The index (0+) of the command that is canceled.
 @param ncommand The number of commands being processed.  This will often be the
 total number of commands but calling code may process a subset.
-@param command The instance of the neareset command that is being cancelled.
+@param command The instance of the nearest command that is being canceled.
 */
-protected void notifyCommandProcessorListenersOfCommandCancelled (
-		int icommand, int ncommand, Command command )
+protected void notifyCommandProcessorListenersOfCommandCancelled ( int icommand, int ncommand, Command command )
 {	// This method is protected to allow TSEngine to call
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
@@ -1543,8 +1544,7 @@ Notify registered CommandProcessorListeners about a command completing.
 total number of commands but calling code may process a subset.
 @param command The instance of the command that is completing.
 */
-protected void notifyCommandProcessorListenersOfCommandCompleted (
-		int icommand, int ncommand, Command command )
+protected void notifyCommandProcessorListenersOfCommandCompleted ( int icommand, int ncommand, Command command )
 {	// This method is protected to allow TSEngine to call
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
@@ -1560,8 +1560,7 @@ Notify registered CommandProcessorListeners about a command starting.
 total number of commands but calling code may process a subset.
 @param command The instance of the command that is starting.
 */
-protected void notifyCommandProcessorListenersOfCommandStarted (
-		int icommand, int ncommand, Command command )
+protected void notifyCommandProcessorListenersOfCommandStarted ( int icommand, int ncommand, Command command )
 {	// This method is protected to allow TSEngine to call
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
@@ -3405,7 +3404,7 @@ throws Exception
     __tsengine.setInputStart ( null );
     __tsengine.setOutputEnd ( null );
     __tsengine.setOutputStart ( null );
-    __tsengine.setOutputYearType ( __tsengine._WATER_YEAR );
+    __tsengine.setOutputYearType ( YearType.CALENDAR );
 }
 
 /**
@@ -3668,14 +3667,14 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 	}
     else if ( prop.equalsIgnoreCase("OutputYearType") ) {
         String OutputYearType = (String)contents;
-        if ( OutputYearType.equalsIgnoreCase("Water") ) {
-            __tsengine.setOutputYearType ( __tsengine._WATER_YEAR );
+        if ( OutputYearType.equalsIgnoreCase("" + YearType.WATER ) ) {
+            __tsengine.setOutputYearType ( YearType.WATER );
         }
-        else if ( OutputYearType.equalsIgnoreCase("NovToOct") ) {
-            __tsengine.setOutputYearType ( __tsengine._NOV_TO_OCT_YEAR );
+        else if ( OutputYearType.equalsIgnoreCase("" + YearType.NOV_TO_OCT) ) {
+            __tsengine.setOutputYearType ( YearType.NOV_TO_OCT );
         }
-        else if ( OutputYearType.equalsIgnoreCase("Calendar") ) {
-            __tsengine.setOutputYearType ( __tsengine._CALENDAR_YEAR );
+        else if ( OutputYearType.equalsIgnoreCase("" + YearType.CALENDAR) ) {
+            __tsengine.setOutputYearType ( YearType.CALENDAR );
         }
     }
     else if ( prop.equalsIgnoreCase("RiversideDBDMI" ) ) {

@@ -793,23 +793,6 @@ Filter indicating that output should be data coverage (% non-missing).
 */
 public final int OUTPUT_FILTER_DATA_COVERAGE = 2;
 
-// FIXME SAM 2009-03-04 Need to use class for year type to have more flexibility
-
-/**
-Output in water year, for use with setOutputYearType().
-*/
-protected final int _WATER_YEAR = 1;
-
-/**
-Output in calendar year.
-*/
-protected final int _CALENDAR_YEAR = 2;
-
-/**
-Output in NovToOct year.
-*/
-protected final int _NOV_TO_OCT_YEAR = 3;
-
 // Data members...
 
 /**
@@ -898,17 +881,17 @@ NDFD Adapter instance list, to allow more than one database instance to be open 
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
 */
-private List __nwsrfs_dmi_Vector = new Vector();
+private List<NWSRFS_DMI> __nwsrfs_dmi_Vector = new Vector();
 
 /**
 Default output file name.
 */
-private String	__output_file = "tstool.out";
+private String __output_file = "tstool.out";
 
 /**
 Year type for output (calendar year is the default).
 */
-private int __OutputYearType_int = _CALENDAR_YEAR;
+private YearType __outputYearType = YearType.CALENDAR;
 
 /**
 Global output start date/time.
@@ -945,7 +928,7 @@ Reference date for year to date report (only use month and day).
 private DateTime __reference_date = null;
 
 /**
-DMI for DIADvisor archive database.
+DMI for State of Colorado Satellite Monitoring System (real-time data).
 */
 private SatMonSysDMI __smsdmi = null;
 
@@ -1130,8 +1113,7 @@ throws Exception
 			    // Get the average values from the available period...
 				if ( i <= 0 ) {
 					// Print the message once...
-					Message.printStatus ( 2, routine,
-					"No averaging period specified.  Will use available period.");
+					Message.printStatus ( 2, routine, "No averaging period specified.  Will use available period.");
 				}
 				average_limits = new TSLimits ( ts,	ts.getDate1(), ts.getDate2(), limits_flag );
 			}
@@ -1223,9 +1205,9 @@ available period for the time series (it does not check the output period).
 @param tslist list of time series to analyze.
 @param props Properties to control report (see TSUtil.createMonthSummary()).
 */
-private List createMonthSummaryReport ( List tslist, PropList props )
+private List createMonthSummaryReport ( List<TS> tslist, PropList props )
 {	int size = tslist.size();
-	List report = new Vector ();
+	List<String> report = new Vector ();
 	String routine = "TSEngine.createMonthSummaryReport";
 
 	String prop_val = props.getValue ( "DayType" );
@@ -1240,11 +1222,11 @@ private List createMonthSummaryReport ( List tslist, PropList props )
 	report.add ( "" );
 
 	TS ts = null;
-	List summary = null;
+	List<String> summary = null;
 	int interval_base;
 	int error_count = 0;
 	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)tslist.get(i);
+		ts = tslist.get(i);
 		if ( ts == null ) {
 			continue;
 		}
@@ -1280,8 +1262,6 @@ private List createMonthSummaryReport ( List tslist, PropList props )
 		Message.printWarning ( 1, routine,
 		"There was an unexpected error creating the report.  See the log file for details." );
 	}
-	ts = null;
-	summary = null;
 	return report;
 }
 
@@ -1292,9 +1272,9 @@ each year to the specified date.  Handle real-time and historic.  But only CFS u
 @param end_date Ending date for annual total (precision day!).
 @param props Properties to control output (currently the only property is SortTotals=true/false).
 */
-private List createYearToDateReport ( List tslist, DateTime end_date, PropList props )
+private List<String> createYearToDateReport ( List<TS> tslist, DateTime end_date, PropList props )
 {	int size = tslist.size();
-	List report = new Vector ();
+	List<String> report = new Vector ();
 
 	report.add ( "" );
 	report.add ( "Annual totals to date ending on " +
@@ -1310,7 +1290,7 @@ private List createYearToDateReport ( List tslist, DateTime end_date, PropList p
 	int missing[] = null;
 	int ypos = 0;
 	for ( int i = 0; i < size; i++ ) {
-		ts = (TS)tslist.get(i);
+		ts = tslist.get(i);
 		if ( ts == null ) {
 			continue;
 		}
@@ -1420,12 +1400,6 @@ private List createYearToDateReport ( List tslist, DateTime end_date, PropList p
 			+ StringUtil.formatString(totals[j], "%11.0f") + "          " +
 			StringUtil.formatString(missing[sort_order[j]], "%5d"));
 		}
-		sort_order = null;
-		totals = null;
-		years = null;
-		start = null;
-		missing = null;
-		end = null;
 	}
 	return report;
 }
@@ -1436,7 +1410,7 @@ Create the data coverage report dialog.
 @param orig_tslist Original list of time series to process.
 @exception Exception if there is an error.
 */
-private List createDataCoverageReport ( List orig_tslist )
+private List<String> createDataCoverageReport ( List<TS> orig_tslist )
 throws Exception
 {	String routine = "TSEngine.createDataCoverageReport";
 	// If the output is to be a data coverage time series, convert each
@@ -1449,26 +1423,15 @@ throws Exception
 	TSAnalyst analyst = new TSAnalyst();
 	// Start the data coverage report...
 	try {
-	    PropList props = new PropList ( "tsanalyst" );
-		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
-			props.set( "CalendarType=WaterYear" );
-		}
-		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
-			props.set( "CalendarType=NovToOct" );
-		}
-		else {
-		    // Default...
-		}
-		if ( haveOutputPeriod() ) {
+	    if ( haveOutputPeriod() ) {
 			// Use it...
-			analyst.startDataCoverageReport ( __OutputStart_DateTime,	__OutputEnd_DateTime, props );
+			analyst.startDataCoverageReport ( __OutputStart_DateTime, __OutputEnd_DateTime, getOutputYearType() );
 		}
 		else {
 		    // Figure out the maximum period and start the report with that...
 			TSLimits report_limits = TSUtil.getPeriodFromTS ( __tslist, TSUtil.MAX_POR );
-			analyst.startDataCoverageReport ( report_limits.getDate1(),	report_limits.getDate2(), props );
+			analyst.startDataCoverageReport ( report_limits.getDate1(),	report_limits.getDate2(), getOutputYearType() );
 		}
-		props = null;
 	}
 	catch ( Exception e ) {
 		// Data coverage report was a failure, just ignore for now.
@@ -1482,22 +1445,19 @@ throws Exception
 	}
 	for ( int i = 0; i < ntslist; i++ ) {
 		try {
-		    newts = TSAnalyst.createStatisticMonthTS( (TS)orig_tslist.get(i), null );
+		    newts = TSAnalyst.createStatisticMonthTS( orig_tslist.get(i), null );
 			analyst.appendToDataCoverageSummaryReport ( newts );
 			// Don't actually need the time series...
 			newts = null;
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 2, routine, "Error creating Statistic Month TS for \"" +
-			((TS)orig_tslist.get(i)).getIdentifierString() + "\"" );
+			orig_tslist.get(i).getIdentifierString() + "\"" );
 			continue;
 		}
 	}
 	// Now return the report contents...
-	List report = analyst.getDataCoverageReport();
-	analyst = null;
-	newts = null;
-	return report;
+	return analyst.getDataCoverageReport();
 }
 
 // TODO SAM 2005-09-14 Evaluate how this works with other TSAnalyst capabilities
@@ -1512,7 +1472,7 @@ createYearStatisticsReport(OutputFile="x",TSOutputFile="x")
 private void do_createYearStatisticsReport ( String command )
 throws Exception
 {	String routine = "TSEngine.do_createYearStatisticsReport", message;
-	List tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
+	List<String> tokens = StringUtil.breakStringList ( command, "()", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (tokens == null) || (tokens.size() < 1) ) {
 		// Should never happen because the command name was parsed before...
 		throw new Exception ( "Bad command: \"" + command + "\"" );
@@ -1545,7 +1505,7 @@ throws Exception
 	// Loop through the time series and convert to yearly...  Do it the brute force way right now...
 
 	int nts = getTimeSeriesSize();
-	List yts_Vector = new Vector(nts);
+	List<YearTS> yts_Vector = new Vector(nts);
 	YearTS yts = null;
 	TS ts = null;
 	TSIdent tsident = null;
@@ -2139,31 +2099,11 @@ protected DateTime getOutputStart()
 
 /**
 Return the output year type, to be used for commands that create output.
-@return the output year type, as "Calendar" or "Water".
+@return the output year type enumeration.
 */
-protected String getOutputYearType()
-{	int OutputYearType_int = getOutputYearTypeInt();
-	if ( OutputYearType_int == _CALENDAR_YEAR ) {
-		return "Calendar";
-	}
-	else if ( OutputYearType_int == _WATER_YEAR ) {
-		return "Water";
-	}
-	else if ( OutputYearType_int == _NOV_TO_OCT_YEAR ) {
-		return "NovToOct";
-	}
-	else {
-		return "";
-	}
-}
-
-/**
-Return the output year type as an internal integer, to be used for commands that create output.
-@return the output year type integer representation.
-*/
-private int getOutputYearTypeInt()
+protected YearType getOutputYearType()
 {   
-    return __OutputYearType_int;
+    return __outputYearType;
 }
 
 /**
@@ -3627,7 +3567,7 @@ throws Exception
     getMissingTS().clear();
     setOutputStart ( null );
     setOutputEnd ( null );
-    setOutputYearType ( _CALENDAR_YEAR );
+    setOutputYearType ( YearType.CALENDAR );
     setPreviewExportedOutput ( false );
     __reference_date = null;
     // Free all data from the previous run...
@@ -3989,19 +3929,11 @@ throws IOException
 
 		PropList sumprops = new PropList ( "" );
 		sumprops.set ( "DayType", daytype );
-		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
-			sumprops.set ( "CalendarType", "WaterYear" );
-		}
-		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
-			sumprops.set ( "CalendarType", "NovToOct" );
-		}
-		else {
-		    sumprops.set ( "CalendarType", "CalendarYear" );
-		}
+		sumprops.set ( "CalendarType", "" + getOutputYearType() );
 
 		try {
 		    // For now, put the code in here at the bottom of this file...
-			List report = createMonthSummaryReport ( tslist_output, sumprops );
+			List<String> report = createMonthSummaryReport ( tslist_output, sumprops );
 			new ReportJFrame ( report, reportProps );
 		}
 		catch ( Exception e ) {
@@ -4116,15 +4048,7 @@ throws IOException
     		// First need to get the summary strings...
     		PropList sumprops = new PropList ( "Summary" );
     		sumprops.set ( "Format", "Summary" );
-    		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
-    			sumprops.set ( "CalendarType", "WaterYear" );
-    		}
-    		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
-    			sumprops.set ( "CalendarType", "NovToOct" );
-    		}
-    		else {
-                sumprops.set ( "CalendarType", "CalendarYear" );
-    		}
+    		sumprops.set ( "CalendarType", "" + getOutputYearType() );
     		// Check the first time series.  If NWSCARD or DateValue, don't use comments for header...
     		sumprops.set ( "PrintHeader", "true" );
     		sumprops.set ( "PrintComments", "true" );
@@ -4182,8 +4106,10 @@ throws IOException
     else if ( output_format == OUTPUT_SUMMARY_HTML ) {
         try {
             TSHtmlFormatter formatter = new TSHtmlFormatter(tslist_output);
-            String html = formatter.toHTML ( "Time Series Summary", YearType.valueOfIgnoreCase(getOutputYearType()),
-                null, null, null );
+            String html = formatter.toHTML ( "Time Series Summary", getOutputYearType(),
+                null, // start
+                null, // end
+                null ); // precision
      
             if ( IOUtil.isBatch() || !getPreviewExportedOutput() ) {
                 PrintWriter ofp = null;
@@ -4249,15 +4175,7 @@ throws IOException
     		graphprops.set ( "HelpKey", "TSTool.TableMenu" );
     		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
     		graphprops.set ( "YAxisLabelString", ((TS)tslist.get(0)).getDataUnits() );
-    		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
-    			graphprops.set ( "CalendarType", "WaterYear" );
-    		}
-    		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
-    			graphprops.set ( "CalendarType", "NovToOct" );
-    		}
-    		else {
-                graphprops.set ( "CalendarType", "CalendarYear" );
-    		}
+    		graphprops.set ( "CalendarType", "" + getOutputYearType() );
     		// Set the total size of the graph window...
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
@@ -4339,15 +4257,7 @@ throws IOException
     		graphprops.set ( "HelpKey", "TSTool.GraphMenu" );
     		graphprops.set ( "DataUnits", ((TS)tslist.get(0)).getDataUnits() );
     		graphprops.set ( "YAxisLabelString",((TS)tslist.get(0)).getDataUnits() );
-    		if ( getOutputYearTypeInt() == _WATER_YEAR ) {
-    			graphprops.set ( "CalendarType", "WaterYear" );
-    		}
-    		else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
-    			graphprops.set ( "CalendarType", "NovToOct" );
-    		}
-    		else {
-    		    graphprops.set ( "CalendarType", "CalendarYear" );
-    		}
+    		graphprops.set ( "CalendarType", "" + getOutputYearType() );
     		// Set the total size of the graph window...
     		graphprops.set ( "TotalWidth", "600" );
     		graphprops.set ( "TotalHeight", "400" );
@@ -5638,13 +5548,12 @@ protected void setOutputStart ( DateTime start )
 {	__OutputStart_DateTime = start;
 }
 
-// TODO SAM 2007-11-16 Convert to enumeration when moved to Java 1.5.
 /**
 Set the output year type.
-@param OutputYearType_int Output year type as an integer.
+@param outputYearType Output year type as a YearType enumeration.
 */
-protected void setOutputYearType ( int OutputYearType_int )
-{   __OutputYearType_int = OutputYearType_int;
+protected void setOutputYearType ( YearType outputYearType )
+{   __outputYearType = outputYearType;
 }
 
 /**
@@ -5803,19 +5712,8 @@ StateMod.writePersistent().
 @param comments Comments to include at the top of the StateMod file, consisting
 of the commands as text and database version information.
 */
-private void writeStateModTS ( List tslist, String output_file, String precision_string, String[] comments )
+private void writeStateModTS ( List<TS> tslist, String output_file, String precision_string, String[] comments )
 {	String routine = "TSEngine.writeStateModTS";
-	// Type of calendar for output...
-	String calendar = "";
-	if ( getOutputYearTypeInt() == _WATER_YEAR ) {
-		calendar = "WaterYear";
-	}
-	else if ( getOutputYearTypeInt() == _NOV_TO_OCT_YEAR ) {
-		calendar = "NovToOct";
-	}
-	else {
-	    calendar = "CalendarYear";
-	}
 	// Set the precision default precision for output (-2 generally works OK)...
 	int	precision = -2;
 	if ( !precision_string.equals("*") && !precision_string.equals("") &&
@@ -5827,9 +5725,9 @@ private void writeStateModTS ( List tslist, String output_file, String precision
         // Precision is determined from units and possibly data type...
 		// Default, get the precision from the units of the first time series...
 	    int	list_size = 0;
-		TS	tspt = null;
+		TS tspt = null;
 		if ( (tslist != null) && (tslist.size() > 0) ) {
-			tspt = (TS)tslist.get(0);
+			tspt = tslist.get(0);
 			list_size = tslist.size();
 		}
 		if ( tspt != null ) {
@@ -5844,12 +5742,12 @@ private void writeStateModTS ( List tslist, String output_file, String precision
 				}
 			}
 			outputformat = null;
-			Message.printStatus ( 1, "", "Precision from units output format *-1 is " +	precision);
+			Message.printStatus ( 2, "", "Precision from units output format *-1 is " +	precision);
 		}
 		// Old code that we still need to support...
 		// In year 2, we changed the precision to 0 for RSTO.  See if any of the TS in the list are RSTO...
 		for ( int ilist = 0; ilist < list_size; ilist++ ) {
-			tspt = (TS)tslist.get(ilist);
+			tspt = tslist.get(ilist);
 			if ( tspt == null ) {
 				continue;
 			}
@@ -5863,7 +5761,7 @@ private void writeStateModTS ( List tslist, String output_file, String precision
 	if ( TSUtil.intervalsMatch ( tslist )) {
 		// The time series to write have the same interval so write using the first interval....
 		int interval = 0;
-		interval = ((TS)tslist.get(0)).getDataIntervalBase();
+		interval = tslist.get(0).getDataIntervalBase();
 		if((interval == TimeInterval.DAY) ||(interval == TimeInterval.MONTH) ) {
 			PropList smprops = new PropList ( "StateMod" );
 			// Don't set input file since it is null...
@@ -5878,7 +5776,7 @@ private void writeStateModTS ( List tslist, String output_file, String precision
 				smprops.set ( "OutputEnd=" + __OutputEnd_DateTime.toString());
 			}
 			double missing = -999.0;
-			smprops.set ( "CalendarType", calendar );
+			smprops.set ( "CalendarType", "" + getOutputYearType() );
 			smprops.set ( "MissingDataValue", "" + missing );
 			smprops.set ( "OutputPrecision", "" + precision );
 			try {

@@ -50,6 +50,7 @@ private SimpleJButton __ok_JButton = null; // Ok Button
 private JTextField __InputFile1_JTextField = null; // First file
 private JTextField __InputFile2_JTextField = null; // Second file
 private JTextField __CommentLineChar_JTextField = null;
+private JTextField __AllowedDiff_JTextField = null;
 private SimpleJComboBox __IfDifferent_JComboBox =null;
 private SimpleJComboBox __IfSame_JComboBox =null;
 private JTextArea __command_JTextArea = null; // Command as JTextField
@@ -190,6 +191,7 @@ private void checkInput ()
 	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
+	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
 	__error_wait = false;
@@ -201,6 +203,9 @@ private void checkInput ()
 	}
     if ( CommentLineChar.length() > 0 ) {
         props.set ( "CommentLineChar", CommentLineChar );
+    }
+    if ( AllowedDiff.length() > 0 ) {
+        props.set ( "AllowedDiff", AllowedDiff );
     }
 	if ( IfDifferent.length() > 0 ) {
 		props.set ( "IfDifferent", IfDifferent );
@@ -225,11 +230,13 @@ private void commitEdits ()
 {	String InputFile1 = __InputFile1_JTextField.getText().trim();
 	String InputFile2 = __InputFile2_JTextField.getText().trim();
 	String CommentLineChar = __CommentLineChar_JTextField.getText().trim();
+	String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	String IfDifferent = __IfDifferent_JComboBox.getSelected();
 	String IfSame = __IfSame_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile1", InputFile1 );
 	__command.setCommandParameter ( "InputFile2", InputFile2 );
 	__command.setCommandParameter ( "CommentLineChar", CommentLineChar );
+	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
 	__command.setCommandParameter ( "IfDifferent", IfDifferent );
 	__command.setCommandParameter ( "IfSame", IfSame );
 }
@@ -313,7 +320,16 @@ private void initialize ( JFrame parent, Command command )
     __CommentLineChar_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __CommentLineChar_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=#)"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - must be first char on line (default=#)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allowed # of different lines:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowedDiff_JTextField = new JTextField ( 5 );
+    __AllowedDiff_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AllowedDiff_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if different:"),
@@ -328,7 +344,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Action if files are different (default=" + __command._Ignore + ")"), 
+		"Optional - action if files are different (default=" + __command._Ignore + ")"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
@@ -343,7 +359,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Action if files are the same (default=" + __command._Ignore + ")"), 
+		"Optional - action if files are the same (default=" + __command._Ignore + ")"), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -416,6 +432,7 @@ private void refresh ()
 	String InputFile1 = "";
 	String InputFile2 = "";
 	String CommentLineChar = "";
+	String AllowedDiff = "";
 	String IfDifferent = "";
 	String IfSame = "";
     PropList parameters = null;
@@ -425,6 +442,7 @@ private void refresh ()
 		InputFile1 = parameters.getValue ( "InputFile1" );
 		InputFile2 = parameters.getValue ( "InputFile2" );
 		CommentLineChar = parameters.getValue ( "CommentLineChar" );
+		AllowedDiff = parameters.getValue ( "AllowedDiff" );
 		IfDifferent = parameters.getValue ( "IfDifferent" );
 		IfSame = parameters.getValue ( "IfSame" );
 		if ( InputFile1 != null ) {
@@ -436,9 +454,10 @@ private void refresh ()
         if ( CommentLineChar != null ) {
             __CommentLineChar_JTextField.setText ( CommentLineChar );
         }
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__IfDifferent_JComboBox, IfDifferent,
-			JGUIUtil.NONE, null, null ) ) {
+        if ( AllowedDiff != null ) {
+            __AllowedDiff_JTextField.setText ( AllowedDiff );
+        }
+		if ( JGUIUtil.isSimpleJComboBoxItem(__IfDifferent_JComboBox, IfDifferent, JGUIUtil.NONE, null, null ) ) {
 			__IfDifferent_JComboBox.select ( IfDifferent );
 		}
 		else {
@@ -474,12 +493,14 @@ private void refresh ()
 	InputFile1 = __InputFile1_JTextField.getText().trim();
 	InputFile2 = __InputFile2_JTextField.getText().trim();
 	CommentLineChar = __CommentLineChar_JTextField.getText().trim();
+	AllowedDiff = __AllowedDiff_JTextField.getText().trim();
 	IfDifferent = __IfDifferent_JComboBox.getSelected();
 	IfSame = __IfSame_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile1=" + InputFile1 );
 	props.add ( "InputFile2=" + InputFile2 );
 	props.add ( "CommentLineChar=" + CommentLineChar );
+	props.add ( "AllowedDiff=" + AllowedDiff );
 	props.add ( "IfDifferent=" + IfDifferent );
 	props.add ( "IfSame=" + IfSame );
 	__command_JTextArea.setText( __command.toString(props) );
@@ -508,8 +529,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok )
 {	__ok = ok;

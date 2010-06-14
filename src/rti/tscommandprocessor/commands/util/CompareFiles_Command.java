@@ -57,8 +57,7 @@ public CompareFiles_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
 (recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
@@ -66,6 +65,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
+	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	String IfSame = parameters.getValue ( "IfSame" );
 	String warning = "";
@@ -92,6 +92,13 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the second file name."));
 	}
+    if ( (AllowedDiff != null) && !AllowedDiff.equals("") && !StringUtil.isInteger(AllowedDiff) ) {
+            message = "The number of allowed differences \"" + AllowedDiff + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                     message, "Specify the parameter as an integer."));
+    }
 	if ( (IfDifferent != null) && !IfDifferent.equals("") && !IfDifferent.equalsIgnoreCase(_Ignore) &&
 		!IfDifferent.equalsIgnoreCase(_Warn) && !IfDifferent.equalsIgnoreCase(_Fail) ) {
 			message = "The IfDifferent parameter \"" + IfDifferent + "\" is not a valid value.";
@@ -115,6 +122,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "InputFile1" );
 	valid_Vector.add ( "InputFile2" );
 	valid_Vector.add ( "CommentLineChar" );
+	valid_Vector.add ( "AllowedDiff" );
 	valid_Vector.add ( "IfDifferent" );
 	valid_Vector.add ( "IfSame" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -245,6 +253,11 @@ CommandWarningException, CommandException
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String CommentLineChar = parameters.getValue ( "CommentLineChar" );
+	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
+	int AllowedDiff_int = 0;
+	if ( StringUtil.isInteger(AllowedDiff) ) {
+	    AllowedDiff_int = Integer.parseInt(AllowedDiff);
+	}
 	if ( (CommentLineChar == null) || CommentLineChar.equals("") ) {
 	    CommentLineChar = "#";
 	}
@@ -352,7 +365,7 @@ CommandWarningException, CommandException
 					message, "See the log file for details."));
 		throw new CommandException ( message );
 	}
-	if ( (diff_count > 0) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+	if ( (diff_count > AllowedDiff_int) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
 		(IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
 		message = "" + diff_count + " lines were different, " +
 			StringUtil.formatString(100.0*(double)diff_count/(double)lineCountCompared, "%.2f") +
@@ -389,6 +402,7 @@ public String toString ( PropList parameters )
 	String InputFile1 = parameters.getValue("InputFile1");
 	String InputFile2 = parameters.getValue("InputFile2");
 	String CommentLineChar = parameters.getValue("CommentLineChar");
+	String AllowedDiff = parameters.getValue("AllowedDiff");
 	String IfDifferent = parameters.getValue("IfDifferent");
 	String IfSame = parameters.getValue("IfSame");
 	StringBuffer b = new StringBuffer ();
@@ -406,6 +420,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "CommentLineChar=\"" + CommentLineChar + "\"" );
+    }
+    if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AllowedDiff=\"" + AllowedDiff + "\"" );
     }
 	if ( (IfDifferent != null) && (IfDifferent.length() > 0) ) {
 		if ( b.length() > 0 ) {

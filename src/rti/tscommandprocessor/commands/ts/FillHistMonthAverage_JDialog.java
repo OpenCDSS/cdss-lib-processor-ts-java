@@ -30,7 +30,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -43,6 +42,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -54,25 +54,23 @@ import RTi.Util.Message.Message;
 public class FillHistMonthAverage_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private FillHistMonthAverage_Command __command = null;
-						// Command to edit
-private JTextArea	__command_JTextArea=null;// Command as JTextArea
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__TSList_JComboBox = null;
-						// Indicate how to get time
-						// series list.
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private JTextField	__FillStart_JTextField, // Text fields for fill period.
-			__FillEnd_JTextField,
-			__FillFlag_JTextField;	// Flag to set for filled data.
-private boolean		__first_time = true;
-private boolean		__error_wait = false;
-private boolean		__ok = false;		// Indicates whether OK button
-						// has been pressed.
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox	__TSID_JComboBox = null;
+private JTextField __FillStart_JTextField;
+private JTextField __FillEnd_JTextField;
+private JTextField __FillFlag_JTextField;
+private JTextField __FillFlagDesc_JTextField;
+private boolean __first_time = true;
+private boolean __error_wait = false; // Is an error waiting to be fixed/canceled
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
-fillHistMonthAverage_JDialog constructor.
+Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
@@ -108,15 +106,16 @@ public void actionPerformed( ActionEvent event )
 Check the state of the dialog, disabling/enabling components as appropriate.
 */
 private void checkGUIState()
-{	// If "AllMatchingTSID", enable the list.
+{	// If "AllMatchingTSID", etc. enable the TSID list.
 	// Otherwise, clear and disable...
 	String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
 		__TSID_JComboBox.setEnabled(true);
 	}
-	else {	__TSID_JComboBox.setEnabled(false);
+	else {
+	    __TSID_JComboBox.setEnabled(false);
 		// Set the the first choice, which is blank...
 		__TSID_JComboBox.select ( 0 );
 	}
@@ -134,6 +133,7 @@ private void checkInput ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	__error_wait = false;
 
 	if ( TSList.length() > 0 ) {
@@ -151,7 +151,11 @@ private void checkInput ()
 	if ( FillFlag.length() > 0 ) {
 		props.set ( "FillFlag", FillFlag );
 	}
-	try {	// This will warn the user...
+    if ( FillFlagDesc.length() > 0 ) {
+        props.set ( "FillFlagDesc", FillFlagDesc );
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -170,11 +174,13 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "FillStart", FillStart );
 	__command.setCommandParameter ( "FillEnd", FillEnd );
 	__command.setCommandParameter ( "FillFlag", FillFlag );
+	__command.setCommandParameter ( "FillFlagDesc", FillFlagDesc );
 }
 
 /**
@@ -211,92 +217,65 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Fill monthly time series with historical monthly averages." ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Historical averages are computed immediately after reading " +
-		"the data and therefore do not consider filled values." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Only monthly time series can be processed." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The time series to process are indicated using the TS list."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If TS list is \"" + __command._AllMatchingTSID + "\", "+
-		"pick a single time series, " +
-		"or enter a wildcard time series identifier pattern."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"Fill monthly time series with historical monthly averages." ), 
+    	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"Historical averages are computed immediately after reading " +
+    	"the data and therefore do not include filled values." ), 
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Only monthly time series can be processed." ), 
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        List tslist_Vector = new Vector();
-	tslist_Vector.add ( __command._AllTS );
-	tslist_Vector.add ( __command._AllMatchingTSID );
-	tslist_Vector.add ( __command._SelectedTS );
-	__TSList_JComboBox = new SimpleJComboBox(false);
-	__TSList_JComboBox.setData ( tslist_Vector );
-	__TSList_JComboBox.select ( 0 );
-	__TSList_JComboBox.addActionListener (this);
-	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the time series to fill."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    __TSList_JComboBox.remove("" + TSListType.ENSEMBLE_ID);
+    __TSList_JComboBox.remove("" + TSListType.SPECIFIED_TSID);
+    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Identifier (TSID) to match:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
 
-	// Allow edits...
-        List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-    			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-	__TSID_JComboBox = new SimpleJComboBox ( true );
-	int size = 0;
-	if ( tsids == null ) {
-		tsids = new Vector ();
-	}
-	size = tsids.size();
-	// Blank for default
-	if ( size > 0 ) {
-		tsids.add ( 0, "" );
-	}
-	else {	tsids.add ( "" );
-	}
-	// Always allow a "*" to let all time series be filled (put at end)...
-	tsids.add ( "*" );
-	__TSID_JComboBox.setData ( tsids );
-	__TSID_JComboBox.addItemListener ( this );
-	__TSID_JComboBox.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill period:" ), 
+	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill start:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillStart_JTextField = new JTextField ( "", 15 );
 	__FillStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - default is full period."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill end:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillEnd_JTextField = new JTextField ( "", 15 );
 	__FillEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - default is full period."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillFlag_JTextField = new JTextField ( 5 );
 	__FillFlag_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"1-character flag to indicate fill."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optonal - string to indicate filled values (use \"auto\" for MonAvg"), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillFlagDesc_JTextField = new JTextField ( 15 );
+    __FillFlagDesc_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for fill flag."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 50 );
 	__command_JTextArea.setLineWrap ( true );
@@ -311,7 +290,7 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__cancel_JButton = new SimpleJButton("Cancel", this);
@@ -321,14 +300,12 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
-
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 3,
-		"fillHistMonthAverage_JDialog.initialize", e );
+		Message.printWarning ( 3, "fillHistMonthAverage_JDialog.initialize", e );
 	}
 }
 
@@ -354,7 +331,8 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// One of the combo boxes...
+	else {
+	    // One of the combo boxes...
 		refresh();
 	}
 }
@@ -369,7 +347,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -385,6 +363,7 @@ private void refresh ()
 	String FillStart = "";
 	String FillEnd = "";
 	String FillFlag = "";
+	String FillFlagDesc = "";
 	PropList props = __command.getCommandParameters();
 	try {
 	if ( __first_time ) {
@@ -395,34 +374,34 @@ private void refresh ()
 		FillStart = props.getValue("FillStart");
 		FillEnd = props.getValue("FillEnd");
 		FillFlag = props.getValue("FillFlag");
+		FillFlagDesc = props.getValue("FillFlagDesc");
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__TSList_JComboBox, TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
 			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
+			else {
+			    Message.printWarning ( 1, routine,
+				"Existing command references an invalid\nTSList value \"" + TSList +
 				"\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {
+		    // Automatically add to the list after the blank...
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the blank...
+			else {
+			    // Select the blank...
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
@@ -444,6 +423,9 @@ private void refresh ()
 		if ( FillFlag != null ) {
 			__FillFlag_JTextField.setText ( FillFlag );
 		}
+        if ( FillFlagDesc != null ) {
+            __FillFlagDesc_JTextField.setText ( FillFlagDesc );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -451,12 +433,14 @@ private void refresh ()
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	FillFlag = __FillFlag_JTextField.getText().trim();
+	FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "FillFlag=" + FillFlag );
+	props.add ( "FillFlagDesc=" + FillFlagDesc );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	}
 	catch ( Exception e ) {
@@ -466,7 +450,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -499,4 +483,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end fillHistMonthAverage_JDialog
+}

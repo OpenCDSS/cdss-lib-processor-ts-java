@@ -60,13 +60,6 @@ public class FillHistMonthAverage_Command extends AbstractCommand implements Com
 {
 
 /**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
-
-/**
 Constructor.
 */
 public FillHistMonthAverage_Command ()
@@ -77,25 +70,25 @@ public FillHistMonthAverage_Command ()
 /**
 Check the command parameter for valid values, combination, etc.
 @param parameters The parameters for the command.
-@param command_tag an indicator to be used when printing messages, to allow a
-cross-reference to the original commands.
+@param command_tag an indicator to be used when printing messages, to allow a cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{	String TSList = parameters.getValue ( "TSList" );
-	String TSID = parameters.getValue ( "TSID" );
+{	//String TSList = parameters.getValue ( "TSList" );
+	//String TSID = parameters.getValue ( "TSID" );
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
-	String FillFlag = parameters.getValue ( "FillFlag" );
+	//String FillFlag = parameters.getValue ( "FillFlag" );
+	//String FillFlagDesc = parameters.getValue ( "FillFlagDesc" );
 	String warning = "";
     String message;
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
     
+    /* TODO SAM 2010-06-11 Evaluate whether checks are needed
     if ( (TSList != null) && !TSListType.ALL_MATCHING_TSID.equals(TSList) &&
             !TSListType.FIRST_MATCHING_TSID.equals(TSList) &&
             !TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
@@ -124,6 +117,8 @@ throws InvalidCommandParameterException
                             message, "Specify a TSList parameter value." ) );
 		}
 	}
+	*/
+    
 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
 		try {	DateTime.parse(FillStart);
 		}
@@ -146,13 +141,6 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
-	if ( (FillFlag != null) && !FillFlag.equals("") && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
-	}
     
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
@@ -161,6 +149,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
     valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "FillFlagDesc" );
+    
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -190,7 +180,6 @@ supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -205,11 +194,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     }
     else {
 		// TODO SAM 2005-04-29 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new
-		// syntax.
+		// removed as soon as commands have been migrated to the new syntax.
 		//
-		// Old syntax where the only parameter is a single TSID or *
-		// to fill all.
+		// Old syntax where the only parameter is a single TSID or * to fill all.
     	List v = StringUtil.breakStringList(command_string,
 			"(),\t", StringUtil.DELIM_SKIP_BLANKS |
 			StringUtil.DELIM_ALLOW_STRINGS );
@@ -234,7 +221,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		if ( TSID.length() > 0 ) {
 			parameters.set ( "TSID", TSID );
 			parameters.setHowSet(Prop.SET_AS_RUNTIME_DEFAULT);
-			parameters.set ( "TSList", _AllMatchingTSID );
+			parameters.set ( "TSList", "" + TSListType.ALL_MATCHING_TSID );
 		}
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
@@ -244,12 +231,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Number of command in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -277,8 +261,8 @@ CommandWarningException, CommandException
 	request_params.set ( "TSList", TSList );
 	request_params.set ( "TSID", TSID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+	    bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -359,6 +343,7 @@ CommandWarningException, CommandException
 	String FillStart = parameters.getValue("FillStart");
 	String FillEnd = parameters.getValue("FillEnd");
 	String FillFlag = parameters.getValue("FillFlag");
+	String FillFlagDesc = parameters.getValue("FillFlagDesc");
 
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
@@ -396,7 +381,8 @@ CommandWarningException, CommandException
                                 message, "Verify that the fill start date/time is valid." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	FillStart_DateTime = (DateTime)prop_contents;
+			else {
+			    FillStart_DateTime = (DateTime)prop_contents;
 			}
 		}
 		}
@@ -468,12 +454,6 @@ CommandWarningException, CommandException
 
 	// Now process the time series...
 
-	PropList props = new PropList ( "fillHistMonthAverage" );
-	if ( FillFlag != null ) {
-		props.set ( "FillFlag", FillFlag );
-	}
-	props.set ( "DescriptionSuffix", ", fill w/ hist mon ave" );
-
 	TS ts = null;
 	String nl = System.getProperty ( "line.separator" );
 	for ( int its = 0; its < nts; its++ ) {
@@ -509,9 +489,7 @@ CommandWarningException, CommandException
 		}
 		
 		if ( ts.getDataIntervalBase() != TimeInterval.MONTH) {
-			message =
-			"Filling with historic month average is only " +
-			"implemented for monthly time series.  Skipping:\n" +
+			message = "Filling with historic month average is only implemented for monthly time series.  Skipping:\n" +
 			ts.getIdentifier();
 			Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
@@ -540,7 +518,7 @@ CommandWarningException, CommandException
 						FillStart_DateTime,
 						FillEnd_DateTime,
 						average_limits.getMeanArray(),
-						props );
+						", fill w/ hist mon avg", FillFlag, FillFlagDesc );
 			}
 			// TODO need a PropList to pass the fill flag.
 		}
@@ -598,6 +576,7 @@ public String toString ( PropList props )
 	String FillStart = props.getValue("FillStart");
 	String FillEnd = props.getValue("FillEnd");
 	String FillFlag = props.getValue("FillFlag");
+	String FillFlagDesc = props.getValue("FillFlagDesc");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -626,6 +605,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "FillFlag=\"" + FillFlag + "\"" );
 	}
+    if ( (FillFlagDesc != null) && (FillFlagDesc.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillFlagDesc=\"" + FillFlagDesc + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

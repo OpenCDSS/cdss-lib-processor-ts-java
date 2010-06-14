@@ -39,6 +39,7 @@ import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
+import RTi.Util.Time.YearType;
 import RTi.TS.TSIdent;
 import RTi.TS.StringMonthTS;
 import RTi.TS.TS;
@@ -588,7 +589,7 @@ throws CommandWarningException, CommandException
             }
             PropList bean_PropList = bean.getResultsPropList();
             Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-            List tslist = null;
+            List<TS> tslist = null;
             if ( o_TSList == null ) {
                 message = "Unable to find time series to process using TSList=\"" + TSList +
                 "\" TSID=\"" + TSID + "\".";
@@ -600,7 +601,7 @@ throws CommandWarningException, CommandException
                                 message, "Report the problem to software support." ) );
             }
             else {
-                tslist = (List)o_TSList;
+                tslist = (List<TS>)o_TSList;
                 if ( tslist.size() == 0 ) {
                     message = "Unable to find time series to process using TSList=\"" + TSList +
                     "\" TSID=\"" + TSID + "\".";
@@ -624,7 +625,8 @@ throws CommandWarningException, CommandException
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
             }
-            else {  tspos = (int [])o_Indices;
+            else {
+                tspos = (int [])o_Indices;
                 if ( tspos.length == 0 ) {
                     message = "Unable to find positions for time series to process using TSList=\"" + TSList +
                     "\" TSID=\"" + TSID + "\".";
@@ -657,7 +659,7 @@ throws CommandWarningException, CommandException
         	} catch ( Exception e ) {
         	}
         	startDate = new DateTime ( limits.getDate1() );
-        	endDate   = new DateTime ( limits.getDate2() );
+        	endDate = new DateTime ( limits.getDate2() );
         
         	// Monthly Time series
         	int smBase = TimeInterval.MONTH;
@@ -681,8 +683,8 @@ throws CommandWarningException, CommandException
     			request_params = new PropList ( "" );
     			request_params.setUsingObject ( "Index", new Integer(tspos[nTS]) );
     			bean = null;
-    			try { bean =
-    				processor.processRequest( "GetTimeSeries", request_params);
+    			try {
+    			    bean = processor.processRequest( "GetTimeSeries", request_params);
     			}
     			catch ( Exception e ) {
                     message = "Error requesting GetTimeSeries(Index=" + tspos[nTS] + ") from processor.";
@@ -707,7 +709,8 @@ throws CommandWarningException, CommandException
     					// Skip the time series...
     					continue;
     			}
-    			else {	analysisTS = (TS)prop_contents;
+    			else {
+    			    analysisTS = (TS)prop_contents;
     			}
                 
                 if ( !(analysisTS instanceof MonthTS) ) {
@@ -743,21 +746,20 @@ throws CommandWarningException, CommandException
     			//         It also set the dates, from the old time
     			//	   series. Make sure to reset these properties
     			//	   to the values needed by the new time series.
-    			stringMonthTS.copyHeader        ( analysisTS );
+    			stringMonthTS.copyHeader ( analysisTS );
     		// TODO What dataType?			
-    		//	stringMonthTS.setDataType       ( NewDataType );
-    			stringMonthTS.setIdentifier     ( smIdent  );
-    			stringMonthTS.setDataInterval   ( smBase, smMult );
+    		//	stringMonthTS.setDataType ( NewDataType );
+    			stringMonthTS.setIdentifier ( smIdent  );
+    			stringMonthTS.setDataInterval ( smBase, smMult );
     			// Finally allocate data space.
     			stringMonthTS.allocateDataSpace	();
     
     			// Get the actual startDate end the endDate for this
-    			// time series. These may different from the dates
-    			// used to create the stringMonthTS.
+    			// time series. These may different from the dates used to create the stringMonthTS.
     			DateTime _startDate = new DateTime( analysisTS.getDate1() );
     			DateTime _endDate   = new DateTime( analysisTS.getDate2() );
-    			double [] values      = null;
-    			int    [] sortedOrder = null;
+    			double [] values = null;
+    			int [] sortedOrder = null;
     			int nValues;
     			double bigNegative = -1.0e50;
     
@@ -789,15 +791,13 @@ throws CommandWarningException, CommandException
     					yearOffset += 1;
     				}
     
-    				// Loop through the sorted data until the first
-    				// non-missing is found. Then set the counters,
-    				// the currentUpperLimit, the currentPatternID
-    				// and break out.
-    				int     missingCount     = 0;
-    				int non_missingCount     = 0;
+    				// Loop through the sorted data until the first non-missing is found. Then set the counters,
+    				// the currentUpperLimit, the currentPatternID and break out.
+    				int missingCount = 0;
+    				int non_missingCount = 0;
     				double currentUpperLimit = -999.9;
-    				String currentPatternID  = "";
-    				int    percentileIndex   = 0;
+    				String currentPatternID = "";
+    				int percentileIndex = 0;
     				boolean found = false;
     				if ( Message.isDebugOn ) {
     				    Message.printDebug( dl, routine, analysisTS.getIdentifierString() +
@@ -899,17 +899,11 @@ throws CommandWarningException, CommandException
     
     		// Saving results in the output file.
     		PropList props = new PropList ( "AnalyzePattern" );
-    		String CalendarType = "CalendarYear";
-    	   	try { Object o = processor.getPropContents ( "OutputYearType" );
+    		YearType outputYearType = YearType.CALENDAR; // Default
+    	   	try {
+    	   	    Object o = processor.getPropContents ( "OutputYearType" );
     	   		if ( o != null ) {
-    	   			CalendarType = (String)o; // Default to whatever is coming in
-    	   			// Convert to the format used by code below ("NovToDec" is ok just passing through)...
-    	   			if ( StringUtil.indexOfIgnoreCase(CalendarType, "calendar", 0) >= 0 ){
-    	   				CalendarType = "CalendarYear";
-    	   			}
-    	   			else if ( StringUtil.indexOfIgnoreCase(CalendarType, "water", 0) >= 0 ){
-    	   				CalendarType = "WaterYear";
-    	   			}
+    	   			outputYearType = (YearType)o; // Default to whatever is coming in
     	   		}
     	   	}
     	   	catch ( Exception e ) {
@@ -919,7 +913,7 @@ throws CommandWarningException, CommandException
                        new CommandLogRecord(CommandStatusType.WARNING,
                                message, "Report the problem to software support." ) );
     	   	}
-            props.add ( "CalendarType=" + CalendarType );
+            props.add ( "CalendarType=" + outputYearType );
                     
             // Write the results file using the available data, or the global
             // output period if it was specified.

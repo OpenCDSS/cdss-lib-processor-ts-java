@@ -523,10 +523,6 @@ CommandWarningException, CommandException
 	double [] difftotalabs = new double[Tolerance_count]; // Total difference for each tolerance, absolute values.
 	double [] diffabsavg = null;
 	double [] diffavg = null;
-	int DiffFlag_length = 1; // Longest DiffFlag length.
-	if ( DiffFlag != null ) {
-		DiffFlag_length = DiffFlag.length();
-	}
 	boolean is_diff = false; // Indicates whether a differences has been determined.
 	TSData tsdata = null; // Data point from time series.
 	boolean found_loc1 = false; // Has the time series already been processed?
@@ -634,8 +630,8 @@ CommandWarningException, CommandException
 				datatype_Vector.add ( datatype1 ); // save for check
 				// If the differences will be flagged, allocate the data flag space in both time series.
 				if ( DiffFlag != null ) {
-					ts1.allocateDataFlagSpace ( DiffFlag_length, null, true ); // Retain previous.
-					ts2.allocateDataFlagSpace ( DiffFlag_length, null, true ); // Retain previous.
+					ts1.allocateDataFlagSpace ( null, true ); // Retain previous.
+					ts2.allocateDataFlagSpace ( null, true ); // Retain previous.
 				}
 				// If a difference time series is to be created, do it...
 				if ( CreateDiffTS_boolean ) {

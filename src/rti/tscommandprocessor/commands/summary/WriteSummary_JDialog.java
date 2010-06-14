@@ -40,6 +40,7 @@ import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.YearType;
 
 public class WriteSummary_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -48,10 +49,10 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 	
-private SimpleJButton __browse_JButton = null,// Button to browse for file
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and absolute paths.
+private SimpleJButton __browse_JButton = null;// Button to browse for file
+private SimpleJButton __cancel_JButton = null;// Cancel Button
+private SimpleJButton __ok_JButton = null;	// Ok Button
+private SimpleJButton __path_JButton = null;	// Convert between relative and absolute paths.
 private WriteSummary_Command __command = null;// Command to edit
 private JTextArea __command_JTextArea=null;// Command display
 private SimpleJComboBox __TSList_JComboBox = null;
@@ -62,6 +63,7 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __OutputFile_JTextField = null;// Field for time series identifier
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private SimpleJComboBox __OutputYearType_JComboBox = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -138,8 +140,7 @@ public void actionPerformed( ActionEvent event )
 				IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
 			}
 			catch ( Exception e ) {
-				Message.printWarning ( 1,
-				"WriteSummary_JDialog", "Error converting file to relative path." );
+				Message.printWarning ( 1, "WriteSummary_JDialog", "Error converting file to relative path." );
 			}
 		}
 		refresh ();
@@ -185,6 +186,7 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+    String OutputYearType = __OutputYearType_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -206,6 +208,9 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
+    if ( OutputYearType.length() > 0 ) {
+        parameters.set ( "OutputYearType", OutputYearType );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -228,12 +233,14 @@ private void commitEdits ()
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String OutputYearType = __OutputYearType_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "OutputYearType", OutputYearType );
 }
 
 /**
@@ -271,21 +278,17 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-     JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a summary format file, which can be specified using a full or " +
 		"relative path (relative to the working directory)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	 if ( __working_dir != null ) {
+	if ( __working_dir != null ) {
      	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	 }
-     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file " +
-		"to overwrite (or edit the file name after selection)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The summary is impacted by the SetOutputPeriod() and SetOutputYearType() commands."),
+	}
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specify the file extension as \"html\" to write an HTML file (default is text)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Summary file to write:" ), 
@@ -314,7 +317,7 @@ private void initialize ( JFrame parent, Command command )
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
          this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
      
-     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
     	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputStart_JTextField = new JTextField (20);
     __OutputStart_JTextField.addKeyListener (this);
@@ -325,14 +328,27 @@ private void initialize ( JFrame parent, Command command )
     	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-    	0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __OutputEnd_JTextField = new JTextField (20);
     __OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-    	1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - output end (default=use global output period or write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputYearType_JComboBox = new SimpleJComboBox ( false );
+    __OutputYearType_JComboBox.add ( "" );
+    __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
+    __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
+    __OutputYearType_JComboBox.add ( "" + YearType.WATER );
+    __OutputYearType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - output year type (default is global output year type)."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -403,7 +419,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -413,13 +429,14 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "WriteDateValue_JDialog.refresh";
+{	String routine = "WriteSummary_JDialog.refresh";
 	String OutputFile = "";
-	String OutputStart = "";
-	String OutputEnd = "";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
+	String OutputStart = "";
+	String OutputEnd = "";
+	String OutputYearType = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -432,6 +449,7 @@ private void refresh ()
         EnsembleID = parameters.getValue ( "EnsembleID" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		OutputYearType = parameters.getValue ( "OutputYearType" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -486,6 +504,21 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+        if ( OutputYearType == null ) {
+            // Select default...
+            __OutputYearType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __OutputYearType_JComboBox,OutputYearType, JGUIUtil.NONE, null, null ) ) {
+                __OutputYearType_JComboBox.select ( OutputYearType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nOutputYearType value \"" + OutputYearType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -494,6 +527,7 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	OutputYearType = __OutputYearType_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
     parameters.add ( "TSList=" + TSList );
@@ -501,6 +535,7 @@ private void refresh ()
     parameters.add ( "EnsembleID=" + EnsembleID );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "OutputYearType=" + OutputYearType );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
@@ -521,8 +556,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
@@ -554,5 +588,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end WriteSummary_JDialog
-
+}

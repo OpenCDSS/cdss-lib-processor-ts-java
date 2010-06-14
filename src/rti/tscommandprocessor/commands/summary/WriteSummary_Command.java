@@ -8,7 +8,10 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
+import RTi.TS.TS;
+import RTi.TS.TSHtmlFormatter;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
@@ -30,22 +33,13 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.YearType;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteSummary() command.
-</p>
-</p>
 */
 public class WriteSummary_Command extends AbstractCommand implements Command, FileGenerator
 {
-
-/**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-//protected final String _AllMatchingTSID = "AllMatchingTSID";
 
 /**
 Output file that is created by this command.
@@ -73,6 +67,7 @@ throws InvalidCommandParameterException
 {	String OutputFile = parameters.getValue ( "OutputFile" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -88,7 +83,8 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an output file." ) );
 	}
-	else {	String working_dir = null;
+	else {
+	    String working_dir = null;
 		try { Object o = processor.getPropContents ( "WorkingDir" );
 			if ( o != null ) {
 				working_dir = (String)o;
@@ -157,12 +153,37 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+	
+    if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
+        try {
+            YearType.valueOfIgnoreCase(OutputYearType);
+        }
+        catch ( Exception e ) {
+            message = "The output year type (" + OutputYearType + ") is invalid.";
+            warning += "\n" + message;
+            StringBuffer b = new StringBuffer();
+            List<YearType> values = YearType.getYearTypeChoices();
+            for ( YearType t : values ) {
+                if ( b.length() > 0 ) {
+                    b.append ( ", " );
+                }
+                b.append ( t.toString() );
+            }
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Valid values are:  " + b.toString() + "."));
+        }
+    }
+	
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
+	valid_Vector.add ( "TSList" );
+	valid_Vector.add ( "TSID" );
+	valid_Vector.add ( "EnsembleID" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
-	valid_Vector.add ( "TSList" );
+	valid_Vector.add ( "OutputYearType" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -187,9 +208,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -207,9 +228,7 @@ private File getOutputFile ()
 /**
 Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -221,11 +240,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// New syntax, can be blank parameter list for new command...
 		super.parseCommand ( command_string );
 	}
-	else {	// Parse the old command...
+	else {
+	    // Parse the old command...
 		List tokens = StringUtil.breakStringList ( command_string,"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 2 ) {
-			message =
-			"Invalid syntax for command.  Expecting WriteSummary(OutputFile).";
+			message = "Invalid syntax for command.  Expecting WriteSummary(OutputFile).";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -267,18 +286,18 @@ CommandWarningException, CommandException
 
 	CommandProcessor processor = getCommandProcessor();
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
-			Message.printStatus ( 2, routine,
-			"Skipping \"" + toString() + "\" because output is not being created." );
+	    Message.printStatus ( 2, routine, "Skipping \"" + toString() + "\" because output is not being created." );
 	}
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	if ( TSList == null ) {
-		TSList = _AllTS;
+		TSList = "" + TSListType.ALL_TS;
 	}
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
@@ -289,8 +308,8 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesToProcess", request_params);
+	try {
+	    bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
 	catch ( Exception e ) {
 		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
@@ -324,13 +343,13 @@ CommandWarningException, CommandException
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
 
-	String OutputStart = null;
+	String OutputStart = parameters.getValue ( "OutputStart" );
 	DateTime OutputStart_DateTime = null;
 	if ( (OutputStart != null) && !OutputStart.equals("") ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputStart );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputStart + ") from processor.";
@@ -353,11 +372,14 @@ CommandWarningException, CommandException
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Report problem to software support." ) );
 		}
-		else {	OutputStart_DateTime = (DateTime)prop_contents;
+		else {
+		    OutputStart_DateTime = (DateTime)prop_contents;
 		}
 	}
-	else {	// Get from the processor (can be null)...
-		try {	Object o_OutputStart = processor.getPropContents ( "OutputStart" );
+	else {
+	    // Get from the processor (can be null)...
+		try {
+		    Object o_OutputStart = processor.getPropContents ( "OutputStart" );
 			if ( o_OutputStart != null ) {
 				OutputStart_DateTime = (DateTime)o_OutputStart;
 			}
@@ -370,13 +392,13 @@ CommandWarningException, CommandException
 							message, "Report problem to software support." ) );
 		}
 	}
-	String OutputEnd = null;
+	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	DateTime OutputEnd_DateTime = null;
 	if ( (OutputEnd != null) && !OutputEnd.equals("") ) {
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputEnd );
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting DateTime(DateTime=" + OutputEnd + ") from processor.";
@@ -402,8 +424,10 @@ CommandWarningException, CommandException
 		else {	OutputEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
-	else {	// Get from the processor...
-		try {	Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
+	else {
+	    // Get from the processor...
+		try {
+		    Object o_OutputEnd = processor.getPropContents ( "OutputEnd" );
 			if ( o_OutputEnd != null ) {
 				OutputEnd_DateTime = (DateTime)o_OutputEnd;
 			}
@@ -414,24 +438,56 @@ CommandWarningException, CommandException
 			Message.printDebug(10, routine, message );
 		}
 	}
+	
+	YearType outputYearType = YearType.CALENDAR; // Default
+    if ( (OutputYearType == null) || OutputYearType.equals("") ) {
+        // Get from the processor
+        Object o = null;
+        try {
+            o = processor.getPropContents ( "OutputYearType");
+            outputYearType = (YearType)o;
+        }
+        catch ( Exception e ) {
+            message = "Error requesting OutputYearType from processor - defaulting to Calendar.";
+            Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Software error - report problem to support." ) );
+            outputYearType = YearType.CALENDAR;
+        }
+        if ( o == null ) {
+            message = "Null OutputYearType from processor - defaulting to Calendar.";
+            Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.WARNING,
+                            message, "Software error - report problem to support." ) );
+            outputYearType = YearType.CALENDAR;
+        }
+    }
+    else {
+        // Convert string to enumerated value
+        outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
+    }
 
 	// Now try to write...
 
     String OutputFile_full = OutputFile;
 	try {
 		// Convert to an absolute path...
-		OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
+		OutputFile_full = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)) );
 		Message.printStatus ( 2, routine, "Writing Summary file \"" + OutputFile_full + "\"" );
 		warning_count = writeSummary ( tslist, OutputFile_full,	OutputStart_DateTime, OutputEnd_DateTime,
-				warning_level, command_tag, warning_count );
+				outputYearType, warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing time series to summary file \"" + OutputFile_full + "\" (" + e + ").";
 		Message.printWarning ( warning_level, 
-		MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+		    MessageUtil.formatMessageTag(command_tag, ++warning_count), routine, message );
 		Message.printWarning ( 3, routine, e );
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
@@ -459,13 +515,28 @@ public String toString ( PropList parameters )
 		return getCommandName() + "()";
 	}
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String TSList = parameters.getValue ( "TSList" );
+	String TSID = parameters.getValue ( "TSID" );
+	String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
-	String TSList = parameters.getValue ( "TSList" );
+	String OutputYearType = parameters.getValue ( "OutputYearType" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
 	}
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -484,26 +555,27 @@ public String toString ( PropList parameters )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
-	if ( (TSList != null) && (TSList.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "TSList=\"" + TSList + "\"" );
-	}
+    if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputYearType=" + OutputYearType );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 
 /**
 Write a summary time series file given the current time series.
-@param tslist Vector of time series to write.  Currently this is ignored if
+@param tslist list of time series to write.  Currently this is ignored if
 a BinaryTS has been created for daily data.
-@param OutputFile Name of file to write.
-@param OutputStart_DateTime Datetime to start output.
-@param OutputEnd_DateTime Datetime to end output.
+@param outputFile Name of file to write.
+@param outputStart Datetime to start output.
+@param outputEnd Datetime to end output.
+@param outputYearType the output year type to write, which impacts intervals Day and Month in particular.
 @exception IOException if there is an error writing the file.
 */
-private int writeSummary ( List tslist, String OutputFile,
-		DateTime OutputStart_DateTime, DateTime OutputEnd_DateTime,
+private int writeSummary ( List<TS> tslist, String outputFile,
+		DateTime outputStart, DateTime outputEnd, YearType outputYearType,
 		int warning_level, String command_tag, int warning_count )
 throws IOException
 {	String routine = getClass().getName() + ".writeSummary";
@@ -520,78 +592,67 @@ throws IOException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	if ( !TSCommandProcessorUtil.getCreateOutput(processor) ) {
-		Message.printStatus ( 2, routine,
-		"Skipping \"" + toString() + "\" because output is not being created." );
+		Message.printStatus ( 2, routine, "Skipping \"" + toString() + "\" because output is not being created." );
 	}
 
-	boolean detailedheader = false;
-	
-	String OutputYearType = "CalendarYear";	// default
-	Object o = null;
-	try {
-		o = processor.getPropContents ( "OutputYearType");
-	}
-	catch ( Exception e ) {
-		message = "Error requesting OutputYearType from processor.";
-		Message.printWarning ( warning_level, 
-				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Software error - report problem to support." ) );
-	}
-	if ( o == null ) {
-		message = "Null OutputYearType from processor - setting to CalendarYear.";
-		Message.printWarning ( warning_level, 
-				MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.WARNING,
-						message, "Software error - report problem to support." ) );
-	}
-	else {
-	    OutputYearType = (String)o;
-	    // Translate into formats used by the summary method
-	    if ( OutputYearType.equalsIgnoreCase("Calendar") ) {
-	        OutputYearType = "CalendarYear";
-	    }
-	    else if ( OutputYearType.equalsIgnoreCase("Water") ) {
-            OutputYearType = "WaterYear";
+	if ( StringUtil.endsWithIgnoreCase(outputFile,"html") ) {
+	    TSHtmlFormatter formatter = new TSHtmlFormatter( tslist );
+        try {
+            Message.printStatus ( 2, routine, "Writing HTML summary file \"" + outputFile + "\"" );
+            IOUtil.writeFile(outputFile, formatter.toHTML(null, // No title
+                outputYearType, outputStart, outputEnd,
+                null) ); // Precision not specified
+        }
+        catch ( Exception e ) {
+            message = "Unexpected error writing HTML summary file \"" + outputFile + "\" (" + e + ")";
+            Message.printWarning ( warning_level, 
+                MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+            Message.printWarning ( 3, routine, e );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Software error - report problem to support." ) );
         }
 	}
-	
-	// First need to get the summary strings...
-	PropList sumprops = new PropList ( "Summary" );
-	sumprops.set ( "Format", "Summary" );
-	sumprops.set ( "CalendarType", OutputYearType );
-	if ( detailedheader ) {
-		sumprops.set("PrintGenesis","true");
-	}
 	else {
-		sumprops.set("PrintGenesis","false");
-	}
-	sumprops.set ( "PrintHeader", "true" );
-	sumprops.set ( "PrintComments", "true" );
-	sumprops.set ( "PrintMinStats", "true" );
-	sumprops.set ( "PrintMaxStats", "true" );
-	sumprops.set ( "PrintMeanStats", "true" );
-	sumprops.set ( "PrintNotes", "true" );
-	if ( OutputStart_DateTime != null ) {
-		sumprops.set ("OutputStart",OutputStart_DateTime.toString());
-	}
-	if ( OutputEnd_DateTime != null ) {
-		sumprops.set ("OutputEnd",OutputEnd_DateTime.toString());
-	}
-	
-	try {
-		Message.printStatus ( 2, routine, "Writing summary file \"" + OutputFile + "\"" );
-		TSUtil.formatOutput ( OutputFile, tslist, sumprops );
-	}
-	catch ( Exception e ) {
-		message = "Unexpected error writing summary to file \"" + OutputFile + "\" (" + e + ")";
-		Message.printWarning ( warning_level, 
-			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-			new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Software error - report problem to support." ) );
+	    // Write the text summary
+    	boolean detailedheader = false;
+    	
+    	// First need to get the summary strings...
+    	PropList sumprops = new PropList ( "Summary" );
+    	sumprops.set ( "Format", "Summary" );
+    	sumprops.set ( "CalendarType", "" + outputYearType );
+    	if ( detailedheader ) {
+    		sumprops.set("PrintGenesis","true");
+    	}
+    	else {
+    		sumprops.set("PrintGenesis","false");
+    	}
+    	sumprops.set ( "PrintHeader", "true" );
+    	sumprops.set ( "PrintComments", "true" );
+    	sumprops.set ( "PrintMinStats", "true" );
+    	sumprops.set ( "PrintMaxStats", "true" );
+    	sumprops.set ( "PrintMeanStats", "true" );
+    	sumprops.set ( "PrintNotes", "true" );
+    	if ( outputStart != null ) {
+    		sumprops.set ("OutputStart",outputStart.toString());
+    	}
+    	if ( outputEnd != null ) {
+    		sumprops.set ("OutputEnd",outputEnd.toString());
+    	}
+    	
+    	try {
+    		Message.printStatus ( 2, routine, "Writing summary file \"" + outputFile + "\"" );
+    		TSUtil.formatOutput ( outputFile, tslist, sumprops );
+    	}
+    	catch ( Exception e ) {
+    		message = "Unexpected error writing summary to file \"" + outputFile + "\" (" + e + ")";
+    		Message.printWarning ( warning_level, 
+    			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
+    		Message.printWarning ( 3, routine, e );
+    		status.addToLog ( CommandPhaseType.RUN,
+    			new CommandLogRecord(CommandStatusType.FAILURE,
+    				message, "Software error - report problem to support." ) );
+    	}
 	}
 	return warning_count;
 }

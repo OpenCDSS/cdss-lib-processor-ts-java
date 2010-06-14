@@ -560,14 +560,8 @@ CommandWarningException, CommandException
 					"Verify that the output period is not huge and check computer memory."));
 		}
 		if ( __PatternFlags != null ) {
-		    // Also allocate the space for flags - allocate to maximum length of the flags
-		    int dataFlagLength = 1; // Default
-		    for ( int i = 0; i < __PatternFlags.length; i++ ) {
-		        if ( __PatternFlags[i].length() > dataFlagLength ) {
-		            dataFlagLength = __PatternFlags[i].length();
-		        }
-		    }
-		    ts.allocateDataFlagSpace(dataFlagLength, null, false);
+		    // Also allocate the space for flags
+		    ts.allocateDataFlagSpace(null, false);
 		}
 		if ( (__PatternValues_double != null) && (__PatternValues_double.length > 0) ) {
 		    if ( ts instanceof IrregularTS ) {

@@ -24,6 +24,7 @@ import java.util.Vector;
 import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
@@ -49,23 +50,15 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
+import RTi.Util.Time.YearType;
 
 import DWR.StateMod.StateMod_TS;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteStateMod() command.
-</p>
 */
 public class WriteStateMod_Command extends AbstractCommand implements Command, FileGenerator
 {
-
-/**
-Protected data members shared with the dialog and other related classes.
-*/
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
 
 /**
 Output file that is created by this command.
@@ -105,9 +98,8 @@ throws InvalidCommandParameterException
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 
 	if ( (TSList != null) && (TSList.length() > 0) ) {
-		if (	TSList.equalsIgnoreCase(_AllMatchingTSID) &&
-			((TSID == null) || (TSID.length() == 0)) ) {
-			message = "TSList=AllMatchingID requires a TSID value.";
+		if ( TSList.equalsIgnoreCase("" + TSListType.ALL_MATCHING_TSID) && ((TSID == null) || (TSID.length() == 0)) ) {
+			message = "TSList=" + TSListType.ALL_MATCHING_TSID + " requires a TSID value.";
 			warning += "\n" + message;
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
 					new CommandLogRecord(CommandStatusType.FAILURE,
@@ -234,9 +226,9 @@ throws InvalidCommandParameterException
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -267,7 +259,6 @@ Parse the command string into a PropList of parameters.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -279,21 +270,21 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// New syntax, can be blank parameter list...
 		super.parseCommand ( command_string );
 	}
-	else {	// Parse the old command...
-		List tokens = StringUtil.breakStringList ( command_string,
+	else {
+	    // Parse the old command...
+		List<String> tokens = StringUtil.breakStringList ( command_string,
 			"(,)", StringUtil.DELIM_ALLOW_STRINGS );
 		if ( tokens.size() != 3 ) {
-			message =
-			"Invalid syntax for command \"" + command_string + "\".  Expecting 2 parameters.";
+			message = "Invalid syntax for command \"" + command_string + "\".  Expecting 2 parameters.";
 			Message.printWarning ( warning_level, routine, message);
 			CommandStatus status = getCommandStatus();
 			status.addToLog ( CommandPhaseType.INITIALIZATION,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify command syntax or edit with command editor." ) );
+				new CommandLogRecord(CommandStatusType.FAILURE,
+					message, "Verify command syntax or edit with command editor." ) );
 			throw new InvalidCommandSyntaxException ( message );
 		}
-		String OutputFile = ((String)tokens.get(1)).trim();
-		String Precision = ((String)tokens.get(2)).trim();
+		String OutputFile = tokens.get(1).trim();
+		String Precision = tokens.get(2).trim();
 		if ( Precision.equals("*") ) {
 			Precision = "";
 		}
@@ -316,10 +307,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -370,7 +359,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to write using TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\".";
@@ -381,7 +370,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report to software support." ) );
 	}
-	else {	tslist = (List)o_TSList;
+	else {
+	    tslist = (List<TS>)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to write using TSList=\"" + TSList +
 			"\" TSID=\"" + TSID + "\".";
@@ -414,8 +404,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		request_params = new PropList ( "" );
 		request_params.set ( "DateTime", OutputStart );
 		bean = null;
-		try { bean =
-			processor.processRequest( "DateTime", request_params);
+		try {
+		    bean = processor.processRequest( "DateTime", request_params);
 		}
 		catch ( Exception e ) {
 			message = "Error requesting OutputStart DateTime(DateTime=" + OutputStart + ") from processor.";
@@ -530,26 +520,29 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String MissingValue = parameters.getValue ( "MissingValue" );
 
 	String OutputYearType = "Calendar";	// Default
-	try { Object o = processor.getPropContents ( "OutputYearType" );
+	YearType outputYearType = YearType.CALENDAR;
+	try {
+	    Object o = processor.getPropContents ( "OutputYearType" );
 		// Output year type is available so use it...
 		if ( o != null ) {
-			OutputYearType = (String)o;
+			outputYearType = (YearType)o;
 		}
 	}
 	catch ( Exception e ) {
-		message = "Error requesting OutputYearType from processor - not using.";
+		message = "Error requesting OutputYearType from processor - defaulting to calendar.";
 		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
+			new CommandLogRecord(CommandStatusType.FAILURE,
+				message, "Report problem to software support." ) );
 		Message.printDebug(10, routine, message );
 	}
 	// Check OutputYearType at runtime because it is specified in earlier commands.
 	
-    if ( !OutputYearType.equalsIgnoreCase("Calendar") && !OutputYearType.equalsIgnoreCase("Water")
-    	&& !OutputYearType.equalsIgnoreCase("NovToOct") ) {
+    if ( (outputYearType != YearType.CALENDAR) && (outputYearType != YearType.WATER)
+    	&& (outputYearType != YearType.NOV_TO_OCT) ) {
         message = "\nThe output year type (" + OutputYearType +
-            ") must be \"Calendar\", \"Water\", or \"NovToOct\".  Defaulting to Calendar.";
-        OutputYearType = "Calendar";
+            ") must be \"" + YearType.CALENDAR + "\", \"" + YearType.WATER + "\", or \"" +
+            YearType.NOV_TO_OCT + "\".  Defaulting to Calendar.";
+        outputYearType = YearType.CALENDAR;
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
@@ -568,25 +561,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
     String OutputFile_full = OutputFile;
 	try {
-		OutputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile));
+		OutputFile_full = IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor, this,OutputFile)));
 		Message.printStatus ( 2, routine,"Writing StateMod file \"" + OutputFile_full + "\"" );
-		// Format the StateMod year type...
-		String sm_calendar = "CalendarYear";
-		if ( OutputYearType.equalsIgnoreCase("Water") ) {
-			sm_calendar = "WaterYear";
-		}
-		else if ( OutputYearType.equalsIgnoreCase("NovToOct") ) {
-			sm_calendar = "IrrigationYear";
-		}
 
 		// Get the comments to add to the top of the file.
 
-		List OutputComments_Vector = null;
+		List<String> OutputComments_Vector = null;
 		try { Object o = processor.getPropContents ( "OutputComments" );
 			// Comments are available so use them...
 			if ( o != null ) {
-				OutputComments_Vector = (List)o;
+				OutputComments_Vector = (List<String>)o;
 			}
 		}
 		catch ( Exception e ) {
@@ -605,7 +590,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				size = tslist.size();
 			}
 			for ( int i = 0; i < size; i++ ) {
-				ts = (TS)tslist.get(i);
+				ts = tslist.get(i);
 				if ( ts == null ) {
 					continue;
 				}
@@ -618,8 +603,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				MessageUtil.formatMessageTag(command_tag,
 				++warning_count), routine, message );
 				status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify that all time series being written have interval of either Day or Month." ) );
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that all time series being written have interval of either Day or Month." ) );
 				throw new CommandException ( message );
 			}
 			else if ((interval == TimeInterval.DAY) || (interval == TimeInterval.MONTH) ) {
@@ -636,7 +621,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					smprops.set ( "OutputEnd=" + OutputEnd_DateTime.toString());
 				}
 				if ( OutputYearType != null ) {
-					smprops.set ( "CalendarType",sm_calendar );
+					smprops.set ( "CalendarType", "" + outputYearType );
 				}
 				if ( MissingValue != null ) {
 					smprops.set ( "MissingDataValue",MissingValue );
@@ -663,23 +648,24 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 					MessageUtil.formatMessageTag(
 					command_tag, ++warning_count), routine, message );
 					status.addToLog ( CommandPhaseType.RUN,
-							new CommandLogRecord(CommandStatusType.FAILURE,
-									message, "Check log file for details." ) );
+						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Check log file for details." ) );
 				}
 			}
-			else {	message =
-				"Don't know how to write StateMod output for interval \"" +
-				ts.getIdentifier().getInterval() + "\".";
+			else {
+			    message = "Don't know how to write StateMod output for interval \"" +
+			        ts.getIdentifier().getInterval() + "\".";
 				Message.printWarning ( warning_level, 
 				MessageUtil.formatMessageTag(command_tag,
 					++warning_count), routine, message );
 				status.addToLog ( CommandPhaseType.RUN,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify that all time series being written have interval of either Day or Month." ) );
+					new CommandLogRecord(CommandStatusType.FAILURE,
+						message, "Verify that all time series being written have interval of either Day or Month." ) );
 				throw new CommandException ( message );
 			}
 		}
-		else {	message = "Unable to write StateMod time series of different intervals.";
+		else {
+		    message = "Unable to write StateMod time series of different intervals.";
 			Message.printWarning ( warning_level, 
 			MessageUtil.formatMessageTag(command_tag,
 				++warning_count), routine, message );

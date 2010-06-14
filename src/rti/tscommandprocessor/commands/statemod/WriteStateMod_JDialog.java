@@ -302,35 +302,32 @@ private void initialize ( JFrame parent, Command command )
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The Browse button can be used to select an existing file " +
 		"to overwrite (or edit the file name after selection)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For the precision, a negative integer allows auto-adjustment "+
-		"to prevent overflow." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"For the precision, a negative integer allows auto-adjustment to prevent overflow." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A precision of -2001 will default to 2 digits, adjusted for "+
-		"overflow, and also use no decimal (special precision " +
-		"option)."), 
+		"overflow, and also use no decimal (special precision option)."), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The time series to process are indicated using the TS list."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If TS list is \"" + __command._AllMatchingTSID + "\", "+
-		"pick a single time series, " +
-		"or enter a wildcard time series identifier pattern."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If TS list is \"" + TSListType.ALL_MATCHING_TSID + "\", "+
+		"pick a single time series, or enter a wildcard time series identifier pattern."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         List tslist_Vector = new Vector();
-	tslist_Vector.add ( __command._AllMatchingTSID );
-	tslist_Vector.add ( __command._AllTS );
-	tslist_Vector.add ( __command._SelectedTS );
+	tslist_Vector.add ( TSListType.ALL_MATCHING_TSID );
+	tslist_Vector.add ( TSListType.ALL_TS );
+	tslist_Vector.add ( TSListType.SELECTED_TS );
 	__TSList_JComboBox = new SimpleJComboBox(false);
 	__TSList_JComboBox.setData ( tslist_Vector );
 	__TSList_JComboBox.select ( 0 );
@@ -509,38 +506,35 @@ private void refresh ()
 		Precision = props.getValue("Precision");
 		if ( TSList == null ) {
 			// Select default...
-			__TSList_JComboBox.select ( __command._AllTS );
+			__TSList_JComboBox.select ( "" + TSListType.ALL_TS );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
-				__TSList_JComboBox,
-				TSList, JGUIUtil.NONE, null, null ) ) {
+		else {
+		    if ( JGUIUtil.isSimpleJComboBoxItem(__TSList_JComboBox, TSList, JGUIUtil.NONE, null, null ) ) {
 				__TSList_JComboBox.select ( TSList );
 			}
-			else {	Message.printWarning ( 1, routine,
-				"Existing command " +
-				"references an invalid\nTSList value \"" +
-				TSList +
-				"\".  Select a different value or Cancel.");
+			else {
+			    Message.printWarning ( 1, routine, "Existing command references an invalid\nTSList value \"" +
+				TSList + "\".  Select a different value or Cancel.");
 				__error_wait = true;
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-				JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
+		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+			__TSID_JComboBox.select ( TSID );
 		}
-		else {	// Automatically add to the list after the blank...
+		else {
+		    // Automatically add to the list after the blank...
 			if ( (TSID != null) && (TSID.length() > 0) ) {
 				__TSID_JComboBox.insertItemAt ( TSID, 1 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
-			else {	// Select the blank...
+			else {
+			    // Select the blank...
 				__TSID_JComboBox.select ( 0 );
 			}
 		}
 		if ( !__TSID_JComboBox.isEnabled() ) {
-			// Not needed because some other method of specifying
-			// the time series is being used...
+			// Not needed because some other method of specifying the time series is being used...
 			TSID = null;
 		}
 		if ( OutputFile != null ) {

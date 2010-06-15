@@ -35,9 +35,7 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the NewPatternTimeSeries() command.
-</p>
 */
 public class NewPatternTimeSeries_Command extends AbstractCommand implements Command
 {
@@ -287,11 +285,8 @@ public boolean editCommand ( JFrame parent )
 /**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
-@exception InvalidCommandSyntaxException if during parsing the command is
-determined to have invalid syntax.
-syntax of the command are bad.
-@exception InvalidCommandParameterException if during parsing the command
-parameters are determined to be invalid.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
 */
 public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
@@ -301,34 +296,31 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Get the part of the command after the TS Alias =...
 	int pos = command.indexOf ( "=" );
 	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	String token0 = command.substring ( 0, pos ).trim();	// TS Alias
 	String token1 = command.substring ( pos + 1 ).trim();	// command(...)
 	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
 	// Get the alias from the first token before the equal sign...
 	
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	String Alias = (String)v.get(1);
+	String Alias = v.get(1);
 
 	// Get the command parameters from the token on the right of the =...
 
-	List tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || (tokens.size() < 2) ) {
 		// Must have at least the command name and its parameters...
 		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewPatternTimeSeries(...)";
@@ -337,8 +329,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 
 	try {
-        PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.get(1), routine, "," );
+        PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -386,7 +377,7 @@ CommandWarningException, CommandException
 	String Units = parameters.getValue ( "Units" );
 
 	if ( SetStart == null ) {
-			SetStart = "";	// Makes for better messages
+		SetStart = "";	// Makes for better messages
 	}
 	if ( SetEnd == null ) {
 		SetEnd = "";	// Better messages
@@ -443,8 +434,7 @@ CommandWarningException, CommandException
 		}
 	}
 	catch ( Exception e ) {
-		message = "SetStart \"" + SetStart + "\" is invalid." +
-		"  Specify a valid SetStart or global OutputStart.";
+		message = "SetStart \"" + SetStart + "\" is invalid.  Specify a valid SetStart or global OutputStart.";
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
@@ -573,17 +563,19 @@ CommandWarningException, CommandException
 		            tsinterval = TimeInterval.parseInterval ( IrregularInterval );
 		        }
 		        catch ( Exception e ) {
-		            message = "Unable to allocate memory for time series.";
+		            message = "Irregular time series interval is invalid.";
 		            Message.printWarning ( warning_level,
 		            MessageUtil.formatMessageTag(
 		            command_tag,++warning_count),routine,message );
 		            status.addToLog(CommandPhaseType.RUN,
 		                    new CommandLogRecord(
 		                    CommandStatusType.FAILURE, message,
-		                    "Verify that the output period is not huge and check computer memory."));
+		                    "Verify that the irregular time series interval is valid (e.g., \"5Min\")."));
 		        }
 		        double missing = ts.getMissing();
 		        int iPattern = 0; // Pattern to use
+		        Message.printStatus(2, routine, "Initializing pattern time series to missing..." );
+		        // Interval base and multiplier are from the IrregularInterval...
 		        for ( DateTime date = new DateTime(ts.getDate1()); date.lessThanOrEqualTo(end);
 		            date.addInterval(tsinterval.getBase(),tsinterval.getMultiplier())) {
 		            if ( __PatternFlags != null ) {
@@ -593,7 +585,7 @@ CommandWarningException, CommandException
 		                }
 		            }
 		            else {
-		                // Just set the data value
+		                // Just set the data value to missing
 		                ts.setDataValue(date, missing );
 		            }
 		        }

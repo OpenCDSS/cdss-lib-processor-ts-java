@@ -49,9 +49,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
 This class initializes, checks, and runs the NewTimeSeries() command.
-</p>
 */
 public class NewTimeSeries_Command extends AbstractCommand
 implements Command
@@ -71,8 +69,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -199,7 +196,6 @@ supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -211,8 +207,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	// Get the part of the command after the TS Alias =...
 	int pos = command.indexOf ( "=" );
 	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = newTimeSeries(...)";
+		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = newTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
@@ -226,17 +221,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 	// Get the alias from the first token before the equal sign...
 	
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewTimeSeries(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	String Alias = (String)v.get(1);
+	String Alias = v.get(1);
 
 	// Get the command parameters from the token on the right of the =...
 
-	List tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || (tokens.size() < 2) ) {
 		// Must have at least the command name and its parameters...
 		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewTimeSeries(...)";
@@ -245,8 +240,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	}
 
 	try {
-	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.get(1), routine, "," );
+	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -261,10 +255,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Run the command.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -293,10 +285,10 @@ CommandWarningException, CommandException
 	String InitialValue = parameters.getValue ( "InitialValue" );
 	double InitialValue_double = 0.0;
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
-		InitialValue_double = StringUtil.atod ( InitialValue );
+		InitialValue_double = Double.parseDouble ( InitialValue );
 	}
 	if ( SetStart == null ) {
-			SetStart = "";	// Makes for better messages
+		SetStart = "";	// Makes for better messages
 	}
 	if ( SetEnd == null ) {
 		SetEnd = "";	// Better messages
@@ -312,8 +304,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", "OutputStart" );
 			CommandProcessorRequestResultsBean bean = null;
-			bean =
-			processor.processRequest( "DateTime", request_params);
+			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -326,7 +317,8 @@ CommandWarningException, CommandException
                                 message, "Use a SetOutputPeriod() command or specify the set start." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetStart_DateTime = (DateTime)prop_contents;
+			else {
+			    SetStart_DateTime = (DateTime)prop_contents;
 			}
 		}
 		else {
@@ -338,8 +330,7 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for SetStart DateTime(DateTime=" +
-				SetStart +	") returned from processor.";
+				message = "Null value for SetStart DateTime(DateTime=" +SetStart +	") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -370,8 +361,7 @@ CommandWarningException, CommandException
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", "OutputEnd" );
 			CommandProcessorRequestResultsBean bean = null;
-			bean =
-			processor.processRequest( "DateTime", request_params);
+			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
@@ -385,7 +375,8 @@ CommandWarningException, CommandException
                                 message, "Use a SetOutputPeriod() command or specify the set end." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetEnd_DateTime = (DateTime)prop_contents;
+			else {
+			    SetEnd_DateTime = (DateTime)prop_contents;
 			}
 		}
 		else {
@@ -407,7 +398,8 @@ CommandWarningException, CommandException
                                 message, "Use a SetOutputPeriod() command or specify the set end." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
-			else {	SetEnd_DateTime = (DateTime)prop_contents;
+			else {
+			    SetEnd_DateTime = (DateTime)prop_contents;
 			}
 		}
 	}
@@ -425,7 +417,8 @@ CommandWarningException, CommandException
 	// Now process the time series...
 
 	TS ts = null;
-	try {	// Create the time series...
+	try {
+	    // Create the time series...
 		ts = TSUtil.newTimeSeries ( NewTSID, true );
 		if ( ts == null ) {
             message = "Null time series returned when trying to create with NewTSID=\"" + NewTSID + "\"";

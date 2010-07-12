@@ -129,7 +129,7 @@ Errors should not result and are logged in the log file and command status, indi
 @param tslist List of time series to append.
 @param return the number of warnings generated.
 */
-public static int appendTimeSeriesListToResultsList ( CommandProcessor processor, Command command, List tslist )
+public static int appendTimeSeriesListToResultsList ( CommandProcessor processor, Command command, List<TS> tslist )
 {
     int wc = 0;
     int size = 0;
@@ -137,7 +137,7 @@ public static int appendTimeSeriesListToResultsList ( CommandProcessor processor
         size = tslist.size();
     }
     for ( int i = 0; i < size; i++ ) {
-        wc += appendTimeSeriesToResultsList ( processor, command, (TS)tslist.get(i) );
+        wc += appendTimeSeriesToResultsList ( processor, command, tslist.get(i) );
     }
     return wc;
 }
@@ -272,8 +272,7 @@ public static String expandParameterValue( CommandProcessor processor, Command c
 
 /**
 Expand a string to recognize time series % formatting strings using TS.formatLegend()
-and also ${Property} strings.  If a property string is not found, it will remain
-without being replaced.
+and also ${Property} strings.  If a property string is not found, it will remain without being replaced.
 @param processor The processor that is being used.
 @param ts Time series to be used for metadata string.
 @param s String to expand.  The string can contain % format specifiers used with TS.
@@ -370,62 +369,57 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
 	
 /**
 Get the commands before the indicated index position.  Only the requested commands
-are returned.  Use this, for example, to get the setWorkingDir() commands above
+are returned.  Use this, for example, to get the SetWorkingDir() commands above
 the insert position for a readXXX() command, so the working directory can be
 defined and used in the editor dialog.
-@return List of commands (as Vector of Command instances) before the index that match the commands in
-the needed_commands_Vector.  This will always return a non-null Vector, even if
-no commands are in the Vector.
+@return List of commands before the index that match the commands in
+the neededCommandsList.  This will always return a non-null list, even if no commands are found.
 @param index The index in the command list before which to search for other commands.
 @param processor A TSCommandProcessor with commands to search.
-@param needed_commands_String_Vector Vector of commands (as String) that need to be processed
-(e.g., "setWorkingDir").  Only the main command name should be defined.
+@param neededCommandsList List of commands (as String) that need to be processed
+(e.g., "SetWorkingDir").  Only the main command name should be defined.
 @param last_only if true, only the last item above the insert point
 is returned.  If false, all matching commands above the point are returned in
 the order from top to bottom.
 */
-public static List getCommandsBeforeIndex (
-	int index,
-	TSCommandProcessor processor,
-	List needed_commands_String_Vector,
-	boolean last_only )
-{	// Now search backwards matching commands for each of the requested
-	// commands...
+public static List<Command> getCommandsBeforeIndex ( int index, TSCommandProcessor processor,
+	List<String> neededCommandsList, boolean last_only )
+{	// Now search backwards matching commands for each of the requested commands...
 	int size = 0;
-	if ( needed_commands_String_Vector != null ) {
-		size = needed_commands_String_Vector.size();
+	if ( neededCommandsList != null ) {
+		size = neededCommandsList.size();
 	}
 	String needed_command_string;
-	List found_commands = new Vector();
+	List<Command> found_commands = new Vector();
 	// Get the commands from the processor
-	List commands = processor.getCommands();
+	List<Command> commands = processor.getCommands();
 	Command command;
 	// Now loop up through the command list...
 	for ( int ic = (index - 1); ic >= 0; ic-- ) {
-		command = (Command)commands.get(ic);
+		command = commands.get(ic);
 		for ( int i = 0; i < size; i++ ) {
-			needed_command_string = (String)needed_commands_String_Vector.get(i);
+			needed_command_string = neededCommandsList.get(i);
 			//((String)_command_List.getItem(ic)).trim() );
-			if (	needed_command_string.regionMatches(true,0,command.toString().trim(),0,
-					needed_command_string.length() ) ) {
-					found_commands.add ( command );
-					if ( last_only ) {
-						// Don't need to search any more...
-						break;
-					}
+			if ( needed_command_string.regionMatches(true,0,command.toString().trim(),0,
+				needed_command_string.length() ) ) {
+				found_commands.add ( command );
+				if ( last_only ) {
+					// Don't need to search any more...
+					break;
 				}
 			}
 		}
-		// Reverse the commands so they are listed in the order of the list...
-		size = found_commands.size();
-		if ( size <= 1 ) {
-			return found_commands;
-		}
-		List found_commands_sorted = new Vector(size);
-		for ( int i = size - 1; i >= 0; i-- ) {
-			found_commands_sorted.add ( found_commands.get(i));
-		}
-		return found_commands_sorted;
+	}
+	// Reverse the commands so they are listed in the order of the list...
+	size = found_commands.size();
+	if ( size <= 1 ) {
+		return found_commands;
+	}
+	List<Command> found_commands_sorted = new Vector(size);
+	for ( int i = size - 1; i >= 0; i-- ) {
+		found_commands_sorted.add ( found_commands.get(i));
+	}
+	return found_commands_sorted;
 }
 	
 /**
@@ -581,17 +575,17 @@ The getEnsembleID() method on the TSEnsemble is then returned.
 @param sort Should output be sorted by identifier.
 @return list of ensemble identifiers or an empty non-null Vector if nothing found.
 */
-protected static List getEnsembleIdentifiersFromCommands ( List commands, boolean sort )
+protected static List<String> getEnsembleIdentifiersFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
         return new Vector();
     }
-    List v = new Vector ( 10, 10 );
+    List<String> v = new Vector ( 10, 10 );
     int size = commands.size();
     boolean in_comment = false;
     Command command = null;
     String command_string = null;
     for ( int i = 0; i < size; i++ ) {
-        command = (Command)commands.get(i);
+        command = commands.get(i);
         command_string = command.toString();
         if ( command_string.startsWith("/*") ) {
             in_comment = true;
@@ -605,13 +599,13 @@ protected static List getEnsembleIdentifiersFromCommands ( List commands, boolea
             continue;
         }
         if ( command instanceof ObjectListProvider ) {
-            List list = ((ObjectListProvider)command).getObjectList ( new TSEnsemble().getClass() );
+            List<TSEnsemble> list = ((ObjectListProvider)command).getObjectList ( new TSEnsemble().getClass() );
             String id;
             if ( list != null ) {
                 int listsize = list.size();
                 TSEnsemble tsensemble;
                 for ( int its = 0; its < listsize; its++ ) {
-                    tsensemble = (TSEnsemble)list.get(its);
+                    tsensemble = list.get(its);
                     id = tsensemble.getEnsembleID();
                     if ( (id != null) && !id.equals("") ) {
                         v.add( id );
@@ -681,11 +675,11 @@ Time series are determined as follows:
 @param commands Commands to search.
 @param List of pattern time series provided by commands.
 */
-protected static List getPatternTSListFromCommands ( List commands )
+protected static List<TS> getPatternTSListFromCommands ( List commands )
 {   if ( commands == null ) {
         return new Vector();
     }
-    List v = new Vector ( 10, 10 );
+    List<TS> v = new Vector ( 10, 10 );
     int size = commands.size();
     Object command_o = null;    // Command as object
     for ( int i = 0; i < size; i++ ) {
@@ -693,12 +687,12 @@ protected static List getPatternTSListFromCommands ( List commands )
         if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
             // Try to get the list of identifiers using the interface method.
             // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
-            List list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+            List<TS> list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
             if ( list != null ) {
                 int tssize = list.size();
                 TS ts;
                 for ( int its = 0; its < tssize; its++ ) {
-                    ts = (TS)list.get(its);
+                    ts = list.get(its);
                     v.add( ts );
                 }
             }
@@ -751,7 +745,7 @@ column names to editor dialogs.
 @param sort Indicates whether column names should be sorted (NOT YET IMPLEMENTED).
 @return a list of String containing the ensemble identifiers, or an empty Vector.
 */
-public static List getTableColumnNamesFromCommandsBeforeCommand(
+public static List<String> getTableColumnNamesFromCommandsBeforeCommand(
         TSCommandProcessor processor, Command command, String table_id, boolean sort )
 {   String routine = "TSCommandProcessorUtil.getTableColumnNamesFromCommandsBeforeCommand";
     // Get the position of the command in the list...
@@ -764,19 +758,19 @@ public static List getTableColumnNamesFromCommandsBeforeCommand(
         command = (Command)processor.get(i);
         if ( command instanceof ObjectListProvider ) {
             // Request table objects
-            List tables = ((ObjectListProvider)command).getObjectList(DataTable.class);
+            List<DataTable> tables = ((ObjectListProvider)command).getObjectList(DataTable.class);
             int ntables = 0;
             if ( tables != null ) {
                 ntables = tables.size();
             }
             for ( int it = 0; it < ntables; it++ ) {
-                table = (DataTable)tables.get(it);
+                table = tables.get(it);
                 if ( !table.getTableID().equalsIgnoreCase(table_id) ) {
                     continue;
                 }
                 // Found the table.  Get its column names.
                 String [] field_names = table.getFieldNames();
-                List field_names_Vector = new Vector();
+                List<String> field_names_Vector = new Vector();
                 for ( int in = 0; in < field_names.length; in++ ) {
                     field_names_Vector.add ( field_names[in] );
                 }
@@ -793,7 +787,7 @@ Get a list of table identifiers from a list of commands.  See documentation for 
 @param commands Time series commands to search.
 @return list of table identifiers or an empty non-null Vector if nothing found.
 */
-private static List getTableIdentifiersFromCommands ( List commands )
+private static List<String> getTableIdentifiersFromCommands ( List<Command> commands )
 {   // Default behavior...
     return getTableIdentifiersFromCommands ( commands, false );
 }
@@ -807,17 +801,17 @@ The getTableID() method on the DataTable is then returned.
 @param sort Should output be sorted by identifier.
 @return list of table identifiers or an empty non-null Vector if nothing found.
 */
-protected static List getTableIdentifiersFromCommands ( List commands, boolean sort )
+protected static List<String> getTableIdentifiersFromCommands ( List<Command> commands, boolean sort )
 {   if ( commands == null ) {
         return new Vector();
     }
-    List v = new Vector ( 10, 10 );
+    List<String> v = new Vector ( 10, 10 );
     int size = commands.size();
     boolean in_comment = false;
     Command command = null;
     String command_string = null;
     for ( int i = 0; i < size; i++ ) {
-        command = (Command)commands.get(i);
+        command = commands.get(i);
         command_string = command.toString();
         if ( command_string.startsWith("/*") ) {
             in_comment = true;
@@ -831,13 +825,13 @@ protected static List getTableIdentifiersFromCommands ( List commands, boolean s
             continue;
         }
         if ( command instanceof ObjectListProvider ) {
-            List list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
+            List<DataTable> list = ((ObjectListProvider)command).getObjectList ( new DataTable().getClass() );
             String id;
             if ( list != null ) {
                 int tablesize = list.size();
                 DataTable table;
                 for ( int its = 0; its < tablesize; its++ ) {
-                    table = (DataTable)list.get(its);
+                    table = list.get(its);
                     id = table.getTableID();
                     if ( !id.equals("") ) {
                         v.add( id );
@@ -854,9 +848,9 @@ Return the table identifiers for commands before a specific command
 in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
 @param processor a TSCommandProcessor that is managing commands.
 @param command the command above which time series identifiers are needed.
-@return a Vector of String containing the table identifiers, or an empty Vector.
+@return a list of String containing the table identifiers, or an empty Vector.
 */
-public static List getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+public static List<String> getTableIdentifiersFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {   String routine = "TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand";
     // Get the position of the command in the list...
     int pos = processor.indexOf(command);
@@ -866,7 +860,7 @@ public static List getTableIdentifiersFromCommandsBeforeCommand( TSCommandProces
         return new Vector();
     }
     // Find the commands above the position...
-    List commands = getCommandsBeforeIndex ( processor, pos );
+    List<Command> commands = getCommandsBeforeIndex ( processor, pos );
     // Get the time series identifiers from the commands...
     return getTableIdentifiersFromCommands ( commands );
 }
@@ -879,16 +873,16 @@ Get values for a tag in command comments.  Tags are strings like "@tagName" or "
 @return a list of tag values, which are either Strings for the value or True if the tag has
 no value.  Return an empty list if the tag was not found.
 */
-public static List getTagValues ( CommandProcessor processor, String tag )
+public static List<Object> getTagValues ( CommandProcessor processor, String tag )
 {
-    List tagValues = new Vector();
+    List<Object> tagValues = new Vector();
     // Loop through the commands and check comments for the special string
-    List commandList = ((TSCommandProcessor)processor).getCommands();
+    List<Command> commandList = ((TSCommandProcessor)processor).getCommands();
     int size = commandList.size();
     Command c;
     String searchTag = "@" + tag;
     for ( int i = 0; i < size; i++ ) {
-        c = (Command)commandList.get(i);
+        c = commandList.get(i);
         String commandString = c.toString();
         if ( !commandString.trim().startsWith("#") ) {
             continue;
@@ -920,7 +914,7 @@ Get values for a tag in command file comments.  Tags are strings like "@tagName"
 @return a list of tag values, which are either Strings for the value or True if the tag has
 no value.  Return an empty list if the tag was not found.
 */
-public static List getTagValues ( String commandFile, String tag )
+public static List<Object> getTagValues ( String commandFile, String tag )
 throws IOException, FileNotFoundException
 {
     TSCommandProcessor processor = new TSCommandProcessor();
@@ -932,9 +926,9 @@ throws IOException, FileNotFoundException
 Get a list of identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted and does NOT contain the input type or name.
 @param commands Time series commands to search.
-@return list of time series identifiers or an empty non-null Vector if nothing found.
+@return list of time series identifiers or an empty non-null list if nothing found.
 */
-private static List getTSIdentifiersFromCommands ( List commands )
+private static List<String> getTSIdentifiersFromCommands ( List commands )
 {	// Default behavior...
 	return getTSIdentifiersFromCommands ( commands, false, false );
 }
@@ -944,9 +938,9 @@ Get a list of identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list does NOT contain the input type or name.
 @param commands Time series commands to search.
 @param sort Should output be sorted by identifier.
-@return list of time series identifiers or an empty non-null Vector if nothing found.
+@return list of time series identifiers or an empty non-null list if nothing found.
 */
-protected static List getTSIdentifiersFromCommands ( List commands, boolean sort )
+protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean sort )
 {	// Return the identifiers without the input type and name.
 	return getTSIdentifiersFromCommands ( commands, false, sort );
 }
@@ -967,16 +961,16 @@ Time series identifiers are determined as follows:
 @param include_input If true, include the input type and name in the returned
 values.  If false, only include the 5-part information.
 @param sort Should output be sorted by identifier.
-@return list of time series identifiers or an empty non-null Vector if nothing found.
+@return list of time series identifiers or an empty non-null list if nothing found.
 */
-protected static List getTSIdentifiersFromCommands ( List commands, boolean include_input, boolean sort )
+protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean include_input, boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
 	}
-	List v = new Vector ( 10, 10 );
+	List<String> v = new Vector ( 10, 10 );
 	int size = commands.size();
 	String command = null;
-	List tokens = null;
+	List<String> tokens = null;
 	boolean in_comment = false;
 	Object command_o = null;	// Command as object
 	for ( int i = 0; i < size; i++ ) {
@@ -1005,12 +999,12 @@ protected static List getTSIdentifiersFromCommands ( List commands, boolean incl
         if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
             // Try to get the list of identifiers using the interface method.
             // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
-            List list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
+            List<TS> list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
             if ( list != null ) {
                 int tssize = list.size();
                 TS ts;
                 for ( int its = 0; its < tssize; its++ ) {
-                    ts = (TS)list.get(its);
+                    ts = list.get(its);
                     if ( !ts.getAlias().equals("") ) {
                         // Use the alias if it is available.
                         v.add( ts.getAlias() );
@@ -1026,7 +1020,7 @@ protected static List getTSIdentifiersFromCommands ( List commands, boolean incl
 			// Use the alias...
 			tokens = StringUtil.breakStringList( command.substring(3)," =",	StringUtil.DELIM_SKIP_BLANKS);
 			if ( (tokens != null) && (tokens.size() > 0) ) {
-				v.add ( (String)tokens.get(0) );
+				v.add ( tokens.get(0) );
 				//+ " (alias)" );
 			}
 			tokens = null;
@@ -1039,12 +1033,12 @@ protected static List getTSIdentifiersFromCommands ( List commands, boolean incl
 				// Add the whole thing...
 				v.add ( command );
 			}
-			else {	// Add the part before the input fields...
+			else {
+			    // Add the part before the input fields...
 				v.add ( command.substring(0,pos) );
 			}
 		}
 	}
-	tokens = null;
 	return v;
 }
 
@@ -1055,7 +1049,7 @@ in the TSCommandProcessor.  This is used, for example, to provide a list of iden
 @param command the command above which time series identifiers are needed.
 @return a list of String containing the time series identifiers, or an empty list.
 */
-public static List getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+public static List<String> getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
 {	String routine = "TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand";
 	// Get the position of the command in the list...
 	int pos = processor.indexOf(command);
@@ -1065,7 +1059,7 @@ public static List getTSIdentifiersNoInputFromCommandsBeforeCommand( TSCommandPr
 		return new Vector();
 	}
     // Find the commands above the position...
-	List commands = getCommandsBeforeIndex ( processor, pos );
+	List<Command> commands = getCommandsBeforeIndex ( processor, pos );
 	// Get the time series identifiers from the commands...
 	return getTSIdentifiersFromCommands ( commands );
 }
@@ -1228,7 +1222,7 @@ Command status messages will be added if problems arise but exceptions are not t
 */
 public static int processTimeSeriesAfterRead( CommandProcessor processor, Command command, TS ts )
 {
-    List tslist = new Vector();
+    List<TS> tslist = new Vector();
     tslist.add ( ts );
     return processTimeSeriesListAfterRead ( processor, command, tslist );
 }
@@ -1237,7 +1231,7 @@ public static int processTimeSeriesAfterRead( CommandProcessor processor, Comman
 Process a list of time series after reading.  This calls the command processor readTimeSeries2() method.
 Command status messages will be added if problems arise but exceptions are not thrown.
 */
-public static int processTimeSeriesListAfterRead( CommandProcessor processor, Command command, List tslist )
+public static int processTimeSeriesListAfterRead( CommandProcessor processor, Command command, List<TS> tslist )
 {   int log_level = 3;
     int warning_count = 0;
     String routine = "TSCommandProcessorUtil.processTimeSeriesListAfterRead";
@@ -1270,7 +1264,7 @@ names is provided.  If a name is not recognized, it is removed so as to prevent 
 will be appended to if there are more issues.
 @return the warning string, longer if invalid parameters are detected.
 */
-public static String validateParameterNames ( List valid_Vector, Command command, String warning )
+public static String validateParameterNames ( List<String> valid_Vector, Command command, String warning )
 {	if ( command == null ) {
 		return warning;
 	}

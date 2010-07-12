@@ -839,6 +839,8 @@ private int getColumnNumberFromName ( String columnName, List<String> columnName
             return i;
         }
     }
+    String routine = getClass().getName() + ".getColumnNumberFromName";
+    Message.printWarning(3, routine, "Unable to find column name \"" + columnName + "\" in choices." );
     return -1;
 }
 
@@ -1149,10 +1151,10 @@ Read a list of time series from a delimited file.
 @param skipRowsAfterComments the number of rows after the header comments to be skipped
 @param units data units for each time series.
 @param readData True to read data, false to only read the header information.
-@param props Properties to control the read, from command parameters.
+@param errorMessages Error message strings to be propagated back to calling code.
 */
 private List<TS> readTimeSeriesList ( String inputFileFull,
-    String delim,  boolean treatConsecutiveDelimitersAsOne,
+    String delim, boolean treatConsecutiveDelimitersAsOne,
     List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, List<String> valueColumns,
     String commentChar, int[][] skipRows, int skipRowsAfterComments,
     List<String> ids, List<String> providers, List<String> datatypes, TimeInterval interval,
@@ -1176,28 +1178,37 @@ throws IOException
         TS ts = null;
         String tsidentstr = ids.get(its) + "." + providers.get(its) + "." + datatypes.get(its) + "." +
             interval + "." + scenarios.get(its);
-        try {
-            tsident = new TSIdent( tsidentstr );
+        if ( valuePos[its] < 0 ) {
+            // Was a problem looking up column numbers
+            errorMessages.add ( "Column name \"" +
+                columnNames.get(its) + "\" does not match known columns - will not read.");
         }
-        catch ( Exception e ) {
-            tsident = null;
-            errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
-        }
-        if ( tsident != null ) {
+        else {
             try {
-                ts = TSUtil.newTimeSeries( tsident.toString(), true );
-                // Set all the information
-                ts.setIdentifier ( tsident );
-                ts.setDescription ( ids.get(its) + " " + datatypes.get(its) );
-                ts.setDataUnits ( units.get(its) );
-                ts.setDataUnitsOriginal ( units.get(its) );
-                ts.setMissing ( Double.NaN );
-                ts.setInputName ( inputFileFull );
+                tsident = new TSIdent( tsidentstr );
             }
             catch ( Exception e ) {
-                // Set the TS to null to match the column positions but won't be able to set data below
-                ts = null;
-                errorMessages.add ( "Error initializing time series \"" + tsidentstr + "\" (" + e + ") - will not read.");
+                tsident = null;
+                errorMessages.add ( "Error initializing time series \"" + tsidentstr +
+                    "\" (" + e + ") - will not read.");
+            }
+            if ( tsident != null ) {
+                try {
+                    ts = TSUtil.newTimeSeries( tsident.toString(), true );
+                    // Set all the information
+                    ts.setIdentifier ( tsident );
+                    ts.setDescription ( ids.get(its) + " " + datatypes.get(its) );
+                    ts.setDataUnits ( units.get(its) );
+                    ts.setDataUnitsOriginal ( units.get(its) );
+                    ts.setMissing ( Double.NaN );
+                    ts.setInputName ( inputFileFull );
+                }
+                catch ( Exception e ) {
+                    // Set the TS to null to match the column positions but won't be able to set data below
+                    ts = null;
+                    errorMessages.add ( "Error initializing time series \"" +
+                        tsidentstr + "\" (" + e + ") - will not read.");
+                }
             }
         }
         // Always add, even if null
@@ -1299,6 +1310,11 @@ throws IOException
             }
             // Process the time series for the row
             for ( ival = 0; ival < valuePos.length; ival++ ) {
+                if ( valuePos[ival] < 0 ) {
+                    // Error matching column in setup so continue to avoid major problem
+                    // Will have null time series in result
+                    continue;
+                }
                 // Time series corresponding to value.
                 ts = tslist.get(ival);
                 // If the first row being processed, need to allocate the data space for all the time series

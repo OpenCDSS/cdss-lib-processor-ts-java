@@ -408,7 +408,8 @@ Writes the log records to the check file.
 @param logRecordList list of log records to output.
 @throws Exception
  */
-private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, String [] tableHeaders ) throws Exception
+private void htmlWriteCommandLogRecords( HTMLWriter html, List<CommandLogRecord> logRecordList,
+    String [] tableHeaders ) throws Exception
 {
     // Get the data from the model
     // proplist provides an anchor link for this section used
@@ -429,14 +430,14 @@ private void htmlWriteCommandLogRecords( HTMLWriter html, List logRecordList, St
         // loop through the data
         String [] td1 = new String[1]; // Cell data for single column
         //String [] tds = new String[tableHeaders.length - 1]; // Omit the severity since it is written separately
-        CommandLogRecord logRecord = null;
         String severity;
         PropList severityAttributes = new PropList("severity");
-        for ( int iLogRec = 0; iLogRec < logRecordList.size(); iLogRec++ ) {
-            logRecord = (CommandLogRecord)logRecordList.get(iLogRec);
+        int logRecCount = 0;
+        for ( CommandLogRecord logRecord: logRecordList ) {
             html.tableRowStart();
             // Row (problem) number...
-            td1[0] = "" + (iLogRec + 1);
+            ++logRecCount;
+            td1[0] = "" + logRecCount;
             html.tableCells( td1, null );
             // Severity
             severity = logRecord.getSeverity().toString();
@@ -579,7 +580,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         
         // Get the log records...
         
-        List logRecordList = CommandStatusUtil.getLogRecordList ( processor.getCommands(), CommandPhaseType.RUN );
+        List<CommandLogRecord> logRecordList =
+            CommandStatusUtil.getLogRecordListFromCommands ( processor.getCommands(), CommandPhaseType.RUN );
  
         // Write the output file.
         

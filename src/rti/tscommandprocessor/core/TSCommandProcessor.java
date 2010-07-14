@@ -702,12 +702,12 @@ Return the Command instance at the requested position.
 */
 public Command get( int pos )
 {
-	return (Command)__Command_Vector.get(pos);
+	return __Command_Vector.get(pos);
 }
 
 /**
-Indicate whether cancelling processing has been requested.
-@return true if cancelling has been requested.
+Indicate whether canceling processing has been requested.
+@return true if canceling has been requested.
 */
 public boolean getCancelProcessingRequested ()
 {
@@ -752,7 +752,7 @@ protected TSEnsemble getEnsemble ( String EnsembleID )
     int size = __TSEnsemble_Vector.size();
     TSEnsemble tsensemble = null, tsensemble2;
     for ( int i = 0; i < size; i++ ) {
-        tsensemble2 = (TSEnsemble)__TSEnsemble_Vector.get(i);
+        tsensemble2 = __TSEnsemble_Vector.get(i);
         if ( tsensemble2 == null ) {
             continue;
         }
@@ -1382,7 +1382,7 @@ public boolean getReadOnly ()
     int size = size();
     Command c;
     for ( int i = 0; i < size; i++ ) {
-        c = (Command)__Command_Vector.get(i);
+        c = __Command_Vector.get(i);
         String commandString = c.toString();
         if ( commandString.trim().startsWith("#") &&
                 (StringUtil.indexOfIgnoreCase(commandString,readOnlyString,0) > 0) ) {
@@ -2137,16 +2137,14 @@ Process the AppendTimeSeries request.
 private CommandProcessorRequestResultsBean processRequest_AppendTimeSeries (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TS" );
 	if ( o == null ) {
-			String warning = "Request AppendTimeSeries() does not provide a TS parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request AppendTimeSeries() does not provide a TS parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText ( "This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	TS ts = (TS)o;
 	__tsengine.appendTimeSeries ( ts );
@@ -2189,11 +2187,9 @@ throws Exception
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "DateTime" );
 	if ( o == null ) {
-			String warning =
-				"Request DateTime() does not provide a DateTime parameter.";
+			String warning = "Request DateTime() does not provide a DateTime parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	String DateTime = (String)o;
@@ -2269,11 +2265,9 @@ throws Exception
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "InputName" );
 	if ( o == null ) {
-			String warning =
-				"Request GetHydroBaseDMI() does not provide an InputName parameter.";
+			String warning = "Request GetHydroBaseDMI() does not provide an InputName parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	String InputName = (String)o;
@@ -2375,8 +2369,7 @@ Process the GetTimeSeries request.
 private CommandProcessorRequestResultsBean processRequest_GetTimeSeries (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "Index" );
 	if ( o == null ) {
@@ -2476,13 +2469,11 @@ Process the GetTimeSeriesForTSID request.
 private CommandProcessorRequestResultsBean processRequest_GetTSIDListNoInputAboveCommand (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "Command" );
 	if ( o == null ) {
-			String warning =
-				"Request GetTSIDListNoInputAboveCommand() does not provide a TSID parameter.";
+			String warning = "Request GetTSIDListNoInputAboveCommand() does not provide a TSID parameter.";
 			bean.setWarningText ( warning );
 			bean.setWarningRecommendationText (
 					"This is likely a software code error.");
@@ -2531,13 +2522,13 @@ throws Exception
 	TSCommandProcessor ts_processor = new TSCommandProcessor();
 	ts_processor.setPropContents("InitialWorkingDir", getPropContents("InitialWorkingDir"));
 	int size = setWorkingDir_CommandVector.size();
-	// Add all the commands (currently no method to add all because this is normally
-	// not done).
+	// Add all the commands (currently no method to add all because this is normally not done).
 	for ( int i = 0; i < size; i++ ) {
 		ts_processor.addCommand ( (Command)setWorkingDir_CommandVector.get(i));
 	}
 	// Run the commands to set the working directory in the temporary processor...
-	try {	ts_processor.runCommands(
+	try {
+	    ts_processor.runCommands(
 			null,	// Process all commands in this processor
 			null );	// No need for controlling properties since controlled by commands
 	}
@@ -2567,8 +2558,7 @@ throws Exception
 	if ( o == null ) {
 			String warning = "Request IndexOf() does not provide a TSID parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	String TSID = (String)o;
@@ -2585,27 +2575,22 @@ Process the ProcessTimeSeriesAction request.
 private CommandProcessorRequestResultsBean processRequest_ProcessCommands (
 		String request, PropList request_params )
 throws Exception
-{	TSCommandProcessorRequestResultsBean bean =
-		new TSCommandProcessorRequestResultsBean();
+{	TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
 	// Get the necessary parameters...
 	// Time series...
 	Object o_Commands = request_params.getContents ( "Commands" );
 	if ( o_Commands == null ) {
-			String warning =
-				"Request ProcessCommands() does not provide a Commands parameter.";
+			String warning = "Request ProcessCommands() does not provide a Commands parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	List commands = (List)o_Commands;
 	Object o_Properties = request_params.getContents ( "Properties" );
 	if ( o_Properties == null ) {
-			String warning =
-				"Request ProcessCommands() does not provide a Properties parameter.";
+			String warning = "Request ProcessCommands() does not provide a Properties parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ( "This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 	}
 	__tsengine.processCommands( commands, (PropList)o_Properties );
@@ -2687,11 +2672,9 @@ throws Exception
 	int [] Indices_array = null;
 	if ( o_Indices == null ) {
 		/* OK FOR NOW since null means process all
-			String warning =
-				"Request ProcessTimeSeriesResultsList() does not provide an Indices parameter.";
+			String warning = "Request ProcessTimeSeriesResultsList() does not provide an Indices parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ("This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 			*/
 	}
@@ -2703,11 +2686,9 @@ throws Exception
 	PropList Properties = null;
 	if ( o_Properties == null ) {
 			/* OK for now - use defaults
-			String warning =
-				"Request ProcessTimeSeriesResultsList() does not provide a Properties parameter.";
+			String warning = "Request ProcessTimeSeriesResultsList() does not provide a Properties parameter.";
 			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (
-					"This is likely a software code error.");
+			bean.setWarningRecommendationText ("This is likely a software code error.");
 			throw new RequestParameterNotFoundException ( warning );
 			*/
 	}

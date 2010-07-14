@@ -2,8 +2,8 @@ package rti.tscommandprocessor.commands.util;
 
 import java.io.File;
 import java.io.StringWriter;
-import java.lang.ClassLoader;
-import java.net.URL;
+import java.security.InvalidParameterException;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
 import java.util.List;
@@ -42,16 +42,26 @@ This class initializes, checks, and runs the RunPython() command.
 */
 public class RunPython_Command extends AbstractCommand implements Command
 {
-    
-/**
-Interpreter parameter value indicating that Python should be called to run script.
-*/
-protected String _Python = "Python";
 
 /**
-Interpreter parameter value indicating that Jython should be called to run script.
+Interpreter parameter value indicating that command-line IronPython should be called to run script.
+*/
+protected String _IronPython = "IronPython";
+
+/**
+Interpreter parameter value indicating that command-line Jython should be called to run script.
 */
 protected String _Jython = "Jython";
+
+/**
+Interpreter parameter value indicating that embedded Jython should be called to run script.
+*/
+protected String _JythonEmbedded = "JythonEmbedded";
+    
+/**
+Interpreter parameter value indicating that command-line Python should be called to run script.
+*/
+protected String _Python = "Python";
     
 /**
 Indicate whether Jython has been initialized.
@@ -141,19 +151,23 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an interpreter to use, one of " + _Python + " or " + _Jython ) );
     }
-    else if ( !Interpreter.equalsIgnoreCase(_Python) && !Interpreter.equalsIgnoreCase(_Jython) ) {
+    else if ( !Interpreter.equalsIgnoreCase(_Python) && !Interpreter.equalsIgnoreCase(_Jython) &&
+            !Interpreter.equalsIgnoreCase(_JythonEmbedded) && !Interpreter.equalsIgnoreCase(_IronPython) ) {
         message = "The interpreter is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an interpreter to use, one of " + _Python + " or " + _Jython ) );
+                        message, "Specify an interpreter to use, one of " + _IronPython + ", " +
+                        _Python + ", " + _Jython + ", or " + _JythonEmbedded ) );
     }
 
 	// Check for invalid parameters...
     List valid_Vector = new Vector();
+    valid_Vector.add ( "Interpreter" );
+    valid_Vector.add ( "Program" );
+    valid_Vector.add ( "PythonPath" );
 	valid_Vector.add ( "Arguments" );
 	valid_Vector.add ( "InputFile" );
-	valid_Vector.add ( "Interpreter" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -177,12 +191,41 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Get the Python program to use to execute the interpreter in command-line mode.
+If the Program parameter is not specified, use defaults based on standard installation and assuming
+that the program is in the path.
+*/
+private String getPythonProgram ( String interpreter )
+{
+    String program = getCommandParameters().getValue("Program");
+    if ( (program == null) || program.equals("") ) {
+        // Return the default for the interpreter
+        if ( interpreter.equalsIgnoreCase(_IronPython) ) {
+            return "ipy";
+        }
+        else if ( interpreter.equalsIgnoreCase(_Jython) ) {
+            return "jython"; // Has been a *.bat so may need to specify program as jython.bat on cygwin
+        }
+        else if ( interpreter.equalsIgnoreCase(_Python) ) {
+            return "python";
+        }
+        else {
+            // Should not happen...
+            throw new InvalidParameterException ( "Interpreter \"" + interpreter + "\" not supported." );
+        }
+    }
+    else {
+        // Return the program from the parameter, expanded for properties and special characters
+        return TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, program);
+    }
+}
+
+/**
 Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -200,6 +243,7 @@ CommandWarningException, CommandException
 	String InputFile = parameters.getValue ( "InputFile" );
 	String Arguments = parameters.getValue ( "Arguments" );
 	String Interpreter = parameters.getValue ( "Interpreter" );
+	String PythonPath = parameters.getValue ( "PythonPath" );
 	
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -222,18 +266,27 @@ CommandWarningException, CommandException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify the location of the script file." ) );
         }
+        
+        // Parse out the user-specified python path
+        String [] pathParts = new String[0];
+        if ( (PythonPath != null) && !PythonPath.equals("") ) {
+            // Expand the path
+            PythonPath = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PythonPath );
+            pathParts = PythonPath.split("[:;]");
+        }
+        
 		Message.printStatus ( 2, routine,
 		"Processing Python script file \"" + InputFile_full + "\" using " + Interpreter + " interpreter.");
-        
-		if ( Interpreter.equalsIgnoreCase(_Python) ) {
-		    warning_count = runPythonScript ( command_tag, warning_count,
-		            InputFile_full, Arguments, WorkingDir );
+
+        if ( Interpreter.equalsIgnoreCase(_JythonEmbedded) ) {
+            runJythonEmbedded ( command_tag, InputFile_full,
+                StringUtil.toArray(StringUtil.breakStringList(Arguments, " ", 0)), WorkingDir, pathParts );
+            Message.printStatus ( 2, routine,"...done processing Python file." );
+        }
+        else {
+		    warning_count = runPython ( command_tag, warning_count, getPythonProgram(Interpreter),
+	            InputFile_full, Arguments, WorkingDir, pathParts );
 		    Message.printStatus ( 2, routine,"...done processing Python file." );
-		}
-		else if ( Interpreter.equalsIgnoreCase(_Jython) ) {
-		        runJythonScript ( command_tag, InputFile_full,
-		            StringUtil.toArray(StringUtil.breakStringList(Arguments, " ", 0)), WorkingDir );
-		        Message.printStatus ( 2, routine,"...done processing Python file." );
 		}
 	}
     catch ( PySyntaxError e ) {
@@ -274,11 +327,13 @@ Run the Python script using the Jython interpreter.
 @param command_tag Command tag for logging.
 @param pyfile Python file to run.
 @param args List of command line arguments for script.
-@param WorkingDir The working directory in which to run the script.
+@param workingDir The working directory in which to run the script.
+@param pathParts the folders to append to the normal path, to find library *.py files.
 */
-private void runJythonScript ( String command_tag, String pyfile, String [] args, String WorkingDir )
+private void runJythonEmbedded ( String command_tag, String pyfile, String [] args, String workingDir,
+        String[] pathParts )
 throws PyException, Exception
-{   String routine = "RunPython.runJythonScript";
+{   String routine = "RunPython.runJythonEmbedded";
     // Only need to do this once to initialize the default state.
     if ( !__Jython_initialized ) {
         // This passes to the interpreter the environment information from the application
@@ -287,8 +342,7 @@ throws PyException, Exception
         Properties postProperties = new Properties();
         // TODO SAM 2008-06-25 Change to use a folder in the user's home once TSTool
         // setup is reconfigured to have personal files during install.
-        // Use a cachedir in a temporary directory that should be visible and write-able for the
-        // user.
+        // Use a cachedir in a temporary directory that should be visible and write-able for the user.
         String cachedir = System.getProperty("java.io.tmpdir") +
             System.getProperty("file.separator") + System.getProperty("user.name") + "-jythoncache";
         Message.printStatus( 2, routine, "Initializing Jython interpreter with python.cachdir=\"" +
@@ -300,17 +354,11 @@ throws PyException, Exception
     // The general properties will be inherited from the system properties passed in above.
     // specify new script name and command line parameters based on this specific call.
     PySystemState state = new PySystemState();
-    // Add the path to the jar'ed Jython/Lib files, assuming that this file is named
-    // jython-lib.jar and is in the same place as jython.jar.
-    URL url = ClassLoader.getSystemResource("org/python/util/PythonInterpreter.class");
-    String path = url.getPath();
-    Message.printStatus( 2, routine, "PythonInterpeter is in: " + path );
-    // The path will be something like "File:/C:/path.../jython.jar!...class
-    // Replace "/jython.jar" with "/jython-lib.jar" and strip out extra path info
-    String libpath = StringUtil.replaceString(path, "/jython.jar", "/jython-lib.jar" );
-    libpath = libpath.substring(6,libpath.indexOf("!"));
-    Message.printStatus(2, routine, "Adding the following to Python path for state: \"" + libpath + "\"" );
-    state.path.add ( libpath );
+    for ( int i = 0; i < pathParts.length; i++ ) {
+        Message.printStatus(2, routine,
+            "Adding the following to Python path for state: \"" + pathParts[i] + "\"" );
+        state.path.add( pathParts[i] );
+    }
     
     String [] argv = new String[1 + args.length];
     argv[0] = pyfile;   // Script name
@@ -350,21 +398,45 @@ throws PyException, Exception
 
 /**
 Run the Python script by making a system call to Python.
+@param pythonProgram the name of the python program to run, either a simple filename, in which case the PATH
+will be used to find the program, or a full path to the program.
 @param pyfile Python file to run.
 @param Arguments Arguments to pass to Python.
 @param WorkingDir The working directory in which to run the script.
+@param pathParts the folders to append to the normal path, to find library *.py files.
 */
-private int runPythonScript ( String command_tag, int warning_count,
-        String pyfile, String Arguments, String WorkingDir )
+private int runPython ( String command_tag, int warning_count, String pythonProgram, 
+        String pyfile, String Arguments, String WorkingDir, String[] pathParts )
 throws PyException
-{   String routine = "RynPython_Command.runPythonScript", message;
-    String args = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Arguments );
+{   String routine = "RynPython_Command.runPython", message;
     // Expand ${} parameters...
-    String commandLine = "python \"" + pyfile + "\" " + args;
+    String args = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Arguments );
+    String commandLine = null;
+    // Use a command line because arguments are one string
+    if ( pythonProgram.indexOf(" ") > 0 ) {
+        // Program has spaces so surround the program name with quotes
+        commandLine = "\"" + pythonProgram + "\" \"" + pyfile + "\" " + args;
+    }
+    else {
+        commandLine = pythonProgram + " \"" + pyfile + "\" " + args;
+    }
     int warning_level = 2;
     
     Message.printStatus ( 2, routine, "Running:  " + commandLine );
     ProcessManager pm = new ProcessManager ( commandLine );
+    // Add the requested path to the PYTHONPATH environment variable
+    if ( pathParts.length > 0 ) {
+        StringBuffer path = new StringBuffer();
+        for ( int i = 0; i < pathParts.length; i++ ) {
+            Message.printStatus(2, routine,
+                "Adding the following to Python path: \"" + pathParts[i] + "\"" );
+            // Put the delimiter in front because parts will be appended to the existing path
+            path.append ( System.getProperty("path.separator") + pathParts[i] );
+        }
+        HashMap envMap = new HashMap();
+        envMap.put ( "PYTHONPATH", "+" + path );
+        pm.setEnvironment ( envMap );
+    }
     pm.saveOutput ( true );
     pm.run();
     CommandStatus status = getCommandStatus();

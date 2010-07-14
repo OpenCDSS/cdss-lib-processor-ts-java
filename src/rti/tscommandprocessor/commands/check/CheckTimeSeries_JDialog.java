@@ -54,6 +54,8 @@ private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __ProblemType_JTextField = null;// Field for problem type
 private JTextField __MaxWarnings_JTextField = null;
+private JTextField __Flag_JTextField = null; // Flag to label filled data.
+private JTextField __FlagDesc_JTextField;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -131,6 +133,8 @@ private void checkInput ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
 	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
+    String Flag = __Flag_JTextField.getText().trim();
+    String FlagDesc = __FlagDesc_JTextField.getText().trim();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -166,6 +170,12 @@ private void checkInput ()
     if ( MaxWarnings.length() > 0 ) {
         parameters.set ( "MaxWarnings", MaxWarnings );
     }
+    if ( Flag.length() > 0 ) {
+        parameters.set ( "Flag", Flag );
+    }
+    if ( FlagDesc.length() > 0 ) {
+        parameters.set ( "FlagDesc", FlagDesc );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -192,6 +202,8 @@ private void commitEdits ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String ProblemType = __ProblemType_JTextField.getText().trim();
 	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
+	String Flag = __Flag_JTextField.getText().trim();
+	String FlagDesc = __FlagDesc_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -203,6 +215,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "ProblemType", ProblemType );
 	__command.setCommandParameter ( "MaxWarnings", MaxWarnings );
+	__command.setCommandParameter ( "Flag", Flag );
+	__command.setCommandParameter ( "FlagDesc", FlagDesc );
 }
 
 /**
@@ -288,7 +302,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check criteria:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
     List checkCriteriaChoices = TSUtil_CheckTimeSeries.getCheckCriteriaChoices();
     __CheckCriteria_JComboBox.setData ( checkCriteriaChoices );
     __CheckCriteria_JComboBox.addItemListener ( this );
@@ -339,7 +353,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, __ProblemType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Optional - problem type to use in output (default=" + __command._PROBLEM_TYPE_Check + ")."), 
+		"Optional - problem type to use in output (default=check criteria)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Maximum warnings:" ), 
@@ -350,6 +364,24 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - maximum # of warnings/time series (default=no limit)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Flag:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Flag_JTextField = new JTextField ( "", 10 );
+    __Flag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Flag_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - flag to mark detected values."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Flag description:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FlagDesc_JTextField = new JTextField ( 15 );
+    __FlagDesc_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FlagDesc_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for flag."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -439,6 +471,8 @@ private void refresh ()
 	String AnalysisEnd = "";
 	String ProblemType = "";
 	String MaxWarnings = "";
+	String Flag = "";
+	String FlagDesc = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -454,6 +488,8 @@ private void refresh ()
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		ProblemType = props.getValue ( "ProblemType" );
 		MaxWarnings = props.getValue ( "MaxWarnings" );
+		Flag = props.getValue ( "Flag" );
+		FlagDesc = props.getValue ( "FlagDesc" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -546,6 +582,12 @@ private void refresh ()
         if ( MaxWarnings != null ) {
             __MaxWarnings_JTextField.setText ( MaxWarnings );
         }
+        if ( Flag != null ) {
+            __Flag_JTextField.setText ( Flag );
+        }
+        if ( FlagDesc != null ) {
+            __FlagDesc_JTextField.setText ( FlagDesc );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -559,6 +601,8 @@ private void refresh ()
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	ProblemType = __ProblemType_JTextField.getText().trim();
 	MaxWarnings = __MaxWarnings_JTextField.getText().trim();
+	Flag = __Flag_JTextField.getText().trim();
+	FlagDesc = __FlagDesc_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -571,13 +615,14 @@ private void refresh ()
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "ProblemType=" + ProblemType );
 	props.add ( "MaxWarnings=" + MaxWarnings );
+	props.add ( "Flag=" + Flag );
+	props.add ( "FlagDesc=" + FlagDesc );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()

@@ -43,11 +43,6 @@ protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
 
 /**
-Values for ProblemType parameter.
-*/
-protected final String _PROBLEM_TYPE_Check = "Check";
-
-/**
 Values for ValueToCheck parameter.
 */
 protected final String _DataValue = "DataValue";
@@ -196,6 +191,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "ProblemType" );
     valid_Vector.add ( "MaxWarnings" );
+    valid_Vector.add ( "Flag" );
+    valid_Vector.add ( "FlagDesc" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -262,13 +259,15 @@ CommandWarningException, CommandException
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String ProblemType = parameters.getValue ( "ProblemType" );
     if ( (ProblemType ==null) || ProblemType.equals("") ) {
-        ProblemType = "Check"; // Default
+        ProblemType = CheckCriteria; // Default
     }
     String MaxWarnings = parameters.getValue ( "MaxWarnings" );
     int MaxWarnings_int = -1;
     if ( (MaxWarnings != null) && !MaxWarnings.equals("") ) {
         MaxWarnings_int = Integer.parseInt(MaxWarnings);
     }
+    String Flag = parameters.getValue ( "Flag" );
+    String FlagDesc = parameters.getValue ( "FlagDesc" );
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -443,7 +442,8 @@ CommandWarningException, CommandException
             try {
                 // Do the check...
                 TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, ValueToCheck, CheckCriteria,
-                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType );
+                    AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType,
+                    Flag, FlagDesc );
                 check.checkTimeSeries();
                 List<String> problems = check.getProblems();
                 int problemsSize = problems.size();
@@ -458,7 +458,7 @@ CommandWarningException, CommandException
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
                     // No recommendation since it is a user-defined check
                     // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
+                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
                 }
                 for ( int iprob = 0; iprob < problemsSizeOutput; iprob++ ) {
                     message = problems.get(iprob);
@@ -466,7 +466,7 @@ CommandWarningException, CommandException
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
                     // No recommendation since it is a user-defined check
                     // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
+                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING, ProblemType, message, "" ) );
                 }
             }
             catch ( Exception e ) {
@@ -520,6 +520,8 @@ public String toString ( PropList parameters )
     String AnalysisEnd = parameters.getValue( "AnalysisEnd" );
     String ProblemType = parameters.getValue( "ProblemType" );
     String MaxWarnings = parameters.getValue( "MaxWarnings" );
+    String Flag = parameters.getValue( "Flag" );
+    String FlagDesc = parameters.getValue( "FlagDesc" );
     String IfNotFound = parameters.getValue ( "IfNotFound" );
         
     StringBuffer b = new StringBuffer ();
@@ -589,6 +591,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "MaxWarnings=" + MaxWarnings  );
+    }
+    if ( (Flag != null) && (Flag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Flag=\"" + Flag + "\"" );
+    }
+    if ( (FlagDesc != null) && (FlagDesc.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FlagDesc=\"" + FlagDesc + "\"" );
     }
     if ( IfNotFound != null && IfNotFound.length() > 0 ) {
         if ( b.length() > 0 ) {

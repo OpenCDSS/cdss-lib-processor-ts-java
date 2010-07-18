@@ -2270,9 +2270,9 @@ determined, with one of the following values (see TSListType):
 TSList=LastMatchingTSID, or a list of time series separated by commas when used with
 TSList=SpecifiedTSID.
 @param EnsembleID A time series ensemble identifier (no pattern currently allowed).
-@return A Vector that has as its first element a Vector of TS to process and as
+@return A list that has as its first element a list of TS to process and as
 its second element an int[] indicating the positions in the time series list,
-to be used to update the time series.  Use the size of the Vector (in the first
+to be used to update the time series.  Use the size of the list (in the first
 element) to determine the number of time series to process.  The order of the
 time series will be from first to last.  A non-null list is guaranteed to be returned.
 */

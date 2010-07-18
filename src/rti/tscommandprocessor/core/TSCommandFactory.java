@@ -216,6 +216,7 @@ import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Com
 import rti.tscommandprocessor.commands.util.TestCommand_Command;
 import rti.tscommandprocessor.commands.util.WebGet_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
+import rti.tscommandprocessor.commands.view.NewTreeView_Command;
 
 /**
 This class instantiates Commands for time series processing.  The full command name
@@ -506,6 +507,9 @@ throws UnknownCommandException
 	else if ( isTScommand && TScommand.equalsIgnoreCase("NewTimeSeries") ) {
 		return new NewTimeSeries_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"NewTreeView") ) {
+        return new NewTreeView_Command ();
+    }
     else if ( isTScommand && TScommand.equalsIgnoreCase("Normalize") ) {
         return new Normalize_Command ();
     }

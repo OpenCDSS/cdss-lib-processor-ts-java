@@ -82,6 +82,7 @@ import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
+import rti.tscommandprocessor.core.TimeSeriesView;
 
 // Check commands
 
@@ -206,11 +207,16 @@ as time allows it will also be enabled within a command.
 */
 private volatile boolean __cancel_processing_requested = false;
 
-// TODO SAM 2007-12-06 Evaluate how to make the table object more generic.
+// TODO SAM 2007-12-06 Evaluate how to make the DataTable object more generic.
 /**
 List of DataTable objects maintained by the processor.
 */
-List __Table_Vector = new Vector();
+List<DataTable> __Table_Vector = new Vector();
+
+/**
+List of TimeSeriesView objects maintained by the processor.
+*/
+List<TimeSeriesView> __TimeSeriesViewList = new Vector();
 
 /**
 Construct a command processor with no commands.
@@ -1025,6 +1031,9 @@ public Object getPropContents ( String prop ) throws Exception
     else if ( prop.equalsIgnoreCase("TableResultsList") ) {
         return getPropContents_TableResultsList();
     }
+    else if ( prop.equalsIgnoreCase("TimeSeriesViewResultsList") ) {
+        return getPropContents_TimeSeriesViewResultsList();
+    }
     else if ( prop.equalsIgnoreCase("TSEnsembleResultsListSize") ) {
         return getPropContents_TSEnsembleResultsListSize();
     }
@@ -1274,6 +1283,15 @@ Handle the TableResultsList property request.
 private List<DataTable> getPropContents_TableResultsList()
 {
     return __Table_Vector;
+}
+
+/**
+Handle the TimeSeriesViewResultsList property request.
+@return The TimeSeriesView results list.
+*/
+private List<TimeSeriesView> getPropContents_TimeSeriesViewResultsList()
+{
+    return __TimeSeriesViewList;
 }
 
 /**
@@ -2075,6 +2093,9 @@ throws Exception
 	else if ( request.equalsIgnoreCase("SetTimeSeries") ) {
 		return processRequest_SetTimeSeries ( request, request_params );
 	}
+    else if ( request.equalsIgnoreCase("SetTimeSeriesView") ) {
+        return processRequest_SetTimeSeriesView ( request, request_params );
+    }
 	else {
 		TSCommandProcessorRequestResultsBean bean =
 			new TSCommandProcessorRequestResultsBean();
@@ -3129,6 +3150,40 @@ throws Exception
 	//PropList results = bean.getResultsPropList();
 	// No data are returned in the bean.
 	return bean;
+}
+
+/**
+Process the SetTimeSeriesView request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetTimeSeriesView (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "TimeSeriesView" );
+    if ( o == null ) {
+        String warning = "Request SetTimeSeriesView() does not provide a TimeSeriesView parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ("This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
+    }
+    TimeSeriesView o_TimeSeriesView = (TimeSeriesView)o;
+    // Loop through the views.  If a matching table ID is found, reset.  Otherwise, add at the end.
+    int size = __TimeSeriesViewList.size();
+    TimeSeriesView view;
+    boolean found = false;
+    for ( int i = 0; i < size; i++ ) {
+        view = (TimeSeriesView)__TimeSeriesViewList.get(i);
+        if ( view.getViewID().equalsIgnoreCase(o_TimeSeriesView.getViewID())) {
+            __TimeSeriesViewList.set(i,o_TimeSeriesView);
+            found = true;
+        }
+    }
+    if ( !found ) {
+        __TimeSeriesViewList.add ( o_TimeSeriesView );
+    }
+    // No data are returned in the bean.
+    return bean;
 }
 
 /**

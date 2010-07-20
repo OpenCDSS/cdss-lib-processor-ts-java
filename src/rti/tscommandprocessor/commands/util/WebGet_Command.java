@@ -2,12 +2,11 @@
 
 package rti.tscommandprocessor.commands.util;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -214,24 +213,22 @@ CommandWarningException, CommandException
 	}
 
 	try {
-	    PrintWriter fout = null;
+	    FileOutputStream fos = null;
         try {
-            // Open the stream...
+            // Open the input stream...
             URL url = new URL(URI);
             URLConnection urlConnection = url.openConnection();
             InputStream is = urlConnection.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is);
-            // Read the characters...
-            int numCharsRead;
-            char[] charArray = new char[1024];
-            StringBuffer sb = new StringBuffer();
-            while ((numCharsRead = isr.read(charArray)) > 0) {
-                sb.append(charArray, 0, numCharsRead);
-            }
+            BufferedInputStream isr = new BufferedInputStream(is);
+            // Open the output file...
+            fos = new FileOutputStream( LocalFile_full );
             // Output the characters to the local file...
-            FileOutputStream fos = new FileOutputStream( LocalFile_full );
-            fout = new PrintWriter ( fos );
-            fout.print(sb.toString());
+            int numCharsRead;
+            int arraySize = 8192; // 8K optimal
+            byte[] byteArray = new byte[arraySize];
+            while ((numCharsRead = isr.read(byteArray, 0, arraySize)) != -1) {
+                fos.write(byteArray, 0, numCharsRead);
+            }
             // Save the output file name...
             setOutputFile ( new File(LocalFile_full));
         }
@@ -255,8 +252,8 @@ CommandWarningException, CommandException
         }
         finally {
             // Close the streams
-            if ( fout != null ) {
-                fout.close();
+            if ( fos != null ) {
+                fos.close();
             }
         }
 	}

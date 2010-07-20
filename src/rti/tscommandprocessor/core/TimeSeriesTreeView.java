@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-
 import RTi.TS.TS;
+import RTi.Util.GUI.SimpleJTree_Node;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -28,8 +27,8 @@ private String __viewID = "";
 /**
 The list of TreeViewNode objects.
 */
-//private TimeSeriesTreeViewNode __rootNode;
-private DefaultMutableTreeNode __rootNode;
+private SimpleJTree_Node __rootNode;
+//private DefaultMutableTreeNode __rootNode;
 
 /**
 Construct a tree view with the given identifier.
@@ -65,8 +64,8 @@ throws IOException
     boolean rootFound = false;
     int ntab = 0; // Number of tabs in current line
     int ntabPrev = 0; // Number of tabs in previous non-comment line
-    DefaultMutableTreeNode folderNode = null; // Active node (a "folder")
-    DefaultMutableTreeNode nodePrev = null; // The node processed in the previous row
+    SimpleJTree_Node folderNode = null; // Active node (a "folder")
+    SimpleJTree_Node nodePrev = null; // The node processed in the previous row
     int lineCount = 0;
     for ( String fileLine : fileLines ) {
         ++lineCount;
@@ -95,7 +94,7 @@ throws IOException
             }
             else if ( ntab == 0 ) {
                 // Create the root node
-                __rootNode = new DefaultMutableTreeNode(nodeLabel);
+                __rootNode = new SimpleJTree_Node(nodeLabel);
                 folderNode = __rootNode;
                 nodePrev = folderNode;
                 rootFound = true;
@@ -127,7 +126,7 @@ throws IOException
                 // Tab level is decreasing so set the folder back to a previous parent folder...
                 int nshift = ntabPrev - ntab;
                 for ( int i = 0; i < nshift; i++ ) {
-                    folderNode = (DefaultMutableTreeNode)folderNode.getParent();
+                    folderNode = (SimpleJTree_Node)folderNode.getParent();
                 }
             }
             // Now add the node depending on the node type...
@@ -135,7 +134,7 @@ throws IOException
                 Message.printStatus(2, routine, "Adding label to folder node \"" + folderNode +
                     "\" at line " + lineCount );
                 String nodeLabel = fileLineTrimmed.substring(6).trim();
-                nodePrev = new DefaultMutableTreeNode(nodeLabel);
+                nodePrev = new SimpleJTree_Node(nodeLabel);
                 folderNode.add(nodePrev );
             }
             else if ( StringUtil.startsWithIgnoreCase(fileLineTrimmed, "TS:") ) {
@@ -175,12 +174,13 @@ throws IOException
                     for ( TS ts: tslist ) {
                         Message.printStatus(2, routine, "Adding TS to folder node \"" + folderNode +
                             "\" at line " + lineCount );
-                        nodePrev = new DefaultMutableTreeNode(ts);
+                        nodePrev = new SimpleJTree_Node( ts.getIdentifierString() );
+                        nodePrev.setData ( ts );
                         folderNode.add(nodePrev );
                     }
                 }
                 else {
-                    nodePrev = new DefaultMutableTreeNode("Unable to match TS: " + TSID );
+                    nodePrev = new SimpleJTree_Node("Unable to match TS: " + TSID );
                     folderNode.add(nodePrev );
                 }
             }
@@ -192,7 +192,7 @@ throws IOException
 Get the root node.
 */
 //public TimeSeriesTreeViewNode getRootNode ()
-public DefaultMutableTreeNode getRootNode ()
+public SimpleJTree_Node getRootNode ()
 {
     return __rootNode;
 }

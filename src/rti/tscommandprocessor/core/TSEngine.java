@@ -4162,7 +4162,7 @@ throws IOException
         // need to initialize all the view data at the same time in case the user changes
         // views interactively after the initial view.
 		// Temporary copy of data...
-		List tslist = tslist_output;
+		List<TS> tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
     			Message.printWarning ( 1, routine, "Can only generate a table from GUI" );
@@ -4386,9 +4386,6 @@ throws IOException
     		// Connect dynamic data objects...
     		addTSViewTSProductDMIs ( view );
     		addTSViewTSProductAnnotationProviders ( view );
-    		// For garbage collection...
-    		view = null;
-    		tslist = null;
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 3, routine, e );

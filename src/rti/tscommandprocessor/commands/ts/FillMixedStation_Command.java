@@ -4,6 +4,7 @@ import java.io.File;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -110,22 +111,26 @@ throws InvalidCommandParameterException
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
 	String Intercept = parameters.getValue ( "Intercept" );
+	String ConfidenceLevel = parameters.getValue ( "ConfidenceLevel" );
 	String FillFlag = parameters.getValue ( "FillFlag" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
 	CommandProcessor processor = getCommandProcessor();
 	
+	// FIXME SAM 2010-06-10 Evaluate whether SEP_TOTAL should be an option.
 	if ( (BestFitIndicator != null) && !BestFitIndicator.equals("") &&
 	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.SEP) &&
-	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.R) &&
-	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.SEP_TOTAL)) {
+	    !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.R)
+	    // && !BestFitIndicator.equalsIgnoreCase(""+BestFitIndicatorType.SEP_TOTAL)
+	    ) {
         message = "The best fit indicator (" + BestFitIndicator + ") is not valid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the best fit indicator as " + BestFitIndicatorType.SEP +
-                " (default if blank), " +
-                BestFitIndicatorType.SEP_TOTAL + ", or " + BestFitIndicatorType.R) );
+                " (default if blank)" +
+                //BestFitIndicatorType.SEP_TOTAL +
+                ", or " + BestFitIndicatorType.R) );
     }
 	
     if ( (AnalysisMethod != null) && !AnalysisMethod.equals("") ) {
@@ -341,7 +346,28 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the intercept as 0, or do not specify." ) );
-	} 
+	}
+	
+	// Make sure confidence level, if given is a valid number
+    if ( (ConfidenceLevel != null) && !ConfidenceLevel.equals("") ) {
+        if ( !StringUtil.isDouble(ConfidenceLevel) ) { 
+            message = "The confidence level (" + ConfidenceLevel + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the confidence level as a percent > 0 and < 100 (e.g., 95)." ) );
+        }
+        else {
+            double cl = Double.parseDouble(ConfidenceLevel);
+            if ( (cl <= 0.0) || (cl >= 100.0) ) { 
+                message = "The confidence level (" + ConfidenceLevel + ") is invalid.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the confidence level as a percent > 0 and < 100 (e.g., 95)." ) );
+            }
+        }
+    }
 
     if ( (OutputFile != null) && (OutputFile.length() != 0) ) {
         // Verify that the output file can be written
@@ -414,6 +440,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
     valid_Vector.add ( "Intercept" );
+    valid_Vector.add ( "ConfidenceLevel" );
     valid_Vector.add ( "FillFlag" );
     valid_Vector.add ( "OutputFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -431,7 +458,7 @@ throws InvalidCommandParameterException
 Create the commands needed to fill the dependent time series using the best fit
 among the independent time series.
 */
-protected List createFillCommands ()
+protected List<String> createFillCommands ()
 {	
 	return __MixedStationAnalysis.createFillCommands ();
 }
@@ -439,8 +466,7 @@ protected List createFillCommands ()
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
-@return true if the command was edited (e.g., "OK" was pressed), and false if
-not (e.g., "Cancel" was pressed).
+@return true if the command was edited (e.g., "OK" was pressed), and false if not (e.g., "Cancel" was pressed).
 */
 public boolean editCommand ( JFrame parent )
 {	
@@ -471,9 +497,9 @@ throws Throwable
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-    List list = new Vector();
+    List<File> list = new Vector();
     if ( getOutputFile() != null ) {
         list.add ( getOutputFile() );
     }
@@ -594,6 +620,11 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (BestFitIndicator == null) || BestFitIndicator.equals("") ) {
         BestFitIndicator = "" + BestFitIndicatorType.SEP; // default
     }
+    String ConfidenceLevel = parameters.getValue ( "ConfidenceLevel" );
+    Double confidenceLevel = null;
+    if ( (ConfidenceLevel != null) && !ConfidenceLevel.equals("") ) {
+        confidenceLevel = Double.parseDouble(ConfidenceLevel);
+    }
 	String AnalysisMethod = parameters.getValue ( "AnalysisMethod" );
 	if ( (AnalysisMethod == null) || AnalysisMethod.equals("") ) {
 	    AnalysisMethod = "" + RegressionType.OLS_REGRESSION; // default
@@ -637,6 +668,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the list of independent time series to process...
 	List<Object> tsdata2 = getTimeSeriesToProcess( processor, "independent", IndependentTSList, IndependentTSID );
 	List<TS> independentTSList = (List)tsdata2.get(0);
+	
+	// Only allow one FillMixedStation command in a command file.  Otherwise it is difficult to
+	// track when filled data are used to compute relationships later in the data flow
+	
+	List<String> neededCommands = new Vector();
+	List<Command> fmsCommands = TSCommandProcessorUtil.getCommandsBeforeIndex(
+	    processor.getCommands().size(), (TSCommandProcessor)processor,
+	    neededCommands, false);
+	if ( fmsCommands.size() > 1 ) {
+        mssg = "Found " + neededCommands.size() +
+            " FillMixedStation() commands - only one can be used in command file.";
+        Message.printWarning ( warning_level, 
+            MessageUtil.formatMessageTag(command_tag, ++warning_count),mthd, mssg );
+        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            mssg, "Remove all but one FillMixedStation() command." ) );
+	}
 	
     if ( warning_count > 0 ) {
         // Input error...
@@ -704,7 +751,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		__MixedStationAnalysis = new MixedStationAnalysis( dependentTSList, independentTSList,
 		    bestFitIndicator, analysisMethodList, numberOfEquations,
 		    AnalysisStart_DateTime, AnalysisEnd_DateTime, FillStart_DateTime, FillEnd_DateTime,
-		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double, FillFlag );
+		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double, confidenceLevel,
+		    FillFlag );
 		
 		__MixedStationAnalysis.analyzeAndRank();
 		
@@ -773,6 +821,7 @@ public String toString ( PropList props )
 	String FillStart = props.getValue ( "FillStart" );
 	String FillEnd = props.getValue ( "FillEnd" );
 	String Intercept = props.getValue ( "Intercept" );
+	String ConfidenceLevel = props.getValue ( "ConfidenceLevel" );
 	String FillFlag = props.getValue( "FillFlag" );
 	String OutputFile = props.getValue ( "OutputFile" );
 
@@ -821,6 +870,11 @@ public String toString ( PropList props )
     if ( Intercept != null && Intercept.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "Intercept=" + Intercept );
+    }
+    
+    if ( ConfidenceLevel != null && ConfidenceLevel.length() > 0 ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "ConfidenceLevel=" + ConfidenceLevel );
     }
 
 	if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {

@@ -721,6 +721,7 @@ CommandWarningException, CommandException
 	    TSRegression regress_results = TSUtil.fillRegress ( 
 			ts_to_fill, ts_independent,
 			null, // No previously computed TSRegression object
+			null, // Confidence level
 			RegressionType.OLS_REGRESSION, numberOfEquations,
             intercept,
             analysisMonths,

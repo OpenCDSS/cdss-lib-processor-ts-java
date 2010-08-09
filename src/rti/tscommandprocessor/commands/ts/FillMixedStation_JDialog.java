@@ -105,6 +105,7 @@ private JTextField __MinimumDataCount_JTextField;
 private JTextField __MinimumR_JTextField;
 
 private JTextField __Intercept_JTextField = null;
+private JTextField __ConfidenceLevel_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __FillStart_JTextField = null;
@@ -458,6 +459,7 @@ private void checkInput ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String Intercept = __Intercept_JTextField.getText().trim();
+	String ConfidenceLevel = __ConfidenceLevel_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
@@ -523,6 +525,9 @@ private void checkInput ()
 	if ( Intercept != null && Intercept.length() > 0 ) {
 		props.set( "Intercept", Intercept );
 	}
+    if ( ConfidenceLevel != null && ConfidenceLevel.length() > 0 ) {
+        props.set( "ConfidenceLevel", ConfidenceLevel );
+    }
     if ( FillFlag.length() > 0 ) {
         props.set ( "FillFlag", FillFlag );
     }
@@ -567,6 +572,7 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String Intercept = __Intercept_JTextField.getText().trim();
+	String ConfidenceLevel = __ConfidenceLevel_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
@@ -585,7 +591,8 @@ private void commitEdits ()
 	__command.setCommandParameter ("FillStart", FillStart);
 	__command.setCommandParameter ("FillEnd", FillEnd);
 	__command.setCommandParameter ("Intercept", Intercept);
-	__command.setCommandParameter ( "FillFlag", FillFlag );
+	__command.setCommandParameter ("ConfidenceLevel", ConfidenceLevel);
+	__command.setCommandParameter ("FillFlag", FillFlag );
 	__command.setCommandParameter ("OutputFile", OutputFile);
 }
 
@@ -838,7 +845,8 @@ private void initialize ( JFrame parent )
     __BestFitIndicator_JComboBox = new SimpleJComboBox ( false );
     __BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.R );
     __BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP );
-    __BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP_TOTAL );
+    // FIXME SAM 2010-06-10 Does not seem to get computed for monthly and just confusing
+    //__BestFitIndicator_JComboBox.addItem ( "" + BestFitIndicatorType.SEP_TOTAL );
     __BestFitIndicator_JComboBox.select ( "" + BestFitIndicatorType.SEP );
     __BestFitIndicator_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(mainAnalysis_JPanel, __BestFitIndicator_JComboBox,
@@ -910,6 +918,17 @@ private void initialize ( JFrame parent )
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
 		"Optional - 0.0 is allowed with Transformation=None (default=no fixed intercept)."),
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+	// Confidence level
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Confidence level:" ),
+        0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ConfidenceLevel_JTextField = new JTextField ( 10 );
+    __ConfidenceLevel_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(mainAnalysis_JPanel, __ConfidenceLevel_JTextField,
+        1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
+        "Optional - confidence level (%) for line slope (default=do not consider level)."),
+        3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Analysis period
 	JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Analysis period:" ),
@@ -1190,6 +1209,7 @@ private void refresh()
 	String FillStart = "";
 	String FillEnd = "";
 	String Intercept = "";
+	String ConfidenceLevel = "";
 	String FillFlag = "";
 	String OutputFile = "";
 
@@ -1216,6 +1236,7 @@ private void refresh()
 		FillStart = props.getValue ( "FillStart" );
 		FillEnd = props.getValue ( "FillEnd" );
 		Intercept = props.getValue ( "Intercept" );
+		ConfidenceLevel = props.getValue ( "ConfidenceLevel" );
 		FillFlag = props.getValue( "FillFlag" );
 		OutputFile = props.getValue ( "OutputFile" );
 
@@ -1430,6 +1451,13 @@ private void refresh()
 			__Intercept_JTextField.setText ( Intercept );
 		}
 		
+        if ( ConfidenceLevel == null ) {
+            __ConfidenceLevel_JTextField.setText ( "" );
+        }
+        else {
+            __ConfidenceLevel_JTextField.setText ( ConfidenceLevel );
+        }
+		
 	    if ( FillFlag != null ) {
 	        __FillFlag_JTextField.setText ( FillFlag );
 	    }
@@ -1459,6 +1487,7 @@ private void refresh()
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	Intercept = __Intercept_JTextField.getText().trim();
+	ConfidenceLevel = __ConfidenceLevel_JTextField.getText().trim();
     FillFlag = __FillFlag_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 
@@ -1479,12 +1508,12 @@ private void refresh()
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "Intercept=" + Intercept );
+	props.add ( "ConfidenceLevel=" + ConfidenceLevel );
 	props.add ( "FillFlag=" + FillFlag );
 	props.add ( "OutputFile=" + OutputFile );
 
 	// FIXME SAM 2009-08-26 Evaluate whether FillMixedStation() command should always be used or
-	// add a checkbox to allow individual FillRegression(), etc. commands to be used (see createFillCommands()
-	// method).
+	// add a checkbox to allow individual FillRegression(), etc. commands to be used (see createFillCommands() method).
 	// Update the __Command_JTextArea if running under the command mode. 
 	__Command_JTextArea.setText( __command.toString(props) );
 }

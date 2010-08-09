@@ -1091,6 +1091,7 @@ throws Exception
 		catch ( Exception e ) {
 			message = "Error getting limits for time series.";
 			Message.printWarning ( 2, routine, message );
+			//Message.printWarning ( 3, routine, e );
 			throw new Exception ( message );
 		}
 	}
@@ -1505,7 +1506,7 @@ throws Exception
 	// Loop through the time series and convert to yearly...  Do it the brute force way right now...
 
 	int nts = getTimeSeriesSize();
-	List<YearTS> yts_Vector = new Vector(nts);
+	List<TS> yts_Vector = new Vector(nts);
 	YearTS yts = null;
 	TS ts = null;
 	TSIdent tsident = null;
@@ -1586,7 +1587,7 @@ throws Exception
 	// If the time series output file was specified, write out the time series that were analyzed...
 	if ( TSOutputFile != null ) {
 		DateValueTS.writeTimeSeriesList ( yts_Vector,
-			IOUtil.getPathUsingWorkingDir ( TSOutputFile ),	null, null, null, true );
+			IOUtil.getPathUsingWorkingDir ( TSOutputFile ),	(DateTime)null, (DateTime)null, (String)null, true );
 	}
 }
 

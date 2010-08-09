@@ -70,7 +70,8 @@ throws IOException
     for ( String fileLine : fileLines ) {
         ++lineCount;
         String fileLineTrimmed = fileLine.trim();
-        if ( fileLine.startsWith("#") || fileLineTrimmed.equals("") ) {
+        // Allow comments to be indented
+        if ( fileLineTrimmed.startsWith("#") || fileLineTrimmed.equals("") ) {
             continue;
         }
         // Determine how many tabs...

@@ -117,7 +117,7 @@ public void setFilters ( IppDMI dmi, IPPSubjectType subjectType, int numFilterGr
     String rd = dmi.getRightIdDelim();
     String ld = dmi.getLeftIdDelim();
 
-    List filters = new Vector();
+    List<InputFilter> filters = new Vector();
 
     String dataTableName = dmi.getSchemaPrefix() + "v" + subjectType + "DataMetaData." + ld;
 

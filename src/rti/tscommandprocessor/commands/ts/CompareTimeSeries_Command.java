@@ -524,7 +524,7 @@ CommandWarningException, CommandException
 	double [] diffabsavg = null;
 	double [] diffavg = null;
 	boolean is_diff = false; // Indicates whether a differences has been determined.
-	TSData tsdata = null; // Data point from time series.
+	TSData tsdata = new TSData(); // Data point from time series.
 	boolean found_loc1 = false; // Has the time series already been processed?
 	boolean found_datatype1 = false;
 	boolean found_match = false;
@@ -549,7 +549,7 @@ CommandWarningException, CommandException
 		double diffabs; // abs(diff)
 		double value1, value1_orig; // Data values from each time series, rounded and original.
 		double value2, value2_orig;
-		TSData tsdata1, tsdata2; // Data points for each time series.
+		TSData tsdata1 = new TSData(), tsdata2 = new TSData(); // Data points for each time series.
 		String flag1, flag2; // Data flags for values in each time series.
 		double diffmax = 0.0, diffmaxabs;
 		DateTime diffmax_DateTime = null; // Date for max diff.
@@ -684,10 +684,10 @@ CommandWarningException, CommandException
 					date = tsi.getDate();
 					// This is not overly efficient but currently the iterator does not have
 					// a way to set a data point...
-					tsdata1 = ts1.getDataPoint ( date );
+					tsdata1 = ts1.getDataPoint ( date, tsdata1 );
 					value1_orig = tsdata1.getData ();
 					flag1 = tsdata1.getDataFlag().trim();
-					tsdata2 = ts2.getDataPoint ( date );
+					tsdata2 = ts2.getDataPoint ( date, tsdata2 );
 					value2_orig = tsdata2.getData ();
 					flag2 = tsdata2.getDataFlag().trim();
 					if ( Precision != null ) {
@@ -763,9 +763,9 @@ CommandWarningException, CommandException
 					}
 					if ( is_diff && (DiffFlag != null) ) {
 						// Append to the data flag...
-						tsdata=ts1.getDataPoint (date);
+						tsdata=ts1.getDataPoint (date, tsdata);
 						ts1.setDataValue ( date, value1_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
-						tsdata=ts2.getDataPoint (date);
+						tsdata=ts2.getDataPoint (date, tsdata);
 						ts2.setDataValue ( date, value2_orig, tsdata.getDataFlag().trim() + DiffFlag, 1 );
 					}
 				}

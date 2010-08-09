@@ -255,7 +255,7 @@ Calls TSCommandProcessor to re-calculate limits for this time series.
 private int recalculateLimits( TS ts, CommandProcessor TSCmdProc, 
 		int warningLevel, int warning_count, String command_tag )
 {
-	String routine = "fillUsingDiversionComments_Command.recalculateLimits", message;
+	String routine = "FillUsingDiversionComments_Command.recalculateLimits", message;
     
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
@@ -267,12 +267,12 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
 	    bean = TSCmdProc.processRequest( "CalculateTSAverageLimits", request_params);
 	}
 	catch ( Exception e ) {
-        message = "Error recalculating original data limits for \"" + ts.getIdentifierString() + "\"";
+        message = "Error recalculating original data limits for \"" + ts.getIdentifierString() + "\" (" + e + ").";
 		Message.printWarning(warningLevel,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message  );
         status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report problem to software support." ) );
+                        message, "This may be due to the time series having all missing values." ) );
 		return warning_count;
 	}
 	// Get the calculated limits and set in the original data limits...
@@ -458,6 +458,7 @@ CommandWarningException, CommandException
                             message, "Report the problem to software support." ) );
 	}
 	
+	// TODO SAM 2010-07-30 Need to simplify the list of time series being processed
 	// Loop through and fill data for TSID's chosen
 	for ( int its = start_pos; its <= end_pos; its++ ) {
 		// Get the time series to process...
@@ -692,7 +693,8 @@ CommandWarningException, CommandException
 			}
 		}
 		else if ( RecalcLimits.equalsIgnoreCase( "True" ) ) {
-			recalculateLimits( ts, processor, warningLevel, warning_count, command_tag );
+		    // The following method handles exceptions recomputing the limits
+	        recalculateLimits( ts, processor, warningLevel, warning_count, command_tag );
 		}
 		// Update the time series in the processor...
 
@@ -716,6 +718,9 @@ CommandWarningException, CommandException
     			continue;
     		}
 		} catch (Exception e) {
+		    // Unexpected error processing a specific time series
+		    Message.printWarning(3, routine, "Unexpected error processing time series \"" +
+		        ts.getIdentifierString() + "\" - results may be incomplete." );
 			Message.printWarning(warningLevel,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, e.toString());

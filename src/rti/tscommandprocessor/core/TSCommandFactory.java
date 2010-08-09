@@ -157,6 +157,7 @@ import rti.tscommandprocessor.commands.ts.FillRegression_Command;
 import rti.tscommandprocessor.commands.ts.FillRepeat_Command;
 import rti.tscommandprocessor.commands.ts.Free_Command;
 //import rti.tscommandprocessor.commands.ts.FreeEnsemble_Command;
+import rti.tscommandprocessor.commands.ts.Delta_Command;
 import rti.tscommandprocessor.commands.ts.LagK_Command;
 import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
@@ -375,7 +376,10 @@ throws UnknownCommandException
     
     // "D" commands...
     
-    else if ( StringUtil.startsWithIgnoreCase(commandString,"DeselectTimeSeries") ) {
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"Delta") ) {
+        return new Delta_Command ();
+    }
+	else if ( StringUtil.startsWithIgnoreCase(commandString,"DeselectTimeSeries") ) {
         return new DeselectTimeSeries_Command ();
     }
     else if ( isTScommand && TScommand.equalsIgnoreCase("Disaggregate") ) {

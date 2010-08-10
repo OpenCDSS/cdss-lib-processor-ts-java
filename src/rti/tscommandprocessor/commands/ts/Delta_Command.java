@@ -52,7 +52,7 @@ Check the command parameter for valid values, combination, etc.
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
-{   String Trend = parameters.getValue ( "Trend" );
+{   String ExpectedTrend = parameters.getValue ( "ExpectedTrend" );
 	String ResetMin = parameters.getValue ( "ResetMin" );
 	String ResetMax = parameters.getValue ( "ResetMax" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
@@ -72,10 +72,10 @@ throws InvalidCommandParameterException
             message, "Provide a time series identifier." ) );
 	}
     */
-    // Verify that the trend is values that can be handled
-    if ( (Trend != null) && !Trend.equals("") && !Trend.equalsIgnoreCase("" + TrendType.DECREASING) &&
-        !Trend.equalsIgnoreCase("" + TrendType.INCREASING) ) {
-        message = "The trend (" + Trend + ") is invalid.";
+    // Verify that the expected trend is values that can be handled
+    if ( (ExpectedTrend != null) && !ExpectedTrend.equals("") && !ExpectedTrend.equalsIgnoreCase("" + TrendType.DECREASING) &&
+        !ExpectedTrend.equalsIgnoreCase("" + TrendType.INCREASING) ) {
+        message = "The expected trend (" + ExpectedTrend + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify the trend as blank, " + TrendType.DECREASING + ", or " + TrendType.INCREASING + "." ) );
@@ -116,11 +116,11 @@ throws InvalidCommandParameterException
             message, "Specify both or neither ResetMax and ResetMin." ) );
     }
     // Make sure that the trend is specified if the reset values are specified
-    if ( (resetCount == 2) && ((Trend == null) || Trend.equals("")) ) {
+    if ( (resetCount == 2) && ((ExpectedTrend == null) || ExpectedTrend.equals("")) ) {
         message = "ResetMin and ResetMax are specified but Trend is not.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify Trend when ResetMax and ResetMin are specified." ) );
+            message, "Specify ExpectedTrend when ResetMax and ResetMin are specified." ) );
     }
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
@@ -159,7 +159,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Trend" );
+    valid_Vector.add ( "ExpectedTrend" );
     valid_Vector.add ( "ResetMin" );
     valid_Vector.add ( "ResetMax" );
     valid_Vector.add ( "AnalysisStart" );
@@ -220,10 +220,10 @@ CommandWarningException, CommandException
     }
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String Trend = parameters.getValue ( "Trend" );
+    String ExpectedTrend = parameters.getValue ( "ExpectedTrend" );
     TrendType trendType = null;
-    if ( (Trend != null) && !Trend.equals("") ) {
-        trendType = TrendType.valueOfIgnoreCase(Trend);
+    if ( (ExpectedTrend != null) && !ExpectedTrend.equals("") ) {
+        trendType = TrendType.valueOfIgnoreCase(ExpectedTrend);
     }
 	String ResetMin = parameters.getValue ( "ResetMin" );
 	Double resetMin = null;
@@ -496,7 +496,7 @@ public String toString ( PropList props )
     String TSList = props.getValue( "TSList" );
 	String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
-    String Trend = props.getValue("Trend");
+    String ExpectedTrend = props.getValue("ExpectedTrend");
 	String ResetMin = props.getValue("ResetMin");
 	String ResetMax = props.getValue("ResetMax");
 	String AnalysisStart = props.getValue("AnalysisStart");
@@ -523,11 +523,11 @@ public String toString ( PropList props )
 		}
 		b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
 	}
-    if ( (Trend != null) && (Trend.length() > 0) ) {
+    if ( (ExpectedTrend != null) && (ExpectedTrend.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "Trend=" + Trend );
+        b.append ( "ExpectedTrend=" + ExpectedTrend );
     }
 	if ( (ResetMin != null) && (ResetMin.length() > 0) ) {
 		if ( b.length() > 0 ) {

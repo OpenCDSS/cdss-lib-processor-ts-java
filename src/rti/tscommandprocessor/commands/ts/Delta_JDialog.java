@@ -47,7 +47,7 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private SimpleJComboBox __Trend_JComboBox = null;
+private SimpleJComboBox __ExpectedTrend_JComboBox = null;
 private JTextField __ResetMin_JTextField = null;
 private JTextField __ResetMax_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null;
@@ -125,7 +125,7 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String Trend = __Trend_JComboBox.getSelected();
+    String ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
 	String ResetMin = __ResetMin_JTextField.getText().trim();
 	String ResetMax = __ResetMax_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -144,8 +144,8 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-    if ( Trend.length() > 0 ) {
-        parameters.set ( "Trend", Trend );
+    if ( ExpectedTrend.length() > 0 ) {
+        parameters.set ( "ExpectedTrend", ExpectedTrend );
     }
 	if ( ResetMin.length() > 0 ) {
 		parameters.set ( "ResetMin", ResetMin );
@@ -186,7 +186,7 @@ private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String Trend = __Trend_JComboBox.getSelected();
+    String ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
 	String ResetMin = __ResetMin_JTextField.getText().trim();
 	String ResetMax = __ResetMax_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -197,7 +197,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "Trend", Trend );
+    __command.setCommandParameter ( "ExpectedTrend", ExpectedTrend );
 	__command.setCommandParameter ( "ResetMin", ResetMin );
 	__command.setCommandParameter ( "ResetMax", ResetMax );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
@@ -276,12 +276,12 @@ private void initialize ( JFrame parent, Delta_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected trend:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Trend_JComboBox = new SimpleJComboBox ();
-    __Trend_JComboBox.addItem ( "" );
-    __Trend_JComboBox.addItem ( "" + TrendType.DECREASING );
-    __Trend_JComboBox.addItem ( "" + TrendType.INCREASING );
-    __Trend_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Trend_JComboBox,
+    __ExpectedTrend_JComboBox = new SimpleJComboBox ();
+    __ExpectedTrend_JComboBox.addItem ( "" );
+    __ExpectedTrend_JComboBox.addItem ( "" + TrendType.DECREASING );
+    __ExpectedTrend_JComboBox.addItem ( "" + TrendType.INCREASING );
+    __ExpectedTrend_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ExpectedTrend_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - specify with reset limits (default=" +
         TrendType.VARIABLE + ")"), 
@@ -437,7 +437,7 @@ private void refresh ()
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String Trend = "";
+    String ExpectedTrend = "";
 	String ResetMin = "";
 	String ResetMax = "";
 	String AnalysisStart = "";
@@ -452,7 +452,7 @@ private void refresh ()
         TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
-        Trend = props.getValue ( "Trend" );
+        ExpectedTrend = props.getValue ( "ExpectedTrend" );
 		ResetMin = props.getValue ( "ResetMin" );
 		ResetMax = props.getValue ( "ResetMax" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
@@ -505,12 +505,12 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem( __Trend_JComboBox, Trend, JGUIUtil.NONE, null, null ) ) {
-            __Trend_JComboBox.select ( Trend );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __ExpectedTrend_JComboBox, ExpectedTrend, JGUIUtil.NONE, null, null ) ) {
+            __ExpectedTrend_JComboBox.select ( ExpectedTrend );
         }
         else {
             // Select the default...
-            __Trend_JComboBox.select ( 0 );
+            __ExpectedTrend_JComboBox.select ( 0 );
         }
 		if ( ResetMin != null ) {
 			__ResetMin_JTextField.setText ( ResetMin );
@@ -538,7 +538,7 @@ private void refresh ()
     TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    Trend = __Trend_JComboBox.getSelected();
+    ExpectedTrend = __ExpectedTrend_JComboBox.getSelected();
 	ResetMin = __ResetMin_JTextField.getText().trim();
 	ResetMax = __ResetMax_JTextField.getText().trim();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -550,7 +550,7 @@ private void refresh ()
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-    props.add ( "Trend=" + Trend );
+    props.add ( "ExpectedTrend=" + ExpectedTrend );
 	props.add ( "ResetMin=" + ResetMin );
 	props.add ( "ResetMax=" + ResetMax );
 	props.add ( "AnalysisStart=" + AnalysisStart );

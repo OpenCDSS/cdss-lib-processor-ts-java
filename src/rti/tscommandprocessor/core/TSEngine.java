@@ -670,6 +670,7 @@ import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
+import us.co.state.dwr.hbguest.ColoradoWaterHBGuestService;
 import us.co.state.dwr.sms.ColoradoWaterSMS;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
 
@@ -845,7 +846,7 @@ private List __ippdmi_Vector = new Vector();
 /**
 HydroBase DMI instance list, to allow more than one database instance to be open at a time.
 */
-private List __hbdmi_Vector = new Vector();
+private List<HydroBaseDMI> __hbdmi_Vector = new Vector();
 
 /**
 Indicates whether values <= 0 should be treated as missing when calculating historical averages.
@@ -981,7 +982,7 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 	int hsize = __hbdmi_Vector.size();
 	HydroBaseDMI hbdmi = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(ih);
+		hbdmi = __hbdmi_Vector.get(ih);
 		if ((hbdmi != null) && (hbdmi instanceof TSProductDMI)){
 			view.addTSProductDMI(hbdmi);
 		}
@@ -1089,7 +1090,7 @@ throws Exception
 			}
 		}
 		catch ( Exception e ) {
-			message = "Error getting limits for time series.";
+			message = "Error getting limits for time series (" + e + ").";
 			Message.printWarning ( 2, routine, message );
 			//Message.printWarning ( 3, routine, e );
 			throw new Exception ( message );
@@ -1782,7 +1783,7 @@ protected String [] formatOutputHeaderComments ( List commands )
 	int hsize = __hbdmi_Vector.size();
 	String db_comments[] = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(ih);
+		hbdmi = __hbdmi_Vector.get(ih);
 		if ( hbdmi != null ) {
 			try {
 			    db_comments = hbdmi.getVersionComments ();
@@ -1933,7 +1934,7 @@ protected HydroBaseDMI getHydroBaseDMI ( String inputName )
     }
 	HydroBaseDMI hbdmi = null;
 	for ( int i = 0; i < size; i++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(i);
+		hbdmi = __hbdmi_Vector.get(i);
 	    if ( Message.isDebugOn ) {
 	        Message.printDebug ( 1, "", "Checking HydroBaseDMI instance with input name=\""+
 	            hbdmi.getInputName() + "\"" );
@@ -1953,7 +1954,7 @@ protected HydroBaseDMI getHydroBaseDMI ( String inputName )
 Return the list of HydroBaseDMI.
 @return Vector of open HydroBaseDMI.
 */
-protected List getHydroBaseDMIList ()
+protected List<HydroBaseDMI> getHydroBaseDMIList ()
 {	return __hbdmi_Vector;
 }
 
@@ -2663,7 +2664,7 @@ protected List getTSProductAnnotationProviders ()
 	int hsize = __hbdmi_Vector.size();
 	HydroBaseDMI hbdmi = null;
 	for ( int ih = 0; ih < hsize; ih++ ) {
-		hbdmi = (HydroBaseDMI)__hbdmi_Vector.get(ih);
+		hbdmi = __hbdmi_Vector.get(ih);
 		if ( (hbdmi != null) &&	(hbdmi instanceof TSProductAnnotationProvider)) {
 			ap_Vector.add ( hbdmi );
 		}
@@ -2676,7 +2677,7 @@ protected List getTSProductAnnotationProviders ()
     int rsize = __rdmi_Vector.size();
     RiversideDB_DMI rdmi = null;
     for ( int ir = 0; ir < rsize; ir++ ) {
-        rdmi = (RiversideDB_DMI)__rdmi_Vector.get(ir);
+        rdmi = __rdmi_Vector.get(ir);
         if ( (rdmi != null) && (rdmi instanceof TSProductAnnotationProvider)) {
             ap_Vector.add ( rdmi );
         }
@@ -4571,6 +4572,29 @@ throws Exception
             }
         }
     }
+    else if ((inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterHBGuest") ) {
+        if ( Message.isDebugOn ) {
+            Message.printDebug ( 10, routine, "Reading time series..." +
+            tsidentString + "," + readStart + "," + readEnd);
+        }
+        try {
+            ts = ColoradoWaterHBGuestService.getService().readTimeSeries (
+                tsidentString, readStart, readEnd, units, readData );
+            if ( Message.isDebugOn ) {
+                Message.printStatus ( 10, routine, "...done reading time series." );
+            }
+            // Update the header comments.
+            if ( ts != null ) {
+                //FIXME SAM 2010-08-15 Need to implement for web services
+                //updateHydroBaseComments(ts);
+            }
+        }
+        catch ( Exception e ) {
+            Message.printWarning ( 3, routine, "Error from ColoradoWaterHBGuestService.readTimeSeries (" + e + ").");
+            Message.printWarning ( 3, routine, e );
+            ts = null;
+        }
+    }
 	else if ( (inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterSMS") ) {
         // New style TSID~input_type~input_name
         try {
@@ -5169,7 +5193,7 @@ throws Exception
 	// Compute the historical average here rather than having to put this code
 	// in each clause in the processTimeSeriesCommands() method.
 
-	if ( ts.hasData() ) {
+	if ( readData && ts.hasData() ) {
     	try {
             ts.setDataLimitsOriginal (calculateTSAverageLimits(ts));
     	}

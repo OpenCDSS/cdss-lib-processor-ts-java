@@ -36,17 +36,16 @@ public class CheckTimeSeries_Command extends AbstractCommand implements Command
 {
     
 /**
-Values for IfNotFound parameter.
-*/
-protected final String _Ignore = "Ignore";
-protected final String _Warn = "Warn";
-protected final String _Fail = "Fail";
-
-/**
 Values for ValueToCheck parameter.
 */
 protected final String _DataValue = "DataValue";
 protected final String _Statistic = "Statistic";
+
+/**
+Values for Action parameter.
+*/
+protected final String _Remove = "Remove";
+protected final String _SetMissing = "SetMissing";
 
 /**
 Constructor.
@@ -74,6 +73,7 @@ throws InvalidCommandParameterException
     String Value1 = parameters.getValue ( "Value1" );
     String Value2 = parameters.getValue ( "Value2" );
     String MaxWarnings = parameters.getValue ( "MaxWarnings" );
+    String Action = parameters.getValue ( "Action" );
     String warning = "";
     String message;
     
@@ -178,6 +178,14 @@ throws InvalidCommandParameterException
             message, "Specify MaxWarnings as an integer." ) );
     }
     
+    if ( (Action != null) && !Action.equals("") &&
+        !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
+            message = "The action \"" + Action + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the action as " + _Remove + " or " + _SetMissing + ".") );
+    }
+    
     // Check for invalid parameters...
     List valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
@@ -193,6 +201,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "MaxWarnings" );
     valid_Vector.add ( "Flag" );
     valid_Vector.add ( "FlagDesc" );
+    valid_Vector.add ( "Action" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -268,6 +277,7 @@ CommandWarningException, CommandException
     }
     String Flag = parameters.getValue ( "Flag" );
     String FlagDesc = parameters.getValue ( "FlagDesc" );
+    String Action = parameters.getValue ( "Action" );
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -443,7 +453,7 @@ CommandWarningException, CommandException
                 // Do the check...
                 TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, ValueToCheck, CheckCriteria,
                     AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType,
-                    Flag, FlagDesc );
+                    Flag, FlagDesc, Action );
                 check.checkTimeSeries();
                 List<String> problems = check.getProblems();
                 int problemsSize = problems.size();
@@ -522,7 +532,7 @@ public String toString ( PropList parameters )
     String MaxWarnings = parameters.getValue( "MaxWarnings" );
     String Flag = parameters.getValue( "Flag" );
     String FlagDesc = parameters.getValue( "FlagDesc" );
-    String IfNotFound = parameters.getValue ( "IfNotFound" );
+    String Action = parameters.getValue ( "Action" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -604,11 +614,11 @@ public String toString ( PropList parameters )
         }
         b.append ( "FlagDesc=\"" + FlagDesc + "\"" );
     }
-    if ( IfNotFound != null && IfNotFound.length() > 0 ) {
+    if ( Action != null && Action.length() > 0 ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "IfNotFound=" + IfNotFound );
+        b.append ( "Action=" + Action );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

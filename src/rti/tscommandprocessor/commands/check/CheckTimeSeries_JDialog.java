@@ -13,6 +13,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -56,6 +57,7 @@ private JTextField __ProblemType_JTextField = null;// Field for problem type
 private JTextField __MaxWarnings_JTextField = null;
 private JTextField __Flag_JTextField = null; // Flag to label filled data.
 private JTextField __FlagDesc_JTextField;
+private SimpleJComboBox __Action_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -135,6 +137,7 @@ private void checkInput ()
 	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
     String Flag = __Flag_JTextField.getText().trim();
     String FlagDesc = __FlagDesc_JTextField.getText().trim();
+    String Action = __Action_JComboBox.getSelected();
 	__error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -176,6 +179,9 @@ private void checkInput ()
     if ( FlagDesc.length() > 0 ) {
         parameters.set ( "FlagDesc", FlagDesc );
     }
+    if ( Action.length() > 0 ) {
+        parameters.set ( "Action", Action );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -204,6 +210,7 @@ private void commitEdits ()
 	String MaxWarnings = __MaxWarnings_JTextField.getText().trim();
 	String Flag = __Flag_JTextField.getText().trim();
 	String FlagDesc = __FlagDesc_JTextField.getText().trim();
+    String Action = __Action_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -217,6 +224,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "MaxWarnings", MaxWarnings );
 	__command.setCommandParameter ( "Flag", Flag );
 	__command.setCommandParameter ( "FlagDesc", FlagDesc );
+	__command.setCommandParameter ( "Action", Action );
 }
 
 /**
@@ -309,8 +317,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     __CheckCriteria_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
     JGUIUtil.addComponent(main_JPanel, __CheckCriteria_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - may require other parameters."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - may require other parameters."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value1:" ), 
@@ -390,6 +397,22 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for flag."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Action_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
+    List<String> actionChoices = new Vector();
+    actionChoices.add("");
+    actionChoices.add(__command._Remove);
+    actionChoices.add(__command._SetMissing);
+    __Action_JComboBox.setData ( checkCriteriaChoices );
+    __Action_JComboBox.select(0);
+    __Action_JComboBox.addItemListener ( this );
+    __Action_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __Action_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action to take for matched values."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -456,7 +479,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -480,6 +503,7 @@ private void refresh ()
 	String MaxWarnings = "";
 	String Flag = "";
 	String FlagDesc = "";
+	String Action = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -497,6 +521,7 @@ private void refresh ()
 		MaxWarnings = props.getValue ( "MaxWarnings" );
 		Flag = props.getValue ( "Flag" );
 		FlagDesc = props.getValue ( "FlagDesc" );
+		Action = props.getValue ( "Action" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -595,6 +620,21 @@ private void refresh ()
         if ( FlagDesc != null ) {
             __FlagDesc_JTextField.setText ( FlagDesc );
         }
+        if ( Action == null ) {
+            // Select default...
+            __Action_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Action_JComboBox,ValueToCheck, JGUIUtil.NONE, null, null ) ) {
+                __Action_JComboBox.select ( Action );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nAction value \"" + Action +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -610,6 +650,7 @@ private void refresh ()
 	MaxWarnings = __MaxWarnings_JTextField.getText().trim();
 	Flag = __Flag_JTextField.getText().trim();
 	FlagDesc = __FlagDesc_JTextField.getText().trim();
+	Action = __Action_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
@@ -624,6 +665,7 @@ private void refresh ()
 	props.add ( "MaxWarnings=" + MaxWarnings );
 	props.add ( "Flag=" + Flag );
 	props.add ( "FlagDesc=" + FlagDesc );
+	props.add ( "Action=" + Action );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

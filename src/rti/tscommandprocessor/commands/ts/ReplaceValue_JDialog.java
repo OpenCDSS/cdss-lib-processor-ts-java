@@ -13,6 +13,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -37,20 +38,21 @@ import RTi.Util.Message.Message;
 public class ReplaceValue_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField	__SetStart_JTextField = null,// First date to apply set.
-			__SetEnd_JTextField = null;// Last date to apply set.
+private JTextField __SetStart_JTextField = null; // First date to reset.
+private JTextField __SetEnd_JTextField = null; // Last date to reset.
 private ReplaceValue_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private JTextField	__MinValue_JTextField = null,
-			__MaxValue_JTextField = null,
-			__NewValue_JTextField = null;
+private JTextField __MinValue_JTextField = null;
+private JTextField __MaxValue_JTextField = null;
+private JTextField __NewValue_JTextField = null;
+private SimpleJComboBox __Action_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false;       // Indicates whether OK button has been pressed.
@@ -125,6 +127,7 @@ private void checkInput ()
     String NewValue = __NewValue_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
+    String Action = __Action_JComboBox.getSelected();
     
     __error_wait = false;
 
@@ -152,7 +155,11 @@ private void checkInput ()
     if ( SetEnd.length() > 0 ) {
         parameters.set ( "SetEnd", SetEnd );
     }
-    try {   // This will warn the user...
+    if ( Action.length() > 0 ) {
+        parameters.set ( "Action", Action );
+    }
+    try {
+        // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
     }
     catch ( Exception e ) {
@@ -174,6 +181,7 @@ private void commitEdits ()
     String NewValue = __NewValue_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
+    String Action = __Action_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -182,6 +190,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "NewValue", NewValue );
     __command.setCommandParameter ( "SetStart", SetStart );
     __command.setCommandParameter ( "SetEnd", SetEnd );
+    __command.setCommandParameter ( "Action", Action );
 }
 
 /**
@@ -224,8 +233,11 @@ private void initialize ( JFrame parent, Command command )
 		"Replace a single data value or range of data values with a constant."),
 		0, y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "If the missing value indicator is a number in the given range, missing values also will be replaced." ),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "Optionally, set missing, or remove the values entirely (if an irregular interval time series)."),
+        0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "If the missing value indicator is a number in the given range, missing values also will be replaced." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify dates with precision appropriate for the data." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -252,7 +264,7 @@ private void initialize ( JFrame parent, Command command )
 	__MinValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MinValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (maximum value can also be specified)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Maximum value to replace:"),
@@ -270,20 +282,43 @@ private void initialize ( JFrame parent, Command command )
 	__NewValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __NewValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - or specify action."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Action_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
+    List<String> actionChoices = new Vector();
+    actionChoices.add("");
+    actionChoices.add(__command._Remove);
+    actionChoices.add(__command._SetMissing);
+    __Action_JComboBox.setData ( actionChoices );
+    __Action_JComboBox.select(0);
+    __Action_JComboBox.addItemListener ( this );
+    __Action_JComboBox.setMaximumRowCount(actionChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __Action_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__SetStart_JTextField = new JTextField ( "", 15 );
-	__SetStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__SetEnd_JTextField = new JTextField ( "", 15 );
-	__SetEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Replacement start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetStart_JTextField = new JTextField (20);
+    __SetStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - start of replacement (default is all)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Replacement end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetEnd_JTextField = new JTextField (20);
+    __SetEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - end of replacement (default is all)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 55 );
@@ -368,6 +403,7 @@ private void refresh ()
     String MinValue = "";
     String MaxValue = "";
     String NewValue = "";
+    String Action = "";
     String SetStart = "";
     String SetEnd = "";
     PropList props = __command.getCommandParameters();
@@ -380,6 +416,7 @@ private void refresh ()
         MinValue = props.getValue ( "MinValue" );
         MaxValue = props.getValue ( "MaxValue" );
         NewValue = props.getValue ( "NewValue" );
+        Action = props.getValue ( "Action" );
         SetStart = props.getValue ( "SetStart" );
         SetEnd = props.getValue ( "SetEnd" );
         if ( TSList == null ) {
@@ -441,6 +478,21 @@ private void refresh ()
         if ( SetEnd != null ) {
             __SetEnd_JTextField.setText( SetEnd );
         }
+        if ( Action == null ) {
+            // Select default...
+            __Action_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Action_JComboBox,Action, JGUIUtil.NONE, null, null ) ) {
+                __Action_JComboBox.select ( Action );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nAction value \"" + Action +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
     }
     // Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -449,6 +501,7 @@ private void refresh ()
     MinValue = __MinValue_JTextField.getText().trim();
     MaxValue = __MaxValue_JTextField.getText().trim();
     NewValue = __NewValue_JTextField.getText().trim();
+    Action = __Action_JComboBox.getSelected();
     SetStart = __SetStart_JTextField.getText().trim();
     SetEnd = __SetEnd_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
@@ -458,6 +511,7 @@ private void refresh ()
     props.add ( "MinValue=" + MinValue );
     props.add ( "MaxValue=" + MaxValue );
     props.add ( "NewValue=" + NewValue );
+    props.add ( "Action=" + Action );
     props.add ( "SetStart=" + SetStart );
     props.add ( "SetEnd=" + SetEnd );
     __command_JTextArea.setText( __command.toString ( props ) );

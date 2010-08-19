@@ -31,12 +31,16 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the ReplaceValue() command.
-</p>
 */
 public class ReplaceValue_Command extends AbstractCommand implements Command
 {
+    
+/**
+Values for Action parameter.
+*/
+protected final String _Remove = "Remove";
+protected final String _SetMissing = "SetMissing";
 
 /**
 Constructor.
@@ -69,6 +73,10 @@ throws InvalidCommandParameterException
     String NewValue = parameters.getValue ( "NewValue" );
     if ( NewValue == null ) {
         NewValue = ""; // To simplify checks below
+    }
+    String Action = parameters.getValue ( "Action" );
+    if ( Action == null ) {
+        Action = ""; // To simplify checks below
     }
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
@@ -131,12 +139,14 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the maximum value as a number." ) );
     }
-    if ( (NewValue == null) || NewValue.equals("") ) {
-        message = "The new value must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the new value as a number." ) );  
+    if ( NewValue.equals("") ) {
+        if ( Action.equals("") ) {
+            message = "The new value (or the action) must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the new value as a number." ) );
+        }
     }
     else {
         if ( !NewValue.equals("") && !StringUtil.isDouble(NewValue) ) {
@@ -146,6 +156,22 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the new value as a number." ) );
         }
+    }
+    
+    if ( !Action.equals("") && !Action.equalsIgnoreCase(_Remove) && !Action.equalsIgnoreCase(_SetMissing) ) {
+        message = "The action (" + Action + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the action as " + _Remove + " or " + _SetMissing + " (or specify a new value)." ) );
+    }
+    
+    if ( !Action.equals("") && !NewValue.equals("") ) {
+        message = "A new value and an action cannot both be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the new value or an action." ) );
     }
  
 	if ( (SetStart != null) && !SetStart.equals("") && !SetStart.equalsIgnoreCase("OutputStart")){
@@ -190,6 +216,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "NewValue" );
     valid_Vector.add ( "SetStart" );
     valid_Vector.add ( "SetEnd" );
+    valid_Vector.add ( "Action" );
     //valid_Vector.add ( "FillFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -307,10 +334,8 @@ Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -429,14 +454,21 @@ CommandWarningException, CommandException
 	// Values...
 
 	String MinValue = parameters.getValue("MinValue");
-	double MinValue_double = StringUtil.atod ( MinValue );
-	double MaxValue_double = MinValue_double;
+	Double MinValue_double = null;
+	if ( StringUtil.isDouble(MinValue) ) {
+	    MinValue_double = Double.parseDouble ( MinValue );
+	}
     String MaxValue = parameters.getValue("MaxValue");
+    Double MaxValue_double = null;
     if ( StringUtil.isDouble(MaxValue) ) {
-        MaxValue_double = StringUtil.atod ( MaxValue );
+        MaxValue_double = Double.parseDouble ( MaxValue );
     }
     String NewValue = parameters.getValue("NewValue");
-    double NewValue_double = StringUtil.atod ( NewValue );
+    Double NewValue_double = null;
+    if ( StringUtil.isDouble(NewValue) ) {
+        NewValue_double = Double.parseDouble ( NewValue );
+    }
+    String Action = parameters.getValue("Action");
 
 	// Set period...
 
@@ -479,7 +511,8 @@ CommandWarningException, CommandException
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetStart_DateTime = (DateTime)prop_contents;
+		else {
+		    SetStart_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
@@ -525,7 +558,8 @@ CommandWarningException, CommandException
                             message, "Specify a valid date/time or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
 		}
-		else {	SetEnd_DateTime = (DateTime)prop_contents;
+		else {
+		    SetEnd_DateTime = (DateTime)prop_contents;
 		}
 	}
 	}
@@ -549,13 +583,6 @@ CommandWarningException, CommandException
 	}
 
 	// Now process the time series...
-
-    /*
-	PropList props = new PropList ( "ReplaceValue" );
-	if ( FillFlag != null ) {
-		props.set ( "FillFlag", FillFlag );
-	}
-    */
 
 	TS ts = null;
 	for ( int its = 0; its < nts; its++ ) {
@@ -602,9 +629,11 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the setting...
-		Message.printStatus ( 2, routine, "Replacing value in \"" + ts.getIdentifier()+ "\" with new value " + NewValue + "." );
+		Message.printStatus ( 2, routine, "Replacing value in \"" + ts.getIdentifier()+ "\" with new value " +
+		    NewValue + ", action=\"" + Action + "\"." );
 		try {
-            TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double, NewValue_double );
+            TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double,
+                NewValue_double, Action );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error replacing values in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -642,6 +671,7 @@ public String toString ( PropList props )
 	String MinValue = props.getValue( "MinValue" );
     String MaxValue = props.getValue( "MaxValue" );
     String NewValue = props.getValue( "NewValue" );
+    String Action = props.getValue( "Action" );
 	String SetStart = props.getValue("SetStart");
 	String SetEnd = props.getValue("SetEnd");
 	//String FillFlag = props.getValue("FillFlag");
@@ -681,6 +711,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "NewValue=" + NewValue );
+    }
+    if ( Action != null && Action.length() > 0 ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Action=" + Action );
     }
 	if ( (SetStart != null) && (SetStart.length() > 0) ) {
 		if ( b.length() > 0 ) {

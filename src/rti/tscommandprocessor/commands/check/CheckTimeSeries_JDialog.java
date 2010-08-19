@@ -405,13 +405,13 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
     actionChoices.add("");
     actionChoices.add(__command._Remove);
     actionChoices.add(__command._SetMissing);
-    __Action_JComboBox.setData ( checkCriteriaChoices );
+    __Action_JComboBox.setData ( actionChoices );
     __Action_JComboBox.select(0);
     __Action_JComboBox.addItemListener ( this );
-    __Action_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
+    __Action_JComboBox.setMaximumRowCount(actionChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Action_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action to take for matched values."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -625,7 +625,7 @@ private void refresh ()
             __Action_JComboBox.select ( 0 );
         }
         else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __Action_JComboBox,ValueToCheck, JGUIUtil.NONE, null, null ) ) {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Action_JComboBox,Action, JGUIUtil.NONE, null, null ) ) {
                 __Action_JComboBox.select ( Action );
             }
             else {

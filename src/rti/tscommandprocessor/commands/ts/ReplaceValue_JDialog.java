@@ -15,6 +15,7 @@ import java.awt.Insets;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -34,6 +35,9 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTime_JPanel;
+import RTi.Util.Time.TimeInterval;
 
 public class ReplaceValue_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -45,14 +49,17 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private JTextField __SetStart_JTextField = null; // First date to reset.
-private JTextField __SetEnd_JTextField = null; // Last date to reset.
 private ReplaceValue_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __MinValue_JTextField = null;
 private JTextField __MaxValue_JTextField = null;
 private JTextField __NewValue_JTextField = null;
 private SimpleJComboBox __Action_JComboBox = null;
+private JTextField __SetStart_JTextField = null; // First date to reset.
+private JTextField __SetEnd_JTextField = null; // Last date to reset.
+private JCheckBox __AnalysisWindow_JCheckBox = null;
+private DateTime_JPanel __AnalysisWindowStart_JPanel = null;  // Fields for analysis window within a year
+private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false;       // Indicates whether OK button has been pressed.
@@ -84,6 +91,10 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else {
+        checkGUIState();
+        refresh ();
+    }
 }
 
 /**
@@ -109,6 +120,16 @@ private void checkGUIState ()
     else {
         __EnsembleID_JComboBox.setEnabled(false);
         __EnsembleID_JLabel.setEnabled ( false );
+    }
+    
+    if ( __AnalysisWindow_JCheckBox.isSelected() ) {
+        // Checked so enable the date panels
+        __AnalysisWindowStart_JPanel.setEnabled ( true );
+        __AnalysisWindowEnd_JPanel.setEnabled ( true );
+    }
+    else {
+        __AnalysisWindowStart_JPanel.setEnabled ( false );
+        __AnalysisWindowEnd_JPanel.setEnabled ( false );
     }
 }
 
@@ -149,14 +170,24 @@ private void checkInput ()
     if ( NewValue.length() > 0 ) {
         parameters.set ( "NewValue", NewValue );
     }
+    if ( Action.length() > 0 ) {
+        parameters.set ( "Action", Action );
+    }
     if ( SetStart.length() > 0 ) {
         parameters.set ( "SetStart", SetStart );
     }
     if ( SetEnd.length() > 0 ) {
         parameters.set ( "SetEnd", SetEnd );
     }
-    if ( Action.length() > 0 ) {
-        parameters.set ( "Action", Action );
+    if ( __AnalysisWindow_JCheckBox.isSelected() ){
+        String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
+        String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        if ( AnalysisWindowStart.length() > 0 ) {
+            parameters.set ( "AnalysisWindowStart", AnalysisWindowStart );
+        }
+        if ( AnalysisWindowEnd.length() > 0 ) {
+            parameters.set ( "AnalysisWindowEnd", AnalysisWindowEnd );
+        }
     }
     try {
         // This will warn the user...
@@ -191,6 +222,12 @@ private void commitEdits ()
     __command.setCommandParameter ( "SetStart", SetStart );
     __command.setCommandParameter ( "SetEnd", SetEnd );
     __command.setCommandParameter ( "Action", Action );
+    if ( __AnalysisWindow_JCheckBox.isSelected() ){
+        String AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
+        String AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        __command.setCommandParameter ( "AnalysisWindowStart", AnalysisWindowStart );
+        __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
+    }
 }
 
 /**
@@ -318,6 +355,29 @@ private void initialize ( JFrame parent, Command command )
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - end of replacement (default is all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    __AnalysisWindow_JCheckBox = new JCheckBox ( "Analysis window:", false );
+    __AnalysisWindow_JCheckBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisWindow_JCheckBox, 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JPanel analysisWindow_JPanel = new JPanel();
+    analysisWindow_JPanel.setLayout(new GridBagLayout());
+    __AnalysisWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.MINUTE, null );
+    __AnalysisWindowStart_JPanel.addActionListener(this);
+    __AnalysisWindowStart_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowStart_JPanel,
+        1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
+    __AnalysisWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.MINUTE, null );
+    __AnalysisWindowEnd_JPanel.addActionListener(this);
+    __AnalysisWindowEnd_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(analysisWindow_JPanel, __AnalysisWindowEnd_JPanel,
+        4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, analysisWindow_JPanel,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - analysis window within each year (default=full year)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -406,6 +466,8 @@ private void refresh ()
     String Action = "";
     String SetStart = "";
     String SetEnd = "";
+    String AnalysisWindowStart = "";
+    String AnalysisWindowEnd = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -419,6 +481,8 @@ private void refresh ()
         Action = props.getValue ( "Action" );
         SetStart = props.getValue ( "SetStart" );
         SetEnd = props.getValue ( "SetEnd" );
+        AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
+        AnalysisWindowEnd = props.getValue ( "AnalysisWindowEnd" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -493,8 +557,40 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime AnalysisWindowStart_DateTime = DateTime.parse ( "0000-" + AnalysisWindowStart );
+                Message.printStatus(2, routine, "Setting window start to " + AnalysisWindowStart_DateTime );
+                __AnalysisWindowStart_JPanel.setDateTime ( AnalysisWindowStart_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "AnalysisWindowStart (" + AnalysisWindowStart +
+                    ") is not a valid date/time." );
+            }
+        }
+        if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime AnalysisWindowEnd_DateTime = DateTime.parse ( "0000-" + AnalysisWindowEnd );
+                Message.printStatus(2, routine, "Setting window end to " + AnalysisWindowEnd_DateTime );
+                __AnalysisWindowEnd_JPanel.setDateTime ( AnalysisWindowEnd_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "AnalysisWindowEnd (" + AnalysisWindowEnd +
+                    ") is not a valid date/time." );
+            }
+        }
+        if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() != 0) &&
+                (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() != 0)) {
+            __AnalysisWindow_JCheckBox.setSelected ( true );
+        }
+        else {
+            __AnalysisWindow_JCheckBox.setSelected ( false );
+        }
     }
     // Regardless, reset the command from the fields...
+    checkGUIState();
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -514,6 +610,12 @@ private void refresh ()
     props.add ( "Action=" + Action );
     props.add ( "SetStart=" + SetStart );
     props.add ( "SetEnd=" + SetEnd );
+    if ( __AnalysisWindow_JCheckBox.isSelected() ) {
+        AnalysisWindowStart = __AnalysisWindowStart_JPanel.toString(false,true).trim();
+        AnalysisWindowEnd = __AnalysisWindowEnd_JPanel.toString(false,true).trim();
+        props.add ( "AnalysisWindowStart=" + AnalysisWindowStart );
+        props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
+    }
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

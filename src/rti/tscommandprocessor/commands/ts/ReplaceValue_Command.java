@@ -37,6 +37,12 @@ public class ReplaceValue_Command extends AbstractCommand implements Command
 {
     
 /**
+Analysis window year, since users do not supply this information.
+This allows for leap year in case the analysis window start or end is on Feb 29.
+*/
+private final int __ANALYSIS_WINDOW_YEAR = 2000;
+    
+/**
 Values for Action parameter.
 */
 protected final String _Remove = "Remove";
@@ -81,6 +87,8 @@ throws InvalidCommandParameterException
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	//String FillFlag = parameters.getValue ( "SetFlag" );
+	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
 	String warning = "";
     String message;
     
@@ -196,6 +204,37 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
+	
+    if ( (AnalysisWindowStart != null) && !AnalysisWindowStart.equals("") ) {
+        String analysisWindowStart = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart;
+        try {
+            DateTime.parse( analysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "The analysis window start \"" + AnalysisWindowStart + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
+    
+    if ( (AnalysisWindowEnd != null) && !AnalysisWindowEnd.equals("") ) {
+        String analysisWindowEnd = "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd;
+        try {
+            DateTime.parse( analysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "The analysis window end \"" + AnalysisWindowEnd + "\" (prepended with " +
+            __ANALYSIS_WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
+	
     /*
 	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
         message = "The fill flag must be 1 character long.";
@@ -214,9 +253,11 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "MinValue" );
     valid_Vector.add ( "MaxValue" );
     valid_Vector.add ( "NewValue" );
+    valid_Vector.add ( "Action" );
     valid_Vector.add ( "SetStart" );
     valid_Vector.add ( "SetEnd" );
-    valid_Vector.add ( "Action" );
+    valid_Vector.add ( "AnalysisWindowStart" );
+    valid_Vector.add ( "AnalysisWindowEnd" );
     //valid_Vector.add ( "FillFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -573,6 +614,42 @@ CommandWarningException, CommandException
                         message, "Specify a valid date/time or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
 	}
+	
+    String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
+    
+    DateTime AnalysisWindowStart_DateTime = null;
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            AnalysisWindowStart_DateTime =
+                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "AnalysisWindowStart \"" + AnalysisWindowStart +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
+    DateTime AnalysisWindowEnd_DateTime = null;
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        try {
+            // The following works with ISO formats...
+            AnalysisWindowEnd_DateTime =
+                DateTime.parse ( "" + __ANALYSIS_WINDOW_YEAR + "-" + AnalysisWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "AnalysisWindowEnd \"" + AnalysisWindowEnd +
+                "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            throw new InvalidCommandParameterException ( message );
+        }
+    }
 
 	if ( warning_count > 0 ) {
 		// Input error (e.g., missing time series)...
@@ -633,7 +710,7 @@ CommandWarningException, CommandException
 		    NewValue + ", action=\"" + Action + "\"." );
 		try {
             TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double,
-                NewValue_double, Action );
+                NewValue_double, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error replacing values in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -674,6 +751,8 @@ public String toString ( PropList props )
     String Action = props.getValue( "Action" );
 	String SetStart = props.getValue("SetStart");
 	String SetEnd = props.getValue("SetEnd");
+    String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
+    String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
 	//String FillFlag = props.getValue("FillFlag");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -730,6 +809,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "SetEnd=\"" + SetEnd + "\"" );
 	}
+    if ( (AnalysisWindowStart != null) && (AnalysisWindowStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowStart=\"" + AnalysisWindowStart + "\"" );
+    }
+    if ( (AnalysisWindowEnd != null) && (AnalysisWindowEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
+    }
     /*
 	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
 		if ( b.length() > 0 ) {

@@ -250,7 +250,7 @@ private void initialize ( JFrame parent, Command command )
 	__ConstantValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ConstantValue_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Use for all intervals."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - use for all intervals (if monthly not specified)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Monthly values:" ), 
@@ -259,7 +259,7 @@ private void initialize ( JFrame parent, Command command )
 	__MonthValues_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MonthValues_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Monthly values, separated by commas."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - monthly values, separated by commas."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Set start:"), 
@@ -268,7 +268,7 @@ private void initialize ( JFrame parent, Command command )
 	__SetStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set start (optional).  Default is all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set start (default is all)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set End:"), 
@@ -277,7 +277,7 @@ private void initialize ( JFrame parent, Command command )
 	__SetEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Set end (optional).  Default is all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - set end (default is all)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

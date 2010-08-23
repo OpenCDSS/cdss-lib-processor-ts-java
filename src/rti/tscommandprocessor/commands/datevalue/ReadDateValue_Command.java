@@ -568,48 +568,59 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             read_data = false;
         }
         InputFile_full = IOUtil.verifyPathForOS(
-                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                        TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
-        if ( _use_alias ) {
-            TS ts = null;
-            if ( (TSID == null) || TSID.equals("") || TSID.equals("*") ) {
-                // Just read the time series without specifying the TSID
-                ts = DateValueTS.readTimeSeries (
-                InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
-            }
-            else {
-                // A specific TSID has been specified.
-                ts = DateValueTS.readTimeSeries (
-                TSID, InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
-            }
-            if ( ts == null ) {
-                message = "Null time series - unable to read.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                if ( TSID != null ) {
-                    status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that file format is correct and that TSID (" + TSID +
-                                ") is found in file." ) );
-                }
-                else {
-                    status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Verify that file format is correct." ) );
-                }
-                throw new CommandException ( message );
-            }
-            // Add the single time series to a list to use shared code below.
-            tslist = new Vector(1);
-            tslist.add( ts );
+            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
+        if ( !IOUtil.fileExists(InputFile_full) ) {
+            message = "Input file does not exist:  \"" + InputFile_full + "\".";
+            Message.printWarning(log_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( command_phase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that filename is correct and that the file exists." ) );
         }
         else {
-            // Read everything in the file (one time series or traces).
-            tslist = DateValueTS.readTimeSeriesList (
-                InputFile_full, InputStart_DateTime, InputEnd_DateTime,
-                NewUnits, read_data );
-            // TODO SAM 2007-12-27 - should enable EnsembleID if traces
+            if ( _use_alias ) {
+                TS ts = null;
+                if ( (TSID == null) || TSID.equals("") || TSID.equals("*") ) {
+                    // Just read the time series without specifying the TSID
+                    ts = DateValueTS.readTimeSeries (
+                    InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+                }
+                else {
+                    // A specific TSID has been specified.
+                    ts = DateValueTS.readTimeSeries (
+                    TSID, InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
+                }
+                if ( ts == null ) {
+                    message = "Null time series - unable to read.";
+                    Message.printWarning(log_level,
+                            MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                            routine, message );
+                    if ( TSID != null ) {
+                        status.addToLog ( command_phase,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify that file format is correct and that TSID (" + TSID +
+                                    ") is found in file." ) );
+                    }
+                    else {
+                        status.addToLog ( command_phase,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that file format is correct." ) );
+                    }
+                    throw new CommandException ( message );
+                }
+                // Add the single time series to a list to use shared code below.
+                tslist = new Vector(1);
+                tslist.add( ts );
+            }
+            else {
+                // Read everything in the file (one time series or traces).
+                tslist = DateValueTS.readTimeSeriesList (
+                    InputFile_full, InputStart_DateTime, InputEnd_DateTime,
+                    NewUnits, read_data );
+                // TODO SAM 2007-12-27 - should enable EnsembleID if traces
+            }
         }
 			
 		if ( tslist != null ) {

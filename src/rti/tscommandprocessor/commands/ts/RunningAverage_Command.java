@@ -424,7 +424,7 @@ CommandWarningException, CommandException
 		
 		try {
             // Do the processing...
-			Message.printStatus ( 2, routine, "Converterting to running average: \"" + ts.getIdentifier() + "\"." );
+			Message.printStatus ( 2, routine, "Converting to running average: \"" + ts.getIdentifier() + "\"." );
             if ( AverageMethod.equalsIgnoreCase( _Centered) ) {
                 newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_CENTER );
             }

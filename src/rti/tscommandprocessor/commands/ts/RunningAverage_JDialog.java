@@ -251,7 +251,7 @@ private void initialize ( JFrame parent, Command command )
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Type of Average:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Type of average:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AverageMethod_JComboBox = new SimpleJComboBox ( false );
 	__AverageMethod_JComboBox.addItem ( __command._Centered );
@@ -263,6 +263,8 @@ private void initialize ( JFrame parent, Command command )
 	__AverageMethod_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __AverageMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	__Bracket_JLabel = new JLabel ( __BRACKET_LABEL_CENTERED );
     JGUIUtil.addComponent(main_JPanel, __Bracket_JLabel,
@@ -271,6 +273,8 @@ private void initialize ( JFrame parent, Command command )
 	__Bracket_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Bracket_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

@@ -62,7 +62,6 @@ throws InvalidCommandParameterException
 	String ConstantValue = parameters.getValue ( "ConstantValue" );
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
-	String FillFlag = parameters.getValue ( "FillFlag" );
 	String warning = "";
     String message;
     
@@ -135,13 +134,6 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
-	}
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
 	}
     
 	// Check for invalid parameters...

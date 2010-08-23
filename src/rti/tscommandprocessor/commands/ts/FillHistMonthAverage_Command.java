@@ -238,7 +238,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "fillHistMonthAverage_Command.runCommand", message;
+{	String routine = "FillHistMonthAverage_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -253,6 +253,9 @@ CommandWarningException, CommandException
     status.clearLog(CommandPhaseType.RUN);
 
 	String TSList = parameters.getValue ( "TSList" );
+	if ( (TSList == null) || TSList.equals("") ) {
+	    TSList = "" + TSListType.ALL_TS;
+	}
 	String TSID = parameters.getValue ( "TSID" );
 
 	// Get the time series to process...

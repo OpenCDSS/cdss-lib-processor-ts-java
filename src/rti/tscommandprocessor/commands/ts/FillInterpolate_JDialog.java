@@ -258,7 +258,7 @@ private void initialize ( JFrame parent, Command command )
     __FillStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default=fill all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - start of period to fill (default=fill all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date/time:"),
@@ -267,7 +267,7 @@ private void initialize ( JFrame parent, Command command )
     __FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default=fill all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - end of period to fill (default=fill all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Maximum intervals to fill:"),
@@ -276,7 +276,7 @@ private void initialize ( JFrame parent, Command command )
 	__MaxIntervals_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MaxIntervals_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default=0 to fill all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=0 to fill all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Transformation for interpolation:"), 
@@ -288,7 +288,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __Transformation_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Currently only default value (" + __command._None + ") is recognized."),
+        "Optional - currently only default value (" + __command._None + ") is recognized."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
        
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill flag:"),
@@ -298,7 +298,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
     	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Optional one-character flag to mark filled data."),
+    	"Optional - string to flag filled values (default=no flag)."),
     	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

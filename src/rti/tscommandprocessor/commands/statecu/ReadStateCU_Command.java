@@ -421,6 +421,9 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
 	String NewScenario = parameters.getValue ( "NewScenario" );
 	String AutoAdjust = parameters.getValue ( "AutoAdjust" );
+	if ( (AutoAdjust == null) || AutoAdjust.equals("") ) {
+	    AutoAdjust = _True;
+	}
 	String CheckData = parameters.getValue ( "CheckData" );
 	
 	// TODO SAM 2007-11-29 need to check prop

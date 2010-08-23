@@ -306,12 +306,10 @@ private void initialize ( JFrame parent, Command command )
 		"     StateCU IWR or WSL report file (output)." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify a full or relative path (relative to working " +
-		"directory)." ), 
+		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ),
+        JGUIUtil.addComponent(main_JPanel, new JLabel ("The working directory is: " + __working_dir ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -319,31 +317,24 @@ private void initialize ( JFrame parent, Command command )
 		" filter the read ONLY for IWR and WSL files;" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"specify blank to read all or use * wildcards to match a" +
-		" time series identifier." ),
+		"specify blank to read all or use * wildcards to match a time series identifier." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"For example, to read all monthly IWR time series for" +
-		" locations starting with ABC, specify:" ),
+		"For example, to read all monthly IWR time series for locations starting with ABC, specify:" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "  ABC.*.IWR.Month"),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Location can be X, X*, or *.  Data type and interval can " +
-		"be * or combinations as follows:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "  ABC.*.IWR.Month" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"   CropArea-AllCrops        Year" ),
+		"Location can be X, X*, or *.  Data type and interval can be * or combinations as follows:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"   IWR or WSL               Month, Year" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "   CropArea-AllCrops (Year)" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"   IWR_Depth or WSL_Depth   Month, Year" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "   IWR or WSL (Month, Year)" ),
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "   IWR_Depth or WSL_Depth (Month, Year)" ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"StateCU file to read:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "StateCU file to read:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );
@@ -360,7 +351,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
     	1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Overrides the global input start."),
+    	"Optional - overrides the global input start (default=read all)."),
     	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
@@ -370,7 +361,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
     	1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Overrides the global input end."),
+    	"Optional - overrides the global input end (default=read all)."),
     	3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );   
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series ID:" ), 
@@ -380,7 +371,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Loc.Source.Type.Interval to filter."),
+	"Optional - Loc.Source.Type.Interval to filter (default=read all)."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New scenario:" ), 
@@ -390,7 +381,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __NewScenario_JTextField,
     		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"To help uniquely identify time series (default=none)."),
+    	"Optional - to help uniquely identify time series (default=none)."),
     	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Automatically adjust?:" ), 
@@ -403,7 +394,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __AutoAdjust_JComboBox,
    		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       	"Convert data type with \".\" to \"-\" (default=False)."),
+       	"Optional - convert data type with \".\" to \"-\" to work in TSID (default=" + __command._True + ")."),
        	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check data after read?:" ), 
@@ -416,7 +407,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __CheckData_JComboBox,
        		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-           	"Check data integrity after read (default=True)?"),
+           	"Optional - check data integrity after read? (default=" + __command._True + ")."),
            	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
        	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),

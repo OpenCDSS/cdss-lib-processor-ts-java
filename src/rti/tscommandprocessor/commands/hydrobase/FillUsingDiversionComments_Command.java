@@ -103,9 +103,7 @@ throws InvalidCommandParameterException
 	String TSID = parameters.getValue ( "TSID" );
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
-	String FillFlag = parameters.getValue ( "FillFlag" );
 	String FillUsingCIU = parameters.getValue ( "FillUsingCIU" );
-	String FillUsingCIUFlag = parameters.getValue ( "FillUsingCIUFlag" );
 	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 	String warning = "";
     String message = "";
@@ -147,13 +145,6 @@ throws InvalidCommandParameterException
 
 		}
 	}
-	if ( (FillFlag != null) && !(FillFlag.equalsIgnoreCase("Auto")) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long or set to Auto.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a 1-character fill flag or Auto." ) );
-    }
 	if ( FillUsingCIU != null && !(FillUsingCIU.equalsIgnoreCase("True")) && 
 			!(FillUsingCIU.equalsIgnoreCase("False")) && !(FillUsingCIU.equalsIgnoreCase(""))) {
         message = "Fill Using CIU is invalid.";
@@ -161,15 +152,6 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Fill Using CIU must be true, false or blank." ) );
-	}
-	if ( FillUsingCIU != null && FillUsingCIU.equalsIgnoreCase( "true" ) && 
-		FillUsingCIUFlag != null && !(FillUsingCIUFlag.equalsIgnoreCase("Auto")) &&
-		FillUsingCIUFlag.length() != 1 ) {
-        message = "The fill using CIU flag must be 1 character long or set to Auto.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a 1-character fill flag or Auto." ) );
 	}
     if ( (RecalcLimits != null) && !RecalcLimits.equals("") && !RecalcLimits.equalsIgnoreCase( "true" ) && 
             !RecalcLimits.equalsIgnoreCase("false") ) {
@@ -304,7 +286,7 @@ CommandWarningException, CommandException
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	int log_level = 3;
-	String message, routine = "fillUsingDiversionComments_Command.runCommand";
+	String message, routine = "FillUsingDiversionComments_Command.runCommand";
 	PropList parameters = getCommandParameters();
 	String TSID = parameters.getValue ( "TSID" );
 	String FillStart = parameters.getValue ( "FillStart" );

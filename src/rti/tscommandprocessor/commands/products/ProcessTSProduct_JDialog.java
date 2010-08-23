@@ -269,23 +269,17 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series product definition files (typically named *.tsp)"+
-		" contain properties for graphs or other data products." ),
+		"Process a time series product definition file (typically named *.tsp)"+
+		" to create a graph product." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"A product can be processed in a script, resulting in viewable graphs or image files."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If the working directory has been specified, the file path can be specified as relative."),
+		"Specify paths relative to the working directory, or use an absolute path."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The output file extension indicates the output format (only .jpg and .png are supported)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"TS product file (TSP):" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -308,7 +302,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __RunMode_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-		new JLabel ( "Indicates when products should be processed." ), 
+		new JLabel ( "Optional - when to process products (default=" + __command._GUIAndBatch + ")." ), 
 		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "View:" ), 
@@ -321,16 +315,19 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __View_JComboBox,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-		new JLabel ( "Display product (default=True)." ), 
+		new JLabel ( "Optional - display product in window (default=" + __command._True + ")." ), 
 		2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__OutputFile_JTextField = new JTextField ();
+	__OutputFile_JTextField = new JTextField (30);
 	__OutputFile_JTextField.addKeyListener ( this );
 	__OutputFile_JTextField.setEditable ( true );
 	JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - output file with *.png or *.jpg extension." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default save file:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -338,9 +335,10 @@ private void initialize ( JFrame parent, Command command )
     __DefaultSaveFile_JTextField.addKeyListener ( this );
     __DefaultSaveFile_JTextField.setEditable ( true );
     JGUIUtil.addComponent(main_JPanel, __DefaultSaveFile_JTextField,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
-    __DefaultSaveFile_JTextField.setToolTipText (
-            "Used when editing time series. Specify the file to save.  The extension indicates file type.");
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - file to save during interactive editing (*.dv)." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

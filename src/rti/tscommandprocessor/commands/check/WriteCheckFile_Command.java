@@ -213,10 +213,10 @@ throws Exception
     String environmentLink = "environment";
     String notesHeading = "Command File Comments";
     String notesLink = "notes";
-    String detailsHeading = "Command Details";
-    String detailsLink = "commands";
     String summaryHeading = "Command Problem Summary";
     String summaryLink = "summary";
+    String detailsHeading = "Command Details";
+    String detailsLink = "commands";
     
     html.link("#"+environmentLink, environmentHeading );
     html.write ( " - generated at runtime");
@@ -224,10 +224,10 @@ throws Exception
     html.link("#"+notesLink, notesHeading );
     html.write ( " - as written to output file headers");
     html.breakLine();
-    html.link("#"+detailsLink, detailsHeading );
+    html.link("#"+summaryLink, summaryHeading );
     html.write ( " - command run times and warning/failure counts");
     html.breakLine();
-    html.link("#"+summaryLink, summaryHeading );
+    html.link("#"+detailsLink, detailsHeading );
     html.write ( " - command problem summary");
     html.breakLine();
     
@@ -286,7 +286,7 @@ throws Exception
     }
     html.preEnd();
 
-    html.heading(2, detailsHeading, detailsLink );
+    html.heading(2, summaryHeading, summaryLink );
     htmlWriteProblemCounts ( html );
     htmlWriteCommands( html, processor.getCommands(), true ); // false to write text, true for table
 }
@@ -418,8 +418,8 @@ private void htmlWriteCommandLogRecords( HTMLWriter html, List<CommandLogRecord>
     //data_prop.add( "name=data" + index );
     // write the more component specific data
     
-    String heading = "Command Problem Summary";
-    html.heading(2, heading, "summary" );
+    String heading = "Command Problem Details";
+    html.heading(2, heading, "commands" );
     htmlWriteProblemCounts ( html );
     if ( logRecordList.size() > 0 ) {
         // table start

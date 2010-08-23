@@ -214,8 +214,7 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 	"This command can be used to fill monthly, daily, and" +
-	" yearly diversions and reservoir releases for the " +
-	"HydroBase input type." ), 
+	" yearly diversions and reservoir releases for the HydroBase input type." ), 
 	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 	"The diversion comments in HydroBase indicate years when no" +
@@ -246,14 +245,13 @@ private void initialize ( JFrame parent, Command command )
     "will be added and limits are recalculated a specific way (see documentation)."), 
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Time series to fill:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to fill:" ), 
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JComboBox = new SimpleJComboBox ( false );
     
     int size = 0;
     
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
     
     if ( tsids != null ) {
@@ -269,26 +267,24 @@ private void initialize ( JFrame parent, Command command )
 	    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel,new JLabel(
-	"Fill start date:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Fill start date:"),
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillStart_JTextField = new JTextField ( "", 10 );
 	__FillStart_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
 	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Start of period to fill."), 
+	"Optional - start of period to fill (default=fill entire period)."), 
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel,new JLabel(
-	"Fill end date:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date:"),
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillEnd_JTextField = new JTextField ( "", 10 );
 	__FillEnd_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
 	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"End of period to fill."), 
+	"Optional - end of period to fill (default=fill entire period)."), 
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
@@ -298,11 +294,10 @@ private void initialize ( JFrame parent, Command command )
        JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-    "1-character (or \"Auto\") flag on values to indicate fill."), 
+    "Optional - string (or \"Auto\") to flag filled values (default=no flag)."), 
     3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Fill using CIU:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Fill using CIU:"), 
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__FillUsingCIU_JComboBox = new SimpleJComboBox ( false );
 	__FillUsingCIU_JComboBox.addItem ( __TRUE );
@@ -311,7 +306,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __FillUsingCIU_JComboBox,
 	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Use currently in use information."), 
+	"Required - use currently in use (CIU) information to fill."), 
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using CIU flag:" ), 
@@ -321,7 +316,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __FillUsingCIUFlag_JTextField,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-    "1-character (or \"Auto\") flag on values to indicate fill."), 
+    "Optional - string (or \"Auto\") to flag filled values (default=no flag)."), 
     3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Recalculate limits:"), 
@@ -333,12 +328,12 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
 	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-	"Recalculate original data limits after fill (CIU does automatically)?"), 
+	"Optional - recalculate original data limits after fill? (default=" + __command._False + ")."), 
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__command_JTextArea = new JTextArea (2,60);
+	__command_JTextArea = new JTextArea (4,60);
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );

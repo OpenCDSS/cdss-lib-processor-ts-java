@@ -458,21 +458,21 @@ private void initialize ( JFrame parent, Command command )
 
 	if ( __use_alias ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from the HydroBase database."),
+		"Read a single time series from a HydroBase database."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 	else {
 	    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read one or more time series from the HydroBase database."),
+		"Read one or more time series from a HydroBase database."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
        	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The data type and interval must be selected.  Constrain the " +
+		"The data type and interval must be specified.  Constrain the " +
 		"query using the \"where\" clauses, if necessary." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"This command is fully enabled ONLY FOR STRUCTURE TIME SERIES "+
-		"(e.g., DivTotal, DivClass, RelTotal, RelClass)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+            "<html><b>\"Where\" choices have only been fully implemented for structure time series " +
+            "(e.g., DivTotal, DivClass, RelTotal, RelClass).</b></html>" ), 
+            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Refer to the HydroBase Input Type documentation for possible values." ), 
@@ -482,10 +482,7 @@ private void initialize ( JFrame parent, Command command )
 		"for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If not specified, the period defaults to the query period."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Filling with diversion comments applies only to diversion and reservoir release time series."),
+		"Filling with diversion comments applies only to diversion and reservoir records."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	if ( __use_alias ) {
@@ -520,7 +517,7 @@ private void initialize ( JFrame parent, Command command )
 	__DataType_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: Streamflow."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (e.g., Streamflow, DivTotal)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
@@ -529,7 +526,7 @@ private void initialize ( JFrame parent, Command command )
 	__Interval_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: 6Hour, Day, Month."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (e.g., Day, Month, Year)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input name:"),
@@ -539,7 +536,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"HydroBase connection name (blank for default)."),
+		"Optional - HydroBase connection name (blank for default)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	if ( !__use_alias ) {
@@ -722,18 +719,23 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	}
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
 	/* TODO SAM 2006-04-27
 	As per Ray Bennett this should always be done.
@@ -779,7 +781,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __FillUsingDivComments_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Whether to use diversion comments to fill more zero values (blank=False)."),
+		"Optional - may result in more zero values (default=" + __command._False + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using diversion comments flag:"),
@@ -790,7 +792,7 @@ private void initialize ( JFrame parent, Command command )
 		__FillUsingDivCommentsFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"1-character flag to indicate filled diversion comment values."),
+		"Optional - string to flag filled diversion comment values."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
@@ -806,7 +808,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __IfMissing_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "How to handle missing time series (blank=Warn)."),
+        "Optional - how to handle missing time series (blank=" + __command._Warn + ")."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),

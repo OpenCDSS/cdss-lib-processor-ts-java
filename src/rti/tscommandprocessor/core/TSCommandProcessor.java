@@ -41,9 +41,8 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import java.awt.event.WindowListener;	// To know when graph closes to close app
+import java.awt.event.WindowListener; // To know when graph window closes to close entire application
 
-import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandListListener;
@@ -82,6 +81,7 @@ import RTi.TS.TSEnsemble;
 import RTi.TS.TSIdent;
 import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
+import riverside.datastore.DataStore;
 import rti.tscommandprocessor.core.TimeSeriesView;
 
 // Check commands
@@ -100,7 +100,6 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 // NWSRFS_DMI commands.
 
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
-import RTi.DataTest.DataTest;
 import RTi.GRTS.TSProductAnnotationProvider;
 
 // TS general commands.
@@ -747,6 +746,43 @@ public Boolean getCreateOutput ()
 }
 
 /**
+Return the data store for the requested name, or null if not found.
+@return the data store for the requested name, or null if not found.
+*/
+public DataStore getDataStoreForName ( String name )
+{   for ( DataStore dataStore : getDataStores() ) {
+        if ( dataStore.getName().equalsIgnoreCase(name) ) {
+            return dataStore;
+        }
+    }
+    return null;
+}
+
+/**
+Return the list of all DataStore instances known to the processor.  These are named database
+connections that correspond to input type/name for time series.
+*/
+public List<DataStore> getDataStores()
+{
+    return __tsengine.getDataStoreList();
+}
+
+/**
+Return the list of data stores for the requested type (e.g., RiversideDBDataStore).  A non-null list
+is guaranteed, but the list may be empty.
+@return the list of data stores matching the requested type
+*/
+public List<DataStore> getDataStoresByType ( Class dataStoreClass )
+{   List<DataStore> dataStoreList = new Vector();
+    for ( DataStore dataStore : getDataStores() ) {
+        if ( dataStore.getClass() == dataStoreClass ) {
+            dataStoreList.add(dataStore);
+        }
+    }
+    return dataStoreList;
+}
+
+/**
 Return an Ensemble matching the requested identifier, or null if not found.
 This method is meant to be used internally without going through the request mechanism.
 @param EnsembleID Ensemble ID to match.
@@ -977,9 +1013,6 @@ public Object getPropContents ( String prop ) throws Exception
 	else if ( prop.equalsIgnoreCase("CreateOutput") ) {
 		return getPropContents_CreateOutput();
 	}
-	else if ( prop.equalsIgnoreCase("DataTestList") ) {
-		return getPropContents_DataTestList();
-	}
     else if ( prop.equalsIgnoreCase("DebugLevelLogFile") ) {
         return new Integer(Message.getDebugLevel(Message.LOG_OUTPUT));
     }
@@ -1119,15 +1152,6 @@ Handle the CreateOutput property request.
 private Boolean getPropContents_CreateOutput()
 {
 	return __CreateOutput_Boolean;
-}
-
-/**
-Handle the DataTestList property request.
-@return list of DataTest instances.
-*/
-private List<DataTest> getPropContents_DataTestList()
-{
-	return __tsengine.getDataTestList();
 }
 
 /**
@@ -2072,6 +2096,9 @@ throws Exception
     else if ( request.equalsIgnoreCase("SetColoradoIppDMI") ) {
         return processRequest_SetColoradoIppDMI ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("DataStore") ) {
+        return processRequest_SetDataStore ( request, request_params );
+    }
 	else if ( request.equalsIgnoreCase("SetHydroBaseDMI") ) {
 		return processRequest_SetHydroBaseDMI ( request, request_params );
 	}
@@ -2083,9 +2110,6 @@ throws Exception
     }
     else if ( request.equalsIgnoreCase("SetProperty") ) {
         return processRequest_SetProperty ( request, request_params );
-    }
-    else if ( request.equalsIgnoreCase("SetRiversideDB_DMI") ) {
-        return processRequest_SetRiversideDB_DMI ( request, request_params );
     }
     else if ( request.equalsIgnoreCase("SetTable") ) {
         return processRequest_SetTable ( request, request_params );
@@ -2957,6 +2981,30 @@ throws Exception
 }
 
 /**
+Process the SetDataStore request.
+*/
+private CommandProcessorRequestResultsBean processRequest_SetDataStore (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "DataStore" );
+    if ( o == null ) {
+        String warning = "Request SetDataStore() does not provide a DataStore parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
+    }
+    DataStore dataStore = (DataStore)o;
+    // Add an open DataStore instance, closing and discarding a previous data store of the same id
+    // if it exists.
+    // 
+    __tsengine.setDataStore( dataStore, true );
+    // No results need to be returned.
+    return bean;
+}
+
+/**
 Process the SetHydroBaseDMI request.
 */
 private CommandProcessorRequestResultsBean processRequest_SetHydroBaseDMI (
@@ -3063,28 +3111,6 @@ throws Exception
     }
     __property_Hashtable.put ( PropertyName, o2 );
     // No data are returned in the bean.
-    return bean;
-}
-
-/**
-Process the SetRiversideDB_DMI request.
-*/
-private CommandProcessorRequestResultsBean processRequest_SetRiversideDB_DMI (
-        String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
-    // Get the necessary parameters...
-    Object o = request_params.getContents ( "RiversideDB_DMI" );
-    if ( o == null ) {
-            String warning = "Request SetRiversideDB_DMI() does not provide a RiversideDB_DMI parameter.";
-            bean.setWarningText ( warning );
-            bean.setWarningRecommendationText ( "This is likely a software code error.");
-            throw new RequestParameterNotFoundException ( warning );
-    }
-    RiversideDB_DMI dmi = (RiversideDB_DMI)o;
-    // Add an open RiversideDB_DMI instance, closing a previous connection of the same name if it exists.
-    __tsengine.setRiversideDB_DMI( dmi, true );
-    // No results need to be returned.
     return bean;
 }
 
@@ -3599,6 +3625,12 @@ output period at read.
 </tr>
 
 <tr>
+<td><b>DataStore</b></td>
+<td>A DataStore instance, such as RiversideDBDataStore.
+</td>
+</tr>
+
+<tr>
 <td><b>DataTestList</b></td>
 <td>A list of DataTest, to be processed when evaluating data.
 </td>
@@ -3674,9 +3706,9 @@ public void setPropContents ( String prop, Object contents ) throws Exception
     else if ( prop.equalsIgnoreCase("AverageStart") ) {
         __tsengine.setAverageStart ( (DateTime)contents );
     }
-    else if ( prop.equalsIgnoreCase("DataTestList" ) ) {
-		__tsengine.setDataTestList ( (List)contents );
-	}
+    else if ( prop.equalsIgnoreCase("DataStore" ) ) {
+        __tsengine.setDataStore ( (DataStore)contents, true );
+    }
 	else if ( prop.equalsIgnoreCase("HydroBaseDMIList" ) ) {
 		__tsengine.setHydroBaseDMIList ( (List)contents );
 	}
@@ -3714,7 +3746,7 @@ public void setPropContents ( String prop, Object contents ) throws Exception
         }
     }
     else if ( prop.equalsIgnoreCase("RiversideDBDMI" ) ) {
-        __tsengine.setRiversideDB_DMI ( (RiversideDB_DMI)contents, true );
+        __tsengine.setDataStore ( (DataStore)contents, true );
     }
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (List)contents );

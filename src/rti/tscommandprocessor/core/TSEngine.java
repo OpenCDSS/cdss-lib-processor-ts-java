@@ -653,17 +653,9 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
-// Code that will be used when service code is fully implemented...
-//import rti.common.transfer.TSIdentityTO;
-//import rti.common.transfer.TSRequestTO;
-//import rti.common.type.PersistenceType;
-//import rti.domain.timeseries.TimeSeries;
-//import rti.domain.timeseries.TimeSeriesFabricator;
-//import rti.transfer.TimeSeriesIdBean;
-//import rti.type.TimeSeriesInputType;
-
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
+import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.ipp.IppDMI;
 import rti.tscommandprocessor.commands.util.Comment_Command;
@@ -685,12 +677,15 @@ import DWR.StateMod.StateMod_TS;
 import DWR.StateMod.StateMod_BTS;
 
 //import RTi.DataServices.Adapter.NDFD.Adapter;
+import RTi.DMI.DMI;
+import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_ESPTraceEnsemble;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
+import RTi.DMI.RiversideDB_DMI.RiversideDBDataStore;
 
 import RTi.GRTS.TSProductAnnotationProvider;
 import RTi.GRTS.TSProductDMI;
@@ -813,11 +808,6 @@ End date for averaging.
 private DateTime __AverageEnd_DateTime = null;
 
 /**
-List of data tests that are defined.
-*/
-private List __datatestlist = null;
-
-/**
 List of DateTime initialized from commands.
 */
 private Hashtable __datetime_Hashtable = new Hashtable ();
@@ -871,7 +861,7 @@ private DateTime __InputEnd_DateTime = null;
 /**
 Vector to save list of time series identifiers that are not found.
 */
-private List __missing_ts = new Vector();
+private List<String> __missing_ts = new Vector();
 
 // TODO SAM 2007-02-18 need to re-enable NDFD
 /**
@@ -918,10 +908,13 @@ which requires the working directory at that point of the workflow.
 */
 private PropList __processor_PropList = null;
 
+// TODO SAM 2010-08-31 Evaluate extending to other databases to consolidate (HDB next?).
 /**
-RiversideDB DMI instance list, to allow more than one database instance to be open at a time.
+Data store list, to generically manage database connections.  Currently only RiversideDB connections
+are managed through this list, as a test.  This list is guaranteed to be non-null, although the individual
+data stores may not be opened and need to be handled appropriately.
 */
-private List<RiversideDB_DMI> __rdmi_Vector = new Vector();
+private List<DataStore> __dataStoreList = new Vector();
 
 /**
 Reference date for year to date report (only use month and day).
@@ -973,7 +966,7 @@ private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
 }
 
 /**
-Make the TSProeductDMI instances known to a TSViewJFrame.  This examines
+Make the TSProductDMI instances known to a TSViewJFrame.  This examines
 DMI instances to see if they implement TSProductDMI.  If so, the
 TSView.addTSProductDMI() method is called with the instance.
 */
@@ -988,12 +981,13 @@ private void addTSViewTSProductDMIs ( TSViewJFrame view )
 		}
 	}
 	// Check the RiversideDB_DMI instances...
-    int rsize = __rdmi_Vector.size();
-    RiversideDB_DMI rdmi = null;
-    for ( int ir = 0; ir < rsize; ir++ ) {
-        rdmi = (RiversideDB_DMI)__rdmi_Vector.get(ir);
-        if ((rdmi != null) && (rdmi instanceof TSProductDMI)){
-            view.addTSProductDMI(rdmi);
+	// TODO SAM 2010-08-31 This is ugly - need to abstract if possible
+    for ( DataStore ds : __dataStoreList ) {
+        if ( ds instanceof RiversideDBDataStore ) {
+            RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)ds).getDMI();
+            if ((rdmi != null) && (rdmi instanceof TSProductDMI)){
+                view.addTSProductDMI(rdmi);
+            }
         }
     }
 }
@@ -1861,11 +1855,11 @@ protected List getColoradoIppDMIList ()
 }
 
 /**
-Return the list of DataTest.
-@return Vector of DataTest that can be used for data test commands.
+Return the list of data stores known to the TSEngine.
 */
-protected List getDataTestList ()
-{   return __datatestlist;
+protected List<DataStore> getDataStoreList()
+{
+    return __dataStoreList;
 }
 
 /**
@@ -2114,32 +2108,6 @@ Indicate whether output that is exported should be previewed first.
 */
 protected boolean getPreviewExportedOutput()
 {   return __PreviewExportedOutput_boolean;
-}
-
-/**
-Return the RiversideDB_DMI that is being used.  Use a blank input name to get the default.
-@param input_name Input name for the DMI, can be blank.
-@return the RiversideDB_DMI that is being used (may return null).
-*/
-protected RiversideDB_DMI getRiversideDB_DMI ( String input_name )
-{   String routine = "TSEngine.getRiversideDB_DMI";
-    Message.printStatus(2, routine, "Getting RiversideDB_DMI connection \"" + input_name + "\"" );
-    int size = __rdmi_Vector.size();
-    if ( input_name == null ) {
-        input_name = "";
-    }
-    RiversideDB_DMI rdmi = null;
-    for ( int i = 0; i < size; i++ ) {
-        rdmi = (RiversideDB_DMI)__rdmi_Vector.get(i);
-        if ( rdmi.getInputName().equalsIgnoreCase(input_name) ) {
-            if ( Message.isDebugOn ) {
-                Message.printDebug ( 1, "", "Returning RiversideDB_DMI[" + i +"] InputName=\""+
-                rdmi.getInputName() + "\"" );
-            }
-            return rdmi;
-        }
-    }
-    return null;
 }
 
 /**
@@ -2654,12 +2622,12 @@ protected static List getTraceIdentifiersFromCommands ( List commands, boolean s
 }
 
 /**
-Return a Vector of objects (currently open DMI instances) that implement
+Return a list of objects (currently open DMI instances) that implement
 TSProductAnnotationProvider. This is a helper method for other methods.
 @return a non-null Vector of TSProductAnnotationProviders.
 */
-protected List getTSProductAnnotationProviders ()
-{	List ap_Vector = new Vector();
+protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
+{	List<TSProductAnnotationProvider> ap_Vector = new Vector();
 	// Check the HydroBase instances...
 	int hsize = __hbdmi_Vector.size();
 	HydroBaseDMI hbdmi = null;
@@ -2674,12 +2642,12 @@ protected List getTSProductAnnotationProviders ()
 		ap_Vector.add ( __smsdmi );
 	}
 	// Check the RiversideDB_DMI instances...
-    int rsize = __rdmi_Vector.size();
-    RiversideDB_DMI rdmi = null;
-    for ( int ir = 0; ir < rsize; ir++ ) {
-        rdmi = __rdmi_Vector.get(ir);
-        if ( (rdmi != null) && (rdmi instanceof TSProductAnnotationProvider)) {
-            ap_Vector.add ( rdmi );
+    for ( DataStore ds: __dataStoreList ) {
+        if ( ds instanceof RiversideDBDataStore ) {
+            RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)ds).getDMI();
+            if ( (rdmi != null) && (rdmi instanceof TSProductAnnotationProvider)) {
+                ap_Vector.add ( (TSProductAnnotationProvider)rdmi );
+            }
         }
     }
 
@@ -2822,6 +2790,22 @@ private int indexOf ( String string, int sequence_number )
 		}
 	}
 	return -1;
+}
+
+/**
+Return the data store that matches the requested name.
+@param dataStoreName name for the data store to find.
+@return the RiversideDB_DMI that is being used (may return null).
+*/
+protected DataStore lookupDataStore ( String dataStoreName )
+{   //String routine = "TSEngine.lookupDataStore";
+    //Message.printStatus(2, routine, "Getting data store for \"" + dataStoreID + "\"" );
+    for ( DataStore ds : __dataStoreList ) {
+        if ( ds.getName().equalsIgnoreCase(dataStoreName) ) {
+            return ds;
+        }
+    }
+    return null;
 }
 
 /**
@@ -3560,7 +3544,6 @@ throws Exception
 {
     // The following are the initial defaults...
     setAutoExtendPeriod ( true );
-    __datatestlist = null;
     __datetime_Hashtable.clear();
     setIncludeMissingTS ( false );
     setIgnoreLEZero ( false );
@@ -4525,22 +4508,31 @@ throws Exception
 
 	// Separate out the input from the TSID...
 
-	List v = StringUtil.breakStringList ( tsidentString, "~", 0 );
+	List<String> v = StringUtil.breakStringList ( tsidentString, "~", 0 );
 	String tsidentString2;	// Version without the input...
 	String inputType = null;
 	String inputName = null;
+	String inputTypeAndName = null; // used with data store approach
     String inputNameFull = null;  // input name with full path
-	tsidentString2 = (String)v.get(0);
+	tsidentString2 = v.get(0);
 	if ( v.size() == 2 ) {
-		inputType = (String)v.get(1);
+		inputType = v.get(1);
+		inputTypeAndName = inputType;
 	}
 	else if ( v.size() == 3 ) {
-		inputType = (String)v.get(1);
-		inputName = (String)v.get(2);
+		inputType = v.get(1);
+		inputName = v.get(2);
+		inputTypeAndName = inputType + "~" + inputName;
         inputNameFull = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(__ts_processor),inputName) );
         Message.printStatus(2, routine, "Absolute path to input name is \"" + inputNameFull + "\"" );
 	}
+	
+	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
+	// using the input type string.  If matched, then the DataStore object information below (e.g., for
+	// RiversideDB).
+	
+	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
 	// TSIdent uses only the first part of the identifier...
 	// TODO SAM 2005-05-22 (why? to avoid confusing the following code?)
@@ -4788,12 +4780,18 @@ throws Exception
 		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( inputNameFull, true );
 		ts = nwsrfs_dmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData );
 	}
-	else if ((inputType != null) && inputType.equalsIgnoreCase("RiversideDB") ) {
+	//else if ((inputType != null) && inputType.equalsIgnoreCase("RiversideDB") ) {
+	else if ((dataStore != null) && (dataStore instanceof RiversideDBDataStore) ) {
 		// New style TSID~input_type~input_name for RiversideDB...
-        RiversideDB_DMI rdmi = getRiversideDB_DMI ( inputName );
+        RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)dataStore).getDMI();
         if ( rdmi == null ) {
-            Message.printWarning ( 3, routine, "Unable to get RiversideDB connection for " +
-            "input name \"" + inputName +  "\".  Unable to read time series." );
+            Message.printWarning ( 3, routine, "Unable to get RiversideDB data store \"" + dataStore.getName() +
+                "\" from processor.  Unable to read time series." );
+            ts = null;
+        }
+        else if ( !rdmi.isOpen() ) {
+            Message.printWarning ( 3, routine, "RiversideDB data store \"" + dataStore.getName() +
+                "\" is not open.  Unable to read time series." );
             ts = null;
         }
         else {
@@ -4801,7 +4799,8 @@ throws Exception
                 ts = rdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
             }
 			catch ( Exception te ) {
-				Message.printWarning ( 2, routine,"Error reading time series \""+tsidentString2 + "\" from RiversideDB" );
+				Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+				    "\" from RiversideDB \"" + dataStore.getName() + "\"." );
 				Message.printWarning ( 3, routine, te );
 				ts = null;
 			}
@@ -5370,12 +5369,45 @@ protected void setColoradoIppDMI ( IppDMI dmi, boolean close_old )
 }
 
 /**
-Set the list of DataTest, for example, when set with TSCommandsProcessor.
-@param DataTest_Vector List of data test definitions, as Vector of DataTest.
+Set a DataStore instance in the list that is being maintained for use.
+The DataStore identifier is used to lookup the instance.  If a match is found,
+the old instance is optionally closed and discarded before adding the new instance.
+The new instance is added at the end.
+@param dataStore DataStore to add to the list.  Null will be ignored.
+@param closeOld If an old data store is matched, close the data store (e.g., database connection) if
+true.  The main issue is that if something else is using a DMI instance (e.g.,
+the TSTool GUI) it may be necessary to leave the old instance open.
 */
-protected void setDataTestList ( List DataTest_Vector )
-{	
-	__datatestlist = (List)DataTest_Vector;
+protected void setDataStore ( DataStore dataStore, boolean closeOld )
+{   String routine = "TSEngine.setDataStore";
+    if ( dataStore == null ) {
+        return;
+    }
+
+    Message.printStatus(2, routine, "Setting data store \"" + dataStore.getName() + "\"" );
+    for ( DataStore ds : __dataStoreList ) {
+        if ( ds.getName().equalsIgnoreCase(dataStore.getName())){
+            // The input name of the current instance matches that of the instance in the list.
+            // Replace the instance in the list by the new instance...
+            if ( closeOld ) {
+                try {
+                    if ( ds instanceof DatabaseDataStore ) {
+                        DMI dmi = ((DatabaseDataStore)ds).getDMI();
+                        dmi.close();
+                    }
+                }
+                catch ( Exception e ) {
+                    // Probably can ignore.
+                    Message.printWarning (3,routine,"Error closing data store \"" + dataStore.getName() +
+                        "\" before reopening:");
+                    Message.printWarning (3,routine, e);
+                }
+            }
+        }
+    }
+
+    // Add a new instance to the list...
+    __dataStoreList.add ( dataStore );
 }
 
 /**
@@ -5585,47 +5617,6 @@ Set the value of the PreviewExportedOutput property.
 private void setPreviewExportedOutput ( boolean PreviewExportedOutput_boolean )
 {
     __PreviewExportedOutput_boolean = PreviewExportedOutput_boolean;
-}
-
-/**
-Set a RiversideDB_DMI instance in the list that is being maintained for use.
-The input name in the DMI is used to lookup the instance.  If a match is found,
-the old instance is optionally closed and the new instance is set in the same
-location.  If a match is not found, the new instance is added at the end.
-@param hbdmi RiversideDB_DMI to add to the list.  Null will be ignored.
-@param close_old If an old DMI instance is matched, close the DMI instance if
-true.  The main issue is that if something else is using the DMI instance (e.g.,
-the TSTool GUI) it may be necessary to leave the old instance open.
-*/
-protected void setRiversideDB_DMI ( RiversideDB_DMI rdmi, boolean close_old )
-{   String routine = "TSEngine.setRiversideDB_DMI";
-    if ( rdmi == null ) {
-        return;
-    }
-    int size = __rdmi_Vector.size();
-    RiversideDB_DMI rdmi2 = null;
-    String input_name = rdmi.getInputName();
-    Message.printStatus(2, routine, "Saving RiversideDB_DMI connection \"" + input_name + "\"" );
-    for ( int i = 0; i < size; i++ ) {
-        rdmi2 = __rdmi_Vector.get(i);
-        if ( rdmi2.getInputName().equalsIgnoreCase(input_name)){
-            // The input name of the current instance matches that of the instance in the Vector.
-            // Replace the instance in the Vector by the new instance...
-            if ( close_old ) {
-                try {
-                    rdmi2.close();
-                }
-                catch ( Exception e ) {
-                    // Probably can ignore.
-                }
-            }
-            __rdmi_Vector.set ( i, rdmi );
-            return;
-        }
-    }
-
-    // Add a new instance to the Vector...
-    __rdmi_Vector.add ( rdmi );
 }
 
 /**

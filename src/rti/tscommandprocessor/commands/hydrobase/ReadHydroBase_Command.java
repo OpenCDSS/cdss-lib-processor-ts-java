@@ -107,7 +107,7 @@ protected String _Warn = "Warn";
 List of time series read during discovery.  These are TS objects but with maintly the
 metadata (TSIdent) filled in.
 */
-private List __discovery_TS_Vector = null;
+private List<TS> __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -368,7 +368,7 @@ throws InvalidCommandParameterException
 /**
 Return the list of time series read in discovery phase.
 */
-private List getDiscoveryTSList ()
+private List<TS> getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -378,14 +378,14 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-	List discovery_TS_Vector = getDiscoveryTSList ();
+	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_Vector.get(0);
-    // Use the most generic for the base class...
-    TS ts = new TS();
-    if ( (c == ts.getClass()) || (c == datats.getClass()) ) {
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Also check the base class
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_Vector;
     }
     else {

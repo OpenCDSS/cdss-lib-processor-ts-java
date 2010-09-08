@@ -88,7 +88,7 @@ private String __delimiter = null;
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List __discovery_TS_List = null;
+private List<TS> __discovery_TS_List = null;
 
 /**
 Interval for the time series.
@@ -887,7 +887,7 @@ private String getDelimiter ()
 /**
 Return the list of time series read in discovery phase.
 */
-private List getDiscoveryTSList ()
+private List<TS> getDiscoveryTSList ()
 {
     return __discovery_TS_List;
 }
@@ -921,11 +921,13 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List discovery_TS_List = getDiscoveryTSList ();
+    List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_List.get(0);
+    // Since all time series in file must have the same interval, check the first time series (e.g., MonthTS)
+    TS datats = discovery_TS_List.get(0);
+    // Also check the base class
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_List;
     }

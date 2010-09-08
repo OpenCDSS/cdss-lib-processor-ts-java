@@ -48,7 +48,7 @@ protected final String _PercentError = "PercentError";
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List __discovery_TS_List = null;
+private List<TS> __discovery_TS_List = null;
 
 /**
 Constructor.
@@ -183,7 +183,7 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of time series read in discovery phase.
 */
-private List getDiscoveryTSList ()
+private List<TS> getDiscoveryTSList ()
 {
     return __discovery_TS_List;
 }
@@ -193,11 +193,11 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List discovery_TS_List = getDiscoveryTSList ();
+    List<TS> discovery_TS_List = getDiscoveryTSList ();
     if ( (discovery_TS_List == null) || (discovery_TS_List.size() == 0) ) {
         return null;
     }
-    TS datats = (TS)discovery_TS_List.get(0);
+    TS datats = discovery_TS_List.get(0);
     if ( (c == TS.class) || (c == datats.getClass()) ) {
         return discovery_TS_List;
     }

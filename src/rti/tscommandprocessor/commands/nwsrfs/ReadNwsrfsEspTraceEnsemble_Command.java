@@ -62,7 +62,7 @@ private TSEnsemble __tsensemble = null;
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List __discovery_TS_Vector = null;
+private List<TS> __discovery_TS_Vector = null;
 
 /**
 Indicates whether the TS Alias version of the command is being used.
@@ -379,7 +379,7 @@ private TSEnsemble getDiscoveryEnsemble()
 /**
 Return the list of time series read in discovery phase.
 */
-private List getDiscoveryTSList ()
+private List<TS> getDiscoveryTSList ()
 {
     return __discovery_TS_Vector;
 }
@@ -388,10 +388,11 @@ private List getDiscoveryTSList ()
 Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
-{   List discovery_TS_Vector = getDiscoveryTSList ();
+{   List<TS> discovery_TS_Vector = getDiscoveryTSList ();
     TS datats = null;
+    // Since all time series must be the same interval, check the class for the first one (e.g., HourTS)
     if ( (discovery_TS_Vector != null) && (discovery_TS_Vector.size() > 0) ) {
-        datats = (TS)discovery_TS_Vector.get(0);
+        datats = discovery_TS_Vector.get(0);
     }
     // Use the most generic for the base class...
     if ( (c == TS.class) || ((datats != null) && (c == datats.getClass())) ) {
@@ -409,7 +410,7 @@ public List getObjectList ( Class c )
             return null;
         }
         else {
-        	List v = new Vector();
+        	List<TSEnsemble> v = new Vector();
             v.add ( ensemble );
             return v;
         }

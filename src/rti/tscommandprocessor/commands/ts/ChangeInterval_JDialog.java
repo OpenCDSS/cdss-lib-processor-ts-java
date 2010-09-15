@@ -471,12 +471,12 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to convert:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
     			(TSCommandProcessor)__command.getCommandProcessor(), __command );
     if ( tsids == null ) {
         tsids = new Vector();
     }
-	__TSID_JComboBox = new SimpleJComboBox ( false );
+	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit because discovery may not work with some commands
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,

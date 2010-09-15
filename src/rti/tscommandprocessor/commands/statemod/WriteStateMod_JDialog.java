@@ -324,26 +324,24 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        List tslist_Vector = new Vector();
-	tslist_Vector.add ( TSListType.ALL_MATCHING_TSID );
-	tslist_Vector.add ( TSListType.ALL_TS );
-	tslist_Vector.add ( TSListType.SELECTED_TS );
+    List<String> tslist_Vector = new Vector();
+	tslist_Vector.add ( "" + TSListType.ALL_MATCHING_TSID );
+	tslist_Vector.add ( "" + TSListType.ALL_TS );
+	tslist_Vector.add ( "" + TSListType.SELECTED_TS );
 	__TSList_JComboBox = new SimpleJComboBox(false);
 	__TSList_JComboBox.setData ( tslist_Vector );
 	__TSList_JComboBox.select ( 0 );
 	__TSList_JComboBox.addActionListener (this);
 	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"How to get the time series to write."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("How to get the time series to write."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Identifier (TSID) to match:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Identifier (TSID) to match:" ), 
+	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-        List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-    			(TSCommandProcessor)__command.getCommandProcessor(), __command );
+    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	int size = 0;
 	if ( tsids == null ) {
@@ -354,7 +352,8 @@ private void initialize ( JFrame parent, Command command )
 	if ( size > 0 ) {
 		tsids.add ( 0, "" );
 	}
-	else {	tsids.add ( "" );
+	else {
+	    tsids.add ( "" );
 	}
 	// Always allow a "*" to let all time series be filled (put at end)...
 	tsids.add ( "*" );
@@ -365,8 +364,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"StateMod file to write:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("StateMod file to write:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST );
 	__OutputFile_JTextField = new JTextField ( 50 );
 	__OutputFile_JTextField.addKeyListener ( this );
@@ -380,20 +378,18 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
 	__OutputStart_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output start."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Overrides the global output start."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
 	__OutputEnd_JTextField.addKeyListener (this);
-        JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Overrides the global output end."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Overrides the global output end."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
@@ -410,13 +406,12 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Precision_JTextField = new JTextField ( "", 20 );
 	__Precision_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Digits after decimal (default=-2)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Digits after decimal (default=-2)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 4, 55 );
 	__command_JTextArea.setLineWrap ( true );
@@ -428,7 +423,7 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	if ( __working_dir != null ) {
@@ -461,7 +456,8 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// Other character entered...
+	else {
+	    // Other character entered...
 		refresh();
 	}
 }
@@ -474,7 +470,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -590,7 +586,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -623,4 +619,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end writeStateMod_JDialog
+}

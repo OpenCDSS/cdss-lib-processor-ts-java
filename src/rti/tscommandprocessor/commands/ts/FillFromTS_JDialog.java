@@ -264,9 +264,7 @@ private void initialize ( JFrame parent, Command command )
 	// Main contents...
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Copy data values from the independent time series to replace missing values in the"),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Copy data values from the independent time series to replace missing values in the " +
 		"dependent time series.  Only data in the fill period will be checked."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -288,7 +286,7 @@ private void initialize ( JFrame parent, Command command )
      y = CommandEditorUtil.addTSListToEditorDialogPanel (
              this, main_JPanel, new JLabel ("Dependent TS List:"), __TSList_JComboBox, y );
 
-     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+     __TSID_JLabel = new JLabel ("TSID (for TSList=*MatchingTSID):");
      __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
      List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
              (TSCommandProcessor)__command.getCommandProcessor(), __command );
@@ -306,7 +304,7 @@ private void initialize ( JFrame parent, Command command )
              this, main_JPanel, new JLabel ("Independent TS List:"), __IndependentTSList_JComboBox, y );
 
      __IndependentTSID_JLabel = new JLabel (
-             "Independent TSID (for Independent TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
+             "Independent TSID (for Independent TSList=*MatchingTSID):");
      __IndependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
      y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids, y );
      
@@ -316,18 +314,23 @@ private void initialize ( JFrame parent, Command command )
      y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
              this, this, main_JPanel, __IndependentEnsembleID_JLabel, __IndependentEnsembleID_JComboBox, EnsembleIDs, y );
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill period:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__FillStart_JTextField = new JTextField ( "", 15 );
-	__FillStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__FillEnd_JTextField = new JTextField ( "", 15 );
-	__FillEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill start date/time:"),
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __FillStart_JTextField = new JTextField ( "", 10 );
+     __FillStart_JTextField.addKeyListener ( this );
+         JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - start of period to fill (default=fill all)."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+     JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end date/time:"),
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __FillEnd_JTextField = new JTextField ( "", 10 );
+     __FillEnd_JTextField.addKeyListener ( this );
+     JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - end of period to fill (default=fill all)."),
+         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -339,8 +342,9 @@ private void initialize ( JFrame parent, Command command )
     __RecalcLimits_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __RecalcLimits_JComboBox,
     1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Recalculate original data limits after fill (default=False)."), 
-    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel( "Optional - recalculate original data limits after fill (default=" + __command._False + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

@@ -108,6 +108,8 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.TableMath_Command;
+import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
 
@@ -742,7 +744,13 @@ throws UnknownCommandException
 	
 	// "T" commands...
 
-	else if ( StringUtil.startsWithIgnoreCase(commandString,"TestCommand") ) {
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"TableMath") ) {
+        return new TableMath_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"TableTimeSeriesMath") ) {
+        return new TableTimeSeriesMath_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"TestCommand") ) {
 		return new TestCommand_Command ();
 	}
     else if ( StringUtil.startsWithIgnoreCase(commandString,"TimeSeriesToTable") ) {

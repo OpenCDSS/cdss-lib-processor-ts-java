@@ -1,24 +1,3 @@
-// ----------------------------------------------------------------------------
-// startLog_JDialog - editor for startLog() command
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-05-13	Steven A. Malers, RTi	Initial version (copy and modify
-//					sortTimeSeries_JDialog).
-// 2005-05-19	SAM, RTi		Move from TSTool package.
-// 2005-05-20	SAM, RTi		Add Suffix parameter.
-// 2005-12-12	J. Thomas Sapienza, RTi	Corrected bug that was resulting in 
-//					a blank filename (used to specify that
-//					the log file should be re-opened) 
-//					being translated to ".log" when the OK
-//					button was pressed.
-// 2007-02-16	SAM, RTi		Update for new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.logging;
 
 import java.awt.event.ActionEvent;
@@ -93,8 +72,7 @@ public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
 	if ( o == __browse_JButton ) {
-		String last_directory_selected =
-			JGUIUtil.getLastFileDialogDirectory();
+		String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
 		JFileChooser fc = null;
 		if ( last_directory_selected != null ) {
 			fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
@@ -176,7 +154,8 @@ private void checkInput ()
 	if ( Suffix.length() > 0 ) {
 		props.set ( "Suffix", Suffix );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -186,7 +165,7 @@ private void checkInput ()
 }
 
 /**
-Commit the edits to the command.  In this case the command should be reparsed
+Commit the edits to the command.  In this case the command should be re-parsed
 to check its low-level values.
 */
 private void commitEdits ()
@@ -258,32 +237,30 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"(Re)start the log file.  This is useful when it is desirable "+
 		"to have a log file saved for a commands file." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"A blank log file name will restart the current file."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The log file can be specified using a full or " +
 		"relative path (relative to the working directory)."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file " +
-		"to overwrite."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"The Browse button can be used to select an existing file to overwrite."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying a suffix for the file will insert the suffix " +
-		"before the \"log\" file extension."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Specifying a suffix for the file will insert the suffix before the \"log\" file extension."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Log file:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Log file:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__LogFile_JTextField = new JTextField ( 50 );
 	__LogFile_JTextField.addKeyListener ( this );
@@ -293,7 +270,7 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Suffix:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Suffix:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Suffix_JComboBox = new SimpleJComboBox ( false );
 	__Suffix_JComboBox.addItem ( "" );	// Default
@@ -303,7 +280,7 @@ private void initialize ( JFrame parent, Command command )
 	__Suffix_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Suffix_JComboBox,
 	    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Suffix for log file (blank=none)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - suffix for log file (blank=none)."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

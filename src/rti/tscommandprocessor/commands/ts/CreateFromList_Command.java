@@ -390,7 +390,7 @@ throws InvalidCommandParameterException,
     String DefaultUnits = parameters.getValue("DefaultUnits");
     
 	// Read the file.
-    List tslist = new Vector();   // Keep the list of time series
+    List<TS> tslist = new Vector();   // Keep the list of time series
     String ListFile_full = ListFile;
 	try {
         boolean read_data = true;
@@ -592,7 +592,7 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
 {
     __discovery_TS_Vector = discovery_TS_Vector;
 }

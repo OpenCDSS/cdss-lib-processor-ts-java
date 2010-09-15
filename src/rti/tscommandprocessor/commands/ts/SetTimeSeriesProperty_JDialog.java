@@ -28,6 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -52,7 +53,7 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Editable_JComboBox = null;
-private JTextField __Description_JTextField = null;
+private TSFormatSpecifiersJPanel __Description_JTextField = null; // Allows expansion of % specifiers
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null; // Missing value for output
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
@@ -218,7 +219,7 @@ private void initialize ( JFrame parent, Command command )
 		"Set time series properties (metadata)." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The identifier cannot be reset because it is used to connect commands during processing."),
+		"The identifier information cannot be changed because it is used to define workflow processing."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -237,13 +238,16 @@ private void initialize ( JFrame parent, Command command )
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
         
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Description:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Description_JTextField = new JTextField (10);
-    __Description_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Description:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Description_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Description_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Description_JTextField.addKeyListener ( this );
+    __Description_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - often the location."),
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
@@ -253,7 +257,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - only set equivalent to original units."),
+        "Optional - data units (does not change values)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),

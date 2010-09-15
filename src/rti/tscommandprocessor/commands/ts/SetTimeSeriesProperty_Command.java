@@ -119,10 +119,8 @@ public boolean editCommand ( JFrame parent )
 /**
 Run the command.
 @param command_number Command number in sequence.
-@exception CommandWarningException Thrown if non-fatal warnings occur (the
-command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -206,7 +204,7 @@ CommandWarningException, CommandException
         // Now set the data...
         try {
             if ( (Description != null) && (Description.length() > 0) ) {
-                ts.setDescription ( Description );
+                ts.setDescription ( ts.formatLegend ( Description ) );
             }
             if ( (Units != null) && (Units.length() > 0) ) {
                 ts.setDataUnits ( Units );

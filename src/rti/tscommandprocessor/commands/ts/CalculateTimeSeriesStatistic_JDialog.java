@@ -27,6 +27,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -54,6 +55,7 @@ private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
 private JTextField __TableStatisticColumn_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -134,6 +136,7 @@ private void checkInput ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
 	String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+	String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
 	String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
 	__error_wait = false;
 
@@ -170,6 +173,9 @@ private void checkInput ()
     if ( TableTSIDColumn.length() > 0 ) {
         parameters.set ( "TableTSIDColumn", TableTSIDColumn );
     }
+    if ( TableTSIDFormat.length() > 0 ) {
+        parameters.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
     if ( TableStatisticColumn.length() > 0 ) {
         parameters.set ( "TableStatisticColumn", TableStatisticColumn );
     }
@@ -199,6 +205,7 @@ private void commitEdits ()
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
@@ -211,6 +218,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
+    __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "TableStatisticColumn", TableStatisticColumn );
 }
 
@@ -282,7 +290,7 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Statistic to calculate:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Statistic_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    __Statistic_JComboBox = new SimpleJComboBox ( 12, false ); // Do not allow edit
     __Statistic_JComboBox.setData ( TSUtil_CalculateTimeSeriesStatistic.getStatisticChoicesAsStrings() );
     __Statistic_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
@@ -356,6 +364,17 @@ private void initialize ( JFrame parent, CalculateTimeSeriesStatistic_Command co
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for TSID."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Format of TSID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
+    __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __TableTSIDFormat_JTextField.addKeyListener ( this );
+    __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __TableTSIDFormat_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table statistic column:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -454,6 +473,7 @@ private void refresh ()
 	String AnalysisEnd = "";
 	String TableID = "";
 	String TableTSIDColumn = "";
+	String TableTSIDFormat = "";
 	String TableStatisticColumn = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -470,6 +490,7 @@ private void refresh ()
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		TableID = props.getValue ( "TableID" );
 		TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
+		TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
 		TableStatisticColumn = props.getValue ( "TableStatisticColumn" );
         if ( TSList == null ) {
             // Select default...
@@ -563,6 +584,9 @@ private void refresh ()
         if ( TableTSIDColumn != null ) {
             __TableTSIDColumn_JTextField.setText ( TableTSIDColumn );
         }
+        if (TableTSIDFormat != null ) {
+            __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
+        }
         if ( TableStatisticColumn != null ) {
             __TableStatisticColumn_JTextField.setText ( TableStatisticColumn );
         }
@@ -579,6 +603,7 @@ private void refresh ()
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     TableStatisticColumn = __TableStatisticColumn_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -591,7 +616,8 @@ private void refresh ()
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
     props.add ( "TableID=" + TableID );
-    props.add ( "TableTISColumn=" + TableTSIDColumn );
+    props.add ( "TableTSIDColumn=" + TableTSIDColumn );
+    props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "TableStatisticColumn=" + TableStatisticColumn );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

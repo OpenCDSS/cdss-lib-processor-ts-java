@@ -28,6 +28,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.TableField;
 import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 
@@ -124,8 +125,16 @@ throws InvalidCommandParameterException
         // Additional checks that depend on the statistic
         
         if ( supported ) {
-            int nRequiredValues =
+            int nRequiredValues = -1;
+            try {
                 TSUtil_CalculateTimeSeriesStatistic.getRequiredNumberOfValuesForStatistic ( statisticType );
+            }
+            catch ( Exception e ) {
+                message = "Statistic \"" + statisticType + "\" is not recognized.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Contact software support." ) );
+            }
             
             if ( nRequiredValues >= 1 ) {
                 if ( (Value1 == null) || Value1.equals("") ) {
@@ -219,6 +228,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "TableTSIDColumn" );
+    valid_Vector.add ( "TableTSIDFormat" );
     valid_Vector.add ( "TableStatisticColumn" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -247,7 +257,7 @@ public boolean editCommand ( JFrame parent )
 // Parse command is in the base class
 
 /**
-Method to execute the setIrrigationPracticeTSPumpingMaxUsingWellRights() command.
+Method to execute the command.
 @param command_number Number of command in sequence.
 @exception Exception if there is an error processing the command.
 */
@@ -292,8 +302,9 @@ CommandWarningException, CommandException
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String TableID = parameters.getValue ( "TableID" );
-    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
+    String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
 
     // Figure out the dates to use for the analysis.
     // Default of null means to analyze the full period.
@@ -501,15 +512,33 @@ CommandWarningException, CommandException
                     AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, Value3_Double );
                 tsStatistic.calculateTimeSeriesStatistic();
                 // Now set in the table
-                if ( TableID != null ) {
-                    if ( TableStatisticColumn != null ) {
-                        // See if a matching row exists...
-                        String tsid = ts.getAlias();
-                        if ( (tsid == null) || tsid.equals("") ) {
-                            tsid = ts.getIdentifierString();
+                if ( (TableID != null) && !TableID.equals("") ) {
+                    if ( (TableStatisticColumn != null) && !TableStatisticColumn.equals("") ) {
+                        // See if a matching row exists using the specified TSID column...
+                        String tsid = null;
+                        if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
+                            // Format the TSID using the specified format
+                            tsid = ts.formatLegend ( TableTSIDFormat );
+                        }
+                        else {
+                            // Use the alias if available and then the TSID
+                            tsid = ts.getAlias();
+                            if ( (tsid == null) || tsid.equals("") ) {
+                                tsid = ts.getIdentifierString();
+                            }
                         }
                         TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
-                        int statisticColumn = table.getFieldIndex(TableStatisticColumn);
+                        Message.printStatus(2,routine,"Searched column\"" + TableTSIDColumn + "\" for \"" +
+                            tsid + "\" ... found " + rec );
+                        int statisticColumn = -1;
+                        try {
+                            statisticColumn = table.getFieldIndex(TableStatisticColumn);
+                        }
+                        catch ( Exception e2 ) {
+                            // Automatically add to the table, initialize with null (not nonValue)
+                            table.addField(new TableField(TableField.DATA_TYPE_DOUBLE,TableStatisticColumn,10,4), null );
+                            statisticColumn = table.getFieldIndex(TableStatisticColumn);
+                        }
                         if ( rec != null ) {
                             // There is already a row for the TSID so just set the value in the table column...
                             rec.setFieldValue(statisticColumn, tsStatistic.getStatisticResult());
@@ -575,6 +604,7 @@ public String toString ( PropList parameters )
     String IfNotFound = parameters.getValue ( "IfNotFound" );
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
+    String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableStatisticColumn = parameters.getValue ( "TableStatisticColumn" );
         
     StringBuffer b = new StringBuffer ();
@@ -650,6 +680,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableTSIDColumn=\"" + TableTSIDColumn + "\"" );
+    }
+    if ( (TableTSIDFormat != null) && (TableTSIDFormat.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TableTSIDFormat=\"" + TableTSIDFormat + "\"" );
     }
     if ( (TableStatisticColumn != null) && (TableStatisticColumn.length() > 0) ) {
         if ( b.length() > 0 ) {

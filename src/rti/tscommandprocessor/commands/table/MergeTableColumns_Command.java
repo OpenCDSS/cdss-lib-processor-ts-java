@@ -406,9 +406,9 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 	
-	// Add a column to the table.  For now alwasy treat as a string...
+	// Add a column to the table.  For now always treat as a string...
 
-	table.addField ( new TableField(TableField.DATA_TYPE_STRING,NewColumnName) );
+	table.addField ( new TableField(TableField.DATA_TYPE_STRING,NewColumnName), "" );
 
 	// Loop through the table records, merge the columns and set in the new column...
 

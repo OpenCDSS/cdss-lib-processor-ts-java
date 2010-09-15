@@ -16,6 +16,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -25,6 +26,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
@@ -33,7 +35,15 @@ import RTi.Util.Time.DateTime;
 This class initializes, checks, and runs the Delta() command.
 */
 public class Delta_Command extends AbstractCommand implements Command
+// TODO SAM 2010-09-13 Need to figure out how to do discovery
+// , CommandDiscoverable, ObjectListProvider
 {
+    
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discovery_TS_Vector = null;
     
 /**
 Constructor.
@@ -187,8 +197,51 @@ public boolean editCommand ( JFrame parent )
 	return (new Delta_JDialog ( parent, this )).ok();
 }
 
+/**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
 // parseCommand() from the base class
 
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could
+not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+// TODO SAM 2010-09-13 The following is used since discovery is not fully enabled
 /**
 Run the command.
 ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
@@ -200,6 +253,21 @@ ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
 {	String routine = "Delta_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
@@ -209,7 +277,7 @@ CommandWarningException, CommandException
 	// Make sure there are time series available to operate on...
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -260,7 +328,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -274,7 +342,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -288,7 +356,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -307,7 +375,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -321,7 +389,7 @@ CommandWarningException, CommandException
 			Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -335,7 +403,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -357,7 +425,7 @@ CommandWarningException, CommandException
 		Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 	}
@@ -373,7 +441,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( log_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message,
                         "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
@@ -386,7 +454,7 @@ CommandWarningException, CommandException
 			Message.printWarning ( log_level,
 					MessageUtil.formatMessageTag(
 							command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message,
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
@@ -400,7 +468,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 	}
 
@@ -417,6 +485,7 @@ CommandWarningException, CommandException
 
 	TS ts = null;
 	Object o_ts = null;
+	List<TS> discoverTSList = new Vector();
 	for ( int its = 0; its < nts; its++ ) {
 		// The time series to process, from the list that was returned above.
 		o_ts = tslist.get(its);
@@ -425,7 +494,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE, message,
                     "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
 			// Go to next time series.
@@ -434,14 +503,20 @@ CommandWarningException, CommandException
 		ts = (TS)o_ts;
 		
 		try {
+		    boolean createData = true; // Run full command
+	        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	            // Just want time series headers initialized
+	            createData = false;
+	            setDiscoveryTSList ( null );
+	        }
 		    // Do the scaling...
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
 			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime,
-			    trendType, resetMin, resetMax, Flag );
+			    trendType, resetMin, resetMax, Flag, createData );
 			TS newts = tsu.delta();
 			if ( (Alias != null) && !Alias.equals("") ) {
 			    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                    processor, newts, Alias, status, CommandPhaseType.RUN);
+                    processor, newts, Alias, status, commandPhase);
                 newts.setAlias ( alias );
 			}
 			// If requested, change the data units...
@@ -457,11 +532,17 @@ CommandWarningException, CommandException
                     MessageUtil.formatMessageTag(command_tag,++warning_count),routine,problem );
                 // No recommendation since it is a user-defined check
                 // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(CommandStatusType.WARNING,
+                status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.WARNING,
                     problem, "" ) );
             }
 
 	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts );
+	        
+	        // Add to the discover list
+	        
+	        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	            discoverTSList.add ( newts );
+	        }
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error creating delta time series for \""+ ts.getIdentifier() + "\" (" + e + ").";
@@ -469,11 +550,18 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
 			Message.printWarning(3,routine,e);
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "See the log file for details - report the problem to software support." ) );
 		}
 	}
+	
+	// Set the discovery time series list
+	
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Just want time series headers initialized
+        setDiscoveryTSList ( discoverTSList );
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -483,7 +571,15 @@ CommandWarningException, CommandException
 			routine,message);
 		throw new CommandWarningException ( message );
 	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

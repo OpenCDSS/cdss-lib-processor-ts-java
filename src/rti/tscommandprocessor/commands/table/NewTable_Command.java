@@ -253,8 +253,8 @@ CommandWarningException, CommandException
                         columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], 12, 2) );
                     }
                     else {
-                        // No precision is necessary
-                        columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i]) );
+                        // No precision is necessary and specify the field width as -1 meaning it can grow
+                        columnList.add ( new TableField(TableField.lookupDataType(__columnTypes[i]), __columnNames[i], -1) );
                     }
                 }
             }

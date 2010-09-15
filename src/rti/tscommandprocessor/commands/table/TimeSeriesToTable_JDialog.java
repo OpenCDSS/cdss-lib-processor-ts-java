@@ -238,7 +238,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Copy time series to an existing table (or optionally create a new table)." ), 
+		"Copy time series to a new table." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The date/times and data values will be put in columns of the table." ), 
@@ -333,14 +333,13 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if table not found:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfTableNotFound_JComboBox = new SimpleJComboBox ( false );
-	__IfTableNotFound_JComboBox.addItem ( "" );
+	//__IfTableNotFound_JComboBox.addItem ( "" );
 	__IfTableNotFound_JComboBox.addItem ( __command._Create );
-	__IfTableNotFound_JComboBox.addItem ( __command._Warn );
+	//__IfTableNotFound_JComboBox.addItem ( __command._Warn );
 	__IfTableNotFound_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __IfTableNotFound_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional (default is " + __command._Warn + ")."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

@@ -128,7 +128,7 @@ private void initialize ( JFrame parent, Command command )
 	addWindowListener( this );
 
     Insets insetsTLBR = new Insets(7,2,7,2);
-    Insets insetsMin = new Insets(0,2,0,2);
+    Insets insetsMin = new Insets(2,2,2,2);
 
 	// Main panel...
 
@@ -139,23 +139,24 @@ private void initialize ( JFrame parent, Command command )
 
 	// Main contents...
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "The output period" +
-	" is used ONLY for output products (e.g., files)."),
-	0, y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Set the global (default) output period for time series and output products."),
+	    0, y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"The time series period after reading will typically be extended to the output period if necessary."),
+	"The time series period after reading typically will be extended to " +
+	"the output period by using the missing value."),
 	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Use a SetOutputPeriod() command to guarantee longer periods if filling data."),
+	"Use a SetOutputPeriod() command to guarantee a longer period when filling/extending data."),
 	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 	"Specify the command at the top of commands when filling a specific period."),
 	0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Enter date/times to a " +
-		"precision appropriate for time series being read.  For example:"),
+		"precision appropriate for time series being processed.  For example:"),
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -197,8 +198,7 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Leave blank to read all available data (default if " +
-		"SetInputPeriod() command is not used)."), 
+		"See also the SetInputPeriod() command, which will constrain the period that is read."), 
 		0, ++y, 6, 1, 0, 0, insetsMin, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output period start:" ),
@@ -207,6 +207,8 @@ private void initialize ( JFrame parent, Command command )
 	__OutputStart_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
 		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required"), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output period end:" ),
 		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -214,6 +216,8 @@ private void initialize ( JFrame parent, Command command )
 	__OutputEnd_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
 		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required"), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

@@ -26,9 +26,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the SetOutputPeriod() command.
-</p>
 */
 public class SetOutputPeriod_Command extends AbstractCommand implements Command
 {
@@ -114,7 +112,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );

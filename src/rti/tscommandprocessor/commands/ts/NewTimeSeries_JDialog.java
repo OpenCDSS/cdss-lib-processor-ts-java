@@ -1,23 +1,3 @@
-// ----------------------------------------------------------------------------
-// newTimeSeries_JDialog - editor for newTimeSeries()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 20 Feb 2001	Steven A. Malers, RTi	Initial version.
-// 2002-04-24	SAM, RTi		Clean up the dialog.
-// 2002-04-28	SAM, RTi		Fix so that bad dates print a warning.
-// 2003-03-23	SAM, RTi		Display the TSID parts individually so
-//					the user does not need to mess with.
-// 2003-12-15	SAM, RTi		Update to Swing.
-// 2005-09-20	SAM, RTi		* Convert to use a command class.
-//					* Hook in the dialog to edit the time
-//					  series identifier.
-// 2007-03-02	SAM, RTi		Fix notes about start and end.
-//					Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -102,27 +82,25 @@ public void actionPerformed( ActionEvent event )
         refresh();
 	}
 	else if ( o == __edit_JButton ) {
-		// Edit the NewTSID in the dialog.  It is OK for the string to
-		// be blank.
+		// Edit the NewTSID in the dialog.  It is OK for the string to be blank.
 		String NewTSID = __NewTSID_JTextArea.getText().trim();
 		TSIdent tsident;
-		try {	if ( NewTSID.length() == 0 ) {
+		try {
+		    if ( NewTSID.length() == 0 ) {
 				tsident = new TSIdent();
 			}
-			else {	tsident = new TSIdent ( NewTSID );
+			else {
+			    tsident = new TSIdent ( NewTSID );
 			}
-			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame,
-				true, tsident, null )).response();
+			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame, true, tsident, null )).response();
 			if ( tsident2 != null ) {
-				__NewTSID_JTextArea.setText (
-					tsident2.toString(true) );
+				__NewTSID_JTextArea.setText (tsident2.toString(true) );
 				refresh();
 			}
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" +
-			NewTSID + "\"." );
+			"Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -172,7 +150,8 @@ private void checkInput ()
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		props.set ( "InitialValue", InitialValue );
 	}
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -247,84 +226,84 @@ private void initialize ( JFrame parent, Command command )
 		"Specify period start and end date/times using a precision consistent with the data interval."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Alias_JTextField = new JTextField ( "" );
 	__Alias_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Can use in other commands instead of TSID." ), 
+		"Required - use in other commands instead of TSID." ), 
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__NewTSID_JTextArea = new JTextArea ( 3, 25 );
 	__NewTSID_JTextArea.setLineWrap ( true );
 	__NewTSID_JTextArea.setWrapStyleWord ( true );
 	__NewTSID_JTextArea.addKeyListener ( this );
 	// Make 3-high to fit in the edit button...
-        JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
 		1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Specify to avoid confusion with TSID from original TS."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Required - specify to avoid confusion with TSID from original TS."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	y += 2;
-        JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
 		new SimpleJButton ( "Edit", "Edit", this ) ),
 		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-        JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
+    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Description_JTextField = new JTextField ( "", 30 );
 	JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__Description_JTextField.addKeyListener ( this );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Start:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Start:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetStart_JTextField = new JTextField ( "", 20 );
 	__SetStart_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __SetStart_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Starting date/time for time series (blank=setOutputPeriod() start)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - starting date/time for time series (default=SetOutputPeriod() start)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "End:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__SetEnd_JTextField = new JTextField ( "", 20 );
 	__SetEnd_JTextField.addKeyListener ( this );
 	JGUIUtil.addComponent(main_JPanel, __SetEnd_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Ending date/time for time series (blank=setOutputPeriod() end)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - ending date/time for time series (default=SetOutputPeriod() end)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data units:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 10 );
 	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__Units_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"For example:  ACFT, CFS, IN."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - for example:  ACFT, CFS, IN (default=no units)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial value:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial value:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InitialValue_JTextField = new JTextField ( "", 10 );
 	JGUIUtil.addComponent(main_JPanel, __InitialValue_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	__InitialValue_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Default is to initialize with missing value."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+		"Optional - default is initialize with missing value."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,60);
 	__command_JTextArea.setLineWrap ( true );
@@ -339,7 +318,7 @@ private void initialize ( JFrame parent, Command command )
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+    JGUIUtil.addComponent(main_JPanel, button_JPanel, 
 		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__cancel_JButton = new SimpleJButton("Cancel", this);
@@ -349,9 +328,9 @@ private void initialize ( JFrame parent, Command command )
 
 	setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
-        pack();
-        JGUIUtil.center( this );
-        super.setVisible( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
 }
 
 /**
@@ -459,7 +438,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -492,4 +471,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end newTimeSeries_JDialog
+}

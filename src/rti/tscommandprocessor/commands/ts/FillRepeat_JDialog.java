@@ -31,36 +31,36 @@ import java.util.List;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 public class FillRepeat_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private FillRepeat_Command __command = null;// Command as Vector of String
-private JTextArea	__command_JTextArea=null;// Command as JTextField
-private JTextField	__MaxIntervals_JTextField=null; // Max intervals to fill
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private FillRepeat_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private JTextField __MaxIntervals_JTextField = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox	__FillDirection_JComboBox = null;
-private JTextField	__FillStart_JTextField =null;
-private JTextField	__FillEnd_JTextField =null;
-private boolean		__error_wait = false;	// Is there an error to be cleared up
-private boolean		__first_time = true;
-private boolean     __ok = false; // Indicates whether OK button has been pressed.
+private JTextField __FillStart_JTextField = null;
+private JTextField __FillEnd_JTextField = null;
+private JTextField __FillFlag_JTextField = null;
+private boolean __error_wait = false; // Is there an error to be cleared up
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public FillRepeat_JDialog ( JFrame parent, Command command )
+public FillRepeat_JDialog ( JFrame parent, FillRepeat_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -124,7 +124,7 @@ private void checkInput ()
     String MaxIntervals = __MaxIntervals_JTextField.getText().trim();
     String FillStart = __FillStart_JTextField.getText().trim();
     String FillEnd = __FillEnd_JTextField.getText().trim();
-    //String FillFlag = __FillFlag_JTextField.getText().trim();
+    String FillFlag = __FillFlag_JTextField.getText().trim();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -148,11 +148,9 @@ private void checkInput ()
     if ( FillEnd.length() > 0 ) {
         props.set ( "FillEnd", FillEnd );
     }
-    /*
     if ( FillFlag.length() > 0 ) {
         props.set ( "FillFlag", FillFlag );
     }
-    */
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -175,7 +173,7 @@ private void commitEdits ()
     String MaxIntervals = __MaxIntervals_JTextField.getText().trim();
     String FillStart = __FillStart_JTextField.getText().trim();
     String FillEnd = __FillEnd_JTextField.getText().trim();
-    //String FillFlag = __FillFlag_JTextField.getText().trim();
+    String FillFlag = __FillFlag_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -183,7 +181,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "MaxIntervals", MaxIntervals );
     __command.setCommandParameter ( "FillStart", FillStart );
     __command.setCommandParameter ( "FillEnd", FillEnd );
-    //__command.setCommandParameter ( "FillFlag", FillFlag );
+    __command.setCommandParameter ( "FillFlag", FillFlag );
 }
 
 /**
@@ -208,8 +206,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (FillRepeat_Command)command;
+private void initialize ( JFrame parent, FillRepeat_Command command )
+{   __command = command;
 
 	addWindowListener( this );
 
@@ -241,13 +239,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -293,6 +291,16 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - largest gap to fill (default=fill all)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillFlag_JTextField = new JTextField ( 5 );
+    __FillFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - string to flag filled values (default=no flag)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -357,7 +365,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {   return __ok;
@@ -375,6 +383,7 @@ private void refresh()
 	String FillEnd = "";
 	String FillDirection = "";
 	String MaxIntervals = "";
+	String FillFlag = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -386,6 +395,7 @@ private void refresh()
         FillEnd = props.getValue ( "FillEnd" );
         FillDirection = props.getValue ( "FillDirection" );
         MaxIntervals = props.getValue ( "MaxIntervals" );
+        FillFlag = props.getValue( "FillFlag" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -457,6 +467,9 @@ private void refresh()
 		if ( MaxIntervals != null ) {
 			__MaxIntervals_JTextField.setText ( MaxIntervals );
 		}
+        if ( FillFlag != null ) {
+            __FillFlag_JTextField.setText ( FillFlag );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -466,6 +479,7 @@ private void refresh()
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	FillDirection = __FillDirection_JComboBox.getSelected();
 	MaxIntervals = __MaxIntervals_JTextField.getText().trim();
+	FillFlag = __FillFlag_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
@@ -473,12 +487,13 @@ private void refresh()
     props.add ( "MaxIntervals=" + MaxIntervals );
     props.add ( "FillStart=" + FillStart );
     props.add ( "FillEnd=" + FillEnd );
+    props.add ( "FillFlag=" + FillFlag );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

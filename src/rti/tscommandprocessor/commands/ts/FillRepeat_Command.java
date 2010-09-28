@@ -58,8 +58,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -69,7 +68,6 @@ throws InvalidCommandParameterException
     String MaxIntervals = parameters.getValue ( "MaxIntervals" );
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
-	//String FillFlag = parameters.getValue ( "FillFlag" );
 	String warning = "";
     String message;
     
@@ -144,15 +142,6 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
-    /*
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
-	}
-    */
     
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
@@ -163,7 +152,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "MaxIntervals" );
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
-    //valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "FillFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -268,8 +257,7 @@ Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -280,7 +268,7 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messgaes
+	int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
@@ -296,6 +284,7 @@ CommandWarningException, CommandException
     }
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String FillFlag = parameters.getValue ( "FillFlag" );
 
 	// Get the time series to process...
 	
@@ -497,13 +486,6 @@ CommandWarningException, CommandException
 
 	// Now process the time series...
 
-    /*
-	PropList props = new PropList ( "FillRepeat" );
-	if ( FillFlag != null ) {
-		props.set ( "FillFlag", FillFlag );
-	}
-    */
-    
     String FillDirection = parameters.getValue("FillDirection");
     int FillDirection_int = 1;   // Forward
     if ( (FillDirection != null) && FillDirection.equalsIgnoreCase(_Backward) ) {
@@ -545,7 +527,8 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	ts = (TS)prop_contents;
+		else {
+		    ts = (TS)prop_contents;
 		}
 		
 		if ( ts == null ) {
@@ -563,7 +546,7 @@ CommandWarningException, CommandException
 		// Do the filling...
 		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" by repeating, direction=" + FillDirection );
 		try {
-            TSUtil.fillRepeat ( ts, FillStart_DateTime, FillEnd_DateTime, FillDirection_int, MaxIntervals_int );
+            TSUtil.fillRepeat ( ts, FillStart_DateTime, FillEnd_DateTime, FillDirection_int, MaxIntervals_int, FillFlag );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error filling by repeating for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -604,7 +587,7 @@ public String toString ( PropList props )
     String MaxIntervals = props.getValue( "MaxIntervals" );
 	String FillStart = props.getValue("FillStart");
 	String FillEnd = props.getValue("FillEnd");
-	//String FillFlag = props.getValue("FillFlag");
+	String FillFlag = props.getValue("FillFlag");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -645,14 +628,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "FillEnd=\"" + FillEnd + "\"" );
 	}
-    /*
 	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
 		b.append ( "FillFlag=\"" + FillFlag + "\"" );
 	}
-    */
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

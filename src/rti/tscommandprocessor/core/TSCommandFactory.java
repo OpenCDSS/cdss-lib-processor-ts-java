@@ -21,12 +21,6 @@ import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.OpenCheckFile_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
-// DataTest commands
-// FIXME SAM 2007-08-30 Need to work with Ian to pull in new data test features
-
-import rti.tscommandprocessor.commands.datatest.NewDataTest_Command;
-import rti.tscommandprocessor.commands.datatest.RunDataTest_Command;
-
 // DateValue commands
 
 import rti.tscommandprocessor.commands.datevalue.ReadDateValue_Command;
@@ -106,8 +100,12 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 // Table commands.
 
+import rti.tscommandprocessor.commands.table.CopyTable_Command;
+import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
+import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
@@ -269,22 +267,17 @@ throws UnknownCommandException
 	// Parse out arguments for TS alias = foo() commands to be able to handle nulls here
 
 	boolean isTScommand = false;	// Whether TS alias = foo() command.
-	boolean isDataTest_command = false;	// Whether DataTest alias = foo() command.
 	String TScommand = "";			// Don't use null, to allow string compares below
-	String DataTest_command = "";
 	String token0 = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,0);
 	if ( (token0 != null) && token0.equalsIgnoreCase( "TS") ) {
 		isTScommand = true;
-		TScommand = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,2);
+		// This allows aliases with spaces...
+		TScommand = StringUtil.getToken(commandString,"(=",StringUtil.DELIM_SKIP_BLANKS,1);
 		if ( TScommand == null ) {
 			TScommand = "";
 		}
-	}
-	else if ( (token0 != null) && token0.equalsIgnoreCase( "DataTest") ) {
-		isDataTest_command = true;
-		DataTest_command = StringUtil.getToken(commandString,"( =",StringUtil.DELIM_SKIP_BLANKS,2);
-		if ( DataTest_command == null ) {
-			DataTest_command = "";
+		else {
+		    TScommand = TScommand.trim();
 		}
 	}
 	
@@ -354,6 +347,9 @@ throws UnknownCommandException
     // Put CopyEnsemble() before the shorter Copy() command
     else if ( StringUtil.startsWithIgnoreCase(commandString,"CopyEnsemble") ) {
         return new CopyEnsemble_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"CopyTable") ) {
+        return new CopyTable_Command ();
     }
 	else if ( isTScommand && TScommand.equalsIgnoreCase("Copy") ) {
 		return new Copy_Command ();
@@ -473,6 +469,9 @@ throws UnknownCommandException
 	
 	// "M" commands...
 	
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"ManipulateTableString") ) {
+        return new ManipulateTableString_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"MergeListFileColumns") ) {
 		return new MergeListFileColumns_Command ();
 	}
@@ -482,9 +481,6 @@ throws UnknownCommandException
 
 	// "N" commands...
 
-	else if ( isDataTest_command && DataTest_command.equalsIgnoreCase("NewDataTest") ) {
-		return new NewDataTest_Command();
-	}
     else if ( isTScommand && TScommand.equalsIgnoreCase("NewDayTSFromMonthAndDayTS") ) {
         return new NewDayTSFromMonthAndDayTS_Command ();
     }
@@ -605,6 +601,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadStateMod") ) {
 		return new ReadStateMod_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadTableFromDBF") ) {
+        return new ReadTableFromDBF_Command ();
+    }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();
     }
@@ -638,9 +637,6 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(commandString,"RunPython") ) {
         return new RunPython_Command ();
     }
-	else if ( StringUtil.startsWithIgnoreCase(commandString,"RunDataTest") ) {
-		return new RunDataTest_Command ();
-	}
     else if ( StringUtil.startsWithIgnoreCase(commandString,"RunningAverage") ) {
         return new RunningAverage_Command ();
     }
@@ -706,6 +702,9 @@ throws UnknownCommandException
 		// Phasing into new syntax...
 		return new SetInputPeriod_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"SetTimeSeriesPropertiesFromTable") ) {
+        return new SetTimeSeriesPropertiesFromTable_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"SetTimeSeriesProperty") ) {
 		return new SetTimeSeriesProperty_Command ();
 	}

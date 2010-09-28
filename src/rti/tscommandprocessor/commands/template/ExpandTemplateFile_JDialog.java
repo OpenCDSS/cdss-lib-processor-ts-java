@@ -262,6 +262,10 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Template markup language can be applied to command files to implement conditional logic, loops, etc." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The template data model receives properties set with SetProperty() and one-column tables are passed " +
+        "as a list using the table identifier as the list name." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that file names be relative to the working directory, which is:"),
@@ -279,7 +283,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browseInput_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browseInput_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Expanded file:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -289,7 +293,7 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
         1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     __browseOutput_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
-        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
     /*
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),

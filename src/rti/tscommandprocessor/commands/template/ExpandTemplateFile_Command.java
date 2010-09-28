@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,8 +13,10 @@ import javax.swing.JFrame;
 
 import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
+import freemarker.template.SimpleSequence;
 import freemarker.template.Template;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.Util.IO.AbstractCommand;
@@ -32,6 +35,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Table.DataTable;
 
 /**
 This class initializes, checks, and runs the ExpandTemplateFile() command.
@@ -74,14 +78,6 @@ throws InvalidCommandParameterException
 	
 	// The existence of the file to remove is not checked during initialization
 	// because files may be created dynamically at runtime.
-
-	if ( (InputFile == null) || (InputFile.length() == 0) ) {
-		message = "The template command file must be specified.";
-		warning += "\n" + message;
-		status.addToLog(CommandPhaseType.INITIALIZATION,
-			new CommandLogRecord(CommandStatusType.FAILURE,
-				message, "Specify the file to remove."));
-	}
 	
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
         message = "The input template command file must be specified.";
@@ -347,9 +343,29 @@ CommandWarningException, CommandException
         }
         if ( !error ) {
             // Create a model
-            // TODO SAM 2009-10-07 Enable global properties from TSTool as TSTool hash
             Map model = new HashMap();
-            // model1.put("timeperiod", "day");
+            TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
+            if ( processor instanceof TSCommandProcessor ) {
+                // Add properties from the processor
+                Collection<String> propertyNames = tsprocessor.getPropertyNameList();
+                for ( String propertyName : propertyNames ) {
+                    model.put(propertyName, tsprocessor.getPropContents(propertyName) );
+                }
+                // Add single column tables from the processor, using the table ID as the object key
+                List<DataTable> tables = (List<DataTable>)tsprocessor.getPropContents ( "TableResultsList" );
+                for ( DataTable table: tables ) {
+                    if ( table.getNumberOfFields() == 1 ) {
+                        // One-column table so add as a hash (list) property in the data model
+                        int numRecords = table.getNumberOfRecords();
+                        SimpleSequence list = new SimpleSequence();
+                        for ( int irec = 0; irec < numRecords; irec++ ) {
+                            list.add ( table.getFieldValue(irec, 0) );
+                        }
+                        model.put(table.getTableID(), list );
+                    }
+                }
+            }        
+            // Expand the template to the output file
             FileOutputStream fos = new FileOutputStream( OutputFile_full );
             PrintWriter out = new PrintWriter ( fos );
             try {

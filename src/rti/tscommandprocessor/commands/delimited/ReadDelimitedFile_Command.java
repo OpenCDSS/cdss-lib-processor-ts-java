@@ -1290,6 +1290,11 @@ throws IOException
                 ntokens = 0;
             }
             else {
+                if ( s.endsWith(delim) ) {
+                    // breakStringList() does not count a delimiter at the end as having data after but
+                    // this command does some checks that make this required
+                    tokens.add("");
+                }
                 ntokens = tokens.size();
             }
             if ( tokens.size() < columnNames.size() ) {
@@ -1393,7 +1398,7 @@ Read a list of time series from a delimited file.
 @param read_data True to read data, false to only read the header information.
 @param props Properties to control the read, from command parameters.
 */
-private List readTimeSeriesListOld ( String InputFile_full,
+private List<TS> readTimeSeriesListOld ( String InputFile_full,
         DateTime InputStart_DateTime, DateTime InputEnd_DateTime, String NewUnits,
         boolean read_data, PropList props )
 throws IOException, FileNotFoundException

@@ -125,7 +125,7 @@ throws InvalidCommandParameterException
     }
     
     if ( (TableInputColumn == null) || TableInputColumn.equals("") ) {
-        message = "The TableTSID column must be specified.";
+        message = "The table input column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Provide a table column name for the input value." ) );
@@ -375,7 +375,7 @@ CommandWarningException, CommandException
                 tableObject = rec.getFieldValue(tableInputColumn);
                 // Allow the value to be any number
                 if ( tableObject == null ) {
-                    message = "Table value in column \"" + TableTSIDColumn +
+                    message = "Table value in column \"" + TableInputColumn +
                     "\" matching TSID \"" + tsid + "\" is null - skipping time series \"" +
                     ts.getIdentifierString() + "\".";
                     Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -386,7 +386,7 @@ CommandWarningException, CommandException
                     continue;
                 }
                 else if ( !StringUtil.isDouble("" + tableObject) ) {
-                    message = "Table value in column \"" + TableTSIDColumn +
+                    message = "Table value in column \"" + TableInputColumn +
                     "\" matching TSID \"" + tsid + "\" (" + tableObject +
                     ") is not a number - skipping time series \"" + ts.getIdentifierString() + "\".";
                     Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -400,7 +400,7 @@ CommandWarningException, CommandException
                     // Have a numerical value, but re-parse in case the original is an Integer, etc.
                     tableValue = Double.parseDouble("" + tableObject );
                     if ( tableValue.isNaN() ) {
-                        message = "Table value in column \"" + TableTSIDColumn +
+                        message = "Table value in column \"" + TableInputColumn +
                         "\" matching TSID \"" + tsid + "\" is NaN - skipping time series \"" +
                         ts.getIdentifierString() + "\".";
                         Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),

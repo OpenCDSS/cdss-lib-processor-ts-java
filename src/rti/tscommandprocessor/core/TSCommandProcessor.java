@@ -190,7 +190,7 @@ private String __WorkingDir_String = null;
 /**
 Hashtable of properties used by the processor.
 */
-Hashtable __property_Hashtable = new Hashtable();
+private Hashtable __property_Hashtable = new Hashtable();
 
 /**
 Indicates whether the processor is currently running (false if has not started
@@ -199,7 +199,7 @@ or has completed).  The running occurs in TSEngine.processCommands().
 private volatile boolean __is_running = false;
 
 /**
-Indicates whether the processing loop should be cancelled.  This is a request
+Indicates whether the processing loop should be canceled.  This is a request
 (e.g., from a GUI) that needs to be handled as soon as possible during command
 processing.  It is envisioned that cancel can always occur between commands and
 as time allows it will also be enabled within a command.

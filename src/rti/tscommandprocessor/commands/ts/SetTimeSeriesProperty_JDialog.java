@@ -43,8 +43,8 @@ public class SetTimeSeriesProperty_JDialog extends JDialog
 implements ActionListener, KeyListener, ItemListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null;	// Ok Button
 private SetTimeSeriesProperty_Command __command = null;// Command to edit
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__TSList_JComboBox = null;
@@ -56,6 +56,9 @@ private SimpleJComboBox __Editable_JComboBox = null;
 private TSFormatSpecifiersJPanel __Description_JTextField = null; // Allows expansion of % specifiers
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null; // Missing value for output
+private SimpleJComboBox __PropertyType_JComboBox = null;
+private JTextField __PropertyValue_JTextField = null;
+private JTextField __PropertyName_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user has pressed OK to close the dialog?
@@ -129,6 +132,9 @@ private void checkInput ()
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyType = __PropertyType_JComboBox.getSelected();
+    String PropertyValue = __PropertyValue_JTextField.getText().trim();
 
 	__error_wait = false;
 	
@@ -153,6 +159,15 @@ private void checkInput ()
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
     }
+    if ( PropertyName.length() > 0 ) {
+        parameters.set ( "PropertyName", PropertyName );
+    }
+    if ( PropertyType.length() > 0 ) {
+        parameters.set ( "PropertyType", PropertyType );
+    }
+    if ( PropertyValue.length() > 0 ) {
+        parameters.set ( "PropertyValue", PropertyValue );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -176,6 +191,9 @@ private void commitEdits ()
     String Description = __Description_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyType = __PropertyType_JComboBox.getSelected();
+    String PropertyValue = __PropertyValue_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -183,6 +201,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "Description", Description );
     __command.setCommandParameter ( "Units", Units );
     __command.setCommandParameter ( "MissingValue", MissingValue );
+    __command.setCommandParameter ( "PropertyName", PropertyName );
+    __command.setCommandParameter ( "PropertyType", PropertyType );
+    __command.setCommandParameter ( "PropertyValue", PropertyValue );
 }
 
 /**
@@ -221,22 +242,25 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The identifier information cannot be changed because it is used to define workflow processing."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Several specific properties are built-in, and user-defined properties also can be set (see Property... below) ."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel (
-            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel("Description:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -247,7 +271,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel,
-        new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
+        new JLabel ("Optional - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data units:"),
@@ -257,7 +281,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - data units (does not change values)."),
+        "Optional - data units (does not change data values)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ),
@@ -266,7 +290,7 @@ private void initialize ( JFrame parent, Command command )
     __MissingValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - missing data value."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - missing data value (does not change data values)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Are data editable?:"),
@@ -284,6 +308,41 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - for interactive edits (default=" + __command._False + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required if user-defined property is set."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyType_JComboBox = new SimpleJComboBox ( false );
+    __PropertyType_JComboBox.addItem ( "" );
+    __PropertyType_JComboBox.addItem ( __command._DateTime );
+    __PropertyType_JComboBox.addItem ( __command._Double );
+    __PropertyType_JComboBox.addItem ( __command._Integer );
+    __PropertyType_JComboBox.addItem ( __command._String );
+    __PropertyType_JComboBox.select ( __command._String );
+    __PropertyType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required if user-defined property is set - to ensure proper initialization."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property value:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyValue_JTextField = new JTextField ( 20 );
+    __PropertyValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if user-defined property is set."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -351,7 +410,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -369,6 +428,9 @@ private void refresh ()
     String Units = "";
     String MissingValue = "";
     String Editable = "";
+    String PropertyName = "";
+    String PropertyType = "";
+    String PropertyValue = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -382,6 +444,9 @@ private void refresh ()
         Units = parameters.getValue ( "Units" );
         MissingValue = parameters.getValue("MissingValue");
         Editable = parameters.getValue ( "Editable" );
+        PropertyName = parameters.getValue ( "PropertyName" );
+        PropertyType = parameters.getValue ( "PropertyType" );
+        PropertyValue = parameters.getValue ( "PropertyValue" );
 		if ( TSList == null ) {
 			// Select default...
 			__TSList_JComboBox.select ( 0 );
@@ -453,6 +518,27 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( PropertyName != null ) {
+            __PropertyName_JTextField.setText ( PropertyName );
+        }
+        if ( PropertyType == null ) {
+            // Select default...
+            __PropertyType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __PropertyType_JComboBox,PropertyType, JGUIUtil.NONE, null, null ) ) {
+                __PropertyType_JComboBox.select ( PropertyType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nPropertyType value \"" + PropertyType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( PropertyValue != null ) {
+            __PropertyValue_JTextField.setText ( PropertyValue );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSList = __TSList_JComboBox.getSelected();
@@ -462,6 +548,9 @@ private void refresh ()
     Units = __Units_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     Editable = __Editable_JComboBox.getSelected();
+    PropertyName = __PropertyName_JTextField.getText().trim();
+    PropertyType = __PropertyType_JComboBox.getSelected();
+    PropertyValue = __PropertyValue_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
 	parameters.add ( "TSID=" + TSID );
@@ -470,12 +559,15 @@ private void refresh ()
     parameters.add ( "Units=" + Units );
     parameters.add ( "MissingValue=" + MissingValue );
     parameters.add ( "Editable=" + Editable );
+    parameters.add ( "PropertyName=" + PropertyName );
+    parameters.add ( "PropertyType=" + PropertyType );
+    parameters.add ( "PropertyValue=" + PropertyValue );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()

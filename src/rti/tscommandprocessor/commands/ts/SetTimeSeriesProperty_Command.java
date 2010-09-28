@@ -14,6 +14,8 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
@@ -41,6 +43,14 @@ protected final String _False = "False";
 protected final String _True = "True";
 
 /**
+Possible value for PropertyType.
+*/
+protected final String _DateTime = "DateTime";
+protected final String _Double = "Double";
+protected final String _Integer = "Integer";
+protected final String _String = "String";
+
+/**
 Constructor.
 */
 public SetTimeSeriesProperty_Command ()
@@ -60,6 +70,9 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String Editable = parameters.getValue ( "Editable" );
     String MissingValue = parameters.getValue("MissingValue" );
+    String PropertyName = parameters.getValue ( "PropertyName" );
+    String PropertyType = parameters.getValue ( "PropertyType" );
+    String PropertyValue = parameters.getValue ( "PropertyValue" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -83,9 +96,60 @@ throws InvalidCommandParameterException
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Specify blank, " + _False + " (default), or " + _True + "." ) );
 	}
+	
+    if ( (PropertyName != null) && !PropertyName.equals("") ) {
+        // Check for allowed characters...
+        if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
+            message = "The property name contains invalid characters ${}() space, tab.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Specify a property name that does not include the characters $(){}, space, or tab." ) );
+        }
+        if ( (PropertyType == null) || PropertyType.equals("") ) {
+            message = "The property type must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Provide a property type." ) );
+            // Set to blank to be able to do checks below
+            PropertyType = "";
+        }
+        if ( (PropertyValue == null) || PropertyValue.equals("") ) {
+            message = "The property value must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Provide a property value." ) );
+        }
+        else {
+            // Check the value given the type.
+            if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the property value as a date/time (e.g., YYYY-MM-DD if a date)" ));
+            }
+            else if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the property value as a number" ));
+            }
+            else if ( PropertyType.equalsIgnoreCase(_Integer) && !StringUtil.isInteger(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not an integer";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the property value as an integer." ));
+            }
+        }
+    }
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -93,6 +157,9 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Units" );
     valid_Vector.add ( "MissingValue" );
 	valid_Vector.add ( "Editable" );
+    valid_Vector.add ( "PropertyName" );
+    valid_Vector.add ( "PropertyType" );
+    valid_Vector.add ( "PropertyValue" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -149,6 +216,9 @@ CommandWarningException, CommandException
     if ( (Editable != null) && Editable.equalsIgnoreCase(_True) ) {
         Editable_boolean = true;
     }
+    String PropertyName = parameters.getValue ( "PropertyName" );
+    String PropertyType = parameters.getValue ( "PropertyType" );
+    String PropertyValue = parameters.getValue ( "PropertyValue" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -181,7 +251,7 @@ CommandWarningException, CommandException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
-	List tslist = (List)o_TSList;
+	List<TS> tslist = (List)o_TSList;
 	if ( tslist.size() == 0 ) {
 		message = "Zero time series in list to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
@@ -200,19 +270,42 @@ CommandWarningException, CommandException
     }
     TS ts = null;
     for ( int i = 0; i < size; i++ ) {
-        ts = (TS)tslist.get(i);
+        ts = tslist.get(i);
         // Now set the data...
         try {
             if ( (Description != null) && (Description.length() > 0) ) {
                 ts.setDescription ( ts.formatLegend ( Description ) );
+                ts.addToGenesis ( "Set description to \"" + ts.getDescription() + "\"" );
             }
             if ( (Units != null) && (Units.length() > 0) ) {
                 ts.setDataUnits ( Units );
+                ts.addToGenesis ( "Set data units to \"" + ts.getDataUnits() + "\"" );
             }
             if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
                 ts.setMissing ( Double.parseDouble(MissingValue) );
+                ts.addToGenesis ( "Set missing data value to " + MissingValue );
             }
             ts.setEditable ( Editable_boolean );
+            if ( PropertyName != null ) {
+                Object Property_Object = null;
+                if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+                    Property_Object = DateTime.parse(PropertyValue);
+                    ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to \"" + PropertyValue + "\"");
+                }
+                else if ( PropertyType.equalsIgnoreCase(_Double) ) {
+                    Property_Object = Double.valueOf(PropertyValue);
+                    ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to " + PropertyValue );
+                }
+                else if ( PropertyType.equalsIgnoreCase(_Integer) ) {
+                    Property_Object = Integer.valueOf(PropertyValue);
+                    ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to " + PropertyValue );
+                }
+                else if ( PropertyType.equalsIgnoreCase(_String) ) {
+                    Property_Object = PropertyValue;
+                    ts.addToGenesis ( "Set property \"" + PropertyName + "\" (type " + PropertyType + ") to \"" + PropertyValue + "\"");
+                }
+                ts.setProperty(PropertyName, Property_Object);
+            }
         }
         catch ( Exception e ) {
             message = "Unexpected error setting properties for time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -253,6 +346,9 @@ public String toString ( PropList parameters )
     String Units = parameters.getValue ( "Units" );
     String MissingValue = parameters.getValue("MissingValue");
     String Editable = parameters.getValue ( "Editable" );
+    String PropertyName = parameters.getValue( "PropertyName" );
+    String PropertyType = parameters.getValue( "PropertyType" );
+    String PropertyValue = parameters.getValue( "PropertyValue" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
 		b.append ( "TSList=" + TSList );
@@ -292,6 +388,24 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Editable=" + Editable );
+    }
+    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyName=\"" + PropertyName + "\"" );
+    }
+    if ( (PropertyType != null) && (PropertyType.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyType=" + PropertyType );
+    }
+    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

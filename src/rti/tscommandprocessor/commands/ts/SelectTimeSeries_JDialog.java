@@ -28,6 +28,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.Util.GUI.InputFilterStringCriterionType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -42,23 +43,25 @@ public class SelectTimeSeries_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
-private SelectTimeSeries_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private SelectTimeSeries_Command __command = null; // Command to edit
+private JTextArea __command_JTextArea = null;	// Command as JTextField
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __TSPosition_JLabel = null;
-private JTextField	__TSPosition_JTextField=null;		// Field for TS positions
+private JTextField __TSPosition_JTextField = null; // Field for TS positions
+private JTextField __PropertyName_JTextField = null;
+private SimpleJComboBox __PropertyCriterion_JComboBox = null;
+private JTextField __PropertyValue_JTextField = null;
 private SimpleJComboBox	__DeselectAllFirst_JComboBox = null;
 
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-
-private boolean     __ok = false;       // Indicates whether OK button has been pressed.
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private boolean __ok = false;       // Indicates whether OK button has been pressed.
 
 /**
 Command editor dialog constructor.
@@ -135,6 +138,9 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
+    String PropertyValue = __PropertyValue_JTextField.getText().trim();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -151,6 +157,15 @@ private void checkInput ()
     }
     if ( DeselectAllFirst.length() > 0 ) {
         parameters.set ( "DeselectAllFirst", DeselectAllFirst );
+    }
+    if ( PropertyName.length() > 0 ) {
+        parameters.set ( "PropertyName", PropertyName );
+    }
+    if ( PropertyCriterion.length() > 0 ) {
+        parameters.set ( "PropertyCriterion", PropertyCriterion );
+    }
+    if ( PropertyValue.length() > 0 ) {
+        parameters.set ( "PropertyValue", PropertyValue );
     }
     try {
         // This will warn the user...
@@ -172,11 +187,17 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String TSPosition = __TSPosition_JTextField.getText().trim();
     String DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
+    String PropertyName = __PropertyName_JTextField.getText().trim();
+    String PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
+    String PropertyValue = __PropertyValue_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "TSPosition", TSPosition );
     __command.setCommandParameter ( "DeselectAllFirst", DeselectAllFirst );
+    __command.setCommandParameter ( "PropertyName", PropertyName );
+    __command.setCommandParameter ( "PropertyCriterion", PropertyCriterion );
+    __command.setCommandParameter ( "PropertyValue", PropertyValue );
 }
 
 /**
@@ -215,8 +236,8 @@ private void initialize ( JFrame parent, Command command )
 	"Selected time series may then be used by other commands."),
 	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"For example, output commands may allow selected time series" +
-	" to be output, rather than default to all time series."),
+	"For example, commands may allow selected time series" +
+	" to be processed, rather than default to all time series."),
 	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -240,14 +261,24 @@ private void initialize ( JFrame parent, Command command )
     "    Use *.*.XXXXX.*.* to match all time series with a data type XXXXX."),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "When specifying time series positions:"),
+    "<html>When selecting time series by specifying time series positions (<b>not recommended for production" +
+    " work because positions may change</b>):</html>"),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     "    The first time series created is position 1."),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "    Separate numbers by a comma.  Specify a range, for example, as 1-3."),
+    "    Separate numbers by a comma.  Specify a range, for example, as 1-3.  A valid combination is: 1,5-10,13"),
     0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "When selecting time series by matching a property:"),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    Currently only string properties are supported."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    Comparisons are case-independent."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -258,13 +289,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -277,9 +308,9 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __TSPosition_JTextField,
 		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example, 1,2,7-8 (positions are 1+)." ),
-		2, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    List select_all_first = new Vector ( 3 );
+    List<String> select_all_first = new Vector ( 3 );
 	select_all_first.add ( "" );
 	select_all_first.add ( __command._False );
 	select_all_first.add ( __command._True );
@@ -293,6 +324,40 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - eliminates need for separate deselect (default=" +
         __command._False + ")."),
 	3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - use to match user-defined properties."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property criterion:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyCriterion_JComboBox = new SimpleJComboBox ( false );
+    __PropertyCriterion_JComboBox.addItem ( "" );
+    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.CONTAINS );
+    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.ENDS_WITH );
+    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.MATCHES );
+    __PropertyCriterion_JComboBox.addItem ( "" + InputFilterStringCriterionType.STARTS_WITH );
+    __PropertyCriterion_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyCriterion_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required if matching user-defined property."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property value:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyValue_JTextField = new JTextField ( 20 );
+    __PropertyValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if matching user-defined property."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -378,6 +443,9 @@ private void refresh ()
 	String EnsembleID = "";
 	String TSPosition = "";
 	String DeselectAllFirst = "";
+    String PropertyName = "";
+    String PropertyCriterion = "";
+    String PropertyValue = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -387,6 +455,9 @@ private void refresh ()
 		EnsembleID = props.getValue ( "EnsembleID" );
 		TSPosition = props.getValue ( "TSPosition" );
 		DeselectAllFirst = props.getValue ( "DeselectAllFirst" );
+        PropertyName = props.getValue ( "PropertyName" );
+        PropertyCriterion = props.getValue ( "PropertyCriterion" );
+        PropertyValue = props.getValue ( "PropertyValue" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -451,6 +522,27 @@ private void refresh ()
 				__error_wait = true;
 			}
 		}
+        if ( PropertyName != null ) {
+            __PropertyName_JTextField.setText ( PropertyName );
+        }
+        if ( PropertyCriterion == null ) {
+            // Select default...
+            __PropertyCriterion_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __PropertyCriterion_JComboBox,PropertyCriterion, JGUIUtil.NONE, null, null ) ) {
+                __PropertyCriterion_JComboBox.select ( PropertyCriterion );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nPropertyCriterion value \"" + PropertyCriterion +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( PropertyValue != null ) {
+            __PropertyValue_JTextField.setText ( PropertyValue );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -458,18 +550,24 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     TSPosition = __TSPosition_JTextField.getText().trim();
 	DeselectAllFirst = __DeselectAllFirst_JComboBox.getSelected();
+    PropertyName = __PropertyName_JTextField.getText().trim();
+    PropertyCriterion = __PropertyCriterion_JComboBox.getSelected();
+    PropertyValue = __PropertyValue_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "TSPosition=" + TSPosition );
     props.add ( "DeselectAllFirst=" + DeselectAllFirst );
+    props.add ( "PropertyName=" + PropertyName );
+    props.add ( "PropertyCriterion=" + PropertyCriterion );
+    props.add ( "PropertyValue=" + PropertyValue );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

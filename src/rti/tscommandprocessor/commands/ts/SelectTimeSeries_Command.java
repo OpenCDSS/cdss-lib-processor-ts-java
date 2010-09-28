@@ -12,6 +12,8 @@ import RTi.TS.TS;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.GUI.InputFilter;
+import RTi.Util.GUI.InputFilterStringCriterionType;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandException;
@@ -28,9 +30,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the SelectTimeSeries() command.
-</p>
 */
 public class SelectTimeSeries_Command extends AbstractCommand implements Command
 {
@@ -61,8 +61,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -70,6 +69,9 @@ throws InvalidCommandParameterException
     //String TSID = parameters.getValue ( "TSID" );
     String TSPosition = parameters.getValue ( "TSPosition" );
 	String DeselectAllFirst = parameters.getValue ( "DeselectAllFirst" );
+    String PropertyName = parameters.getValue ( "PropertyName" );
+    String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
+    String PropertyValue = parameters.getValue ( "PropertyValue" );
 	String warning = "";
     String message;
     
@@ -136,14 +138,80 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify as " + _False + " or " + _True + "." ) );
 	}
+	
+    if ( (PropertyName != null) && !PropertyName.equals("") ) {
+        // Check for allowed characters...
+        if ( StringUtil.containsAny(PropertyName,"${}() \t", true)) {
+            message = "The property name contains invalid characters ${}() space, tab.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Specify a property name that does not include the characters $(){}, space, or tab." ) );
+        }
+        if ( (PropertyCriterion == null) || PropertyCriterion.equals("") ) {
+            message = "The property condition must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Provide a property condition." ) );
+        }
+        else {
+            // Make sure that the condition is known in general
+            try {
+                InputFilterStringCriterionType.valueOfIgnoreCase(PropertyCriterion);
+            }
+            catch ( Exception e ) {
+                message = "The condition (" + PropertyCriterion + ") is not recognized.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported conditiion using the command editor." ) );
+            }
+        }
+        if ( (PropertyValue == null) || PropertyValue.equals("") ) {
+            message = "The property value must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Provide a property value." ) );
+        }
+        else {
+            /* How to do a check in discovery?
+            // Check the value given the type.
+            if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the property value as a date/time (e.g., YYYY-MM-DD if a date)" ));
+            }
+            else if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not a number.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the property value as a number" ));
+            }
+            else if ( PropertyType.equalsIgnoreCase(_Integer) && !StringUtil.isInteger(PropertyValue) ) {
+                message = "The property value \"" + PropertyValue + "\" is not an integer";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the property value as an integer." ));
+            }
+            */
+        }
+    }
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "TSPosition" );
     valid_Vector.add ( "DeselectAllFirst" );
+    valid_Vector.add ( "PropertyName" );
+    valid_Vector.add ( "PropertyCriterion" );
+    valid_Vector.add ( "PropertyValue" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -207,8 +275,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -230,6 +297,9 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = parameters.getValue ( "TSList" );
+	if ( (TSList == null) || TSList.equals("") ) {
+	    TSList = "" + TSListType.ALL_TS; // Default
+	}
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String TSPosition = parameters.getValue ( "TSPosition" );
@@ -238,9 +308,17 @@ CommandWarningException, CommandException
 	if ( (DeselectAllFirst != null) && DeselectAllFirst.equalsIgnoreCase("true") ) {
 	    DeselectAllFirst_boolean = true;
 	}
+    String PropertyName = parameters.getValue ( "PropertyName" );
+    String PropertyCriterion = parameters.getValue ( "PropertyCriterion" );
+    // TODO SAM 2010-09-21 Need to enable numeric property checks
+    InputFilterStringCriterionType propertyStringConditionType = null;
+    if ( (PropertyCriterion != null) && !PropertyCriterion.equals("") ) {
+        propertyStringConditionType = InputFilterStringCriterionType.valueOfIgnoreCase(PropertyCriterion);
+    }
+    String PropertyValue = parameters.getValue ( "PropertyValue" );
 	
 	// If necessary, get the list of all time series...
-	List tslistAll = new Vector();
+	List<TS> tslistAll = new Vector();
 	if ( DeselectAllFirst_boolean ) {
 	    // Deselect all first
 	    try {
@@ -293,7 +371,7 @@ CommandWarningException, CommandException
     }
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
 		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -364,9 +442,31 @@ CommandWarningException, CommandException
 		ts = (TS)o_ts;
 		
 		try {
-		    // Do the selection...
-			Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier()+ "\"" );
-			ts.setSelected ( true );
+		    boolean selected = false;
+		    // Further filter based on the property
+		    if ( (PropertyName != null) && !PropertyName.equals("") ) {
+		        // Have a property to check
+		        Object property = ts.getProperty(PropertyName);
+		        if ( property != null ) {
+		            // Check the property by type
+		            if ( (property instanceof String) && (propertyStringConditionType != null) ) {
+		                selected = InputFilter.evaluateCriterion(
+		                    (String)property, propertyStringConditionType, PropertyValue );
+		            }
+		            if ( selected ) {
+		                Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier() +
+	                    "\" based on " + PropertyName + " " + PropertyCriterion + " " + PropertyValue + "." );
+		            }
+		        }
+		    }
+		    else {
+		        // Previous criteria were used to filter to matching time series
+		        Message.printStatus ( 2, routine, "Selecting \"" + ts.getIdentifier() +
+		            "\" based on TSList parameter." );
+		        selected = true;
+		    }
+	        // Do the selection...
+			ts.setSelected ( selected );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error selecting time series (" + e + ").";
@@ -403,6 +503,9 @@ public String toString ( PropList props )
     String EnsembleID = props.getValue( "EnsembleID" );
 	String TSPosition = props.getValue("TSPosition");
 	String DeselectAllFirst = props.getValue("DeselectAllFirst");
+    String PropertyName = props.getValue( "PropertyName" );
+    String PropertyCriterion = props.getValue( "PropertyCriterion" );
+    String PropertyValue = props.getValue( "PropertyValue" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -434,6 +537,24 @@ public String toString ( PropList props )
 		}
 		b.append ( "DeselectAllFirst=" + DeselectAllFirst );
 	}
+    if ( (PropertyName != null) && (PropertyName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyName=\"" + PropertyName + "\"" );
+    }
+    if ( (PropertyCriterion != null) && (PropertyCriterion.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyCriterion=\"" + PropertyCriterion + "\"");
+    }
+    if ( (PropertyValue != null) && (PropertyValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "PropertyValue=\"" + PropertyValue + "\"" );
+    }
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

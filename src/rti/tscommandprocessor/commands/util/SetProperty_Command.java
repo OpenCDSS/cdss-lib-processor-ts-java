@@ -135,7 +135,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "PropertyName" );
     valid_Vector.add ( "PropertyType" );
     valid_Vector.add ( "PropertyValue" );

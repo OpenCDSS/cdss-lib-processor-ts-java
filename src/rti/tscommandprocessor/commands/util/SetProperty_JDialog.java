@@ -31,16 +31,16 @@ import RTi.Util.Message.Message;
 public class SetProperty_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private SetProperty_Command	__command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;
+private SimpleJButton __cancel_JButton = null; // Cancel Button
+private SimpleJButton __ok_JButton = null; // Ok Button
+private SetProperty_Command	__command = null; // Command to edit
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __PropertyType_JComboBox = null;
-private JTextField	__PropertyValue_JTextField = null;
-private JTextField	__PropertyName_JTextField = null;
-private boolean		__error_wait = false;	// Is there an error to be cleared up or Cancel?
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Indicates whether OK button has been pressed.
+private JTextField __PropertyValue_JTextField = null;
+private JTextField __PropertyName_JTextField = null;
+private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command dialog constructor.
@@ -102,7 +102,8 @@ private void checkInput ()
 		parameters.set ( "PropertyValue", PropertyValue );
 	}
 
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -169,7 +170,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Do not use spaces $, { or } in name."), 
+        "Required - do not use spaces $, { or } in name."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property type:" ), 
@@ -181,8 +182,11 @@ private void initialize ( JFrame parent, Command command )
     __PropertyType_JComboBox.addItem ( __command._String );
     __PropertyType_JComboBox.select ( __command._String );
     __PropertyType_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
+    JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required - to ensure proper initialization."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property value:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -190,8 +194,7 @@ private void initialize ( JFrame parent, Command command )
 	__PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		""), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -245,7 +248,8 @@ public void keyPressed ( KeyEvent event )
 			response ( true );
 		}
 	}
-	else {	// Combo box...
+	else {
+	    // Combo box...
 		refresh();
 	}
 }
@@ -258,7 +262,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -314,7 +318,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

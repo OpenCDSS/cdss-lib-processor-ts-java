@@ -219,15 +219,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
-	// Get the alias from the first token before the equal sign...
-	
-	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (v == null) || (v.size() != 2) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String Alias = v.get(1);
+	// Alias is everything after "TS " (can include space in alias name)
+	String Alias = token0.trim().substring(3).trim();
 
 	// Get the command parameters from the token on the right of the =...
 

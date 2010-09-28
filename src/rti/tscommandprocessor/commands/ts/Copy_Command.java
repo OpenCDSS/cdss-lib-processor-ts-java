@@ -189,13 +189,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
-    if ( v == null ) {
-        message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
-        Message.printWarning ( warning_level, routine, message);
-        throw new InvalidCommandSyntaxException ( message );
-    }
-    String Alias = (String)v.get(1);
+    // Alias is everything after "TS " (can include space in alias name)
+    String Alias = token0.trim().substring(3).trim();
     String TSID = null;
 	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
 		// No parameters have = in them...
@@ -204,14 +199,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		//
 		// Old syntax without named parameters.
 
-		v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
+		List<String> v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
 		if ( v == null ) {
 			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
         // TSID is the only parameter
-        TSID = (String)v.get(1);
+        TSID = v.get(1);
 	}
 	else {
         // Current syntax...

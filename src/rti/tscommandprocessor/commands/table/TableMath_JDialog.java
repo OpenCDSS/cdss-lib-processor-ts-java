@@ -183,11 +183,11 @@ private void initialize ( JFrame parent, TableMath_Command command, List<String>
 		"Perform simple math operation on columns of data in a table, using one of the following approaches:" ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "   - process input from two columns to populate the output column" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	   JGUIUtil.addComponent(main_JPanel, new JLabel (
-       "   - process input from a column and a constant to populate the output column" ), 
-       0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "   - process input from two columns to populate the output column" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "   - process input from a column and a constant to populate the output column" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Future enhancements may provide more cell range addressing - currently full columns are processed." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

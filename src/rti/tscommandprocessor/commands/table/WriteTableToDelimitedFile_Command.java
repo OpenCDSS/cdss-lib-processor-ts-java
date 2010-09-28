@@ -324,11 +324,11 @@ throws IOException
 
     // Get the comments to add to the top of the file.
 
-    List OutputComments_Vector = null;
+    List<String> OutputComments_Vector = null;
     try { Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (List)o;
+            OutputComments_Vector = (List<String>)o;
         }
     }
     catch ( Exception e ) {

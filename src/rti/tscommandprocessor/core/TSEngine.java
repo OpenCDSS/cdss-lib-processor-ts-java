@@ -4906,7 +4906,7 @@ throws Exception
 		}
 	}
 	else {
-	    String message = "Unknown input type \"" + inputType + "\" for time series \"" +
+	    String message = "Unknown input type or data store \"" + inputType + "\" for time series \"" +
 	    tsidentString + "\" - don't know how to read time series.";
 	    Message.printWarning( 3, routine, message );
 	    throw new TimeSeriesNotFoundException ( message );
@@ -5428,7 +5428,7 @@ protected void setHydroBaseDMI ( HydroBaseDMI hbdmi, boolean close_old )
 	HydroBaseDMI hbdmi2 = null;
 	String input_name = hbdmi.getInputName();
 	for ( int i = 0; i < size; i++ ) {
-		hbdmi2 = (HydroBaseDMI)__hbdmi_Vector.get(i);
+		hbdmi2 = __hbdmi_Vector.get(i);
 		if ( hbdmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the list.
 			// Replace the instance in the list by the new instance...

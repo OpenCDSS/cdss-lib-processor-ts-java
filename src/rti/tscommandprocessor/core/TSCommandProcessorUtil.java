@@ -712,7 +712,7 @@ public static Collection getPropertyNameList( CommandProcessor processor )
 {
 	// This could use reflection.
 	if ( processor instanceof TSCommandProcessor ) {
-		return ((TSCommandProcessor)processor).getPropertyNameList();
+		return ((TSCommandProcessor)processor).getPropertyNameList(true,true);
 	}
 	return new Vector();
 }

@@ -1377,38 +1377,44 @@ private String getPropContents_WorkingDir()
 /**
 Return the list of property names available from the processor.
 These properties can be requested using getPropContents().
-@return the list of property names available from the processor.
+@param includeBuiltinProperties if true, include the list of built-in property names.
+@param includeDynamicPoperties if true, include the list of dynamically-defined property names.
 */
-public Collection getPropertyNameList()
+public Collection getPropertyNameList ( boolean includeBuiltInProperties, boolean includeDynamicProperties )
 {
-	List v = new Vector();
+    // Create a set that includes the above.
+    TreeSet set = new TreeSet();
 	// FIXME SAM 2008-02-15 Evaluate whether these should be in the
 	// property hashtable - should properties be available before ever
 	// being defined (in case they are used later) or should only defined
 	// properties be available (and rely on discovery to pass to other commands)?
 	// Add properties that are hard-coded.
-    v.add ( "AutoExtendPeriod" );
-    v.add ( "AverageStart" );
-    v.add ( "AverageEnd" );
-    v.add ( "DebugLevelLogFile" );
-    v.add ( "DebugLevelScreen" );
-    v.add ( "HydroBaseDMIListSize" );
-    v.add ( "IgnoreLEZero" );
-    v.add ( "IncludeMissingTS" );
-	v.add ( "InputStart" );
-	v.add ( "InputEnd" );
-	v.add ( "OutputStart" );
-	v.add ( "OutputEnd" );
-    v.add ( "OutputYearType" );
-    v.add ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
-    v.add ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
-    v.add ( "WarningLevelLogFile" );
-    v.add ( "WarningLevelScreen" );
-    v.add ( "WorkingDir" );
-    // Create a set that includes the above.
-    TreeSet set = new TreeSet(v);
-    // Add the hashtable keys and make a unique list
-    set.addAll ( __property_Hashtable.keySet() );
+	if ( includeBuiltInProperties ) {
+	    List<String> v = new Vector();
+        v.add ( "AutoExtendPeriod" );
+        v.add ( "AverageStart" );
+        v.add ( "AverageEnd" );
+        v.add ( "DebugLevelLogFile" );
+        v.add ( "DebugLevelScreen" );
+        v.add ( "HydroBaseDMIListSize" );
+        v.add ( "IgnoreLEZero" );
+        v.add ( "IncludeMissingTS" );
+    	v.add ( "InputStart" );
+    	v.add ( "InputEnd" );
+    	v.add ( "OutputStart" );
+    	v.add ( "OutputEnd" );
+        v.add ( "OutputYearType" );
+        v.add ( "TSEnsembleResultsListSize" );   // Useful for testing when zero time series are expected
+        v.add ( "TSResultsListSize" );   // Useful for testing when zero time series are expected
+        v.add ( "WarningLevelLogFile" );
+        v.add ( "WarningLevelScreen" );
+        v.add ( "WorkingDir" );
+        set.addAll ( v );
+	}
+    if ( includeDynamicProperties ) {
+        // Add the hashtable keys and make a unique list
+        set.addAll ( __property_Hashtable.keySet() );
+    }
 	return set;
 }
 
@@ -3557,6 +3563,25 @@ Indicate output files should be created.
 protected void setCreateOutput ( Boolean CreateOutput_Boolean )
 {
 	__CreateOutput_Boolean = CreateOutput_Boolean;
+}
+
+/**
+Set the list of all DataStore instances known to the processor.  These are named database
+connections that correspond to input type/name for time series.
+This method is normally only called in special cases.  For example, the RunCommands() command
+sets the data stores from the main processor into the called commands.
+Note that each data store in the list is set using setDataStore() - the instance of the list that
+manages the data stores is not reset.
+@param dataStoreList list of DataStore to use in the processor
+@param closeOld if true, then any matching data stores are first closed before being set to the
+new value (normally this should be false if, for example, a list of data stores from one processor
+is passed to another)
+*/
+public void setDataStores ( List<DataStore> dataStoreList, boolean closeOld )
+{
+    for ( DataStore dataStore : dataStoreList ) {
+        __tsengine.setDataStore(dataStore, closeOld );
+    }
 }
 
 /**

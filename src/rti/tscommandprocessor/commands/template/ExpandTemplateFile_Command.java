@@ -347,7 +347,7 @@ CommandWarningException, CommandException
             TSCommandProcessor tsprocessor = (TSCommandProcessor)processor;
             if ( processor instanceof TSCommandProcessor ) {
                 // Add properties from the processor
-                Collection<String> propertyNames = tsprocessor.getPropertyNameList();
+                Collection<String> propertyNames = tsprocessor.getPropertyNameList(true,true);
                 for ( String propertyName : propertyNames ) {
                     model.put(propertyName, tsprocessor.getPropContents(propertyName) );
                 }

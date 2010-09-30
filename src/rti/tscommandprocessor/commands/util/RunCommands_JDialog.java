@@ -43,20 +43,20 @@ implements ActionListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Convert between relative and absolute paths.
-private RunCommands_Command __command = null;	// Command to edit
-private JTextArea	__command_JTextArea=null;
-private String		__working_dir = null;	// Working directory.
-private JTextField	__InputFile_JTextField = null;
-private SimpleJComboBox __ExpectedStatus_JComboBox =null;
-// FIXME SAM 2008-07-15 Need to add option to inherit the properties of the calling processor
-//private SimpleJComboBox __InheritParentWorkflowProperties_JComboBox =null;
-private boolean		__error_wait = false;	// Is there an error waiting to be cleared up
-private boolean		__first_time = true;
-private boolean		__ok = false; // Indicates whether OK was pressed when closing the dialog.
+private SimpleJButton __browse_JButton = null; 
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private RunCommands_Command __command = null;
+private JTextArea __command_JTextArea=null;
+private String __working_dir = null;
+private JTextField __InputFile_JTextField = null;
+private SimpleJComboBox __ExpectedStatus_JComboBox = null;
+//private SimpleJComboBox __ShareProperties_JComboBox = null;
+private SimpleJComboBox __ShareDataStores_JComboBox = null;
+private boolean __error_wait = false; // Is there an error waiting to be cleared up
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
 
 /**
 Command editor dialog constructor.
@@ -137,7 +137,8 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	String InputFile = __InputFile_JTextField.getText().trim();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
-    //String InheritParentWorkflowProperties = __InheritParentWorkflowProperties_JComboBox.getSelected();
+    //String ShareProperties = __ShareProperties_JComboBox.getSelected();
+    String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
@@ -145,11 +146,12 @@ private void checkInput ()
     if ( ExpectedStatus.length() > 0 ) {
         props.set ( "ExpectedStatus", ExpectedStatus );
     }
-    /*
-    if ( InheritParentWorkflowProperties.length() > 0 ) {
-        props.set ( "ResetWorkflowProperties", InheritParentWorkflowProperties );
+    //if ( ShareProperties.length() > 0 ) {
+    //    props.set ( "ShareProperties", ShareProperties );
+    //}
+    if ( ShareDataStores.length() > 0 ) {
+        props.set ( "ShareDataStores", ShareDataStores );
     }
-    */
 	try {	// This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
@@ -166,10 +168,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
-    //String InheritParentWorkflowProperties = __InheritParentWorkflowProperties_JComboBox.getSelected();
+    //String ShareProperties = __ShareProperties_JComboBox.getSelected();
+    String ShareDataStores = __ShareDataStores_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
     __command.setCommandParameter ( "ExpectedStatus", ExpectedStatus );
-    //__command.setCommandParameter ( "InheritParentWorkflowProperties", InheritParentWorkflowProperties );
+    //__command.setCommandParameter ( "ShareProperties", ShareProperties );
+    __command.setCommandParameter ( "ShareDataStores", ShareDataStores );
 }
 
 /**
@@ -211,20 +215,22 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a command file and run the commands." ),
+		"Read a command file and run the commands using a separate command processor." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Time series results are cleared before processing each command file." ),
+        "Parent command processor data stores can be shared with the processor for the command file." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Results are cleared before processing each command file." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    "The (success/warning/failure) status from each command file is used for the RunCommands() command." ),
-    0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "The (success/warning/failure) status from the command file is used for the RunCommands() command status." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full or relative path (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The working directory is: " + __working_dir ), 
+        JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
@@ -236,7 +242,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	__browse_JButton = new SimpleJButton ( "Browse", this );
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Expected status:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -251,24 +257,40 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __ExpectedStatus_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Use for testing (overall status=Success if matches this)."), 
+        "Optional - use for testing (default=" + __command._Success + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     /*
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Inherit parent workflow properties?:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent workflow properties?:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __InheritParentWorkflowProperties_JComboBox = new SimpleJComboBox ( false );
-    __InheritParentWorkflowProperties_JComboBox.addItem ( "" );   // Default
-    __InheritParentWorkflowProperties_JComboBox.addItem ( __command._False );
-    __InheritParentWorkflowProperties_JComboBox.addItem ( __command._True );
-    __InheritParentWorkflowProperties_JComboBox.select ( 0 );
-    __InheritParentWorkflowProperties_JComboBox.addActionListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __InheritParentWorkflowProperties_JComboBox,
+    __ShareProperties_JComboBox = new SimpleJComboBox ( false );
+    __ShareProperties_JComboBox.addItem ( "" );   // Default
+    __ShareProperties_JComboBox.addItem ( __command._Copy );
+    __ShareProperties_JComboBox.addItem ( __command._DoNotShare );
+    __ShareProperties_JComboBox.addItem ( __command._Share );
+    __ShareProperties_JComboBox.select ( 0 );
+    __ShareProperties_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ShareProperties_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "False (default) uses properties set by previous commands."), 
+        "Optional - share properties (default=" + __command._DoNotShare + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    */
+        */
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Share parent data stores?:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ShareDataStores_JComboBox = new SimpleJComboBox ( false );
+    __ShareDataStores_JComboBox.addItem ( "" );   // Default
+    //__ShareDataStores_JComboBox.addItem ( __command._Copy ); // Too difficult?
+    __ShareDataStores_JComboBox.addItem ( __command._DoNotShare );
+    __ShareDataStores_JComboBox.addItem ( __command._Share );
+    __ShareDataStores_JComboBox.select ( 0 );
+    __ShareDataStores_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ShareDataStores_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - share data stores (default=" + __command._Share + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -327,7 +349,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -340,7 +362,8 @@ private void refresh ()
 {	String routine = "RunCommands_JDialog.refresh";
     String InputFile = "";
     String ExpectedStatus = "";
-    //String InheritParentWorkflowProperties = "";
+    //String ShareProperties = "";
+    String ShareDataStores = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
@@ -348,7 +371,8 @@ private void refresh ()
 		props = __command.getCommandParameters();
 		InputFile = props.getValue ( "InputFile" );
         ExpectedStatus = props.getValue ( "ExpectedStatus" );
-        //InheritParentWorkflowProperties = props.getValue ( "InheritParentWorkflowProperties" );
+        //ShareProperties = props.getValue ( "ShareProperties" );
+        ShareDataStores = props.getValue ( "ShareDataStores" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
@@ -369,32 +393,46 @@ private void refresh ()
             }
         }
         /*
-        if ( JGUIUtil.isSimpleJComboBoxItem(__InheritParentWorkflowProperties_JComboBox, ExpectedStatus,JGUIUtil.NONE, null, null ) ) {
-            __InheritParentWorkflowProperties_JComboBox.select ( ExpectedStatus );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ShareProperties_JComboBox, ShareProperties,JGUIUtil.NONE, null, null ) ) {
+            __ShareProperties_JComboBox.select ( ShareProperties );
         }
         else {
-            if ( (ResetWorkflowProperties == null) || ResetWorkflowProperties.equals("") ) {
+            if ( (ShareProperties == null) || ShareProperties.equals("") ) {
                 // New command...select the default...
-                __InheritParentWorkflowProperties_JComboBox.select ( 0 );
+                __ShareProperties_JComboBox.select ( 0 );
             }
             else {  // Bad user command...
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\n"+
-                "ResetWorkflowProperties parameter \"" +
-                ResetWorkflowProperties +
-                "\".  Select a\nMissing value or Cancel." );
+                "Existing command references an invalid ShareProperties parameter \"" +
+                ShareProperties + "\".  Correct or Cancel." );
             }
         }
         */
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ShareDataStores_JComboBox, ShareDataStores,JGUIUtil.NONE, null, null ) ) {
+            __ShareDataStores_JComboBox.select ( ShareDataStores );
+        }
+        else {
+            if ( (ShareDataStores == null) || ShareDataStores.equals("") ) {
+                // New command...select the default...
+                __ShareDataStores_JComboBox.select ( 0 );
+            }
+            else {  // Bad user command...
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid ShareDataStores parameter \"" +
+                ShareDataStores + "\".  Correct or Cancel." );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	InputFile = __InputFile_JTextField.getText().trim();
     ExpectedStatus = __ExpectedStatus_JComboBox.getSelected();
-    //InheritParentWorkflowProperties = __InheritParentWorkflowProperties_JComboBox.getSelected();
+    //ShareProperties = __ShareProperties_JComboBox.getSelected();
+    ShareDataStores = __ShareDataStores_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
     props.add ( "ExpectedStatus=" + ExpectedStatus );
-    //props.add ( "InheritParentWorkflowProperties=" + InheritParentWorkflowProperties );
+    //props.add ( "ShareProperties=" + ShareProperties );
+    props.add ( "ShareDataStores=" + ShareDataStores );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
@@ -411,7 +449,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -444,4 +482,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end runCommands_JDialog
+}

@@ -30,9 +30,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 // FIXME SAM 2008-07-15 Need to add ability to inherit the properties of the main processor
 
 /**
-<p>
 This class initializes, checks, and runs the RunCommands() command.
-</p>
 */
 public class RunCommands_Command extends AbstractCommand implements Command
 {
@@ -56,6 +54,13 @@ ResetWorkflowProperties parameter values.
 */
 private final String __FAIL = "FAIL";
 private final String __PASS = "PASS";
+
+/**
+*Sharing parameter values.
+*/
+protected final String _Copy = "Copy";
+protected final String _DoNotShare = "DoNotShare";
+protected final String _Share = "Share";
 
 /**
 AppendResults parameter values.
@@ -82,7 +87,8 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
-    //String InheritParentWorkflowProperties = parameters.getValue ( "InheritParentWorkflowProperties" );
+    //String ShareProperties = parameters.getValue ( "ShareProperties" );
+    String ShareDataStores = parameters.getValue ( "ShareDataStores" );
 	String warning = "";
     String message;
 	
@@ -97,21 +103,23 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify an input file." ) );
 	}
-	else {	String working_dir = null;
+	else {
+	    String working_dir = null;
 	
-			try { Object o = processor.getPropContents ( "WorkingDir" );
-					// Working directory is available so use it...
-					if ( o != null ) {
-						working_dir = (String)o;
-					}
+		try {
+		    Object o = processor.getPropContents ( "WorkingDir" );
+			// Working directory is available so use it...
+			if ( o != null ) {
+				working_dir = (String)o;
 			}
-			catch ( Exception e ) {
-				message = "Error requesting WorkingDir from processor.";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Software error - report problem to support." ) );
-			}
+		}
+		catch ( Exception e ) {
+			message = "Error requesting WorkingDir from processor.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Software error - report problem to support." ) );
+		}
 	
 		try {
             String adjusted_path = IOUtil.verifyPathForOS(IOUtil.adjustPath ( working_dir, InputFile));
@@ -127,7 +135,7 @@ throws InvalidCommandParameterException
 		}
 		catch ( Exception e ) {
             message = "The input file \"" + InputFile +
-            "\" ncannot be adjusted to an absolute path using the working directory \"" +
+            "\" cannot be adjusted to an absolute path using the working directory \"" +
             working_dir + "\".";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -135,37 +143,51 @@ throws InvalidCommandParameterException
                             message, "Verify that command file to run and working directory paths are compatible." ) );
 		}
 	}
-	/*
-    if ( (InheritParentWorkflowProperties != null) && (InheritParentWorkflowProperties.length() == 0) &&
-            !InheritParentWorkflowProperties.equalsIgnoreCase(_False) &&
-            !InheritParentWorkflowProperties.equalsIgnoreCase(_True) ) {
-        message = "The InheritParentWorkflowProperties parameter is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an expected status of " + _False + " (default if blank), " +
-                        ", or " + _True) );
-    }
-    */
     
     if ( (ExpectedStatus != null) && (ExpectedStatus.length() == 0) &&
-            !ExpectedStatus.equalsIgnoreCase(_Unknown) &&
-            !ExpectedStatus.equalsIgnoreCase(_Success) &&
-            !ExpectedStatus.equalsIgnoreCase(_Warning) &&
-            !ExpectedStatus.equalsIgnoreCase(_Failure) ) {
+        !ExpectedStatus.equalsIgnoreCase(_Unknown) &&
+        !ExpectedStatus.equalsIgnoreCase(_Success) &&
+        !ExpectedStatus.equalsIgnoreCase(_Warning) &&
+        !ExpectedStatus.equalsIgnoreCase(_Failure) ) {
         message = "The expected status is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an expected status of " + _Unknown + ", " + _Success + ", " +
-                        _Warning + ", or " + _Failure) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an expected status of " + _Unknown + ", " + _Success + ", " +
+                _Warning + ", or " + _Failure) );
+    }
+    /*
+    if ( (ShareProperties != null) && (ShareProperties.length() == 0) &&
+        //!ShareProperties.equalsIgnoreCase(_Copy) &&
+        !ShareProperties.equalsIgnoreCase(_DoNotShare) &&
+        !ShareProperties.equalsIgnoreCase(_Share)) {
+        message = "The ShareProperties parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify ShareProperties as " +// _Copy + ", " +
+                _DoNotShare + " (default if blank), " + " or " + _Share) );
+    }
+    */
+    
+    if ( (ShareDataStores != null) && (ShareDataStores.length() == 0) &&
+        !ShareDataStores.equalsIgnoreCase(_Copy) &&
+        !ShareDataStores.equalsIgnoreCase(_DoNotShare) &&
+        !ShareDataStores.equalsIgnoreCase(_Share)) {
+        message = "The ShareDataStores parameter is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify ShareDataStores as " + _Copy + ", " + _DoNotShare +
+                " (default if blank), " + ", or " + _Share) );
     }
 
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
-	//valid_Vector.add ( "InheritParentWorkflowProperties" );
     valid_Vector.add ( "ExpectedStatus" );
+    valid_Vector.add ( "ShareProperties" );
+    valid_Vector.add ( "ShareDataStores" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -208,7 +230,14 @@ CommandWarningException, CommandException
 
 	String InputFile = parameters.getValue ( "InputFile" );
     String ExpectedStatus = parameters.getValue ( "ExpectedStatus" );
-    //String InheritParentWorkflowProperties = parameters.getValue ( "InheritParentWorkflowProperties" );
+    String ShareProperties = parameters.getValue ( "ShareProperties" );
+    if ( (ShareProperties == null) || ShareProperties.equals("") ) {
+        ShareProperties = _DoNotShare;
+    }
+    String ShareDataStores = parameters.getValue ( "ShareDataStores" );
+    if ( (ShareDataStores == null) || ShareDataStores.equals("") ) {
+        ShareDataStores = _Share;
+    }
 	String AppendResults = parameters.getValue ( "AppendResults" );
 	
 	if ( warning_count > 0 ) {
@@ -231,12 +260,26 @@ CommandWarningException, CommandException
         // This will set the initial working directory of the runner to that of the command file...
 		runner.readCommandFile(InputFile_full);
         // Set the database connection information...
-        // FIXME SAM 2007-11-25 This needs to be generic "DataSource" objects.
+        // FIXME SAM 2007-11-25 HydroBase needs to be converted to generic DataStore objects.
         TSCommandProcessor runner_processor = runner.getProcessor();
-        runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
-        // FIXME SAM 2008-07-15 If inheriting properties from parent workflow, transfer here
-        // similar to how results will be appended after running.
-        // Run the commands.
+        if ( ShareDataStores.equalsIgnoreCase(_Share) ) {
+            // All data stores are transferred
+            runner_processor.setPropContents("HydroBaseDMIList", processor.getPropContents("HydroBaseDMIList"));
+            runner_processor.setDataStores(((TSCommandProcessor)processor).getDataStores(), false);
+        }
+        /*
+         * TODO SAM 2010-09-30 Need to evaluate how to share properties - issue is that built-in properties are
+         * handled explicitly whereas user-defined properties are in a list that can be easily shared.
+         * Also, some properties like the working directory receive special treatment.
+         * For now don't bite off the property issue
+        if ( ShareProperties.equalsIgnoreCase(_Copy) ) {
+            setProcessorProperties(processor,runner_processor,true);
+        }
+        else if ( ShareProperties.equalsIgnoreCase(_Share) ) {
+            // All data stores are transferred
+            setProcessorProperties(processor,runner_processor,false);
+        }
+        */
 		runner.runCommands();
 		
 		// Set the CommandStatus for this command to the most severe status of the
@@ -336,7 +379,8 @@ public String toString ( PropList props )
 	}
 	String InputFile = props.getValue("InputFile");
     String ExpectedStatus = props.getValue("ExpectedStatus");
-    //String InheritParentWorkflowProperties = props.getValue("InheritParentWorkflowProperties");
+    //String ShareProperties = props.getValue("ShareProperties");
+    String ShareDataStores = props.getValue("ShareDataStores");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -344,18 +388,25 @@ public String toString ( PropList props )
 		}
 		b.append ( "InputFile=\"" + InputFile + "\"" );
 	}
-	/*
-    if ( (InheritParentWorkflowProperties != null) && (InheritParentWorkflowProperties.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "InheritParentWorkflowProperties=" + InheritParentWorkflowProperties );
-    }*/
     if ( (ExpectedStatus != null) && (ExpectedStatus.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "ExpectedStatus=" + ExpectedStatus );
+    }
+    /*
+    if ( (ShareProperties != null) && (ShareProperties.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ShareProperties=" + ShareProperties );
+    }
+    */
+    if ( (ShareDataStores != null) && (ShareDataStores.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ShareDataStores=" + ShareDataStores );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

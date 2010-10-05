@@ -313,13 +313,15 @@ CommandWarningException, CommandException
                     tableObject = rec.getFieldValue(tableInputColumns[icolumn]);
                     // Allow the value to be any number
                     if ( tableObject == null ) {
+                        // Blank cell values are allowed - just don't set the property
                         message = "Table value in column \"" + tableInputColumnNames[icolumn] +
                         "\" matching TSID \"" + tsid + "\" is null - skipping time series \"" +
                         ts.getIdentifierString() + "\".";
                         Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                             routine, message );
-                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                            "Verify that the proper table input column is specified and that column values are numbers." ) );
+                        // Don't add to command log because warnings will result.
+                        //status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        //    "Verify that the proper table input column is specified and that column values are numbers." ) );
                         // Go to next time series.
                         continue;
                     }

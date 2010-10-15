@@ -13,6 +13,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -52,6 +53,8 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
 private JTextField __TableInputColumn_JTextField = null;
+private SimpleJComboBox __IfTableInputIsBlank_JComboBox = null;
+private SimpleJComboBox __IfTSListIsEmpty_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -126,6 +129,8 @@ private void checkInput ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableInputColumn = __TableInputColumn_JTextField.getText().trim();
+    String IfTableInputIsBlank = __IfTableInputIsBlank_JComboBox.getSelected();
+    String IfTSListIsEmpty = __IfTSListIsEmpty_JComboBox.getSelected();
 	PropList parameters = new PropList ( "" );
 
 	__error_wait = false;
@@ -154,7 +159,12 @@ private void checkInput ()
     if ( TableInputColumn.length() > 0 ) {
         parameters.set ( "TableInputColumn", TableInputColumn );
     }
-
+    if ( IfTableInputIsBlank.length() > 0 ) {
+        parameters.set ( "IfTableInputIsBlank", IfTableInputIsBlank );
+    }
+    if ( IfTSListIsEmpty.length() > 0 ) {
+        parameters.set ( "IfTSListIsEmpty", IfTSListIsEmpty );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -178,6 +188,8 @@ private void commitEdits ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableInputColumn = __TableInputColumn_JTextField.getText().trim();
+    String IfTableInputIsBlank = __IfTableInputIsBlank_JComboBox.getSelected();
+    String IfTSListIsEmpty = __IfTSListIsEmpty_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -186,7 +198,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "TableInputColumn", TableInputColumn );
-
+    __command.setCommandParameter ( "IfTableInputIsBlank", IfTableInputIsBlank );
+    __command.setCommandParameter ( "IfTSListIsEmpty", IfTSListIsEmpty );
 }
 
 /**
@@ -236,7 +249,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
@@ -299,6 +312,40 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Required - column name for table input."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If table input is blank:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> ifTableInputIsBlankChoices = new Vector();
+    ifTableInputIsBlankChoices.add ( "" );
+    ifTableInputIsBlankChoices.add ( __command._Warn );
+    ifTableInputIsBlankChoices.add ( __command._Ignore );
+    ifTableInputIsBlankChoices.add ( __command._Fail );
+    __IfTableInputIsBlank_JComboBox = new SimpleJComboBox ( false );// Do not allow edit
+    __IfTableInputIsBlank_JComboBox.setData ( ifTableInputIsBlankChoices );
+    __IfTableInputIsBlank_JComboBox.addItemListener ( this );
+    //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __IfTableInputIsBlank_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - action if table input value is blank (default=" + __command._Warn + "."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If time series list is empty:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> ifTSListIsEmptyChoices = new Vector();
+    ifTSListIsEmptyChoices.add ( "" );
+    ifTSListIsEmptyChoices.add ( __command._Warn );
+    ifTSListIsEmptyChoices.add ( __command._Ignore );
+    ifTSListIsEmptyChoices.add ( __command._Fail );
+    __IfTSListIsEmpty_JComboBox = new SimpleJComboBox ( false );// Do not allow edit
+    __IfTSListIsEmpty_JComboBox.setData ( ifTSListIsEmptyChoices );
+    __IfTSListIsEmpty_JComboBox.addItemListener ( this );
+    //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __IfTSListIsEmpty_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - action if time series list is empty (default=" + __command._Fail + "."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
@@ -366,7 +413,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -385,6 +432,8 @@ private void refresh ()
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
     String TableInputColumn = "";
+    String IfTableInputIsBlank = "";
+    String IfTSListIsEmpty = "";
 
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -398,6 +447,8 @@ private void refresh ()
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         TableInputColumn = props.getValue ( "TableInputColumn" );
+        IfTableInputIsBlank = props.getValue ( "IfTableInputIsBlank" );
+        IfTSListIsEmpty = props.getValue ( "IfTSListIsEmpty" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -481,6 +532,38 @@ private void refresh ()
         if ( TableInputColumn != null ) {
             __TableInputColumn_JTextField.setText ( TableInputColumn );
         }
+        if ( IfTableInputIsBlank == null ) {
+            // Select default...
+            __IfTableInputIsBlank_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IfTableInputIsBlank_JComboBox,IfTableInputIsBlank,
+                JGUIUtil.NONE, null, null ) ) {
+                __IfTableInputIsBlank_JComboBox.select ( IfTableInputIsBlank );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIfTableInputIsBlank value \"" + IfTableInputIsBlank +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( IfTSListIsEmpty == null ) {
+            // Select default...
+            __IfTSListIsEmpty_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IfTSListIsEmpty_JComboBox,IfTSListIsEmpty,
+                JGUIUtil.NONE, null, null ) ) {
+                __IfTSListIsEmpty_JComboBox.select ( IfTSListIsEmpty );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIfTSListIsEmpty value \"" + IfTSListIsEmpty +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -491,6 +574,8 @@ private void refresh ()
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     TableInputColumn = __TableInputColumn_JTextField.getText().trim();
+    IfTableInputIsBlank = __IfTableInputIsBlank_JComboBox.getSelected();
+    IfTSListIsEmpty = __IfTSListIsEmpty_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -500,6 +585,8 @@ private void refresh ()
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "TableInputColumn=" + TableInputColumn );
+    props.add ( "IfTableInputIsBlank=" + IfTableInputIsBlank );
+    props.add ( "IfTSListIsEmpty=" + IfTSListIsEmpty );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

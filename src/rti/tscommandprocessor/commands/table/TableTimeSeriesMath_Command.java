@@ -43,6 +43,13 @@ protected final String _NaN = "NaN";
 protected final String _Null = "Null";
 
 /**
+Values for IfTableInputIsBlank and IfTSListIsEmpty parameter.
+*/
+protected final String _Fail = "Fail";
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+
+/**
 Constructor.
 */
 public TableTimeSeriesMath_Command ()
@@ -64,6 +71,8 @@ throws InvalidCommandParameterException
     String TableID = parameters.getValue ( "TableID" );
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableInputColumn = parameters.getValue ( "TableInputColumn" );
+    String IfTableInputIsBlank = parameters.getValue ( "IfTableInputIsBlank" );
+    String IfTSListIsEmpty = parameters.getValue ( "IfTSListIsEmpty" );
     String warning = "";
     String message;
     
@@ -131,6 +140,26 @@ throws InvalidCommandParameterException
             message, "Provide a table column name for the input value." ) );
     }
     
+    if ( (IfTableInputIsBlank != null) && !IfTableInputIsBlank.equals("") &&
+        !IfTableInputIsBlank.equalsIgnoreCase(_Ignore) &&  !IfTableInputIsBlank.equalsIgnoreCase(_Fail) &&
+        !IfTableInputIsBlank.equalsIgnoreCase(_Warn) ) {
+        message = "The IfTableInputIsBlank value (" + IfTableInputIsBlank + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _Ignore + ", " + _Warn + ", or " + _Fail + "." ) );   
+    }
+    
+    if ( (IfTSListIsEmpty != null) && !IfTSListIsEmpty.equals("") &&
+        !IfTSListIsEmpty.equalsIgnoreCase(_Ignore) &&  !IfTSListIsEmpty.equalsIgnoreCase(_Fail) &&
+        !IfTSListIsEmpty.equalsIgnoreCase(_Warn) ) {
+        message = "The IfTSListIsEmpty value (" + IfTSListIsEmpty + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _Ignore + ", " + _Warn + ", or " + _Fail + "." ) );   
+    }
+    
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
@@ -141,6 +170,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TableTSIDColumn" );
     valid_Vector.add ( "TableTSIDFormat" );
     valid_Vector.add ( "TableInputColumn" );
+    valid_Vector.add ( "IfTableInputIsBlank" );
+    valid_Vector.add ( "IfTSListIsEmpty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
     if ( warning.length() > 0 ) {
@@ -214,6 +245,14 @@ CommandWarningException, CommandException
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableInputColumn = parameters.getValue ( "TableInputColumn" );
+    String IfTableInputIsBlank = parameters.getValue ( "IfTableInputIsBlank" );
+    if ( (IfTableInputIsBlank == null) || IfTableInputIsBlank.equals("") ) {
+        IfTableInputIsBlank = _Warn;
+    }
+    String IfTSListIsEmpty = parameters.getValue ( "IfTSListIsEmpty" );
+    if ( (IfTSListIsEmpty == null) || IfTSListIsEmpty.equals("") ) {
+        IfTSListIsEmpty = _Warn;
+    }
 
     // Get the table to process.
 
@@ -284,7 +323,8 @@ CommandWarningException, CommandException
     }
     PropList bean_PropList = bean.getResultsPropList();
     Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-    List tslist = null;
+    List<TS> tslist = null;
+    int nts = 0;
     if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -293,25 +333,29 @@ CommandWarningException, CommandException
             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        tslist = (List)o_TSList;
-        if ( tslist.size() == 0 ) {
-            message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-            Message.printWarning ( log_level, MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-        }
+        tslist = (List<TS>)o_TSList;
+        nts = tslist.size();
     }
     
-    int nts = tslist.size();
     if ( nts == 0 ) {
         message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
             "\", EnsembleID=\"" + EnsembleID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        if ( IfTSListIsEmpty.equalsIgnoreCase(_Warn) ) {
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING, message,
+                "Verify that the TSID parameter matches one or more time series - " +
+                "may be OK for partial run or special case." ) );
+        }
+        else if ( IfTSListIsEmpty.equalsIgnoreCase(_Fail) ) {
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                "Verify that the TSID parameter matches one or more time series - " +
+                "may be OK for partial run or special case." ) );
+        }
     }
     
     if ( warning_count > 0 ) {
@@ -362,12 +406,20 @@ CommandWarningException, CommandException
                 TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
                 if ( rec == null ) {
                     message = "Cannot find table cell in column \"" + TableTSIDColumn +
-                        "\" matching TSID formatted as \"" + tsid + "\" - skipping time series \"" +
-                        ts.getIdentifierString() + "\".";
-                    Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    "\" matching TSID formatted as \"" + tsid + "\" - skipping time series \"" +
+                    ts.getIdentifierString() + "\".";
+                    if ( IfTableInputIsBlank.equalsIgnoreCase(_Warn) ) {
+                        Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                    status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING, message,
                         "Verify that the column TSID matches one or more time series." ) );
+                    }
+                    else if ( IfTableInputIsBlank.equalsIgnoreCase(_Fail) ) {
+                        Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        "Verify that the column TSID matches one or more time series." ) );
+                    }
                     // Go to next time series.
                     continue;
                 }
@@ -474,6 +526,8 @@ public String toString ( PropList parameters )
     String TableTSIDColumn = parameters.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     String TableInputColumn = parameters.getValue ( "TableInputColumn" );
+    String IfTableInputIsBlank = parameters.getValue ( "IfTableInputIsBlank" );
+    String IfTSListIsEmpty = parameters.getValue ( "IfTSListIsEmpty" );
         
     StringBuffer b = new StringBuffer ();
 
@@ -524,6 +578,18 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "TableInputColumn=\"" + TableInputColumn + "\"" );
+    }
+    if ( (IfTableInputIsBlank != null) && (IfTableInputIsBlank.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IfTableInputIsBlank=" + IfTableInputIsBlank );
+    }
+    if ( (IfTSListIsEmpty != null) && (IfTSListIsEmpty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IfTSListIsEmpty=" + IfTSListIsEmpty );
     }
     
     return getCommandName() + "(" + b.toString() + ")";

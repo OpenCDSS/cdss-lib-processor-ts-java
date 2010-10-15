@@ -49,12 +49,12 @@ public class Add_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private Add_Command __command = null; // Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private Add_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox	__TSID_JComboBox = null;    // To receive 
-private SimpleJComboBox __EnsembleID_JComboBox = null;  // To receive
+private SimpleJComboBox	__TSID_JComboBox = null; // To receive 
+private SimpleJComboBox __EnsembleID_JComboBox = null; // To receive
 private SimpleJComboBox	__AddTSList_JComboBox = null; // To supply time series to add...
 private JLabel __AddTSID_JLabel = null;
 private SimpleJComboBox __AddTSID_JComboBox = null;
@@ -63,7 +63,8 @@ private SimpleJComboBox __AddEnsembleID_JComboBox = null;
 private JLabel __AddSpecifiedTSID_JLabel = null;
 private DefaultListModel __AddSpecifiedTSID_JListModel = null;
 private JList __AddSpecifiedTSID_JList= null;
-private SimpleJComboBox	__HandleMissingHow_JComboBox = null; // Indicates how to handle missing data.
+private SimpleJComboBox	__HandleMissingHow_JComboBox = null; // How to handle missing data in time series.
+private SimpleJComboBox __IfTSListToAddIsEmpty_JComboBox = null;
 private boolean	__error_wait = false;
 private boolean	__first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -146,6 +147,7 @@ private void checkInput ()
     //String SetStart = __SetStart_JTextField.getText().trim();
    // String SetEnd = __SetEnd_JTextField.getText().trim();
     String HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    String IfTSListToAddIsEmpty = __IfTSListToAddIsEmpty_JComboBox.getSelected();
     __error_wait = false;
     
     // AddTSID is used for several variations of AddTSList
@@ -179,6 +181,9 @@ private void checkInput ()
     if ( HandleMissingHow.length() > 0 ) {
         props.set ( "HandleMissingHow", HandleMissingHow );
     }
+    if ( IfTSListToAddIsEmpty.length() > 0 ) {
+        props.set ( "IfTSListToAddIsEmpty", IfTSListToAddIsEmpty );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -204,6 +209,7 @@ private void commitEdits ()
     //String SetStart = __SetStart_JTextField.getText().trim();
     //String SetEnd = __SetEnd_JTextField.getText().trim();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
+    String IfTSListToAddIsEmpty = __IfTSListToAddIsEmpty_JComboBox.getSelected();
     
     // AddTSID is used for several variations of AddTSList
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
@@ -219,6 +225,7 @@ private void commitEdits ()
     //__command.setCommandParameter ( "SetStart", SetStart );
     //__command.setCommandParameter ( "SetEnd", SetEnd );
     //__command.setCommandParameter ( "TransferHow", TransferHow );
+    __command.setCommandParameter ( "IfTSListToAddIsEmpty", IfTSListToAddIsEmpty );
 }
 
 /**
@@ -355,6 +362,26 @@ private void initialize ( JFrame parent, Command command )
 	__HandleMissingHow_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __HandleMissingHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - how to handle missing values in time series (default=" + __command._IgnoreMissing + "."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If time series list is empty:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    List<String> IfTSListToAddIsEmptyChoices = new Vector();
+    IfTSListToAddIsEmptyChoices.add ( "" );
+    IfTSListToAddIsEmptyChoices.add ( __command._Warn );
+    IfTSListToAddIsEmptyChoices.add ( __command._Ignore );
+    IfTSListToAddIsEmptyChoices.add ( __command._Fail );
+    __IfTSListToAddIsEmpty_JComboBox = new SimpleJComboBox ( false );// Do not allow edit
+    __IfTSListToAddIsEmpty_JComboBox.setData ( IfTSListToAddIsEmptyChoices );
+    __IfTSListToAddIsEmpty_JComboBox.addItemListener ( this );
+    //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __IfTSListToAddIsEmpty_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - action if time series list to add is empty (default=" + __command._Fail + "."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -421,7 +448,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {   return __ok;
@@ -438,6 +465,7 @@ private void refresh ()
 	String AddTSID = "";
     String AddEnsembleID = "";
     String HandleMissingHow = "";
+    String IfTSListToAddIsEmpty = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -448,6 +476,7 @@ private void refresh ()
         AddTSID = props.getValue ( "AddTSID" );
         AddEnsembleID = props.getValue ( "AddEnsembleID" );
         HandleMissingHow = props.getValue ( "HandleMissingHow" );
+        IfTSListToAddIsEmpty = props.getValue ( "IfTSListToAddIsEmpty" );
         if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
             __TSID_JComboBox.select ( TSID );
         }
@@ -535,16 +564,29 @@ private void refresh ()
             // Select default...
             __HandleMissingHow_JComboBox.select ( 0 );
         }
-        else {  if (    JGUIUtil.isSimpleJComboBoxItem(
-                __HandleMissingHow_JComboBox,
-                HandleMissingHow, JGUIUtil.NONE, null, null )) {
-                __HandleMissingHow_JComboBox.select (
-                HandleMissingHow );
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(
+                __HandleMissingHow_JComboBox, HandleMissingHow, JGUIUtil.NONE, null, null )) {
+                __HandleMissingHow_JComboBox.select ( HandleMissingHow );
             }
-            else {  Message.printWarning ( 1, routine,
-                "Existing command " +
-                "references an invalid\n" +
-                "HandleMissingHow value \"" + HandleMissingHow +
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n" +
+                "HandleMissingHow value \"" + HandleMissingHow + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( IfTSListToAddIsEmpty == null ) {
+            // Select default...
+            __IfTSListToAddIsEmpty_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IfTSListToAddIsEmpty_JComboBox,IfTSListToAddIsEmpty,
+                JGUIUtil.NONE, null, null ) ) {
+                __IfTSListToAddIsEmpty_JComboBox.select ( IfTSListToAddIsEmpty );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nIfTSListToAddIsEmpty value \"" + IfTSListToAddIsEmpty +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -560,6 +602,7 @@ private void refresh ()
     //FillStart = __FillStart_JTextField.getText().trim();
     //FillEnd = __FillEnd_JTextField.getText().trim();
     HandleMissingHow = __HandleMissingHow_JComboBox.getSelected();
+    IfTSListToAddIsEmpty = __IfTSListToAddIsEmpty_JComboBox.getSelected();
     // Use the list of specified TSID instead of the __AddTSID_JComboBox above
     if ( TSListType.SPECIFIED_TSID.equals(AddTSList) ) {
         AddTSID = AddSpecifiedTSID;
@@ -574,12 +617,13 @@ private void refresh ()
     //props.add ( "FillStart=" + FillStart );
     //props.add ( "FillEnd=" + FillEnd );
     props.add ( "HandleMissingHow=" + HandleMissingHow );
+    props.add ( "IfTSListToAddIsEmpty=" + IfTSListToAddIsEmpty );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

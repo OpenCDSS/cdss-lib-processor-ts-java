@@ -45,6 +45,13 @@ protected final String _SetMissingIfOtherMissing = "SetMissingIfOtherMissing";
 protected final String _SetMissingIfAnyMissing = "SetMissingIfAnyMissing";
 
 /**
+Values for IfTSListToAddIsEmpty parameter.
+*/
+protected final String _Fail = "Fail";
+protected final String _Ignore = "Ignore";
+protected final String _Warn = "Warn";
+
+/**
 Constructor.
 */
 public Add_Command ()
@@ -58,8 +65,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -69,6 +75,7 @@ throws InvalidCommandParameterException
 	//String SetStart = parameters.getValue ( "SetStart" );
 	//String SetEnd = parameters.getValue ( "SetEnd" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
+    String IfTSListToAddIsEmpty = parameters.getValue ( "IfTSListToAddIsEmpty" );
 	String warning = "";
     String message;
     
@@ -154,6 +161,16 @@ throws InvalidCommandParameterException
                 _SetMissingIfOtherMissing + ", or " + _SetMissingIfAnyMissing) );
     }
     
+    if ( (IfTSListToAddIsEmpty != null) && !IfTSListToAddIsEmpty.equals("") &&
+        !IfTSListToAddIsEmpty.equalsIgnoreCase(_Ignore) &&  !IfTSListToAddIsEmpty.equalsIgnoreCase(_Fail) &&
+        !IfTSListToAddIsEmpty.equalsIgnoreCase(_Warn) ) {
+        message = "The IfTSListToAddIsEmpty value (" + IfTSListToAddIsEmpty + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify as " + _Ignore + ", " + _Warn + ", or " + _Fail + "." ) );   
+    }
+    
 	// Check for invalid parameters...
     List valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
@@ -164,6 +181,7 @@ throws InvalidCommandParameterException
     //valid_Vector.add ( "SetStart" );
     //valid_Vector.add ( "SetEnd" );
     valid_Vector.add ( "HandleMissingHow" );
+    valid_Vector.add ( "IfTSListToAddIsEmpty" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -351,10 +369,8 @@ Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -363,7 +379,7 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	//int log_level = 3;	// Warning message level for non-user messgaes
+	//int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
@@ -376,6 +392,17 @@ CommandWarningException, CommandException
 	// Get the time series to process.  This should be a single matching time series or ensemble time series.
 	
 	PropList request_params = new PropList ( "" );
+    String IfTSListToAddIsEmpty = parameters.getValue ( "IfTSListToAddIsEmpty" );
+    if ( (IfTSListToAddIsEmpty == null) || IfTSListToAddIsEmpty.equals("") ) {
+        IfTSListToAddIsEmpty = _Warn;
+    }
+    CommandStatusType ifTSListToAddIsEmptyStatusType = null;
+    if ( IfTSListToAddIsEmpty.equalsIgnoreCase(_Warn) ) {
+        ifTSListToAddIsEmptyStatusType = CommandStatusType.WARNING;
+    }
+    else if ( IfTSListToAddIsEmpty.equalsIgnoreCase(_Warn) ) {
+        ifTSListToAddIsEmptyStatusType = CommandStatusType.FAILURE;
+    }
 	// Only one of these will be specified...
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
@@ -405,7 +432,8 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
+	int nts = 0;
 	if ( o_TSList == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -418,7 +446,8 @@ CommandWarningException, CommandException
                 "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+        tslist = (List<TS>)o_TSList;
+        nts = tslist.size();
 		if ( tslist.size() == 0 ) {
             message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
             "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
@@ -426,9 +455,9 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag(
 					command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message,
-                    "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Verify that the TSList parameter matches one or more time series - " +
+                    "may be OK for partial run or special case." ) );
 		}
 	}
 	Object o_Indices = bean_PropList.getContents ( "Indices" );
@@ -457,10 +486,6 @@ CommandWarningException, CommandException
 		}
 	}
 	
-	int nts = 0;
-	if ( tslist != null ) {
-		nts = tslist.size();
-	}
 	if ( nts == 0 ) {
         message = "Unable to find any time series to process using TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\".";
@@ -468,9 +493,9 @@ CommandWarningException, CommandException
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
         status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.WARNING,
-                message,
-                "Verify that the TSList parameter matches one or more time series - may be OK for partial run." ) );
+            new CommandLogRecord(CommandStatusType.WARNING, message,
+                "Verify that the TSList parameter matches one or more time series - " +
+                "may be OK for partial run or special case." ) );
 	}
     else {
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
@@ -516,7 +541,8 @@ CommandWarningException, CommandException
     }
     bean_PropList = bean.getResultsPropList();
     Object o_TSList2 = bean_PropList.getContents ( "TSToProcessList" );
-    List add_tslist = null;
+    List<TS> add_tslist = null;
+    int n_add_ts = 0;
     if ( o_TSList2 == null ) {
         message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + AddTSList +
         "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
@@ -529,17 +555,20 @@ CommandWarningException, CommandException
                 "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
     }
     else {
-        add_tslist = (List)o_TSList2;
-        if ( add_tslist.size() == 0 ) {
+        add_tslist = (List<TS>)o_TSList2;
+        n_add_ts = add_tslist.size();
+        if ( n_add_ts == 0 ) {
             message = "No time series to add are available from processor GetTimeSeriesToProcess (TSList=\"" + AddTSList +
             "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\"";
-            Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(
-                    command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message,
-                    "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
+            if ( ifTSListToAddIsEmptyStatusType != null ) {
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                        command_tag,++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(ifTSListToAddIsEmptyStatusType, message,
+                        "Verify that the AddTSList parameter matches one or more time series - " +
+                        "may be OK for partial run or special case." ) );
+            }
         }
     }
     Object o_Indices2 = bean_PropList.getContents ( "Indices" );
@@ -556,7 +585,7 @@ CommandWarningException, CommandException
     }
     else {
         add_tspos = (int [])o_Indices2;
-        if ( add_tspos.length == 0 ) {
+        if ( (add_tspos.length == 0) && (n_add_ts > 0) ) {
             message = "Unable to find indices for time series to add using TSList=\"" + AddTSList +
             "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
             Message.printWarning ( warning_level,
@@ -568,20 +597,22 @@ CommandWarningException, CommandException
         }
     }
     
-    int n_add_ts = 0;
     if ( add_tslist != null ) {
         n_add_ts = add_tslist.size();
     }
     if ( n_add_ts == 0 ) {
         message = "Unable to find any time series to add using TSList=\"" + AddTSList +
         "\" TSID=\"" + AddTSID + "\", EnsembleID=\"" + AddEnsembleID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(
-        command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.WARNING,
-                message,
-                "Verify that the AddTSList parameter matches one or more time series - may be OK for partial run." ) );
+        if ( ifTSListToAddIsEmptyStatusType != null ) {
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(ifTSListToAddIsEmptyStatusType,
+                    message,
+                    "Verify that the AddTSList parameter matches one or more time series - " +
+                    "may be OK for partial run or special case." ) );
+        }
     }
     
     // Make sure that the number of dependent and independent time series is consistent
@@ -670,7 +701,7 @@ CommandWarningException, CommandException
 		// Get the specific time series to add depending on the input parameters...
         
         TS tstoadd = null;  // Single time series to add
-        List tstoadd_list = new Vector(); // List of time series to add
+        List<TS> tstoadd_list = new Vector(); // List of time series to add
         if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ) {
             // Processing a single time series.  Add all the time series to it
             // Reuse the same independent time series for all transfers...
@@ -701,12 +732,13 @@ CommandWarningException, CommandException
         if ( tstoadd_list_size == 0 ) {
             // Skip time series.
             message = "Zero time series to add for " + ts.getIdentifier();
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.WARNING,
-                    message, "May be be OK for partial run." ) );
+            if ( ifTSListToAddIsEmptyStatusType != null ) {
+                Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(ifTSListToAddIsEmptyStatusType,
+                        message, "May be be OK for partial run." ) );
+            }
             continue;
         }
         
@@ -768,6 +800,7 @@ public String toString ( PropList props )
     String AddTSID = props.getValue( "AddTSID" );
     String AddEnsembleID = props.getValue( "AddEnsembleID" );
     String HandleMissingHow = props.getValue( "HandleMissingHow" );
+    String IfTSListToAddIsEmpty = props.getValue ( "IfTSListToAddIsEmpty" );
 	//String SetStart = props.getValue("SetStart");
 	//String SetEnd = props.getValue("SetEnd");
     //String TransferHow = props.getValue( "TransferHow" );
@@ -807,6 +840,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "HandleMissingHow=\"" + HandleMissingHow + "\"" );
+    }
+    if ( (IfTSListToAddIsEmpty != null) && (IfTSListToAddIsEmpty.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IfTSListToAddIsEmpty=" + IfTSListToAddIsEmpty );
     }
     /*
 	if ( (SetStart != null) && (SetStart.length() > 0) ) {

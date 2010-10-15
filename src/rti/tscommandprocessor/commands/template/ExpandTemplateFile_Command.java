@@ -43,6 +43,9 @@ This class initializes, checks, and runs the ExpandTemplateFile() command.
 public class ExpandTemplateFile_Command extends AbstractCommand implements Command, FileGenerator
 {
     
+protected final String _False = "False";
+protected final String _True = "True";
+    
 /**
 Output file that is created by this command.
 */
@@ -68,6 +71,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
     String OutputFile = parameters.getValue ( "OutputFile" );
+    String ListInResults = parameters.getValue ( "ListInResults" );
 	//String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
 	String message;
@@ -172,6 +176,17 @@ throws InvalidCommandParameterException
                         message, "Verify that output file and working directory paths are compatible." ) );
         }
     }
+    
+    if ( (ListInResults != null) && !ListInResults.equals("") &&
+        !ListInResults.equalsIgnoreCase(_True) &&
+        !ListInResults.equalsIgnoreCase(_False) ) {
+        message = "The View parameter \"" + ListInResults + "\" must be " + _True + " or " + _False + ".";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message,
+                "Correct the ListInResults parameter to be blank, " + _True + ", or " + _False + "." ) );
+}
 	
 	/*
 	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
@@ -188,7 +203,7 @@ throws InvalidCommandParameterException
 	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "OutputFile" );
-	valid_Vector.add ( "IfNotFound" );
+	valid_Vector.add ( "ListInResults" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -254,6 +269,11 @@ CommandWarningException, CommandException
 	
 	String InputFile = parameters.getValue ( "InputFile" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String ListInResults = parameters.getValue ( "ListInResults" );
+	boolean ListInResults_boolean = true;
+	if ( (ListInResults != null) && ListInResults.equalsIgnoreCase(_False) ) {
+	    ListInResults_boolean = false;
+	}
 	/*
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
@@ -371,7 +391,9 @@ CommandWarningException, CommandException
             try {
                 template.process (model, out);
                 // Set the output file
-                setOutputFile ( new File(OutputFile_full));
+                if ( ListInResults_boolean ) {
+                    setOutputFile ( new File(OutputFile_full));
+                }
             }
             catch ( Exception e1 ) {
                 message = "Freemarker error expanding command template file \"" + InputFile_full +
@@ -420,6 +442,7 @@ public String toString ( PropList parameters )
 	}
 	String InputFile = parameters.getValue("InputFile");
 	String OutputFile = parameters.getValue("OutputFile");
+	String ListInResults = parameters.getValue("ListInResults");
 	//String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
@@ -430,6 +453,12 @@ public String toString ( PropList parameters )
             b.append(",");
         }
         b.append ( "OutputFile=\"" + OutputFile + "\"" );
+    }
+    if ( (ListInResults != null) && (ListInResults.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append(",");
+        }
+        b.append ( "ListInResults=" + ListInResults );
     }
 	/*
 	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {

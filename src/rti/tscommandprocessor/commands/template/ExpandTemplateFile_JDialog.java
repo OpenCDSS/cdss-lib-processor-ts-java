@@ -2,6 +2,8 @@ package rti.tscommandprocessor.commands.template;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -24,6 +26,7 @@ import javax.swing.JTextField;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -32,7 +35,7 @@ import RTi.Util.Message.Message;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 public class ExpandTemplateFile_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private final String __AddWorkingDirectoryInputFile = "Add Working Directory (Input)";
 private final String __RemoveWorkingDirectoryInputFile = "Remove Working Directory (Input)";
@@ -48,6 +51,7 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
+private SimpleJComboBox __ListInResults_JComboBox = null;
 //private SimpleJComboBox __IfNotFound_JComboBox =null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null; // Working directory.
@@ -185,12 +189,16 @@ private void checkInput ()
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
+	String ListInResults = __ListInResults_JComboBox.getSelected();
 	__error_wait = false;
 	if ( InputFile.length() > 0 ) {
 		props.set ( "InputFile", InputFile );
 	}
     if ( OutputFile.length() > 0 ) {
         props.set ( "OutputFile", OutputFile );
+    }
+    if ( ListInResults.length() > 0 ) {
+        props.set ( "ListInResults", ListInResults );
     }
 	//if ( IfNotFound.length() > 0 ) {
 	//	props.set ( "IfNotFound", IfNotFound );
@@ -212,9 +220,11 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String InputFile = __InputFile_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
+    String ListInResults = __ListInResults_JComboBox.getSelected();
 	//String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
+	__command.setCommandParameter ( "ListInResults", ListInResults );
 	//__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
@@ -294,6 +304,19 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
     __browseOutput_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browseOutput_JButton,
         6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "List output in results?:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ListInResults_JComboBox = new SimpleJComboBox ( false );
+    __ListInResults_JComboBox.add ( "" );
+    __ListInResults_JComboBox.add ( __command._False );
+    __ListInResults_JComboBox.add ( __command._True );
+    __ListInResults_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ListInResults_JComboBox,
+        1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel,
+        new JLabel ( "Optional - list expanded file in results (default=" + __command._True + ")." ), 
+        2, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
@@ -351,6 +374,14 @@ private void initialize ( JFrame parent, ExpandTemplateFile_Command command )
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{   refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
@@ -381,6 +412,7 @@ private void refresh ()
 {	//String routine = getClass().getName() + ".refresh";
 	String InputFile = "";
 	String OutputFile = "";
+	String ListInResults = "";
 	//String IfNotFound = "";
     PropList parameters = null;
 	if ( __first_time ) {
@@ -388,12 +420,30 @@ private void refresh ()
         parameters = __command.getCommandParameters();
 		InputFile = parameters.getValue ( "InputFile" );
 		OutputFile = parameters.getValue ( "OutputFile" );
+		ListInResults = parameters.getValue ( "ListInResults" );
 		//IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
 		}
         if ( OutputFile != null ) {
             __OutputFile_JTextField.setText ( OutputFile );
+        }
+        if ( (ListInResults == null) || (ListInResults.length() == 0) ) {
+            // Select default...
+            __ListInResults_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ListInResults_JComboBox,
+                ListInResults, JGUIUtil.NONE, null, null ) ) {
+                __ListInResults_JComboBox.select ( ListInResults );
+            }
+            else {
+                Message.printWarning ( 1,
+                "processTSProduct_JDialog.refresh", "Existing "+
+                "command references an invalid\n"+
+                "ListInResults \"" + ListInResults +
+                "\" parameter.  Select a\ndifferent value or Cancel." );
+            }
         }
         /*
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
@@ -417,10 +467,12 @@ private void refresh ()
 	// information that has not been committed in the command.
 	InputFile = __InputFile_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
+	ListInResults = __ListInResults_JComboBox.getSelected();
 	//IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
 	props.add ( "OutputFile=" + OutputFile );
+	props.add ( "ListInResults=" + ListInResults );
 	//props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...
@@ -448,7 +500,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 public void response ( boolean ok )

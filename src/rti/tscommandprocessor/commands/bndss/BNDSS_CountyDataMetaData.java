@@ -1,11 +1,11 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 /**
 Class to hold CountyDataMetaData record data.
 */
-public class IPP_CountyDataMetaData extends IPP_DataMetaData {
+public class BNDSS_CountyDataMetaData extends BNDSS_DataMetaData {
 
-public IPP_CountyDataMetaData ()
+public BNDSS_CountyDataMetaData ()
 {
     super();
 }

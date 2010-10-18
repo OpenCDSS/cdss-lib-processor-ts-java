@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 import java.security.InvalidParameterException;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-The IppDMI provides an interface to the State of Colorado's IPP database.
+The BNDSS_DMI provides an interface to the State of Colorado's BNDSS (formerly IPP) database.
 
 <b>SQL Method Naming Conventions</b><p>
 
@@ -97,15 +97,13 @@ record.
 If the user group needs to be changed, a call can be made to 
 <tt>changeCurrentGroup()</tt>
 */
-public class IppDMI extends DMI {
+public class BNDSS_DMI extends DMI {
 //implements TSProductDMI, TSSupplier {
 
 /**
-IPP initial version handled by Java.
+BNDSS database initial version handled by Java.
 */
 public final static long _VERSION_010000_20090312 = 1000020090312L;
-// This member was made public to be used by the main application, which most
-// likely than not will not be derived from the RiversideDB_DMI.
 
 protected final static long _VERSION_LATEST = _VERSION_010000_20090312;
 
@@ -117,32 +115,32 @@ private List<String> __subjectList = new Vector();
 /**
 Hashtable of unique method lists for each subject type.
 */
-private Hashtable<IPPSubjectType,List<String>> __dataMetaDataMethodList = new Hashtable();
+private Hashtable<BNDSSSubjectType,List<String>> __dataMetaDataMethodList = new Hashtable();
 
 /**
 Hashtable of unique data type lists for each subject type.
 */
-private Hashtable<IPPSubjectType,List<String>> __dataMetaDataDataTypeList = new Hashtable();
+private Hashtable<BNDSSSubjectType,List<String>> __dataMetaDataDataTypeList = new Hashtable();
 
 /**
 Hashtable of unique scenario lists for each subject type.
 */
-private Hashtable<IPPSubjectType,List<String>> __dataMetaDataScenarioList = new Hashtable();
+private Hashtable<BNDSSSubjectType,List<String>> __dataMetaDataScenarioList = new Hashtable();
 
 /**
 Hashtable of unique data source lists for each subject type.
 */
-private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSourceList = new Hashtable();
+private Hashtable<BNDSSSubjectType,List<String>> __dataMetaDataSourceList = new Hashtable();
 
 /**
 Hashtable of unique subject ID lists for each subject type.
 */
-private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSubjectIDList = new Hashtable();
+private Hashtable<BNDSSSubjectType,List<String>> __dataMetaDataSubjectIDList = new Hashtable();
 
 /**
 Hashtable of unique data subtype lists for each subject type.
 */
-private Hashtable<IPPSubjectType,List<String>> __dataMetaDataSubTypeList = new Hashtable();
+private Hashtable<BNDSSSubjectType,List<String>> __dataMetaDataSubTypeList = new Hashtable();
 
 /**
 Database table/view owner prefix, which needs to be added to all queries.  This seems to be
@@ -211,7 +209,7 @@ connection.  If null, the default system login is used.
 @param systemPassword If not null, this is used as the system password to make
 the connection.  If null, the default system password is used.
 */
-public IppDMI ( String databaseEngine, String databaseServer,
+public BNDSS_DMI ( String databaseEngine, String databaseServer,
 String databaseName, int port, String systemLogin, String systemPassword)
 throws Exception {
 	// Use the default system login and password
@@ -230,7 +228,7 @@ throws Exception {
     }
 	if ( systemLogin == null ) {
 		// Use the default...
-		setSystemLogin("ippadmin");
+		setSystemLogin("admin");
 	}
 	if ( systemPassword == null ) {
 		// Use the default...
@@ -451,7 +449,7 @@ for the table/record being checked
 */
 public boolean canCreate(int DBUser_num, int DBGroup_num, String permissions) 
 throws Exception {
-	String routine = "IppDMI.canCreate";
+	String routine = "BNDSS_DMI.canCreate";
 	int dl = 5;
 
 	Message.printDebug(dl, routine, "canCreate(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
@@ -513,7 +511,7 @@ for the table/record being checked
 */
 public boolean canDelete(int DBUser_num, int DBGroup_num, String permissions)
 throws Exception {
-	String routine = "IppDMI.canDelete";
+	String routine = "BNDSS_DMI.canDelete";
 	int dl = 5;
 
 	Message.printDebug(dl, routine, "canDelete(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
@@ -574,7 +572,7 @@ for the table/record being checked
 */
 public boolean canInsert(int DBUser_num, int DBGroup_num, String permissions)
 throws Exception {
-	String routine = "IppDMI.canInsert";
+	String routine = "BNDSS_DMI.canInsert";
 	int dl = 5;
 
 	Message.printDebug(dl, routine, "canInsert(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
@@ -636,7 +634,7 @@ for the table/record being checked
 */
 public boolean canRead(int DBUser_num, int DBGroup_num, String permissions)
 throws Exception {
-	String routine = "IppDMI.canRead";
+	String routine = "BNDSS_DMI.canRead";
 	int dl = 5;
 
 	Message.printDebug(dl, routine, "canRead(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
@@ -698,7 +696,7 @@ for the table/record being checked
 */
 public boolean canUpdate(int DBUser_num, int DBGroup_num, String permissions)
 throws Exception {
-	String routine = "IppDMI.canUpdate";
+	String routine = "BNDSS_DMI.canUpdate";
 	int dl = 5;
 
 	Message.printDebug(dl, routine, "canUpdate(" + DBUser_num + ", " + DBGroup_num + ", " + permissions + ")");
@@ -769,13 +767,13 @@ throws Exception {
 
 /**
 Determine the database version by examining the table structure for the
-database.  The following versions are known for IppDMI:
+database.  The following versions are known for BNDSS_DMI:
 <ul>
 </ul>
 */
 public void determineDatabaseVersion() {
 	// Default until more checks are added...
-	String routine = "IppDMI.determineDatabaseVersion";
+	String routine = "BNDSS_DMI.determineDatabaseVersion";
 	boolean version_found = false;
 	/*
 	try {
@@ -809,7 +807,7 @@ public void determineDatabaseVersion() {
 		// Assume this...
 		setDatabaseVersion ( _VERSION_010000_20090312 );
 	}
-	Message.printStatus ( 1, routine, "IPP database version determined to be at least " + getDatabaseVersion() );
+	Message.printStatus ( 1, routine, "BNDSS database version determined to be at least " + getDatabaseVersion() );
 }
 
 /**
@@ -916,17 +914,17 @@ public List getDatabaseProperties ( int level )
 }
 
 /**
-Returns "ColoradoIPP"
-@return "ColoradoIPP"
+Returns "ColoradoBNDSS"
+@return "ColoradoBNDSS"
 */
 public String getDMIName() {
-	return "ColoradoIPP";
+	return "ColoradoBNDSS";
 }
 
 /**
 Return the unique list of data types for a subject type.
 */
-public List<String> getDataMetaDataDataTypeList ( IPPSubjectType subjectType )
+public List<String> getDataMetaDataDataTypeList ( BNDSSSubjectType subjectType )
 {
     return __dataMetaDataDataTypeList.get ( subjectType );
 }
@@ -934,7 +932,7 @@ public List<String> getDataMetaDataDataTypeList ( IPPSubjectType subjectType )
 /**
 Return the unique list of methods for a subject type.
 */
-public List<String> getDataMetaDataMethodList ( IPPSubjectType subjectType )
+public List<String> getDataMetaDataMethodList ( BNDSSSubjectType subjectType )
 {
     return __dataMetaDataMethodList.get ( subjectType );
 }
@@ -942,7 +940,7 @@ public List<String> getDataMetaDataMethodList ( IPPSubjectType subjectType )
 /**
 Return the unique list of scenarios for a subject type.
 */
-public List<String> getDataMetaDataScenarioList ( IPPSubjectType subjectType )
+public List<String> getDataMetaDataScenarioList ( BNDSSSubjectType subjectType )
 {
     return __dataMetaDataScenarioList.get ( subjectType );
 }
@@ -950,7 +948,7 @@ public List<String> getDataMetaDataScenarioList ( IPPSubjectType subjectType )
 /**
 Return the unique list of data sources for a subject type.
 */
-public List<String> getDataMetaDataSourceList ( IPPSubjectType subjectType )
+public List<String> getDataMetaDataSourceList ( BNDSSSubjectType subjectType )
 {
     return __dataMetaDataSourceList.get ( subjectType );
 }
@@ -958,7 +956,7 @@ public List<String> getDataMetaDataSourceList ( IPPSubjectType subjectType )
 /**
 Return the unique list of subject IDs for a subject type.
 */
-public List<String> getDataMetaDataSubjectIDList ( IPPSubjectType subjectType )
+public List<String> getDataMetaDataSubjectIDList ( BNDSSSubjectType subjectType )
 {
     return __dataMetaDataSubjectIDList.get ( subjectType );
 }
@@ -966,7 +964,7 @@ public List<String> getDataMetaDataSubjectIDList ( IPPSubjectType subjectType )
 /**
 Return the unique list of data subtypes for a subject type.
 */
-public List<String> getDataMetaDataSubTypeList ( IPPSubjectType subjectType )
+public List<String> getDataMetaDataSubTypeList ( BNDSSSubjectType subjectType )
 {
     return __dataMetaDataSubTypeList.get ( subjectType );
 }
@@ -1022,7 +1020,7 @@ public List getSubjectList ()
 Return the name of the TSSupplier.  This is used for messages.
 */
 public String getTSSupplierName() {
-	return "ColoradoIPP";
+	return "ColoradoBNDSS";
 }
 
 // H FUNCTIONS
@@ -1041,7 +1039,7 @@ public String getTSSupplierName() {
 
 /**
 Reads all the CountyDataMetaData view records that match the given constraints.
-@return a list of matching IPP_CountyDataMetaData objects.
+@return a list of matching BNDSS_CountyDataMetaData objects.
 @throws Exception if an error occurs
 */
 public List readCountyDataMetaDataList( String name, String source, String dataType, String subType,
@@ -1102,17 +1100,17 @@ throws Exception {
 Read the distinct data meta-data data type strings.
 @param subjectType the subject type to which time series are connected.
 */
-public List<String> readDataMetaDataDistinctDataTypeList ( IPPSubjectType subjectType )
+public List<String> readDataMetaDataDistinctDataTypeList ( BNDSSSubjectType subjectType )
 throws Exception
 {   String routine = getClass().getName() + ".readDataMetaDataDistinctDataTypeList";
     DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaDataDistinctDataType );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaDataDistinctDataType );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctDataType );
     }
     ResultSet rs = dmiSelect(q);
@@ -1126,17 +1124,17 @@ throws Exception
 Read the distinct data meta-data method strings.
 @param subjectType the subject type to which time series are connected.
 */
-public List<String> readDataMetaDataDistinctMethodList ( IPPSubjectType subjectType )
+public List<String> readDataMetaDataDistinctMethodList ( BNDSSSubjectType subjectType )
 throws Exception
 {   String routine = getClass().getName() + ".readDataMetaDataDistinctMethodList";
     DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaDataDistinctMethod );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaDataDistinctMethod );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctMethod );
     }
     ResultSet rs = dmiSelect(q);
@@ -1150,17 +1148,17 @@ throws Exception
 Read the distinct data meta-data scenario strings.
 @param subjectType the subject type to which time series are connected.
 */
-public List<String> readDataMetaDataDistinctScenarioList ( IPPSubjectType subjectType )
+public List<String> readDataMetaDataDistinctScenarioList ( BNDSSSubjectType subjectType )
 throws Exception
 {   String routine = getClass().getName() + ".readDataMetaDataDistinctScenarioList";
     DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaDataDistinctScenario );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaDataDistinctScenario );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctScenario );
     }
     ResultSet rs = dmiSelect(q);
@@ -1174,17 +1172,17 @@ throws Exception
 Read the distinct data meta-data source strings.
 @param subjectType the subject type to which time series are connected.
 */
-public List<String> readDataMetaDataDistinctSourceList ( IPPSubjectType subjectType )
+public List<String> readDataMetaDataDistinctSourceList ( BNDSSSubjectType subjectType )
 throws Exception
 {   String routine = getClass().getName() + ".readDataMetaDataDistinctSourceList";
     DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaDataDistinctSource );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaDataDistinctSource );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctSource );
     }
     ResultSet rs = dmiSelect(q);
@@ -1198,17 +1196,17 @@ throws Exception
 Read the distinct data meta-data subject ID strings.
 @param subjectType the subject type to which time series are connected.
 */
-public List<String> readDataMetaDataDistinctSubjectIDList ( IPPSubjectType subjectType )
+public List<String> readDataMetaDataDistinctSubjectIDList ( BNDSSSubjectType subjectType )
 throws Exception
 {   String routine = getClass().getName() + ".readDataMetaDataDistinctSubjectIDList";
     DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaDataDistinctSubjectID );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaDataDistinctSubjectID );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctSubjectID );
     }
     ResultSet rs = dmiSelect(q);
@@ -1222,17 +1220,17 @@ throws Exception
 Read the distinct data meta-data data subtype strings.
 @param subjectType the subject type to which time series are connected.
 */
-public List<String> readDataMetaDataDistinctSubTypeList ( IPPSubjectType subjectType )
+public List<String> readDataMetaDataDistinctSubTypeList ( BNDSSSubjectType subjectType )
 throws Exception
 {   String routine = getClass().getName() + ".readDataMetaDataDistinctSubTypeList";
     DMISelectStatement q = new DMISelectStatement ( this );
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaDataDistinctSubType );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaDataDistinctSubType );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctSubType );
     }
     ResultSet rs = dmiSelect(q);
@@ -1246,16 +1244,16 @@ throws Exception
 Read global data for the database, to keep in memory and improve performance.
 */
 public void readGlobalData()
-{   String routine = "IppDMI.readGlobalData";
+{   String routine = "BNDSS_DMI.readGlobalData";
     // Subjects (data object) types that have time series
     __subjectList = new Vector(); // Strings
-    __subjectList.add ( "" + IPPSubjectType.COUNTY );
-    //__subjectList.add ( "" + IPPSubjectType.BASIN );
-    //__subjectList.add ( "" + IPPSubjectType.STATE );
-    __subjectList.add ( "" + IPPSubjectType.PROVIDER );
-    __subjectList.add ( "" + IPPSubjectType.PROJECT );
+    __subjectList.add ( "" + BNDSSSubjectType.COUNTY );
+    //__subjectList.add ( "" + BNDSSSubjectType.BASIN );
+    //__subjectList.add ( "" + BNDSSSubjectType.STATE );
+    __subjectList.add ( "" + BNDSSSubjectType.PROVIDER );
+    __subjectList.add ( "" + BNDSSSubjectType.IPP );
     
-    for ( IPPSubjectType subjectType : IPPSubjectType.values() ) {
+    for ( BNDSSSubjectType subjectType : BNDSSSubjectType.values() ) {
         // Distinct data sources and other filter choices for the different subject types
         try {
             __dataMetaDataDataTypeList.put( subjectType, readDataMetaDataDistinctDataTypeList ( subjectType ) );
@@ -1297,23 +1295,23 @@ public void readGlobalData()
 }
 
 /**
-Read IPP_IPPDataMetaData records for distinct data types, ordered by MeasLoc.identifier.
+Read BNDSS_IPPDataMetaData records for distinct data types, ordered by MeasLoc.identifier.
 @return a list of objects of type RiversideDB_MeasTypeMeasLocGeoloc.
 @param ifp An InputFilter_JPanel instance from which to retrieve where clause information.
 @throws Exception if an error occurs
 */
-public List readDataMetaDataList ( InputFilter_JPanel ifp, IPPSubjectType subjectType ) 
+public List readDataMetaDataList ( InputFilter_JPanel ifp, BNDSSSubjectType subjectType ) 
 throws Exception
 {
     DMISelectStatement q = new DMISelectStatement ( this );
     // For now focus on the county data...
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         buildSQL ( q, _S_CountyDataMetaData );
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         buildSQL ( q, _S_ProjectDataMetaData );
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaData );
     }
     /* TODO SAM 2010-04-29 May do something like this if the Subject is passed in from external code
@@ -1341,13 +1339,13 @@ throws Exception
     q.addOrderByClause ( schemaPrefix + "v" + subjectType + "DataMetaData.source" );
     ResultSet rs = dmiSelect(q);
     List v = null;
-    if ( subjectType == IPPSubjectType.COUNTY ) {
+    if ( subjectType == BNDSSSubjectType.COUNTY ) {
         v = toCountyDataMetaDataList (rs);
     }
-    else if ( subjectType == IPPSubjectType.PROJECT ) {
+    else if ( subjectType == BNDSSSubjectType.IPP ) {
         v = toProjectDataMetaDataList (rs);
     }
-    else if ( subjectType == IPPSubjectType.PROVIDER ) {
+    else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         v = toProviderDataMetaDataList (rs);
     }
     closeResultSet(rs);
@@ -1356,7 +1354,7 @@ throws Exception
 
 /**
 Reads all the ProjectDataMetaData view records that match the given constraints.
-@return a list of matching IPP_ProjectDataMetaData objects.
+@return a list of matching BNDSS_ProjectDataMetaData objects.
 @throws Exception if an error occurs
 */
 public List readProjectDataMetaDataList( String subjectID, String source, String dataType, String subType,
@@ -1414,7 +1412,7 @@ throws Exception {
 Reads all the ProviderDataMetaData view records that match the given constraints.
 @param matchBlanks if true, then blank parameters will be matched in the query (returning a
 more specific result); if false, more records will be returned
-@return a list of matching IPP_ProviderDataMetaData objects.
+@return a list of matching BNDSS_ProviderDataMetaData objects.
 @throws Exception if an error occurs
 */
 public List readProviderDataMetaDataList( String subjectID, String source, String dataType, String subType,
@@ -1480,17 +1478,17 @@ throws Exception
 {   DMISelectStatement q = new DMISelectStatement ( this );
     String schemaPrefix = getSchemaPrefix();
     // Query the time series data records...
-    if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY)) {
+    if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.COUNTY)) {
         buildSQL ( q, _S_CountyData );
         q.addWhereClause(schemaPrefix+"tblCountyData.id = " + id );
         q.addOrderByClause(schemaPrefix+"tblCountyData.year");
     }
-    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROJECT)) {
+    else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.IPP)) {
         buildSQL ( q, _S_ProjectData );
         q.addWhereClause(schemaPrefix+"tblProjectData.id = " + id );
         q.addOrderByClause(schemaPrefix+"tblProjectData.year");
     }
-    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROVIDER)) {
+    else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.PROVIDER)) {
         buildSQL ( q, _S_ProviderData );
         q.addWhereClause(schemaPrefix+"tblProviderData.id = " + id );
         q.addOrderByClause(schemaPrefix+"tblProviderData.year");
@@ -1504,7 +1502,7 @@ throws Exception
         ts.setDataUnitsOriginal ( units );
     }
     TSIdent tsident = null;
-    if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY)) {
+    if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.COUNTY)) {
         // The name can be used in the identifier
         tsident = new TSIdent ( subject + ":" + name + "." + source + "." +
             dataType + "-" + subType + "-" + method + "-" + subMethod + ".Year." + scenario );
@@ -1588,14 +1586,14 @@ throws Exception
     String source = tsident.getSource();
     String scenario = tsident.getScenario();
     // Read the database record for the time series metadata, to get the units and name
-    List<IPP_DataMetaData> dataList = null;
-    if ( subject.equalsIgnoreCase(""+IPPSubjectType.COUNTY) ) {
+    List<BNDSS_DataMetaData> dataList = null;
+    if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.COUNTY) ) {
         dataList = readCountyDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
-    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROJECT) ) {
+    else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.IPP) ) {
         dataList = readProjectDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
-    else if ( subject.equalsIgnoreCase(""+IPPSubjectType.PROVIDER) ) {
+    else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.PROVIDER) ) {
         dataList = readProviderDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
     if ( dataList.size() == 0 ) {
@@ -1610,7 +1608,7 @@ throws Exception
         Message.printWarning(3, routine, message);
         throw new InvalidParameterException(message);
     }
-    IPP_DataMetaData data = dataList.get(0);
+    BNDSS_DataMetaData data = dataList.get(0);
     // Get the internal data (time series) ID resulting from the time series (this is NOT the subjectID)
     long id = data.getID();
     // The following uses the id to read the time series.  All other parameters are provided to avoid
@@ -1646,16 +1644,16 @@ throws Exception {
 }
 
 /**
-Convert a ResultSet to a list of IPP_CountyDataMetaData.
-@param rs ResultSet from a IPP_ProviderDataMetaData view query.
+Convert a ResultSet to a list of BNDSS_CountyDataMetaData.
+@param rs ResultSet from a BNDSS_ProviderDataMetaData view query.
 @throws Exception if an error occurs
 */
-private List toCountyDataMetaDataList ( ResultSet rs ) 
+private List<BNDSS_CountyDataMetaData> toCountyDataMetaDataList ( ResultSet rs ) 
 throws Exception {
-    List v = new Vector();
-    IPP_CountyDataMetaData data = null;
+    List<BNDSS_CountyDataMetaData> v = new Vector();
+    BNDSS_CountyDataMetaData data = null;
     while ( rs.next() ) {
-        data = new IPP_CountyDataMetaData();
+        data = new BNDSS_CountyDataMetaData();
         data.setSubject( "County" );
         toDataMetaData ( data, rs );
         v.add(data);
@@ -1664,10 +1662,10 @@ throws Exception {
 }
 
 /**
-Process a result set record into an IPP_DataMetaData object.
+Process a result set record into an BNDSS_DataMetaData object.
 @throws SQLException 
 */
-private void toDataMetaData ( IPP_DataMetaData data, ResultSet rs )
+private void toDataMetaData ( BNDSS_DataMetaData data, ResultSet rs )
 throws SQLException
 {   String s;
     int index = 1;
@@ -1714,16 +1712,16 @@ throws SQLException
 }
 
 /**
-Convert a ResultSet to a list of IPP_ProjectDataMetaData.
-@param rs ResultSet from a IPP_ProjectDataMetaData view query.
+Convert a ResultSet to a list of BNDSS_ProjectDataMetaData.
+@param rs ResultSet from a BNDSS_ProjectDataMetaData view query.
 @throws Exception if an error occurs
 */
-private List toProjectDataMetaDataList ( ResultSet rs ) 
+private List<BNDSS_ProjectDataMetaData> toProjectDataMetaDataList ( ResultSet rs ) 
 throws Exception {
-    List v = new Vector();
-    IPP_ProjectDataMetaData data = null;
+    List<BNDSS_ProjectDataMetaData> v = new Vector();
+    BNDSS_ProjectDataMetaData data = null;
     while ( rs.next() ) {
-        data = new IPP_ProjectDataMetaData();
+        data = new BNDSS_ProjectDataMetaData();
         data.setSubject( "Project" );
         toDataMetaData ( data, rs );
         v.add(data);
@@ -1732,16 +1730,16 @@ throws Exception {
 }
 
 /**
-Convert a ResultSet to a list of IPP_ProviderDataMetaData.
-@param rs ResultSet from a IPP_ProviderDataMetaData view query.
+Convert a ResultSet to a list of BNDSS_ProviderDataMetaData.
+@param rs ResultSet from a BNDSS_ProviderDataMetaData view query.
 @throws Exception if an error occurs
 */
-private List toProviderDataMetaDataList ( ResultSet rs ) 
+private List<BNDSS_ProviderDataMetaData> toProviderDataMetaDataList ( ResultSet rs ) 
 throws Exception {
-	List v = new Vector();
-	IPP_ProviderDataMetaData data = null;
+	List<BNDSS_ProviderDataMetaData> v = new Vector();
+	BNDSS_ProviderDataMetaData data = null;
 	while ( rs.next() ) {
-		data = new IPP_ProviderDataMetaData();
+		data = new BNDSS_ProviderDataMetaData();
 		data.setSubject( "Provider" );
 		toDataMetaData ( data, rs );
 		v.add(data);
@@ -1750,12 +1748,12 @@ throws Exception {
 }
 
 /**
-Process a result set record into an IPP_DataMetaData object.
+Process a result set record into an BNDSS_DataMetaData object.
 @throws SQLException 
 */
-private List toTSDataList ( ResultSet rs )
+private List<TSData> toTSDataList ( ResultSet rs )
 throws SQLException
-{   List v = new Vector();
+{   List<TSData> v = new Vector();
     TSData data = null; // FIXME SAM 2009-03-12 Not extremely efficient since it uses DateTime
     int i;
     double d;

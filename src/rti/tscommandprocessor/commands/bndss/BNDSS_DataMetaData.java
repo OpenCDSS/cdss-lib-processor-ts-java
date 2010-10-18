@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 import RTi.DMI.DMIDataObject;
 import RTi.DMI.DMIUtil;
@@ -6,7 +6,7 @@ import RTi.DMI.DMIUtil;
 /**
 Class to store data from the DataMetaData views
 */
-public class IPP_DataMetaData extends DMIDataObject
+public class BNDSS_DataMetaData extends DMIDataObject
 {
 
 /**
@@ -57,7 +57,7 @@ protected String _scenario = DMIUtil.MISSING_STRING;
 /**
 Copy constructor.
 */
-public IPP_DataMetaData(IPP_DataMetaData m) {
+public BNDSS_DataMetaData(BNDSS_DataMetaData m) {
 	super();
 	setName(new String(m.getName()));
 	setDataType(new String(m.getDataType()));
@@ -72,7 +72,7 @@ public IPP_DataMetaData(IPP_DataMetaData m) {
 /**
 Constructor.  
 */
-public IPP_DataMetaData()
+public BNDSS_DataMetaData()
 {	super();
 }
 

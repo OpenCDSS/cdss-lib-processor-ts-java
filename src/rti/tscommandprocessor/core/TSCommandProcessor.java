@@ -86,12 +86,12 @@ import rti.tscommandprocessor.core.TimeSeriesView;
 
 // Check commands
 
+import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
 import rti.tscommandprocessor.commands.check.CheckFileCommandProcessorEventListener;
 
 // HEC-DSS I/O...
 
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
-import rti.tscommandprocessor.commands.ipp.IppDMI;
 
 // HydroBase commands.
 
@@ -1004,8 +1004,8 @@ public Object getPropContents ( String prop ) throws Exception
     else if ( prop.equalsIgnoreCase("AverageStart") ) {
         return getPropContents_AverageStart();
     }
-    else if ( prop.equalsIgnoreCase("ColoradoIppDMIList") ) {
-        return getPropContents_ColoradoIppDMIList();
+    else if ( prop.equalsIgnoreCase("ColoradoBNDSSDMIList") ) {
+        return getPropContents_ColoradoBNDSSDMIList();
     }
     else if ( prop.equalsIgnoreCase("CommandFileName") ) {
         return getCommandFileName();
@@ -1137,12 +1137,12 @@ private DateTime getPropContents_AverageStart()
 }
 
 /**
-Handle the ColoradoIppDMIList property request.
+Handle the ColoradoBNDSSDMIList property request.
 @return List of open IppDMI instances.
 */
-private List<IppDMI> getPropContents_ColoradoIppDMIList()
+private List<BNDSS_DMI> getPropContents_ColoradoBNDSSDMIList()
 {
-    return __tsengine.getColoradoIppDMIList();
+    return __tsengine.getColoradoBNDSSDMIList();
 }
 
 /**
@@ -2099,8 +2099,8 @@ throws Exception
 	else if ( request.equalsIgnoreCase("RunCommands") ) {
 		return processRequest_RunCommands ( request, request_params );
 	}
-    else if ( request.equalsIgnoreCase("SetColoradoIppDMI") ) {
-        return processRequest_SetColoradoIppDMI ( request, request_params );
+    else if ( request.equalsIgnoreCase("SetColoradoBNDSSDMI") ) {
+        return processRequest_SetColoradoBNDSSDMI ( request, request_params );
     }
     else if ( request.equalsIgnoreCase("DataStore") ) {
         return processRequest_SetDataStore ( request, request_params );
@@ -2967,21 +2967,21 @@ throws Exception
 /**
 Process the SetHydroBaseDMI request.
 */
-private CommandProcessorRequestResultsBean processRequest_SetColoradoIppDMI (
+private CommandProcessorRequestResultsBean processRequest_SetColoradoBNDSSDMI (
         String request, PropList request_params )
 throws Exception
 {   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
     // Get the necessary parameters...
-    Object o = request_params.getContents ( "ColoradoIppDMI" );
+    Object o = request_params.getContents ( "ColoradoBNDSSDMI" );
     if ( o == null ) {
-            String warning = "Request SetColoradoIppDMI() does not provide a ColoradoIppDMI parameter.";
+            String warning = "Request SetColoradoBNDSSDMI() does not provide a ColoradoBNDSSDMI parameter.";
             bean.setWarningText ( warning );
             bean.setWarningRecommendationText ( "This is likely a software code error.");
             throw new RequestParameterNotFoundException ( warning );
     }
-    IppDMI dmi = (IppDMI)o;
+    BNDSS_DMI dmi = (BNDSS_DMI)o;
     // Add an open IppDMI instance, closing a previous connection of the same name if it exists.
-    __tsengine.setColoradoIppDMI( dmi, true );
+    __tsengine.setColoradoBNDSSDMI( dmi, true );
     // No results need to be returned.
     return bean;
 }

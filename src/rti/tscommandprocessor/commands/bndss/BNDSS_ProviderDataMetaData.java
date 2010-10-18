@@ -1,11 +1,11 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 /**
 Class to hold ProviderDataMetaData record data.
 */
-public class IPP_ProviderDataMetaData extends IPP_DataMetaData {
+public class BNDSS_ProviderDataMetaData extends BNDSS_DataMetaData {
 
-public IPP_ProviderDataMetaData ()
+public BNDSS_ProviderDataMetaData ()
 {
     super();
 }

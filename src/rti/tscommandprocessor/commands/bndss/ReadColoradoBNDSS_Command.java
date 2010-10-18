@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 import java.util.List;
 import java.util.Vector;
@@ -31,10 +31,10 @@ import RTi.Util.Time.DateTime;
 
 /**
 <p>
-This class initializes, checks, and runs the ReadColoradoIPP() command.
+This class initializes, checks, and runs the ReadColoradoBNDSS() command.
 </p>
 */
-public class ReadColoradoIPP_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadColoradoBNDSS_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
@@ -64,9 +64,9 @@ private List<TS> __discovery_TS_Vector = null;
 /**
 Constructor.
 */
-public ReadColoradoIPP_Command ()
+public ReadColoradoBNDSS_Command ()
 {	super();
-	setCommandName ( "ReadColoradoIPP" );
+	setCommandName ( "ReadColoradoBNDSS" );
 }
 
 /**
@@ -110,7 +110,7 @@ throws InvalidCommandParameterException
     }
     else {
         boolean found = false;
-        for ( IPPSubjectType subject: IPPSubjectType.values() ) {
+        for ( BNDSSSubjectType subject: BNDSSSubjectType.values() ) {
             if ( Subject.equalsIgnoreCase(""+subject)) {
                 found = true;
                 break;
@@ -121,8 +121,8 @@ throws InvalidCommandParameterException
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the subject as " + IPPSubjectType.COUNTY + ", " +
-                    IPPSubjectType.PROJECT + ", or " + IPPSubjectType.PROVIDER + "." ) );
+                    message, "Specify the subject as " + BNDSSSubjectType.COUNTY + ", " +
+                    BNDSSSubjectType.IPP + ", or " + BNDSSSubjectType.PROVIDER + "." ) );
         }
     }
 
@@ -230,7 +230,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new ReadColoradoIPP_JDialog ( parent, this )).ok();
+	return (new ReadColoradoBNDSS_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -270,7 +270,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadColoradoIpp_Command.runCommand", message;
+{	String routine = "ReadColoradoBNDSS_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -424,17 +424,17 @@ CommandWarningException, CommandException
 		}
 	
 		// Find the HydroBaseDMI to use...
-		Object o = processor.getPropContents ( "ColoradoIppDMIList" );
+		Object o = processor.getPropContents ( "ColoradoBNDSSDMIList" );
 		if ( o == null ) {
-			message = "Could not get list of Colorado IPP connections to query data.";
+			message = "Could not get list of Colorado BNDSS database connections to query data.";
 			Message.printWarning ( 2, routine, message );
             status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a Colorado IPP database connection has been opened." ) );
+                    message, "Verify that a Colorado BNDSS database connection has been opened." ) );
 			throw new Exception ( message );
 		}
-		IppDMI ippdmi = (IppDMI)((List)o).get(0);
-		/* TODO SAM 2010-05-23 Currently only support one IPP database connection
+		BNDSS_DMI bndssdmi = (BNDSS_DMI)((List)o).get(0);
+		/* TODO SAM 2010-05-23 Currently only support one BNDSS database connection
 		List ippdmi_Vector = (List)o;
 		IppDMI ippdmi = HydroBase_Util.lookupHydroBaseDMI ( ippdmi_Vector, InputName );
 		if ( ippdmi == null ) {
@@ -449,8 +449,8 @@ CommandWarningException, CommandException
 
 		// Initialize an input filter based on the data type...
 
-		IPP_DataMetaData_InputFilter_JPanel filterPanel =
-		    new IPP_DataMetaData_InputFilter_JPanel(ippdmi, null, getNumFilterGroups());
+		BNDSS_DataMetaData_InputFilter_JPanel filterPanel =
+		    new BNDSS_DataMetaData_InputFilter_JPanel(bndssdmi, null, getNumFilterGroups());
 
 		// Populate with the where information from the command...
 
@@ -483,12 +483,12 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "Getting the list of time series..." );
 	
 		List tslist0 = null;
-        IPPSubjectType subject = null;
+        BNDSSSubjectType subject = null;
         List<String> input = ((InputFilter_JPanel)filterPanel).getInput("Subject", false, null );
 
         //Message.printStatus(2, "", "Input is \"" + input.get(0) );
-        subject = IPPSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));
-        tslist0 = ippdmi.readDataMetaDataList( filterPanel, subject );
+        subject = BNDSSSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));
+        tslist0 = bndssdmi.readDataMetaDataList( filterPanel, subject );
 		// Make sure that size is set...
 		int size = 0;
 		if ( tslist0 != null ) {
@@ -496,9 +496,9 @@ CommandWarningException, CommandException
 		}
 	
    		if ( (tslist0 == null) || (size == 0) ) {
-			Message.printStatus ( 2, routine,"No Colorado IPP time series were found." );
+			Message.printStatus ( 2, routine,"No Colorado BNDSS time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
-            message = "No time series were read from the Colorado IPP database.";
+            message = "No time series were read from the Colorado BNDSS database.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( command_phase,
@@ -513,9 +513,9 @@ CommandWarningException, CommandException
 
 			//String tsident_string = null; // TSIdent string
 			TS ts; // Time series to read.
-			IPP_DataMetaData meta = null;
+			BNDSS_DataMetaData meta = null;
 			for ( int i = 0; i < size; i++ ) {
-				meta = (IPP_DataMetaData)tslist0.get(i);
+				meta = (BNDSS_DataMetaData)tslist0.get(i);
 				//tsident_string = 
 					//Subject + ":" + SubjectName
 					//+ "." + Source
@@ -527,7 +527,7 @@ CommandWarningException, CommandException
 				Message.printStatus ( 2, routine, "Reading time series for subject=\"" + meta.getSubject() +
 				    "\" name=\"" + meta.getName() + "\"..." );
 				try {
-				    ts = ippdmi.readTimeSeries ( meta.getSubject(), meta.getID(), meta.getName(),
+				    ts = bndssdmi.readTimeSeries ( meta.getSubject(), meta.getID(), meta.getName(),
 			            meta.getSource(), meta.getDataType(), meta.getSubType(), meta.getUnits(), meta.getMethod(),
 			            meta.getSubMethod(), meta.getScenario(), InputStart_DateTime, InputEnd_DateTime, readData );
 				    /*
@@ -541,7 +541,7 @@ CommandWarningException, CommandException
 					tslist.add ( ts );
 				}
 				catch ( Exception e ) {
-					message = "Unexpected error reading Colorado IPP time series (" + e + ").";
+					message = "Unexpected error reading Colorado BNDSS time series (" + e + ").";
 					Message.printWarning ( 2, routine, message );
 					Message.printWarning ( 2, routine, e );
 					++warning_count;
@@ -556,7 +556,7 @@ CommandWarningException, CommandException
         if ( tslist != null ) {
             size = tslist.size();
         }
-        Message.printStatus ( 2, routine, "Read " + size + " Colorado IPP time series." );
+        Message.printStatus ( 2, routine, "Read " + size + " Colorado BNDSS time series." );
 
         if ( command_phase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
@@ -565,7 +565,7 @@ CommandWarningException, CommandException
 
                 int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
                 if ( wc > 0 ) {
-                    message = "Error post-processing Colorado IPP time series after read.";
+                    message = "Error post-processing Colorado BNDSS time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -577,7 +577,7 @@ CommandWarningException, CommandException
                 
                 int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
                 if ( wc2 > 0 ) {
-                    message = "Error adding Colorado IPP time series after read.";
+                    message = "Error adding Colorado BNDSS time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( command_phase,
@@ -602,7 +602,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message ="Unexpected error reading time series from Colorado IPP (" + e + ").";
+		message ="Unexpected error reading time series from Colorado BNDSS database (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );

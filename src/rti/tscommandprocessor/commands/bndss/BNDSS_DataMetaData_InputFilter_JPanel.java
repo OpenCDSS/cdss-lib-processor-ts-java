@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -16,15 +16,15 @@ import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
 /**
-This class is an input filter for querying ColoradoIPP joined records from Count or Provider or Project.
+This class is an input filter for querying ColoradoBNDSS joined records from Count or Provider or Project.
 */
-public class IPP_DataMetaData_InputFilter_JPanel extends InputFilter_JPanel implements ItemListener, KeyListener
+public class BNDSS_DataMetaData_InputFilter_JPanel extends InputFilter_JPanel implements ItemListener, KeyListener
 {
     
 /**
-ColoradoIPP database connection.
+ColoradoBNDSS database connection.
 */
-private IppDMI __dmi = null;
+private BNDSS_DMI __dmi = null;
 
 /**
 Indicate whether ItemStateChanged events should be skipped.  This is used to temporarily limit events
@@ -34,11 +34,11 @@ during component initialization.
 
 /**
 Constructor.
-@param dmi the dmi to use to connect to the IPP database.  Cannot be null.
+@param dmi the dmi to use to connect to the BNDSS database.  Cannot be null.
 @param subjectType the initial subject type to display, or null to default to county.
 @param numFilterGroups the number of filter groups to display
 */
-public IPP_DataMetaData_InputFilter_JPanel(IppDMI dmi, IPPSubjectType subjectType, int numFilterGroups )
+public BNDSS_DataMetaData_InputFilter_JPanel(BNDSS_DMI dmi, BNDSSSubjectType subjectType, int numFilterGroups )
 {   super();
     __dmi = dmi;
     //__skipItemEvents = true;
@@ -64,9 +64,9 @@ public void itemStateChanged ( ItemEvent event )
     // If one of the subject types, then assume that a subject was selected.  Since
     // a subject is always defaulted at initialization, selection will indicate a change
     // in value and a need to refresh the list
-    IPPSubjectType subjectType = null;
+    BNDSSSubjectType subjectType = null;
     if ( selectedChoice != null ) {
-         subjectType = IPPSubjectType.valueOfIgnoreCase(selectedChoice);
+         subjectType = BNDSSSubjectType.valueOfIgnoreCase(selectedChoice);
     }
     if ( (event.getStateChange() == ItemEvent.SELECTED) && (subjectType != null) ) {
         // Different subject was selected so refresh the choices
@@ -109,10 +109,10 @@ public void keyTyped ( KeyEvent e ) {
 Set the filter data.  This method is called at setup and when refreshing the list with a new subject type.
 @param subjectType the initial subject type to display, or null to default to county.
 */
-public void setFilters ( IppDMI dmi, IPPSubjectType subjectType, int numFilterGroups )
+public void setFilters ( BNDSS_DMI dmi, BNDSSSubjectType subjectType, int numFilterGroups )
 {   String routine = getClass().getName() + ".setFilters";
     if ( subjectType == null ) {
-        subjectType = IPPSubjectType.COUNTY; // Default
+        subjectType = BNDSSSubjectType.COUNTY; // Default
     }
     String rd = dmi.getRightIdDelim();
     String ld = dmi.getLeftIdDelim();
@@ -198,7 +198,7 @@ public void setFilters ( IppDMI dmi, IPPSubjectType subjectType, int numFilterGr
         geolocTableName + "y" + rd, "y",
         StringUtil.TYPE_DOUBLE, null, null, false));*/
 
-    setToolTipText("<html>ColoradoIPP queries can be filtered based on station and time series metadata.</html>");
+    setToolTipText("<html>ColoradoBNDSS queries can be filtered based on station and time series metadata.</html>");
     setInputFilters(filters, numFilterGroups, 15);
     // Always initially select the first filter to be a subject of County.  This is a good
     // default and if a more specific setting is used, it can be set after this default

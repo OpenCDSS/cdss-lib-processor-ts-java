@@ -1,11 +1,11 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 /**
 Class to hold ProjectDataMetaData record data.
 */
-public class IPP_ProjectDataMetaData extends IPP_DataMetaData {
+public class BNDSS_ProjectDataMetaData extends BNDSS_DataMetaData {
 
-public IPP_ProjectDataMetaData ()
+public BNDSS_ProjectDataMetaData ()
 {
     super();
 }

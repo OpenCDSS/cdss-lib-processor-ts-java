@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.ipp;
+package rti.tscommandprocessor.commands.bndss;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -33,12 +33,12 @@ import RTi.Util.Message.Message;
 /**
 Editor for he ReadColoradoIPP() command.
 */
-public class ReadColoradoIPP_JDialog extends JDialog
+public class ReadColoradoBNDSS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private ReadColoradoIPP_Command __command = null;
+private ReadColoradoBNDSS_Command __command = null;
 //private JTextField __InputName_JTextField;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
@@ -46,7 +46,7 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
 private InputFilter_JPanel __inputFilter_JPanel =null;
-private IppDMI __ippdmi = null; // Colorado IPP DMI to do queries.
+private BNDSS_DMI __ippdmi = null; // Colorado IPP DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
@@ -56,7 +56,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadColoradoIPP_JDialog ( JFrame parent, ReadColoradoIPP_Command command )
+public ReadColoradoBNDSS_JDialog ( JFrame parent, ReadColoradoBNDSS_Command command )
 {	super(parent, true);
 
 	initialize ( parent, command );
@@ -194,7 +194,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
+private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
 {	String routine = "ReadColoradoIPP_JDialog.initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
@@ -206,7 +206,7 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 			// information should be relatively consistent...
 			List v = (List)o;
 			if ( v.size() > 0 ) {
-				__ippdmi = (IppDMI)v.get(0);
+				__ippdmi = (BNDSS_DMI)v.get(0);
 			}
 			else {
 				String message = "No Colorado IPP connection is available to use with command editing.\n" +
@@ -248,7 +248,7 @@ private void initialize ( JFrame parent, ReadColoradoIPP_Command command )
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
 	    // Add input filters for IPP time series...
-		__inputFilter_JPanel = new IPP_DataMetaData_InputFilter_JPanel(__ippdmi, null, __command.getNumFilterGroups() );
+		__inputFilter_JPanel = new BNDSS_DataMetaData_InputFilter_JPanel(__ippdmi, null, __command.getNumFilterGroups() );
    			JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
 			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );

@@ -14,9 +14,9 @@ import RTi.Util.String.StringUtil;
 
 // Colorado IPP commands
 
-import rti.tscommandprocessor.commands.ipp.ReadColoradoIPP_Command;
 
 // Data checks (for now keep separate from logging and data tests)
+import rti.tscommandprocessor.commands.bndss.ReadColoradoBNDSS_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.OpenCheckFile_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
@@ -536,8 +536,9 @@ throws UnknownCommandException
 
 	// "R" commands...
 
-    else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadColoradoIPP") ) {
-        return new ReadColoradoIPP_Command ();
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadColoradoBNDSS") ||
+        StringUtil.startsWithIgnoreCase(commandString,"ReadColoradoIPP")) { // Legacy
+        return new ReadColoradoBNDSS_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadDateValue") ) {
         return new ReadDateValue_Command ();

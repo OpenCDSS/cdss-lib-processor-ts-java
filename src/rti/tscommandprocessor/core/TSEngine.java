@@ -656,8 +656,8 @@ import java.util.Vector;
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import riverside.datastore.DataStore;
+import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
-import rti.tscommandprocessor.commands.ipp.IppDMI;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
@@ -829,9 +829,9 @@ Count of errors.
 private int	_fatal_error_count = 0;
 
 /**
-IppDMI instance list, to allow more than one database instance to be open at a time.
+BNNDSS_DMI instance list, to allow more than one database instance to be open at a time.
 */
-private List __ippdmi_Vector = new Vector();
+private List<BNDSS_DMI> __bndssdmi_Vector = new Vector();
 
 /**
 HydroBase DMI instance list, to allow more than one database instance to be open at a time.
@@ -1821,37 +1821,37 @@ protected DateTime getAverageStart()
 }
 
 /**
-Return the ColoradoIPP DMI that is requested.  Use a blank input name to get the default.
+Return the BNDSS_DMI that is requested.  Use a blank input name to get the default.
 @param inputName Input name for the DMI, can be blank.
-@return the RiversideDB_DMI that is being used (may return null).
+@return the BNDSS_DMI that is being used (may return null).
 */
-protected IppDMI getColoradoIppDMI ( String inputName )
-{   String routine = "TSEngine.getColoradoIppDMI";
-    Message.printStatus(2, routine, "Getting ColoradoIPP DMI connection \"" + inputName + "\"" );
-    int size = __ippdmi_Vector.size();
+protected BNDSS_DMI getColoradoBNDSSDMI ( String inputName )
+{   String routine = "TSEngine.getColoradoBNDSSDMI";
+    Message.printStatus(2, routine, "Getting ColoradoBNDSS DMI connection \"" + inputName + "\"" );
+    int size = __bndssdmi_Vector.size();
     if ( inputName == null ) {
         inputName = "";
     }
-    IppDMI ippdmi = null;
+    BNDSS_DMI bndssdmi = null;
     for ( int i = 0; i < size; i++ ) {
-        ippdmi = (IppDMI)__ippdmi_Vector.get(i);
-        if ( ippdmi.getInputName().equalsIgnoreCase(inputName) ) {
+        bndssdmi = (BNDSS_DMI)__bndssdmi_Vector.get(i);
+        if ( bndssdmi.getInputName().equalsIgnoreCase(inputName) ) {
             if ( Message.isDebugOn ) {
-                Message.printDebug ( 1, "", "Returning IppDMI[" + i +"] InputName=\""+
-                ippdmi.getInputName() + "\"" );
+                Message.printDebug ( 1, "", "Returning BNDSS_DMI[" + i +"] InputName=\""+
+                bndssdmi.getInputName() + "\"" );
             }
-            return ippdmi;
+            return bndssdmi;
         }
     }
     return null;
 }
 
 /**
-Return the list of IppDMI.
-@return List of open IppDMI.
+Return the list of BNDSS_DMI.
+@return List of open BNDSS_DMI.
 */
-protected List getColoradoIppDMIList ()
-{   return __ippdmi_Vector;
+protected List getColoradoBNDSSDMIList ()
+{   return __bndssdmi_Vector;
 }
 
 /**
@@ -4544,21 +4544,21 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
-    if ((inputType != null) && inputType.equalsIgnoreCase("ColoradoIPP") ) {
-        // New style TSID~input_type~input_name for ColoradoIPP...
-        IppDMI ippdmi = getColoradoIppDMI ( inputName );
-        if ( ippdmi == null ) {
-            Message.printWarning ( 3, routine, "Unable to get ColoradoIPP connection for " +
+    if ((inputType != null) && inputType.equalsIgnoreCase("ColoradoBNDSS") ) {
+        // New style TSID~input_type~input_name for ColoradoBNDSS...
+        BNDSS_DMI bndssdmi = getColoradoBNDSSDMI ( inputName );
+        if ( bndssdmi == null ) {
+            Message.printWarning ( 3, routine, "Unable to get ColoradoBNDSS connection for " +
             "input name \"" + inputName +  "\".  Unable to read time series." );
             ts = null;
         }
         else {
             try {
-                ts = ippdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
+                ts = bndssdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
             }
             catch ( Exception te ) {
                 Message.printWarning ( 2, routine,"Error reading time series \""+tsidentString2 +
-                    "\" from ColoradoIPP database" );
+                    "\" from ColoradoBNDSS database" );
                 Message.printWarning ( 3, routine, te );
                 ts = null;
             }
@@ -5331,7 +5331,7 @@ protected void setAverageStart ( DateTime start )
 }
 
 /**
-Set an IppDMI instance in the list that is being maintained for use.
+Set an BNDSS_DMI instance in the list that is being maintained for use.
 The input name in the DMI is used to lookup the instance.  If a match is found,
 the old instance is optionally closed and the new instance is set in the same
 location.  If a match is not found, the new instance is added at the end.
@@ -5340,15 +5340,15 @@ location.  If a match is not found, the new instance is added at the end.
 true.  The main issue is that if something else is using the DMI instance (e.g.,
 the TSTool GUI) it may be necessary to leave the old instance open.
 */
-protected void setColoradoIppDMI ( IppDMI dmi, boolean close_old )
+protected void setColoradoBNDSSDMI ( BNDSS_DMI dmi, boolean close_old )
 {   if ( dmi == null ) {
         return;
     }
-    int size = __ippdmi_Vector.size();
-    IppDMI dmi2 = null;
+    int size = __bndssdmi_Vector.size();
+    BNDSS_DMI dmi2 = null;
     String input_name = dmi.getInputName();
     for ( int i = 0; i < size; i++ ) {
-        dmi2 = (IppDMI)__ippdmi_Vector.get(i);
+        dmi2 = __bndssdmi_Vector.get(i);
         if ( dmi2.getInputName().equalsIgnoreCase(input_name)){
             // The input name of the current instance matches that of the instance in the list.
             // Replace the instance in the list by the new instance...
@@ -5360,12 +5360,12 @@ protected void setColoradoIppDMI ( IppDMI dmi, boolean close_old )
                     // Probably can ignore.
                 }
             }
-            __ippdmi_Vector.set ( i, dmi );
+            __bndssdmi_Vector.set ( i, dmi );
             return;
         }
     }
     // Add a new instance to the Vector...
-    __ippdmi_Vector.add ( dmi );
+    __bndssdmi_Vector.add ( dmi );
 }
 
 /**

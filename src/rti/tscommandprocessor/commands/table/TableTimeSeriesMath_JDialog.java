@@ -328,7 +328,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     JGUIUtil.addComponent(main_JPanel, __IfTableInputIsBlank_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - action if table input value is blank (default=" + __command._Warn + "."), 
+        "Optional - action if table input value is blank (default=" + __command._Warn + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If time series list is empty:" ), 
@@ -345,7 +345,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     JGUIUtil.addComponent(main_JPanel, __IfTSListIsEmpty_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - action if time series list is empty (default=" + __command._Fail + "."), 
+        "Optional - action if time series list is empty (default=" + __command._Fail + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

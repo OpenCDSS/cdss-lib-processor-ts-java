@@ -24,7 +24,7 @@ public class BNDSS_DataMetaData_InputFilter_JPanel extends InputFilter_JPanel im
 /**
 ColoradoBNDSS database connection.
 */
-private BNDSS_DMI __dmi = null;
+private ColoradoBNDSSDataStore __dataStore = null;
 
 /**
 Indicate whether ItemStateChanged events should be skipped.  This is used to temporarily limit events
@@ -34,13 +34,14 @@ during component initialization.
 
 /**
 Constructor.
-@param dmi the dmi to use to connect to the BNDSS database.  Cannot be null.
+@param dataStore the data store to use to connect to the BNDSS database.  Cannot be null.
 @param subjectType the initial subject type to display, or null to default to county.
 @param numFilterGroups the number of filter groups to display
 */
-public BNDSS_DataMetaData_InputFilter_JPanel(BNDSS_DMI dmi, BNDSSSubjectType subjectType, int numFilterGroups )
+public BNDSS_DataMetaData_InputFilter_JPanel( ColoradoBNDSSDataStore dataStore, BNDSSSubjectType subjectType, int numFilterGroups )
 {   super();
-    __dmi = dmi;
+    __dataStore = dataStore;
+    BNDSS_DMI dmi = (BNDSS_DMI)dataStore.getDMI();
     //__skipItemEvents = true;
     //try {
         setFilters ( dmi, subjectType, numFilterGroups );
@@ -75,7 +76,7 @@ public void itemStateChanged ( ItemEvent event )
         // First remove all the existing listeners
         //removeEventListeners(this);
         //try {
-            setFilters ( __dmi, subjectType, getNumFilterGroups() );
+            setFilters ( (BNDSS_DMI)__dataStore.getDMI(), subjectType, getNumFilterGroups() );
         //}
         //finally {
         //    __skipItemEvents = false;
@@ -214,6 +215,15 @@ public void setFilters ( BNDSS_DMI dmi, BNDSSSubjectType subjectType, int numFil
     // Add event listeners so that if the subject changes the lists can be refreshed
     // Do this after initial setup so that don't get into an infinite loop.
     addEventListeners ( this );
+}
+
+/**
+Return the data store corresponding to this input filter panel.
+@return the data store corresponding to this input filter panel.
+*/
+public ColoradoBNDSSDataStore getDataStore ( )
+{
+    return __dataStore;
 }
 
 }

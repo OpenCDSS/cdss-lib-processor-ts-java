@@ -657,6 +657,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
+import rti.tscommandprocessor.commands.bndss.ColoradoBNDSSDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
@@ -908,11 +909,10 @@ which requires the working directory at that point of the workflow.
 */
 private PropList __processor_PropList = null;
 
-// TODO SAM 2010-08-31 Evaluate extending to other databases to consolidate (HDB next?).
+// TODO SAM 2010-08-31 Evaluate extending to other databases to consolidate (HydroBase?).
 /**
-Data store list, to generically manage database connections.  Currently only RiversideDB connections
-are managed through this list, as a test.  This list is guaranteed to be non-null, although the individual
-data stores may not be opened and need to be handled appropriately.
+Data store list, to generically manage database connections.  This list is guaranteed to be
+non-null, although the individual data stores may not be opened and need to be handled appropriately.
 */
 private List<DataStore> __dataStoreList = new Vector();
 
@@ -966,9 +966,9 @@ private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
 }
 
 /**
-Make the TSProductDMI instances known to a TSViewJFrame.  This examines
-DMI instances to see if they implement TSProductDMI.  If so, the
-TSView.addTSProductDMI() method is called with the instance.
+Make the TSProductDMI instances known to a TSViewJFrame.  This examines DMI instances to see
+if they implement TSProductDMI, which is used to persist TSProduct information to a database.
+If the implementation is detected, the TSView.addTSProductDMI() method is called with the instance.
 */
 private void addTSViewTSProductDMIs ( TSViewJFrame view )
 {	// Check the HydroBase instances...
@@ -2624,7 +2624,7 @@ protected static List getTraceIdentifiersFromCommands ( List commands, boolean s
 /**
 Return a list of objects (currently open DMI instances) that implement
 TSProductAnnotationProvider. This is a helper method for other methods.
-@return a non-null Vector of TSProductAnnotationProviders.
+@return a non-null list of TSProductAnnotationProviders.
 */
 protected List<TSProductAnnotationProvider> getTSProductAnnotationProviders ()
 {	List<TSProductAnnotationProvider> ap_Vector = new Vector();
@@ -2795,7 +2795,7 @@ private int indexOf ( String string, int sequence_number )
 /**
 Return the data store that matches the requested name.
 @param dataStoreName name for the data store to find.
-@return the RiversideDB_DMI that is being used (may return null).
+@return the data store that matches the given name (will return null if not matched).
 */
 protected DataStore lookupDataStore ( String dataStoreName )
 {   //String routine = "TSEngine.lookupDataStore";
@@ -4530,7 +4530,7 @@ throws Exception
 	
 	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
 	// using the input type string.  If matched, then the DataStore object information below (e.g., for
-	// RiversideDB).
+	// RiversideDB, ColoradoBNDSS).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
@@ -4544,12 +4544,12 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
-    if ((inputType != null) && inputType.equalsIgnoreCase("ColoradoBNDSS") ) {
-        // New style TSID~input_type~input_name for ColoradoBNDSS...
-        BNDSS_DMI bndssdmi = getColoradoBNDSSDMI ( inputName );
+	if ((dataStore != null) && (dataStore instanceof ColoradoBNDSSDataStore) ) {
+        // New style TSID~input_type~dataStoreName for ColoradoBNDSS...
+	    BNDSS_DMI bndssdmi = (BNDSS_DMI)((ColoradoBNDSSDataStore)dataStore).getDMI();
         if ( bndssdmi == null ) {
             Message.printWarning ( 3, routine, "Unable to get ColoradoBNDSS connection for " +
-            "input name \"" + inputName +  "\".  Unable to read time series." );
+            "data store name \"" + inputName +  "\".  Unable to read time series." );
             ts = null;
         }
         else {
@@ -4557,7 +4557,7 @@ throws Exception
                 ts = bndssdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
             }
             catch ( Exception te ) {
-                Message.printWarning ( 2, routine,"Error reading time series \""+tsidentString2 +
+                Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
                     "\" from ColoradoBNDSS database" );
                 Message.printWarning ( 3, routine, te );
                 ts = null;
@@ -4780,9 +4780,8 @@ throws Exception
 		NWSRFS_DMI nwsrfs_dmi = getNWSRFSFS5FilesDMI ( inputNameFull, true );
 		ts = nwsrfs_dmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData );
 	}
-	//else if ((inputType != null) && inputType.equalsIgnoreCase("RiversideDB") ) {
 	else if ((dataStore != null) && (dataStore instanceof RiversideDBDataStore) ) {
-		// New style TSID~input_type~input_name for RiversideDB...
+		// New style TSID~input_type~dataStoreName for RiversideDB...
         RiversideDB_DMI rdmi = (RiversideDB_DMI)((RiversideDBDataStore)dataStore).getDMI();
         if ( rdmi == null ) {
             Message.printWarning ( 3, routine, "Unable to get RiversideDB data store \"" + dataStore.getName() +

@@ -5,6 +5,8 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import riverside.datastore.DataStore;
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
@@ -82,12 +84,21 @@ throws InvalidCommandParameterException
 {	String warning = "";
     String message;
     
+    String DataStore = parameters.getValue ( "DataStore" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-   
+
+    if ( (DataStore == null) || DataStore.equals("") ) {
+        message = "The data store must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data store." ) );
+    }
+
     String Subject = null;
     // Use an high number to ensure that all where parameters will be checked.
     for ( int iWhere = 1; iWhere <= 100; iWhere++ ) {
@@ -286,6 +297,8 @@ CommandWarningException, CommandException
         readData = false;
     }
     
+    String DataStore = parameters.getValue("DataStore");
+    
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
@@ -402,7 +415,7 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List tslist = new Vector();	// Vector for time series results.
+	List<TS> tslist = new Vector();	// Vector for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
@@ -423,34 +436,24 @@ CommandWarningException, CommandException
 			WhereN_Vector.add ( WhereN );
 		}
 	
-		// Find the HydroBaseDMI to use...
-		Object o = processor.getPropContents ( "ColoradoBNDSSDMIList" );
-		if ( o == null ) {
-			message = "Could not get list of Colorado BNDSS database connections to query data.";
+		// Find the data store to use...
+		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
+		    DataStore, ColoradoBNDSSDataStore.class );
+		if ( dataStore == null ) {
+			message = "Could not get data store for name \"" + DataStore + "\" to query data.";
 			Message.printWarning ( 2, routine, message );
             status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a Colorado BNDSS database connection has been opened." ) );
+                    message, "Verify that a Colorado BNDSS database connection has been opened with name \"" +
+                    DataStore + "\"." ) );
 			throw new Exception ( message );
 		}
-		BNDSS_DMI bndssdmi = (BNDSS_DMI)((List)o).get(0);
-		/* TODO SAM 2010-05-23 Currently only support one BNDSS database connection
-		List ippdmi_Vector = (List)o;
-		IppDMI ippdmi = HydroBase_Util.lookupHydroBaseDMI ( ippdmi_Vector, InputName );
-		if ( ippdmi == null ) {
-			message ="Could not find HydroBase connection with input name \"" + InputName + "\" to query data.";
-			Message.printWarning ( 2, routine, message );
-            status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a HydroBase database connection has been opened." ) );
-			throw new Exception ( message );
-		}
-		*/
+		BNDSS_DMI bndssdmi = (BNDSS_DMI)((ColoradoBNDSSDataStore)dataStore).getDMI();
 
 		// Initialize an input filter based on the data type...
 
 		BNDSS_DataMetaData_InputFilter_JPanel filterPanel =
-		    new BNDSS_DataMetaData_InputFilter_JPanel(bndssdmi, null, getNumFilterGroups());
+		    new BNDSS_DataMetaData_InputFilter_JPanel((ColoradoBNDSSDataStore)dataStore, null, getNumFilterGroups());
 
 		// Populate with the where information from the command...
 
@@ -641,7 +644,13 @@ public String toString ( PropList props )
 	if ( props == null ) {
 	    return getCommandName() + "()";
 	}
-
+    String DataStore = props.getValue("DataStore");
+    if ( (DataStore != null) && (DataStore.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataStore=\"" + DataStore + "\"" );
+    }
     String Subject = props.getValue("Subject");
     if ( (Subject != null) && (Subject.length() > 0) ) {
         if ( b.length() > 0 ) {

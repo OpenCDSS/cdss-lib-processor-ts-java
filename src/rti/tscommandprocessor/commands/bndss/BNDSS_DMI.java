@@ -171,16 +171,16 @@ private final int _S_CountyDataMetaDataDistinctSubjectID = 1014;
 private final int _S_CountyDataMetaDataDistinctSubType = 1015;
 
 //IPPData (table)
-private final int _S_ProjectData = 1800;
+private final int _S_IPPData = 1800;
 
 // Meta-data for project-related time series data (view)
-private final int _S_ProjectDataMetaData = 2200;
-private final int _S_ProjectDataMetaDataDistinctDataType = 2201;
-private final int _S_ProjectDataMetaDataDistinctMethod = 2202;
-private final int _S_ProjectDataMetaDataDistinctScenario = 2203;
-private final int _S_ProjectDataMetaDataDistinctSource = 2204;
-private final int _S_ProjectDataMetaDataDistinctSubjectID = 2205;
-private final int _S_ProjectDataMetaDataDistinctSubType = 2206;
+private final int _S_IPPDataMetaData = 2200;
+private final int _S_IPPDataMetaDataDistinctDataType = 2201;
+private final int _S_IPPDataMetaDataDistinctMethod = 2202;
+private final int _S_IPPDataMetaDataDistinctScenario = 2203;
+private final int _S_IPPDataMetaDataDistinctSource = 2204;
+private final int _S_IPPDataMetaDataDistinctSubjectID = 2205;
+private final int _S_IPPDataMetaDataDistinctSubType = 2206;
 
 //ProviderData (table)
 private final int _S_ProviderData = 2500;
@@ -200,9 +200,9 @@ private final int _S_ProviderDataMetaDataDistinctSubType = 3505;
 
 /** 
 Constructor for a database server and database name, to use an automatically created URL.
-@param databaseEngine The database engine to use (see the DMI constructor), will default to SQLServer2000.
+@param databaseEngine The database engine to use (see the DMI constructor), will default to SQLServer.
 @param databaseServer The IP address or DSN-resolvable database server machine name.
-@param databaseName The database name on the server.  If null, default to "IPP".
+@param databaseName The database name on the server.
 @param port Port number used by the database.  If <= 0, default to that for the database engine.
 @param systemLogin If not null, this is used as the system login to make the
 connection.  If null, the default system login is used.
@@ -213,19 +213,14 @@ public BNDSS_DMI ( String databaseEngine, String databaseServer,
 String databaseName, int port, String systemLogin, String systemPassword)
 throws Exception {
 	// Use the default system login and password
-	super ( databaseEngine, databaseServer, databaseName, port, systemLogin, systemPassword );
+    // The engine is used in the base class so it needs to be non-null in the following call if not specified
+	super ( (databaseEngine == null) ? "SQLServer":databaseEngine,
+	    databaseServer, databaseName, port, systemLogin, systemPassword );
     if ( databaseEngine == null ) {
         // Use the default...
         setDatabaseEngine("SQLServer");
     }
-    if ( databaseServer == null ) {
-        // Use the default...
-        setDatabaseServer("hbserver");
-    }
-    if ( databaseName == null ) {
-        // Use the default...
-        setDatabaseName("IPP");
-    }
+    // TODO SAM 2010-10-18 Evaluate removing from code
 	if ( systemLogin == null ) {
 		// Use the default...
 		setSystemLogin("admin");
@@ -316,14 +311,14 @@ throws Exception
             select.addTable ( schemaPrefix + "vCountyDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_ProjectData:
+        case _S_IPPData:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "tblProjectData.id" );
             select.addField ( schemaPrefix + "tblProjectData.year" );
             select.addField ( schemaPrefix + "tblProjectData.value" );
             select.addTable ( schemaPrefix + "tblProjectData" );
             break;
-        case _S_ProjectDataMetaData:
+        case _S_IPPDataMetaData:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.id" );
             select.addField ( schemaPrefix + "vProjectDataMetaData.subjectID" );
@@ -337,37 +332,37 @@ throws Exception
             select.addField ( schemaPrefix + "vProjectDataMetaData.scenario" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             break;
-        case _S_ProjectDataMetaDataDistinctDataType:
+        case _S_IPPDataMetaDataDistinctDataType:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.dataType" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_ProjectDataMetaDataDistinctMethod:
+        case _S_IPPDataMetaDataDistinctMethod:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.method" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_ProjectDataMetaDataDistinctScenario:
+        case _S_IPPDataMetaDataDistinctScenario:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.scenario" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_ProjectDataMetaDataDistinctSource:
+        case _S_IPPDataMetaDataDistinctSource:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.source" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_ProjectDataMetaDataDistinctSubjectID:
+        case _S_IPPDataMetaDataDistinctSubjectID:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.subjectID" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
             select.selectDistinct(true);
             break;
-        case _S_ProjectDataMetaDataDistinctSubType:
+        case _S_IPPDataMetaDataDistinctSubType:
             select = (DMISelectStatement)statement;
             select.addField ( schemaPrefix + "vProjectDataMetaData.subType" );
             select.addTable ( schemaPrefix + "vProjectDataMetaData" );
@@ -1042,7 +1037,7 @@ Reads all the CountyDataMetaData view records that match the given constraints.
 @return a list of matching BNDSS_CountyDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readCountyDataMetaDataList( String name, String source, String dataType, String subType,
+public List<BNDSS_CountyDataMetaData> readCountyDataMetaDataList( String name, String source, String dataType, String subType,
     String method, String subMethod, String scenario, boolean matchBlanks ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
@@ -1091,7 +1086,7 @@ throws Exception {
         q.addWhereClause(schemaPrefix+"vCountyDataMetaData.scenario = '" + escape("") + "'");
     }
     ResultSet rs = dmiSelect(q);
-    List v = toCountyDataMetaDataList (rs);
+    List<BNDSS_CountyDataMetaData> v = toCountyDataMetaDataList (rs);
     closeResultSet(rs);
     return v;
 }
@@ -1108,7 +1103,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaDataDistinctDataType );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaDataDistinctDataType );
+        buildSQL ( q, _S_IPPDataMetaDataDistinctDataType );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctDataType );
@@ -1132,7 +1127,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaDataDistinctMethod );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaDataDistinctMethod );
+        buildSQL ( q, _S_IPPDataMetaDataDistinctMethod );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctMethod );
@@ -1156,7 +1151,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaDataDistinctScenario );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaDataDistinctScenario );
+        buildSQL ( q, _S_IPPDataMetaDataDistinctScenario );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctScenario );
@@ -1180,7 +1175,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaDataDistinctSource );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaDataDistinctSource );
+        buildSQL ( q, _S_IPPDataMetaDataDistinctSource );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctSource );
@@ -1204,7 +1199,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaDataDistinctSubjectID );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaDataDistinctSubjectID );
+        buildSQL ( q, _S_IPPDataMetaDataDistinctSubjectID );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctSubjectID );
@@ -1228,7 +1223,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaDataDistinctSubType );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaDataDistinctSubType );
+        buildSQL ( q, _S_IPPDataMetaDataDistinctSubType );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaDataDistinctSubType );
@@ -1309,7 +1304,7 @@ throws Exception
         buildSQL ( q, _S_CountyDataMetaData );
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        buildSQL ( q, _S_ProjectDataMetaData );
+        buildSQL ( q, _S_IPPDataMetaData );
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         buildSQL ( q, _S_ProviderDataMetaData );
@@ -1343,7 +1338,7 @@ throws Exception
         v = toCountyDataMetaDataList (rs);
     }
     else if ( subjectType == BNDSSSubjectType.IPP ) {
-        v = toProjectDataMetaDataList (rs);
+        v = toIPPDataMetaDataList (rs);
     }
     else if ( subjectType == BNDSSSubjectType.PROVIDER ) {
         v = toProviderDataMetaDataList (rs);
@@ -1354,14 +1349,15 @@ throws Exception
 
 /**
 Reads all the ProjectDataMetaData view records that match the given constraints.
-@return a list of matching BNDSS_ProjectDataMetaData objects.
+@return a list of matching BNDSS_IPPDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readProjectDataMetaDataList( String subjectID, String source, String dataType, String subType,
-    String method, String subMethod, String scenario, boolean matchBlanks ) 
+public List<BNDSS_IPPDataMetaData> readIPPDataMetaDataList( String subjectID, String source,
+    String dataType, String subType, String method, String subMethod, String scenario,
+    boolean matchBlanks ) 
 throws Exception {
     DMISelectStatement q = new DMISelectStatement ( this );
-    buildSQL ( q, _S_ProjectDataMetaData );
+    buildSQL ( q, _S_IPPDataMetaData );
     String schemaPrefix = getSchemaPrefix();
     if ( (subjectID != null) && !subjectID.equals("") ) {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.subjectID = " + subjectID );
@@ -1403,7 +1399,7 @@ throws Exception {
         q.addWhereClause(schemaPrefix+"vProjectDataMetaData.scenario = '" + escape("") + "'");
     }
     ResultSet rs = dmiSelect(q);
-    List v = toProjectDataMetaDataList (rs);
+    List<BNDSS_IPPDataMetaData> v = toIPPDataMetaDataList (rs);
     closeResultSet(rs);
     return v;
 }
@@ -1415,7 +1411,7 @@ more specific result); if false, more records will be returned
 @return a list of matching BNDSS_ProviderDataMetaData objects.
 @throws Exception if an error occurs
 */
-public List readProviderDataMetaDataList( String subjectID, String source, String dataType, String subType,
+public List<BNDSS_ProviderDataMetaData> readProviderDataMetaDataList( String subjectID, String source, String dataType, String subType,
     String method, String subMethod, String scenario, boolean matchBlanks ) 
 throws Exception {
 	DMISelectStatement q = new DMISelectStatement ( this );
@@ -1461,7 +1457,7 @@ throws Exception {
         q.addWhereClause(schemaPrefix+"vProviderDataMetaData.scenario = '" + escape("") + "'");
     }
 	ResultSet rs = dmiSelect(q);
-	List v = toProviderDataMetaDataList (rs);
+	List<BNDSS_ProviderDataMetaData> v = toProviderDataMetaDataList (rs);
 	closeResultSet(rs);
 	return v;
 }
@@ -1484,7 +1480,7 @@ throws Exception
         q.addOrderByClause(schemaPrefix+"tblCountyData.year");
     }
     else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.IPP)) {
-        buildSQL ( q, _S_ProjectData );
+        buildSQL ( q, _S_IPPData );
         q.addWhereClause(schemaPrefix+"tblProjectData.id = " + id );
         q.addOrderByClause(schemaPrefix+"tblProjectData.year");
     }
@@ -1586,12 +1582,12 @@ throws Exception
     String source = tsident.getSource();
     String scenario = tsident.getScenario();
     // Read the database record for the time series metadata, to get the units and name
-    List<BNDSS_DataMetaData> dataList = null;
+    List<? extends BNDSS_DataMetaData> dataList = null;
     if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.COUNTY) ) {
         dataList = readCountyDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
     else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.IPP) ) {
-        dataList = readProjectDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
+        dataList = readIPPDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
     }
     else if ( subject.equalsIgnoreCase(""+BNDSSSubjectType.PROVIDER) ) {
         dataList = readProviderDataMetaDataList(location, source, dataType, subType, method, subMethod, scenario, true);
@@ -1629,7 +1625,7 @@ throws Exception {
 /**
 Unsupported.
 */
-public List readTimeSeriesList(String fname, DateTime date1, DateTime date2, String req_units, boolean read_data)
+public List<TS> readTimeSeriesList(String fname, DateTime date1, DateTime date2, String req_units, boolean read_data)
 throws Exception {
 	return null;
 }
@@ -1637,7 +1633,7 @@ throws Exception {
 /**
 Unsupported.
 */
-public List readTimeSeriesList(TSIdent tsident, String fname, DateTime date1, 
+public List<TS> readTimeSeriesList(TSIdent tsident, String fname, DateTime date1, 
 DateTime date2, String req_units, boolean read_data)
 throws Exception {
 	return null;
@@ -1716,13 +1712,13 @@ Convert a ResultSet to a list of BNDSS_ProjectDataMetaData.
 @param rs ResultSet from a BNDSS_ProjectDataMetaData view query.
 @throws Exception if an error occurs
 */
-private List<BNDSS_ProjectDataMetaData> toProjectDataMetaDataList ( ResultSet rs ) 
+private List<BNDSS_IPPDataMetaData> toIPPDataMetaDataList ( ResultSet rs ) 
 throws Exception {
-    List<BNDSS_ProjectDataMetaData> v = new Vector();
-    BNDSS_ProjectDataMetaData data = null;
+    List<BNDSS_IPPDataMetaData> v = new Vector();
+    BNDSS_IPPDataMetaData data = null;
     while ( rs.next() ) {
-        data = new BNDSS_ProjectDataMetaData();
-        data.setSubject( "Project" );
+        data = new BNDSS_IPPDataMetaData();
+        data.setSubject( "IPP" );
         toDataMetaData ( data, rs );
         v.add(data);
     }

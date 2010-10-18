@@ -22,10 +22,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import riverside.datastore.DataStore;
+import rti.tscommandprocessor.core.TSCommandProcessor;
+
 import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -39,14 +43,13 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadColoradoBNDSS_Command __command = null;
-//private JTextField __InputName_JTextField;
+private SimpleJComboBox __DataStore_JComboBox =null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
 private InputFilter_JPanel __inputFilter_JPanel =null;
-private BNDSS_DMI __ippdmi = null; // Colorado IPP DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
@@ -99,12 +102,10 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	__error_wait = false;
-	/*
-	String InputName = __InputName_JTextField.getText().trim();
-	if ( InputName.length() > 0 ) {
-		props.set ( "InputName", InputName );
+	String DataStore = __DataStore_JComboBox.getSelected();
+	if ( DataStore.length() > 0 ) {
+		props.set ( "DataStore", DataStore );
 	}
-	*/
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
 	    String where = getWhere ( i - 1 );
@@ -139,8 +140,8 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	//String InputName = __InputName_JTextField.getText().trim();
-	//__command.setCommandParameter ( "InputName", InputName );
+{	String DataStore = __DataStore_JComboBox.getSelected();
+	__command.setCommandParameter ( "DataStore", DataStore );
 	String delim = ";";
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
@@ -176,6 +177,22 @@ throws Throwable
 }
 
 /**
+Get the selected data store.
+*/
+private ColoradoBNDSSDataStore getSelectedDataStore ()
+{   String routine = getClass().getName() + ".getSelectedDataStore";
+    String DataStore = __DataStore_JComboBox.getSelected();
+    Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
+    ColoradoBNDSSDataStore dataStore = (ColoradoBNDSSDataStore)((TSCommandProcessor)
+        __command.getCommandProcessor()).getDataStoreForName(
+        DataStore, ColoradoBNDSSDataStore.class );
+    if ( dataStore == null ) {
+        Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
+    }
+    return dataStore;
+}
+
+/**
 Return the "WhereN" parameter for the requested input filter.
 @return the "WhereN" parameter for the requested input filter.
 @param ifg the Input filter to process (zero index).
@@ -199,20 +216,21 @@ private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 
+	/*
 	try {
-	    Object o = processor.getPropContents("ColoradoIppDMIList");
-		if ( o != null ) {
-			// Use the first ColoradoIppDMI instance, since input filter
-			// information should be relatively consistent...
-			List v = (List)o;
-			if ( v.size() > 0 ) {
-				__ippdmi = (BNDSS_DMI)v.get(0);
-			}
-			else {
-				String message = "No Colorado IPP connection is available to use with command editing.\n" +
-					"Make sure that Colorado IPP is open.";
-				Message.printWarning(1, routine, message );
-			}
+	    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
+	        ColoradoBNDSSDataStore.class );
+		// Use the data store that matches the name...
+		ColoradoBNDSSDataStore dataStore = null;
+		for ( DataStore ds : dataStoreList ) {
+		    if ( ds)
+			__dmi = (BNDSS_DMI)v.get(0);
+		}
+		else {
+			String message = "No Colorado BNDSS database connection is available to use with command editing.\n" +
+				"Make sure that Colorado BNDSS data store \"" + DataStore +
+				"\" is available and that the database is open.";
+			Message.printWarning(1, routine, message );
 		}
 	}
 	catch ( Exception e ){
@@ -221,6 +239,7 @@ private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
 			"Make sure that Colorado IPP is open.";
 		Message.printWarning(1, routine, message );
 	}
+	*/
 
 	addWindowListener( this );
 
@@ -232,32 +251,52 @@ private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read one or more time series from the State of Colorado's IPP database."),
+    	"Read one or more time series from the State of Colorado's Basin Needs Decision Support System (BNDSS) database."),
     	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Constrain the query by specifying time series metadata to match." ), 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to the Colorado IPP Database Input Type documentation for possible values." ), 
+		"Refer to the Colorado BNDSS Data Store documentation for possible values." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the period defaults to the input period from SetInputPeriod()."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	
+   	// List available data stores of the correct type
+   	
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataStore_JComboBox = new SimpleJComboBox ( false );
+    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
+        ColoradoBNDSSDataStore.class );
+    for ( DataStore dataStore: dataStoreList ) {
+        __DataStore_JComboBox.addItem ( dataStore.getName() );
+    }
+    __DataStore_JComboBox.select ( 0 );
+    __DataStore_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	
+   	// Input filters
 
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
 	    // Add input filters for IPP time series...
-		__inputFilter_JPanel = new BNDSS_DataMetaData_InputFilter_JPanel(__ippdmi, null, __command.getNumFilterGroups() );
-   			JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
+		__inputFilter_JPanel = new BNDSS_DataMetaData_InputFilter_JPanel(
+		    getSelectedDataStore(), null, __command.getNumFilterGroups() );
+		JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
 			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );
    		__inputFilter_JPanel.addEventListeners ( this );
    	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject is required, otherwise optional query filters."),
-   	         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+   	        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 2, routine, "Unable to initialize IPP input filter." );
+		Message.printWarning ( 2, routine, "Unable to initialize BNDSS input filter." );
 		Message.printWarning ( 2, routine, e );
 	}
 
@@ -373,9 +412,9 @@ public boolean ok ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "ReadColoradoIPP_JDialog.refresh";
+{	String routine = "ReadColoradoBNDSS_JDialog.refresh";
 	__error_wait = false;
-	//String InputName = "";
+	String DataStore = "";
 	String filter_delim = ";";
 	String InputStart = "";
 	String InputEnd = "";
@@ -385,11 +424,24 @@ private void refresh ()
 		__first_time = false;
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
-		//Interval = props.getValue ( "Interval" );
-		//InputName = props.getValue ( "InputName" );
+		DataStore = props.getValue ( "DataStore" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
+            __DataStore_JComboBox.select ( DataStore );
+        }
+        else {
+            if ( (DataStore == null) || DataStore.equals("") ) {
+                // New command...select the default...
+                __DataStore_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
         InputFilter_JPanel filter_panel = __inputFilter_JPanel;
         int nfg = filter_panel.getNumFilterGroups();
         String where;
@@ -420,11 +472,11 @@ private void refresh ()
         }
 	}
 	// Regardless, reset the command from the fields...
-	//InputName = __InputName_JTextField.getText().trim();
-	//props.add ( "InputName=" + InputName );
 	Alias = __Alias_JTextField.getText().trim();
 	// Regardless, reset the command from the fields...
 	props = new PropList ( __command.getCommandName() );
+	DataStore = __DataStore_JComboBox.getSelected().trim();
+    props.add ( "DataStore=" + DataStore );
 	// Add the where clause(s)...
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	int nfg = filter_panel.getNumFilterGroups();

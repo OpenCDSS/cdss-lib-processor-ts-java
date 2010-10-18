@@ -747,11 +747,17 @@ public Boolean getCreateOutput ()
 
 /**
 Return the data store for the requested name, or null if not found.
+@param name the data store name to match (case is ignored in the comparison)
+@param dataStoreClass the class of the data store to match, useful when ensuring that the data store
+is compatible with intended use - specify as null to not match class
 @return the data store for the requested name, or null if not found.
 */
-public DataStore getDataStoreForName ( String name )
+public DataStore getDataStoreForName ( String name, Class dataStoreClass )
 {   for ( DataStore dataStore : getDataStores() ) {
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
+            if ( (dataStoreClass != null) && (dataStore.getClass() != dataStoreClass) ) {
+                dataStore = null;
+            }
             return dataStore;
         }
     }
@@ -770,6 +776,7 @@ public List<DataStore> getDataStores()
 /**
 Return the list of data stores for the requested type (e.g., RiversideDBDataStore).  A non-null list
 is guaranteed, but the list may be empty.
+@param dataStoreClass the data store class to match (required).
 @return the list of data stores matching the requested type
 */
 public List<DataStore> getDataStoresByType ( Class dataStoreClass )
@@ -3769,9 +3776,6 @@ public void setPropContents ( String prop, Object contents ) throws Exception
         else if ( OutputYearType.equalsIgnoreCase("" + YearType.CALENDAR) ) {
             __tsengine.setOutputYearType ( YearType.CALENDAR );
         }
-    }
-    else if ( prop.equalsIgnoreCase("RiversideDBDMI" ) ) {
-        __tsengine.setDataStore ( (DataStore)contents, true );
     }
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (List)contents );

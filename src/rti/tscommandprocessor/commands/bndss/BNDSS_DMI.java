@@ -802,7 +802,7 @@ public void determineDatabaseVersion() {
 		// Assume this...
 		setDatabaseVersion ( _VERSION_010000_20090312 );
 	}
-	Message.printStatus ( 1, routine, "BNDSS database version determined to be at least " + getDatabaseVersion() );
+	Message.printStatus ( 2, routine, "BNDSS database version determined to be at least " + getDatabaseVersion() );
 }
 
 /**

@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.bndss;
+package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.util.List;
 import java.util.Vector;
@@ -28,22 +28,19 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
-import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
-This class initializes, checks, and runs the ReadColoradoBNDSS() command.
-</p>
+This class initializes, checks, and runs the ReadReclamationHDB() command.
 */
-public class ReadColoradoBNDSS_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadReclamationHDB_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
 Number of where clauses shown in the editor and available as parameters - enough to allow select on each
 time series identifier part, including sub-parts.
 */
-private int __numFilterGroups = 8;
+private int __numFilterGroups = 6;
 
 /**
 Data values for boolean parameters.
@@ -66,9 +63,9 @@ private List<TS> __discovery_TS_Vector = null;
 /**
 Constructor.
 */
-public ReadColoradoBNDSS_Command ()
+public ReadReclamationHDB_Command ()
 {	super();
-	setCommandName ( "ReadColoradoBNDSS" );
+	setCommandName ( "ReadReclamationHDB" );
 }
 
 /**
@@ -97,44 +94,6 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
-    }
-
-    String Subject = null;
-    // Use an high number to ensure that all where parameters will be checked.
-    for ( int iWhere = 1; iWhere <= 100; iWhere++ ) {
-        String whereN = parameters.getValue ( "Where" + iWhere );
-        if ( whereN != null ) {
-            List<String> whereParts = StringUtil.breakStringList(whereN, ";", 0);
-            if ( whereParts.get(0).equalsIgnoreCase("Subject") ) {
-                // Found Subject
-                Subject = whereParts.get(2);
-                break;
-            }
-        }
-    }
-    if ( (Subject == null) || Subject.equals("") ) {
-        message = "The subject must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the subject." ) );
-    }
-    else {
-        boolean found = false;
-        for ( BNDSSSubjectType subject: BNDSSSubjectType.values() ) {
-            if ( Subject.equalsIgnoreCase(""+subject)) {
-                found = true;
-                break;
-            }
-        }
-        if ( !found ) {
-            message = "The subject (" + Subject + ") is invalid.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the subject as " + BNDSSSubjectType.COUNTY + ", " +
-                    BNDSSSubjectType.IPP + ", or " + BNDSSSubjectType.PROVIDER + "." ) );
-        }
     }
 
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
@@ -167,20 +126,14 @@ throws InvalidCommandParameterException
 	}
 
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    valid_Vector.add ( "Subject" );
-    valid_Vector.add ( "SubjectID" );
-    valid_Vector.add ( "SubjectName" );
+    List<String> valid_Vector = new Vector();
+    valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "DataSource" );
     valid_Vector.add ( "DataType" );
-    valid_Vector.add ( "SubDataType" );
     valid_Vector.add ( "Interval" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
-    valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "Method" );
-    valid_Vector.add ( "SubMethod" );
     valid_Vector.add ( "Scenario" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -240,7 +193,7 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-	return (new ReadColoradoBNDSS_JDialog ( parent, this )).ok();
+	return (new ReadReclamationHDB_JDialog ( parent, this )).ok();
 }
 
 /**
@@ -262,8 +215,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -280,7 +232,7 @@ Run the command.
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "ReadColoradoBNDSS_Command.runCommand", message;
+{	String routine = "ReadReclamationHDB_Command.runCommand", message;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
@@ -419,6 +371,11 @@ CommandWarningException, CommandException
 					// read or replaced if a list is read.
 	try {
         // Read 1+ time series...
+		// Get the input needed to process the file...
+		//String InputName = parameters.getValue ( "InputName" );
+		//if ( InputName == null ) {
+		//	InputName = "";
+		//}
 		List WhereN_Vector = new Vector ( 6 );
 		String WhereN;
 		int nfg = 0;	// Used below.
@@ -432,22 +389,22 @@ CommandWarningException, CommandException
 	
 		// Find the data store to use...
 		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-		    DataStore, ColoradoBNDSSDataStore.class );
+		    DataStore, ReclamationHDBDataStore.class );
 		if ( dataStore == null ) {
 			message = "Could not get data store for name \"" + DataStore + "\" to query data.";
 			Message.printWarning ( 2, routine, message );
             status.addToLog ( command_phase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a Colorado BNDSS database connection has been opened with name \"" +
+                    message, "Verify that a ReclamationHDB database connection has been opened with name \"" +
                     DataStore + "\"." ) );
 			throw new Exception ( message );
 		}
-		BNDSS_DMI bndssdmi = (BNDSS_DMI)((ColoradoBNDSSDataStore)dataStore).getDMI();
+		ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
 
 		// Initialize an input filter based on the data type...
 
-		BNDSS_DataMetaData_InputFilter_JPanel filterPanel =
-		    new BNDSS_DataMetaData_InputFilter_JPanel((ColoradoBNDSSDataStore)dataStore, null, getNumFilterGroups());
+		ReclamationHDB_TimeSeries_InputFilter_JPanel filterPanel =
+		    new ReclamationHDB_TimeSeries_InputFilter_JPanel((ReclamationHDBDataStore)dataStore, null, getNumFilterGroups());
 
 		// Populate with the where information from the command...
 
@@ -479,13 +436,13 @@ CommandWarningException, CommandException
 	
 		Message.printStatus ( 2, routine, "Getting the list of time series..." );
 	
-		List tslist0 = null;
-        BNDSSSubjectType subject = null;
+		List<TS> tslist0 = null;
+        //BNDSSSubjectType subject = null;
         List<String> input = ((InputFilter_JPanel)filterPanel).getInput("Subject", false, null );
 
         //Message.printStatus(2, "", "Input is \"" + input.get(0) );
-        subject = BNDSSSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));
-        tslist0 = bndssdmi.readDataMetaDataList( filterPanel, subject );
+        //subject = BNDSSSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));
+        //tslist0 = dmi.readDataMetaDataList( filterPanel, subject );
 		// Make sure that size is set...
 		int size = 0;
 		if ( tslist0 != null ) {
@@ -493,9 +450,9 @@ CommandWarningException, CommandException
 		}
 	
    		if ( (tslist0 == null) || (size == 0) ) {
-			Message.printStatus ( 2, routine,"No Colorado BNDSS time series were found." );
+			Message.printStatus ( 2, routine,"No Reclamation HDB time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
-            message = "No time series were read from the Colorado BNDSS database.";
+            message = "No time series were read from the Reclamation HDB database.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( command_phase,
@@ -509,10 +466,10 @@ CommandWarningException, CommandException
 			Message.printStatus ( 2, "", "Reading " + size + " time series..." );
 
 			//String tsident_string = null; // TSIdent string
-			TS ts; // Time series to read.
-			BNDSS_DataMetaData meta = null;
+			TS ts = null; // Time series to read.
+			//BNDSS_DataMetaData meta = null;
 			for ( int i = 0; i < size; i++ ) {
-				meta = (BNDSS_DataMetaData)tslist0.get(i);
+				//meta = (BNDSS_DataMetaData)tslist0.get(i);
 				//tsident_string = 
 					//Subject + ":" + SubjectName
 					//+ "." + Source
@@ -521,17 +478,24 @@ CommandWarningException, CommandException
 					//+ "~ColoradoIPP" + input_name;
 	
 				//Message.printStatus ( 2, routine, "Reading time series for \"" + tsident_string + "\"..." );
-				Message.printStatus ( 2, routine, "Reading time series for subject=\"" + meta.getSubject() +
-				    "\" name=\"" + meta.getName() + "\"..." );
+				//Message.printStatus ( 2, routine, "Reading time series for subject=\"" + meta.getSubject() +
+				//    "\" name=\"" + meta.getName() + "\"..." );
 				try {
-				    ts = bndssdmi.readTimeSeries ( meta.getSubject(), meta.getID(), meta.getName(),
-			            meta.getSource(), meta.getDataType(), meta.getSubType(), meta.getUnits(), meta.getMethod(),
-			            meta.getSubMethod(), meta.getScenario(), InputStart_DateTime, InputEnd_DateTime, readData );
+				    //ts = dmi.readTimeSeries ( meta.getSubject(), meta.getID(), meta.getName(),
+			        //    meta.getSource(), meta.getDataType(), meta.getSubType(), meta.getUnits(), meta.getMethod(),
+			        //    meta.getSubMethod(), meta.getScenario(), InputStart_DateTime, InputEnd_DateTime, readData );
+				    /*
+				    It gets a bit complicated with the ID so deal with parsing later
+				    ts = ippdmi.readTimeSeries (
+						tsident_string,
+						InputStart_DateTime,
+						InputEnd_DateTime, null, read_data );
+						*/
 					// Add the time series to the temporary list.  It will be further processed below...
 					tslist.add ( ts );
 				}
 				catch ( Exception e ) {
-					message = "Unexpected error reading Colorado BNDSS time series (" + e + ").";
+					message = "Unexpected error reading Reclamation HDB time series (" + e + ").";
 					Message.printWarning ( 2, routine, message );
 					Message.printWarning ( 2, routine, e );
 					++warning_count;
@@ -546,7 +510,7 @@ CommandWarningException, CommandException
         if ( tslist != null ) {
             size = tslist.size();
         }
-        Message.printStatus ( 2, routine, "Read " + size + " Colorado BNDSS time series." );
+        Message.printStatus ( 2, routine, "Read " + size + " Reclamation HDB time series." );
 
         if ( command_phase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
@@ -555,7 +519,7 @@ CommandWarningException, CommandException
 
                 int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
                 if ( wc > 0 ) {
-                    message = "Error post-processing Colorado BNDSS time series after read.";
+                    message = "Error post-processing Reclamation HDB time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
@@ -567,7 +531,7 @@ CommandWarningException, CommandException
                 
                 int wc2 = TSCommandProcessorUtil.appendTimeSeriesListToResultsList ( processor, this, tslist );
                 if ( wc2 > 0 ) {
-                    message = "Error adding Colorado BNDSS time series after read.";
+                    message = "Error adding Reclamation HDB time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( command_phase,
@@ -576,13 +540,14 @@ CommandWarningException, CommandException
                     throw new CommandException ( message );
                 }
             }
+
         }
         else if ( command_phase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
         if ( (tslist == null) || (size == 0) ) {
-            message = "No time series were read from HydroBase.";
+            message = "No time series were read from the Reclamation HDB database.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
             status.addToLog ( command_phase,
@@ -592,7 +557,7 @@ CommandWarningException, CommandException
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 3, routine, e );
-		message ="Unexpected error reading time series from Colorado BNDSS database (" + e + ").";
+		message ="Unexpected error reading time series from Reclamation HDB database (" + e + ").";
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
@@ -623,6 +588,7 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
     __discovery_TS_Vector = discovery_TS_Vector;
 }
 
+// FIXME SAM 2010-10-20 Enable correct properties
 /**
 Return the string representation of the command.
 */
@@ -700,6 +666,13 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "Interval=\"" + Interval + "\"" );
+	}
+	String InputName = props.getValue("InputName");
+	if ( (InputName != null) && (InputName.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
+		}
+		b.append ( "InputName=\"" + InputName + "\"" );
 	}
 	String delim = ";";
     for ( int i = 1; i <= __numFilterGroups; i++ ) {

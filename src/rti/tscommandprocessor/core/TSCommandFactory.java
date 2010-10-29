@@ -72,6 +72,11 @@ import rti.tscommandprocessor.commands.nwsrfs.SetPropertyFromNwsrfsAppDefault_Co
 import rti.tscommandprocessor.commands.nwsrfs.WriteNwsCard_Command;
 import rti.tscommandprocessor.commands.nwsrfs.WriteNWSRFSESPTraceEnsemble_Command;
 
+// Reclamation HDB commands
+
+import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
+import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
+
 // RiverWare commands
 
 import rti.tscommandprocessor.commands.riverware.ReadRiverWare_Command;
@@ -582,6 +587,9 @@ throws UnknownCommandException
     else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadPatternFile") ) {
         return new ReadPatternFile_Command ();
     }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"ReadReclamationHDB") ) {
+        return new ReadReclamationHDB_Command ();
+    }
     else if ( isTScommand && TScommand.equalsIgnoreCase("ReadRiverWare") ) {
         return new ReadRiverWare_Command ();
     }
@@ -789,6 +797,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteProperty") ) {
 		return new WriteProperty_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteReclamationHDB") ) {
+        return new WriteReclamationHDB_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteRiverWare") ) {
 		return new WriteRiverWare_Command ();
 	}

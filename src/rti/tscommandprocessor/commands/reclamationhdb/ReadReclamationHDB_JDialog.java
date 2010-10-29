@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.bndss;
+package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -35,15 +35,15 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Editor for he ReadColoradoBNDSS() command.
+Editor for he ReadReclamationHDB() command.
 */
-public class ReadColoradoBNDSS_JDialog extends JDialog
+public class ReadReclamationHDB_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
-private ReadColoradoBNDSS_Command __command = null;
-private SimpleJComboBox __DataStore_JComboBox =null;
+private ReadReclamationHDB_Command __command = null;
+private SimpleJComboBox __DataStore_JComboBox = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -59,7 +59,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadColoradoBNDSS_JDialog ( JFrame parent, ReadColoradoBNDSS_Command command )
+public ReadReclamationHDB_JDialog ( JFrame parent, ReadReclamationHDB_Command command )
 {	super(parent, true);
 
 	initialize ( parent, command );
@@ -178,13 +178,13 @@ throws Throwable
 /**
 Get the selected data store.
 */
-private ColoradoBNDSSDataStore getSelectedDataStore ()
+private ReclamationHDBDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
     Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
-    ColoradoBNDSSDataStore dataStore = (ColoradoBNDSSDataStore)((TSCommandProcessor)
+    ReclamationHDBDataStore dataStore = (ReclamationHDBDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName(
-        DataStore, ColoradoBNDSSDataStore.class );
+        DataStore, ReclamationHDBDataStore.class );
     if ( dataStore == null ) {
         Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
     }
@@ -210,35 +210,10 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
-{	String routine = "ReadColoradoBNDSS_JDialog.initialize";
+private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
+{	String routine = "ReadReclamationHDB_JDialog.initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
-
-	/*
-	try {
-	    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
-	        ColoradoBNDSSDataStore.class );
-		// Use the data store that matches the name...
-		ColoradoBNDSSDataStore dataStore = null;
-		for ( DataStore ds : dataStoreList ) {
-		    if ( ds)
-			__dmi = (BNDSS_DMI)v.get(0);
-		}
-		else {
-			String message = "No Colorado BNDSS database connection is available to use with command editing.\n" +
-				"Make sure that Colorado BNDSS data store \"" + DataStore +
-				"\" is available and that the database is open.";
-			Message.printWarning(1, routine, message );
-		}
-	}
-	catch ( Exception e ){
-		// Not fatal, but of use to developers.
-		String message = "No Colorado BNDSS connection is available to use with command editing.\n" +
-			"Make sure that Colorado BNDSS is open.";
-		Message.printWarning(1, routine, message );
-	}
-	*/
 
 	addWindowListener( this );
 
@@ -250,13 +225,13 @@ private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read one or more time series from the State of Colorado's Basin Needs Decision Support System (BNDSS) database."),
+    	"Read one or more time series from Reclamation's HDB database."),
     	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Constrain the query by specifying time series metadata to match." ), 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to the Colorado BNDSS Data Store documentation for possible values." ), 
+		"Refer to the ReclamationHDB Data Store documentation for possible values." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the period defaults to the input period from SetInputPeriod()."),
@@ -268,7 +243,7 @@ private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
-        ColoradoBNDSSDataStore.class );
+        ReclamationHDBDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
@@ -284,18 +259,18 @@ private void initialize ( JFrame parent, ReadColoradoBNDSS_Command command )
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
-	    // Add input filters for BNDSS time series...
-		__inputFilter_JPanel = new BNDSS_DataMetaData_InputFilter_JPanel(
+	    // Add input filters for ReclamationHDB time series...
+		__inputFilter_JPanel = new ReclamationHDB_TimeSeries_InputFilter_JPanel(
 		    getSelectedDataStore(), null, __command.getNumFilterGroups() );
 		JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
 			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );
    		__inputFilter_JPanel.addEventListeners ( this );
-   	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Subject is required, otherwise optional query filters."),
+   	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - query filters."),
    	        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
 	catch ( Exception e ) {
-		Message.printWarning ( 2, routine, "Unable to initialize BNDSS input filter." );
+		Message.printWarning ( 2, routine, "Unable to initialize ReclamationHDB input filter." );
 		Message.printWarning ( 2, routine, e );
 	}
 
@@ -399,7 +374,7 @@ public boolean ok ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "ReadColoradoBNDSS_JDialog.refresh";
+{	String routine = "ReadReclamationHDB_JDialog.refresh";
 	__error_wait = false;
 	String DataStore = "";
 	String filter_delim = ";";

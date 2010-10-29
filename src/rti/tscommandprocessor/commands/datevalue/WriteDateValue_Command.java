@@ -33,9 +33,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the WriteDateValue() command.
-</p>
 */
 public class WriteDateValue_Command extends AbstractCommand implements Command, FileGenerator
 {
@@ -313,7 +311,6 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	boolean haveTS = true;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
@@ -326,7 +323,6 @@ CommandWarningException, CommandException
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
-		haveTS = false;
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -569,12 +565,6 @@ public String toString ( PropList parameters )
         }
         b.append ( "OutputStart=\"" + OutputStart + "\"" );
     }
-	if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "OutputStart=\"" + OutputStart + "\"" );
-	}
 	if ( (OutputEnd != null) && (OutputEnd.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

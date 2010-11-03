@@ -659,6 +659,8 @@ import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
 import rti.tscommandprocessor.commands.bndss.ColoradoBNDSSDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
+import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
@@ -828,11 +830,6 @@ private DIADvisorDMI __DIADvisor_archive_dmi = null;
 Count of errors.
 */
 private int	_fatal_error_count = 0;
-
-/**
-BNNDSS_DMI instance list, to allow more than one database instance to be open at a time.
-*/
-private List<BNDSS_DMI> __bndssdmi_Vector = new Vector();
 
 /**
 HydroBase DMI instance list, to allow more than one database instance to be open at a time.
@@ -1818,40 +1815,6 @@ Return the average start, or null if all available data are to be used.
 */
 protected DateTime getAverageStart()
 {   return __AverageStart_DateTime;
-}
-
-/**
-Return the BNDSS_DMI that is requested.  Use a blank input name to get the default.
-@param inputName Input name for the DMI, can be blank.
-@return the BNDSS_DMI that is being used (may return null).
-*/
-protected BNDSS_DMI getColoradoBNDSSDMI ( String inputName )
-{   String routine = "TSEngine.getColoradoBNDSSDMI";
-    Message.printStatus(2, routine, "Getting ColoradoBNDSS DMI connection \"" + inputName + "\"" );
-    int size = __bndssdmi_Vector.size();
-    if ( inputName == null ) {
-        inputName = "";
-    }
-    BNDSS_DMI bndssdmi = null;
-    for ( int i = 0; i < size; i++ ) {
-        bndssdmi = (BNDSS_DMI)__bndssdmi_Vector.get(i);
-        if ( bndssdmi.getInputName().equalsIgnoreCase(inputName) ) {
-            if ( Message.isDebugOn ) {
-                Message.printDebug ( 1, "", "Returning BNDSS_DMI[" + i +"] InputName=\""+
-                bndssdmi.getInputName() + "\"" );
-            }
-            return bndssdmi;
-        }
-    }
-    return null;
-}
-
-/**
-Return the list of BNDSS_DMI.
-@return List of open BNDSS_DMI.
-*/
-protected List getColoradoBNDSSDMIList ()
-{   return __bndssdmi_Vector;
 }
 
 /**
@@ -4530,7 +4493,7 @@ throws Exception
 	
 	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
 	// using the input type string.  If matched, then the DataStore object information below (e.g., for
-	// RiversideDB, ColoradoBNDSS).
+	// RiversideDB, ColoradoBNDSS, ReclamationHDB).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
@@ -4545,7 +4508,7 @@ throws Exception
 
 	TS ts = null;
 	if ((dataStore != null) && (dataStore instanceof ColoradoBNDSSDataStore) ) {
-        // New style TSID~input_type~dataStoreName for ColoradoBNDSS...
+        // New style TSID~dataStoreName for ColoradoBNDSS...
 	    BNDSS_DMI bndssdmi = (BNDSS_DMI)((ColoradoBNDSSDataStore)dataStore).getDMI();
         if ( bndssdmi == null ) {
             Message.printWarning ( 3, routine, "Unable to get ColoradoBNDSS connection for " +
@@ -4815,6 +4778,26 @@ throws Exception
 		}
 		*/
 	}
+	else if ((dataStore != null) && (dataStore instanceof ReclamationHDBDataStore) ) {
+        // New style TSID~dataStoreName for ReclamationHDB...
+        ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
+        if ( dmi == null ) {
+            Message.printWarning ( 3, routine, "Unable to get ReclamationHDB connection for " +
+            "data store name \"" + inputName +  "\".  Unable to read time series." );
+            ts = null;
+        }
+        else {
+            try {
+                ts = dmi.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+            }
+            catch ( Exception te ) {
+                Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                    "\" from ReclamationHDB database" );
+                Message.printWarning ( 3, routine, te );
+                ts = null;
+            }
+        }
+    }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("RiverWare") ) {
 		// New style TSID~input_type~input_name for RiverWare...
 		try {
@@ -5327,44 +5310,6 @@ Set the average period start.
 */
 protected void setAverageStart ( DateTime start )
 {   __AverageStart_DateTime = start;
-}
-
-/**
-Set an BNDSS_DMI instance in the list that is being maintained for use.
-The input name in the DMI is used to lookup the instance.  If a match is found,
-the old instance is optionally closed and the new instance is set in the same
-location.  If a match is not found, the new instance is added at the end.
-@param dmi HydroBaseDMI to add to the list.  Null will be ignored.
-@param close_old If an old DMI instance is matched, close the DMI instance if
-true.  The main issue is that if something else is using the DMI instance (e.g.,
-the TSTool GUI) it may be necessary to leave the old instance open.
-*/
-protected void setColoradoBNDSSDMI ( BNDSS_DMI dmi, boolean close_old )
-{   if ( dmi == null ) {
-        return;
-    }
-    int size = __bndssdmi_Vector.size();
-    BNDSS_DMI dmi2 = null;
-    String input_name = dmi.getInputName();
-    for ( int i = 0; i < size; i++ ) {
-        dmi2 = __bndssdmi_Vector.get(i);
-        if ( dmi2.getInputName().equalsIgnoreCase(input_name)){
-            // The input name of the current instance matches that of the instance in the list.
-            // Replace the instance in the list by the new instance...
-            if ( close_old ) {
-                try {
-                    dmi2.close();
-                }
-                catch ( Exception e ) {
-                    // Probably can ignore.
-                }
-            }
-            __bndssdmi_Vector.set ( i, dmi );
-            return;
-        }
-    }
-    // Add a new instance to the Vector...
-    __bndssdmi_Vector.add ( dmi );
 }
 
 /**

@@ -1082,7 +1082,9 @@ private void refresh ()
 			where = filter_panel.toString(ifg,delim).trim();
 			// Make sure there is a field that is being checked in a where clause...
 			if ( (where.length() > 0) && !where.startsWith(delim) ) {
-				props.add ( "Where" + (ifg + 1) + "=" + where );
+	            // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
+	            //props.add ( "Where" + (ifg + 1) + "=" + where );
+	            props.set ( "Where" + (ifg + 1), where );
 			}
 		}
 	}

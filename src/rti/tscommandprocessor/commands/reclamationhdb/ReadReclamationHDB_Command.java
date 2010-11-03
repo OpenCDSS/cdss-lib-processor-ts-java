@@ -11,7 +11,6 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
 
-import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
@@ -82,6 +81,8 @@ throws InvalidCommandParameterException
     String message;
     
     String DataStore = parameters.getValue ( "DataStore" );
+    String DataType = parameters.getValue ( "DataType" );
+    String Interval = parameters.getValue ( "Interval" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
 
@@ -94,6 +95,22 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
+    }
+    
+    if ( (DataType == null) || DataType.equals("") ) {
+        message = "The data type must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data type." ) );
+    }
+    
+    if ( (Interval == null) || Interval.equals("") ) {
+        message = "The data interval must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data interval." ) );
     }
 
 	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
@@ -128,13 +145,11 @@ throws InvalidCommandParameterException
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
     valid_Vector.add ( "DataStore" );
-    valid_Vector.add ( "DataSource" );
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "Interval" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
-    valid_Vector.add ( "Scenario" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Alias" );
@@ -229,7 +244,7 @@ Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "ReadReclamationHDB_Command.runCommand", message;
@@ -240,15 +255,18 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
+    status.clearLog(commandPhase);
     
     boolean readData = true;
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
         readData = false;
     }
     
     String DataStore = parameters.getValue("DataStore");
+    String DataType = parameters.getValue("DataType");
+    String Interval = parameters.getValue("Interval");
+    String Alias = parameters.getValue("Alias");
     
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
@@ -264,7 +282,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                    message, "Report problem to software support." ) );
 		}
@@ -275,7 +293,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that a valid InputStart string has been specified." ) );
 		}
@@ -296,7 +314,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report problem to software support." ) );
 		}
@@ -318,7 +336,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Report problem to software support." ) );
 		}
@@ -329,7 +347,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that a valid InputEnd has been specified." ) );
 		}
@@ -350,7 +368,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report problem to software support." ) );
 		}
@@ -393,7 +411,7 @@ CommandWarningException, CommandException
 		if ( dataStore == null ) {
 			message = "Could not get data store for name \"" + DataStore + "\" to query data.";
 			Message.printWarning ( 2, routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that a ReclamationHDB database connection has been opened with name \"" +
                     DataStore + "\"." ) );
@@ -423,7 +441,7 @@ CommandWarningException, CommandException
 				Message.printWarning ( 2, routine,message);
 				Message.printWarning ( 3, routine, e );
 				++warning_count;
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support - also see the log file." ) );
 			}
@@ -436,26 +454,23 @@ CommandWarningException, CommandException
 	
 		Message.printStatus ( 2, routine, "Getting the list of time series..." );
 	
-		List<TS> tslist0 = null;
-        //BNDSSSubjectType subject = null;
-        List<String> input = ((InputFilter_JPanel)filterPanel).getInput("Subject", false, null );
+		List<ReclamationHDB_SiteTimeSeriesMetadata> tsMetadataList = null;
 
-        //Message.printStatus(2, "", "Input is \"" + input.get(0) );
-        //subject = BNDSSSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));
-        //tslist0 = dmi.readDataMetaDataList( filterPanel, subject );
+		// The data type in the command is "ObjectType - DataCommonName", which is OK for the following call
+        tsMetadataList = dmi.readSiteTimeSeriesMetadataList(DataType, Interval, filterPanel );
 		// Make sure that size is set...
 		int size = 0;
-		if ( tslist0 != null ) {
-			size = tslist0.size();
+		if ( tsMetadataList != null ) {
+			size = tsMetadataList.size();
 		}
 	
-   		if ( (tslist0 == null) || (size == 0) ) {
+   		if ( (tsMetadataList == null) || (size == 0) ) {
 			Message.printStatus ( 2, routine,"No Reclamation HDB time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
             message = "No time series were read from the Reclamation HDB database.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Data may not be in database." +
                     	"  Previous messages may provide more information." ) );
@@ -465,32 +480,20 @@ CommandWarningException, CommandException
 
 			Message.printStatus ( 2, "", "Reading " + size + " time series..." );
 
-			//String tsident_string = null; // TSIdent string
+			String tsidentString = null;
 			TS ts = null; // Time series to read.
-			//BNDSS_DataMetaData meta = null;
+			ReclamationHDB_SiteTimeSeriesMetadata meta = null;
 			for ( int i = 0; i < size; i++ ) {
-				//meta = (BNDSS_DataMetaData)tslist0.get(i);
-				//tsident_string = 
-					//Subject + ":" + SubjectName
-					//+ "." + Source
-					//+ "." + DataType + "-" + SubDataType + "." + Interval
-					//+ "." + Method + "-" + SubMethod + "-" + Scenario
-					//+ "~ColoradoIPP" + input_name;
+				meta = (ReclamationHDB_SiteTimeSeriesMetadata)tsMetadataList.get(i);
+				tsidentString = meta.getTSID() + "~" + DataStore;
 	
-				//Message.printStatus ( 2, routine, "Reading time series for \"" + tsident_string + "\"..." );
-				//Message.printStatus ( 2, routine, "Reading time series for subject=\"" + meta.getSubject() +
-				//    "\" name=\"" + meta.getName() + "\"..." );
+				Message.printStatus ( 2, routine, "Reading time series for \"" + tsidentString + "\"..." );
 				try {
-				    //ts = dmi.readTimeSeries ( meta.getSubject(), meta.getID(), meta.getName(),
-			        //    meta.getSource(), meta.getDataType(), meta.getSubType(), meta.getUnits(), meta.getMethod(),
-			        //    meta.getSubMethod(), meta.getScenario(), InputStart_DateTime, InputEnd_DateTime, readData );
-				    /*
-				    It gets a bit complicated with the ID so deal with parsing later
-				    ts = ippdmi.readTimeSeries (
-						tsident_string,
-						InputStart_DateTime,
-						InputEnd_DateTime, null, read_data );
-						*/
+				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime, readData );
+				    // Set the alias to the desired string - this is impacted by the Location parameter
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, commandPhase);
+                    ts.setAlias ( alias );
 					// Add the time series to the temporary list.  It will be further processed below...
 					tslist.add ( ts );
 				}
@@ -499,7 +502,7 @@ CommandWarningException, CommandException
 					Message.printWarning ( 2, routine, message );
 					Message.printWarning ( 2, routine, e );
 					++warning_count;
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report the problem to software support - also see the log file." ) );
 				}
@@ -512,7 +515,7 @@ CommandWarningException, CommandException
         }
         Message.printStatus ( 2, routine, "Read " + size + " Reclamation HDB time series." );
 
-        if ( command_phase == CommandPhaseType.RUN ) {
+        if ( commandPhase == CommandPhaseType.RUN ) {
             if ( tslist != null ) {
                 // Further process the time series...
                 // This makes sure the period is at least as long as the output period...
@@ -522,7 +525,7 @@ CommandWarningException, CommandException
                     message = "Error post-processing Reclamation HDB time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                    status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
                     // Don't throw an exception - probably due to missing data.
                 }
@@ -534,7 +537,7 @@ CommandWarningException, CommandException
                     message = "Error adding Reclamation HDB time series after read.";
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
                     throw new CommandException ( message );
@@ -542,7 +545,7 @@ CommandWarningException, CommandException
             }
 
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             setDiscoveryTSList ( tslist );
         }
         // Warn if nothing was retrieved (can be overridden to ignore).
@@ -550,7 +553,7 @@ CommandWarningException, CommandException
             message = "No time series were read from the Reclamation HDB database.";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Data may not be in database.  See previous messages." ) );
     }
@@ -561,7 +564,7 @@ CommandWarningException, CommandException
 		Message.printWarning ( warning_level, 
 		MessageUtil.formatMessageTag(command_tag, ++warning_count),
 		routine, message );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                message, "Report the problem to software support - also see the log file." ) );
 		throw new CommandException ( message );
@@ -577,7 +580,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -604,61 +607,12 @@ public String toString ( PropList props )
         }
         b.append ( "DataStore=\"" + DataStore + "\"" );
     }
-    String Subject = props.getValue("Subject");
-    if ( (Subject != null) && (Subject.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Subject=" + Subject );
-    }
-    String SubjectName = props.getValue("SubjectName");
-    if ( (SubjectName != null) && (SubjectName.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SubjectName=\"" + SubjectName + "\"" );
-    }
-    String DataSource = props.getValue("DataSource");
-    if ( (DataSource != null) && (DataSource.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataSource=\"" + DataSource + "\"" );
-    }
     String DataType = props.getValue("DataType");
-	if ( (DataType != null) && (DataType.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "DataType=\"" + DataType + "\"" );
-	}
-    String SubDataType = props.getValue("SubDataType");
-    if ( (SubDataType != null) && (SubDataType.length() > 0) ) {
+    if ( (DataType != null) && (DataType.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "SubDataType=\"" + SubDataType + "\"" );
-    }
-    String Method = props.getValue("Method");
-    if ( (Method != null) && (Method.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Method=\"" + Method + "\"" );
-    }
-    String SubMethod = props.getValue("SubMethod");
-    if ( (SubMethod != null) && (SubMethod.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "SubMethod=\"" + SubMethod + "\"" );
-    }
-    String Scenario = props.getValue("Scenario");
-    if ( (Scenario != null) && (Scenario.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Scenario=\"" + Scenario + "\"" );
+        b.append ( "DataType=\"" + DataType + "\"" );
     }
 	String Interval = props.getValue("Interval");
 	if ( (Interval != null) && (Interval.length() > 0) ) {
@@ -666,13 +620,6 @@ public String toString ( PropList props )
 			b.append ( "," );
 		}
 		b.append ( "Interval=\"" + Interval + "\"" );
-	}
-	String InputName = props.getValue("InputName");
-	if ( (InputName != null) && (InputName.length() > 0) ) {
-		if ( b.length() > 0 ) {
-			b.append ( "," );
-		}
-		b.append ( "InputName=\"" + InputName + "\"" );
 	}
 	String delim = ";";
     for ( int i = 1; i <= __numFilterGroups; i++ ) {

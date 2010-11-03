@@ -13,6 +13,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -44,6 +45,8 @@ private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private ReadReclamationHDB_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
+private SimpleJComboBox __DataType_JComboBox = null;
+private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -106,6 +109,14 @@ private void checkInput ()
 	if ( DataStore.length() > 0 ) {
 		props.set ( "DataStore", DataStore );
 	}
+    String DataType = __DataType_JComboBox.getSelected();
+    if ( DataType.length() > 0 ) {
+        props.set ( "DataType", DataType );
+    }
+    String Interval = __Interval_JComboBox.getSelected();
+    if ( Interval.length() > 0 ) {
+        props.set ( "Interval", Interval );
+    }
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
 	    String where = getWhere ( i - 1 );
@@ -141,7 +152,11 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
+    String DataType = __DataType_JComboBox.getSelected();
+    String Interval = __Interval_JComboBox.getSelected();
 	__command.setCommandParameter ( "DataStore", DataStore );
+	__command.setCommandParameter ( "DataType", DataType );
+	__command.setCommandParameter ( "Interval", Interval );
 	String delim = ";";
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
@@ -181,7 +196,6 @@ Get the selected data store.
 private ReclamationHDBDataStore getSelectedDataStore ()
 {   String routine = getClass().getName() + ".getSelectedDataStore";
     String DataStore = __DataStore_JComboBox.getSelected();
-    Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
     ReclamationHDBDataStore dataStore = (ReclamationHDBDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName(
         DataStore, ReclamationHDBDataStore.class );
@@ -225,16 +239,19 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"Read one or more time series from Reclamation's HDB database."),
+    	"Read one or more time series from a Reclamation HDB database."),
     	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Constrain the query by specifying time series metadata to match." ), 
     	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Refer to the ReclamationHDB Data Store documentation for possible values." ), 
+		"Refer to the ReclamationHDB Data Store documentation for more information." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify the input period in format YYYY-MM-DD HH, to a precision appropriate for the data."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"If not specified, the period defaults to the input period from SetInputPeriod()."),
+		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
    	// List available data stores of the correct type
@@ -242,19 +259,46 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
+    TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
+    List<DataStore> dataStoreList = tsProcessor.getDataStoresByType(
         ReclamationHDBDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
     __DataStore_JComboBox.select ( 0 );
-    __DataStore_JComboBox.addActionListener ( this );
+    __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Data types are particular to the data store...
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DataType_JComboBox = new SimpleJComboBox ( false );
+    setDataTypeChoices();
+    __DataType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data type for time series."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Intervals are hard-coded
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data interval:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Interval_JComboBox = new SimpleJComboBox ( false );
+    setIntervalChoices();
+    __DataType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	
    	// Input filters
+    // TODO SAM 2010-11-02 Need to use SetInputFilters() so the filters can change when a
+    // data store is selected.  For now it is OK because the input filters do not provide choices.
 
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
@@ -280,7 +324,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - YYYY, override the global input start."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - override the global input start."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
@@ -289,7 +333,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - YYYY, override the global input end."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - override the global input end."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
@@ -341,6 +385,12 @@ Handle ItemListener events.
 */
 public void itemStateChanged ( ItemEvent event )
 {
+    // If a new data store has been selected, update the data type, interval, list and the input filter
+    if ( event.getSource() == __DataStore_JComboBox ) {
+        setDataTypeChoices();
+        setIntervalChoices();
+        setInputFilters();
+    }
     refresh();
 }
 
@@ -377,6 +427,8 @@ private void refresh ()
 {	String routine = "ReadReclamationHDB_JDialog.refresh";
 	__error_wait = false;
 	String DataStore = "";
+	String DataType = "";
+	String Interval = "";
 	String filter_delim = ";";
 	String InputStart = "";
 	String InputEnd = "";
@@ -387,6 +439,8 @@ private void refresh ()
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
 		DataStore = props.getValue ( "DataStore" );
+		DataType = props.getValue ( "DataType" );
+		Interval = props.getValue ( "Interval" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
@@ -402,6 +456,34 @@ private void refresh ()
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null ) ) {
+            __DataType_JComboBox.select ( DataType );
+        }
+        else {
+            if ( (DataType == null) || DataType.equals("") ) {
+                // New command...select the default...
+                __DataType_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "DataType parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
+            __Interval_JComboBox.select ( Interval );
+        }
+        else {
+            if ( (Interval == null) || Interval.equals("") ) {
+                // New command...select the default...
+                __Interval_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "Interval parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         InputFilter_JPanel filter_panel = __inputFilter_JPanel;
@@ -435,7 +517,11 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	props = new PropList ( __command.getCommandName() );
 	DataStore = __DataStore_JComboBox.getSelected().trim();
+	DataType = __DataType_JComboBox.getSelected().trim();
+	Interval = __Interval_JComboBox.getSelected().trim();
     props.add ( "DataStore=" + DataStore );
+    props.add ( "DataType=" + DataType );
+    props.add ( "Interval=" + Interval );
 	// Add the where clause(s)...
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	int nfg = filter_panel.getNumFilterGroups();
@@ -445,7 +531,9 @@ private void refresh ()
 		where = filter_panel.toString(ifg,delim).trim();
 		// Make sure there is a field that is being checked in a where clause...
 		if ( (where.length() > 0) && !where.startsWith(delim) ) {
-			props.add ( "Where" + (ifg + 1) + "=" + where );
+		    // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
+			//props.add ( "Where" + (ifg + 1) + "=" + where );
+			props.set ( "Where" + (ifg + 1), where );
 		}
 	}
 	InputStart = __InputStart_JTextField.getText().trim();
@@ -478,6 +566,51 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
+}
+
+/**
+Set the data type choices in response to a new data store being selected.
+*/
+private void setDataTypeChoices ()
+{   String routine = getClass().getName() + ".setDataTypeChoices";
+    ReclamationHDBDataStore hdbDataStore = getSelectedDataStore();
+    ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)hdbDataStore.getDMI();
+    List<String> dataTypes = new Vector();
+    try {
+        dataTypes = dmi.getObjectDataTypes ( true );
+    }
+    catch ( Exception e ) {
+        // Hopefully should not happen
+        Message.printWarning(2, routine, "Unable to get data types for data store \"" +
+            __DataStore_JComboBox.getSelected() + "\" - no database connection?");
+    }
+    // Add a wildcard option to get all data types
+    dataTypes.add(0,"*");
+    __DataType_JComboBox.setData ( dataTypes );
+    __DataType_JComboBox.select ( 0 );
+}
+
+
+/**
+Set the input filters in response to a new data store being selected.
+*/
+private void setInputFilters ()
+{
+
+}
+
+/**
+Set the data interval choices in response to a new data store being selected.
+*/
+private void setIntervalChoices ()
+{
+    __Interval_JComboBox.removeAll();
+    __Interval_JComboBox.add ( "Hour" );
+    __Interval_JComboBox.add ( "Day" );
+    __Interval_JComboBox.add ( "Month" );
+    __Interval_JComboBox.add ( "Year" );
+    // FIXME SAM 2010-10-26 Could handle WY as YEAR, but need to think about it
+    __Interval_JComboBox.select ( 0 );
 }
 
 /**

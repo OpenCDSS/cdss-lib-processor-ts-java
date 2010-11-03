@@ -98,7 +98,7 @@ public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilt
     filters.add(new InputFilter("Site - ID",
         "HDB_SITE.SITE_ID", "",
         StringUtil.TYPE_INTEGER, null, null, true));
-    
+    /* FIXME SAM 2010-10-29 Disable for now because in the database these are strings - difficult to filter
     filters.add(new InputFilter("Site - Latitude",
         "HDB_SITE.LAT", "",
         StringUtil.TYPE_DOUBLE, null, null, true));
@@ -106,6 +106,7 @@ public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilt
     filters.add(new InputFilter("Site - Longitude",
         "HDB_SITE.LONGI", "",
         StringUtil.TYPE_DOUBLE, null, null, true));
+        */
     
     filters.add(new InputFilter("Site - Name",
         "HDB_SITE.SITE_NAME", "",
@@ -147,6 +148,10 @@ public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilt
         "REF_MODEL_RUN.MODEL_RUN_NAME", "",
         StringUtil.TYPE_STRING, null, null, true));
     
+    filters.add(new InputFilter("Model - Hydrologic Indicator",
+        "REF_MODEL_RUN.HYDROLOGIC_INDICATOR", "",
+        StringUtil.TYPE_STRING, null, null, true));
+    
     filters.add(new InputFilter("Data - Physical Quantity Name",
         "HDB_DATATYPE.PHYSICAL_QUANTITY_NAME", "",
         StringUtil.TYPE_STRING, null, null, true));
@@ -160,7 +165,7 @@ public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilt
         StringUtil.TYPE_STRING, null, null, true));
     
     setToolTipText("<html>Reclamation HDB queries can be filtered based on site and time series metadata.</html>");
-    setInputFilters(filters, numFilterGroups, 15);
+    setInputFilters(filters, numFilterGroups, 25);
 }
 
 /**

@@ -179,6 +179,9 @@ throws SQLException
     {
         stmt = __hdbConnection.ourConn.createStatement();
         rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
         if ( rs == null ) {
             Message.printWarning(3, routine, "Resultset is null.");
         }
@@ -660,6 +663,9 @@ throws SQLException
         StopWatch sw = new StopWatch();
         sw.clearAndStart();
         rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
         sw.stop();
         Message.printStatus(2,routine,"Time to execute query was " + sw.getSeconds() + " seconds." );
         results = toReclamationHDBSiteTimeSeriesMetadataList ( routine, tsType, timeStep, rs );
@@ -814,6 +820,9 @@ throws Exception
             StopWatch sw = new StopWatch();
             sw.clearAndStart();
             rs = stmt.executeQuery(selectSQL.toString());
+            // Set the fetch size to a relatively big number to try to improve performance.
+            // Hopefully this improves performance over VPN and using remote databases
+            rs.setFetchSize(10000);
             sw.stop();
             Message.printStatus(2,routine,"Query of \"" + tsidentString + "\" data took " + sw.getSeconds() + " seconds.");
             sw.clearAndStart();
@@ -822,51 +831,63 @@ throws Exception
             String validation;
             String overwriteFlag;
             String derivationFlags;
+            String dateTimeString;
             DateTime dateTime = null; // Reused to set time series values
             DateTime startDateTime = new DateTime(); // Reused start for each record
             DateTime endDateTime = new DateTime(); // Reused end for each record
             int col = 1;
+            boolean transferDateTimesAsStrings = true; // Use to evaluate performance of date/time transfer
+                                                       // It seems that strings are a bit faster
             while (rs.next()) {
                 ++record;
                 col = 1;
                 // TODO SAM 2010-11-01 Not sure if using getTimestamp() vs. getDate() changes performance
-                if ( intervalBase == TimeInterval.HOUR ) {
-                    dt = rs.getTimestamp(col++);
+                if ( transferDateTimesAsStrings ) {
+                    dateTimeString = rs.getString(col++);
+                    setDateTime ( startDateTime, intervalBase, dateTimeString );
+                    dateTimeString = rs.getString(col++);
+                    setDateTime ( endDateTime, intervalBase, dateTimeString );
                 }
                 else {
-                    dt = rs.getDate(col++);
-                }
-                if ( dt == null ) {
-                    // Cannot process record
-                    continue;
-                }
-                if ( intervalBase == TimeInterval.HOUR ) {
-                    startDateTime.setDate(dt);
-                }
-                else {
-                    // Date object (not timestamp) will throw exception if processing time so set manually
-                    startDateTime.setYear(dt.getYear() + 1900);
-                    startDateTime.setMonth(dt.getMonth() + 1);
-                    startDateTime.setDay(dt.getDate());
-                }
-                if ( intervalBase == TimeInterval.HOUR ) {
-                    dt = rs.getTimestamp(col++);
-                }
-                else {
-                    dt = rs.getDate(col++);
-                }
-                if ( dt == null ) {
-                    // Cannot process record
-                    continue;
-                }
-                if ( intervalBase == TimeInterval.HOUR ) {
-                    endDateTime.setDate(dt);
-                }
-                else {
-                    // Date object (not timestamp) will throw exception if processing time so set manually
-                    endDateTime.setYear(dt.getYear() + 1900);
-                    endDateTime.setMonth(dt.getMonth() + 1);
-                    endDateTime.setDay(dt.getDate());
+                    // Use Date variants to transfer data (seems to be slow)
+                    if ( intervalBase == TimeInterval.HOUR ) {
+                        dt = rs.getTimestamp(col++);
+                    }
+                    else {
+                        dt = rs.getDate(col++);
+                    }
+                    if ( dt == null ) {
+                        // Cannot process record
+                        continue;
+                    }
+                    if ( intervalBase == TimeInterval.HOUR ) {
+                        startDateTime.setDate(dt);
+                    }
+                    else {
+                        // Date object (not timestamp) will throw exception if processing time so set manually
+                        startDateTime.setYear(dt.getYear() + 1900);
+                        startDateTime.setMonth(dt.getMonth() + 1);
+                        startDateTime.setDay(dt.getDate());
+                    }
+                    if ( intervalBase == TimeInterval.HOUR ) {
+                        dt = rs.getTimestamp(col++);
+                    }
+                    else {
+                        dt = rs.getDate(col++);
+                    }
+                    if ( dt == null ) {
+                        // Cannot process record
+                        continue;
+                    }
+                    if ( intervalBase == TimeInterval.HOUR ) {
+                        endDateTime.setDate(dt);
+                    }
+                    else {
+                        // Date object (not timestamp) will throw exception if processing time so set manually
+                        endDateTime.setYear(dt.getYear() + 1900);
+                        endDateTime.setMonth(dt.getMonth() + 1);
+                        endDateTime.setDay(dt.getDate());
+                    }
                 }
                 value = rs.getDouble(col++);
                 if ( isReal ) {
@@ -895,6 +916,37 @@ throws Exception
         }
     }
     return ts;
+}
+
+/**
+Set a DateTime's contents given a string.  This does not do a full parse constructor because a single
+DateTime instance is reused.
+@param dateTime the DateTime instance to set values in (should be at an appropriate precision)
+@param intervalBase the base data interval for the date/time being processed - will limit the transfer from
+the string
+@param dateTimeString a string in the format YYYY-MM-DD hh:mm:ss.  The intervalBase is used to determine when
+to stop transferring values.
+*/
+private void setDateTime ( DateTime dateTime, int intervalBase, String dateTimeString )
+{
+    // Transfer the year
+    dateTime.setYear ( Integer.parseInt(dateTimeString.substring(0,4)) );
+    if ( intervalBase == TimeInterval.YEAR ) {
+        return;
+    }
+    dateTime.setMonth ( Integer.parseInt(dateTimeString.substring(5,7)) );
+    if ( intervalBase == TimeInterval.MONTH ) {
+        return;
+    }
+    dateTime.setDay ( Integer.parseInt(dateTimeString.substring(8,10)) );
+    if ( intervalBase == TimeInterval.DAY ) {
+        return;
+    }
+    dateTime.setHour ( Integer.parseInt(dateTimeString.substring(11,13)) );
+    if ( intervalBase == TimeInterval.HOUR ) {
+        return;
+    }
+    // TODO don't handle instantaneous
 }
 
 /**

@@ -1011,9 +1011,6 @@ public Object getPropContents ( String prop ) throws Exception
     else if ( prop.equalsIgnoreCase("AverageStart") ) {
         return getPropContents_AverageStart();
     }
-    else if ( prop.equalsIgnoreCase("ColoradoBNDSSDMIList") ) {
-        return getPropContents_ColoradoBNDSSDMIList();
-    }
     else if ( prop.equalsIgnoreCase("CommandFileName") ) {
         return getCommandFileName();
     }
@@ -1141,15 +1138,6 @@ Handle the AverageStart property request.
 private DateTime getPropContents_AverageStart()
 {
     return __tsengine.getAverageStart();
-}
-
-/**
-Handle the ColoradoBNDSSDMIList property request.
-@return List of open IppDMI instances.
-*/
-private List<BNDSS_DMI> getPropContents_ColoradoBNDSSDMIList()
-{
-    return __tsengine.getColoradoBNDSSDMIList();
 }
 
 /**
@@ -2106,9 +2094,6 @@ throws Exception
 	else if ( request.equalsIgnoreCase("RunCommands") ) {
 		return processRequest_RunCommands ( request, request_params );
 	}
-    else if ( request.equalsIgnoreCase("SetColoradoBNDSSDMI") ) {
-        return processRequest_SetColoradoBNDSSDMI ( request, request_params );
-    }
     else if ( request.equalsIgnoreCase("DataStore") ) {
         return processRequest_SetDataStore ( request, request_params );
     }
@@ -2969,28 +2954,6 @@ throws Exception
 	runCommands ( commands, props );
 	// No results need to be returned.
 	return bean;
-}
-
-/**
-Process the SetHydroBaseDMI request.
-*/
-private CommandProcessorRequestResultsBean processRequest_SetColoradoBNDSSDMI (
-        String request, PropList request_params )
-throws Exception
-{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
-    // Get the necessary parameters...
-    Object o = request_params.getContents ( "ColoradoBNDSSDMI" );
-    if ( o == null ) {
-            String warning = "Request SetColoradoBNDSSDMI() does not provide a ColoradoBNDSSDMI parameter.";
-            bean.setWarningText ( warning );
-            bean.setWarningRecommendationText ( "This is likely a software code error.");
-            throw new RequestParameterNotFoundException ( warning );
-    }
-    BNDSS_DMI dmi = (BNDSS_DMI)o;
-    // Add an open IppDMI instance, closing a previous connection of the same name if it exists.
-    __tsengine.setColoradoBNDSSDMI( dmi, true );
-    // No results need to be returned.
-    return bean;
 }
 
 /**

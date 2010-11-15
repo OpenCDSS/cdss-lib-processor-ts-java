@@ -757,6 +757,8 @@ throws Exception
         intervalBase ) );
     ts.setDate2Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMax(),
         intervalBase ) );
+    // Set the missing value to 
+    ts.setMissing(Double.NaN);
     
     // Now read the data...
     if ( readData ) {

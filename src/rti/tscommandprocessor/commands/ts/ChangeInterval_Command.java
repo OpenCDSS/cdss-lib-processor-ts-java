@@ -600,7 +600,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String Tolerance = parameters.getValue( "Tolerance" );
 	Double tolerance = null;
 	if ( StringUtil.isDouble(Tolerance) ) {
-	    tolerance = new Double(tolerance);
+	    tolerance = Double.parseDouble(Tolerance);
 	}
 	String HandleEndpointsHow = parameters.getValue( "HandleEndpointsHow" );
 	TSUtil_ChangeInterval_HandleEndpointsHowType handleEndpointsHow = null;

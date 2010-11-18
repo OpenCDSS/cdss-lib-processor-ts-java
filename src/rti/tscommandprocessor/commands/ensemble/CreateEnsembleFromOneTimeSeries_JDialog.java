@@ -255,7 +255,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     __EnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required identifier for ensemble."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - identifier for ensemble."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ), 
@@ -264,7 +264,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
     __EnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional name for output."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - name for output."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Trace length:" ), 
@@ -274,7 +274,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 	JGUIUtil.addComponent(main_JPanel, __TraceLength_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-            "Default=1Year."), 
+            "Optional (default=1Year)."), 
             3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Reference date:" ), 
@@ -284,11 +284,10 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 	JGUIUtil.addComponent(main_JPanel, __ReferenceDate_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Default=Jan 1 of first year."), 
+        "Optional (default=Jan 1 of first year)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Shift data how?:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Shift data how?:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__ShiftDataHow_JComboBox = new SimpleJComboBox ( false );
 	__ShiftDataHow_JComboBox.addItem ( __command._NoShift );
@@ -296,7 +295,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
 	__ShiftDataHow_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ShiftDataHow_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default=" + __command._NoShift), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=" + __command._NoShift + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

@@ -765,13 +765,14 @@ private void initialize ( JFrame parent )
 	mainNotes_JPanel.setLayout( new GridBagLayout() );
 	int yNotes = 0;
     if ( __commandUI == null ) {
-        JGUIUtil.addComponent( mainNotes_JPanel, new JLabel ( "This command finds the best fit to fill the dependent time"
+        JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
+            "This command determines the best fit to fill the dependent time"
             + " series with data from the independent time series, and performs the filling."),
             0, yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     else {
         JGUIUtil.addComponent( mainNotes_JPanel, new JLabel (
-            "This tool finds the best fit to fill the dependent time"
+            "This tool determines the best fit to fill the dependent time"
             + " series with data from the independent time series, and generates a command to perform the filling."),
             0, yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
@@ -780,7 +781,7 @@ private void initialize ( JFrame parent )
         "The dependent and independent time series can be selected using the TS list parameters."),
         0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
-        JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "The working directory is: " + __working_dir ),
+        JGUIUtil.addComponent(mainNotes_JPanel, new JLabel ( "The working directory for files is: " + __working_dir ),
         0, ++yNotes, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
     JGUIUtil.addComponent( main_JPanel, mainNotes_JPanel,
@@ -987,7 +988,7 @@ private void initialize ( JFrame parent )
     JGUIUtil.addComponent(mainAnalysis_JPanel, __FillFlag_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(mainAnalysis_JPanel,
-        new JLabel("Optional - 1-character (or \"Auto\") to indicate fill for value (default=no flag)."), 
+        new JLabel("Optional - string (or \"Auto\") to indicate filled values (default=no flag)."), 
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// File to save results.

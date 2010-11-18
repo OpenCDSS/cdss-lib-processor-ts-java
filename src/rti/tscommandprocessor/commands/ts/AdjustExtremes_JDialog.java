@@ -284,6 +284,8 @@ private void initialize ( JFrame parent, Command command )
 	__AdjustMethod_JComboBox.select ( __command._Average );
         JGUIUtil.addComponent(main_JPanel, __AdjustMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Extreme to adjust:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -293,6 +295,8 @@ private void initialize ( JFrame parent, Command command )
 	__ExtremeToAdjust_JComboBox.select ( __command._AdjustMinimum );
         JGUIUtil.addComponent(main_JPanel, __ExtremeToAdjust_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Extreme value:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -309,7 +313,7 @@ private void initialize ( JFrame parent, Command command )
 	__MaxIntervals_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MaxIntervals_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default = 0, no limit."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=0, no limit)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Analysis start:"), 
@@ -318,16 +322,16 @@ private void initialize ( JFrame parent, Command command )
     __AnalysisStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full period)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis End:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:"), 
         0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __AnalysisEnd_JTextField = new JTextField (20);
     __AnalysisEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
         1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is all."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=full period)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

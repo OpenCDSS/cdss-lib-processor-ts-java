@@ -180,11 +180,13 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String TSList = parameters.getValue ( "TSList" );
         String TSID = parameters.getValue ( "TSID" );
         if ( TSList == null ) {
-            if ( (TSID != null) && TSID.indexOf("*") >= 0 ) {
-                parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
-            }
-            else {
-                parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+            if ( TSID != null ) {
+                if ( TSID.indexOf("*") >= 0 ) {
+                    parameters.set ( "TSList", TSListType.ALL_MATCHING_TSID.toString() );
+                }
+                else {
+                    parameters.set ( "TSList", TSListType.LAST_MATCHING_TSID.toString() );
+                }
             }
         }
     }

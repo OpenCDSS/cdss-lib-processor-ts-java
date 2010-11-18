@@ -230,6 +230,10 @@ private void initialize ( JFrame parent, Command command )
         "ABC*.*.Type.Month - matches locations starting with ABC, with data type Type and interval Month."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel (
+         "<html><b>Use TSList=" + TSListType.TSPOSITION +
+         " with caution because positions may change when commands are changed.</b></html>"),
+         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel (
          "Time series that are in an ensemble will be removed from the ensemble."),
          0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -258,7 +262,7 @@ private void initialize ( JFrame parent, Command command )
      __TSPosition_JTextField.addKeyListener ( this );
          JGUIUtil.addComponent(main_JPanel, __TSPosition_JTextField,
          1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-         JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example, 1,2,7-8 (positions are 1+)." ),
+         JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - use with TSList=TSPosition (e.g., 1,2,7-8)." ),
          2, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
          
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Free ensemble if empty?" ), 
@@ -271,7 +275,7 @@ private void initialize ( JFrame parent, Command command )
      __FreeEnsembleIfEmpty_JComboBox.addItemListener ( this );
      JGUIUtil.addComponent(main_JPanel, __FreeEnsembleIfEmpty_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-     JGUIUtil.addComponent(main_JPanel, new JLabel( "Default (blank) = True."), 
+     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - for ensembles (default=" + __command._True + ")."), 
              3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

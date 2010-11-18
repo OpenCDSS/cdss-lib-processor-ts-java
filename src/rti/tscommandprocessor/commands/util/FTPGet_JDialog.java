@@ -265,6 +265,8 @@ private void initialize ( JFrame parent, Command command )
     __RemoteSite_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RemoteSite_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Login:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -272,7 +274,7 @@ private void initialize ( JFrame parent, Command command )
     __Login_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Login_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Case-sensitive (default=anonymous)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - case-sensitive (default=anonymous)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Password:" ), 
@@ -281,7 +283,7 @@ private void initialize ( JFrame parent, Command command )
     __Password_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Password_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Case-sensitive (default=anonymous)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional, case-sensitive (default=anonymous)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Remote folder:" ), 
@@ -290,7 +292,7 @@ private void initialize ( JFrame parent, Command command )
     __RemoteFolder_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RemoteFolder_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is / on FTP server." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=/ root on FTP server)." ), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File pattern:" ), 
@@ -299,7 +301,7 @@ private void initialize ( JFrame parent, Command command )
     __FilePattern_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __FilePattern_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is *."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=*)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
             
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Destination folder:" ), 
@@ -322,7 +324,7 @@ private void initialize ( JFrame parent, Command command )
     __TransferMode_JComboBox.addActionListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TransferMode_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is " + __command._Binary ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=" + __command._Binary + ")."), 
             3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Retry count:" ), 
@@ -331,7 +333,7 @@ private void initialize ( JFrame parent, Command command )
     __RetryCount_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RetryCount_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is 3."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=3)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Retry wait:" ), 
@@ -340,7 +342,7 @@ private void initialize ( JFrame parent, Command command )
     __RetryWait_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RetryWait_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is 3 seconds."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - seconds (default=3)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

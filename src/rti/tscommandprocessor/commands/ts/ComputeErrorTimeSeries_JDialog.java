@@ -345,6 +345,8 @@ private void initialize ( JFrame parent, Command command )
 	__ErrorMeasure_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ErrorMeasure_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Alias to assign:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -352,7 +354,7 @@ private void initialize ( JFrame parent, Command command )
     __Alias_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is no alias is assigned."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default is no alias assigned)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

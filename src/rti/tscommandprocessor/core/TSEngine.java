@@ -781,6 +781,8 @@ public final int OUTPUT_POINT_GRAPH = 26;	// Point graph
 public final int OUTPUT_PredictedValue_GRAPH = 27;	// Predicted Value graph
 public final int OUTPUT_PredictedValueResidual_GRAPH = 28;  // Predicted Value Residual graph
 public final int OUTPUT_SUMMARY_HTML = 29; // Summary as HTML, annotated with fill information
+public final int OUTPUT_AREA_GRAPH = 30; // Area graph
+public final int OUTPUT_AREA_STACKED_GRAPH = 31; // Stacked area graph
 
 /**
 Filter indicating that output should be data (default).
@@ -3677,6 +3679,12 @@ throws IOException
 		else if ( prop_value.equalsIgnoreCase("-oannual_traces_graph")){
 			output_format = OUTPUT_ANNUAL_TRACES_GRAPH;
 		}
+        else if ( prop_value.equalsIgnoreCase("-oarea_graph")){
+            output_format = OUTPUT_AREA_GRAPH;
+        }
+        else if ( prop_value.equalsIgnoreCase("-oarea_stacked_graph")){
+            output_format = OUTPUT_AREA_STACKED_GRAPH;
+        }
 		else if ( prop_value.equalsIgnoreCase("-obar_graph")){
 			output_format = OUTPUT_BAR_GRAPH;
 			// Use parameters for the position of the bars.
@@ -4180,7 +4188,9 @@ throws IOException
 			Message.printWarning ( 3, routine, e );
 		}
 	}
-	else if (	(output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ||
+	else if ( (output_format == OUTPUT_ANNUAL_TRACES_GRAPH) ||
+	        (output_format == OUTPUT_AREA_GRAPH) ||
+	        (output_format == OUTPUT_AREA_STACKED_GRAPH) ||
 			(output_format == OUTPUT_BAR_GRAPH) ||
 			(output_format == OUTPUT_DOUBLE_MASS_GRAPH) ||
 			(output_format == OUTPUT_DURATION_GRAPH) ||
@@ -4193,7 +4203,7 @@ throws IOException
 			(output_format == OUTPUT_PredictedValueResidual_GRAPH)||
 			(output_format == OUTPUT_XY_SCATTER_GRAPH) ) {
 		// A graph type.  Temporary copy of data...
-		List tslist = tslist_output;
+		List<TS> tslist = tslist_output;
 		try {
     		if ( IOUtil.isBatch() ) {
     			Message.printWarning ( 1, routine, "Can only graph from GUI" );
@@ -4262,6 +4272,12 @@ throws IOException
     			graphprops.set ( "XAxis.Format", "MM-DD" );
     */
     		}
+            else if ( output_format == OUTPUT_AREA_GRAPH ) {
+                graphprops.set("GraphType=Area");
+            }
+            else if ( output_format == OUTPUT_AREA_STACKED_GRAPH ) {
+                graphprops.set("GraphType=AreaStacked");
+            }
     		else if ( output_format == OUTPUT_BAR_GRAPH ) {
     			graphprops.set("GraphType=Bar");
     			graphprops.set("BarPosition=" + parameters );

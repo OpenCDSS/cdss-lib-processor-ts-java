@@ -4904,8 +4904,8 @@ throws Exception
 		}
 	}
 	else {
-	    String message = "Unknown input type or data store \"" + inputType + "\" for time series \"" +
-	    tsidentString + "\" - don't know how to read time series.";
+	    String message = "Unknown input type or data store \"" + inputType + "\" for time series " +
+	    "- don't know how to read time series using identifier \"" + tsidentString + "\".";
 	    Message.printWarning( 3, routine, message );
 	    throw new TimeSeriesNotFoundException ( message );
 	}

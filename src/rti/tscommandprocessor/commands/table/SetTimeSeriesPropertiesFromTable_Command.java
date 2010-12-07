@@ -299,13 +299,13 @@ CommandWarningException, CommandException
                     }
                     TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
                     if ( rec == null ) {
-                        message = "Cannot find table cell in column \"" + TableTSIDColumn +
+                        message = "Cannot find table \"" + TableID + "\" cell in column \"" + TableTSIDColumn +
                             "\" matching TSID formatted as \"" + tsid + "\" - skipping time series \"" +
                             ts.getIdentifierString() + "\".";
                         Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),
                             routine, message );
                         status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE, message,
-                            "Verify that the column TSID matches one or more time series." ) );
+                            "Verify that table \"" + TableID + "\" column TSID matches one or more time series." ) );
                         // Go to next time series.
                         continue;
                     }
@@ -314,7 +314,7 @@ CommandWarningException, CommandException
                     // Allow the value to be any number
                     if ( tableObject == null ) {
                         // Blank cell values are allowed - just don't set the property
-                        message = "Table value in column \"" + tableInputColumnNames[icolumn] +
+                        message = "Table \"" + TableID + "\" value in column \"" + tableInputColumnNames[icolumn] +
                         "\" matching TSID \"" + tsid + "\" is null - skipping time series \"" +
                         ts.getIdentifierString() + "\".";
                         Message.printWarning(warning_level, MessageUtil.formatMessageTag( command_tag, ++warning_count),

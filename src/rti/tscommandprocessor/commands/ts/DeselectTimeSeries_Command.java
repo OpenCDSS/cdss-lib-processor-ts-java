@@ -230,6 +230,9 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
 
 	String TSList = parameters.getValue ( "TSList" );
+	if ( TSList == null ) {
+	    TSList = "" + TSListType.ALL_TS; // Default
+	}
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String TSPosition = parameters.getValue ( "TSPosition" );

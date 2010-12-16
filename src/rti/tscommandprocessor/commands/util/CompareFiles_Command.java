@@ -65,6 +65,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
+	String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
 	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
 	String IfDifferent = parameters.getValue ( "IfDifferent" );
 	String IfSame = parameters.getValue ( "IfSame" );
@@ -92,6 +93,15 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify the second file name."));
 	}
+	if ( (IgnoreWhitespace != null) && !IgnoreWhitespace.equals("") && !IgnoreWhitespace.equalsIgnoreCase(_False) &&
+			!IgnoreWhitespace.equalsIgnoreCase(_True)  ) {
+				message = "The IgnoreWhitespace parameter \"" + IgnoreWhitespace + "\" is not a valid value.";
+				warning += "\n" + message;
+				status.addToLog(CommandPhaseType.INITIALIZATION,
+						new CommandLogRecord(CommandStatusType.FAILURE,
+							message, "Specify the parameter as " + _False + " (default) or " +
+							_True ));
+		}
     if ( (AllowedDiff != null) && !AllowedDiff.equals("") && !StringUtil.isInteger(AllowedDiff) ) {
             message = "The number of allowed differences \"" + AllowedDiff + "\" is invalid.";
             warning += "\n" + message;
@@ -118,10 +128,11 @@ throws InvalidCommandParameterException
 					_Warn + ", or " + _Fail + "."));
 	}
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile1" );
 	valid_Vector.add ( "InputFile2" );
 	valid_Vector.add ( "CommentLineChar" );
+	valid_Vector.add ( "IgnoreWhitespace" );
 	valid_Vector.add ( "AllowedDiff" );
 	valid_Vector.add ( "IfDifferent" );
 	valid_Vector.add ( "IfSame" );
@@ -203,14 +214,17 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Read a line from a file.  Skip over comments.
+Read a line from a file.  Skip over comments until the next non-comment line is found.
 @param in BufferedReader for open file to read.
 @param CommentLineChar character at start of line that indicates comment line.
+@param ignoreWhitespace if true, trim the lines.
 @return the next line from the file, or null if at the end.
 */
-private String readLine ( BufferedReader in, String CommentLineChar )
+private String readLine ( BufferedReader in, String CommentLineChar, boolean ignoreWhitespace )
 {	String iline;
+	int commentCount = 0;
 	while ( true ) {
+		// Read until a non-comment line is found
 		try {
 		    iline = in.readLine ();
 		}
@@ -222,10 +236,19 @@ private String readLine ( BufferedReader in, String CommentLineChar )
 		}
 		// check for comments
 		else if ( (iline.length() > 0) && (CommentLineChar.indexOf(iline.charAt(0)) >= 0) ) {
+			++commentCount;
 			continue;
 		}
 		else {
-		    return iline;
+			if ( Message.isDebugOn ) {
+				Message.printDebug (1, "", "Skipped " + commentCount + " comments before getting to data line" );
+			}
+			if ( ignoreWhitespace ) {
+				return iline.trim();
+			}
+			else {
+				return iline;
+			}
 		}
 	}
 }
@@ -243,6 +266,7 @@ CommandWarningException, CommandException
 	int warning_level = 2;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
+	int dl = 1;
 	
 	PropList parameters = getCommandParameters();
 	
@@ -253,6 +277,11 @@ CommandWarningException, CommandException
 	String InputFile1 = parameters.getValue ( "InputFile1" );
 	String InputFile2 = parameters.getValue ( "InputFile2" );
 	String CommentLineChar = parameters.getValue ( "CommentLineChar" );
+	String IgnoreWhitespace = parameters.getValue ( "IgnoreWhitespace" );
+	boolean IgnoreWhitespace_boolean = false;
+	if ( (IgnoreWhitespace != null) && IgnoreWhitespace.equalsIgnoreCase(_True)) {
+		IgnoreWhitespace_boolean = true;
+	}
 	String AllowedDiff = parameters.getValue ( "AllowedDiff" );
 	int AllowedDiff_int = 0;
 	if ( StringUtil.isInteger(AllowedDiff) ) {
@@ -323,8 +352,10 @@ CommandWarningException, CommandException
 		// Loop through the files, comparing non-comment lines...
 		String iline1, iline2;
 		while ( true ) {
-			iline1 = readLine ( in1, CommentLineChar );
-			iline2 = readLine ( in2, CommentLineChar );
+			// The following will discard comments and only return non-comment lines
+			// Therefore comparisons are made on chunks of non-comment lines.
+			iline1 = readLine ( in1, CommentLineChar, IgnoreWhitespace_boolean );
+			iline2 = readLine ( in2, CommentLineChar, IgnoreWhitespace_boolean );
 			if ( (iline1 == null) && (iline2 == null) ) {
 				// both are done at the same time...
 				break;
@@ -343,6 +374,10 @@ CommandWarningException, CommandException
 			++lineCountCompared;
 			if ( !iline1.equals(iline2) ) {
 				++diff_count;
+			}
+			if ( Message.isDebugOn ) {
+				Message.printDebug (dl,routine,"Compared:\n\"" + iline1 + "\"\n\"" + iline2 + "\"\nDiffCount=" +
+						diff_count );
 			}
 		}
 		in1.close();
@@ -402,6 +437,7 @@ public String toString ( PropList parameters )
 	String InputFile1 = parameters.getValue("InputFile1");
 	String InputFile2 = parameters.getValue("InputFile2");
 	String CommentLineChar = parameters.getValue("CommentLineChar");
+	String IgnoreWhitespace = parameters.getValue("IgnoreWhitespace");
 	String AllowedDiff = parameters.getValue("AllowedDiff");
 	String IfDifferent = parameters.getValue("IfDifferent");
 	String IfSame = parameters.getValue("IfSame");
@@ -420,6 +456,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "CommentLineChar=\"" + CommentLineChar + "\"" );
+    }
+    if ( (IgnoreWhitespace != null) && (IgnoreWhitespace.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IgnoreWhitespace=" + IgnoreWhitespace );
     }
     if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
         if ( b.length() > 0 ) {

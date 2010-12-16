@@ -115,6 +115,7 @@ import rti.tscommandprocessor.commands.table.TableMath_Command;
 import rti.tscommandprocessor.commands.table.TableTimeSeriesMath_Command;
 import rti.tscommandprocessor.commands.table.TimeSeriesToTable_Command;
 import rti.tscommandprocessor.commands.table.WriteTableToDelimitedFile_Command;
+import rti.tscommandprocessor.commands.table.WriteTableToHTML_Command;
 
 // Template commands
 
@@ -817,6 +818,9 @@ throws UnknownCommandException
 	}
     else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTableToDelimitedFile") ) {
         return new WriteTableToDelimitedFile_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTableToHTML") ) {
+        return new WriteTableToHTML_Command ();
     }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"WriteTimeSeriesProperty") ) {
         return new WriteTimeSeriesProperty_Command ();

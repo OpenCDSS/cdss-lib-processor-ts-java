@@ -26,6 +26,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Table.DataTable;
+import RTi.Util.Table.DataTableHtmlWriter;
 
 /**
 This class initializes, checks, and runs the WriteTableToHTML() command.
@@ -75,7 +76,7 @@ throws InvalidCommandParameterException
     }
 	
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-		message = "The output file: \"" + OutputFile + "\" must be specified.";
+		message = "The output file must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,
@@ -121,7 +122,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "TableID" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -148,9 +149,9 @@ public boolean editCommand ( JFrame parent )
 /**
 Return the list of files that were created by this command.
 */
-public List getGeneratedFileList ()
+public List<File> getGeneratedFileList ()
 {
-	List list = new Vector();
+	List<File> list = new Vector();
 	if ( getOutputFile() != null ) {
 		list.add ( getOutputFile() );
 	}
@@ -196,11 +197,9 @@ CommandWarningException, CommandException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.RUN);
 	
-	String OutputFile_full = null;
-
     // Get the table information  
     String OutputFile = parameters.getValue ( "OutputFile" );
-    OutputFile_full = OutputFile;
+    String OutputFile_full = OutputFile;
     String TableID = parameters.getValue ( "TableID" );
     PropList request_params = new PropList ( "" );
     request_params.set ( "TableID", TableID );
@@ -335,7 +334,8 @@ throws IOException
 	
 	try {
 		Message.printStatus ( 2, routine, "Writing summary file \"" + OutputFile + "\"" );
-		table.writeHtmlFile(OutputFile, true, OutputComments_Vector);
+		DataTableHtmlWriter tableWriter = new DataTableHtmlWriter(table);
+		tableWriter.writeHtmlFile(OutputFile, true, OutputComments_Vector, null, null, null );
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error writing summary to file \"" + OutputFile + "\" (" + e + ")";

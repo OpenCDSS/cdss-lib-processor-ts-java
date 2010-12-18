@@ -45,14 +45,14 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 	
-private SimpleJButton __browse_JButton = null,// Button to browse for file
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null,	// Ok Button
+private SimpleJButton __browse_JButton = null,
+			__cancel_JButton = null,
+			__ok_JButton = null,
 			__path_JButton = null;	// Convert between relative and absolute paths.
 private WriteTableToHTML_Command __command = null;// Command to edit
-private JTextArea __command_JTextArea=null;// Command display
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TableID_JComboBox = null;
-private JTextField __OutputFile_JTextField = null;// Field for time series identifier
+private JTextField __OutputFile_JTextField = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -152,7 +152,7 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-    if ( TableID.length() > 0 ) {
+    if ( (TableID != null) && TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
     }
 	try {
@@ -311,7 +311,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -358,7 +358,9 @@ private void refresh ()
     TableID = __TableID_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
-    parameters.add ( "TableID=" + TableID );
+	if ( TableID != null ) {
+	    parameters.add ( "TableID=" + TableID );
+	}
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

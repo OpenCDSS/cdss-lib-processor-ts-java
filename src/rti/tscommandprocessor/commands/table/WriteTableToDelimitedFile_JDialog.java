@@ -152,7 +152,7 @@ private void checkInput ()
 	if ( OutputFile.length() > 0 ) {
 		parameters.set ( "OutputFile", OutputFile );
 	}
-    if ( TableID.length() > 0 ) {
+    if ( (TableID != null) && TableID.length() > 0 ) {
         parameters.set ( "TableID", TableID );
     }
 	try {
@@ -358,7 +358,9 @@ private void refresh ()
     TableID = __TableID_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "OutputFile=" + OutputFile );
-    parameters.add ( "TableID=" + TableID );
+	if ( TableID != null ) {
+	    parameters.add ( "TableID=" + TableID );
+	}
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {

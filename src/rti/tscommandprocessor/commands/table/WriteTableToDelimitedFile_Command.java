@@ -75,7 +75,7 @@ throws InvalidCommandParameterException
     }
 	
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-		message = "The output file: \"" + OutputFile + "\" must be specified.";
+		message = "The output file must be specified.";
 		warning += "\n" + message;
 		status.addToLog ( CommandPhaseType.INITIALIZATION,
 			new CommandLogRecord(CommandStatusType.FAILURE,

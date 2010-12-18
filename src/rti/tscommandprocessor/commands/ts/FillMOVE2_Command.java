@@ -747,11 +747,14 @@ CommandWarningException, CommandException
 	try {
 	    TSRegression regress_results = TSUtil.fillRegress ( ts_to_fill, ts_independent,
             null, // No previously computed TSRegression object
-            null, // Confidence level
             RegressionType.MOVE2, numberOfEquations,
             null, //Double intercept,
             null, //int [] analysisMonths,
             transformation,
+            null, // No minimum data count
+            null, // No minimum R
+            null, // value for <= 0 when log transform is used
+            null, // Confidence interval
             dependentAnalysisStart, dependentAnalysisEnd,
             independentAnalysisStart, independentAnalysisEnd,
             FillStart_DateTime, FillEnd_DateTime,

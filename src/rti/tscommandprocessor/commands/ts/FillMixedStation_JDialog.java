@@ -105,7 +105,7 @@ private JTextField __MinimumDataCount_JTextField;
 private JTextField __MinimumR_JTextField;
 
 private JTextField __Intercept_JTextField = null;
-private JTextField __ConfidenceLevel_JTextField = null;
+private JTextField __ConfidenceInterval_JTextField = null;
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
 private JTextField __FillStart_JTextField = null;
@@ -459,7 +459,7 @@ private void checkInput ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String Intercept = __Intercept_JTextField.getText().trim();
-	String ConfidenceLevel = __ConfidenceLevel_JTextField.getText().trim();
+	String ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
@@ -525,8 +525,8 @@ private void checkInput ()
 	if ( Intercept != null && Intercept.length() > 0 ) {
 		props.set( "Intercept", Intercept );
 	}
-    if ( ConfidenceLevel != null && ConfidenceLevel.length() > 0 ) {
-        props.set( "ConfidenceLevel", ConfidenceLevel );
+    if ( ConfidenceInterval != null && ConfidenceInterval.length() > 0 ) {
+        props.set( "ConfidenceInterval", ConfidenceInterval );
     }
     if ( FillFlag.length() > 0 ) {
         props.set ( "FillFlag", FillFlag );
@@ -572,7 +572,7 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String Intercept = __Intercept_JTextField.getText().trim();
-	String ConfidenceLevel = __ConfidenceLevel_JTextField.getText().trim();
+	String ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
 	String OutputFile = __OutputFile_JTextField.getText().trim();
 
@@ -591,7 +591,7 @@ private void commitEdits ()
 	__command.setCommandParameter ("FillStart", FillStart);
 	__command.setCommandParameter ("FillEnd", FillEnd);
 	__command.setCommandParameter ("Intercept", Intercept);
-	__command.setCommandParameter ("ConfidenceLevel", ConfidenceLevel);
+	__command.setCommandParameter ("ConfidenceInterval", ConfidenceInterval);
 	__command.setCommandParameter ("FillFlag", FillFlag );
 	__command.setCommandParameter ("OutputFile", OutputFile);
 }
@@ -920,15 +920,15 @@ private void initialize ( JFrame parent )
 		"Optional - 0.0 is allowed with Transformation=None (default=no fixed intercept)."),
 		3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
-	// Confidence level
-    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Confidence level:" ),
+	// Confidence interval
+    JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel ( "Confidence interval:" ),
         0, ++yAnalysis, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ConfidenceLevel_JTextField = new JTextField ( 10 );
-    __ConfidenceLevel_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(mainAnalysis_JPanel, __ConfidenceLevel_JTextField,
+    __ConfidenceInterval_JTextField = new JTextField ( 10 );
+    __ConfidenceInterval_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(mainAnalysis_JPanel, __ConfidenceInterval_JTextField,
         1, yAnalysis, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(mainAnalysis_JPanel, new JLabel(
-        "Optional - confidence level (%) for line slope (default=do not consider level)."),
+        "Optional - confidence interval (%) for line slope (default=do not check interval)."),
         3, yAnalysis, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Analysis period
@@ -1210,7 +1210,7 @@ private void refresh()
 	String FillStart = "";
 	String FillEnd = "";
 	String Intercept = "";
-	String ConfidenceLevel = "";
+	String ConfidenceInterval = "";
 	String FillFlag = "";
 	String OutputFile = "";
 
@@ -1237,7 +1237,7 @@ private void refresh()
 		FillStart = props.getValue ( "FillStart" );
 		FillEnd = props.getValue ( "FillEnd" );
 		Intercept = props.getValue ( "Intercept" );
-		ConfidenceLevel = props.getValue ( "ConfidenceLevel" );
+		ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 		FillFlag = props.getValue( "FillFlag" );
 		OutputFile = props.getValue ( "OutputFile" );
 
@@ -1452,11 +1452,11 @@ private void refresh()
 			__Intercept_JTextField.setText ( Intercept );
 		}
 		
-        if ( ConfidenceLevel == null ) {
-            __ConfidenceLevel_JTextField.setText ( "" );
+        if ( ConfidenceInterval == null ) {
+            __ConfidenceInterval_JTextField.setText ( "" );
         }
         else {
-            __ConfidenceLevel_JTextField.setText ( ConfidenceLevel );
+            __ConfidenceInterval_JTextField.setText ( ConfidenceInterval );
         }
 		
 	    if ( FillFlag != null ) {
@@ -1488,7 +1488,7 @@ private void refresh()
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	Intercept = __Intercept_JTextField.getText().trim();
-	ConfidenceLevel = __ConfidenceLevel_JTextField.getText().trim();
+	ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
     FillFlag = __FillFlag_JTextField.getText().trim();
 	OutputFile = __OutputFile_JTextField.getText().trim();
 
@@ -1509,7 +1509,7 @@ private void refresh()
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "Intercept=" + Intercept );
-	props.add ( "ConfidenceLevel=" + ConfidenceLevel );
+	props.add ( "ConfidenceInterval=" + ConfidenceInterval );
 	props.add ( "FillFlag=" + FillFlag );
 	props.add ( "OutputFile=" + OutputFile );
 

@@ -35,7 +35,6 @@ public class MixedStationAnalysis
     
 /**
 Value used to indicate no best fit statistic.  This works because all errors will be >= 0 and
-
 */
 private double __MISSING = -999.0;
 
@@ -82,9 +81,9 @@ Analysis end date/time.
 private DateTime __analysisEnd = null;
 
 /**
-Confidence level >0 and <100 %, used to discard estimated values.  If null, all estimated values are used.
+Confidence interval >0 and <100 %, used to discard estimated values.  If null, all estimated values are used.
 */
-private Double __confidenceLevel = null;
+private Double __confidenceInterval = null;
 
 /**
 Best fit indicator.
@@ -110,6 +109,11 @@ private DateTime __fillEnd = null;
 Intercept when using OLS regression (null or 0 is allowed).
 */
 private Double __intercept = null;
+
+/**
+Data value substituted when log transform is used and original value is <= 0.
+*/
+private Double __leZeroLogValue = null;
 
 /**
 Minimum overlapping data count required for acceptable analysis.
@@ -198,7 +202,7 @@ public MixedStationAnalysis ( List<TS> dependentTSList, List<TS> independentTSLi
 	__intercept = intercept;
 	__minimumDataCount = minimumDataCount;
 	__minimumR = minimumR;
-	__confidenceLevel = confidenceLevel;
+	__confidenceInterval = confidenceLevel;
 	__fillFlag = fillFlag;
 }
 
@@ -287,11 +291,12 @@ private void analyze()
 		    	    try {
 		    	        TSRegression tsRegression = new TSRegression (independentTS, dependentTS,
                             true, // analyze for filling
-                            __confidenceLevel,
                             analysisMethod,
                             intercept, __numberOfEquations,
                             null, // include all months in analysis
                             transformation,
+                            __leZeroLogValue,
+                            __confidenceInterval,
                             __analysisStart, __analysisEnd, // Dependent analysis
                             __analysisStart, __analysisEnd, // Independent analysis (same as dependent)
                             __fillStart, __fillEnd );
@@ -1480,7 +1485,10 @@ public void fill ( )
 	DataTransformationType transformation;
 	NumberOfEquationsType numberOfEquations;
 	RegressionType analysisMethod;
-	Double confidenceLevel = null;
+	Double leZeroLogValue = null;
+	Integer minimumDataCount = null;
+	Double minimumR = null;
+	Double confidenceInterval = null;
 	Double intercept;
 	DateTime dependentAnalysisStart;
 	DateTime dependentAnalysisEnd;
@@ -1685,11 +1693,14 @@ public void fill ( )
 	                    // Fill only the month of interest...
                         TSUtil.fillRegress(dependentTS, independentTS,
                             tsRegression, // Use this directly since don't want to recompute from filled data
-                            confidenceLevel, // Confidence level
                             analysisMethod, numberOfEquations,
                             intercept,
                             monthArray, // only the month of interest
                             transformation,
+                            leZeroLogValue,
+                            minimumDataCount,
+                            minimumR,
+                            confidenceInterval, // Confidence interval
                             dependentAnalysisStart, dependentAnalysisEnd,
                             independentAnalysisStart, independentAnalysisEnd,
                             fillStart, fillEnd,
@@ -1700,11 +1711,14 @@ public void fill ( )
 	  	    		    // Fill the entire time series...
     	  	    		TSUtil.fillRegress(dependentTS, independentTS,
     	  	    		    tsRegression, // Use this directly since don't want to recompute from filled data
-    	  	    		    confidenceLevel, // Confidence level
     	  	    		    analysisMethod, numberOfEquations,
     	  	    		    intercept,
     	  	    		    null, // no analysis months specified
     	  	    		    transformation,
+                            leZeroLogValue,
+                            minimumDataCount,
+                            minimumR,
+                            confidenceInterval, // Confidence interval
     	  	    		    dependentAnalysisStart, dependentAnalysisEnd,
     	  	    		    independentAnalysisStart, independentAnalysisEnd,
     	  	    		    fillStart, fillEnd,

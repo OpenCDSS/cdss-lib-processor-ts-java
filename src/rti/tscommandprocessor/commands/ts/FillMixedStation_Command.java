@@ -111,7 +111,7 @@ throws InvalidCommandParameterException
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
 	String Intercept = parameters.getValue ( "Intercept" );
-	String ConfidenceLevel = parameters.getValue ( "ConfidenceLevel" );
+	String ConfidenceInterval = parameters.getValue ( "ConfidenceInterval" );
 	String FillFlag = parameters.getValue ( "FillFlag" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
 	
@@ -349,22 +349,22 @@ throws InvalidCommandParameterException
 	}
 	
 	// Make sure confidence level, if given is a valid number
-    if ( (ConfidenceLevel != null) && !ConfidenceLevel.equals("") ) {
-        if ( !StringUtil.isDouble(ConfidenceLevel) ) { 
-            message = "The confidence level (" + ConfidenceLevel + ") is invalid.";
+    if ( (ConfidenceInterval != null) && !ConfidenceInterval.equals("") ) {
+        if ( !StringUtil.isDouble(ConfidenceInterval) ) { 
+            message = "The confidence level (" + ConfidenceInterval + ") is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the confidence level as a percent > 0 and < 100 (e.g., 95)." ) );
+                    message, "Specify the confidence interval as a percent > 0 and < 100 (e.g., 95)." ) );
         }
         else {
-            double cl = Double.parseDouble(ConfidenceLevel);
+            double cl = Double.parseDouble(ConfidenceInterval);
             if ( (cl <= 0.0) || (cl >= 100.0) ) { 
-                message = "The confidence level (" + ConfidenceLevel + ") is invalid.";
+                message = "The confidence level (" + ConfidenceInterval + ") is invalid.";
                 warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the confidence level as a percent > 0 and < 100 (e.g., 95)." ) );
+                        message, "Specify the confidence interval as a percent > 0 and < 100 (e.g., 95)." ) );
             }
         }
     }
@@ -440,7 +440,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
     valid_Vector.add ( "Intercept" );
-    valid_Vector.add ( "ConfidenceLevel" );
+    valid_Vector.add ( "ConfidenceInterval" );
     valid_Vector.add ( "FillFlag" );
     valid_Vector.add ( "OutputFile" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -620,10 +620,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( (BestFitIndicator == null) || BestFitIndicator.equals("") ) {
         BestFitIndicator = "" + BestFitIndicatorType.SEP; // default
     }
-    String ConfidenceLevel = parameters.getValue ( "ConfidenceLevel" );
-    Double confidenceLevel = null;
-    if ( (ConfidenceLevel != null) && !ConfidenceLevel.equals("") ) {
-        confidenceLevel = Double.parseDouble(ConfidenceLevel);
+    String ConfidenceInterval = parameters.getValue ( "ConfidenceInterval" );
+    Double ConfidenceInterval_Double = null;
+    if ( (ConfidenceInterval != null) && !ConfidenceInterval.equals("") ) {
+        ConfidenceInterval_Double = Double.parseDouble(ConfidenceInterval);
     }
 	String AnalysisMethod = parameters.getValue ( "AnalysisMethod" );
 	if ( (AnalysisMethod == null) || AnalysisMethod.equals("") ) {
@@ -751,7 +751,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 		__MixedStationAnalysis = new MixedStationAnalysis( dependentTSList, independentTSList,
 		    bestFitIndicator, analysisMethodList, numberOfEquations,
 		    AnalysisStart_DateTime, AnalysisEnd_DateTime, FillStart_DateTime, FillEnd_DateTime,
-		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double, confidenceLevel,
+		    transformationList, Intercept_double, MinimumDataCount_int, MinimumR_double, ConfidenceInterval_Double,
 		    FillFlag );
 		
 		__MixedStationAnalysis.analyzeAndRank();
@@ -821,7 +821,7 @@ public String toString ( PropList props )
 	String FillStart = props.getValue ( "FillStart" );
 	String FillEnd = props.getValue ( "FillEnd" );
 	String Intercept = props.getValue ( "Intercept" );
-	String ConfidenceLevel = props.getValue ( "ConfidenceLevel" );
+	String ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 	String FillFlag = props.getValue( "FillFlag" );
 	String OutputFile = props.getValue ( "OutputFile" );
 
@@ -872,9 +872,9 @@ public String toString ( PropList props )
         b.append ( "Intercept=" + Intercept );
     }
     
-    if ( ConfidenceLevel != null && ConfidenceLevel.length() > 0 ) {
+    if ( ConfidenceInterval != null && ConfidenceInterval.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "ConfidenceLevel=" + ConfidenceLevel );
+        b.append ( "ConfidenceInterval=" + ConfidenceInterval );
     }
 
 	if ( AnalysisStart != null && AnalysisStart.length() > 0 ) {

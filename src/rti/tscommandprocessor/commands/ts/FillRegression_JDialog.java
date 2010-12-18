@@ -45,6 +45,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -65,46 +67,55 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.List;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.TS.TSRegression;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Math.DataTransformationType;
 import RTi.Util.Math.NumberOfEquationsType;
 import RTi.Util.Message.Message;
 
 public class FillRegression_JDialog extends JDialog
-implements ActionListener, KeyListener, ListSelectionListener, WindowListener
+implements ActionListener, KeyListener, ItemListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private JTextArea	__command_JTextArea=null; // Command as JTextArea
-private JTextField	__Intercept_JTextField = null; // Intercept value as JTextField
-private JTextField	__AnalysisStart_JTextField,
-			__AnalysisEnd_JTextField, // Text fields for dependent time series analysis period.
-			__FillStart_JTextField, // Text fields for fill period.
-			__FillEnd_JTextField,
-			__FillFlag_JTextField;	// Flag to set for filled data.
-private SimpleJComboBox	__TSID_JComboBox = null;// Field for time series ID
-private SimpleJComboBox	__IndependentTSID_JComboBox= null; // List for independent time series identifier(s)
-private SimpleJComboBox	__NumberOfEquations_JComboBox = null; // One or monthly equations.
-private SimpleJComboBox	__AnalysisMonth_JComboBox = null; // Month to analyze - monthly equations only.
-private SimpleJComboBox	__Transformation_JComboBox=null;// None or log transformation.
-private boolean		__error_wait = false;	// True if there is an error in the input.
-private boolean		__first_time = true;
-private boolean		__ok = false;		// Was OK pressed last (false=cancel)?
-private FillRegression_Command __command = null;// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JTextArea __command_JTextArea=null;
+private JTextField __AnalysisStart_JTextField;
+private JTextField __AnalysisEnd_JTextField;
+private JTextField __FillStart_JTextField;
+private JTextField __FillEnd_JTextField;
+private JTextField __FillFlag_JTextField;
+private SimpleJComboBox	__TSID_JComboBox = null;
+private SimpleJComboBox	__IndependentTSID_JComboBox= null;
+private SimpleJComboBox	__NumberOfEquations_JComboBox = null;
+private SimpleJComboBox	__AnalysisMonth_JComboBox = null;
+private SimpleJComboBox	__Transformation_JComboBox=null;
+private JTextField __Intercept_JTextField = null;
+private JTextField __LEZeroLogValue_JTextField = null;
+private JTextField __MinimumDataCount_JTextField = null;
+private JTextField __MinimumR_JTextField = null;
+private JTextField __ConfidenceInterval_JTextField = null;
+private SimpleJComboBox __TableID_JComboBox = null;
+private JTextField __TableTSIDColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null;
+private boolean __error_wait = false; // True if there is an error in the input.
+private boolean __first_time = true;
+private boolean __ok = false; // Was OK pressed last (false=cancel)?
+private FillRegression_Command __command = null;
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
+@param tableIDChoices choices for TableID value.
 */
-public FillRegression_JDialog ( JFrame parent, Command command )
+public FillRegression_JDialog ( JFrame parent, FillRegression_Command command, List<String> tableIDChoices )
 {	super(parent, true);
-	initialize ( parent, command );
+	initialize ( parent, command, tableIDChoices );
 }
 
 /**
@@ -163,11 +174,18 @@ private void checkInput ()
 	String IndependentTSID = __IndependentTSID_JComboBox.getSelected ();
 	String Transformation = __Transformation_JComboBox.getSelected();
 	String Intercept = __Intercept_JTextField.getText().trim();
+	String LEZeroLogValue = __LEZeroLogValue_JTextField.getText().trim();
+    String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
+    String MinimumR = __MinimumR_JTextField.getText().trim();
+    String ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String TableID = __TableID_JComboBox.getSelected();
+    String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
 	__error_wait = false;
 
 	if ( TSID.length() > 0 ) {
@@ -182,6 +200,18 @@ private void checkInput ()
 	if ( Intercept.length() > 0 ) {
 		props.set ( "Intercept", Intercept );
 	}
+    if ( LEZeroLogValue.length() > 0 ) {
+        props.set ( "LEZeroLogValue", LEZeroLogValue );
+    }
+    if ( MinimumDataCount.length() > 0 ) {
+        props.set ( "MinimumDataCount", MinimumDataCount );
+    }
+    if ( MinimumR.length() > 0 ) {
+        props.set ( "MinimumR", MinimumR );
+    }
+    if ( ConfidenceInterval.length() > 0 ) {
+        props.set ( "ConfidenceInterval", ConfidenceInterval );
+    }
 	if ( AnalysisStart.length() > 0 ) {
 		props.set ( "AnalysisStart", AnalysisStart );
 	}
@@ -197,7 +227,17 @@ private void checkInput ()
 	if ( FillFlag.length() > 0 ) {
 		props.set ( "FillFlag", FillFlag );
 	}
-	try {	// This will warn the user...
+    if ( TableID.length() > 0 ) {
+        props.set ( "TableID", TableID );
+    }
+    if ( TableTSIDColumn.length() > 0 ) {
+        props.set ( "TableTSIDColumn", TableTSIDColumn );
+    }
+    if ( TableTSIDFormat.length() > 0 ) {
+        props.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -217,22 +257,36 @@ private void commitEdits ()
 	String AnalysisMonth = __AnalysisMonth_JComboBox.getSelected();
 	String Transformation = __Transformation_JComboBox.getSelected();
 	String Intercept = __Intercept_JTextField.getText().trim();
+    String LEZeroLogValue = __LEZeroLogValue_JTextField.getText().trim();
+    String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
+    String MinimumR = __MinimumR_JTextField.getText().trim();
+    String ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+    String TableID = __TableID_JComboBox.getSelected();
+    String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "IndependentTSID", IndependentTSID );
 	__command.setCommandParameter ( "NumberOfEquations", NumberOfEquations);
 	__command.setCommandParameter ( "AnalysisMonth", AnalysisMonth );
 	__command.setCommandParameter ( "Transformation", Transformation );
 	__command.setCommandParameter ( "Intercept", Intercept );
+	__command.setCommandParameter ( "LEZeroLogValue", LEZeroLogValue );
+	__command.setCommandParameter ( "MinimumDataCount", MinimumDataCount );
+	__command.setCommandParameter ( "MinimumR", MinimumR );
+	__command.setCommandParameter ( "ConfidenceInterval", ConfidenceInterval );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "FillStart", FillStart );
 	__command.setCommandParameter ( "FillEnd", FillEnd );
 	__command.setCommandParameter ( "FillFlag", FillFlag );
+    __command.setCommandParameter ( "TableID", TableID );
+    __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
+    __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
 }
 
 /**
@@ -256,8 +310,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (FillRegression_Command)command;
+private void initialize ( JFrame parent, FillRegression_Command command, List<String> tableIDChoices  )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -351,6 +405,17 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - how to transform data before analysis (blank=" + DataTransformationType.NONE + ")."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value to use when log and <= 0:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __LEZeroLogValue_JTextField = new JTextField ( 5 );
+    __LEZeroLogValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __LEZeroLogValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - value to substitute when original is <= 0 and log transform (default=" +
+        TSRegression.getDefaultLEZeroLogValue() + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Intercept:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -361,32 +426,79 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - blank or 0.0 are allowed with no transformation."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Minimum Data Count
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum data count:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MinimumDataCount_JTextField = new JTextField ( 10 );
+    __MinimumDataCount_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MinimumDataCount_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - minimum number of overlapping points required for analysis (default=no limit)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis period:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__AnalysisStart_JTextField = new JTextField ( "", 15 );
-	__AnalysisStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__AnalysisEnd_JTextField = new JTextField ( "", 15 );
-	__AnalysisEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    // Minimum R
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum R:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MinimumR_JTextField = new JTextField ( 10 );
+    __MinimumR_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MinimumR_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - minimum correlation coefficient R required for a best fit (default=no limit)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Confidence interval
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Confidence interval:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ConfidenceInterval_JTextField = new JTextField ( 10 );
+    __ConfidenceInterval_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __ConfidenceInterval_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - confidence interval (%) for line slope (default=do not check interval)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill Period:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__FillStart_JTextField = new JTextField ( "", 15 );
-	__FillStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__FillEnd_JTextField = new JTextField ( "", 15 );
-	__FillEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
-		5, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisStart_JTextField = new JTextField ( "", 20 );
+    __AnalysisStart_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - starting date/time (default=full period)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis end:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AnalysisEnd_JTextField = new JTextField ( "", 20 );
+    __AnalysisEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AnalysisEnd_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - ending date/time (default=full period)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill start:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillStart_JTextField = new JTextField ( "", 10 );
+    __FillStart_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __FillStart_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - fill start date/time (default=full period)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Fill end:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillEnd_JTextField = new JTextField ( "", 10 );
+    __FillEnd_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FillEnd_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - fill end date/time (default=full period)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -394,8 +506,41 @@ private void initialize ( JFrame parent, Command command )
 	__FillFlag_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - 1-character flag to indicate fill."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - string to indicate filled values."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID for output:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
+    tableIDChoices.add(0,""); // Add blank to ignore table
+    __TableID_JComboBox.setData ( tableIDChoices );
+    __TableID_JComboBox.addItemListener ( this );
+    //__TableID_JComboBox.setMaximumRowCount(tableIDChoices.size());
+    JGUIUtil.addComponent(main_JPanel, __TableID_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - specify to output statistics to table."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table TSID column:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDColumn_JTextField = new JTextField ( 10 );
+    __TableTSIDColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TableTSIDColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required if using table - column name for dependent TSID."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Format of TSID:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(10);
+    __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __TableTSIDFormat_JTextField.addKeyListener ( this );
+    __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __TableTSIDFormat_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -426,6 +571,15 @@ private void initialize ( JFrame parent, Command command )
     pack();
     JGUIUtil.center( this );
     super.setVisible( true );
+}
+
+/**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{   checkGUIState();
+    refresh();
 }
 
 /**
@@ -467,17 +621,25 @@ public boolean ok ()
 Refresh the expression from the other text field contents.
 */
 private void refresh ()
-{	String TSID = "";
+{	String routine = getClass().getName() + ".refresh";
+    String TSID = "";
 	String IndependentTSID = "";
 	String NumberOfEquations = "";
 	String AnalysisMonth = "";
 	String Transformation = "";
 	String Intercept = "";
+	String LEZeroLogValue = "";
+    String MinimumDataCount = "";
+    String MinimumR = "";
+    String ConfidenceInterval = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
 	String FillStart = "";
 	String FillEnd = "";
 	String FillFlag = "";
+    String TableID = "";
+    String TableTSIDColumn = "";
+    String TableTSIDFormat = "";
 	PropList props = null;		// Parameters as PropList.
 	if ( __first_time ) {
 		__first_time = false;
@@ -489,18 +651,24 @@ private void refresh ()
 		AnalysisMonth = props.getValue("AnalysisMonth");
 		Transformation = props.getValue("Transformation");
 		Intercept = props.getValue("Intercept");
+		LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
+	    MinimumDataCount = props.getValue ( "MinimumDataCount" );
+	    MinimumR = props.getValue ( "MinimumR" );
+	    ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 		AnalysisStart = props.getValue("AnalysisStart");
 		AnalysisEnd = props.getValue("AnalysisEnd");
 		FillStart = props.getValue("FillStart");
 		FillEnd = props.getValue("FillEnd");
 		FillFlag = props.getValue("FillFlag");
+        TableID = props.getValue ( "TableID" );
+        TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
+        TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
 		// Now check the information and set in the GUI...
 		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
 			__TSID_JComboBox.select ( TSID );
 		}
 		else {
-            /* TODO SAM 2005-04-27 disable since this may
-			prohibit advanced users.
+            /* TODO SAM 2005-04-27 disable since this may prohibit advanced users.
 			Message.printWarning ( 1,
 				"fillRegression_JDialog.refresh", "Existing " +
 				"fillRegression() references a non-existent\n"+
@@ -509,63 +677,21 @@ private void refresh ()
 			}
 			*/
 			if ( (TSID == null) || TSID.equals("") ) {
-				// For new command... Select the first item
-				// in the list...
+				// For new command... Select the first item in the list...
 				if ( __TSID_JComboBox.getItemCount() > 0 ) {
 					__TSID_JComboBox.select ( 0 );
 				}
 			}
-			else {	// Automatically add to the list at the top... 
+			else {
+			    // Automatically add to the list at the top... 
 				__TSID_JComboBox.insertItemAt ( TSID, 0 );
 				// Select...
 				__TSID_JComboBox.select ( TSID );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__IndependentTSID_JComboBox, IndependentTSID,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem( __IndependentTSID_JComboBox, IndependentTSID, JGUIUtil.NONE, null, null ) ) {
 			__IndependentTSID_JComboBox.select ( IndependentTSID );
 		}
-	/* TODO SAM 2005-04-27 Figure out how to do with combo box
-		else if ( IndependentTSID.regionMatches(
-			true,0,"TEMPTS",0,6) ) {
-			// The time series is a TEMPTS so look
-			// for the rest of the time series in
-			// the list.  If it exists, convert to
-			// TEMPTS to match the command.  If not
-			// add to the list as a TEMPTS to match
-			// the command.
-			token =	StringUtil.getToken(
-				independent, " ",
-				StringUtil.DELIM_SKIP_BLANKS,1);
-			if ( token != null ) {
-				token = token.trim();
-				pos =	JGUIUtil.indexOf(
-					__IndependentTSID_JComboBox,
-					token,false,true);
-				if ( (pos >=0) ) {
-					token = "TEMPTS " + token;
-					__IndependentTSID_JComboBox.
-					setElementAt( token, pos );
-					JGUIUtil.select (
-					__IndependentTSID_JComboBox,
-					token, true );
-					found_ts = true;
-				}
-			}
-			if ( !found_ts ) {
-				// Probably not in the original
-				// list so add to the bottom.
-				// The TEMPTS is already at the
-				// front of the independent TS..
-				__IndependentTSID_JComboBox.addElement(
-						independent);
-				JGUIUtil.select (
-					__IndependentTSID_JComboBox,
-					independent, true );
-			}
-		}
-	*/
 		else {
             /* TODO SAM 2005-04-27  disable and add
 			Message.printWarning ( 1,
@@ -585,7 +711,8 @@ private void refresh ()
 					__IndependentTSID_JComboBox.select (0);
 				}
 			}
-			else {	// Automatically add to the list at the top... 
+			else {
+			    // Automatically add to the list at the top... 
 				__IndependentTSID_JComboBox.insertItemAt ( IndependentTSID, 0 );
 				// Select...
 				__IndependentTSID_JComboBox.select ( IndependentTSID );
@@ -616,7 +743,8 @@ private void refresh ()
 				// New command...select the default...
 				__AnalysisMonth_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+			    // Bad user command...
 				Message.printWarning ( 1,
 				"fillRegression_JDialog.refresh", "Existing " +
 				"fillRegression() references an invalid\n"+
@@ -643,6 +771,18 @@ private void refresh ()
 		if ( Intercept != null ) {
 			__Intercept_JTextField.setText ( Intercept );
 		}
+        if ( LEZeroLogValue != null ) {
+            __LEZeroLogValue_JTextField.setText ( LEZeroLogValue );
+        }
+        if ( MinimumDataCount != null ) {
+            __MinimumDataCount_JTextField.setText ( MinimumDataCount );
+        }
+        if ( MinimumR != null ) {
+            __MinimumR_JTextField.setText ( MinimumR );
+        }
+        if ( ConfidenceInterval != null ) {
+            __ConfidenceInterval_JTextField.setText ( ConfidenceInterval );
+        }
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText ( AnalysisStart );
 		}
@@ -658,6 +798,27 @@ private void refresh ()
 		if ( FillFlag != null ) {
 			__FillFlag_JTextField.setText ( FillFlag );
 		}
+        if ( TableID == null ) {
+            // Select default...
+            __TableID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TableID_JComboBox,TableID, JGUIUtil.NONE, null, null ) ) {
+                __TableID_JComboBox.select ( TableID );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nTableID value \"" + TableID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( TableTSIDColumn != null ) {
+            __TableTSIDColumn_JTextField.setText ( TableTSIDColumn );
+        }
+        if (TableTSIDFormat != null ) {
+            __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
+        }
 	}
 	// Regardless, reset the expression from the fields.  This is only the
 	// visible information and has not yet been committed in the command.
@@ -667,11 +828,18 @@ private void refresh ()
 	AnalysisMonth = __AnalysisMonth_JComboBox.getSelected();
 	Transformation = __Transformation_JComboBox.getSelected();
 	Intercept = __Intercept_JTextField.getText().trim();
+	LEZeroLogValue = __LEZeroLogValue_JTextField.getText().trim();
+    MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
+    MinimumR = __MinimumR_JTextField.getText().trim();
+    ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	FillFlag = __FillFlag_JTextField.getText().trim();
+    TableID = __TableID_JComboBox.getSelected();
+    TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "TSID=" + TSID );
 	props.add ( "IndependentTSID=" + IndependentTSID );
@@ -681,18 +849,24 @@ private void refresh ()
 	}
 	props.add ( "Transformation=" + Transformation );
 	props.add ( "Intercept=" + Intercept );
+	props.add ( "LEZeroLogValue=" + LEZeroLogValue );
+    props.add ( "MinimumDataCount=" + MinimumDataCount );
+    props.add ( "MinimumR=" + MinimumR );
+    props.add ( "ConfidenceInterval=" + ConfidenceInterval );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "FillFlag=" + FillFlag );
+    props.add ( "TableID=" + TableID );
+    props.add ( "TableTSIDColumn=" + TableTSIDColumn );
+    props.add ( "TableTSIDFormat=" + TableTSIDFormat );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()

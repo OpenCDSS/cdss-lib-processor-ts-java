@@ -105,6 +105,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 // Table commands.
 
+import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
@@ -341,6 +342,9 @@ throws UnknownCommandException
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"CompareFiles") ) {
 		return new CompareFiles_Command ();
 	}
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"CompareTables") ) {
+        return new CompareTables_Command ();
+    }
 	else if ( StringUtil.startsWithIgnoreCase(commandString,"CompareTimeSeries") ) {
 		return new CompareTimeSeries_Command ();
 	}

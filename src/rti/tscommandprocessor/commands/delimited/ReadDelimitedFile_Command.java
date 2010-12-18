@@ -38,9 +38,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
 This class initializes, checks, and runs the ReadDelimitedFile() command.
-</p>
 */
 public class ReadDelimitedFile_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -78,11 +76,6 @@ private List<String> __dataType = new Vector();
 Date/time column name, expanded for runtime, consistent with the ColumnNames runtime values.
 */
 private String __dateTimeColumnRuntime = null;
-
-/**
-Delimiter for parsing file data.
-*/
-private String __delimiter = null;
 
 /**
 List of time series read during discovery.  These are TS objects but with mainly the
@@ -242,18 +235,12 @@ throws InvalidCommandParameterException
         }
     }
     
-    setDelimiter ( null );
     if ( (Delimiter == null) || (Delimiter.length() == 0) ) {
         message = "The delimiter must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the delimiter indicating breaks between columns." ) );
-    }
-    else {
-        // Convert \t into internal characters
-        String delimiter = Delimiter.replace("\\t", "\t");
-        setDelimiter ( delimiter );
     }
     
     if ( (TreatConsecutiveDelimitersAsOne != null) && !TreatConsecutiveDelimitersAsOne.equals("") &&
@@ -313,10 +300,11 @@ throws InvalidCommandParameterException
     // If the column names include information from the file, get the column names from the file
     List<String> columnNamesRuntime = new Vector();
     setColumnNamesRuntime ( columnNamesRuntime );
-    if ( StringUtil.indexOfIgnoreCase(ColumnNames,_FC, 0) >= 0 ) {
+    if ( (ColumnNames != null) && StringUtil.indexOfIgnoreCase(ColumnNames,_FC, 0) >= 0 ) {
         // Original string used slice notation for column names in file
         try {
-            columnNamesRuntime = readColumnNamesFromFile(InputFile_full, columnNames, Delimiter, Comment, getSkipRows(),
+            columnNamesRuntime = readColumnNamesFromFile(InputFile_full, columnNames,
+                StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
                 getSkipRowsAfterComments() );
         }
         catch ( Exception e ) {
@@ -349,7 +337,8 @@ throws InvalidCommandParameterException
             try {
                 List<String> dateTimeColumnName = new Vector();
                 dateTimeColumnName.add ( DateTimeColumn ); // Only one
-                dateTimeColumnName = readColumnNamesFromFile(InputFile_full, dateTimeColumnName, Delimiter, Comment, getSkipRows(),
+                dateTimeColumnName = readColumnNamesFromFile(InputFile_full, dateTimeColumnName,
+                    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
                     getSkipRowsAfterComments() );
                 dateTimeColumnRuntime = dateTimeColumnName.get(0);
             }
@@ -392,7 +381,8 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(ValueColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
-                valueColumnsRuntime = readColumnNamesFromFile(InputFile_full, valueColumns, Delimiter, Comment, getSkipRows(),
+                valueColumnsRuntime = readColumnNamesFromFile(InputFile_full, valueColumns,
+                    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
                     getSkipRowsAfterComments() );
             }
             catch ( Exception e ) {
@@ -436,7 +426,8 @@ throws InvalidCommandParameterException
         if ( StringUtil.indexOfIgnoreCase(LocationID,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
-                tokens = readColumnNamesFromFile(InputFile_full, tokens, Delimiter, Comment, getSkipRows(),
+                tokens = readColumnNamesFromFile(InputFile_full, tokens,
+                    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
                     getSkipRowsAfterComments() );
             }
             catch ( Exception e ) {
@@ -877,14 +868,6 @@ private String getDateTimeColumnRuntime ()
 }
 
 /**
-Return the delimiter that separates columns.
-*/
-private String getDelimiter ()
-{
-    return __delimiter;
-}
-
-/**
 Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
@@ -1030,7 +1013,8 @@ Read the column names from the file.  This code is essentially a copy of some of
 actually processing the time series and should be kept consistent.  It mainly is concerned with handling
 initial comments in the file, skipped rows, and reading the first non-comment record as a header.
 @param inputFileFull the full path to the input file.
-@param columnNames0 the value of the ColumnNames parameter before special handling
+@param columnNames0 the value of the ColumnNames parameter before special handling.  For example, this may contain
+FC[] notation.
 */
 protected List<String> readColumnNamesFromFile ( String inputFileFull, List<String> columnNames0, String delim,
     String commentChar, int[][] skipRows, int skipRowsAfterComments )
@@ -1041,8 +1025,8 @@ throws IOException
     Message.printStatus(2, routine, "Getting the column names from file \"" + inputFileFull + "\"" );
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
     String s, sTrimmed;
-    List<String> tokens = null;
-    int ntokens = 0;
+    List<String> columnHeadingList = null;
+    int nColumnHeadings = 0;
     int row = 0;
     boolean rowIsComment = false;
     int firstNonHeaderRow = -1; // first line that is not a header comment (1+)
@@ -1095,12 +1079,12 @@ throws IOException
         // Else continue reading data records from the file - this will be the file header with column names...
         // First break the row (allow quoted strings since headers)...
         Message.printStatus(2, routine, "Parsing the line to get column names." );
-        tokens = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS );
-        if ( tokens == null ) {
-            ntokens = 0;
+        columnHeadingList = StringUtil.breakStringList ( s, delim, breakFlag | StringUtil.DELIM_ALLOW_STRINGS );
+        if ( columnHeadingList == null ) {
+            nColumnHeadings = 0;
         }
         else {
-            ntokens = tokens.size();
+            nColumnHeadings = columnHeadingList.size();
         }
         // Loop through original column name tokens and, as requested. expand to what is in the file
         for ( String columnName0 : columnNames0 ) {
@@ -1111,19 +1095,19 @@ throws IOException
                 if ( (parenPos1 >= 0) && (parenPos2 >= 0) ) {
                     // Need to interpret slice of field numbers in file
                     String slice = columnName0.substring((parenPos1 + _FC.length()),parenPos2);
-                    int [] fileColPos = StringUtil.parseIntegerSlice( slice, ":", 0, ntokens );
+                    int [] fileColPos = StringUtil.parseIntegerSlice( slice, ":", 0, nColumnHeadings );
                     Message.printStatus(2, routine, "Got " + fileColPos.length + " columns from slice \"" + slice + "\"" );
                     for ( int ipos = 0; ipos <fileColPos.length; ipos++ ) {
                         // Positions from parameter parsing are 1+ so need to decrement to get 0+ indices
-                        Message.printStatus(2, routine, "Adding file column name \"" + tokens.get(fileColPos[ipos] - 1).trim() + "\"" );
-                        columnNames.add ( tokens.get(fileColPos[ipos] - 1).trim() );
+                        Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(fileColPos[ipos] - 1).trim() + "\"" );
+                        columnNames.add ( columnHeadingList.get(fileColPos[ipos] - 1).trim() );
                     }
                 }
                 else {
                     // Use all the file field names
-                    for ( int ipos = 0; ipos <ntokens; ipos++ ) {
-                        Message.printStatus(2, routine, "Adding file column name \"" + tokens.get(ipos).trim() + "\"" );
-                        columnNames.add ( tokens.get(ipos).trim() );
+                    for ( int ipos = 0; ipos <nColumnHeadings; ipos++ ) {
+                        Message.printStatus(2, routine, "Adding file column name \"" + columnHeadingList.get(ipos).trim() + "\"" );
+                        columnNames.add ( columnHeadingList.get(ipos).trim() );
                     }
                 }
             }
@@ -1652,6 +1636,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	// Get the command properties not already stored as members.
 	PropList parameters = getCommandParameters();
 	String InputFile = parameters.getValue("InputFile");
+	String Delimiter = parameters.getValue("Delimiter");
 	String Comment = parameters.getValue("Comment");
 	if ( (Comment == null) || Comment.equals("") ) {
 	    Comment = "#"; // default
@@ -1819,7 +1804,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         if ( StringUtil.indexOfIgnoreCase(parameters.getValue("ColumnNames"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
-        tslist = readTimeSeriesList ( InputFile_full, getDelimiter(), getTreatConsecutiveDelimitersAsOne(),
+        tslist = readTimeSeriesList ( InputFile_full, StringUtil.literalToInternal(Delimiter),
+            getTreatConsecutiveDelimitersAsOne(),
             getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(), getValueColumnsRuntime(),
             Comment, getSkipRows(), getSkipRowsAfterComments(),
             getLocationIDRuntime(), getProvider(), getDataType(), getInterval(), getScenario(),
@@ -1933,14 +1919,6 @@ Set date/time column expanded for runtime.
 private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime )
 {
     __dateTimeColumnRuntime = dateTimeColumnRuntime;
-}
-
-/**
-Set the delimiter that separates columns.
-*/
-private void setDelimiter ( String delimiter )
-{
-    __delimiter = delimiter;
 }
 
 /**

@@ -520,7 +520,7 @@ private void initialize(JFrame parent, Command command) {
     __ColumnNames_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __ColumnNames_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column names for file, used below to read data."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column names for file, used below to read data (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date/time column:"),
@@ -530,7 +530,7 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, __DateTimeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - if date and time are in the same column."),
+        "Required - if date and time are in the same column (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JTextField __DateTimeFormat_JTextField;
@@ -580,7 +580,7 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, __ValueColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - specify column names for time series values, separated by commas."),
+        "Required - specify column names for time series values, separated by commas (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Location ID(s):"),
@@ -590,7 +590,7 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, __LocationID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - location ID for each value column, separated by commas."),
+        "Required - location ID for each value column, separated by commas (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data provider:"),

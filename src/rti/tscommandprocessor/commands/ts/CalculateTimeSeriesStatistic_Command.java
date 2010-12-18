@@ -33,9 +33,7 @@ import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the CheckTimeSeries() command.
-</p>
 */
 public class CalculateTimeSeriesStatistic_Command extends AbstractCommand implements Command
 {

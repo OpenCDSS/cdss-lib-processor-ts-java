@@ -481,7 +481,7 @@ CommandWarningException, CommandException
 	
 		List tslist0 = null;
         BNDSSSubjectType subject = null;
-        List<String> input = ((InputFilter_JPanel)filterPanel).getInput("Subject", false, null );
+        List<String> input = ((InputFilter_JPanel)filterPanel).getInput("Subject", null, false, null );
 
         //Message.printStatus(2, "", "Input is \"" + input.get(0) );
         subject = BNDSSSubjectType.valueOfIgnoreCase(StringUtil.getToken(input.get(0),";",0,1));

@@ -268,11 +268,11 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         "compare can be specified."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The table is compared by formatting all cell values to strings and comparing."),
+        "The table is compared by formatting cell values as strings."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The results are placed in a new table, which when written as HTML indicates differences " +
-        "(the normal HMTL view will not color the differences)."),
+        "The results are placed in a new table, which if written as HTML indicates differences " +
+        "(the normal table view will not color the differences)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -351,7 +351,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, __IfDifferent_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel(
-         "Optional - action if files are different (default=" + __command._Ignore + ")"), 
+         "Optional - action if tables are different (default=" + __command._Ignore + ")."), 
          3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if same:"),
@@ -366,7 +366,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
      JGUIUtil.addComponent(main_JPanel, __IfSame_JComboBox,
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel(
-         "Optional - action if files are the same (default=" + __command._Ignore + ")"), 
+         "Optional - action if tables are the same (default=" + __command._Ignore + ")."), 
          3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Command:"), 

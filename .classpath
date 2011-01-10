@@ -16,5 +16,6 @@
 	<classpathentry kind="lib" path="lib/heclib/rma.jar"/>
 	<classpathentry kind="lib" path="lib/freemarker/freemarker.jar"/>
 	<classpathentry kind="lib" path="lib/Oracle_JDBC/ojdbc6.jar"/>
+	<classpathentry kind="lib" path="lib/gson/gson-1.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

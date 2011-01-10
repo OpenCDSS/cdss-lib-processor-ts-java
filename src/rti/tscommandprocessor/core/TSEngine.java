@@ -659,6 +659,7 @@ import riverside.datastore.DataStore;
 import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
 import rti.tscommandprocessor.commands.bndss.ColoradoBNDSSDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
+import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
 import rti.tscommandprocessor.commands.util.Comment_Command;
@@ -679,7 +680,6 @@ import DWR.StateCU.StateCU_TS;
 import DWR.StateMod.StateMod_TS;
 import DWR.StateMod.StateMod_BTS;
 
-//import RTi.DataServices.Adapter.NDFD.Adapter;
 import RTi.DMI.DMI;
 import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.DIADvisorDMI.DIADvisorDMI;
@@ -859,15 +859,9 @@ End date for read.
 private DateTime __InputEnd_DateTime = null;        
 
 /**
-Vector to save list of time series identifiers that are not found.
+List of time series identifiers that are not found.
 */
 private List<String> __missing_ts = new Vector();
-
-// TODO SAM 2007-02-18 need to re-enable NDFD
-/**
-NDFD Adapter instance list, to allow more than one database instance to be open at a time, used with openNDFD().
-*/
-//private List __NDFDAdapter_Vector = new Vector();
 
 /**
 List of NWSRFS_DMI to use to read from NWSRFS FS5Files.
@@ -1738,8 +1732,6 @@ throws Throwable
 	__InputEnd_DateTime = null;
 	__hbdmi_Vector = null;
 	__missing_ts = null;
-	// TODO SAM 2007-02-18 Need to enable NDFD
-	//__NDFDAdapter_Vector = null;
 	__output_file = null;
 	__reference_date = null;
 	__tslist = null;
@@ -1957,46 +1949,6 @@ Return the list of TSID strings for which time series could not be read.
 protected List getMissingTS()
 {   return __missing_ts;
 }
-
-// TODO SAM 2006-07-13
-// May need to fully qualify Adapter but for now there is no conflict with
-// other packages.
-/**
-Return the NDFD Adapter that is being used.
-@param input_name Input name for the adapter, can be blank.
-@return the NDFD Adapter that is being used (may return null).
-*/
-
-// TODO KAT 2006-10-30
-// Commenting this out for now to get it to compile
-// Danny will be adding service stuff in the future
-// which should replace this ...
-/**
-public Adapter getNDFDAdapter (String input_name )
-{	int size = __NDFDAdapter_Vector.size();
-	if ( input_name == null ) {
-		input_name = "";
-	}
-	Adapter adapter = null;
-	for ( int i = 0; i < size; i++ ) {
-		adapter = (Adapter)__NDFDAdapter_Vector.elementAt(i);
-		/* TODO SAM 2006-07-15
-		Currently the adapters don't have and ID or name so for
-		now return the first instance.
-		if ( adapter.getInputName().equalsIgnoreCase(input_name) ) {
-			if ( Message.isDebugOn ) {
-				Message.printDebug ( 1, "",
-				"Returning NDFD Adapter[" + i +"] InputName=\""+
-				adapter.getInputName() + "\"" );
-			}
-			return adapter;
-		}
-		
-		return adapter;
-	}
-	return null;
-}
-*/
 
 /**
 Return the NWSRFS_DMI that is being used.  Use a blank input name to get the default.
@@ -4509,7 +4461,7 @@ throws Exception
 	
 	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
 	// using the input type string.  If matched, then the DataStore object information below (e.g., for
-	// RiversideDB, ColoradoBNDSS, ReclamationHDB).
+	// RiversideDB, ColoradoBNDSS, RccAcis, ReclamationHDB).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
@@ -4812,6 +4764,19 @@ throws Exception
                 Message.printWarning ( 3, routine, te );
                 ts = null;
             }
+        }
+    }
+    else if ((dataStore != null) && (dataStore instanceof RccAcisDataStore) ) {
+        // New style TSID~dataStoreName for RCC ACIS...
+        RccAcisDataStore rccAcisDataStore = (RccAcisDataStore)dataStore;
+        try {
+            ts = rccAcisDataStore.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                "\" from RCC ACIS web service." );
+            Message.printWarning ( 3, routine, te );
+            ts = null;
         }
     }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("RiverWare") ) {
@@ -5452,63 +5417,6 @@ protected void setInputStart ( DateTime start )
 }
 
 /**
-Set an NDFD Adapter instance in the Vector that is being maintained for use.
-The input name for the adapter is used to lookup the instance.  If a match is
-found, the old instance is optionally closed and the new instance is set in the
-same location.  If a match is not found, the new instance is added at the end.
-@param adapter NDFD Adapter to add to the list.  Null will be ignored.
-@param close_old If an old adapter is matched, remove the instance if true.
-This is mainly for memory management since NDFD Adapters do not currently keep
-a connection open.
-*/
-
-//TODO KAT 2006-10-30 Need to enable NDFD
-//Commenting this out for now to get it to compile
-/**
-private void setNDFDAdapter ( Adapter adapter, boolean close_old )
-{	if ( adapter == null ) {
-		return;
-	}
-	int size = __NDFDAdapter_Vector.size();
-	Adapter adapter2 = null;
-	//TODO SAM 2006-07-15
-	NDFD Adapters do not have names/identfiers so put in the first slot
-	String input_name = adapter.getIdentifier();
-	for ( int i = 0; i < size; i++ ) {
-		adapter2 = (Adapter)__NDFDAdapter_Vector.elementAt(i);
-		if ( adapter2.getIdentifier().equalsIgnoreCase(input_name)){
-			// The identifier of the current instance matches that of the instance in the Vector.
-			// Replace the instance in the Vector by the new instance...
-			if ( close_old ) {
-				/ * TODO SAM 2006-07-13
-				Probably not needed - evaluate for later
-				try {
-				    hbdmi2.close();
-				}
-				catch ( Exception e ) {
-					// Probably can ignore.
-				}
-				* /
-			}
-			__NDFDAdapter_Vector.setElementAt ( adapter, i );
-			return;
-		}
-	}
-	// Add a new instance to the Vector...
-	__NDFDAdapter_Vector.addElement ( adapter );
-	
-	if ( __NDFDAdapter_Vector.size() == 0 ) {
-		// Add as the first item...
-		__NDFDAdapter_Vector.addElement ( adapter );
-	}
-	else {
-	    __NDFDAdapter_Vector.setElementAt ( adapter, 0 );
-	}
-}
-
-*/
-
-/**
 Set a NWSRFS_DMI (NWSRFS FS5Files DMI) instance in the Vector that is being maintained for use.
 The input name in the DMI is used to lookup the instance.  If a match is found,
 the old instance is optionally closed and the new instance is set in the same
@@ -5526,7 +5434,7 @@ protected void setNWSRFSFS5FilesDMI ( NWSRFS_DMI nwsrfs_dmi, boolean close_old )
 	NWSRFS_DMI nwsrfs_dmi2 = null;
 	String input_name = nwsrfs_dmi.getInputName();
 	for ( int i = 0; i < size; i++ ) {
-		nwsrfs_dmi2 = (NWSRFS_DMI)__nwsrfs_dmi_Vector.get(i);
+		nwsrfs_dmi2 = __nwsrfs_dmi_Vector.get(i);
 		if ( nwsrfs_dmi2.getInputName().equalsIgnoreCase(input_name)){
 			// The input name of the current instance matches that of the instance in the Vector.
 			// Replace the instance in the Vector by the new instance...

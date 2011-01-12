@@ -32,8 +32,8 @@ public RccAcis_TimeSeries_InputFilter_JPanel( RccAcisDataStore dataStore, int nu
 }
 
 /**
-Set the filter data.  This method is called at setup and when refreshing the list with a new subject type.
-@param subjectType the initial subject type to display, or null to default to county.
+Set the filter data.  This method is called at setup.
+@param numFilterGroups the number of filter groups to display
 */
 public void setFilters ( int numFilterGroups )
 {   //String routine = getClass().getName() + ".setFilters";

@@ -633,6 +633,7 @@ throws URISyntaxException, IOException
         b.append(buffer,0,len1);
     }
     in.close();
+    // TODO SAM 2011-01-11 Need to perhaps use standalone="yes" rather than using a DTD when parsing the HTML
     // Prepend the DTD information so document parsing/verification will work properly
     // And content does not have html tag at start?
     // The commented versions did not work (asking for > at end of HTML.Version, etc.)

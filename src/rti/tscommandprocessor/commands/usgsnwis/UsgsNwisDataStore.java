@@ -455,6 +455,12 @@ throws IOException
     catch (Exception ex) {
         throw new IOException("Error setting identifier ", ex);
     }
+    
+    // Get the main time series properties...
+    Element siteName = getSingleElement(element, "siteName");
+    if ( siteName != null ) {
+        ts.setDescription(siteName.getTextContent());
+    }
 
     readTimeSeries_ParseValues(ts, values, readData);
 

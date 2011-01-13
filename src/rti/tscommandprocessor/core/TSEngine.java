@@ -662,6 +662,7 @@ import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDB_DMI;
+import rti.tscommandprocessor.commands.usgsnwis.UsgsNwisDataStore;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
@@ -4461,7 +4462,7 @@ throws Exception
 	
 	// New approach uses DataStore concept to manage input types.  In this case, look up the data store
 	// using the input type string.  If matched, then the DataStore object information below (e.g., for
-	// RiversideDB, ColoradoBNDSS, RccAcis, ReclamationHDB).
+	// RiversideDB, ColoradoBNDSS, RccAcis, ReclamationHDB, UsgsNwis).
 	
 	DataStore dataStore = lookupDataStore ( inputTypeAndName );
 
@@ -4857,6 +4858,19 @@ throws Exception
 			ts = null;
 		}
 	}
+    else if ((dataStore != null) && (dataStore instanceof UsgsNwisDataStore) ) {
+        // New style TSID~dataStoreName for USGS NWIS...
+        UsgsNwisDataStore usgsNwisDataStore = (UsgsNwisDataStore)dataStore;
+        try {
+            ts = usgsNwisDataStore.readTimeSeries ( tsidentString2, readStart, readEnd, readData );
+        }
+        catch ( Exception te ) {
+            Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
+                "\" from USGS NWIS web service." );
+            Message.printWarning ( 3, routine, te );
+            ts = null;
+        }
+    }
 	else if ((inputType != null) && inputType.equalsIgnoreCase("USGSNWIS") ) {
 		// New style TSID~input_type
 		try {

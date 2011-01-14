@@ -127,8 +127,8 @@ for how always return the ACIS identifier.
 public String getIDPreferred ( boolean prefix )
 {   // TODO SAM 2011-01-08 This preferred order could be specified in a configuration file, but need to
     // be careful because don't want user experience to be too varied.
-    // One step is to get a better preferred order from Bill Noon.
-    String [] preferredIDOrder = { "NWSLI", "FAA", "WMO", "WBAN", "COOP", "ICAO", "ThreadEx", "AWDN", "ACIS" };
+    // List order from Bill Noon (2011-01-13).
+    String [] preferredIDOrder = { "COOP", "ICAO", "NWSLI", "FAA", "WMO", "WBAN", "ThreadEx", "AWDN", "ACIS" };
     for ( int i = 0; i < preferredIDOrder.length; i++ ) {
         String id = getIDSpecific(preferredIDOrder[i]);
         if ( !id.equals("") ) {

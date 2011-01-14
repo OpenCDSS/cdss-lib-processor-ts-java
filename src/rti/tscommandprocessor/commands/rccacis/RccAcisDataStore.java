@@ -505,7 +505,8 @@ throws MalformedURLException, Exception
         ts.setDate2Original(dataEnd);
         DateTime date;
         String [] dataStringParts;
-        double traceValue = .001;
+        // Nolan Doesken and Bill Noon indicate that 0 is what people use
+        double traceValue = 0.0;
         double missing = ts.getMissing(); // Should be Double.NaN
         if ( readData ) {
             ts.allocateDataSpace();

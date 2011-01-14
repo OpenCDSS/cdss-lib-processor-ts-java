@@ -34,7 +34,6 @@ import RTi.Util.IO.ReaderInputStream;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 Data store for USGS NWSI web services.  This class maintains the web service information in a general way.
@@ -534,8 +533,8 @@ Parse time series values from the DOM, and also set the period.
 memory or process the data values)
 */
 private void readTimeSeries_ParseValues(TS ts, Element values, boolean readData )
-throws IOException {
-    String counts = values.getAttribute("count");
+throws IOException
+{
     DateTime start = null;
     // TODO SAM 2011-01-11 Why not just used beginDateTime and endDateTime for the period?
     NodeList valuelist = values.getElementsByTagName("value");
@@ -550,36 +549,46 @@ throws IOException {
     catch (Exception ex) {
         throw new IOException("Error parsing start date/time \"" + dateTimeString + "\"", ex);
     }
+    // DO NOT use count data in the WaterML to determine the end date.  Apparently missing values in the original
+    // data result in no XML record.  Therefore it is necessary to parse all DateTime strings from the data.
     DateTime end = null;
-    if ( (counts != null) && (ts.getDataIntervalBase() != TimeInterval.IRREGULAR) ) {
-        // Can determine end for regular interval data from the start and number of values...
-        end = new DateTime(start);
-        end.addInterval(ts.getDataIntervalBase(), ts.getDataIntervalMult() * (Integer.parseInt(counts) - 1));
+    dateTimeString = "";
+    try {
+        dateTimeString = ((Element)valuelist.item(valuelist.getLength() - 1)).getAttribute("dateTime").replace("T", " ");
+        end = DateTime.parse(dateTimeString,DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
     }
-    else {
-        dateTimeString = "";
-        try {
-            dateTimeString = ((Element)valuelist.item(valuelist.getLength() - 1)).getAttribute("dateTime").replace("T", " ");
-            end = DateTime.parse(dateTimeString,DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
-        }
-        catch (IOException ex) {
-            throw ex;
-        }
-        catch (Exception ex) {
-            throw new IOException("Error parsing date/time \"" + dateTimeString + "\"", ex);
-        }
+    catch (IOException ex) {
+        throw ex;
+    }
+    catch (Exception ex) {
+        throw new IOException("Error parsing date/time \"" + dateTimeString + "\"", ex);
     }
     ts.setDate1(start);
     ts.setDate1Original(start);
     ts.setDate2(end);
     ts.setDate2Original(end);
+    String dataFlag;
+    DateTime dateTime;
     if ( readData ) {
         ts.allocateDataSpace();
         for (int i = 0; i < valuelist.getLength(); i++) {
-            Element el = (Element) valuelist.item(i);
-            ts.setDataValue(start, Double.parseDouble(el.getTextContent()));
-            start.addInterval(ts.getDataIntervalBase(), ts.getDataIntervalMult());
-            // TODO SAM 2011-01-11 What about missing values/flags?
+            // Must parse the dates because missing results in gaps
+            try {
+                Element el = (Element) valuelist.item(i);
+                dateTimeString = el.getAttribute("dateTime").replace("T", " ");
+                dataFlag = el.getAttribute("qualifiers");
+                dateTime = DateTime.parse(dateTimeString);
+                if ( (dataFlag != null) && !dataFlag.equals("") ) {
+                    ts.setDataValue(dateTime, Double.parseDouble(el.getTextContent()), dataFlag, 0);
+                }
+                else {
+                    ts.setDataValue(dateTime, Double.parseDouble(el.getTextContent()));
+                }
+            }
+            catch ( Exception e ) {
+                // Bad record.
+                Message.printWarning(3,"","Bad data record (" + e + ") - skipping..." );
+            }
         }
     }
 }

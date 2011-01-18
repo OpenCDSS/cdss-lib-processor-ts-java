@@ -56,11 +56,15 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
+	YearType outputYearType = null;
 	if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         try {
-            YearType.valueOfIgnoreCase(OutputYearType);
+            outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
         }
         catch ( Exception e ) {
+        	outputYearType = null;
+        }
+        if ( outputYearType == null ) {
             message = "The output year type (" + OutputYearType + ") is invalid.";
             warning += "\n" + message;
             StringBuffer b = new StringBuffer();
@@ -106,7 +110,6 @@ supports old syntax and new parameter-based syntax.
 @param command_string A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
@@ -120,7 +123,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     else {
         // TODO SAM 2008-07-08 This whole block of code needs to be
         // removed as soon as commands have been migrated to the new syntax.
-    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
         int ntokens = 0;
         if ( v != null ) {
             ntokens = v.size();
@@ -128,7 +131,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
         String OutputYearType = "";
         if ( ntokens >= 2 ) {
             // Output year type...
-            OutputYearType = ((String)v.get(1)).trim();
+            OutputYearType = v.get(1).trim();
         }
 
         // Set parameters and new defaults...
@@ -165,10 +168,11 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	String OutputYearType = parameters.getValue ( "OutputYearType" );
+	YearType outputYearType = YearType.valueOfIgnoreCase(OutputYearType);
 	
 	try {
         // Set the output year type...
-	    processor.setPropContents ( "OutputYearType", OutputYearType );
+	    processor.setPropContents ( "OutputYearType", outputYearType );
 		Message.printStatus ( 2, routine, "Set output year type to \"" + OutputYearType + "\".");
 	}
 	catch ( Exception e ) {

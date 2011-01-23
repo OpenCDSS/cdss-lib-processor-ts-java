@@ -32,6 +32,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -42,6 +43,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -52,8 +54,14 @@ import RTi.Util.Time.TimeInterval;
 This class initializes, checks, and runs the NewTimeSeries() command.
 */
 public class NewTimeSeries_Command extends AbstractCommand
-implements Command
+implements Command, CommandDiscoverable, ObjectListProvider
 {
+    
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -191,6 +199,34 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.  This method currently
 supports old syntax and new parameter-based syntax.
 @param command A string command to parse.
@@ -247,13 +283,40 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
 Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( int command_number )
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "newTimeSeries.runCommand", message;
@@ -267,7 +330,7 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
 
 	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
@@ -305,7 +368,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Use a SetOutputPeriod() command or specify the set start." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -327,7 +390,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Use a SetOutputPeriod() command or specify the set start." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -342,7 +405,7 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 		Message.printWarning(2, routine, e);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid set start date/time, or as OutputStart or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -363,7 +426,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Use a SetOutputPeriod() command or specify the set end." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -386,7 +449,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Use a SetOutputPeriod() command or specify the set end." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -401,7 +464,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid set start date/time, or as OutputStart or OutputEnd." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -411,6 +474,10 @@ CommandWarningException, CommandException
 
 	TS ts = null;
 	try {
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Initialize the list
+            setDiscoveryTSList ( null );
+        }
 	    // Create the time series...
 		ts = TSUtil.newTimeSeries ( NewTSID, true );
 		if ( ts == null ) {
@@ -418,7 +485,7 @@ CommandWarningException, CommandException
             Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(
                     command_tag,++warning_count),routine,message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify the NewTSID - contact software support if necessary." ) );
 			throw new Exception ( "Null time series." );
@@ -430,7 +497,7 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the NewTSID - contact software support if necessary." ) );
 		throw new CommandException ( message );
@@ -449,17 +516,19 @@ CommandWarningException, CommandException
 		ts.setDate1Original ( SetStart_DateTime );
 		ts.setDate2 ( SetEnd_DateTime );
 		ts.setDate2Original ( SetEnd_DateTime );
-		if ( ts.allocateDataSpace() != 0 ) {
-			message = "Unable to allocate memory for time series.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count),routine,message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the period for the time series is not huge." ) );
-		}
-		if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
-			TSUtil.setConstant ( ts, InitialValue_double );
+		if ( commandPhase == CommandPhaseType.RUN ) {
+    		if ( ts.allocateDataSpace() != 0 ) {
+    			message = "Unable to allocate memory for time series.";
+    			Message.printWarning ( warning_level,
+    			MessageUtil.formatMessageTag(
+    			command_tag,++warning_count),routine,message );
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the period for the time series is not huge." ) );
+    		}
+    		if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
+    			TSUtil.setConstant ( ts, InitialValue_double );
+    		}
 		}
 		ts.setAlias ( Alias );
 	}
@@ -470,14 +539,23 @@ CommandWarningException, CommandException
         MessageUtil.formatMessageTag(
         command_tag,++warning_count),routine,message );
         Message.printWarning(3,routine,e);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE,
             message, "See the log file for details." ) );
 	}
 
-	// Update the data to the processor so that appropriate actions are taken...
-
-    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, ts);
+	if ( commandPhase == CommandPhaseType.RUN ) {
+    	// Update the data to the processor so that appropriate actions are taken...
+        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, ts);
+	}
+    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Set in the discovery list
+        if ( ts != null ) {
+            List<TS> tslist = new Vector();
+            tslist.add(ts);
+            setDiscoveryTSList(tslist);
+        }
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -488,7 +566,15 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

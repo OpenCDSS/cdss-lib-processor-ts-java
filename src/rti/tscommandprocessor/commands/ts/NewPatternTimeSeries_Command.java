@@ -17,6 +17,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -27,6 +28,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -37,8 +39,15 @@ import RTi.Util.Time.TimeUtil;
 /**
 This class initializes, checks, and runs the NewPatternTimeSeries() command.
 */
-public class NewPatternTimeSeries_Command extends AbstractCommand implements Command
+public class NewPatternTimeSeries_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider
 {
+    
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discovery_TS_Vector = null;
 	
 /**
 Pattern values as doubles.  These are created during initialization and used during the run.
@@ -283,6 +292,34 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
@@ -343,13 +380,40 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
 Run the command.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-public void runCommand ( int command_number )
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "NewPatternTimeSeries.runCommand", message;
@@ -361,7 +425,7 @@ CommandWarningException, CommandException
 	// Get and clear the status and clear the run log...
 	
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	status.clearLog(commandPhase);
 
 	// Make sure there are time series available to operate on...
 	
@@ -402,7 +466,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-				status.addToLog(CommandPhaseType.RUN,
+				status.addToLog(commandPhase,
 						new CommandLogRecord(
 						CommandStatusType.FAILURE,message,
 						"Specify SetStart or make sure that a setOutputPeriod() command has been specified prior to this command."));
@@ -456,7 +520,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-				status.addToLog(CommandPhaseType.RUN,
+				status.addToLog(commandPhase,
 						new CommandLogRecord(
 						CommandStatusType.FAILURE, message,
 						"Specify SetEnd or make sure that a setOutputPeriod() command has been specified prior to this command."));
@@ -480,7 +544,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog(CommandPhaseType.RUN,
+                status.addToLog(commandPhase,
                         new CommandLogRecord(
                         CommandStatusType.FAILURE, message,
                         "Report the problem to software support."));
@@ -496,7 +560,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog(CommandPhaseType.RUN,
+        status.addToLog(commandPhase,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,
                 "Specify a valid SetEnd or global OutputStart."));
@@ -519,13 +583,17 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-		status.addToLog(CommandPhaseType.RUN,
+		status.addToLog(commandPhase,
 				new CommandLogRecord(
 				CommandStatusType.FAILURE, message,
 				"Verify the TSID format using the command editor."));
 		throw new CommandException ( message );
 	}
 	try {
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Initialize the list
+            setDiscoveryTSList ( null );
+        }
         // Try to fill out the time series. Allocate memory and set other information...
 		ts.setIdentifier ( NewTSID );
 		if ( (Description != null) && (Description.length() > 0) ) {
@@ -539,101 +607,113 @@ CommandWarningException, CommandException
 		ts.setDate1Original ( SetStart_DateTime );
 		ts.setDate2 ( SetEnd_DateTime );
 		ts.setDate2Original ( SetEnd_DateTime );
-		if ( ts.allocateDataSpace() != 0 ) {
-			message = "Unable to allocate memory for time series.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count),routine,message );
-			status.addToLog(CommandPhaseType.RUN,
-					new CommandLogRecord(
-					CommandStatusType.FAILURE, message,
-					"Verify that the output period is not huge and check computer memory."));
-		}
-		if ( __PatternFlags != null ) {
-		    // Also allocate the space for flags
-		    ts.allocateDataFlagSpace(null, false);
-		}
-		if ( (__PatternValues_double != null) && (__PatternValues_double.length > 0) ) {
-		    if ( ts instanceof IrregularTS ) {
-		        // Irregular time series don't have a regular data space so need to fill in some
-		        // missing values first.  Use the period to iterate and define missing values.
-		        DateTime end = new DateTime ( ts.getDate2() );
-		        TimeInterval tsinterval = null;
-		        try {
-		            tsinterval = TimeInterval.parseInterval ( IrregularInterval );
-		        }
-		        catch ( Exception e ) {
-		            message = "Irregular time series interval is invalid.";
-		            Message.printWarning ( warning_level,
-		            MessageUtil.formatMessageTag(
-		            command_tag,++warning_count),routine,message );
-		            status.addToLog(CommandPhaseType.RUN,
-		                    new CommandLogRecord(
-		                    CommandStatusType.FAILURE, message,
-		                    "Verify that the irregular time series interval is valid (e.g., \"5Min\")."));
-		        }
-		        double missing = ts.getMissing();
-		        int iPattern = 0; // Pattern to use
-		        Message.printStatus(2, routine, "Initializing pattern time series to missing..." );
-		        // Interval base and multiplier are from the IrregularInterval...
-		        for ( DateTime date = new DateTime(ts.getDate1()); date.lessThanOrEqualTo(end);
-		            date.addInterval(tsinterval.getBase(),tsinterval.getMultiplier())) {
-		            if ( __PatternFlags != null ) {
-		                ts.setDataValue(date, missing, __PatternFlags[iPattern++], 0 );
-		                if ( iPattern == __PatternFlags.length ) {
-		                    iPattern = 0;
-		                }
-		            }
-		            else {
-		                // Just set the data value to missing
-		                ts.setDataValue(date, missing );
-		            }
-		        }
-		    }
-		    // Set the data.  This will reset the initial missing values in the time series.
-			TSUtil_SetDataValuesUsingPattern tsworker = new TSUtil_SetDataValuesUsingPattern ();
-			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime,
-			    __PatternValues_double, __PatternFlags );
+		if ( commandPhase == CommandPhaseType.RUN ) {
+    		if ( ts.allocateDataSpace() != 0 ) {
+    			message = "Unable to allocate memory for time series.";
+    			Message.printWarning ( warning_level,
+    			MessageUtil.formatMessageTag(
+    			command_tag,++warning_count),routine,message );
+    			status.addToLog(commandPhase,
+    					new CommandLogRecord(
+    					CommandStatusType.FAILURE, message,
+    					"Verify that the output period is not huge and check computer memory."));
+    		}
+    		if ( __PatternFlags != null ) {
+    		    // Also allocate the space for flags
+    		    ts.allocateDataFlagSpace(null, false);
+    		}
+    		if ( (__PatternValues_double != null) && (__PatternValues_double.length > 0) ) {
+    		    if ( ts instanceof IrregularTS ) {
+    		        // Irregular time series don't have a regular data space so need to fill in some
+    		        // missing values first.  Use the period to iterate and define missing values.
+    		        DateTime end = new DateTime ( ts.getDate2() );
+    		        TimeInterval tsinterval = null;
+    		        try {
+    		            tsinterval = TimeInterval.parseInterval ( IrregularInterval );
+    		        }
+    		        catch ( Exception e ) {
+    		            message = "Irregular time series interval is invalid.";
+    		            Message.printWarning ( warning_level,
+    		            MessageUtil.formatMessageTag(
+    		            command_tag,++warning_count),routine,message );
+    		            status.addToLog(commandPhase,
+    		                    new CommandLogRecord(
+    		                    CommandStatusType.FAILURE, message,
+    		                    "Verify that the irregular time series interval is valid (e.g., \"5Min\")."));
+    		        }
+    		        double missing = ts.getMissing();
+    		        int iPattern = 0; // Pattern to use
+    		        Message.printStatus(2, routine, "Initializing pattern time series to missing..." );
+    		        // Interval base and multiplier are from the IrregularInterval...
+    		        for ( DateTime date = new DateTime(ts.getDate1()); date.lessThanOrEqualTo(end);
+    		            date.addInterval(tsinterval.getBase(),tsinterval.getMultiplier())) {
+    		            if ( __PatternFlags != null ) {
+    		                ts.setDataValue(date, missing, __PatternFlags[iPattern++], 0 );
+    		                if ( iPattern == __PatternFlags.length ) {
+    		                    iPattern = 0;
+    		                }
+    		            }
+    		            else {
+    		                // Just set the data value to missing
+    		                ts.setDataValue(date, missing );
+    		            }
+    		        }
+    		    }
+    		    // Set the data.  This will reset the initial missing values in the time series.
+    			TSUtil_SetDataValuesUsingPattern tsworker = new TSUtil_SetDataValuesUsingPattern ();
+    			tsworker.setDataValuesUsingPattern ( ts, SetStart_DateTime, SetEnd_DateTime,
+    			    __PatternValues_double, __PatternFlags );
+    		}
 		}
         
         ts.setAlias ( Alias );
 
-		// Further process the time series...
-        // This makes sure the period is at least as long as the output period, and computes the historical averages.
-        List tslist = new Vector();
-        tslist.add ( ts );
-        PropList request_params = new PropList ( "" );
-        request_params.setUsingObject ( "TSList", tslist );
-        try {
-            processor.processRequest( "ReadTimeSeries2", request_params);
+        if ( commandPhase == CommandPhaseType.RUN ) {
+    		// Further process the time series...
+            // This makes sure the period is at least as long as the output period, and computes the historical averages.
+            List tslist = new Vector();
+            tslist.add ( ts );
+            PropList request_params = new PropList ( "" );
+            request_params.setUsingObject ( "TSList", tslist );
+            try {
+                processor.processRequest( "ReadTimeSeries2", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error post-processing new pattern time series.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+                Message.printWarning(log_level, routine, e);
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                throw new CommandException ( message );
+            }
+            
+            // Update the data to the processor...
+            
+            try {
+                TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
+            }
+            catch ( Exception e ){
+                    message = "Cannot append new time series to results list.  Skipping.";
+                    Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag(
+                        command_tag, ++warning_count),
+                        routine,message);
+                    status.addToLog(commandPhase,
+                            new CommandLogRecord(
+                            CommandStatusType.FAILURE, message,
+                            "Unable to provide recommendation - check log file for details."));
+            }
         }
-        catch ( Exception e ) {
-            message = "Error post-processing new pattern time series.";
-            Message.printWarning ( warning_level, 
-                MessageUtil.formatMessageTag(command_tag,
-                ++warning_count), routine, message );
-            Message.printWarning(log_level, routine, e);
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
-            throw new CommandException ( message );
-        }
-        
-        // Update the data to the processor...
-        
-        try {
-            TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, ts );
-        }
-        catch ( Exception e ){
-                message = "Cannot append new time series to results list.  Skipping.";
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(
-                    command_tag, ++warning_count),
-                    routine,message);
-                status.addToLog(CommandPhaseType.RUN,
-                        new CommandLogRecord(
-                        CommandStatusType.FAILURE, message,
-                        "Unable to provide recommendation - check log file for details."));
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Set in the discovery list
+            if ( ts != null ) {
+                List<TS> tslist = new Vector();
+                tslist.add(ts);
+                setDiscoveryTSList(tslist);
+            }
         }
 	}
 	catch ( Exception e ) {
@@ -642,7 +722,7 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-		status.addToLog(CommandPhaseType.RUN,
+		status.addToLog(commandPhase,
 				new CommandLogRecord(
 				CommandStatusType.FAILURE, message,
 				"Report the problem to software support - check log file for details."));
@@ -657,7 +737,15 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 	
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

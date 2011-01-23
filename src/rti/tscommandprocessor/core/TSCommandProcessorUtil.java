@@ -556,12 +556,71 @@ throws InvalidCommandParameterException
 }
 
 /**
+Get a list of TS (time series) from a list of commands.  These time series are suitable for passing to code
+run in discovery mode, which itself produces new time series with identifiers that are dynamically determined
+from the input time series.  Commands that implement ObjectListProvider have their getObjectList(TS) method
+called and the returned time series are added to the list.
+@param commands time series commands to search.
+@param sort Should output time series be sorted by identifier - currently not enabled
+@return list of time series or an empty non-null list if nothing found.
+*/
+protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, boolean sort )
+{   if ( commands == null ) {
+        return new Vector();
+    }
+    List<TS> tslist = new Vector ();
+    for ( Command command: commands ) {
+        if ( (command != null) && (command instanceof ObjectListProvider) ) {
+            List<TS> list = ((ObjectListProvider)command).getObjectList ( TS.class );
+            if ( list != null ) {
+                int tssize = list.size();
+                TS ts;
+                for ( int its = 0; its < tssize; its++ ) {
+                    ts = list.get(its);
+                    if ( ts != null ) {
+                        tslist.add( ts );
+                    }
+                }
+            }
+        }
+    }
+    /*
+    if ( sort ) {
+        TSUtil.sort(tslist);
+    }
+    */
+    return tslist;
+}
+
+/**
+Return the time series identifiers for commands before a specific command
+in the TSCommandProcessor.  This is used, for example, to provide a list of identifiers to editor dialogs.
+@param processor a TSCommandProcessor that is managing commands.
+@param command the command above which time series identifiers are needed.
+@return a list of String containing the time series identifiers, or an empty list.
+*/
+public static List<TS> getDiscoveryTSFromCommandsBeforeCommand( TSCommandProcessor processor, Command command )
+{   String routine = "getDiscoveryTSFromCommandsBeforeCommand";
+    // Get the position of the command in the list...
+    int pos = processor.indexOf(command);
+    Message.printStatus ( 2, routine, "Position in list is " + pos + " for command:" + command );
+    if ( pos < 0 ) {
+        // Just return a blank list...
+        return new Vector();
+    }
+    // Find the commands above the position...
+    List<Command> commands = getCommandsBeforeIndex ( processor, pos );
+    // Get the time series from the commands (sort on the identifiers)...
+    return getDiscoveryTSFromCommands ( commands, true );
+}
+
+/**
 Get a list of ensemble identifiers from a list of commands.  See documentation for
 fully loaded method.  The output list is not sorted..
 @param commands Commands to search.
 @return list of table identifiers or an empty non-null list if nothing found.
 */
-private static List getEnsembleIdentifiersFromCommands ( List commands )
+private static List<String> getEnsembleIdentifiersFromCommands ( List commands )
 {   // Default behavior...
     return getEnsembleIdentifiersFromCommands ( commands, false );
 }

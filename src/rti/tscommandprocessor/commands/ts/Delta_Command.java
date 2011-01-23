@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -34,9 +35,7 @@ import RTi.Util.Time.DateTime;
 /**
 This class initializes, checks, and runs the Delta() command.
 */
-public class Delta_Command extends AbstractCommand implements Command
-// TODO SAM 2010-09-13 Need to figure out how to do discovery
-// , CommandDiscoverable, ObjectListProvider
+public class Delta_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
     
 /**
@@ -232,8 +231,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -241,7 +239,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
-// TODO SAM 2010-09-13 The following is used since discovery is not fully enabled
 /**
 Run the command.
 ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
@@ -411,54 +408,60 @@ CommandWarningException, CommandException
 
 	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
 
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "TSList", TSList );
-	request_params.set ( "TSID", TSID );
-    request_params.set ( "EnsembleID", EnsembleID );
-	CommandProcessorRequestResultsBean bean = null;
-	try {
-        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+    List<TS> tslist = null;
+	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	    // Get the discovery time series list from all time series above this command
+	    tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand((TSCommandProcessor)processor,this);
 	}
-	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-	}
-    if ( bean == null ) {
-        Message.printStatus ( 2, routine, "Bean is null.");
-    }
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
-	if ( o_TSList == null ) {
-		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-		Message.printWarning ( log_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message,
-                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-	}
-	else {
-        tslist = (List)o_TSList;
-		if ( tslist.size() == 0 ) {
-			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
-			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
-			Message.printWarning ( log_level,
-					MessageUtil.formatMessageTag(
-							command_tag,++warning_count), routine, message );
+	else if ( commandPhase == CommandPhaseType.RUN ) {
+    	PropList request_params = new PropList ( "" );
+    	request_params.set ( "TSList", TSList );
+    	request_params.set ( "TSID", TSID );
+        request_params.set ( "EnsembleID", EnsembleID );
+    	CommandProcessorRequestResultsBean bean = null;
+    	try {
+            bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+    		"\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+    	}
+        if ( bean == null ) {
+            Message.printStatus ( 2, routine, "Bean is null.");
+        }
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+    	if ( o_TSList == null ) {
+    		message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+    		"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+    		Message.printWarning ( log_level,
+    		MessageUtil.formatMessageTag(
+    		command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message,
                             "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
-		}
+    	}
+    	else {
+            tslist = (List)o_TSList;
+    		if ( tslist.size() == 0 ) {
+    			message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+    			"\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+    			Message.printWarning ( log_level,
+    					MessageUtil.formatMessageTag(
+    							command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message,
+                                "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    		}
+    	}
 	}
 	
 	int nts = tslist.size();
@@ -505,11 +508,11 @@ CommandWarningException, CommandException
 		try {
 		    boolean createData = true; // Run full command
 	        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	            // Just want time series headers initialized
+	            // Just want time series headers initialized, but not actually do the processing
 	            createData = false;
 	            setDiscoveryTSList ( null );
 	        }
-		    // Do the scaling...
+		    // Create the delta time series...
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
 			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime,
 			    trendType, resetMin, resetMax, Flag, createData );
@@ -519,13 +522,7 @@ CommandWarningException, CommandException
                     processor, newts, Alias, status, commandPhase);
                 newts.setAlias ( alias );
 			}
-			// If requested, change the data units...
-			//if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
-			//	ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
-			//	ts.setDataUnits ( NewUnits );
-			//}
-			// Add the newly created time series to the software memory.
-			
+		
 			// Append problems in the low-level code to command status log
             for ( String problem : tsu.getProblems() ) {
                 Message.printWarning ( warning_level,

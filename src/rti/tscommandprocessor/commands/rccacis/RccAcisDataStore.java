@@ -44,6 +44,7 @@ import RTi.Util.IO.ReaderInputStream;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Data store for NCDC ACIS web services.  This class maintains the web service information in a general way.
@@ -127,22 +128,28 @@ Return the list of data types that are available.  Currently this returns the ma
 the name.  Duplicates in the table are ignored.
 TODO SAM 2011-01-07 It would be good to have the option of using data type abbreviations - work with Bill Noon
 on this.
-@param includeName whether to include the name.
+@param includeName whether to include the name
+@param includeInterval whether to include the interval as (daily), etc.
 */
-public List<String> getDataTypeStrings ( boolean includeName )
+public List<String> getDataTypeStrings ( boolean includeName, boolean includeInterval )
 {   List<String> typeList = new Vector();
     RccAcisVariableTableRecord recPrev = null;
+    String nameString = "";
+    String intervalString = "";
     for ( RccAcisVariableTableRecord rec: __variableTableRecordList ) {
         if ( (typeList.size() > 0) && (rec.getMajor() == recPrev.getMajor()) ) {
             // Same information as previous record so don't add again
             continue;
         }
+        nameString = "";
+        intervalString = "";
         if ( includeName ) {
-            typeList.add( "" + rec.getMajor() + " - " + rec.getName() );
+            nameString = " - " + rec.getName();
         }
-        else {
-            typeList.add( "" + rec.getMajor() );
+        if ( includeInterval ) {
+            intervalString = " (" + rec.getReportInterval() + ")";
         }
+        typeList.add( "" + rec.getMajor() + nameString + intervalString );
         recPrev = rec;
     }
     return typeList;
@@ -237,6 +244,8 @@ throws IOException, MalformedURLException
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() +
         "/MultiStnData?meta=sIds,uid,name,postal,county,ll,elev,valid_daterange" );
     // Specify constraints from input filter
+    // Element being read...
+    urlString.append("&elems="+variable.getMajor());
     // Bounding box...
     List<String> bboxList = ifp.getInput(null, "bbox", true, null);
     if ( bboxList.size() > 1 ) {
@@ -321,6 +330,15 @@ throws IOException, MalformedURLException
     }
     else {
         // Parse the JSON
+        // First fix a known issue with the parsing by replacing offending empty valid date range with something
+        // that GSON can handle
+        // Extra bracket around date range...
+        //resultString = resultString.replace("valid_daterange\":[[", "valid_daterange\":[");
+        //resultString = resultString.replace("]],\"postal","],\"postal");
+        //resultString = resultString.replace("valid_daterange\":[[]]", "valid_daterange\":[\"\",\"\"]");
+        resultString = resultString.replace("[[", "[");
+        resultString = resultString.replace("]]", "]");
+        Message.printStatus(2,routine,"Returned data after cleanup="+resultString);
         Gson gson = new Gson();
         RccAcisStationTimeSeriesMetadataList metadataListObject =
             gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
@@ -332,6 +350,13 @@ throws IOException, MalformedURLException
                 // TODO SAM 2011-01-07 Some metadata like HUC do not return so may need to set based
                 // on whether the information was entered in the filter
             }
+        }
+        // Remove records that have no period
+        try {
+            metadataListObject.cleanupData();
+        }
+        catch ( Exception e ) {
+            Message.printWarning(3, routine, e);
         }
         return metadataListObject.getData();
     }
@@ -354,10 +379,11 @@ throws MalformedURLException, Exception
     TS ts = null;
     String routine = getClass().getName() + ".readTimeSeries";
     TSIdent tsident = TSIdent.parseIdentifier(tsidentString);
+    int intervalBase = tsident.getIntervalBase();
     // Look up the metadata for the data name
     RccAcisVariableTableRecord variable = lookupVariable ( tsident.getType() );
     // The station ID needs to specify the location type...
-    String stationID = readTimeSeries_FormRequestStationID ( tsident.getLocation() );
+    String stationID = readTimeSeries_FormHttpRequestStationID ( tsident.getLocation() );
     // The start and end date are required.
     String readStartString = "por";
     String readEndString = "por";
@@ -366,11 +392,34 @@ throws MalformedURLException, Exception
         readStart = DateTime.parse("2011-01-01");
         readEnd = DateTime.parse("2011-01-01");
     }
+    // TODO SAM 2011-01-21 ACIS always seems to want precision to day on request
     if ( readStart != null ) {
-        readStartString = readStart.toString(DateTime.FORMAT_YYYY_MM_DD);
+        //if ( intervalBase == TimeInterval.DAY ) {
+            readStartString = readStart.toString(DateTime.FORMAT_YYYY_MM_DD);
+        //}
+        //else if ( intervalBase == TimeInterval.MONTH ) {
+        //    readStartString = readStart.toString(DateTime.FORMAT_YYYY_MM);
+        //}
+        //else if ( intervalBase == TimeInterval.HOUR ) {
+        //    readStartString = readStart.toString(DateTime.FORMAT_YYYY_MM_DD_HH);
+        //} 
+        //else {
+        //    readStartString = readStart.toString();
+        //}
     }
     if ( readEnd != null ) {
-        readEndString = readEnd.toString(DateTime.FORMAT_YYYY_MM_DD);
+        //if ( intervalBase == TimeInterval.DAY ) {
+            readEndString = readEnd.toString(DateTime.FORMAT_YYYY_MM_DD);
+        //}
+        //else if ( intervalBase == TimeInterval.MONTH ) {
+        //    readEndString = readEnd.toString(DateTime.FORMAT_YYYY_MM);
+        //}
+        //else if ( intervalBase == TimeInterval.HOUR ) {
+        //    readEndString = readEnd.toString(DateTime.FORMAT_YYYY_MM_DD_HH);
+        //}
+        //else {
+        //    readEndString = readEnd.toString();
+        //}
     }
     // Only one data type is requested as per readTimeSeries() conventions
     String elems = "" + variable.getMajor();
@@ -423,9 +472,9 @@ throws MalformedURLException, Exception
     in.close();
     urlConnection.disconnect();
     String resultString = b.toString();
-    if ( Message.isDebugOn ) {
-        Message.printStatus(1,routine,"Returned data="+resultString);
-    }
+    //if ( Message.isDebugOn ) {
+        Message.printStatus(2,routine,"Returned data="+resultString);
+    //}
     if ( b.indexOf("error") >= 0 ) {
         throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
     }
@@ -461,6 +510,7 @@ throws MalformedURLException, Exception
         String stationName = "";
         int mCount = 0;
         int tCount = 0;
+        int commaPos = 0; // Position of comma
         if ( requestJSON ) {
             // Process the JSON by brute force.  Data are after "data":[ and are a sequence of
             // ["yyyy-mm-dd","value"],... where value can be a number, "M" for missing, or "T" for trace.
@@ -492,8 +542,10 @@ throws MalformedURLException, Exception
             Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data values." );
             if ( dataStringsArray.length > 1 ) {
                 stationName = dataStringsArray[0];
-                dataStart = DateTime.parse(dataStringsArray[1].substring(0,10));
-                dataEnd = DateTime.parse(dataStringsArray[dataStringsArray.length - 1].substring(0,10));
+                commaPos = dataStringsArray[1].indexOf(",");
+                dataStart = DateTime.parse(dataStringsArray[1].substring(0,commaPos));
+                commaPos = dataStringsArray[dataStringsArray.length - 1].indexOf(",");
+                dataEnd = DateTime.parse(dataStringsArray[dataStringsArray.length - 1].substring(0,commaPos));
             }
         }
         ts.setDataUnits(variable.getUnits());
@@ -584,26 +636,26 @@ Form the station ID string part of the time series request, something like "ID c
 ID code.  If an ACIS ID, no code is necessary.
 @param tsidLocation the location part of a time series identifier.
  */
-String readTimeSeries_FormRequestStationID ( String tsidLocation )
+String readTimeSeries_FormHttpRequestStationID ( String tsidLocation )
 {
-    int pos = tsidLocation.indexOf(":");
-    if ( pos <= 0 ) {
+    int colonPos = tsidLocation.indexOf(":");
+    if ( colonPos <= 0 ) {
         throw new InvalidParameterException ( "Station location \"" + tsidLocation +
             "\" is invalid (should be Type:ID)" );
     }
     try {
-        RccAcisStationType stationType = lookupStationTypeFromType(tsidLocation.substring(0,pos).trim());
+        RccAcisStationType stationType = lookupStationTypeFromType(tsidLocation.substring(0,colonPos).trim());
         if ( stationType == null ) {
             throw new InvalidParameterException ( "Station code from \"" + tsidLocation +
                 "\" cannot be determined." );
         }
         else if ( stationType.getCode() == 0 ) {
-            // No station type code is expected, just pass ACIS ID
-            return tsidLocation.substring(pos + 1).trim();
+            // No station type code is expected since the ACIS type, just pass ACIS ID
+            return tsidLocation.substring(colonPos + 1).trim();
         }
         else {
             // Station ID followed by the station type code
-            return tsidLocation.substring(pos + 1).trim() + " " + stationType.getCode();
+            return tsidLocation.substring(colonPos + 1).trim() + " " + stationType.getCode();
         }
     }
     catch ( NumberFormatException e ) {

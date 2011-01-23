@@ -224,6 +224,14 @@ public void setPostal ( String postal2 )
 }
 
 /**
+Set the valid date range.
+*/
+public void setValid_daterange ( String [] valid_daterange2 )
+{
+    valid_daterange = valid_daterange2;
+}
+
+/**
 Set the variable for the data.
 */
 public void setVariable ( RccAcisVariableTableRecord variable )

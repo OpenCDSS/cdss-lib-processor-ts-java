@@ -2,105 +2,103 @@ package rti.tscommandprocessor.core;
 
 /**
 This class provides an enumeration of possible TSList command parameter values.
-An enum could be used when Java 1.5 is utilized.     
 */
-public class TSListType {
+public enum TSListType {
 	
     /**
      * AllMatchingTS indicates that all time series matching a pattern should be in the list.
      */
-    public static TSListType ALL_MATCHING_TSID = new TSListType(0, "AllMatchingTSID");
+    ALL_MATCHING_TSID("AllMatchingTSID"),
     
     /**
      * AllTS indicates that all time series should be in the list. 
      */
-    public static TSListType ALL_TS = new TSListType(1, "AllTS");
+    ALL_TS("AllTS"),
 	
 	/**
 	 * EnsembleID indicates that all time series in the ensemble should be in the list.
 	 */
-	public static TSListType ENSEMBLE_ID = new TSListType(2, "EnsembleID");
+	ENSEMBLE_ID("EnsembleID"),
 	
     /**
      * FirstMatchingTSID indicates that only the first matching time series should be in the list. 
      */
-    public static TSListType FIRST_MATCHING_TSID = new TSListType(3, "FirstMatchingTSID");
+    FIRST_MATCHING_TSID("FirstMatchingTSID"),
     
     /**
      * LastMatchingTSID indicates that only the last matching time series should be in the list. 
      */
-    public static TSListType LAST_MATCHING_TSID = new TSListType(3, "LastMatchingTSID");
+    LAST_MATCHING_TSID("LastMatchingTSID"),
 	
 	/**
 	 * SelectedTS indicates that all selected time series should be in the list. 
 	 */
-	public static TSListType SELECTED_TS = new TSListType(4, "SelectedTS");
+	SELECTED_TS("SelectedTS"),
     
     /**
      * SpecifiedTSID indicates that all specified time series should be in the list.
      * Specified time series are those that are explicitly included in a list.
      */
-    public static TSListType SPECIFIED_TSID = new TSListType(5, "SpecifiedTSID");
+    SPECIFIED_TSID("SpecifiedTSID"),
     
     /**
      * SpecifiedTSID indicates that all specified time series should be in the list. 
      */
-    public static TSListType TSPOSITION = new TSListType(6, "TSPosition");
+    TSPOSITION("TSPosition");
     
     /**
-	 * Integer value of the type.
-	 * @uml.property  name="__type"
-	 */
-	private int __type;
-	/**
-	 * Type name, e.g., "AllTS", "EnsembleID".
-	 * @uml.property  name="__typename"
-	 */
-	private String __typename;
-	
-	/**
-	 * Construct the TSList type using the type number and name.  It is
-	 * private because other code should use the predefined instances.
-	 * @param type
-	 * @param typename
-	 */
-	private TSListType ( int type, String typename ){
-		__type = type;
-		__typename = typename;
-	}
-	
-	/**
-	 * Determine if two types are equal.
-     * @param type An instance of TSListType.
-	 */
-	public boolean equals ( TSListType type )
-	{
-		if ( __type == type.__type ) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-    
-    /**
-     * Determine if two types are equal, based on the string name.  Case is ignored.
-     * @param typename Type name (e.g., "AllTS").
+     * The string name that should be displayed.
      */
-    public boolean equals ( String typename )
-    {
-        if ( __typename.equalsIgnoreCase( typename) ) {
+    private final String displayName;
+    
+    /**
+     * Construct a time series list type enumeration value.
+     * @param displayName name that should be displayed in choices, etc.
+     */
+    private TSListType(String displayName) {
+        this.displayName = displayName;
+    }
+    
+    /**
+     * Equals method to match legacy TSListType class behavior.
+     * TODO SAM 2011-01-21 Phase out in favor of simple == but tricky because of base class implements
+     * equals(Object)
+     */
+    public boolean equals ( String tsListType ) {
+        if ( tsListType.equalsIgnoreCase(this.displayName) ) {
             return true;
         }
         else {
             return false;
         }
     }
-
+	
+    /**
+     * Return the display name for the time series list type.  This is usually the same as the
+     * value but using appropriate mixed case.
+     * @deprecated use ==
+     * @return the display name.
+     */
+    @Override
+    public String toString() {
+        return displayName;
+    }
+	
 	/**
-	 * Return a String representation of the command status (return the type name).
+	 * Return the enumeration value given a string name (case-independent).
+	 * @return the enumeration value given a string name (case-independent), or null if not matched.
 	 */
-	public String toString () {
-		return __typename;
+	public static TSListType valueOfIgnoreCase(String name)
+	{
+	    if ( name == null ) {
+	        return null;
+	    }
+	    // Currently supported values
+	    for ( TSListType t : values() ) {
+	        if ( name.equalsIgnoreCase(t.toString()) ) {
+	            return t;
+	        }
+	    } 
+	    return null;
 	}
 }

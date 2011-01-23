@@ -2154,7 +2154,7 @@ determined, with one of the following values (see TSListType):
         internally the values are zero indexed.  In the future Python notation slices may
         be enabled.</li>
 </ol>
-@param TSID A time series indentifier (pattern) when used with TSList=AllMatchingTSID and
+@param TSID A time series identifier (pattern) when used with TSList=AllMatchingTSID and
 TSList=LastMatchingTSID, or a list of time series separated by commas when used with
 TSList=SpecifiedTSID.
 @param EnsembleID A time series ensemble identifier (no pattern currently allowed).
@@ -2164,17 +2164,15 @@ to be used to update the time series.  Use the size of the list (in the first
 element) to determine the number of time series to process.  The order of the
 time series will be from first to last.  A non-null list is guaranteed to be returned.
 */
-protected List getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID, String TSPosition )
+protected TimeSeriesToProcess getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID,
+    String TSPosition )
 {	String routine = "TSEngine.getTimeSeriesToProcess";
-    List tslist = new Vector();	// List of time series to process
+    List<TS> tslist = new Vector();	// List of time series to process
+    List<String> errorList = new Vector(); // List of error messages finding time series
 	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
 	int [] tspos = new int[nts];	// Positions of time series to process.
 					// Size to match the full list but may
 					// not be filled initially - trim before returning.
-	// Setup the return data...
-	List v = new Vector ( 2 );
-	v.add ( tslist );
-	v.add ( tspos );
 	// Loop through the time series in memory...
 	int count = 0;
 	TS ts = null;
@@ -2198,9 +2196,8 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
                     // Only return the single index...
                     int [] tspos2 = new int[1];
                     tspos2[0] = tspos[0];
-                    v.set(1,tspos2);
                     // Only want one match...
-                    return v;
+                    return new TimeSeriesToProcess(tslist, tspos2, errorList);
                 }
             }
             else {
@@ -2211,14 +2208,14 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
                     // Only return the single index...
                     int [] tspos2 = new int[1];
                     tspos2[0] = tspos[0];
-                    v.set(1,tspos2);
                     // Only want one match...
-                    return v;
+                    return new TimeSeriesToProcess(tslist, tspos2, errorList);
                 }
             }
         }
         // Return empty list since no match
-        return v;
+        errorList.add("Unable to find first matched TSID \"" + TSID + "\"" );
+        return new TimeSeriesToProcess(tslist, new int[0], errorList);
     }
 	else if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
 		// Search backwards for the last single matching time series...
@@ -2238,9 +2235,8 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
 					// Only return the single index...
 					int [] tspos2 = new int[1];
 					tspos2[0] = tspos[0];
-					v.set(1,tspos2);
 					// Only want one match...
-					return v;
+					return new TimeSeriesToProcess(tslist, tspos2, errorList);
 				}
 			}
 			else {
@@ -2251,14 +2247,14 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
 					// Only return the single index...
 					int [] tspos2 = new int[1];
 					tspos2[0] = tspos[0];
-					v.set(1,tspos2);
 					// Only want one match...
-					return v;
+					return new TimeSeriesToProcess(tslist, tspos2, errorList);
 				}
 			}
 		}
 		// Return empty list since no match
-        return v;
+        errorList.add("Unable to find last matched TSID \"" + TSID + "\"" );
+        return new TimeSeriesToProcess(tslist, new int[0], errorList);
 	}
     else if ( TSList.equalsIgnoreCase(TSListType.ENSEMBLE_ID.toString()) ) {
         // Return a list of all time series in an ensemble
@@ -2267,8 +2263,8 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
         // For now, do not allow time series to be copied to ensemble (e.g., in NewEnsemble() command).
         TSEnsemble ensemble = __ts_processor.getEnsemble ( EnsembleID );
         if ( ensemble == null ) {
-            Message.printStatus( 3, routine, "Unable to find ensemble \"" + EnsembleID + "\" to get time series.");
-            return v;
+            errorList.add ("Unable to find ensemble \"" + EnsembleID + "\" to get time series.");
+            return new TimeSeriesToProcess(tslist, new int[0], errorList);
         }
         else {
             int esize = ensemble.size();
@@ -2305,27 +2301,21 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
         }
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
-        if ( count == 0 ) {
-            v.set ( 1, new int[0] );
+        int [] tspos2 = new int[count];
+        for ( int i = 0; i < count; i++ ) {
+            tspos2[i] = tspos[i];
         }
-        else {
-            int [] tspos2 = new int[count];
-            for ( int i = 0; i < count; i++ ) {
-                tspos2[i] = tspos[i];
-            }
-            v.set ( 1, tspos2 );
-        }
-        return v;
+        return new TimeSeriesToProcess(tslist, tspos2, errorList);
     }
     else if ( TSList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString()) ) {
         // Return a list of time series that match the provided identifiers.
-        List tsid_Vector = StringUtil.breakStringList ( TSID, ",", StringUtil.DELIM_SKIP_BLANKS );
+        List<String> tsid_Vector = StringUtil.breakStringList ( TSID, ",", StringUtil.DELIM_SKIP_BLANKS );
         int size_tsid = 0;
         if ( tsid_Vector != null ) {
             size_tsid = tsid_Vector.size();
         }
         for ( int itsid = 0; itsid < size_tsid; itsid++ ) {
-            String tsid = (String)tsid_Vector.get(itsid);
+            String tsid = tsid_Vector.get(itsid);
             Message.printStatus( 2, routine, "Trying to match \"" + tsid + "\"" );
             // Loop through the available time series and see if any match..
             boolean found = false;
@@ -2365,21 +2355,19 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
                     break;
                 }
             }
+            if ( !found ) {
+                // Did not find a specific time series, which is a problem
+                errorList.add ( "Did not match requested (specified) time series \"" + tsid + "\"" );
+            }
         }
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
         Message.printStatus( 2, routine, "Matched " + count + " time series." );
-        if ( count == 0 ) {
-            v.set ( 1, new int[0] );
+        int [] tspos2 = new int[count];
+        for ( int i = 0; i < count; i++ ) {
+            tspos2[i] = tspos[i];
         }
-        else {
-            int [] tspos2 = new int[count];
-            for ( int i = 0; i < count; i++ ) {
-                tspos2[i] = tspos[i];
-            }
-            v.set ( 1, tspos2 );
-        }
-        return v;
+        return new TimeSeriesToProcess(tslist, tspos2, errorList);
     }
     else if ( TSList.equalsIgnoreCase(TSListType.TSPOSITION.toString()) ) {
         // Process the position string
@@ -2417,17 +2405,11 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
         }
         // Trim down the "tspos" array to only include matches so that other
         // code does not mistakenly iterate through a longer array...
-        if ( count == 0 ) {
-            v.set ( 1, new int[0] );
+        int [] tspos2 = new int[count];
+        for ( int i = 0; i < count; i++ ) {
+            tspos2[i] = tspos[i];
         }
-        else {
-            int [] tspos2 = new int[count];
-            for ( int i = 0; i < count; i++ ) {
-                tspos2[i] = tspos[i];
-            }
-            v.set ( 1, tspos2 );
-        }
-        return v;
+        return new TimeSeriesToProcess(tslist, tspos2, errorList);
     }
     else {
     	// Else loop through all the time series from first to last and find matches.  This is for:
@@ -2472,18 +2454,12 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
     	}
     	// Trim down the "tspos" array to only include matches so that other
     	// code does not mistakenly iterate through a longer array...
-    	if ( count == 0 ) {
-    		v.set ( 1, new int[0] );
-    	}
-    	else {
-    		int [] tspos2 = new int[count];
-    		for ( int i = 0; i < count; i++ ) {
-    			tspos2[i] = tspos[i];
-    		}
-    		v.set ( 1, tspos2 );
-    	}
+		int [] tspos2 = new int[count];
+		for ( int i = 0; i < count; i++ ) {
+			tspos2[i] = tspos[i];
+		}
     	//Message.printStatus( 2, routine, tslist.toString() );
-    	return v;
+    	return new TimeSeriesToProcess(tslist, tspos2, errorList);
     }
 }
 
@@ -2491,7 +2467,7 @@ protected List getTimeSeriesToProcess ( String TSList, String TSID, String Ensem
 Get a list of time series identifiers for traces from a list of commands.
 See documentation for fully loaded method.  The list is not sorted
 @param commands Time series commands to search.
-@return list of time series identifiers or an empty non-null Vector if nothing found.
+@return list of time series identifiers or an empty non-null list if nothing found.
 */
 protected static List getTraceIdentifiersFromCommands ( List commands )
 {	return getTraceIdentifiersFromCommands ( commands, false );
@@ -2503,39 +2479,38 @@ Time series identifiers from createTraces() commands are returned.
 These strings are suitable for drop-down lists, etc.
 @param commands Time series commands to search.
 @param sort Should output be sorted by identifier.
-@return list of time series identifiers or an empty non-null Vector if nothing found.
+@return list of time series identifiers or an empty non-null string if nothing found.
 */
-protected static List getTraceIdentifiersFromCommands ( List commands, boolean sort )
+protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands, boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
 	}
-	List v = new Vector ( 10, 10 );
+	List<String> v = new Vector ( 10, 10 );
 	int size = commands.size();
 	String command = null, string = null;
-	List tokens = null;
+	List<String> tokens = null;
 	for ( int i = 0; i < size; i++ ) {
-		command = ((String)commands.get(i)).trim();
+		command = commands.get(i).trim();
 		if ( (command == null) || command.startsWith("#") || (command.length() == 0) ) {
 			// Make sure comments are ignored...
 			continue;
 		}
 		tokens = StringUtil.breakStringList( command," =(),", StringUtil.DELIM_SKIP_BLANKS );
-		string = ((String)tokens.get(0)).trim();
+		string = tokens.get(0).trim();
 		if ( !string.regionMatches ( true,0,"createTraces",0,12) ) {
 			// Not a command we are looking for...
 			continue;
 		}
-		string = ((String)tokens.get(1)).trim();
+		string = tokens.get(1).trim();
 		if ( string.regionMatches ( true,0,"tempts",0,6) ) {
 			// Assume the next item is the identifier...
-			v.add ( ((String)tokens.get(2)).trim() );
+			v.add ( tokens.get(2).trim() );
 		}
 		else {
 		    // Assume this item is the identifier...
-			v.add ( ((String)tokens.get(1)).trim() );
+			v.add ( tokens.get(1).trim() );
 		}
 	}
-	tokens = null;
 	return v;
 }
 
@@ -2612,12 +2587,10 @@ Indicate whether the input period has been specified.
 dates without fear of nulls or zero years).
 */
 private boolean haveInputPeriod ()
-{	if ( (__InputStart_DateTime == null) ||
-		(__InputEnd_DateTime == null) ) {
+{	if ( (__InputStart_DateTime == null) || (__InputEnd_DateTime == null) ) {
 		return false;
 	}
-	if ( (__InputStart_DateTime.getYear() == 0) ||
-			(__InputEnd_DateTime.getYear() == 0) ){
+	if ( (__InputStart_DateTime.getYear() == 0) || (__InputEnd_DateTime.getYear() == 0) ){
 		return false;
 	}
 	return true;

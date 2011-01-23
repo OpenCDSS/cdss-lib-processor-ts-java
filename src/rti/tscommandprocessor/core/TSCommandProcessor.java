@@ -86,7 +86,6 @@ import rti.tscommandprocessor.core.TimeSeriesView;
 
 // Check commands
 
-import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
 import rti.tscommandprocessor.commands.check.CheckFileCommandProcessorEventListener;
 
 // HEC-DSS I/O...
@@ -2469,10 +2468,10 @@ throws Exception
 	// Get the necessary parameters...
 	Object o = request_params.getContents ( "TSList" );
 	if ( o == null ) {
-			String warning = "Request GetTimeSeriesToProcess() does not provide a TSList parameter.";
-			bean.setWarningText ( warning );
-			bean.setWarningRecommendationText (	"This is likely a software code error.");
-			throw new RequestParameterNotFoundException ( warning );
+		String warning = "Request GetTimeSeriesToProcess() does not provide a TSList parameter.";
+		bean.setWarningText ( warning );
+		bean.setWarningRecommendationText (	"This is likely a software code error.");
+		throw new RequestParameterNotFoundException ( warning );
 	}
 	// Else continue...
 	String TSList = (String)o;
@@ -2497,12 +2496,16 @@ throws Exception
 	// Get the information from TSEngine, which is returned as a Vector
 	// with the first element being the matching time series list and the second
 	// being the indices of those time series in the time series results list.
-	List tslist = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
+    TimeSeriesToProcess tsToProcess = __tsengine.getTimeSeriesToProcess ( TSList, TSID, EnsembleID, TSPosition );
+	List<TS> tsList = tsToProcess.getTimeSeriesList();
+	int [] tsPos = tsToProcess.getTimeSeriesPositions();
+	List<String> errorList = tsToProcess.getErrors();
 	PropList results = bean.getResultsPropList();
 	// This will be set in the bean because the PropList is a reference...
 	//Message.printStatus(2,"From TSEngine",((Vector)(tslist.elementAt(0))).toString() );
-	results.setUsingObject("TSToProcessList", (List)(tslist.get(0)) );
-	results.setUsingObject("Indices", (int [])(tslist.get(1)) );
+	results.setUsingObject("TSToProcessList", tsList );
+	results.setUsingObject("Indices", tsPos );
+	results.setUsingObject("Errors", errorList );
 	return bean;
 }
 
@@ -3729,16 +3732,8 @@ public void setPropContents ( String prop, Object contents ) throws Exception
 		__tsengine.setOutputStart ( (DateTime)contents );
 	}
     else if ( prop.equalsIgnoreCase("OutputYearType") ) {
-        String OutputYearType = (String)contents;
-        if ( OutputYearType.equalsIgnoreCase("" + YearType.WATER ) ) {
-            __tsengine.setOutputYearType ( YearType.WATER );
-        }
-        else if ( OutputYearType.equalsIgnoreCase("" + YearType.NOV_TO_OCT) ) {
-            __tsengine.setOutputYearType ( YearType.NOV_TO_OCT );
-        }
-        else if ( OutputYearType.equalsIgnoreCase("" + YearType.CALENDAR) ) {
-            __tsengine.setOutputYearType ( YearType.CALENDAR );
-        }
+        YearType outputYearType = (YearType)contents;
+        __tsengine.setOutputYearType ( outputYearType );
     }
 	else if ( prop.equalsIgnoreCase("TSResultsList") ) {
 		__tsengine.setTimeSeriesList ( (List)contents );

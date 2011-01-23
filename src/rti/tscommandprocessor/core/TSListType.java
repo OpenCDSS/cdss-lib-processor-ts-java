@@ -63,6 +63,7 @@ public enum TSListType {
      * Equals method to match legacy TSListType class behavior.
      * TODO SAM 2011-01-21 Phase out in favor of simple == but tricky because of base class implements
      * equals(Object)
+     * @deprecated use ==
      */
     public boolean equals ( String tsListType ) {
         if ( tsListType.equalsIgnoreCase(this.displayName) ) {
@@ -76,7 +77,6 @@ public enum TSListType {
     /**
      * Return the display name for the time series list type.  This is usually the same as the
      * value but using appropriate mixed case.
-     * @deprecated use ==
      * @return the display name.
      */
     @Override

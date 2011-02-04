@@ -8,9 +8,10 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.List;
 import java.util.Vector;
 
+import RTi.TS.RunningAverageType;
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
-import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_RunningAverage;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -31,22 +32,10 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the RunningAverage() command.
-</p>
 */
 public class RunningAverage_Command extends AbstractCommand implements Command
 {
-
-/**
-Values for the AverageMethod parameter.
-*/
-protected final String _Centered = "Centered";
-protected final String _Future = "Future";
-protected final String _FutureInclusive = "FutureInclusive";
-protected final String _NYear = "NYear";
-protected final String _Previous = "Previous";
-protected final String _PreviousInclusive = "PreviousInclusive";
 
 /**
 Constructor.
@@ -62,8 +51,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -85,29 +73,39 @@ throws InvalidCommandParameterException
                         message, "Provide a time series identifier." ) );
 	}
     */
-	if ( (AverageMethod != null) && !AverageMethod.equals("") &&
-		!AverageMethod.equalsIgnoreCase(_Centered) &&
-        !AverageMethod.equalsIgnoreCase(_Future) &&
-        !AverageMethod.equalsIgnoreCase(_FutureInclusive) &&
-		!AverageMethod.equalsIgnoreCase(_NYear) &&
-        !AverageMethod.equalsIgnoreCase(_Previous) &&
-        !AverageMethod.equalsIgnoreCase(_PreviousInclusive) ) {
+    RunningAverageType averageType = RunningAverageType.valueOfIgnoreCase(AverageMethod);
+	if ( averageType == null ) {
         message = "The AverageMethod parameter (" + AverageMethod + ") is invalid.";
         warning += "\n" + message;
+        StringBuffer b = new StringBuffer();
+        for ( RunningAverageType type : RunningAverageType.values() ) {
+            b.append ( "" + type + ", ");
+        }
+        // Remove the extra comma at end
+        b.delete(b.length() - 2, b.length());
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "AverageMethod must be " + _Centered + " or " + _NYear ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "AverageMethod must be one of: " + b ) );
 	}
-    if ( (Bracket != null) && !Bracket.equals("") && !StringUtil.isInteger(Bracket) ) {
-        message = "The Bracket parameter (" + Bracket + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
+    if ( averageType != RunningAverageType.N_ALL_YEAR ) {
+        if ( (Bracket == null) || Bracket.equals("") ) {
+            message = "The Bracket parameter must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify the bracket as an integer." ) );
+                    message, "Specify the bracket as an integer." ) );
+        }
+        else if ( !StringUtil.isInteger(Bracket) ) {
+            message = "The Bracket parameter (" + Bracket + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the bracket as an integer." ) );
+        }
     }
       
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -171,21 +169,21 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),",StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String AverageMethod = "";
         String Bracket = "";
 		if ( (v != null) && (v.size() == 4) ) {
 			// Second field is identifier...
-			TSID = ((String)v.get(1)).trim();
+			TSID = v.get(1).trim();
 			// Third field has average method...
-            AverageMethod = ((String)v.get(2)).trim();
+            AverageMethod = v.get(2).trim();
             // Transition to newer convention...
             if ( AverageMethod.equalsIgnoreCase("N-Year")) {
-                AverageMethod = _NYear;
+                AverageMethod = "" + RunningAverageType.NYEAR;
             }
             // Fourth field has bracket...
-            Bracket = ((String)v.get(3)).trim();
+            Bracket = v.get(3).trim();
 		}
 
 		// Set parameters and new defaults...
@@ -211,6 +209,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
 		setCommandParameters ( parameters );
 	}
+    // Replace AverageMethod of "N-Year" with "NYear" for simplicity
+    PropList parameters = getCommandParameters();
+    String propValue = parameters.getValue("AverageMethod");
+    if ( (propValue != null) && propValue.equalsIgnoreCase("N-Year") ) {
+        parameters.set("AverageMethod", "" + RunningAverageType.NYEAR );
+    }
 }
 
 /**
@@ -218,8 +222,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -243,13 +246,11 @@ CommandWarningException, CommandException
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue ( "TSID" );
     if ( (TSList == null) || TSList.equals("") ) {
-        TSList = TSListType.ALL_MATCHING_TSID.toString();
-        if ( (TSID == null) || TSID.equals("") ) {
-            TSID = "*";
-        }
+        TSList = "" + TSListType.ALL_TS;
     }
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String AverageMethod = parameters.getValue ( "AverageMethod" );
+	RunningAverageType averageMethod = RunningAverageType.valueOfIgnoreCase(AverageMethod);
     String Bracket = parameters.getValue ( "Bracket" );
 
 	// Get the time series to process.  Allow TSID to be a pattern or specific time series...
@@ -425,24 +426,8 @@ CommandWarningException, CommandException
 		try {
             // Do the processing...
 			Message.printStatus ( 2, routine, "Converting to running average: \"" + ts.getIdentifier() + "\"." );
-            if ( AverageMethod.equalsIgnoreCase( _Centered) ) {
-                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_CENTER );
-            }
-            else if ( AverageMethod.equalsIgnoreCase( _Future) ) {
-                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_FUTURE );
-            }
-            else if ( AverageMethod.equalsIgnoreCase( _FutureInclusive) ) {
-                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_FUTURE_INCLUSIVE );
-            }
-            else if ( AverageMethod.equalsIgnoreCase( _NYear) ) {
-                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_NYEAR );
-            }
-            else if ( AverageMethod.equalsIgnoreCase( _Previous) ) {
-                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_PREVIOUS );
-            }
-            else if ( AverageMethod.equalsIgnoreCase( _PreviousInclusive) ) {
-                newts = TSUtil.createRunningAverageTS ( ts, Bracket_int, TSUtil.RUNNING_AVERAGE_PREVIOUS_INCLUSIVE );
-            }
+			TSUtil_RunningAverage tsu = new TSUtil_RunningAverage(ts, Bracket_int, averageMethod);
+			newts = tsu.runningAverage();
             // Because the time series is a new instance, replace in the processor (and ensemble if appropriate)...
             request_params = new PropList ( "" );
             request_params.setUsingObject ( "TS", newts );

@@ -27,6 +27,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.RunningAverageType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -56,11 +57,11 @@ private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __AverageMethod_JComboBox = null;
-private JTextField	__Bracket_JTextField = null;
-private JLabel		__Bracket_JLabel = null;// Label for bracket
-private boolean		__error_wait = false;	// Is there an error to be cleared up
-private boolean		__first_time = true;
-private boolean     __ok = false;       // Indicates whether OK button has been pressed.
+private JTextField __Bracket_JTextField = null;
+private JLabel __Bracket_JLabel = null; // Label for bracket
+private boolean __error_wait = false; // Is there an error to be cleared up
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
 
 /**
 Command editor constructor.
@@ -116,19 +117,28 @@ private void checkGUIState ()
         __EnsembleID_JLabel.setEnabled ( false );
     }
     
+    __Bracket_JLabel.setEnabled(true);
+    __Bracket_JTextField.setEnabled(true);
     String AverageMethod = __AverageMethod_JComboBox.getSelected();
-    if ( AverageMethod.equalsIgnoreCase( __command._Centered ) ) {
+    if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.CENTERED ) ) {
         __Bracket_JLabel.setText ( __BRACKET_LABEL_CENTERED );
     }
-    else if ( AverageMethod.equalsIgnoreCase( __command._NYear ) ){
+    else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.NYEAR ) ){
         __Bracket_JLabel.setText ( __BRACKET_LABEL_NYEAR );
     }
-    else if ( AverageMethod.equalsIgnoreCase( __command._Previous) ||
-            AverageMethod.equalsIgnoreCase( __command._PreviousInclusive) ) {
+    else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.N_ALL_YEAR) ) {
+        // Bracket is not needed
+        __Bracket_JLabel.setText ( "Bracket:" );
+        __Bracket_JLabel.setEnabled(false);
+        __Bracket_JTextField.setEnabled(false);
+        __Bracket_JTextField.setText("");
+    }
+    else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.PREVIOUS) ||
+        AverageMethod.equalsIgnoreCase( "" + RunningAverageType.PREVIOUS_INCLUSIVE) ) {
         __Bracket_JLabel.setText ( __BRACKET_LABEL_PREVIOUS );
     }
-    else if ( AverageMethod.equalsIgnoreCase( __command._Future) ||
-            AverageMethod.equalsIgnoreCase( __command._FutureInclusive) ) {
+    else if ( AverageMethod.equalsIgnoreCase( "" + RunningAverageType.FUTURE) ||
+        AverageMethod.equalsIgnoreCase( "" + RunningAverageType.FUTURE_INCLUSIVE) ) {
         __Bracket_JLabel.setText ( __BRACKET_LABEL_FUTURE );
     }
 }
@@ -254,12 +264,9 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Type of average:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AverageMethod_JComboBox = new SimpleJComboBox ( false );
-	__AverageMethod_JComboBox.addItem ( __command._Centered );
-    __AverageMethod_JComboBox.addItem ( __command._Future );
-    __AverageMethod_JComboBox.addItem ( __command._FutureInclusive );
-	__AverageMethod_JComboBox.addItem ( __command._NYear );
-    __AverageMethod_JComboBox.addItem ( __command._Previous );
-    __AverageMethod_JComboBox.addItem ( __command._PreviousInclusive );
+	for ( RunningAverageType type : RunningAverageType.values() ) {
+	    __AverageMethod_JComboBox.addItem ( "" + type );
+	}
 	__AverageMethod_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __AverageMethod_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -273,7 +280,7 @@ private void initialize ( JFrame parent, Command command )
 	__Bracket_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Bracket_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (except for " + RunningAverageType.N_ALL_YEAR + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

@@ -1023,7 +1023,18 @@ The overloaded method is called with a time series counter having the return val
 */
 protected TSLimits calculateTSAverageLimits ( TS ts )
 throws Exception
-{	return calculateTSAverageLimits ( getTimeSeriesSize(), ts );
+{	// Find the position of the time series
+    int size = 0;
+    if ( __tslist != null ) {
+        size = __tslist.size();
+    }
+    int pos = size;
+    for ( int i = 0; i < size; i++ ) {
+        if ( __tslist.get(i) == ts ) {
+            pos = i + 1;
+        }
+    }
+    return calculateTSAverageLimits ( pos, ts );
 }
 
 static int calculateTSAverageLimits_warningPrintCount = 0;
@@ -1119,7 +1130,7 @@ throws Exception
 		// time steps so to increase performance don't compute...
 		// If historical averages are used for filling daily, then add daily at some point.
 	    // FIXME SAM 2008-08-18 Need to at least compute overall max, min, etc. for any period, as long
-	    // as it is not a performance hit.
+	    // as it is not a performance hit - why is this not done?
 		if ( Message.isDebugOn ) {
 			Message.printStatus ( 2, routine,
 			"Calculation of historic average limits for other than monthly and yearly data is not enabled: " +
@@ -2077,11 +2088,9 @@ throws Exception
 }
 
 /**
-Return a time series from either the __tslist vector or the BinaryTS file,
-as appropriate.  If a BinaryTS is returned, it is a new instance from the file
-and should be set to null when done.
+Return a time series from either the __tslist list.
 @param position Position in time series list (0 index).
-@return a time series from the requested position or null if none is available.
+@return a time series from the requested position or null if none is available at the position.
 @exception Exception if there is an error reading the time series.
 */
 protected TS getTimeSeries ( int position )
@@ -2096,7 +2105,7 @@ throws Exception
 		return null;
 	}
     // Else return the requested time series.
-	return (TS)__tslist.get(position);
+	return __tslist.get(position);
 }
 
 /**
@@ -2166,301 +2175,11 @@ time series will be from first to last.  A non-null list is guaranteed to be ret
 */
 protected TimeSeriesToProcess getTimeSeriesToProcess ( String TSList, String TSID, String EnsembleID,
     String TSPosition )
-{	String routine = "TSEngine.getTimeSeriesToProcess";
-    List<TS> tslist = new Vector();	// List of time series to process
-    List<String> errorList = new Vector(); // List of error messages finding time series
-	int nts = getTimeSeriesSize(); // OK to be zero for logic below - zero size array will result.
-	int [] tspos = new int[nts];	// Positions of time series to process.
-					// Size to match the full list but may
-					// not be filled initially - trim before returning.
-	// Loop through the time series in memory...
-	int count = 0;
-	TS ts = null;
-	Message.printStatus( 2, "", "Getting list of time series to processing using TSList=\"" + TSList +
-	    "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\", TSPosition=\"" + TSPosition + "\"" );
-    if ( TSList.equalsIgnoreCase(TSListType.FIRST_MATCHING_TSID.toString()) ) {
-        // Search forwards for the first single matching time series...
-        for ( int its = 0; its < nts; its++ ) {
-            try {
-                ts = getTimeSeries ( its );
-            }
-            catch ( Exception e ) {
-                // Don't add...
-                continue;
-            }
-            if ( TSID.indexOf("~") > 0 ) {
-                // Include the input type...
-                if (ts.getIdentifier().matches(TSID,true,true)){
-                    tslist.add ( ts );
-                    tspos[count++] = its;
-                    // Only return the single index...
-                    int [] tspos2 = new int[1];
-                    tspos2[0] = tspos[0];
-                    // Only want one match...
-                    return new TimeSeriesToProcess(tslist, tspos2, errorList);
-                }
-            }
-            else {
-                // Just check the main information...
-                if(ts.getIdentifier().matches(TSID,true,false)){
-                    tslist.add ( ts );
-                    tspos[count++] = its;
-                    // Only return the single index...
-                    int [] tspos2 = new int[1];
-                    tspos2[0] = tspos[0];
-                    // Only want one match...
-                    return new TimeSeriesToProcess(tslist, tspos2, errorList);
-                }
-            }
-        }
-        // Return empty list since no match
-        errorList.add("Unable to find first matched TSID \"" + TSID + "\"" );
-        return new TimeSeriesToProcess(tslist, new int[0], errorList);
-    }
-	else if ( TSList.equalsIgnoreCase(TSListType.LAST_MATCHING_TSID.toString()) ) {
-		// Search backwards for the last single matching time series...
-		for ( int its = (nts - 1); its >= 0; its-- ) {
-			try {
-                ts = getTimeSeries ( its );
-			}
-			catch ( Exception e ) {
-				// Don't add...
-				continue;
-			}
-			if ( TSID.indexOf("~") > 0 ) {
-				// Include the input type...
-				if (ts.getIdentifier().matches(TSID,true,true)){
-					tslist.add ( ts );
-					tspos[count++] = its;
-					// Only return the single index...
-					int [] tspos2 = new int[1];
-					tspos2[0] = tspos[0];
-					// Only want one match...
-					return new TimeSeriesToProcess(tslist, tspos2, errorList);
-				}
-			}
-			else {
-                // Just check the main information...
-				if(ts.getIdentifier().matches(TSID,true,false)){
-					tslist.add ( ts );
-					tspos[count++] = its;
-					// Only return the single index...
-					int [] tspos2 = new int[1];
-					tspos2[0] = tspos[0];
-					// Only want one match...
-					return new TimeSeriesToProcess(tslist, tspos2, errorList);
-				}
-			}
-		}
-		// Return empty list since no match
-        errorList.add("Unable to find last matched TSID \"" + TSID + "\"" );
-        return new TimeSeriesToProcess(tslist, new int[0], errorList);
-	}
-    else if ( TSList.equalsIgnoreCase(TSListType.ENSEMBLE_ID.toString()) ) {
-        // Return a list of all time series in an ensemble
-        // FIXME SAM 2009-10-10 Need to fix issue of index positions being found in ensemble but
-        // then not matching the main TS list (in case where time series were copied to ensemble).
-        // For now, do not allow time series to be copied to ensemble (e.g., in NewEnsemble() command).
-        TSEnsemble ensemble = __ts_processor.getEnsemble ( EnsembleID );
-        if ( ensemble == null ) {
-            errorList.add ("Unable to find ensemble \"" + EnsembleID + "\" to get time series.");
-            return new TimeSeriesToProcess(tslist, new int[0], errorList);
-        }
-        else {
-            int esize = ensemble.size();
-            for ( int ie = 0; ie < esize; ie++ ) {
-                // Set the time series instance (always what is included in the ensemble)...
-                ts = ensemble.get (ie);
-                tslist.add ( ts );
-                // Figure out the index in the processor time series list by comparing the instance...
-                TS ts2; // Time series in main list to compare against.
-                boolean found = false;
-                // Loop through the main list...
-                for ( int its = 0; its < nts; its++ ) {
-                    try {
-                        ts2 = getTimeSeries ( its );
-                    }
-                    catch ( Exception e ) {
-                        continue;
-                    }
-                    if ( ts == ts2 ) {
-                        found = true;
-                        tspos[count++] = its;
-                        break;
-                    }
-                }
-                if ( !found ) {
-                    // This will happen when time series are copied to ensembles in order to protect the
-                    // data from further modification.  Time series will then always need to be accessed via
-                    // the ensemble.
-                    Message.printStatus( 3, routine, "Unable to find ensemble \"" + EnsembleID + "\" time series \"" +
-                            ts.getIdentifier() + "\" - setting index to -1.");
-                    tspos[count++] = -1; // TODO SAM 2009-10-08 - will this impact other code?
-                }
-            }
-        }
-        // Trim down the "tspos" array to only include matches so that other
-        // code does not mistakenly iterate through a longer array...
-        int [] tspos2 = new int[count];
-        for ( int i = 0; i < count; i++ ) {
-            tspos2[i] = tspos[i];
-        }
-        return new TimeSeriesToProcess(tslist, tspos2, errorList);
-    }
-    else if ( TSList.equalsIgnoreCase(TSListType.SPECIFIED_TSID.toString()) ) {
-        // Return a list of time series that match the provided identifiers.
-        List<String> tsid_Vector = StringUtil.breakStringList ( TSID, ",", StringUtil.DELIM_SKIP_BLANKS );
-        int size_tsid = 0;
-        if ( tsid_Vector != null ) {
-            size_tsid = tsid_Vector.size();
-        }
-        for ( int itsid = 0; itsid < size_tsid; itsid++ ) {
-            String tsid = tsid_Vector.get(itsid);
-            Message.printStatus( 2, routine, "Trying to match \"" + tsid + "\"" );
-            // Loop through the available time series and see if any match..
-            boolean found = false;
-            for ( int its = 0; its < nts; its++ ) {
-                try {
-                    ts = getTimeSeries ( its );
-                }
-                catch ( Exception e ) {
-                    // Don't add...
-                    continue;
-                }
-                // Compare the requested TSID with that in the time series list...
-                if ( tsid.indexOf("~") > 0 ) {
-                    // Include the input type...
-                    if (ts.getIdentifier().matches(tsid,true,true)){
-                        //Message.printStatus( 2, routine,
-                        //        "Matched using input with TSID=\"" + ts.getIdentifier() + "\"" +
-                        //        " Alias=\"" + ts.getAlias() + "\"");
-                        found = true;
-                    }
-                }
-                else {
-                    // Just check the main information...
-                    if(ts.getIdentifier().matches(tsid,true,false)){
-                        //Message.printStatus( 2, routine,
-                        //        "Matched not using input with TSID=\"" + ts.getIdentifier() + "\"" +
-                        //        " Alias=\"" + ts.getAlias() + "\"");
-                        found = true;
-                    }
-                }
-                if ( found ) {
-                    // Add the time series and increment the count...
-                    tslist.add ( ts );
-                    tspos[count++] = its;
-                    // Found the specific time series so break out of the list.
-                    // FIXME SAM 2008-02-05 What if user has the same ID more than once?
-                    break;
-                }
-            }
-            if ( !found ) {
-                // Did not find a specific time series, which is a problem
-                errorList.add ( "Did not match requested (specified) time series \"" + tsid + "\"" );
-            }
-        }
-        // Trim down the "tspos" array to only include matches so that other
-        // code does not mistakenly iterate through a longer array...
-        Message.printStatus( 2, routine, "Matched " + count + " time series." );
-        int [] tspos2 = new int[count];
-        for ( int i = 0; i < count; i++ ) {
-            tspos2[i] = tspos[i];
-        }
-        return new TimeSeriesToProcess(tslist, tspos2, errorList);
-    }
-    else if ( TSList.equalsIgnoreCase(TSListType.TSPOSITION.toString()) ) {
-        // Process the position string
-        List tokens = StringUtil.breakStringList ( TSPosition,",", StringUtil.DELIM_SKIP_BLANKS );
-        int npos = 0;
-        if ( tokens != null ) {
-            npos = tokens.size();
-        }
-        int tsposStart, tsposEnd;
-        for ( int i = 0; i < npos; i++ ) {
-            String token = (String)tokens.get(i);
-            if ( token.indexOf("-") >= 0 ) {
-                // Range...
-                String posString = StringUtil.getToken(token, "-",0,0).trim();
-                tsposStart = Integer.parseInt( posString ) - 1;
-                posString = StringUtil.getToken(token, "-",0,1).trim();
-                tsposEnd = Integer.parseInt( posString ) - 1;
-            }
-            else {
-                // Single value.  Treat as a range of 1.
-                tsposStart = Integer.parseInt(token) - 1;
-                tsposEnd = tsposStart;
-            }
-            for ( int itspos = tsposStart; itspos <= tsposEnd; itspos++ ) {
-                try {
-                    tslist.add ( getTimeSeries(itspos) );
-                }
-                catch ( Exception e ) {
-                    // Don't add
-                    // FIXME SAM 2008-07-07 Evaluate whether exception needs to be thrown
-                    // for out of range index.
-                }
-                tspos[count++] = itspos;
-            }
-        }
-        // Trim down the "tspos" array to only include matches so that other
-        // code does not mistakenly iterate through a longer array...
-        int [] tspos2 = new int[count];
-        for ( int i = 0; i < count; i++ ) {
-            tspos2[i] = tspos[i];
-        }
-        return new TimeSeriesToProcess(tslist, tspos2, errorList);
-    }
-    else {
-    	// Else loop through all the time series from first to last and find matches.  This is for:
-        // TSList = AllTS
-        // TSList = SELECTED_TS
-        // TSList = ALL_MATCHING_TSID
-    	boolean found = false;
-    	for ( int its = 0; its < nts; its++ ) {
-    		found = false;
-    		try {
-                ts = getTimeSeries ( its );
-    		}
-    		catch ( Exception e ) {
-    			// Don't add...
-    			continue;
-    		}
-    		if ( TSList.equalsIgnoreCase(TSListType.ALL_TS.toString()) ) {
-    			found = true;
-    		}
-    		else if( TSList.equalsIgnoreCase(TSListType.SELECTED_TS.toString()) && ts.isSelected() ) {
-    			found = true;
-    		}
-    		else if ( TSList.equalsIgnoreCase(TSListType.ALL_MATCHING_TSID.toString()) ) {
-    			if ( TSID.indexOf("~") > 0 ) {
-    				// Include the input type...
-    				if (ts.getIdentifier().matches(TSID,true,true)){
-    					found = true;
-    				}
-    			}
-    			else {
-                    // Just check the main information...
-    				if(ts.getIdentifier().matches(TSID,true,false)){
-    					found = true;
-    				}
-    			}
-    		}
-    		if ( found ) {
-    			// Add the time series and increment the count...
-    			tslist.add ( ts );
-    			tspos[count++] = its;
-    		}
-    	}
-    	// Trim down the "tspos" array to only include matches so that other
-    	// code does not mistakenly iterate through a longer array...
-		int [] tspos2 = new int[count];
-		for ( int i = 0; i < count; i++ ) {
-			tspos2[i] = tspos[i];
-		}
-    	//Message.printStatus( 2, routine, tslist.toString() );
-    	return new TimeSeriesToProcess(tslist, tspos2, errorList);
-    }
+throws Exception
+{
+    List<TSEnsemble> ensembleList = (List<TSEnsemble>)__ts_processor.getPropContents("EnsembleResultsList");
+    return TSCommandProcessorUtil.getTSMatchingTSListParameters ( __tslist,
+        ensembleList, TSList, TSID, TSPosition, EnsembleID );
 }
 
 /**
@@ -2469,7 +2188,7 @@ See documentation for fully loaded method.  The list is not sorted
 @param commands Time series commands to search.
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
-protected static List getTraceIdentifiersFromCommands ( List commands )
+protected static List<String> getTraceIdentifiersFromCommands ( List<String> commands )
 {	return getTraceIdentifiersFromCommands ( commands, false );
 }
 

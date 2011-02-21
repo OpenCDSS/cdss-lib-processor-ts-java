@@ -32,9 +32,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the SetFromTS() command.
-</p>
 */
 public class SetFromTS_Command extends AbstractCommand implements Command
 {
@@ -65,8 +63,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -411,7 +408,7 @@ private int recalculateLimits( TS ts, CommandProcessor TSCmdProc,
     PropList bean_PropList = bean.getResultsPropList();
     Object prop_contents = bean_PropList.getContents ( "TSLimits" );
     if ( prop_contents == null ) {
-        message = "Null value from CalculateTSAverageLimits(" + ts.getIdentifierString() + ")";
+        message = "Null value for TSLimits from CalculateTSAverageLimits(" + ts.getIdentifierString() + ")";
         Message.printWarning(warningLevel,
             MessageUtil.formatMessageTag( command_tag, ++warning_count),
             routine, message );

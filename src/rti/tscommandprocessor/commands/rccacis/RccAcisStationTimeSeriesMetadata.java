@@ -82,9 +82,15 @@ public double getElev()
 
 /**
 Return the longitude and latitude.
+If not available an array of NaN is returned.
 */
 public double [] getLl()
 {
+    if ( ll == null ) {
+        ll = new double[2];
+        ll[0] = Double.NaN;
+        ll[1] = Double.NaN;
+    }
     return ll;
 }
 

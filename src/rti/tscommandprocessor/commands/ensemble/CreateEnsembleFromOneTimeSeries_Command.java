@@ -5,7 +5,9 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
@@ -31,9 +33,7 @@ import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 
 /**
-<p>
 This class initializes, checks, and runs the CreateEnsembleFromOneTimeSeries() command.
-</p>
 */
 public class CreateEnsembleFromOneTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -47,7 +47,13 @@ protected final String _ShiftToReference = "ShiftToReference";
 /**
 TSEnsemble created in discovery mode (basically to get the identifier for other commands).
 */
-private TSEnsemble __tsensemble = null;
+private TSEnsemble __discoveryTSEnsemble = null;
+
+/**
+List of time series created during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -195,7 +201,15 @@ Return the ensemble that is created by this class when run in discovery mode.
 */
 private TSEnsemble getDiscoveryEnsemble()
 {
-    return __tsensemble;
+    return __discoveryTSEnsemble;
+}
+
+/**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
 }
 
 /**
@@ -203,11 +217,19 @@ Return a list of objects of the requested type.  This class only keeps a list of
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
+    List<TS> discoveryTSList = getDiscoveryTSList ();
 	List v = null;
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
         v = new Vector();
         v.add ( tsensemble );
         Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
+    }
+    else if ( (discoveryTSList != null) && (discoveryTSList.size() != 0) ) {
+        // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+        TS datats = discoveryTSList.get(0);
+        if ((c == TS.class) || (c == datats.getClass()) ) {
+            return discoveryTSList;
+        }
     }
     return v;
 }
@@ -250,7 +272,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "CreateEnsembleFromOneTimeSeries_Command.runCommandInternal", message;
@@ -261,10 +283,11 @@ CommandWarningException, CommandException
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(command_phase);
+	status.clearLog(commandPhase);
     
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryEnsemble ( null );
+        setDiscoveryTSList( null );
     }
 
 	PropList parameters = getCommandParameters();
@@ -278,39 +301,50 @@ CommandWarningException, CommandException
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
 
-    if ( command_phase == CommandPhaseType.RUN ) {
-    // Get the time series to process.  The time series list is searched backwards until the first match...
-
-    PropList request_params = new PropList ( "" );
-    request_params.set ( "CommandTag", command_tag );
-    request_params.set ( "TSID", TSID );
-    CommandProcessorRequestResultsBean bean = null;
-    try { bean =
-        processor.processRequest( "GetTimeSeriesForTSID", request_params);
-    }
-    catch ( Exception e ) {
-        message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-        Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-    }
-    PropList bean_PropList = bean.getResultsPropList();
-    Object o_TS = bean_PropList.getContents ( "TS");
     TS ts = null;
-    if ( o_TS == null ) {
-        message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\" from processor.";
-        Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+    PropList request_params = null;
+    CommandProcessorRequestResultsBean bean = null;
+    PropList bean_PropList = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            ts = tslist.get(0);
+        }
     }
-    else {
-        ts = (TS)o_TS;
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+        // Get the time series to process.  The time series list is searched backwards until the first match...
+        request_params = new PropList ( "" );
+        request_params.set ( "CommandTag", command_tag );
+        request_params.set ( "TSID", TSID );
+        try {
+            bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object o_TS = bean_PropList.getContents ( "TS");
+        if ( o_TS == null ) {
+            message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\" from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+        }
+        else {
+            ts = (TS)o_TS;
+        }
     }
      
     if ( ts == null ) {
@@ -318,7 +352,7 @@ CommandWarningException, CommandException
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
         throw new CommandWarningException ( message );
@@ -334,7 +368,7 @@ CommandWarningException, CommandException
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the reference date is valid." ) );
         }
@@ -353,7 +387,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Report problem to software support." ) );
         }
@@ -364,7 +398,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Verify that a valid InputStart string has been specified." ) );
         }
@@ -383,7 +417,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
         }
@@ -404,7 +438,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
         }
@@ -415,7 +449,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                        message, "Verify that a valid InputEnd has been specified." ) );
         }
@@ -434,7 +468,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
         }
@@ -442,20 +476,22 @@ CommandWarningException, CommandException
 	
 	// Now try to process.
     
-    List tslist = null;
+    List<TS> tslist = null;
+    boolean createData = true;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        createData = false;
+    }
     try {
-            TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
-            tslist = util.getTracesFromTS ( ts, TraceLength,
-                    ReferenceDate_DateTime, ShiftDataHow,
-                    InputStart_DateTime,
-                    InputEnd_DateTime );
+        TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
+        tslist = util.getTracesFromTS ( ts, TraceLength, ReferenceDate_DateTime,
+            ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, createData );
     }
     catch ( Exception e ) {
         message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
         Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
         Message.printWarning ( 3, routine, e );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 					message, "Check log file for details." ) );
         throw new CommandException ( message );
@@ -470,19 +506,21 @@ CommandWarningException, CommandException
     // Update the data to the processor so that appropriate actions are taken...
 
     if ( tslist != null ) {
-        TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
-        TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, tslist);
-        
-        // Create an ensemble and add to the processor...
-        
-        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
-        TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
-    }
-    }
-    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-        // Just want the identifier...
-        TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, null );
-        setDiscoveryEnsemble ( ensemble );
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
+            TSCommandProcessorUtil.appendTimeSeriesListToResultsList(processor, this, tslist);
+            
+            // Create an ensemble and add to the processor...
+            
+            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
+        }
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Create an ensemble and add the discovery time series...
+            TSEnsemble ensemble = new TSEnsemble ( EnsembleID, EnsembleName, tslist );
+            setDiscoveryTSList(tslist);
+            setDiscoveryEnsemble ( ensemble );
+        }
     }
 
     if ( warning_count > 0 ) {
@@ -494,7 +532,7 @@ CommandWarningException, CommandException
         throw new CommandWarningException ( message );
     }
 	
-	status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+	status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -502,7 +540,16 @@ Set the ensemble that is processed by this class in discovery mode.
 */
 private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
 {
-    __tsensemble = tsensemble;
+    __discoveryTSEnsemble = tsensemble;
+}
+
+/**
+Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created during discovery phase
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

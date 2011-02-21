@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import java.util.List;
 import java.util.Vector;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TS;
@@ -16,6 +17,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -26,6 +28,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 
@@ -33,12 +36,17 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the NewStatisticTimeSeriesFromEnsemble() command.
 */
 public class NewStatisticTimeSeriesFromEnsemble_Command extends AbstractCommand
-implements Command
+implements Command, CommandDiscoverable, ObjectListProvider
 {
+    
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discovery_TS_Vector = null;
 
 /**
 Constructor.
@@ -88,9 +96,7 @@ throws InvalidCommandParameterException
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Specify an ensemble identifier." ) );
 	}
-	// TODO SAM 2005-08-29
-	// Need to decide whether to check NewTSID - it might need to support
-	// wildcards.
+	// TODO SAM 2005-08-29 Need to decide whether to check NewTSID - it might need to support wildcards.
 	if ( (Statistic == null) || Statistic.equals("") ) {
 		message = "The statistic must be specified.";
 		warning += "\n" + message;
@@ -154,9 +160,8 @@ throws InvalidCommandParameterException
         }
     }
 
-	if (	(AnalysisStart != null) && !AnalysisStart.equals("") &&
-		!AnalysisStart.equalsIgnoreCase("OutputStart") &&
-		!AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
+	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
+		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
 		try {	DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
@@ -167,9 +172,8 @@ throws InvalidCommandParameterException
 							message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
 		}
 	}
-	if (	(AnalysisEnd != null) && !AnalysisEnd.equals("") &&
-		!AnalysisEnd.equalsIgnoreCase("OutputStart") &&
-		!AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") &&
+		!AnalysisEnd.equalsIgnoreCase("OutputStart") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
 		try {	DateTime.parse( AnalysisEnd );
 		}
 		catch ( Exception e ) {
@@ -209,7 +213,7 @@ throws InvalidCommandParameterException
       }
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "Alias" );
 	valid_Vector.add ( "EnsembleID" );
 	valid_Vector.add ( "NewTSID" );
@@ -244,6 +248,34 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discovery_TS_Vector;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
@@ -273,15 +305,15 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 
-	List v = StringUtil.breakStringList ( token0, " ",StringUtil.DELIM_SKIP_BLANKS );
+	List<String> v = StringUtil.breakStringList ( token0, " ",StringUtil.DELIM_SKIP_BLANKS );
 	if ( (v == null) || (v.size() != 2) ) {
 		message = "Syntax error in \"" + command +
 			"\".  Expecting:  TS Alias = NewStatisticTimeSeriesFromEnsemble(...)";
 		Message.printWarning ( warning_level, routine, message);
 		throw new InvalidCommandSyntaxException ( message );
 	}
-	String Alias = (String)v.get(1);
-	List tokens = StringUtil.breakStringList ( token1, "()", 0 );
+	String Alias = v.get(1);
+	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
 	if ( (tokens == null) || tokens.size() < 2 ) {
 		// Must have at least the command name and its parameters...
 		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewStatisticTimeSeriesFromEnsemble(...)";
@@ -289,8 +321,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		throw new InvalidCommandSyntaxException ( message );
 	}
 	// Get the input needed to process the file...
-	try {	 PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.get(1), routine, "," );
+	try {
+	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		parameters.set ( "Alias", Alias );
 		parameters.setHowSet ( Prop.SET_UNKNOWN );
@@ -304,15 +336,40 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command.
-@param command_number Number of command in sequence.
+Run the command in discovery mode.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-public void runCommand ( int command_number )
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "NewStatisticTimeSeriesFromEnsemble.runCommand", message;
@@ -326,7 +383,10 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList(null);
+    }
 
 	String Alias = parameters.getValue ( "Alias" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
@@ -366,7 +426,7 @@ CommandWarningException, CommandException
 				message = "Error requesting AnalysisStart DateTime(DateTime=" + AnalysisStart + ") from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
+				status.addToLog ( commandPhase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -379,7 +439,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
+				status.addToLog ( commandPhase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								message, "Verify the AnalysisStart information." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -393,7 +453,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-			status.addToLog ( CommandPhaseType.RUN,
+			status.addToLog ( commandPhase,
 					new CommandLogRecord(CommandStatusType.FAILURE,
 							message, "Verify the AnalysisStart information." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -412,7 +472,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
+				status.addToLog ( commandPhase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -425,7 +485,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-				status.addToLog ( CommandPhaseType.RUN,
+				status.addToLog ( commandPhase,
 						new CommandLogRecord(CommandStatusType.FAILURE,
 								message, "Verify the AnalysisEnd information." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -439,7 +499,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( commandPhase,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Verify the AnalysisEnd information." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -461,7 +521,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -475,7 +535,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify the OutputStart information." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -489,7 +549,7 @@ CommandWarningException, CommandException
         Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the OutputStart information." ) );
         throw new InvalidCommandParameterException ( message );
@@ -509,7 +569,7 @@ CommandWarningException, CommandException
 	            Message.printWarning(log_level,
 	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	                    routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
+	            status.addToLog ( commandPhase,
 	                    new CommandLogRecord(CommandStatusType.FAILURE,
 	                            message, "Report the problem to software support." ) );
 	            throw new InvalidCommandParameterException ( message );
@@ -523,7 +583,7 @@ CommandWarningException, CommandException
 	            Message.printWarning(log_level,
 	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
 	                routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
+	            status.addToLog ( commandPhase,
 	                    new CommandLogRecord(CommandStatusType.FAILURE,
 	                            message, "Verify the OutputEnd information." ) );
 	            throw new InvalidCommandParameterException ( message );
@@ -537,52 +597,66 @@ CommandWarningException, CommandException
         Message.printWarning(warning_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count),
             routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the OutputEnd information." ) );
         throw new InvalidCommandParameterException ( message );
     }
 
 	// Get the time series to process.  The time series list is searched backwards until the first match...
-
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "CommandTag", command_tag );
-	request_params.set ( "EnsembleID", EnsembleID );
-	CommandProcessorRequestResultsBean bean = null;
-	try {
-        bean = processor.processRequest( "GetEnsemble", request_params);
-	}
-	catch ( Exception e ) {
-		message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report the problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
-	TSEnsemble tsensemble = null;
-	if ( o_TSEnsemble == null ) {
-		message = "Null TS requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
-	}
-	else {
-		tsensemble = (TSEnsemble)o_TSEnsemble;
-	}
+    
+    TSEnsemble tsensemble = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // FIXME - SAM 2011-02-02 This gets all the ensembles, not just the ones matching the request!
+        List<TSEnsemble> tsEnsembleList =
+            TSCommandProcessorUtil.getDiscoveryEnsembleFromCommandsBeforeCommand((TSCommandProcessor)processor,this);
+        for ( TSEnsemble tsEnsemble: tsEnsembleList ) {
+            if ( tsEnsemble.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
+                tsensemble = tsEnsemble;
+                break;
+            }
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	PropList request_params = new PropList ( "" );
+    	request_params.set ( "CommandTag", command_tag );
+    	request_params.set ( "EnsembleID", EnsembleID );
+    	CommandProcessorRequestResultsBean bean = null;
+    	try {
+            bean = processor.processRequest( "GetEnsemble", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+    		status.addToLog ( commandPhase,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    						message, "Report the problem to software support." ) );
+    	}
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
+    	if ( o_TSEnsemble == null ) {
+    		message = "Null TS requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+    	}
+    	else {
+    		tsensemble = (TSEnsemble)o_TSEnsemble;
+    	}
+    }
 	
 	if ( tsensemble == null ) {
 		message = "Unable to find ensemble to analyze using EnsembleID \"" + EnsembleID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( commandPhase,
 		new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
@@ -592,12 +666,43 @@ CommandWarningException, CommandException
 
 	TS stats_ts = null;
 	try {
+	    boolean createData = false; // Whether to actually process the numbers - false for discovery mode
+	    if ( commandPhase == CommandPhaseType.RUN ) {
+	        createData = true;
+    	    if ( tsensemble.size() == 0 ) {
+    	        // Generate a warning to help users know that no data are available as input but create the
+    	        // statistic time series as all missing
+    	        message = "Ensemble \"" + EnsembleID + "\" has no time series to process for statistic.";
+    	        Message.printWarning ( warning_level,
+    	        MessageUtil.formatMessageTag(
+    	        command_tag,++warning_count), routine, message );
+    	        status.addToLog ( commandPhase,
+    	        new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify the ensemble identifier and confirm that data are available." ) );
+    	    }
+	    }
 	    TSUtil_NewStatisticTimeSeriesFromEnsemble tsu = new TSUtil_NewStatisticTimeSeriesFromEnsemble (
 	        tsensemble, AnalysisStart_DateTime, AnalysisEnd_DateTime, OutputStart_DateTime, OutputEnd_DateTime,
 	        NewTSID, statisticType, AllowMissingCount_Integer, MinimumSampleSize_Integer );
-	    stats_ts = tsu.newStatisticTimeSeriesFromEnsemble ();
+	    stats_ts = tsu.newStatisticTimeSeriesFromEnsemble ( createData );
 		stats_ts.setAlias ( Alias ); // Do separate because setting the NewTSID might cause the
 						// alias set to fail below.
+		
+		if ( commandPhase == CommandPhaseType.RUN ) {
+    	    // Update the data to the processor so that appropriate actions are taken...
+    
+    	    if ( stats_ts != null ) {
+    	        warning_count += TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
+    	    }
+		}
+		else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Set in the discovery list
+            if ( stats_ts != null ) {
+                List<TS> tslist = new Vector();
+                tslist.add(stats_ts);
+                setDiscoveryTSList(tslist);
+            }
+        }
 	}
 	catch ( Exception e ) {
 		message ="Unexpected error generating the statistic time series from ensemble \""+ EnsembleID + "\" (" + e + ").";
@@ -605,16 +710,10 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-		status.addToLog ( CommandPhaseType.RUN,
+		status.addToLog ( commandPhase,
 		new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "See the log file for details." ) );
 	}
-    
-    // Update the data to the processor so that appropriate actions are taken...
-
-    if ( stats_ts != null ) {
-        warning_count += TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
-    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -625,7 +724,15 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 	
-	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+	status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+{
+    __discovery_TS_Vector = discovery_TS_Vector;
 }
 
 /**

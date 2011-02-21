@@ -44,7 +44,6 @@ import RTi.Util.IO.ReaderInputStream;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeInterval;
 
 /**
 Data store for NCDC ACIS web services.  This class maintains the web service information in a general way.
@@ -324,7 +323,9 @@ throws IOException, MalformedURLException
     in.close();
     urlConnection.disconnect();
     String resultString = b.toString();
-    Message.printStatus(2,routine,"Returned data="+resultString);
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"Returned data="+resultString);
+    }
     if ( b.indexOf("error") >= 0 ) {
         throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
     }
@@ -338,7 +339,9 @@ throws IOException, MalformedURLException
         //resultString = resultString.replace("valid_daterange\":[[]]", "valid_daterange\":[\"\",\"\"]");
         resultString = resultString.replace("[[", "[");
         resultString = resultString.replace("]]", "]");
-        Message.printStatus(2,routine,"Returned data after cleanup="+resultString);
+        if ( Message.isDebugOn ) {
+            Message.printDebug(1,routine,"Returned data after cleanup="+resultString);
+        }
         Gson gson = new Gson();
         RccAcisStationTimeSeriesMetadataList metadataListObject =
             gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
@@ -472,9 +475,9 @@ throws MalformedURLException, Exception
     in.close();
     urlConnection.disconnect();
     String resultString = b.toString();
-    //if ( Message.isDebugOn ) {
-        Message.printStatus(2,routine,"Returned data="+resultString);
-    //}
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"Returned data="+resultString);
+    }
     if ( b.indexOf("error") >= 0 ) {
         throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
     }

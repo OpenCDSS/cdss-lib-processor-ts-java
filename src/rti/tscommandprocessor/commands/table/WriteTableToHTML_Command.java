@@ -333,17 +333,18 @@ throws IOException
     }
 	
 	try {
-		Message.printStatus ( 2, routine, "Writing summary file \"" + OutputFile + "\"" );
+		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
 		DataTableHtmlWriter tableWriter = new DataTableHtmlWriter(table);
 		tableWriter.writeHtmlFile(OutputFile, true, OutputComments_Vector, null, null, null );
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error writing summary to file \"" + OutputFile + "\" (" + e + ")";
+		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";
 		Message.printWarning ( warning_level, 
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		status.addToLog ( CommandPhaseType.RUN,
 			new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Software error - report problem to support." ) );
+		Message.printWarning(3, routine, e);
 	}
 	return warning_count;
 }

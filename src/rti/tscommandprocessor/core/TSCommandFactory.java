@@ -169,6 +169,7 @@ import rti.tscommandprocessor.commands.ts.LagK_Command;
 import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewEndOfMonthTSFromDayTS_Command;
+import rti.tscommandprocessor.commands.ts.RunningStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticTimeSeries_Command;
 import rti.tscommandprocessor.commands.ts.NewStatisticYearTS_Command;
 import rti.tscommandprocessor.commands.ts.NewPatternTimeSeries_Command;
@@ -653,6 +654,9 @@ throws UnknownCommandException
     }
     else if ( StringUtil.startsWithIgnoreCase(commandString,"RunningAverage") ) {
         return new RunningAverage_Command ();
+    }
+    else if ( StringUtil.startsWithIgnoreCase(commandString,"RunningStatisticTimeSeries") ) {
+        return new RunningStatisticTimeSeries_Command ();
     }
 
 	// "S" commands...

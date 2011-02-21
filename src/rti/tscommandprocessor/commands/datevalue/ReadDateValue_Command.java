@@ -419,6 +419,9 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
+    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+    }
     CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.

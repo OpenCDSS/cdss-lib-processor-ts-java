@@ -67,10 +67,14 @@ throws URISyntaxException, IOException
     setDescription ( description );
     setServiceRootURI ( serviceRootURI );
     // Initialize the parameter types - this may be available as a service at some point but for now inline
+    __parameterTypeList.add ( new UsgsNwisParameterType("00054","Physical","Reservoir storage, acre feet","","Reservoir storage","ac-ft"));
     __parameterTypeList.add ( new UsgsNwisParameterType("00060","Physical","Discharge, cubic feet per second","","Stream flow, mean. daily","cfs"));
     __parameterTypeList.add ( new UsgsNwisParameterType("00065","Physical","Gage height, feet","","Height, gage","ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("74207","Physical","Moisture content, soil, volumetric, percent of total volume","","Moisture content","%"));
     __parameterTypeList.add ( new UsgsNwisParameterType("63160","Physical","Stream water level elevation above NAVD 1988, in feet","","","ft"));
     __parameterTypeList.add ( new UsgsNwisParameterType("72020","Physical","Reservoir storage, total pool, percent of capacity","","","%"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("81026","Physical","Water content of snow, inches","","Water content of snow","in"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("82300","Physical","Snow depth, inches","","Depth, snow cover","in"));
     // Initialize the statistic types - this may be available as a service at some point but for now inline
     __statisticTypeList.add ( new UsgsNwisStatisticType("00001","Maximum","Maximum values"));
     __statisticTypeList.add ( new UsgsNwisStatisticType("00002","Minimum","Minimum values"));
@@ -538,6 +542,10 @@ throws IOException
     DateTime start = null;
     // TODO SAM 2011-01-11 Why not just used beginDateTime and endDateTime for the period?
     NodeList valuelist = values.getElementsByTagName("value");
+    if ( (valuelist == null) || (valuelist.getLength() == 0) ) {
+        // No data to process.  This may occur, for example, if a date range is requested that has no data
+        return;
+    }
     String dateTimeString = "";
     try {
         dateTimeString = ((Element)valuelist.item(0)).getAttribute("dateTime").replace("T", " ");

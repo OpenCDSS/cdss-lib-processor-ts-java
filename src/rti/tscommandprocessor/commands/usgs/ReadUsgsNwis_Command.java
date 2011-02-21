@@ -431,6 +431,11 @@ throws InvalidCommandParameterException,
     
     CommandStatus status = getCommandStatus();
     status.clearLog(command_phase);
+    boolean read_data = true;
+    if ( command_phase == CommandPhaseType.DISCOVERY ){
+        read_data = false;
+        setDiscoveryTSList ( null );
+    }
     CommandProcessor processor = getCommandProcessor();
 
 	// Get the command properties not already stored as members.
@@ -579,10 +584,6 @@ throws InvalidCommandParameterException,
     TS ts = null;
     String InputFile_full = InputFile;
 	try {
-        boolean read_data = true;
-        if ( command_phase == CommandPhaseType.DISCOVERY ){
-            read_data = false;
-        }
         InputFile_full = IOUtil.verifyPathForOS(
                 IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
                         TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));

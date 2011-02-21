@@ -78,7 +78,7 @@ throws InvalidCommandParameterException
         message = "The AverageMethod parameter (" + AverageMethod + ") is invalid.";
         warning += "\n" + message;
         StringBuffer b = new StringBuffer();
-        for ( RunningAverageType type : RunningAverageType.values() ) {
+        for ( RunningAverageType type : TSUtil_RunningAverage.getRunningAverageTypeChoices() ) {
             b.append ( "" + type + ", ");
         }
         // Remove the extra comma at end

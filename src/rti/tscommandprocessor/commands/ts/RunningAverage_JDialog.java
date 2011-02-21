@@ -28,6 +28,7 @@ import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import RTi.TS.RunningAverageType;
+import RTi.TS.TSUtil_RunningAverage;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -244,6 +245,9 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "An N-year running average averages the values for the date/time and previous years (N years total)."), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>The RunningStatisticTimeSeries() command replaces this command and has more flexibility.</b></html>"), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -264,7 +268,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Type of average:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__AverageMethod_JComboBox = new SimpleJComboBox ( false );
-	for ( RunningAverageType type : RunningAverageType.values() ) {
+	for ( RunningAverageType type : TSUtil_RunningAverage.getRunningAverageTypeChoices() ) {
 	    __AverageMethod_JComboBox.addItem ( "" + type );
 	}
 	__AverageMethod_JComboBox.addItemListener ( this );

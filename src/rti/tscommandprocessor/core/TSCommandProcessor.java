@@ -2288,7 +2288,7 @@ throws Exception
         tsensemble = null;
     }
     else {
-        tsensemble = (TSEnsemble)__TSEnsemble_Vector.get ( i );
+        tsensemble = __TSEnsemble_Vector.get ( i );
     }
     PropList results = bean.getResultsPropList();
     // This will be set in the bean because the PropList is a reference...
@@ -3246,11 +3246,12 @@ private void readCommandFile_RunDiscoveryOnCommand ( Command command_read )
     try {
         ((CommandDiscoverable)command_read).runCommandDiscovery(indexOf(command_read));
     }
-    catch ( Exception e )
-    {
+    catch ( Exception e ) {
+        // TODO SAM 2011-02-17 Need to show warning to user?  With current design, code should have complete input.
         // For now ignore because edit-time input may not be complete...
         String message = "Unable to make discover run - may be OK if partial data.";
         Message.printStatus(2, routine, message);
+        Message.printWarning(3, routine, e);
     }
 }
 

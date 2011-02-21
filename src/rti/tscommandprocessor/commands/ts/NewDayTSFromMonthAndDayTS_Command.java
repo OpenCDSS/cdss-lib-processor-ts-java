@@ -2,7 +2,9 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.List;
 import java.util.Vector;
@@ -17,6 +19,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -27,6 +30,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -35,12 +39,17 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the NewDayTSFromMonthAndDayTS() command.
-</p>
 */
-public class NewDayTSFromMonthAndDayTS_Command extends AbstractCommand implements Command
+public class NewDayTSFromMonthAndDayTS_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider
 {
+    
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -132,7 +141,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "NewTSID" );
     valid_Vector.add ( "MonthTSID" );
@@ -158,6 +167,34 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new NewDayTSFromMonthAndDayTS_JDialog ( parent, this )).ok();
+}
+
+/**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
+}
+
+/**
+Return the list of data objects created by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discoveryTSList.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discoveryTSList;
+    }
+    else {
+        return null;
+    }
 }
 
 /**
@@ -244,16 +281,40 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command.
-@param command_number Number of command in sequence.
+Run the command in discovery mode.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "NewDayTSFromMonthAndDayTS_Command.runCommand", message;
@@ -267,7 +328,10 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+    }
 	
 	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
@@ -278,12 +342,23 @@ CommandWarningException, CommandException
 	// backwards until the first match...
 
 	TS monthTS = null;
-	try {	PropList request_params = new PropList ( "" );
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, MonthTSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            monthTS = tslist.get(0);
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+        try {
+            PropList request_params = new PropList ( "" );
 			request_params.set ( "CommandTag", command_tag );
 			request_params.set ( "TSID", MonthTSID );
 			CommandProcessorRequestResultsBean bean = null;
-			try { bean =
-				processor.processRequest( "GetTimeSeriesForTSID", request_params);
+			try {
+			    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
 			}
 			catch ( Exception e ) {
 				message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + MonthTSID +
@@ -292,9 +367,9 @@ CommandWarningException, CommandException
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 				Message.printWarning(log_level, routine, e );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Report the problem to software support." ) );
 			}
 			PropList bean_PropList = bean.getResultsPropList();
 			Object o_TS = bean_PropList.getContents ( "TS");
@@ -304,30 +379,43 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 			}
 			else {
 				monthTS = (TS)o_TS;
 			}
-	}
-	catch ( Exception e ) {
-	    monthTS = null;
-	}
+        }
+    	catch ( Exception e ) {
+    	    monthTS = null;
+    	}
+    }
 	if ( monthTS == null ) {
 		message = "Unable to find monthly time series using TSID \"" + MonthTSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+        status.addToLog ( commandPhase,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
 	}
 	
     TS dayTS = null;
-    try {   PropList request_params = new PropList ( "" );
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, MonthTSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            dayTS = tslist.get(0);
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+        try {
+            PropList request_params = new PropList ( "" );
             request_params.set ( "CommandTag", command_tag );
             request_params.set ( "TSID", DayTSID );
             CommandProcessorRequestResultsBean bean = null;
@@ -341,7 +429,7 @@ CommandWarningException, CommandException
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
                 Message.printWarning(log_level, routine, e );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
             }
@@ -353,31 +441,32 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
             }
             else {
                 dayTS = (TS)o_TS;
             }
-    }
-    catch ( Exception e ) {
-        dayTS = null;
+        }
+        catch ( Exception e ) {
+            dayTS = null;
+        }
     }
     if ( dayTS == null ) {
         message = "Unable to find daily time series using TSID \"" + DayTSID + "\".";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+        status.addToLog ( commandPhase,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
         throw new CommandWarningException ( message );
     }
 
 	// Now process the time series...
 
-	TS ts = null;  // New time series to be created
+	TS ts = null; // New time series to be created
 	try {
 	    DateTime OutputStart_DateTime = null;
 	    Object o = processor.getPropContents("OutputStart");
@@ -416,7 +505,9 @@ CommandWarningException, CommandException
         ts.setDate2 ( date2 );
         ts.allocateDataSpace ();
         ts.setIdentifier ( NewTSID );
-	    setUsingMonthAndDay ( (DayTS)ts, (MonthTS)monthTS, (DayTS)dayTS );
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            setUsingMonthAndDay ( (DayTS)ts, (MonthTS)monthTS, (DayTS)dayTS );
+        }
 		ts.setAlias ( Alias );
 	}
 	catch ( Exception e ) {
@@ -425,14 +516,21 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Check the log file - report the problem to software support." ) );
 	}
 
     // Update the data to the processor so that appropriate actions are taken...
-
-    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, ts );
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Just want time series headers initialized
+        List<TS> discoveryTSList = new Vector();
+        discoveryTSList.add ( ts );
+        setDiscoveryTSList ( discoveryTSList );
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, ts );
+    }
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -443,7 +541,16 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created during discovery phase
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

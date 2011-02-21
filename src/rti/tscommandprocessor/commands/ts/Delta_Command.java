@@ -42,7 +42,7 @@ public class Delta_Command extends AbstractCommand implements Command, CommandDi
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
     
 /**
 Constructor.
@@ -164,7 +164,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -201,7 +201,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -209,19 +209,18 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
-        return null;
+    List<TS> matchingDiscoveryTS = new Vector();
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+        return matchingDiscoveryTS;
     }
-    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
-    TS datats = discovery_TS_Vector.get(0);
-    // Use the most generic for the base class...
-    if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+    for ( TS datats : discoveryTSList ) {
+        // Use the most generic for the base class...
+        if ( (c == TS.class) || (c == datats.getClass()) ) {
+            matchingDiscoveryTS.add(datats);
+        }
     }
-    else {
-        return null;
-    }
+    return matchingDiscoveryTS;
 }
 
 // parseCommand() from the base class
@@ -275,6 +274,9 @@ CommandWarningException, CommandException
     
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+    }
 	
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
@@ -411,7 +413,8 @@ CommandWarningException, CommandException
     List<TS> tslist = null;
 	if ( commandPhase == CommandPhaseType.DISCOVERY ) {
 	    // Get the discovery time series list from all time series above this command
-	    tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand((TSCommandProcessor)processor,this);
+	    tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+	        (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
 	}
 	else if ( commandPhase == CommandPhaseType.RUN ) {
     	PropList request_params = new PropList ( "" );
@@ -444,9 +447,8 @@ CommandWarningException, CommandException
     		MessageUtil.formatMessageTag(
     		command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message,
-                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE, message,
+                    "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
     	}
     	else {
             tslist = (List)o_TSList;
@@ -489,6 +491,11 @@ CommandWarningException, CommandException
 	TS ts = null;
 	Object o_ts = null;
 	List<TS> discoverTSList = new Vector();
+    boolean createData = true; // Run full command
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Just want time series headers initialized, but not actually do the processing
+        createData = false;
+    }
 	for ( int its = 0; its < nts; its++ ) {
 		// The time series to process, from the list that was returned above.
 		o_ts = tslist.get(its);
@@ -506,12 +513,6 @@ CommandWarningException, CommandException
 		ts = (TS)o_ts;
 		
 		try {
-		    boolean createData = true; // Run full command
-	        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	            // Just want time series headers initialized, but not actually do the processing
-	            createData = false;
-	            setDiscoveryTSList ( null );
-	        }
 		    // Create the delta time series...
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
 			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime,
@@ -533,13 +534,12 @@ CommandWarningException, CommandException
                     problem, "" ) );
             }
 
-	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts );
-	        
-	        // Add to the discover list
-	        
-	        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	            discoverTSList.add ( newts );
-	        }
+            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+                discoverTSList.add ( newts );
+            }
+            else if ( commandPhase == CommandPhaseType.RUN ) {
+                TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts );
+            }    
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error creating delta time series for \""+ ts.getIdentifier() + "\" (" + e + ").";
@@ -573,10 +573,11 @@ CommandWarningException, CommandException
 
 /**
 Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created in discovery mode
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

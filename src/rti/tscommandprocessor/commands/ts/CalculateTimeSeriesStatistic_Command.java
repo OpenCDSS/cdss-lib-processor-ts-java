@@ -525,8 +525,10 @@ CommandWarningException, CommandException
                                 tsid = ts.getIdentifierString();
                             }
                         }
+                        Message.printStatus(2,routine, "Searching column \"" + TableTSIDColumn + "\" for \"" +
+                            tsid + "\"" );
                         TableRecord rec = table.getRecord ( TableTSIDColumn, tsid );
-                        Message.printStatus(2,routine,"Searched column\"" + TableTSIDColumn + "\" for \"" +
+                        Message.printStatus(2,routine, "Searched column \"" + TableTSIDColumn + "\" for \"" +
                             tsid + "\" ... found " + rec );
                         int statisticColumn = -1;
                         try {

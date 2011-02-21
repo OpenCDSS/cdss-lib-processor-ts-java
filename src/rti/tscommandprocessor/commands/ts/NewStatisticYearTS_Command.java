@@ -2,7 +2,9 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.List;
 import java.util.Vector;
@@ -15,6 +17,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -25,6 +28,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 
@@ -34,12 +38,17 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
 /**
-<p>
 This class initializes, checks, and runs the NewStatisticYearTS() command.
-</p>
 */
-public class NewStatisticYearTS_Command extends AbstractCommand implements Command
+public class NewStatisticYearTS_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider
 {
+    
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discoveryTSList = null;
     
 /**
 Analysis window year, since users do not supply this information.
@@ -301,7 +310,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "NewTSID" );
@@ -315,10 +324,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "AnalysisWindowStart" );
     valid_Vector.add ( "AnalysisWindowEnd" );
     valid_Vector.add ( "SearchStart" );
-    Message.printStatus ( 2, "SAM", "Valid_Vector=" + StringUtil.toString(valid_Vector,","));
-    Message.printStatus( 2, "SAM", "Props=" + parameters.toString());
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
-    Message.printStatus( 2, "SAM", "Warning=\"" + warning + "\"");
     
 	if ( warning.length() > 0 ) {
 		Message.printWarning ( warning_level,
@@ -338,6 +344,34 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new NewStatisticYearTS_JDialog ( parent, this )).ok();
+}
+
+/**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
+}
+
+/**
+Return the list of data objects created by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discoveryTSList.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discoveryTSList;
+    }
+    else {
+        return null;
+    }
 }
 
 /**
@@ -399,15 +433,40 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
-Run the command.
-@param command_number Number of command in sequence.
+Run the command in discovery mode.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "NewStatisticYearTS.runCommand", message;
@@ -421,7 +480,10 @@ CommandWarningException, CommandException
 	PropList parameters = getCommandParameters ();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+    }
 
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
@@ -472,7 +534,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -486,7 +548,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify the AnalysisStart information." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -501,7 +563,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the AnalysisStart information." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -521,7 +583,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -535,7 +597,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify the AnalysisEnd information." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -549,7 +611,7 @@ CommandWarningException, CommandException
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the AnalysisEnd information." ) );
 		throw new InvalidCommandParameterException ( message );
@@ -605,47 +667,57 @@ CommandWarningException, CommandException
 
 	// Get the time series to process.  The time series list is searched
 	// backwards until the first match...
-
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "CommandTag", command_tag );
-	request_params.set ( "TSID", TSID );
-	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesForTSID", request_params);
-	}
-	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TS = bean_PropList.getContents ( "TS");
-	TS ts = null;
-	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
-		"\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-	}
-	else {
-		ts = (TS)o_TS;
-	}
+    TS ts = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            ts = tslist.get(0);
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	PropList request_params = new PropList ( "" );
+    	request_params.set ( "CommandTag", command_tag );
+    	request_params.set ( "TSID", TSID );
+    	CommandProcessorRequestResultsBean bean = null;
+    	try { bean =
+    		processor.processRequest( "GetTimeSeriesForTSID", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
+    		"\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+    	}
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TS = bean_PropList.getContents ( "TS");
+    	if ( o_TS == null ) {
+    		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID +
+    		"\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+    	}
+    	else {
+    		ts = (TS)o_TS;
+    	}
+    }
 	
 	if ( ts == null ) {
 		message = "Unable to find time series to analyze using TSID \""+TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(
 		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message );
@@ -654,14 +726,17 @@ CommandWarningException, CommandException
     if ( warning_count > 0 ) {
         // Input error...
         message = "Insufficient data to run command.";
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog (commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
     }
 
 	// Now process the time series...
-
+    boolean createData = true;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        createData = false;
+    }
 	try {
 	    // Make sure that the statistic is allowed for the time series interval.
 	    if ( !TSUtil_NewStatisticYearTS.isStatisticSupported(statisticType, ts.getDataIntervalBase(), null) ) {
@@ -670,20 +745,28 @@ CommandWarningException, CommandException
             Message.printWarning ( warning_level,
                 MessageUtil.formatMessageTag(
                 command_tag,++warning_count),routine,message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Refer to documentation to determine supported statistics." ) );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Refer to documentation to determine supported statistics." ) );
 	    }
 	    else {
     	    TSUtil_NewStatisticYearTS tsu = new TSUtil_NewStatisticYearTS ( ts, NewTSID, statisticType,
     	        TestValue_Double, AllowMissingCount_Integer, MinimumSampleSize_Integer,
     	        outputYearType, AnalysisStart_DateTime, AnalysisEnd_DateTime,
                 AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
-    		TS stats_ts = tsu.newStatisticYearTS ();
+    		TS stats_ts = tsu.newStatisticYearTS ( createData );
     		stats_ts.setAlias ( Alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
     
     		// Update the data to the processor so that appropriate actions are taken...
-    	    TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
+    	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+    	        // Just want time series headers initialized
+    	        List<TS> discoveryTSList = new Vector();
+    	        discoveryTSList.add ( stats_ts );
+    	        setDiscoveryTSList ( discoveryTSList );
+    	    }
+    	    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, stats_ts);
+    	    }
 	    }
 	}
 	catch ( Exception e ) {
@@ -693,7 +776,7 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "See the log file for details." ) );
 	}
@@ -707,7 +790,16 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created during discovery phase
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

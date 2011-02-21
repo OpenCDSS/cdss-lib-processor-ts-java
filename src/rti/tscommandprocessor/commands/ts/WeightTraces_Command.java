@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.util.List;
@@ -48,7 +49,7 @@ protected String _AbsoluteWeights = "AbsoluteWeights";
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
 
 /**
 Years as array of integers (populated during data check).
@@ -194,7 +195,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "SpecifyWeightsHow" );
@@ -228,7 +229,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -236,15 +237,15 @@ Return the list of data objects read by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-	List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+	List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
-    TS datats = discovery_TS_Vector.get(0);
+    TS datats = discoveryTSList.get(0);
     // Use the most generic for the base class...
     // Check for TS request or class that matches the data...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return discoveryTSList;
     }
     else {
         return null;
@@ -329,7 +330,7 @@ command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could
 not produce output).
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "WeightTraces_Command.runCommand", message;
@@ -345,17 +346,30 @@ CommandWarningException, CommandException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.RUN);
     
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
     }
-	
+    
     String Alias = parameters.getValue ( "Alias" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     // Currently only one option...
 	//String SpecifyWeightsHow = parameters.getValue ( "SpecifyWeightsHow" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 
-    if ( command_phase == CommandPhaseType.RUN ) {
+    TSEnsemble tsensemble = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // FIXME - SAM 2011-02-02 This gets all the ensembles, not just the ones matching the request!
+        List<TSEnsemble> tsEnsembleList =
+            TSCommandProcessorUtil.getDiscoveryEnsembleFromCommandsBeforeCommand((TSCommandProcessor)processor,this);
+        for ( TSEnsemble tsEnsemble: tsEnsembleList ) {
+            if ( tsEnsemble.getEnsembleID().equalsIgnoreCase(EnsembleID) ) {
+                tsensemble = tsEnsemble;
+                break;
+            }
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
     	// Get the time series ensemble to process.
 
         PropList request_params = new PropList ( "" );
@@ -376,7 +390,6 @@ CommandWarningException, CommandException
         }
         PropList bean_PropList = bean.getResultsPropList();
         Object o_TSEnsemble = bean_PropList.getContents ( "TSEnsemble");
-        TSEnsemble tsensemble = null;
         if ( o_TSEnsemble == null ) {
             message = "Null TS requesting GetEnsemble(EnsembleID=\"" + EnsembleID + "\") from processor.";
             Message.printWarning(log_level,
@@ -389,83 +402,80 @@ CommandWarningException, CommandException
         else {
             tsensemble = (TSEnsemble)o_TSEnsemble;
         }
+    }
         
-        if ( tsensemble == null ) {
-            message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID + "\".";
+    if ( tsensemble == null ) {
+        message = "Unable to find ensemble to process using EnsembleID \"" + EnsembleID + "\".";
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(
+        command_tag,++warning_count), routine, message );
+        status.addToLog ( CommandPhaseType.RUN,
+        new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+        throw new CommandWarningException ( message );
+    }
+    
+    if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
+        try {
+            // Don't validate because the interval will be blank.
+            new TSIdent ( NewTSID, TSIdent.NO_VALIDATION );
+        }
+        catch ( Exception e ) {
+            message = "NewTSID \"" + NewTSID + "\" cannot be parsed - invalid time series identifier.";
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(
             command_tag,++warning_count), routine, message );
             status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify the ensemble identifier.  A previous error may also cause this problem." ) );
+                    message, "Verify the new time series identifier information." ) );
             throw new CommandWarningException ( message );
         }
-        
-        if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
-            try {
-                // Don't validate because the interval will be blank.
-                new TSIdent ( NewTSID, TSIdent.NO_VALIDATION );
-            }
-            catch ( Exception e ) {
-                message = "NewTSID \"" + NewTSID + "\" cannot be parsed - invalid time series identifier.";
-                Message.printWarning ( warning_level,
-                MessageUtil.formatMessageTag(
-                command_tag,++warning_count), routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the new time series identifier information." ) );
-                throw new CommandWarningException ( message );
-            }
-        }
+    }
 
-    	// Now process the time series...
+	// Now process the time series...
+    TS newts = null;
+    try {
+        // Years and weights were previously determined.
+        // Loop through each requested year and get the time series in the ensemble to process.
         
-        try {
-            // Years and weights were previously determined...
-           
-            // Create a new time series to hold the results.
-            
-            TS newts = null;
-            
-            // Loop through each requested year and get the time series in the ensemble to process.
-            
-            int size_ensemble = tsensemble.size();
-            for ( int iyear = 0; iyear < __Year_int.length; iyear++ ) {
-                int year = __Year_int[iyear];   // Year to be weighted
-                TS ts = null;   // Time series in ensemble
-                boolean found = false;  // Is year trace found?
-                for ( int i = 0; i < size_ensemble; i++ ) {
-                    ts = tsensemble.get(i);
-                    if ( ts.getIdentifier().getSequenceNumber() == year ) {
-                        found = true;
-                        break;
-                    }
+        int size_ensemble = tsensemble.size();
+        for ( int iyear = 0; iyear < __Year_int.length; iyear++ ) {
+            int year = __Year_int[iyear];   // Year to be weighted
+            TS ts = null;   // Time series in ensemble
+            boolean found = false;  // Is year trace found?
+            for ( int i = 0; i < size_ensemble; i++ ) {
+                ts = tsensemble.get(i);
+                if ( ts.getIdentifier().getSequenceNumber() == year ) {
+                    found = true;
+                    break;
                 }
-                if ( !found ) {
-                    message = "Unable to find trace year [" + year + "] to add to weighted results.";
-                    Message.printWarning ( warning_level, 
-                        MessageUtil.formatMessageTag(command_tag,
-                        ++warning_count), routine, message );
-                        status.addToLog ( command_phase,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that ensemble includes trace year " + year ) );
-                        continue;
-                }
-                // If the first time series being added, simply clone the original time series, set the
-                // new time series identifier, and clear out the data.
-                boolean first_ts = false;
-                if ( newts == null ) {
-                    newts = (TS)ts.clone();
-                    newts.setAlias ( Alias );
-                    newts.setIdentifier ( NewTSID );
-                    // Set the description to empty since it will be reset in the TSUtil.add call below.
-                    newts.setDescription("");
-                    // Set the data values to missing to clear out
+            }
+            if ( !found ) {
+                message = "Unable to find trace year [" + year + "] to add to weighted results.";
+                Message.printWarning ( warning_level, 
+                    MessageUtil.formatMessageTag(command_tag,
+                    ++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that ensemble includes trace year " + year ) );
+                    continue;
+            }
+            // If the first time series being added, simply clone the original time series, set the
+            // new time series identifier, and clear out the data.
+            if ( newts == null ) {
+                newts = (TS)ts.clone();
+                newts.setAlias ( Alias );
+                newts.setIdentifier ( NewTSID );
+                // Set the description to empty since it will be reset in the TSUtil.add call below.
+                newts.setDescription("");
+                // Set the data values to missing to clear out
+                if ( commandPhase == CommandPhaseType.RUN ) {
                     TSUtil.setConstant(newts,newts.getMissing());
-                    first_ts = true;
                 }
-                // Add the time series to the new time series.  This will add to the description for each
-                // added/scaled value.
+            }
+            // Add the time series to the new time series.  This will add to the description for each
+            // added/scaled value.
+            if ( commandPhase == CommandPhaseType.RUN ) {
                 List v = new Vector();
                 v.add ( ts );
                 double [] factor = new double[1];
@@ -473,46 +483,39 @@ CommandWarningException, CommandException
                 // The missing flag will work here for the first and subsequent time series.
                 TSUtil.add ( newts, v, factor, TSUtil.SET_MISSING_IF_OTHER_MISSING );
             }
-            
-            // Update the data to the processor so that appropriate actions are taken...
-
+        }
+        
+        // Update the data to the processor so that appropriate actions are taken...
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Just want time series headers initialized
+            List<TS> discoveryTSList = new Vector();
+            discoveryTSList.add ( newts );
+            setDiscoveryTSList ( discoveryTSList );
+        }
+        else if ( commandPhase == CommandPhaseType.RUN ) {
             int wc2 = TSCommandProcessorUtil.appendTimeSeriesToResultsList ( processor, this, newts );
             if ( wc2 > 0 ) {
                 message = "Error appending new time series to results.";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
-    	}
-    	catch ( Exception e ) {
-    		message = "Unexpected error trying to weight ensemble traces \""+ tsensemble.getEnsembleID() + "\" (" + e + ").";
-    		Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(
-    			command_tag,++warning_count),routine,message );
-    		Message.printWarning(3,routine,e);
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Check the log file - report the problem to software support." ) );
-    	}
-    }
-    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
-        // Just want the identifier...
-        TS ts = new TS ();
-        ts.setAlias ( Alias );
-        try {
-            ts.setIdentifier( NewTSID );
         }
-        catch ( Exception e ) {
-            // Should not happen since identifier was previously checked.
-        }
-        List tslist = new Vector();
-        tslist.add ( ts );
-        setDiscoveryTSList ( tslist );
-    }
+	}
+	catch ( Exception e ) {
+		message = "Unexpected error trying to weight ensemble traces \""+ tsensemble.getEnsembleID() + "\" (" + e + ").";
+		Message.printWarning ( warning_level,
+			MessageUtil.formatMessageTag(
+			command_tag,++warning_count),routine,message );
+		Message.printWarning(3,routine,e);
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Check the log file - report the problem to software support." ) );
+	}
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -531,7 +534,7 @@ Set the list of time series read in discovery phase.
 */
 private void setDiscoveryTSList ( List discovery_TS_Vector )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discovery_TS_Vector;
 }
 
 /**

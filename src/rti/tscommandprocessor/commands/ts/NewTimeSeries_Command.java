@@ -61,7 +61,7 @@ implements Command, CommandDiscoverable, ObjectListProvider
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -203,7 +203,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -331,6 +331,10 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
     status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Initialize the list
+        setDiscoveryTSList ( null );
+    }
 
 	String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
@@ -363,7 +367,7 @@ CommandWarningException, CommandException
 			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
+			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
 				message = "Null value for SetStart DateTime(DateTime=OutputStart) returned from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -385,7 +389,7 @@ CommandWarningException, CommandException
 			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
+			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
 				message = "Null value for SetStart DateTime(DateTime=" +SetStart +	") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
@@ -420,7 +424,7 @@ CommandWarningException, CommandException
 			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
+			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
 				message = "Null value for SetEnd DateTime(DateTime=" +
 				"OutputEnd" +	"\") returned from processor.";
 				Message.printWarning(log_level,
@@ -443,9 +447,8 @@ CommandWarningException, CommandException
 			bean = processor.processRequest( "DateTime", request_params);
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for SetStart DateTime(DateTime=" +
-				SetEnd +	"\") returned from processor.";
+			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
+				message = "Null value for SetStart DateTime(DateTime=" + SetEnd + "\") returned from processor.";
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
@@ -474,10 +477,6 @@ CommandWarningException, CommandException
 
 	TS ts = null;
 	try {
-        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Initialize the list
-            setDiscoveryTSList ( null );
-        }
 	    // Create the time series...
 		ts = TSUtil.newTimeSeries ( NewTSID, true );
 		if ( ts == null ) {
@@ -572,9 +571,9 @@ CommandWarningException, CommandException
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

@@ -5,13 +5,16 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
 import RTi.TS.TSUtil;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -21,6 +24,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -32,19 +36,17 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.YearType;
 
 /**
-<p>
 This class initializes, checks, and runs the ResequenceTimeSeriesData() command.
-</p>
 */
-public class ResequenceTimeSeriesData_Command extends AbstractCommand implements Command
+public class ResequenceTimeSeriesData_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider
 {
-
+    
 /**
-Protected data members shared with the dialog and other related classes.
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
 */
-protected final String _AllTS = "AllTS";
-protected final String _SelectedTS = "SelectedTS";
-protected final String _AllMatchingTSID = "AllMatchingTSID";
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -189,7 +191,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
 	valid_Vector.add ( "TSID" );
 	valid_Vector.add ( "EnsembleID" );
@@ -212,61 +214,6 @@ throws InvalidCommandParameterException
 	status.refreshPhaseSeverity(CommandPhaseType.INITIALIZATION,CommandStatusType.SUCCESS);
 }
 
-// TODO SAM 2009-09-28 Enable reading the sequence from a row rather than a columns
-/**
-Get the year sequence as a row from the table.
-*/
-private int [] getTableRow ( DataTable table, int TableRow_int, int TableColumnStart_int, int TableColumnEnd_int,
-        String command_tag, int warning_level, CommandStatus status )
-throws Exception
-{   String routine = "ResequenceTimeSeriesData.getTableRow";
-    String message;
-    int warning_count = 0;
-    int nyears = TableColumnEnd_int - TableColumnStart_int + 1;
-    int [] year_sequence = new int[nyears];
-    // Remember that indices are zero offset whereas parameters are 1-offset
-    TableRecord rec = table.getRecord(TableRow_int - 1);
-    Object o;
-    int ival = 0;
-    String s;
-    for ( int icol = (TableColumnStart_int - 1); icol < TableColumnEnd_int; icol++, ival++ ) {
-        o = rec.getFieldValue(icol);
-        if ( o instanceof Integer ) {
-            // Just send back the value...
-            year_sequence[ival] = ((Integer)o).intValue();
-        }
-        else if ( o instanceof String ) {
-            s = (String)o;
-            if ( StringUtil.isInteger(s) ) {
-                year_sequence[ival] = Integer.parseInt(s);
-            }
-            else {
-                message = "Column " + (icol + 1) + " value (" + s + ") is not an integer.";
-                Message.printWarning(warning_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-            }
-        }
-        else {
-            message = "Column " + (icol + 1) + " value (" + o + ") is not an integer.";
-            Message.printWarning(warning_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report problem to software support." ) );
-        }
-    }
-    if ( warning_count > 0 ) {
-        message = "There were " + warning_count + " errors getting the years from the table row.";
-        throw new Exception ( message );
-    }
-    return year_sequence;
-}
-
 /**
 Edit the command.
 @param parent The parent JFrame to which the command dialog will belong.
@@ -276,6 +223,34 @@ not (e.g., "Cancel" was pressed.
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new ResequenceTimeSeriesData_JDialog ( parent, this )).ok();
+}
+
+/**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
+}
+
+/**
+Return the list of data objects created by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discoveryTSList.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discoveryTSList;
+    }
+    else {
+        return null;
+    }
 }
 
 /**
@@ -356,6 +331,61 @@ throws Exception
 
 // parseCommand from base class
 
+//TODO SAM 2009-09-28 Enable reading the sequence from a row rather than a columns
+/**
+Get the year sequence as a row from the table.
+*/
+private int [] getTableRow ( DataTable table, int TableRow_int, int TableColumnStart_int, int TableColumnEnd_int,
+        String command_tag, int warning_level, CommandStatus status )
+throws Exception
+{   String routine = "ResequenceTimeSeriesData.getTableRow";
+    String message;
+    int warning_count = 0;
+    int nyears = TableColumnEnd_int - TableColumnStart_int + 1;
+    int [] year_sequence = new int[nyears];
+    // Remember that indices are zero offset whereas parameters are 1-offset
+    TableRecord rec = table.getRecord(TableRow_int - 1);
+    Object o;
+    int ival = 0;
+    String s;
+    for ( int icol = (TableColumnStart_int - 1); icol < TableColumnEnd_int; icol++, ival++ ) {
+        o = rec.getFieldValue(icol);
+        if ( o instanceof Integer ) {
+            // Just send back the value...
+            year_sequence[ival] = ((Integer)o).intValue();
+        }
+        else if ( o instanceof String ) {
+            s = (String)o;
+            if ( StringUtil.isInteger(s) ) {
+                year_sequence[ival] = Integer.parseInt(s);
+            }
+            else {
+                message = "Column " + (icol + 1) + " value (" + s + ") is not an integer.";
+                Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( CommandPhaseType.RUN,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report problem to software support." ) );
+            }
+        }
+        else {
+            message = "Column " + (icol + 1) + " value (" + o + ") is not an integer.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+    }
+    if ( warning_count > 0 ) {
+        message = "There were " + warning_count + " errors getting the years from the table row.";
+        throw new Exception ( message );
+    }
+    return year_sequence;
+}
+
 /**
 Resequence the data in the old time series, transferring to the new time series, using
 the year sequence as the map.
@@ -394,13 +424,40 @@ private void resequenceData ( TS oldts, TS newts, int [] year_sequence, YearType
 }
 
 /**
-Run the command.
+Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "ResequenceTimeSeriesData_Command.runCommand", message;
@@ -411,56 +468,68 @@ CommandWarningException, CommandException
 
     CommandProcessor processor = getCommandProcessor();
 	CommandStatus status = getCommandStatus();
-	status.clearLog(CommandPhaseType.RUN);
+	status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+    }
 
 	PropList parameters = getCommandParameters();
 	String TSList = parameters.getValue ( "TSList" );
 	if ( TSList == null ) {
-		TSList = _AllTS;
+		TSList = "" + TSListType.ALL_TS;
 	}
 	String TSID = parameters.getValue ( "TSID" );
 	String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String Alias = parameters.getValue("Alias");
 
 	// Get the time series to process...
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "TSList", TSList );
-	request_params.set ( "TSID", TSID );
-	request_params.set ( "EnsembleID", EnsembleID );
-	CommandProcessorRequestResultsBean bean = null;
-	try {
-        bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
-	}
-	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
-		"\", TSID=\"" + TSID + "\") from processor.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	if ( o_TSList == null ) {
-		message = "Unable to find time series to process using TSList=\"" + TSList +
-		"\" TSID=\"" + TSID + "\".";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Report problem to software support." ) );
-	}
-	List tslist = (List)o_TSList;
-	if ( tslist.size() == 0 ) {
-		message = "Zero time series in list to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
+	List<TS> tslist = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	PropList request_params = new PropList ( "" );
+    	request_params.set ( "TSList", TSList );
+    	request_params.set ( "TSID", TSID );
+    	request_params.set ( "EnsembleID", EnsembleID );
+    	CommandProcessorRequestResultsBean bean = null;
+    	try {
+            bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+    		"\", TSID=\"" + TSID + "\") from processor.";
+    		Message.printWarning(warning_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+    		status.addToLog ( commandPhase,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    						message, "Report problem to software support." ) );
+    	}
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+    	if ( o_TSList == null ) {
+    		message = "Unable to find time series to process using TSList=\"" + TSList +
+    		"\" TSID=\"" + TSID + "\".";
+    		Message.printWarning ( warning_level,
+    		MessageUtil.formatMessageTag(
+    		command_tag,++warning_count), routine, message );
+    		status.addToLog ( commandPhase,
+    				new CommandLogRecord(CommandStatusType.FAILURE,
+    						message, "Report problem to software support." ) );
+    	}
+    	tslist = (List)o_TSList;
+    }
+	if ( (tslist == null) || (tslist.size() == 0) ) {
+		message = "No time series in list to process using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-		status.addToLog ( CommandPhaseType.RUN,
-				new CommandLogRecord(CommandStatusType.WARNING,
-						message, "Confirm that time series are available (may be OK for partial run)." ) );
+		status.addToLog ( commandPhase,
+			new CommandLogRecord(CommandStatusType.WARNING,
+				message, "Confirm that time series are available (may be OK for partial run)." ) );
 	}
     
 	String OutputYearType = parameters.getValue ( "OutputYearType" );
@@ -472,22 +541,25 @@ CommandWarningException, CommandException
     //String OutputEnd = parameters.getValue ( "OutputEnd" );
     DateTime OutputStart_DateTime = null;
     //DateTime OutputEnd_DateTime = null;
+    PropList request_params = new PropList ( "" );
+    CommandProcessorRequestResultsBean bean = null;
+    PropList bean_PropList;
     if ( (OutputStart != null) && !OutputStart.equals("") ) {
         try {
         request_params = new PropList ( "" );
         request_params.set ( "DateTime", OutputStart );
         bean = null;
-        try { bean =
-            processor.processRequest( "DateTime", request_params);
+        try {
+            bean = processor.processRequest( "DateTime", request_params);
         }
         catch ( Exception e ) {
             message = "Error requesting OutputStart DateTime(DateTime=" + OutputStart + ") from processor.";
             Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report to software support." ) );
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report to software support." ) );
             throw new InvalidCommandParameterException ( message );
         }
 
@@ -499,12 +571,13 @@ CommandWarningException, CommandException
             Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report to software support." ) );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report to software support." ) );
             throw new InvalidCommandParameterException ( message );
         }
-        else {  OutputStart_DateTime = (DateTime)prop_contents;
+        else {
+            OutputStart_DateTime = (DateTime)prop_contents;
         }
     }
     catch ( Exception e ) {
@@ -512,7 +585,7 @@ CommandWarningException, CommandException
         Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid output start date/time." ) );
         throw new InvalidCommandParameterException ( message );
@@ -543,7 +616,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -557,7 +630,7 @@ CommandWarningException, CommandException
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -570,7 +643,7 @@ CommandWarningException, CommandException
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid output start date/time." ) );
             throw new InvalidCommandParameterException ( message );
@@ -592,29 +665,38 @@ CommandWarningException, CommandException
     
     // Get the table information
     
-    String TableID = parameters.getValue ( "TableID" );
-    request_params = new PropList ( "" );
-    request_params.set ( "TableID", TableID );
-    try {
-        bean = processor.processRequest( "GetTable", request_params);
+    DataTable table = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // TODO SAM 2011-02-17 Evaluate whether this is needed
+        //table = TSCommandProcessorUtil.getDiscoveryTablesFromCommandsBeforeCommand(
+        //    (TSCommandProcessor)processor, this );
     }
-    catch ( Exception e ) {
-        message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Report problem to software support." ) );
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+        String TableID = parameters.getValue ( "TableID" );
+        request_params = new PropList ( "" );
+        request_params.set ( "TableID", TableID );
+        try {
+            bean = processor.processRequest( "GetTable", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+        bean_PropList = bean.getResultsPropList();
+        Object o_Table = bean_PropList.getContents ( "Table" );
+        if ( o_Table == null ) {
+            message = "Unable to find table to process using TableID=\"" + TableID + "\".";
+            Message.printWarning ( warning_level,
+            MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Report problem to software support." ) );
+        }
+        table = (DataTable)o_Table;
     }
-    bean_PropList = bean.getResultsPropList();
-    Object o_Table = bean_PropList.getContents ( "Table" );
-    if ( o_Table == null ) {
-        message = "Unable to find table to process using TableID=\"" + TableID + "\".";
-        Message.printWarning ( warning_level,
-        MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Report problem to software support." ) );
-    }
-    DataTable table = (DataTable)o_Table;
     
     int TableColumn_int = -1;
     int TableRowStart_int = -1;
@@ -624,16 +706,18 @@ CommandWarningException, CommandException
     String TableRowEnd = parameters.getValue ( "TableRowEnd" );
     if ( TableColumn != null ) {
         // Must be a named column
-        try {
-            TableColumn_int = table.getFieldIndex(TableColumn);
-        }
-        catch ( Exception e ) {
-            message = "Unable to determine column number from column name \"" + TableColumn + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the table has a column matching \"" + TableColumn + "\"." ) );
-            throw new CommandException ( message );
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            try {
+                TableColumn_int = table.getFieldIndex(TableColumn);
+            }
+            catch ( Exception e ) {
+                message = "Unable to determine column number from column name \"" + TableColumn + "\".";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the table has a column matching \"" + TableColumn + "\"." ) );
+                throw new CommandException ( message );
+            }
         }
     }
     if ( TableRowStart != null ) {
@@ -644,21 +728,26 @@ CommandWarningException, CommandException
     }
     int [] year_sequence = null;
     try {
-        year_sequence = getTableColumn ( table, TableColumn_int, TableRowStart_int, TableRowEnd_int,
-            command_tag, warning_level, status );
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            year_sequence = getTableColumn ( table, TableColumn_int, TableRowStart_int, TableRowEnd_int,
+                command_tag, warning_level, status );
+        }
     }
     catch ( Exception e ) {
         message = "Error getting year sequence from table.";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Check the table format and parameters that specify the cells to use." ) );
         throw new CommandException ( message );
     }
 
 	// Now try to process.
 
-    int nyears = year_sequence.length;
+    int nyears = 0;
+    if ( year_sequence != null ) {
+        nyears = year_sequence.length;
+    }
     String NewScenario = parameters.getValue("NewScenario");
     int size = 0;
     if ( tslist != null ) {
@@ -666,6 +755,7 @@ CommandWarningException, CommandException
     }
     TS ts = null;
     TS newts = null;
+    List<TS> discoveryTSList = new Vector();
     for ( int i = 0; i < size; i++ ) {
         // Create a copy of the original, but with the new scenario.
         ts = (TS)tslist.get(i);
@@ -673,7 +763,7 @@ CommandWarningException, CommandException
             message = "Resequencing currently only can be applied to monthly time series.";
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify only monthly time series as input to the command." ) );
         }
         newts = (TS)ts.clone();
@@ -696,44 +786,57 @@ CommandWarningException, CommandException
         OutputEnd_new_DateTime.addYear ( nyears - 1 + (-1*outputYearType.getStartYearOffset()));
         OutputEnd_new_DateTime.setMonth(outputYearType.getEndMonth());
         newts.setDate2(OutputEnd_new_DateTime);
-        newts.allocateDataSpace();
-        // Set all data to missing so as to not confuse with old data...
-        TSUtil.setConstant ( newts, newts.getMissing() );
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            newts.allocateDataSpace();
+            // Set all data to missing so as to not confuse with old data...
+            TSUtil.setConstant ( newts, newts.getMissing() );
+        }
         // Reset the description because don't want any extra information like constant note
         newts.setDescription ( ts.getDescription() );
         if ( (Alias != null) && (Alias.length() > 0) ) {
             // Set the alias to the desired string - this is impacted by the Scenario parameter
             String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
-                processor, ts, Alias, status, CommandPhaseType.RUN);
+                processor, ts, Alias, status, commandPhase);
             newts.setAlias ( alias );
         }
 
         // Now resequence the data...
         try {
-            resequenceData ( ts, newts, year_sequence, outputYearType );
-            StringBuffer b = new StringBuffer ();
-            for ( int iy = 0; iy < year_sequence.length; iy++ ) {
-                if ( iy != 0 ) {
-                    b.append (", ");
+            if ( commandPhase == CommandPhaseType.RUN ) {
+                resequenceData ( ts, newts, year_sequence, outputYearType );
+                StringBuffer b = new StringBuffer ();
+                for ( int iy = 0; iy < year_sequence.length; iy++ ) {
+                    if ( iy != 0 ) {
+                        b.append (", ");
+                    }
+                    b.append ( "" + year_sequence[iy]);
                 }
-                b.append ( "" + year_sequence[iy]);
+                newts.addToGenesis( "Resequenced data using " + outputYearType + " " + year_sequence.length +
+                    " years (new period is " + newts.getDate1() + " to " + newts.getDate2() + "): " + b.toString() );
             }
-            newts.addToGenesis( "Resequenced data using " + outputYearType + " " + year_sequence.length +
-                " years (new period is " + newts.getDate1() + " to " + newts.getDate2() + "): " + b.toString() );
         }
         catch ( Exception e ) {
             message = "Unexpected error resequencing the data in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
             Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
             Message.printWarning ( 3, routine, e );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
 				message, "Check log file for details." ) );
             throw new CommandException ( message );
         }
         
         // Append the new time series at the end...
-        
-        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts);
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Just want time series headers initialized
+            discoveryTSList.add ( newts );
+        }
+        else if ( commandPhase == CommandPhaseType.RUN ) {
+            TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, newts);
+        }
+    }
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Just want time series headers initialized
+        setDiscoveryTSList ( discoveryTSList );
     }
     
     if ( warning_count > 0 ) {
@@ -743,7 +846,16 @@ CommandWarningException, CommandException
         throw new CommandWarningException ( message );
     }
 	
-	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+	status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created during discovery phase
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

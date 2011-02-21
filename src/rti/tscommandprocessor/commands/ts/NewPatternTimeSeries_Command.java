@@ -47,7 +47,7 @@ implements Command, CommandDiscoverable, ObjectListProvider
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
 	
 /**
 Pattern values as doubles.  These are created during initialization and used during the run.
@@ -296,23 +296,23 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
-Return the list of data objects read by this object in discovery mode.
+Return the list of data objects created by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
-    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
-    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
         return null;
     }
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
-    TS datats = discovery_TS_Vector.get(0);
+    TS datats = discoveryTSList.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discovery_TS_Vector;
+        return discoveryTSList;
     }
     else {
         return null;
@@ -426,6 +426,10 @@ CommandWarningException, CommandException
 	
 	CommandStatus status = getCommandStatus();
 	status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Initialize the list
+        setDiscoveryTSList ( null );
+    }
 
 	// Make sure there are time series available to operate on...
 	
@@ -448,6 +452,7 @@ CommandWarningException, CommandException
 	}
 
 	// Figure out the dates to use for the Set...
+	// TODO SAM 2011-02-21 need to figure out how to get valid SetOutputPeriod() dates in discovery
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
 	
@@ -461,16 +466,15 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for SetStart DateTime(DateTime=" +
-				"OutputStart" +	"\") returned from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-				status.addToLog(commandPhase,
-						new CommandLogRecord(
-						CommandStatusType.FAILURE,message,
-						"Specify SetStart or make sure that a setOutputPeriod() command has been specified prior to this command."));
-				throw new InvalidCommandParameterException ( message );
+			    if ( commandPhase != CommandPhaseType.DISCOVERY ) {
+    				message = "Null value for SetStart DateTime(DateTime=" +
+    				    "OutputStart" +	"\") returned from processor.";
+    				Message.printWarning(log_level,
+						MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+    				status.addToLog(commandPhase,new CommandLogRecord(CommandStatusType.FAILURE,message,
+						"Specify SetStart or make sure that a SetOutputPeriod() command has been specified prior to this command."));
+    				throw new InvalidCommandParameterException ( message );
+			    }
 			}
 			else {
 			    SetStart_DateTime = (DateTime)prop_contents;
@@ -516,15 +520,14 @@ CommandWarningException, CommandException
 			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
-				message = "Null value for SetEnd DateTime(DateTime=OutputEnd) returned from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-				status.addToLog(commandPhase,
-						new CommandLogRecord(
-						CommandStatusType.FAILURE, message,
-						"Specify SetEnd or make sure that a setOutputPeriod() command has been specified prior to this command."));
-				throw new InvalidCommandParameterException ( message );
+	            if ( commandPhase != CommandPhaseType.DISCOVERY ) {
+    				message = "Null value for SetEnd DateTime(DateTime=OutputEnd) returned from processor.";
+    				Message.printWarning(log_level,
+    					MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+    				status.addToLog(commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
+						"Specify SetEnd or make sure that a SetOutputPeriod() command has been specified prior to this command."));
+    				throw new InvalidCommandParameterException ( message );
+	            }
 			}
 			else {
 			    SetEnd_DateTime = (DateTime)prop_contents;
@@ -590,10 +593,6 @@ CommandWarningException, CommandException
 		throw new CommandException ( message );
 	}
 	try {
-        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Initialize the list
-            setDiscoveryTSList ( null );
-        }
         // Try to fill out the time series. Allocate memory and set other information...
 		ts.setIdentifier ( NewTSID );
 		if ( (Description != null) && (Description.length() > 0) ) {
@@ -742,10 +741,11 @@ CommandWarningException, CommandException
 
 /**
 Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created during discovery phase
 */
-private void setDiscoveryTSList ( List<TS> discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

@@ -32,10 +32,11 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
-import RTi.TS.TSIdent;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.TS.TSUtil_ChangeInterval;
@@ -45,6 +46,7 @@ import RTi.TS.TSUtil_ChangeInterval_OutputFillMethodType;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -55,6 +57,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -64,7 +67,8 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeScaleType;
 import RTi.Util.Time.YearType;
 
-public class ChangeInterval_Command extends AbstractCommand implements Command
+public class ChangeInterval_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 // Defines used by this class and its changeInterval_Dialog counterpart.
@@ -74,6 +78,12 @@ protected final String _Repeat = "Repeat";
 protected final String _SetToZero = "SetToZero";
 protected final String _IncludeFirstOnly = "IncludeFirstOnly";
 protected final String _AverageEndpoints = "AverageEndpoints";
+
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discoveryTSList = null;
 
 private final boolean __read_one = true;	// For now only enable the TS Alias notation.
 
@@ -421,7 +431,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "NewInterval" );
@@ -468,6 +478,34 @@ protected void finalize ()
 throws Throwable
 {	
 	super.finalize ();
+}
+
+/**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
+}
+
+/**
+Return the list of data objects created by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discoveryTSList = getDiscoveryTSList ();
+    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discoveryTSList.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discoveryTSList;
+    }
+    else {
+        return null;
+    }
 }
 
 /**
@@ -545,14 +583,42 @@ throws 	InvalidCommandSyntaxException, InvalidCommandParameterException
 }
 
 /**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
 Run the command.
-@param command_number Number of command being run.
+@param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException, CommandException
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
 {
 	String routine = getCommandName() + ".runCommand";
 	String message = "";
@@ -562,7 +628,10 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	int log_level = 3;	// Warning message level for non-user messages
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        setDiscoveryTSList ( null );
+    }
 	
 	PropList parameters = getCommandParameters();
 	String Alias = parameters.getValue( "Alias" );
@@ -577,7 +646,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         Message.printWarning(log_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count),
             routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify a valid new interval for the time series - see documentation." ) );
 	}
@@ -628,49 +697,58 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	        TSUtil_ChangeInterval_HandleMissingInputHowType.valueOfIgnoreCase(HandleMissingInputHow);
 	}
 	
-	// Get the reference (original_ts) to the time series to change interval
-	// from.  Currently just one can be processed.
+	// Get the original time series to change interval from.  Currently just one can be processed.
 	
 	CommandProcessor processor = getCommandProcessor();
-	
-	PropList request_params = new PropList ( "" );
-	request_params.set ( "CommandTag", command_tag );
-	request_params.set ( "TSID", TSID );
-	CommandProcessorRequestResultsBean bean = null;
-	try {
-	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-	}
-	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TS = bean_PropList.getContents ( "TS");
 	TS original_ts = null;
-	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-		Message.printWarning(log_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            original_ts = tslist.get(0);
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	PropList request_params = new PropList ( "" );
+    	request_params.set ( "CommandTag", command_tag );
+    	request_params.set ( "TSID", TSID );
+    	CommandProcessorRequestResultsBean bean = null;
+    	try {
+    	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+    	}
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TS = bean_PropList.getContents ( "TS");
+    	if ( o_TS == null ) {
+    		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+    		Message.printWarning(log_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-	}
-	else {
-		original_ts = (TS)o_TS;
-	}
+                    message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
+    	}
+    	else {
+    		original_ts = (TS)o_TS;
+    	}
+    }
 	
 	if ( original_ts == null ){
 		message = "Cannot determine the time series to process for TSID=\"" + TSID + "\".";
 		Message.printWarning(warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count),
 			routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
 		throw new CommandWarningException ( message);
@@ -679,7 +757,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     if ( warning_count > 0 ) {
         // Input error...
         message = "Insufficient data to run command.";
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
@@ -687,22 +765,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	
 	// If here, have enough input to attempt the changing the interval
 	TS result_ts = null; // Result time series
+	boolean createData = true;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        createData = false;
+    }
 	try {
 		// Process the change of interval
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
             oldTimeScale, newTimeScale, statisticType, outputYearType, NewDataType, NewUnits, tolerance,
             handleEndpointsHow, outputFillMethod, handleMissingInputHow, allowMissingCount,
             null ); // AllowMissingPercent (not implemented in command)
-		result_ts = tsu.changeInterval();	
+		result_ts = tsu.changeInterval ( createData );
 		
-		// Update the newly created time series alias.
-		TSIdent tsIdent = result_ts.getIdentifier();
-		tsIdent.setAlias ( Alias );
-		result_ts.setIdentifier( tsIdent );
+		// Update the newly created time series alias (alias is required)
+		result_ts.setAlias(Alias);
 
 		// Add the newly created time series to the software memory.
-
-        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
+	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+	        // Just want time series headers initialized
+	        List<TS> discoveryTSList = new Vector();
+	        discoveryTSList.add ( result_ts );
+	        setDiscoveryTSList ( discoveryTSList );
+	    }
+	    else if ( commandPhase == CommandPhaseType.RUN ) {
+	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
+	    }
 	}
     catch ( IllegalArgumentException e ) {
       message = "Error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
@@ -710,7 +797,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 		Message.printWarning ( log_level, routine, e );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Consult documentation for available parameter combinations." ) );
         throw new CommandWarningException ( message );
@@ -721,16 +808,12 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
 		Message.printWarning ( log_level, routine, e );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
 
-	// Clean up
-	original_ts = null;
-	result_ts = null;
-	
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -739,7 +822,16 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 				command_tag, ++warning_count ), routine, message );
 		throw new CommandWarningException ( message );
 	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
+}
+
+/**
+Set the list of time series read in discovery phase.
+@param discoveryTSList list of time series created during discovery phase
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

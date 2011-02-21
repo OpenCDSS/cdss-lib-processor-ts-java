@@ -60,10 +60,8 @@ public enum TSListType {
     }
     
     /**
-     * Equals method to match legacy TSListType class behavior.
-     * TODO SAM 2011-01-21 Phase out in favor of simple == but tricky because of base class implements
-     * equals(Object)
-     * @deprecated use ==
+     * Equals method to match legacy TSListType class behavior, and to prevent common programming error
+     * of using the equals method instead of ==.
      */
     public boolean equals ( String tsListType ) {
         if ( tsListType.equalsIgnoreCase(this.displayName) ) {

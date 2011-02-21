@@ -44,10 +44,10 @@ private final String _Default = "Default";
 private final String _Warn = "Warn";
     
 /**
-List of time series read during discovery.  These are TS objects but with mainly the
+List of time series read during discovery.  These are TS objects but with only the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -63,8 +63,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -85,7 +84,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -115,7 +114,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -206,7 +205,12 @@ throws InvalidCommandParameterException,
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
+    boolean readData = true;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        readData = false;
+        setDiscoveryTSList(null);
+    }
 	
 	String TSID = parameters.getValue ( "TSID" );
 	String IfNotFound = _Warn;
@@ -217,10 +221,6 @@ throws InvalidCommandParameterException,
 	TS ts = null;
 	try {
 	    boolean notFoundLogged = false;
-        boolean readData = true;
-        if ( commandPhase == CommandPhaseType.DISCOVERY ){
-            readData = false;
-        }
         // Make a request to the processor...
         PropList request_params = new PropList ( "" );
         request_params.set ( "TSID", TSID );
@@ -342,7 +342,7 @@ throws InvalidCommandParameterException,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Check the log file - report the problem to software support." ) );
 	}
@@ -369,20 +369,20 @@ throws InvalidCommandParameterException,
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         if ( ts == null ) {
             try {
-                // Create a time series and set the identifier
+                // Create a time series and set the identifier - other metadata will not be set
                 TS tsd = new TS ();
                 tsd.setIdentifier(TSID);
                 tslist.add ( tsd );
             }
             catch ( Exception e ) {
                 message = "Error adding time series for discovery " +
-                	"(time series identifier may not be visible to other commands).";
+                	"(time series identifier will not be visible to other commands during discovery/editing).";
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
                     status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Confirm that the TSID is in valid format." ) );
+                            message, "Confirm that the TSID is a valid format." ) );
             }
         }
         setDiscoveryTSList ( tslist );
@@ -403,9 +403,9 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**

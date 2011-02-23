@@ -120,8 +120,14 @@ Check the GUI state and adjust settings based on user selections.
 */
 private void checkUIState()
 {
-    // FIXME SAM 2009-10-20 Need to enable check on whether NewTSID contains "Irr",
-    // then enable the irregular interval
+    String NewTSID = __NewTSID_JTextArea.getText().trim().toUpperCase();
+    if ( NewTSID.indexOf("IRR") >= 0 ) {
+        // Irregular time series
+        __IrregularInterval_JComboBox.setEnabled(true);
+    }
+    else {
+        __IrregularInterval_JComboBox.setEnabled(false);  
+    }
 }
 
 /**
@@ -292,10 +298,10 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Use to initialize data (required for irregular time series)."),
+        "Required for irregular time series - used to initialize data."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/Name:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Description/name:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Description_JTextField = new JTextField ( "", 30 );
 	JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
@@ -364,6 +370,7 @@ private void initialize ( JFrame parent, Command command )
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
 	// Refresh the contents...
+    checkUIState();
 	refresh();
 
 	// South Panel: North
@@ -389,7 +396,8 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged ( ItemEvent e )
-{	refresh();
+{	checkUIState();
+    refresh();
 }
 
 /**
@@ -419,7 +427,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -491,6 +499,7 @@ private void refresh ()
         }
 	}
 	// Regardless, reset the command from the fields...
+	checkUIState(); // Enable/disable irregular interval
 	Alias = __Alias_JTextField.getText().trim();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
 	IrregularInterval = __IrregularInterval_JComboBox.getSelected();
@@ -515,7 +524,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

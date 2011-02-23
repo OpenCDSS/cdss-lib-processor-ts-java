@@ -81,7 +81,7 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String routine = getClass().getName() + ".checkCommandParameters";
     String Alias = parameters.getValue ( "Alias" );
-	//String NewTSID = parameters.getValue ( "NewTSID" );
+	String NewTSID = parameters.getValue ( "NewTSID" );
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
@@ -103,9 +103,8 @@ throws InvalidCommandParameterException
 				CommandStatusType.FAILURE, message,
 				"Provide a time series alias when defining the command."));
 	}
-    /* TODO SAM 2007-11-29 Need to evaluate whether this is a required check
 	if ( (NewTSID == null) || NewTSID.equals("") ) {
-        message = "The new time series identifier must be specified.";
+        message = "The new time series identifier must be specified to allow definition of the time series.";
 		warning += "\n" + message;
         status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(
@@ -128,8 +127,7 @@ throws InvalidCommandParameterException
 		}
 		catch ( Exception e ) {
 			// TODO SAM 2007-03-12 Need to catch a specific exception like
-			// InvalidIntervalException so that more intelligent messages can be
-			// generated.
+			// InvalidIntervalException so that more intelligent messages can be generated.
             message = "NewTSID \"" + NewTSID + "\" is not a valid identifier." +
             "Use the command editor to enter required fields.";
 			warning += "\n" + message;
@@ -139,7 +137,6 @@ throws InvalidCommandParameterException
 			"Use the command editor to enter required fields."));
 		}
 	}
-    */
 	
 	if ( (IrregularInterval != null) && !IrregularInterval.equals("") ) {
     	try {
@@ -208,7 +205,7 @@ throws InvalidCommandParameterException
 		!SetStart.equalsIgnoreCase("OutputEnd") ) {
 		try {
 		    DateTime dt = DateTime.parse(SetStart);
-            if ( tsident!= null ) {
+            if ( (tsident != null) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) ) {
                 Integer c = TimeUtil.compareDateTimePrecisionToTimeInterval(dt,tsident.getInterval());
                 if ( (c == null) || (c.intValue() != 0) ) {
                     message = "Set start precision does not match the time series data interval \"" +
@@ -235,7 +232,7 @@ throws InvalidCommandParameterException
 		!SetEnd.equalsIgnoreCase("OutputEnd") ) {
 		try {
             DateTime dt = DateTime.parse( SetEnd );
-            if ( tsident!= null ) {
+            if ( (tsident!= null) && (tsident.getIntervalBase() != TimeInterval.IRREGULAR) ) {
                 Integer c = TimeUtil.compareDateTimePrecisionToTimeInterval(dt,tsident.getInterval());
                 if ( (c == null) || (c.intValue() != 0) ) {
                     message = "Set end precision does not match the time series data interval \"" +
@@ -259,7 +256,7 @@ throws InvalidCommandParameterException
 	}
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "Alias" );
 	valid_Vector.add ( "NewTSID" );
 	valid_Vector.add ( "IrregularInterval" );

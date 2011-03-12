@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSData;
 import RTi.TS.TSIdent;
+import RTi.TS.TSIterator;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -55,6 +57,12 @@ public class Copy_Command extends AbstractCommand implements Command, CommandDis
 {
     
 /**
+Values for Copy* parameters.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
+    
+/**
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
@@ -81,6 +89,8 @@ throws InvalidCommandParameterException
 {	String Alias = parameters.getValue ( "Alias" );
     String NewTSID = parameters.getValue ( "NewTSID" );
 	String TSID = parameters.getValue ( "TSID" );
+	String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
+	String CopyHistory = parameters.getValue ( "CopyHistory" );
 	String warning = "";
     String message;
 
@@ -140,11 +150,33 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (CopyDataFlags != null) && CopyDataFlags.equals("") && !CopyDataFlags.equalsIgnoreCase(_False) &&
+        !CopyDataFlags.equalsIgnoreCase(_True)) {
+        message = "The value for CopyDataFlags (" + CopyDataFlags + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify CopyDataFlags as " + _False + " or " + _True + " (default)."));
+    }
+    
+    if ( (CopyHistory != null) && CopyHistory.equals("") && !CopyHistory.equalsIgnoreCase(_False) &&
+        !CopyHistory.equalsIgnoreCase(_True)) {
+        message = "The value for CopyHistory (" + CopyHistory + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify CopyHistory as " + _False + " or " + _True + " (default)."));
+    }
+    
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "NewTSID" );
+    valid_Vector.add ( "CopyDataFlags" );
+    valid_Vector.add ( "CopyHistory" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -391,6 +423,16 @@ CommandWarningException, CommandException
 	String Alias = parameters.getValue ( "Alias" );
 	String TSID = parameters.getValue ( "TSID" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
+	String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
+	boolean copyDataFlags = true; // default
+	if ( (CopyDataFlags != null) && CopyDataFlags.equalsIgnoreCase(_False) ) {
+	    copyDataFlags = false;
+	}
+    String CopyHistory = parameters.getValue ( "CopyHistory" );
+    boolean copyHistory = true; // default
+    if ( (CopyHistory != null) && CopyHistory.equalsIgnoreCase(_False) ) {
+        copyHistory = false;
+    }
 	
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
@@ -463,6 +505,30 @@ CommandWarningException, CommandException
 	TS tscopy = null;
 	try {
         tscopy = (TS)ts.clone();
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            if ( !copyDataFlags ) {
+                // Clear out the data flags in the copy
+                if ( tscopy.hasDataFlags() ) {
+                    // Iterate through and set to blank (since no API to totally remove)
+                    TSIterator tsi = tscopy.iterator();
+                    TSData tsdata;
+                    while ( (tsdata = tsi.next()) != null ) {
+                        tscopy.setDataValue(tsdata.getDate(), tsdata.getData(), "", tsdata.getDuration() );
+                    }
+                }
+            }
+            if ( !copyHistory ) {
+                // Clear out the history
+                tscopy.setGenesis(new Vector());
+            }
+            // Add a new message to the genesis
+            if ( ts.getAlias().length() > 0 ) {
+                tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\" Alias=\"" + ts.getAlias() + "\"");
+            }
+            else {
+                tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\"");
+            }
+        }
 		tscopy.setAlias ( Alias );	// Do separate because setting
 						// the NewTSID might cause the
 						// alias set to fail below.
@@ -492,8 +558,8 @@ CommandWarningException, CommandException
 			command_tag,++warning_count),routine,message );
 		Message.printWarning(3,routine,e);
         status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Check the log file - report the problem to software support." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Check the log file - report the problem to software support." ) );
 	}
 
     // Update the data to the processor so that appropriate actions are taken...
@@ -539,6 +605,8 @@ public String toString ( PropList props )
 	String Alias = props.getValue( "Alias" );
 	String TSID = props.getValue( "TSID" );
 	String NewTSID = props.getValue( "NewTSID" );
+	String CopyDataFlags = props.getValue( "CopyDataFlags" );
+	String CopyHistory = props.getValue( "CopyHistory" );
 	StringBuffer b = new StringBuffer ();
 	if ( (TSID != null) && (TSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -552,6 +620,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
+    if ( (CopyDataFlags != null) && (CopyDataFlags.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CopyDataFlags=" + CopyDataFlags );
+    }
+    if ( (CopyHistory != null) && (CopyHistory.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "CopyHistory=" + CopyHistory );
+    }
 	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
 }
 

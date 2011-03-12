@@ -35,6 +35,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -61,19 +62,21 @@ public class Copy_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel button
-			__ok_JButton = null;	// Ok button
-private JFrame __parent_JFrame = null;	// parent JFrame
-private Copy_Command __command = null;	// Command to edit.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JFrame __parent_JFrame = null;
+private Copy_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private JTextField	__Alias_JTextField = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Time series available to operate on.
 private JTextArea __NewTSID_JTextArea = null; // New TSID.
-private SimpleJButton __edit_JButton = null;	// Edit button
-private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
-private boolean	__error_wait = false;	// Is there an error to be cleared up?
+private SimpleJComboBox __CopyDataFlags_JComboBox = null;
+private SimpleJComboBox __CopyHistory_JComboBox = null;
+private SimpleJButton __edit_JButton = null;
+private SimpleJButton __clear_JButton = null;
+private boolean	__error_wait = false; // Is there an error to be cleared up?
 private boolean	__first_time = true;
-private boolean	__ok = false;		// Whether OK has been pressed.
+private boolean	__ok = false; // Whether OK has been pressed.
 
 /**
 Command editor dialog constructor.
@@ -91,7 +94,7 @@ Responds to ActionEvents.
 */
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
-	String routine = "copy_JDialog.actionPerformed";
+	String routine = "Copy_JDialog.actionPerformed";
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -101,27 +104,25 @@ public void actionPerformed( ActionEvent event )
         refresh();
 	}
 	else if ( o == __edit_JButton ) {
-		// Edit the NewTSID in the dialog.  It is OK for the string to
-		// be blank.
+		// Edit the NewTSID in the dialog.  It is OK for the string to be blank.
 		String NewTSID = __NewTSID_JTextArea.getText().trim();
 		TSIdent tsident;
-		try {	if ( NewTSID.length() == 0 ) {
+		try {
+		    if ( NewTSID.length() == 0 ) {
 				tsident = new TSIdent();
 			}
-			else {	tsident = new TSIdent ( NewTSID );
+			else {
+			    tsident = new TSIdent ( NewTSID );
 			}
-			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame,
-				true, tsident, null )).response();
+			TSIdent tsident2=(new TSIdent_JDialog ( __parent_JFrame, true, tsident, null )).response();
 			if ( tsident2 != null ) {
-				__NewTSID_JTextArea.setText (
-					tsident2.toString(true) );
+				__NewTSID_JTextArea.setText ( tsident2.toString(true) );
 				refresh();
 			}
 		}
 		catch ( Exception e ) {
 			Message.printWarning ( 1, routine,
-			"Error creating time series identifier from \"" +
-			NewTSID + "\"." );
+			"Error creating time series identifier from \"" + NewTSID + "\"." );
 			Message.printWarning ( 3, routine, e );
 		}
 	}
@@ -144,6 +145,8 @@ private void checkInput ()
 	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
+	String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
+	String CopyHistory = __CopyHistory_JComboBox.getSelected();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -155,7 +158,14 @@ private void checkInput ()
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		props.set ( "NewTSID", NewTSID );
 	}
-	try {	// This will warn the user...
+    if ( (CopyDataFlags != null) && (CopyDataFlags.length() > 0) ) {
+        props.set ( "CopyDataFlags", CopyDataFlags );
+    }
+    if ( (CopyHistory != null) && (CopyHistory.length() > 0) ) {
+        props.set ( "CopyHistory", CopyHistory );
+    }
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -172,9 +182,13 @@ private void commitEdits ()
 {	String Alias = __Alias_JTextField.getText().trim();
 	String TSID = __TSID_JComboBox.getSelected();
 	String NewTSID = __NewTSID_JTextArea.getText().trim();
+    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
+    String CopyHistory = __CopyHistory_JComboBox.getSelected();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
+	__command.setCommandParameter ( "CopyDataFlags", CopyDataFlags );
+	__command.setCommandParameter ( "CopyHistory", CopyHistory );
 }
 
 /**
@@ -262,6 +276,32 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Copy data flags?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CopyDataFlags_JComboBox = new SimpleJComboBox ( false );
+    List<String> choices = new Vector();
+    choices.add ("");
+    choices.add ( __command._False );
+    choices.add ( __command._True );
+    __CopyDataFlags_JComboBox.setData ( choices );
+    __CopyDataFlags_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __CopyDataFlags_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - should data flags be copied (default=" + __command._True + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Copy history?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CopyHistory_JComboBox = new SimpleJComboBox ( false );
+    __CopyHistory_JComboBox.setData ( choices );
+    __CopyHistory_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __CopyHistory_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - should history be copied (default=" + __command._True + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -323,7 +363,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -333,9 +373,12 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String Alias = "";
+{	String routine = getClass().getName() + ".refresh";
+    String Alias = "";
 	String TSID = "";
 	String NewTSID = "";
+	String CopyDataFlags = "";
+	String CopyHistory = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -343,6 +386,8 @@ private void refresh ()
 		Alias = props.getValue ( "Alias" );
 		TSID = props.getValue ( "TSID" );
 		NewTSID = props.getValue ( "NewTSID" );
+		CopyDataFlags = props.getValue ( "CopyDataFlags" );
+		CopyHistory = props.getValue ( "CopyHistory" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -367,21 +412,55 @@ private void refresh ()
 		if ( NewTSID != null ) {
 			__NewTSID_JTextArea.setText ( NewTSID );
 		}
+        if ( CopyDataFlags == null ) {
+            // Select default...
+            __CopyDataFlags_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __CopyDataFlags_JComboBox, CopyDataFlags, JGUIUtil.NONE, null, null ) ) {
+                __CopyDataFlags_JComboBox.select ( CopyDataFlags );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nCopyDataFlags value \"" +
+                CopyDataFlags + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( CopyHistory == null ) {
+            // Select default...
+            __CopyHistory_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __CopyHistory_JComboBox, CopyHistory, JGUIUtil.NONE, null, null ) ) {
+                __CopyHistory_JComboBox.select ( CopyHistory );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nCopyHistory value \"" +
+                CopyHistory + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
 	TSID = __TSID_JComboBox.getSelected();
 	NewTSID = __NewTSID_JTextArea.getText().trim();
+    CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
+    CopyHistory = __CopyHistory_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "TSID=" + TSID );
 	props.add ( "NewTSID=" + NewTSID );
+    props.add ( "CopyDataFlags=" + CopyDataFlags );
+    props.add ( "CopyHistory=" + CopyHistory );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -414,4 +493,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end copy_JDialog
+}

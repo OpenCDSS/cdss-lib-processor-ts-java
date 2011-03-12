@@ -989,6 +989,7 @@ private boolean needToSkipRow( int row, int firstNonHeaderRow, int[][] skipRows,
         for ( int ipair = 0; ipair < skipRows.length; ipair++ ) {
             if ( (row >= skipRows[ipair][0]) && (row <= skipRows[ipair][1])) {
                 // Skipping the absolute rows
+                //Message.printStatus ( 2, "", "skipping absolute row " + row );
                 return true;
             }
         }
@@ -997,8 +998,9 @@ private boolean needToSkipRow( int row, int firstNonHeaderRow, int[][] skipRows,
     if ( (firstNonHeaderRow > 0) && (skipRowsAfterComments > 0) ) {
         int startSkip = firstNonHeaderRow;
         int endSkip = firstNonHeaderRow + skipRowsAfterComments - 1;
-        //Message.printStatus ( 2, "", "startSkip="+startSkip+" endSkip="+endSkip+" row="+row);
         if ( (row >= startSkip) && (row <= endSkip) ) {
+            //Message.printStatus ( 2, "", "Skipping row " + row + " after comments, firstNonHeaderRow=" +
+            //    firstNonHeaderRow + ", startSkip=" + startSkip + ", endSkip=" + endSkip + " row=" + row );
             return true;
         }
     }
@@ -1074,6 +1076,9 @@ throws IOException
         }
         // Check again in case the first non-header line is detected.
         if ( rowIsComment || needToSkipRow( row, firstNonHeaderRow, skipRows, skipRowsAfterComments ) ) {
+            if ( Message.isDebugOn ) {
+                Message.printDebug(dl, routine, "Skipping the row because needToSkipRow()=true" );
+            }
             continue;
         }
         // Else continue reading data records from the file - this will be the file header with column names...
@@ -1129,13 +1134,23 @@ Read a list of time series from a delimited file.
 @param inputFileFull the full path to the input file.
 @param delim delimiter character(s).
 @param treatConsecutiveDelimitersAsOne indicate whether consecutive delimiter characters should be treated as one.
-@param inputStart requested start of data (null to return all).
-@param inputEnd requested end of data (null to return all).
+@param columnNames names of columns to use when mapping columns
+@param readColumnNamesFromFile if true, then the column names will be read from the file
+@param dateTimeColumn the date/time column name
+@param valueColumns the data value column names
 @param commentChar character(s) that indicates comments lines, if the first character of a line
 (or null if not specified).  Only 1-character is checked but more than one special character can be indicated.
 @param skipRows ranges of rows (1+ each) that are to be skipped
 @param skipRowsAfterComments the number of rows after the header comments to be skipped
-@param units data units for each time series.
+@param ids list of location identifiers to use for time series
+@param providers list of providers (data sources) to use for time series
+@param dataTypes list of data types to use for time series
+@param interval the data interval
+@param scenarios list of scenarios to use for time series
+@param units data list of data units to use for time series
+@param missing list of missing values to use for time series
+@param inputStart requested start of data (null to return all).
+@param inputEnd requested end of data (null to return all).
 @param readData True to read data, false to only read the header information.
 @param errorMessages Error message strings to be propagated back to calling code.
 */
@@ -1800,10 +1815,38 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         
         // Read everything in the file (one time series or traces).
         List<String> errorMessages = new Vector();
+        // TODO SAM 2011-03-11 Evaluate whether this should be more explicit
+        // If any parameters refer to the column names, then the column names are expected to be in the file
         boolean readColumnNamesFromFile = false;
         if ( StringUtil.indexOfIgnoreCase(parameters.getValue("ColumnNames"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
+        else if ( StringUtil.indexOfIgnoreCase(parameters.getValue("DateTimeColumn"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
+        else if ( StringUtil.indexOfIgnoreCase(parameters.getValue("ValueColumn"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
+        else if ( StringUtil.indexOfIgnoreCase(parameters.getValue("LocationID"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
+        // Check some run-time information
+        // Make sure that data column names for mapping are unique...
+        List<String>valueColumns = getValueColumnsRuntime();
+        for ( int ic = 0; ic < valueColumns.size(); ic++ ) {
+            for ( int jc = (ic + 1); jc < valueColumns.size(); jc++ ) {
+                if ( valueColumns.get(ic).equalsIgnoreCase(valueColumns.get(jc)) ) {
+                    message = "Data value column name \"" + valueColumns.get(ic) + "\" is duplicated in data value "
+                    + "columns " + (ic + 1) + " and " + (jc + 1) + " - data mapping will not work.";
+                    Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count ), routine, message );
+                    status.addToLog(commandPhase,
+                        new CommandLogRecord( CommandStatusType.FAILURE, message,
+                            "Verify that data column names for data mapping are unique."));
+                }
+            }
+        }
+        // Read the time series
         tslist = readTimeSeriesList ( InputFile_full, StringUtil.literalToInternal(Delimiter),
             getTreatConsecutiveDelimitersAsOne(),
             getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(), getValueColumnsRuntime(),

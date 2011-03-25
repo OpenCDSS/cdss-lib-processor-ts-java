@@ -34,9 +34,10 @@ import RTi.Util.Time.DateTime;
 import RTi.TS.DateValueTS;
 
 /**
-<p>
-This class initializes, checks, and runs the TS Alias and non-TS Alias ReadDateValue() commands.
-</p>
+TODO SAM 2011-03-15 Disabled the TS Alias version - this is really incompatible with DateValue files,
+which automatically retain the alias (there is no reason to reassign the alias).  For now leave in both code
+but later phase out the alias.
+This class initializes, checks, and runs the ReadDateValue() commands.
 */
 public class ReadDateValue_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -96,9 +97,9 @@ throws InvalidCommandParameterException
 	
 	// Get the property values. 
 	String InputFile = parameters.getValue("InputFile");
-	String NewUnits  = parameters.getValue("NewUnits");
+	String NewUnits = parameters.getValue("NewUnits");
 	String InputStart = parameters.getValue("InputStart");
-	String InputEnd   = parameters.getValue("InputEnd");
+	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
     
 	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {

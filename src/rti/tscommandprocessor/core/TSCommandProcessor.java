@@ -2042,6 +2042,9 @@ throws Exception
     else if ( request.equalsIgnoreCase("GetNwsrfsDMI") ) {
         return processRequest_GetNwsrfsDMI ( request, request_params );
     }
+    else if ( request.equalsIgnoreCase("GetOutputPeriodForCommand") ) {
+        return processRequest_GetOutputPeriodForCommand ( request, request_params );
+    }
     else if ( request.equalsIgnoreCase("GetProperty") ) {
         return processRequest_GetProperty ( request, request_params );
     }
@@ -2344,6 +2347,58 @@ throws Exception
 }
 
 /**
+Process the GetOutputPeriodForCommand request.
+*/
+private CommandProcessorRequestResultsBean processRequest_GetOutputPeriodForCommand (
+        String request, PropList request_params )
+throws Exception
+{   TSCommandProcessorRequestResultsBean bean = new TSCommandProcessorRequestResultsBean();
+    // Get the necessary parameters...
+    Object o = request_params.getContents ( "Command" );
+    if ( o == null ) {
+        String warning = "Request GetOutputPeriodForCommand() does not provide a Command parameter.";
+        bean.setWarningText ( warning );
+        bean.setWarningRecommendationText ( "This is likely a software code error.");
+        throw new RequestParameterNotFoundException ( warning );
+    }
+    Command command = (Command)o;
+    // Get the index of the requested command...
+    int index = indexOf ( command );
+    // Get the setWorkingDir() commands...
+    List<String> neededCommandsStringList = new Vector();
+    neededCommandsStringList.add ( "SetOutputPeriod" );
+    List<Command> setOutputPeriodCommandList = TSCommandProcessorUtil.getCommandsBeforeIndex (
+        index,
+        this,
+        neededCommandsStringList,
+        false );    // Get all, not just last
+    // Create a local command processor
+    TSCommandProcessor tsProcessor = new TSCommandProcessor();
+    // Add all the commands (currently no method to add all because this is normally not done).
+    for ( Command setOutputPeriodCommand : setOutputPeriodCommandList ) {
+        tsProcessor.addCommand ( setOutputPeriodCommand );
+    }
+    // Run the commands to set the working directory in the temporary processor...
+    try {
+        tsProcessor.runCommands(
+            null, // Process all commands in this processor
+            null ); // No need for controlling properties since controlled by commands
+    }
+    catch ( Exception e ) {
+        // This is a software problem.
+        String routine = getClass().getName() + ".processRequest_GetOutputPeriodForCommand";
+        Message.printWarning(2, routine, "Error getting output period for command (" + e + ")." );
+        Message.printWarning(3, routine, e);
+    }
+    // Return the output period as DateTime instances.  This can then be used in editors, for
+    // example.
+    PropList results = bean.getResultsPropList();
+    results.setUsingObject( "OutputStart", (DateTime)tsProcessor.getPropContents ( "OutputStart") );
+    results.setUsingObject( "OutputEnd", (DateTime)tsProcessor.getPropContents ( "OutputEnd") );
+    return bean;
+}
+
+/**
 Process the GetProperty request.
 */
 private CommandProcessorRequestResultsBean processRequest_GetProperty (
@@ -2554,9 +2609,9 @@ throws Exception
 	// Get the index of the requested command...
 	int index = indexOf ( command );
 	// Get the setWorkingDir() commands...
-	List needed_commands_String_Vector = new Vector();
+	List<String> needed_commands_String_Vector = new Vector();
 	needed_commands_String_Vector.add ( "SetWorkingDir" );
-	List setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
+	List<Command> setWorkingDir_CommandVector = TSCommandProcessorUtil.getCommandsBeforeIndex (
 			index,
 			this,
 			needed_commands_String_Vector,

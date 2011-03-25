@@ -23,6 +23,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -40,7 +41,7 @@ import RTi.Util.Time.TimeUtil;
 This class initializes, checks, and runs the NewPatternTimeSeries() command.
 */
 public class NewPatternTimeSeries_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
     
 /**
@@ -326,53 +327,59 @@ public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "NewPatternTimeSeries.parseCommand", message;
-
-	// Get the part of the command after the TS Alias =...
-	int pos = command.indexOf ( "=" );
-	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String token0 = command.substring ( 0, pos ).trim();	// TS Alias
-	String token1 = command.substring ( pos + 1 ).trim();	// command(...)
-	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-
-	// Get the alias from the first token before the equal sign...
 	
-	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
-	if ( (v == null) || (v.size() != 2) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
+	if ( !command.trim().toUpperCase().startsWith("TS") ) {
+	    // New style syntax using simple parameter=value notation
+	    super.parseCommand(command);
 	}
-	String Alias = v.get(1);
-
-	// Get the command parameters from the token on the right of the =...
-
-	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
-	if ( (tokens == null) || (tokens.size() < 2) ) {
-		// Must have at least the command name and its parameters...
-		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewPatternTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-
-	try {
-        PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "Alias", Alias );
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
-	}
-	catch ( Exception e ) {
-		message = "Syntax error in \"" + command + "\".";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
+	else {
+    	// Get the part of the command after the TS Alias =...
+    	int pos = command.indexOf ( "=" );
+    	if ( pos < 0 ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String token0 = command.substring ( 0, pos ).trim();	// TS Alias
+    	String token1 = command.substring ( pos + 1 ).trim();	// command(...)
+    	if ( (token0 == null) || (token1 == null) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    
+    	// Get the alias from the first token before the equal sign...
+    	
+    	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+    	if ( (v == null) || (v.size() != 2) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewPatternTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String Alias = v.get(1);
+    
+    	// Get the command parameters from the token on the right of the =...
+    
+    	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
+    	if ( (tokens == null) || (tokens.size() < 2) ) {
+    		// Must have at least the command name and its parameters...
+    		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewPatternTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    
+    	try {
+            PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
+    		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+    		parameters.set ( "Alias", Alias );
+    		parameters.setHowSet ( Prop.SET_UNKNOWN );
+    		setCommandParameters ( parameters );
+    	}
+    	catch ( Exception e ) {
+    		message = "Syntax error in \"" + command + "\".";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
 	}
 }
 
@@ -662,7 +669,11 @@ CommandWarningException, CommandException
     		}
 		}
         
-        ts.setAlias ( Alias );
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, ts, Alias, status, commandPhase);
+            ts.setAlias ( alias );
+        }
 
         if ( commandPhase == CommandPhaseType.RUN ) {
     		// Further process the time series...
@@ -747,11 +758,28 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
 {	if ( props == null ) {
-		return getCommandName() + "()";
-	}
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 	String Alias = props.getValue( "Alias" );
 	String NewTSID = props.getValue( "NewTSID" );
 	String IrregularInterval = props.getValue( "IrregularInterval" );
@@ -810,7 +838,23 @@ public String toString ( PropList props )
         }
         b.append ( "PatternFlags=\"" + PatternFlags + "\"" );
     }
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

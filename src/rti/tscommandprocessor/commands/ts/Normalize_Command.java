@@ -221,79 +221,85 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "Normalize_Command.parseCommand", message;
 
-	// Get the part of the command after the TS Alias =...
-	int pos = command.indexOf ( "=" );
-	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Normalize(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String token0 = command.substring ( 0, pos ).trim();
-	String token1 = command.substring ( pos + 1 ).trim();
-	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Normalize(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
-    if ( v == null ) {
-        message = "Syntax error in \"" + command +
-        "\".  Expecting:  TS Alias = Normalize(TSID,MinValueMethod,MinValue,MaxValue)";
-        Message.printWarning ( warning_level, routine, message);
-        throw new InvalidCommandSyntaxException ( message );
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
     }
-    String Alias = (String)v.get(1);
-    String TSID = null;
-    String MinValue = null;
-    String MaxValue = null;
-    String MinValueMethod = null;
-	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
-		// No parameters have = in them...
-		// TODO SAM 2009-09-22 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new syntax.
-		//
-		// Old syntax without named parameters.
-
-		v = StringUtil.breakStringList ( token1,"(),",
-		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
-		if ( (v == null) || v.size() != 5 ) {
-			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = " +
-					"Normalize(TSID,MinValueMethod,MinValue,MaxValue";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-        // TSID is the only parameter
-        TSID = (String)v.get(1);
-        MinValueMethod = (String)v.get(2);
-        MinValue = (String)v.get(3);
-        MaxValue = (String)v.get(4);
- 	}
-	else {
-        // Current syntax...
-        super.parseCommand( token1 );
-	}
+    else {
+    	// Get the part of the command after the TS Alias =...
+    	int pos = command.indexOf ( "=" );
+    	if ( pos < 0 ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Normalize(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String token0 = command.substring ( 0, pos ).trim();
+    	String token1 = command.substring ( pos + 1 ).trim();
+    	if ( (token0 == null) || (token1 == null) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Normalize(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+        if ( v == null ) {
+            message = "Syntax error in \"" + command +
+            "\".  Expecting:  TS Alias = Normalize(TSID,MinValueMethod,MinValue,MaxValue)";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
+        }
+        String Alias = v.get(1);
+        String TSID = null;
+        String MinValue = null;
+        String MaxValue = null;
+        String MinValueMethod = null;
+    	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
+    		// No parameters have = in them...
+    		// TODO SAM 2009-09-22 This whole block of code needs to be
+    		// removed as soon as commands have been migrated to the new syntax.
+    		//
+    		// Old syntax without named parameters.
     
-    // Set parameters and new defaults...
-
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    if ( Alias.length() > 0 ) {
-        parameters.set ( "Alias", Alias );
+    		v = StringUtil.breakStringList ( token1,"(),",
+    		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
+    		if ( (v == null) || v.size() != 5 ) {
+    			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = " +
+    					"Normalize(TSID,MinValueMethod,MinValue,MaxValue";
+    			Message.printWarning ( warning_level, routine, message);
+    			throw new InvalidCommandSyntaxException ( message );
+    		}
+            // TSID is the only parameter
+            TSID = v.get(1);
+            MinValueMethod = v.get(2);
+            MinValue = v.get(3);
+            MaxValue = v.get(4);
+     	}
+    	else {
+            // Current syntax...
+            super.parseCommand( token1 );
+    	}
+        
+        // Set parameters and new defaults...
+    
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        if ( Alias.length() > 0 ) {
+            parameters.set ( "Alias", Alias );
+        }
+        // Reset using above information
+        if ( (TSID != null) && (TSID.length() > 0) ) {
+            parameters.set ( "TSID", TSID );
+        }
+        if ( (MinValue != null) && (MinValue.length() > 0) ) {
+            parameters.set ( "MinValue", MinValue );
+        }
+        if ( (MaxValue != null) && (MaxValue.length() > 0) ) {
+            parameters.set ( "MaxValue", MaxValue );
+        }
+        if ( (MinValueMethod != null) && (MinValueMethod.length() > 0) ) {
+            parameters.set ( "MinValueMethod", MinValueMethod );
+        }
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
     }
-    // Reset using above information
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        parameters.set ( "TSID", TSID );
-    }
-    if ( (MinValue != null) && (MinValue.length() > 0) ) {
-        parameters.set ( "MinValue", MinValue );
-    }
-    if ( (MaxValue != null) && (MaxValue.length() > 0) ) {
-        parameters.set ( "MaxValue", MaxValue );
-    }
-    if ( (MinValueMethod != null) && (MinValueMethod.length() > 0) ) {
-        parameters.set ( "MinValueMethod", MinValueMethod );
-    }
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
 }
 
 /**
@@ -482,11 +488,28 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
-{	if ( props == null ) {
-		return "TS Alias = " + getCommandName() + "()";
-	}
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 	String Alias = props.getValue( "Alias" );
 	String TSID = props.getValue( "TSID" );
 	String MinValue = props.getValue( "MinValue" );
@@ -517,7 +540,23 @@ public String toString ( PropList props )
         }
         b.append ( "MaxValue=" + MaxValue );
     }
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

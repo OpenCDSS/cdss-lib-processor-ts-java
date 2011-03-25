@@ -1,20 +1,3 @@
-//------------------------------------------------------------------------------
-// newTimeSeries - handle the TS Alias = newTimeSeries() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-09-20	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					newStatisticYearTS().
-// 2007-02-12	SAM, RTi				Remove direct dependence on
-//					TSCommandProcessor.
-//					Clean up code based on Eclipse feedback.
-// 2007-03-12	SAM, RTi				Add check to make sure NewTSID has a
-//							valid interval.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -38,6 +21,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -54,7 +38,7 @@ import RTi.Util.Time.TimeInterval;
 This class initializes, checks, and runs the NewTimeSeries() command.
 */
 public class NewTimeSeries_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
     
 /**
@@ -168,7 +152,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "NewTSID" );
     valid_Vector.add ( "Description" );
@@ -240,46 +224,52 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "NewTimeSeries.parseCommand", message;
 
-	// Get the part of the command after the TS Alias =...
-	int pos = command.indexOf ( "=" );
-	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = newTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String token0 = command.substring ( 0, pos ).trim();	// TS Alias
-	String token1 = command.substring ( pos + 1 ).trim();	// command(...)
-	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-
-	// Alias is everything after "TS " (can include space in alias name)
-	String Alias = token0.trim().substring(3).trim();
-
-	// Get the command parameters from the token on the right of the =...
-
-	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
-	if ( (tokens == null) || (tokens.size() < 2) ) {
-		// Must have at least the command name and its parameters...
-		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-
-	try {
-	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "Alias", Alias );
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-		setCommandParameters ( parameters );
-	}
-	catch ( Exception e ) {
-		message = "Syntax error in \"" + command + "\".";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
+    }
+    else {
+    	// Get the part of the command after the TS Alias =...
+    	int pos = command.indexOf ( "=" );
+    	if ( pos < 0 ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = newTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String token0 = command.substring ( 0, pos ).trim();	// TS Alias
+    	String token1 = command.substring ( pos + 1 ).trim();	// command(...)
+    	if ( (token0 == null) || (token1 == null) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    
+    	// Alias is everything after "TS " (can include space in alias name)
+    	String Alias = token0.trim().substring(3).trim();
+    
+    	// Get the command parameters from the token on the right of the =...
+    
+    	List<String> tokens = StringUtil.breakStringList ( token1, "()", 0 );
+    	if ( (tokens == null) || (tokens.size() < 2) ) {
+    		// Must have at least the command name and its parameters...
+    		message = "Syntax error in \"" + command + "\". Expecting:  TS Alias = NewTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    
+    	try {
+    	    PropList parameters = PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," );
+    		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+    		parameters.set ( "Alias", Alias );
+    		parameters.setHowSet ( Prop.SET_UNKNOWN );
+    		setCommandParameters ( parameters );
+    	}
+    	catch ( Exception e ) {
+    		message = "Syntax error in \"" + command + "\".";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    }
 }
 
 /**
@@ -323,7 +313,7 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Level for non-user warnings to go to log file.
+	int log_level = 3; // Level for non-user warnings to go to log file.
 
 	// Make sure there are time series available to operate on...
 	
@@ -358,27 +348,62 @@ CommandWarningException, CommandException
 	DateTime SetStart_DateTime = null;
 	DateTime SetEnd_DateTime = null;
 	
+    DateTime setStartProcessor_DateTime = null;
+    DateTime setEndProcessor_DateTime = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Need to walk the commands for SetOutputPeriod() commands to get the period
+        try {
+            PropList requestParams = new PropList ( "" );
+            requestParams.setUsingObject ( "Command", this );
+            CommandProcessorRequestResultsBean bean =
+                processor.processRequest( "GetOutputPeriodForCommand", requestParams);
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "OutputStart" );
+            if ( prop_contents != null ) {
+                setStartProcessor_DateTime = (DateTime)prop_contents;
+            }
+            prop_contents = bean_PropList.getContents ( "OutputEnd" );
+            if ( prop_contents != null ) {
+                setEndProcessor_DateTime = (DateTime)prop_contents;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error getting request GetOutputPeriodForCommand.";
+            Message.printWarning(warning_level,
+                MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                routine, message );
+            Message.printWarning(2, routine, e);
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "This is likely a software error - contact software support." ) );
+        }
+    }
+	
 	try {
 		if ( (SetStart == null) || SetStart.equals("") ) {
 			// Try to set SetStart from global OutputStart...
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", "OutputStart" );
-			CommandProcessorRequestResultsBean bean = null;
-			bean = processor.processRequest( "DateTime", request_params);
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
+		    if ( commandPhase == CommandPhaseType.RUN ) {
+    			PropList request_params = new PropList ( "" );
+    			request_params.set ( "DateTime", "OutputStart" );
+    			CommandProcessorRequestResultsBean bean = null;
+    			bean = processor.processRequest( "DateTime", request_params);
+    			PropList bean_PropList = bean.getResultsPropList();
+    			Object prop_contents = bean_PropList.getContents ( "DateTime" );
+    			if ( prop_contents != null ) {
+    			    setStartProcessor_DateTime = (DateTime)prop_contents;
+    			}
+	        }
+    		if ( setStartProcessor_DateTime == null ) {
 				message = "Null value for SetStart DateTime(DateTime=OutputStart) returned from processor.";
 				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
+					MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
                 status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Use a SetOutputPeriod() command or specify the set start." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Use a SetOutputPeriod() command or specify the set start." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {
-			    SetStart_DateTime = (DateTime)prop_contents;
+			    SetStart_DateTime = setStartProcessor_DateTime;
 			}
 		}
 		else {
@@ -418,15 +443,19 @@ CommandWarningException, CommandException
 	try {
 		if ( (SetEnd == null) || SetEnd.equals("") ) {
 			// Try to set SetEnd from global OutputEnd...
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", "OutputEnd" );
-			CommandProcessorRequestResultsBean bean = null;
-			bean = processor.processRequest( "DateTime", request_params);
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
-				message = "Null value for SetEnd DateTime(DateTime=" +
-				"OutputEnd" +	"\") returned from processor.";
+	        if ( commandPhase == CommandPhaseType.RUN ) {
+    			PropList request_params = new PropList ( "" );
+    			request_params.set ( "DateTime", "OutputEnd" );
+    			CommandProcessorRequestResultsBean bean = null;
+    			bean = processor.processRequest( "DateTime", request_params);
+    			PropList bean_PropList = bean.getResultsPropList();
+    			Object prop_contents = bean_PropList.getContents ( "DateTime" );
+                if ( prop_contents != null ) {
+                    setEndProcessor_DateTime = (DateTime)prop_contents;
+                }
+	        }
+			if ( setEndProcessor_DateTime == null ) {
+				message = "Null value for SetEnd DateTime(DateTime=\"OutputEnd\") returned from processor.";
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
@@ -436,7 +465,7 @@ CommandWarningException, CommandException
 				throw new InvalidCommandParameterException ( message );
 			}
 			else {
-			    SetEnd_DateTime = (DateTime)prop_contents;
+			    SetEnd_DateTime = setEndProcessor_DateTime;
 			}
 		}
 		else {
@@ -529,11 +558,14 @@ CommandWarningException, CommandException
     			TSUtil.setConstant ( ts, InitialValue_double );
     		}
 		}
-		ts.setAlias ( Alias );
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, ts, Alias, status, commandPhase);
+            ts.setAlias ( alias );
+        }
 	}
 	catch ( Exception e ) {
-        message ="Unexpected error generating the statistic time series from \""+
-        ts.getIdentifier() + "\" (" + e + ").";
+        message = "Unexpected error creating new time series \"" + ts.getIdentifier() + "\" (" + e + ").";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count),routine,message );
@@ -578,11 +610,28 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
 {	if ( props == null ) {
-		return getCommandName() + "()";
-	}
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 	String Alias = props.getValue( "Alias" );
 	String NewTSID = props.getValue( "NewTSID" );
 	String Description = props.getValue( "Description" );
@@ -627,7 +676,23 @@ public String toString ( PropList props )
 		}
 		b.append ( "InitialValue=" + InitialValue );
 	}
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

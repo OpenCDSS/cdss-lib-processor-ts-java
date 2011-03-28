@@ -14,6 +14,7 @@ import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -32,11 +33,10 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
-This class initializes, checks, and runs the TS Alias = ReadUsgsNwis() command.
-</p>
+This class initializes, checks, and runs the ReadUsgsNwis() command.
 */
-public class ReadUsgsNwis_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadUsgsNwis_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 protected static final String
@@ -55,11 +55,6 @@ List of time series read during discovery.  These are TS objects but with mainly
 metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
-
-/**
-Indicates whether the TS Alias version of the command is being used.
-*/
-protected boolean _use_alias = false;
 
 /**
 Constructor.
@@ -96,12 +91,12 @@ throws InvalidCommandParameterException
 	String InputEnd   = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
     
-	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
+	if ( (Alias == null) || Alias.equals("") ) {
 	    message = "The Alias must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an alias." ) );
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify an alias." ) );
     }
 
     if (Alias != null && !Alias.equals("")) {
@@ -223,10 +218,8 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-    if ( _use_alias ) {
-        valid_Vector.add ( "Alias" );
-    }
+	List<String> valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -297,7 +290,7 @@ public List getObjectList ( Class c )
 
 /**
 Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
+@param commandString A string command to parse.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
@@ -308,74 +301,79 @@ syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command_string )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "ReadUsgsNwis_Command.parseCommand", message;
-    String Alias = null;
 	
-	String InputFile = null;
-	String InputStart = null;
-	String InputEnd = null;
-    if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-        // There is an alias specified.  Extract the alias from the full command.
-        _use_alias = true;
-        Alias = StringUtil.getToken ( command_string, " =", StringUtil.DELIM_SKIP_BLANKS, 1);
-        if ( (StringUtil.patternCount(command_string,"=") >=2) || command_string.endsWith("()") ) {
-            // New syntax, can be blank parameter list.  Extract command name and parameters to parse
-            int index = command_string.indexOf("=");
-            super.parseCommand ( command_string.substring(index + 1) );
-        }
-        else {
-            // Parse the old command...
-        	List tokens = StringUtil.breakStringList ( command_string,
-                "(,)", StringUtil.DELIM_ALLOW_STRINGS );
-            if ( tokens.size() != 4 ) {
-                message =
-                "Invalid syntax for legacy command \"" + command_string +
-                "\".  Expecting TS Alias = ReadUsgsNwis(OutputFile,InputStart,InputEnd).";
-                Message.printWarning ( warning_level, routine, message);
-                CommandStatus status = getCommandStatus();
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify command syntax or edit with command editor." ) );
-                throw new InvalidCommandSyntaxException ( message );
-            }
-            InputFile = ((String)tokens.get(1)).trim();
-            InputStart = ((String)tokens.get(2)).trim();
-            InputEnd = ((String)tokens.get(3)).trim();
-            PropList parameters = getCommandParameters();
-            parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-            parameters.set ( "InputFile", InputFile );
-            parameters.set ( "InputStart", InputStart );
-            parameters.set ( "InputEnd", InputEnd );
-            parameters.setHowSet ( Prop.SET_UNKNOWN );
-            setCommandParameters ( parameters );
-        }
+    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(commandString);
     }
-    
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    parameters.set ( "Alias", Alias );
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
-    setCommandParameters ( parameters );
- 
- 	// The following is for backwards compatibility with old commands files.
-	if (parameters.getValue("InputStart") == null) {
-		parameters.set("InputStart", parameters.getValue("QueryStart"));
-	}
-	if ( (parameters.getValue("InputStart") != null) &&
-	        parameters.getValue("InputStart").equals("*") ) {
-	    // Reset to more recent blank default
-	    parameters.set("InputStart","");
-	}
-	if ( parameters.getValue("InputEnd") == null) {
-		parameters.set("InputEnd", parameters.getValue(	"QueryEnd"));
-	}
-   if ( (parameters.getValue("InputEnd") != null) &&
-            parameters.getValue("InputEnd").equals("*") ) {
-        // Reset to more recent blank default
-        parameters.set("InputEnd","");
+    else {
+        String Alias = null;
+    	String InputFile = null;
+    	String InputStart = null;
+    	String InputEnd = null;
+        if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
+            // There is an alias specified.  Extract the alias from the full command.
+            Alias = StringUtil.getToken ( commandString, " =", StringUtil.DELIM_SKIP_BLANKS, 1);
+            if ( (StringUtil.patternCount(commandString,"=") >=2) || commandString.endsWith("()") ) {
+                // New syntax, can be blank parameter list.  Extract command name and parameters to parse
+                int index = commandString.indexOf("=");
+                super.parseCommand ( commandString.substring(index + 1) );
+            }
+            else {
+                // Parse the old command...
+            	List tokens = StringUtil.breakStringList ( commandString,
+                    "(,)", StringUtil.DELIM_ALLOW_STRINGS );
+                if ( tokens.size() != 4 ) {
+                    message =
+                    "Invalid syntax for legacy command \"" + commandString +
+                    "\".  Expecting TS Alias = ReadUsgsNwis(OutputFile,InputStart,InputEnd).";
+                    Message.printWarning ( warning_level, routine, message);
+                    CommandStatus status = getCommandStatus();
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Verify command syntax or edit with command editor." ) );
+                    throw new InvalidCommandSyntaxException ( message );
+                }
+                InputFile = ((String)tokens.get(1)).trim();
+                InputStart = ((String)tokens.get(2)).trim();
+                InputEnd = ((String)tokens.get(3)).trim();
+                PropList parameters = getCommandParameters();
+                parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+                parameters.set ( "InputFile", InputFile );
+                parameters.set ( "InputStart", InputStart );
+                parameters.set ( "InputEnd", InputEnd );
+                parameters.setHowSet ( Prop.SET_UNKNOWN );
+                setCommandParameters ( parameters );
+            }
+        }
+        
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        parameters.set ( "Alias", Alias );
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
+        setCommandParameters ( parameters );
+     
+     	// The following is for backwards compatibility with old commands files.
+    	if (parameters.getValue("InputStart") == null) {
+    		parameters.set("InputStart", parameters.getValue("QueryStart"));
+    	}
+    	if ( (parameters.getValue("InputStart") != null) &&
+    	        parameters.getValue("InputStart").equals("*") ) {
+    	    // Reset to more recent blank default
+    	    parameters.set("InputStart","");
+    	}
+    	if ( parameters.getValue("InputEnd") == null) {
+    		parameters.set("InputEnd", parameters.getValue(	"QueryEnd"));
+    	}
+       if ( (parameters.getValue("InputEnd") != null) &&
+                parameters.getValue("InputEnd").equals("*") ) {
+            // Reset to more recent blank default
+            parameters.set("InputEnd","");
+        }
     }
 }
 
@@ -602,7 +600,11 @@ throws InvalidCommandParameterException,
                         new CommandLogRecord(
                                 CommandStatusType.FAILURE, message,"See the log file."));
             }
-      		ts.setAlias(Alias);
+            if ( (Alias != null) && !Alias.equals("") ) {
+                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, ts, Alias, status, command_phase);
+                ts.setAlias ( alias );
+            }
         }
 	} 
 	catch ( Exception e ) {
@@ -677,17 +679,28 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
 {
-	if ( props == null ) {
-	    if ( _use_alias ) {
-	        return "TS Alias = " + getCommandName() + "()";
-	    }
-	    else {
-	        return getCommandName() + "()";
-	    }
-	}
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
@@ -726,13 +739,23 @@ public String toString ( PropList props )
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
-
-    String lead = "";
-	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
-		lead = "TS " + Alias + " = ";
-	}
-
-	return lead + getCommandName() + "(" + b.toString() + ")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

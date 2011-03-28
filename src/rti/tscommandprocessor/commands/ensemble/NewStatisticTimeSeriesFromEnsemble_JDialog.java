@@ -26,6 +26,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
 import RTi.TS.TSUtil_NewStatisticTimeSeriesFromEnsemble;
@@ -46,7 +47,7 @@ private SimpleJButton __ok_JButton = null;
 private JFrame __parent_JFrame = null;	// parent JFrame
 private NewStatisticTimeSeriesFromEnsemble_Command __command = null;
 private JTextArea __command_JTextArea=null;// Command as JTextField
-private JTextField __Alias_JTextField = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__EnsembleID_JComboBox = null;
 private JTextArea __NewTSID_JTextArea = null;
 private SimpleJComboBox	__Statistic_JComboBox = null;
@@ -280,16 +281,6 @@ private void initialize ( JFrame parent, Command command )
 		"to avoid confusion with the original time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( "" );
-	__Alias_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Required - often the location from the TSID, or a short string."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel("Ensemble to analyze (EnsembleID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__EnsembleID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
@@ -324,6 +315,15 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
 		new SimpleJButton ( "Clear", "Clear", this ) ),
 		4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -429,7 +429,7 @@ private void initialize ( JFrame parent, Command command )
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
 
-	setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
+	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 
 	setResizable ( true );
     pack();

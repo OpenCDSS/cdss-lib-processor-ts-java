@@ -27,8 +27,10 @@ import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
+import java.util.List;
 
 import RTi.TS.ModsimTS;
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 
 import RTi.Util.GUI.JFileChooserFactory;
@@ -43,7 +45,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 
 /**
-Command editor dialog for the ReadMODSIM() and TS Alias = ReadMODSIM() commands.
+Command editor dialog for the ReadMODSIM().
 */
 public class ReadMODSIM_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -52,50 +54,34 @@ private final String
     __RemoveWorkingDirectory = "Remove Working Directory",
     __AddWorkingDirectory = "Add Working Directory";    
     
-private SimpleJButton	__browse_JButton = null,// File browse button
+private SimpleJButton __browse_JButton = null,// File browse button
 			__path_JButton = null,	// Convert between relative and absolute path.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private Command __command = null;
+private ReadMODSIM_Command __command = null;
 private String __working_dir = null;	// Working directory.
-private JTextField __Alias_JTextField = null,// Alias for time series.
-			__NodeName_JTextField,	// Node name to read.
-			__TSID_JTextField,
-			__InputStart_JTextField,
-			__InputEnd_JTextField,
-			__InputFile_JTextField = null//,
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __NodeName_JTextField;	// Node name to read.
+private JTextField __TSID_JTextField;
+private JTextField __InputStart_JTextField;
+private JTextField __InputEnd_JTextField;
+private JTextField __InputFile_JTextField = null;
 			//__NewUnits_JTextField = null  // not in the file
 			// TODO SAM 2008-09-09 Need to check whether units are in version 8 files.
-			;
 JTextArea __command_JTextArea = null;
 
-private SimpleJComboBox	__DataType_JComboBox;	// Node data type choice.
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private SimpleJComboBox	__DataType_JComboBox; // Node data type choice.
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
-private boolean __isAliasVersion = false; // Is command of TS Alias form?
-private boolean __ok = false;   // Whether OK was pressed to close dialog
+private boolean __ok = false; // Whether OK was pressed to close dialog
 
 /**
 Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadMODSIM_JDialog (	JFrame parent, Command command )
+public ReadMODSIM_JDialog (	JFrame parent, ReadMODSIM_Command command )
 {	super(parent, true);
-    PropList props = command.getCommandParameters();
-    String alias = props.getValue("Alias");
-    Message.printStatus(1, "", "Props: " + props.toString("\n"));
-    if (alias == null || alias.trim().equalsIgnoreCase("")) {
-        if (((ReadMODSIM_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
-           __isAliasVersion = true;
-        }
-        else {
-            __isAliasVersion = false;
-        }
-    }
-    else {
-        __isAliasVersion = true;
-    }
 	initialize ( parent, command );
 }
 
@@ -134,6 +120,7 @@ public void actionPerformed( ActionEvent event )
 			if (path != null) {
 				__InputFile_JTextField.setText(path );
 				JGUIUtil.setLastFileDialogDirectory( last_directory_selected );
+	            updateDataTypeChoices();
 				refresh();
 			}
 		}
@@ -179,12 +166,8 @@ private void checkInput () {
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     //String NewUnits = __NewUnits_JTextField.getText().trim();
-    String Alias = null;
-    String TSID = null;
-    if (__isAliasVersion) { 
-        Alias = __Alias_JTextField.getText().trim();
-        TSID = __TSID_JTextField.getText().trim();
-    }
+    String Alias = __Alias_JTextField.getText().trim();
+    String TSID = __TSID_JTextField.getText().trim();
     
     __error_wait = false;
     
@@ -228,18 +211,15 @@ private void commitEdits()
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     //String NewUnits = __NewUnits_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
+    String TSID = __TSID_JTextField.getText().trim();
 
     __command.setCommandParameter("InputFile", InputFile);
     __command.setCommandParameter("InputStart", InputStart);
     __command.setCommandParameter("InputEnd", InputEnd);
     //__command.setCommandParameter("NewUnits", NewUnits);
-    
-    if (__isAliasVersion) {
-        String Alias = __Alias_JTextField.getText().trim();
-        String TSID = __TSID_JTextField.getText().trim();
-        __command.setCommandParameter("Alias", Alias);
-        __command.setCommandParameter("TSID", TSID);
-    }
+    __command.setCommandParameter("Alias", Alias);
+    __command.setCommandParameter("TSID", TSID);
 }
 
 /**
@@ -276,50 +256,35 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-	if ( __isAliasVersion ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a MODSIM format file."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Read 1+ time series from a MODSIM format file."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify the node/link name and data type to read one time series or leave blank to read all time series."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The node/link name must be consistent with information in the MODSIM file."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Data types are determined from the file extension but others can be specified."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working directory) for a MODSIM file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
 		"for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	//JGUIUtil.addComponent(main_JPanel, new JLabel (
+    //JGUIUtil.addComponent(main_JPanel, new JLabel (
 		//"Specifying units causes conversion during the read (currently under development)."),
 		//0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the period defaults to the query period."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-	else {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Read all the time series from a MODSIM file."),
-            0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "Specify a full or relative path (relative to working directory)." ), 
-            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
 
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-
-	if ( __isAliasVersion ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:"),
-    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    	__Alias_JTextField = new JTextField ( 30 );
-    	__Alias_JTextField.addKeyListener ( this );
-    	JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-    		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "MODSIM file to read:" ), 
@@ -332,37 +297,48 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-    if ( __isAliasVersion ) {
-        JGUIUtil.addComponent(main_JPanel,new JLabel("Node/link name to read:"),
+    JGUIUtil.addComponent(main_JPanel,new JLabel("Node/link name to read:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __NodeName_JTextField = new JTextField ( "", 30 );
         __NodeName_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __NodeName_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __NodeName_JTextField,
 		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is to read all."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Data type to read:"),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Data type to read:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
         __DataType_JComboBox = new SimpleJComboBox ( false );
         __DataType_JComboBox.addItem ( "Unavailable" );
         __DataType_JComboBox.addItemListener ( this );
-	    JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
+	JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	    JGUIUtil.addComponent(main_JPanel, new JLabel( "Determined from file extension."), 
-	            3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - default is to read all."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	    
-	    if ( __isAliasVersion ) {
-	        // Show full TSID, formed from above data (but not directly editable)
-            JGUIUtil.addComponent(main_JPanel, new JLabel ( "TSID (full):"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            __TSID_JTextField = new JTextField ( "" );
-            __TSID_JTextField.setToolTipText(
-                    "Time series identifier to read, including only location and data type.");
-            __TSID_JTextField.setEditable ( false );
-            __TSID_JTextField.addKeyListener ( this );
-                JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
-            1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	    }
-    }
+    // Show full TSID, formed from above data (but not directly editable)
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "TSID (full):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID_JTextField = new JTextField ( "" );
+    __TSID_JTextField.setToolTipText(
+        "Time series identifier to read, including only location and data type.");
+    __TSID_JTextField.setEditable ( false );
+    __TSID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Created from node/link name and data type."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     /*
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
@@ -375,18 +351,23 @@ private void initialize ( JFrame parent, Command command )
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         */
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( "", 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( "", 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -413,12 +394,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    if (__isAliasVersion) {
-        setTitle("Edit TS Alias = " + __command.getCommandName() + "() Command");
-    }
-    else {
-        setTitle("Edit " + __command.getCommandName() + "() Command");
-    }
+    setTitle("Edit " + __command.getCommandName() + "() Command");
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -461,7 +437,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok() {
     return __ok;
@@ -492,17 +468,13 @@ private void refresh() {
         Alias = props.getValue("Alias");
         TSID = props.getValue("TSID");
 
-        // Set the control fields
-        if (Alias != null && __isAliasVersion) {
-            __Alias_JTextField.setText(Alias.trim());
-        }
         if (InputFile != null) {
             // This needs to be before the TSID code below.
             __InputFile_JTextField.setText(InputFile);
             // Also initialize the data type choices
             updateDataTypeChoices();
         }
-        if (TSID != null && __isAliasVersion) {
+        if ( TSID != null ) {
             // Parse and set the parts, since that is what the user can edit.
             try {
                 TSIdent tsident = new TSIdent ( TSID );
@@ -529,6 +501,9 @@ private void refresh() {
                 // Unlikely but let the user fill in the parts to reform the TSID
             }
         }
+        if ( Alias != null ) {
+            __Alias_JTextField.setText(Alias.trim());
+        }
         if (InputStart != null) {
             __InputStart_JTextField.setText(InputStart);
         }
@@ -548,22 +523,21 @@ private void refresh() {
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
     //NewUnits = __NewUnits_JTextField.getText().trim();
-    if (__isAliasVersion) {
-        Alias = __Alias_JTextField.getText().trim();
-        TSID = __NodeName_JTextField.getText().trim() + ".." +
-        __DataType_JComboBox.getSelected() + "..";
-        __TSID_JTextField.setText ( TSID );
+    Alias = __Alias_JTextField.getText().trim();
+    TSID = __NodeName_JTextField.getText().trim() + ".." + __DataType_JComboBox.getSelected() + "..";
+    if ( (TSID.indexOf("Unavailable") > 0) || TSID.startsWith("....") ) {
+        // Leave TSID blank in final command string since no useful information for runtime
+        TSID = "";
     }
+    __TSID_JTextField.setText ( TSID );
 
     props = new PropList(__command.getCommandName());
     props.add("InputFile=" + InputFile);
     props.add("InputStart=" + InputStart);
     props.add("InputEnd=" + InputEnd);
     props.add("NewUnits=" + NewUnits);
-    if (Alias != null) {
-        props.add("Alias=" + Alias);
-        props.add("TSID=" + TSID);
-    }
+    props.add("Alias=" + Alias);
+    props.add("TSID=" + TSID);
     
     __command_JTextArea.setText( __command.toString(props) );
 
@@ -599,7 +573,7 @@ private void refreshPathControl()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 public void response ( boolean ok ) {
@@ -633,7 +607,9 @@ private void updateDataTypeChoices()
     		__DataType_JComboBox.add ( "Unavailable" );
     	}
     	else {
-    	    __DataType_JComboBox.setData ( StringUtil.toList(availableDataTypes) );
+    	    List<String> availableDataTypesList = StringUtil.toList(availableDataTypes);
+    	    availableDataTypesList.add(0,"");
+    	    __DataType_JComboBox.setData ( availableDataTypesList );
     	}
     }
     catch ( Exception e ) {
@@ -674,4 +650,4 @@ public void windowOpened( WindowEvent evt )
 {
 }
 
-} // end TSreadMODSIM_JDialog
+}

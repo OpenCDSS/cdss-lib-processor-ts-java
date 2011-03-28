@@ -1,19 +1,3 @@
-// ----------------------------------------------------------------------------
-// TSreadRiverWare_JDialog - editor for TS x = readRiverWare()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2002-06-03	Steven A. Malers, RTi	Initial version (copy and modify
-//					TSreadDateValue_Dialog).
-// 2003-12-07	SAM, RTi		Update to Swing.
-// 2004-02-17	SAM, RTi		Fix bug where directory from file
-//					selection was not getting set as the
-//					last dialog directory in JGUIUtil.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.riverware;
 
 import java.awt.FlowLayout;
@@ -41,9 +25,9 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import java.io.File;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -65,23 +49,22 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null;	// Ok Button
 private ReadRiverWare_Command __command = null;
 private String __working_dir = null;	// Working directory.
-private JTextField __Alias_JTextField = null,// Alias for time series.
-			__InputStart_JTextField,
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __InputStart_JTextField,
 			__InputEnd_JTextField,
-			__InputFile_JTextField = null,
-			__Units_JTextField = null;// Units to convert to at read
+			__InputFile_JTextField = null;
+			//__Units_JTextField = null;// Units to convert to at read
 private JTextArea __command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false;
-private boolean __isAliasVersion = true;
 
 /**
 Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadRiverWare_JDialog ( JFrame parent, Command command )
+public ReadRiverWare_JDialog ( JFrame parent, ReadRiverWare_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -161,11 +144,8 @@ private void checkInput ()
     String InputFile = __InputFile_JTextField.getText().trim();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
-    String Units = __Units_JTextField.getText().trim();
-    String Alias = null;
-    if (__isAliasVersion) { 
-        Alias = __Alias_JTextField.getText().trim();
-    }
+    //String Units = __Units_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
     
     __error_wait = false;
     
@@ -178,9 +158,9 @@ private void checkInput ()
     if (InputEnd.length() > 0 && !InputEnd.equals("*")) {
         props.set("InputEnd", InputEnd);
     }
-    if (Units.length() > 0 && !Units.equals("*")) {
-        props.set("Units", Units);
-    }
+   // if (Units.length() > 0 && !Units.equals("*")) {
+    //    props.set("Units", Units);
+    //}
     if (Alias != null && Alias.length() > 0) {
         props.set("Alias", Alias);
     }
@@ -204,17 +184,14 @@ private void commitEdits()
     String InputFile = __InputFile_JTextField.getText().trim();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
-    String Units = __Units_JTextField.getText().trim();
+    //String Units = __Units_JTextField.getText().trim();
+    String Alias = __Alias_JTextField.getText().trim();
 
     __command.setCommandParameter("InputFile", InputFile);
     __command.setCommandParameter("InputStart", InputStart);
     __command.setCommandParameter("InputEnd", InputEnd);
-    __command.setCommandParameter("Units", Units);
-    
-    if (__isAliasVersion) {
-        String Alias = __Alias_JTextField.getText().trim();
-        __command.setCommandParameter("Alias", Alias);
-    }
+    //__command.setCommandParameter("Units", Units);
+    __command.setCommandParameter("Alias", Alias);
 }
 
 /**
@@ -238,8 +215,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (ReadRiverWare_Command)command;
+private void initialize ( JFrame parent, ReadRiverWare_Command command )
+{   __command = command;
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
 
 	addWindowListener( this );
@@ -269,10 +246,10 @@ private void initialize ( JFrame parent, Command command )
 		"Specifying the period will limit data that are available " +
 		"for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying units causes conversion during the read " +
-		"(new units must be understood by TSTool).  See also Scale() and ConvertDataUnits()."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   //	JGUIUtil.addComponent(main_JPanel, new JLabel (
+	//	"Specifying units causes conversion during the read " +
+	//	"(new units must be understood by TSTool).  See also Scale() and ConvertDataUnits()."),
+	//	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the period defaults to the global input period."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -281,13 +258,6 @@ private void initialize ( JFrame parent, Command command )
         JGUIUtil.addComponent(main_JPanel, new JLabel ( "The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( 30 );
-	__Alias_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "RiverWare file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -298,7 +268,17 @@ private void initialize ( JFrame parent, Command command )
 	__browse_JButton = new SimpleJButton ( "Browse", this );
     JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    /*
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "", 10 );
@@ -306,19 +286,25 @@ private void initialize ( JFrame parent, Command command )
 	__Units_JTextField.setEnabled ( false );
 	JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+		*/
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( "", 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( "", 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -345,12 +331,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    if (__isAliasVersion) {
-        setTitle("Edit TS Alias = " + __command.getCommandName() + "() Command");
-    }
-    else {
-        setTitle("Edit " + __command.getCommandName() + "() Command");
-    }
+    setTitle("Edit " + __command.getCommandName() + "() Command");
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -388,7 +369,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok() {
     return __ok;
@@ -418,7 +399,7 @@ private void refresh() {
         Alias = props.getValue("Alias");
 
         // Set the control fields
-        if (Alias != null && __isAliasVersion) {
+        if (Alias != null) {
             __Alias_JTextField.setText(Alias.trim());
         }
         if (InputFile != null) {
@@ -442,9 +423,7 @@ private void refresh() {
     InputStart = __InputStart_JTextField.getText().trim();
     InputEnd = __InputEnd_JTextField.getText().trim();
     //NewUnits = __NewUnits_JTextField.getText().trim();
-    if (__isAliasVersion) {
-        Alias = __Alias_JTextField.getText().trim();
-    }
+    Alias = __Alias_JTextField.getText().trim();
 
     props = new PropList(__command.getCommandName());
     props.add("InputFile=" + InputFile);

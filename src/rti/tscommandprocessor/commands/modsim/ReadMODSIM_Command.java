@@ -14,6 +14,7 @@ import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -34,11 +35,10 @@ import RTi.Util.Time.DateTime;
 import RTi.TS.ModsimTS;
 
 /**
-<p>
-This class initializes, checks, and runs the TS Alias = ReadMODSIM() and ReadMODSIM() commands.
-</p>
+This class initializes, checks, and runs the ReadMODSIM() commands.
 */
-public class ReadMODSIM_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadMODSIM_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 protected static final String
@@ -57,11 +57,6 @@ List of time series read during discovery.  These are TS objects but with mainly
 metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
-
-/**
-Indicates whether the TS Alias version of the command is being used.
-*/
-protected boolean _useAlias = false;
 
 /**
 Constructor.
@@ -99,61 +94,45 @@ throws InvalidCommandParameterException
 	String Alias = parameters.getValue("Alias");
 	String TSID = parameters.getValue("TSID");
     
-	if ( _useAlias && ((Alias == null) || Alias.equals("")) ) {
-	    message = "The Alias must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an alias." ) );
-    }
-
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
-            // do not allow spaces in the alias
+            // Do not allow spaces in the alias - for legacy syntax
             message = "The Alias value cannot contain any spaces.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Remove spaces from the alias." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Remove spaces from the alias." ) );
         }
     }
-    
-    if ( _useAlias ) {
-        if ( (TSID == null) || TSID.equals("") ) {
-            message = "The requested time series identifier must be specified.";
+
+    if ( (TSID != null) && !TSID.equals("")) {
+        // Check the node/link name and data type
+        TSIdent tsident = null;
+        try {
+            tsident = new TSIdent ( TSID );
+            String NodeName = tsident.getLocation();
+            String DataType = tsident.getType();
+            if ( NodeName.equals("") ) {
+                message = "Node/Link name must be set in TSID.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                         message, "Verify that the node/link name is specified." ) );
+            }
+            if ( DataType.equals("") ) {
+                message = "Data type must be set in TSID.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                         message, "Verify that the data type is specified." ) );
+            }
+        }
+        catch ( Exception e ) {
+            message = "Unable to determine TSID parts from \"" + TSID + "\".";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a node/link name and data type." ) );
-        }
-        else {
-            TSIdent tsident = null;
-            try {
-                tsident = new TSIdent ( TSID );
-                String NodeName = tsident.getLocation();
-                String DataType = tsident.getType();
-                if ( NodeName.equals("") ) {
-                    message = "Node/Link name must be set in TSID.";
-                    warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                             message, "Verify that the node/link name is specified." ) );
-                }
-                if ( DataType.equals("") ) {
-                    message = "Data type must be set in TSID.";
-                    warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                             message, "Verify that the data type is specified." ) );
-                }
-            }
-            catch ( Exception e ) {
-                message = "Unable to determine TSID parts from \"" + TSID + "\".";
-                warning += "\n" + message;
-                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify that the node/link name and data type are specified." ) );
-            }
+                            message, "Verify that the node/link name and data type are specified." ) );
         }
     }
 
@@ -263,11 +242,9 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-    if ( _useAlias ) {
-        valid_Vector.add ( "Alias" );
-        valid_Vector.add ( "TSID" );
-    }
+	List<String> valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "TSID" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -340,65 +317,64 @@ public List getObjectList ( Class c )
 
 /**
 Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
+@param commandString A string command to parse.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param warning_level The warning level to use when printing parse warnings (recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command_string )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	
 	String routine = "ReadMODSIM_Command.parseCommand", message;
-	
-    String Alias = null;
-	int warning_count = 0;
-	_useAlias = false;
-    if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-        // There is an alias specified.  Extract the alias from the full command.
-        _useAlias = true;
-        String str = command_string.substring(3); // Alias = command()
-        int index = str.indexOf("=");
-        int index2 = str.indexOf("(");
-        if (index2 < index) {
-            // no alias specified -- badly-formed command
-            Alias = "Invalid_Alias";
-            message = "No alias was specified, although the command started with \"TS ...\"";
-            Message.printWarning(warning_level, routine, message);
-                ++warning_count;
-            throw new InvalidCommandSyntaxException(message);
-        }
-
-        Alias = str.substring(0, index).trim();
-        // Remainder containing the command name and parameters (old or new style) parse below...
-        command_string = str.substring(index+1).trim();
-    }
-    // In any case parse the command parameters
-    if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()") ) {
-        // Current syntax...
-        super.parseCommand( command_string);
+    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(commandString);
     }
     else {
-        // TODO SAM 2008-09-09 This whole block of code needs to be
-        // removed as soon as commands have been migrated to the new syntax.
-    	List v = StringUtil.breakStringList(command_string, "(),", StringUtil.DELIM_ALLOW_STRINGS );
-        int ntokens = 0;
-        if ( v != null ) {
-            ntokens = v.size();
+        String Alias = null;
+    	int warning_count = 0;
+        if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
+            // There is an alias specified.  Extract the alias from the full command.
+            String str = commandString.substring(3); // Alias = command()
+            int index = str.indexOf("=");
+            int index2 = str.indexOf("(");
+            if (index2 < index) {
+                // no alias specified -- badly-formed command
+                Alias = "Invalid_Alias";
+                message = "No alias was specified, although the command started with \"TS ...\"";
+                Message.printWarning(warning_level, routine, message);
+                    ++warning_count;
+                throw new InvalidCommandSyntaxException(message);
+            }
+    
+            Alias = str.substring(0, index).trim();
+            // Remainder containing the command name and parameters (old or new style) parse below...
+            commandString = str.substring(index+1).trim();
         }
-        Message.printStatus (2,routine,"numtokens="+ntokens);
-        String InputFile = "";
-        String TSID = "";
-        String NewUnits = "";
-        String InputStart = "";
-        String InputEnd = "";
-        if ( _useAlias ) {
+        // In any case parse the command parameters
+        if ( (commandString.indexOf('=') > 0) || commandString.endsWith("()") ) {
+            // Current syntax...
+            super.parseCommand( commandString);
+        }
+        else {
+            // TODO SAM 2008-09-09 This whole block of code needs to be
+            // removed as soon as commands have been migrated to the new syntax.
+        	List v = StringUtil.breakStringList(commandString, "(),", StringUtil.DELIM_ALLOW_STRINGS );
+            int ntokens = 0;
+            if ( v != null ) {
+                ntokens = v.size();
+            }
+            Message.printStatus (2,routine,"numtokens="+ntokens);
+            String InputFile = "";
+            String TSID = "";
+            String NewUnits = "";
+            String InputStart = "";
+            String InputEnd = "";
             if ( ntokens >= 2 ) {
                 InputFile = ((String)v.get(1)).trim();
             }
@@ -414,46 +390,38 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             if ( ntokens >= 6 ) {
                 InputEnd = ((String)v.get(5)).trim();
             }
-        }
-        else {
-            if ( ntokens >= 2 ) {
-                // Only one parameter was supported...
-                InputFile = ((String)v.get(1)).trim();
-            }
-        }
-
-        // Set parameters and new defaults...
-
-        PropList parameters = new PropList ( getCommandName() );
-        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-        if ( InputFile.length() > 0 ) {
-            parameters.set ( "InputFile", InputFile );
-        }
-        if ( TSID.length() > 0 ) {
-            parameters.set ( "TSID", TSID );
-        }
-        if ( NewUnits.length() > 0 ) {
-            parameters.set ( "NewUnits", NewUnits );
-        }
-        if ( InputStart.length() > 0 ) {
-            if ( InputStart.equals("*") ) {
-                InputStart = "";
-            }
-            parameters.set ( "InputStart", InputStart );
-        }
-        if ( InputEnd.length() > 0 ) {
-            if ( InputEnd.equals("*") ) {
-                InputEnd = "";
-            }
-            parameters.set ( "InputEnd", InputEnd );
-        }
-        parameters.setHowSet ( Prop.SET_UNKNOWN );
-        setCommandParameters ( parameters );
-    }
     
-    // Set alias in addition to parameters set above...
-
-    if ( _useAlias ) {
+            // Set parameters and new defaults...
+    
+            PropList parameters = new PropList ( getCommandName() );
+            parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+            if ( InputFile.length() > 0 ) {
+                parameters.set ( "InputFile", InputFile );
+            }
+            if ( TSID.length() > 0 ) {
+                parameters.set ( "TSID", TSID );
+            }
+            if ( NewUnits.length() > 0 ) {
+                parameters.set ( "NewUnits", NewUnits );
+            }
+            if ( InputStart.length() > 0 ) {
+                if ( InputStart.equals("*") ) {
+                    InputStart = "";
+                }
+                parameters.set ( "InputStart", InputStart );
+            }
+            if ( InputEnd.length() > 0 ) {
+                if ( InputEnd.equals("*") ) {
+                    InputEnd = "";
+                }
+                parameters.set ( "InputEnd", InputEnd );
+            }
+            parameters.setHowSet ( Prop.SET_UNKNOWN );
+            setCommandParameters ( parameters );
+        }
+        
+        // Set alias in addition to parameters set above...
+    
         PropList parameters = getCommandParameters();
         parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         if ( (Alias != null) && (Alias.length() > 0) ) {
@@ -469,8 +437,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -483,8 +450,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -497,12 +463,11 @@ Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
@@ -515,9 +480,9 @@ throws InvalidCommandParameterException,
     // Get and clear the status and clear the run log...
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
+    status.clearLog(commandPhase);
     boolean read_data = true;
-    if ( command_phase == CommandPhaseType.DISCOVERY ){
+    if ( commandPhase == CommandPhaseType.DISCOVERY ){
         read_data = false;
     }
     CommandProcessor processor = getCommandProcessor();
@@ -546,7 +511,7 @@ throws InvalidCommandParameterException,
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
@@ -559,7 +524,7 @@ throws InvalidCommandParameterException,
             Message.printWarning(log_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the specified date/time is valid." ) );
             throw new InvalidCommandParameterException ( message );
@@ -572,7 +537,7 @@ throws InvalidCommandParameterException,
         Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count),
                 routine, message );
-        status.addToLog ( command_phase,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify a valid date/time for the input start, " +
                         "or InputStart for the global input start." ) );
@@ -592,7 +557,7 @@ throws InvalidCommandParameterException,
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
@@ -612,7 +577,7 @@ throws InvalidCommandParameterException,
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -625,7 +590,7 @@ throws InvalidCommandParameterException,
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the end date/time is valid." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -639,7 +604,7 @@ throws InvalidCommandParameterException,
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time for the input end, " +
                             "or InputEnd for the global input start." ) );
@@ -659,7 +624,7 @@ throws InvalidCommandParameterException,
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
             }
@@ -667,7 +632,7 @@ throws InvalidCommandParameterException,
 
 	// Read the MODSIM file.
 	TS ts = null; // Single time series
-	List tslist = null;   // Keep the list of time series
+	List<TS> tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
         InputFile_full = IOUtil.verifyPathForOS(
@@ -675,24 +640,30 @@ throws InvalidCommandParameterException,
                         TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));
         if ( !IOUtil.fileExists(InputFile_full)) {
             message = "The MODSIM file \"" + InputFile_full + "\" does not exist.";
-            status.addToLog(command_phase,
+            status.addToLog(commandPhase,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,"Verify that the filename is correct."));
         }
         else {
-            if ( _useAlias ) {
+            if ( (TSID != null) && !TSID.equals("")) {
+                // Requesting specific time series where TSID contains node/link name and data type
                 ts = ModsimTS.readTimeSeries ( TSID, InputFile_full, InputStart_DateTime, InputEnd_DateTime,
                         NewUnits, read_data );
                 if ( ts != null ) {
-                    ts.setAlias( Alias );
                     tslist = new Vector ( 1 );
                     tslist.add ( ts );
                 }
             }
             else {
+                // Reading all the time series (no ability to filter based on name or type)
                 tslist = ModsimTS.readTimeSeriesList (
                     InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, read_data );
             }
+        }
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, ts, Alias, status, commandPhase);
+            ts.setAlias(alias);
         }
 	} 
 	catch ( Exception e ) {
@@ -700,7 +671,7 @@ throws InvalidCommandParameterException,
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag( command_tag, ++warning_count ),routine, message );
 		Message.printWarning ( 3, routine, e );
-        status.addToLog(command_phase,
+        status.addToLog(commandPhase,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,"Verify that the file is a valid MODSIM time series file."));
 		throw new CommandException ( message );
@@ -718,14 +689,14 @@ throws InvalidCommandParameterException,
         Message.printWarning ( warning_level, 
             MessageUtil.formatMessageTag(command_tag,
             ++warning_count), routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message,
                             "Verify that the file is a valid MODSIM time series file with expected identifiers." ) );
         throw new CommandException ( message );
     }
 
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
             // Further process the time series...
             // This makes sure the period is at least as long as the output period...
@@ -735,7 +706,7 @@ throws InvalidCommandParameterException,
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
@@ -749,14 +720,14 @@ throws InvalidCommandParameterException,
                 Message.printWarning ( warning_level, 
                     MessageUtil.formatMessageTag(command_tag,
                     ++warning_count), routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.FAILURE,
                                     message, "Report the problem to software support." ) );
                 throw new CommandException ( message );
             }
         }
     }
-    else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( tslist );
     }
 
@@ -768,7 +739,7 @@ throws InvalidCommandParameterException,
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -781,17 +752,28 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
 {
-	if ( props == null ) {
-	    if ( _useAlias ) {
-	        return "TS Alias = " + getCommandName() + "()";
-	    }
-	    else {
-	        return getCommandName() + "()";
-	    }
-	}
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
@@ -806,14 +788,12 @@ public String toString ( PropList props )
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
-	if ( _useAlias ) {
-	    if ((TSID != null) && (TSID.length() > 0)) {
-	        if (b.length() > 0) {
-	            b.append(",");
-	        }
-	        b.append("TSID=\"" + TSID + "\"");
-	    }
-	}
+    if ((TSID != null) && (TSID.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("TSID=\"" + TSID + "\"");
+    }
 
 	// New Units
 	/*
@@ -841,12 +821,23 @@ public String toString ( PropList props )
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
 
-    String lead = "";
-	if ( _useAlias && (Alias != null) && (Alias.length() > 0) ) {
-		lead = "TS " + Alias + " = ";
-	}
-
-	return lead + getCommandName() + "(" + b.toString() + ")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

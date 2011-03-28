@@ -24,6 +24,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
@@ -41,26 +42,21 @@ Editor for the TS Alias = readDateValue() and non-TS Alias ReadDateValue() comma
 public class ReadDateValue_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and absolute path.
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
+private SimpleJButton __browse_JButton = null,
+			__path_JButton = null, // Convert between relative and absolute path.
+			__cancel_JButton = null,
+			__ok_JButton = null;
 private ReadDateValue_Command __command = null;
-private String		__working_dir = null;	// Working directory.
-private JTextField	__Alias_JTextField = null,// Alias for time series.
-            __TSID_JTextField = null,
-			__InputStart_JTextField,
-			__InputEnd_JTextField, // Text fields for input period.
-			__InputFile_JTextField = null, // Field for input file
-			__NewUnits_JTextField = null; // Units to convert to at read
-private JTextArea	 __Command_JTextArea = null;
-private boolean		__error_wait = false;	// Is there an error to be cleared up?
-private boolean		__first_time = true;
-
-private boolean 	__isAliasVersion = false;	
-			// Whether this dialog is being opened for the version
-			// of the command that returns an alias or not
-private boolean		__ok = false;			
+private String __working_dir = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __InputStart_JTextField;
+private JTextField __InputEnd_JTextField; // Text fields for input period.
+private JTextField __InputFile_JTextField = null; // Field for input file
+private JTextField __NewUnits_JTextField = null; // Units to convert to at read
+private JTextArea __Command_JTextArea = null;
+private boolean __error_wait = false;	// Is there an error to be cleared up?
+private boolean __first_time = true;
+private boolean __ok = false;			
 private final String __RemoveWorkingDirectory = "Remove Working Directory",
 	__AddWorkingDirectory = "Add Working Directory";
 
@@ -70,23 +66,7 @@ Command editor constructor.
 @param command Command to edit.
 */
 public ReadDateValue_JDialog ( JFrame parent, Command command )
-{
-	super(parent, true);
-
-	PropList props = command.getCommandParameters();
-	String alias = props.getValue("Alias");
-	Message.printStatus(1, "", "Props: " + props.toString("\n"));
-	if (alias == null || alias.trim().equalsIgnoreCase("")) {
-        if (((ReadDateValue_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
-            __isAliasVersion = true;
-		}
-		else {
-			__isAliasVersion = false;
-		}
-	}
-	else {
-		__isAliasVersion = true;
-	}
+{   super(parent, true);
 	initialize ( parent, command );
 }
 
@@ -167,21 +147,13 @@ private void checkInput () {
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
-	String Alias = null;
-    String TSID = null;
-	if (__isAliasVersion) { 
-		Alias = __Alias_JTextField.getText().trim();
-        TSID = __TSID_JTextField.getText().trim();
-        if (Alias != null && Alias.length() > 0) {
-            props.set("Alias", Alias);
-        }
-        if (TSID != null && TSID.length() > 0) {
-            props.set("TSID", TSID);
-        }
-	}
+	String Alias = __Alias_JTextField.getText().trim();
 	
 	__error_wait = false;
-	
+
+    if (Alias != null && Alias.length() > 0) {
+        props.set("Alias", Alias);
+    }
 	if (InputFile.length() > 0) {
 		props.set("InputFile", InputFile);
 	}
@@ -209,22 +181,17 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits() {
+    String Alias = __Alias_JTextField.getText().trim();
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
 
+    __command.setCommandParameter("Alias", Alias);
 	__command.setCommandParameter("InputFile", InputFile);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
 	__command.setCommandParameter("NewUnits", NewUnits);
-	
-	if (__isAliasVersion) {
-		String Alias = __Alias_JTextField.getText().trim();
-		__command.setCommandParameter("Alias", Alias);
-        String TSID = __TSID_JTextField.getText().trim();
-        __command.setCommandParameter("TSID", TSID);
-	}
 }
 
 /**
@@ -268,24 +235,20 @@ private void initialize(JFrame parent, Command command) {
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-	if (__isAliasVersion) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a DateValue format file and " +
-		"assign an alias to the time series."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-	else {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "Read all the time series from a DateValue file, using " +
-            "information in the file to assign the identifier and alias."),
-            0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Read all the time series from a DateValue file, using " +
+        "information in the file to assign the identifier."),
+        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Time series in DateValue files may also have an alias assigned; however, use the Alias parameter" +
+        " to assign a new alias."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to the working " +
 		"directory) for a DateValue file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel (
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
@@ -294,16 +257,6 @@ private void initialize(JFrame parent, Command command) {
 		"Specifying the input period will limit data that are " +
 		"available for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-	if (__isAliasVersion) {
-	    JGUIUtil.addComponent(main_JPanel, 
-			new JLabel("Time series alias:"),
-			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Alias_JTextField = new JTextField ( 30 );
-		__Alias_JTextField.addKeyListener ( this );
-		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-			1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"DateValue file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -315,17 +268,14 @@ private void initialize(JFrame parent, Command command) {
         JGUIUtil.addComponent(main_JPanel, __browse_JButton,
 		6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
         
-    if (__isAliasVersion) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel("Identifier/Alias to Read:"),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        __TSID_JTextField = new JTextField ( "*", 30 );
-        __TSID_JTextField.addKeyListener ( this );
-        __TSID_JTextField.setEnabled ( false );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
-            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern to match a time series to read (under development)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    }
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -379,12 +329,7 @@ private void initialize(JFrame parent, Command command) {
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	if (__isAliasVersion) {
-		setTitle("Edit TS Alias = ReadDateValue() Command");
-	}
-	else {
-		setTitle("Edit ReadDateValue() Command");
-	}
+	setTitle("Edit ReadDateValue() Command");
 	
 	// Refresh the contents...
     refresh ();
@@ -423,7 +368,7 @@ public void keyTyped(KeyEvent event) {
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok() {
 	return __ok;
@@ -437,8 +382,7 @@ private void refresh() {
 	       InputStart = "",
 	       InputEnd = "",
 	       NewUnits = "",
-	       Alias = "",
-           TSID = "";
+	       Alias = "";
 
 	PropList props = null;
 
@@ -447,21 +391,15 @@ private void refresh() {
 
 		// Get the properties from the command
 		props = __command.getCommandParameters();
-        if ( __isAliasVersion ) {
-            Alias = props.getValue("Alias");
-            TSID = props.getValue("TSID");
-        }
+        Alias = props.getValue("Alias");
 		InputFile = props.getValue("InputFile");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		NewUnits = props.getValue("NewUnits");
 		// Set the control fields
-		if (Alias != null && __isAliasVersion) {
+		if (Alias != null) {
 			__Alias_JTextField.setText(Alias.trim());
 		}
-        if (TSID != null && __isAliasVersion) {
-            __TSID_JTextField.setText(TSID.trim());
-        }
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
@@ -482,22 +420,14 @@ private void refresh() {
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	NewUnits = __NewUnits_JTextField.getText().trim();
-	if (__isAliasVersion) {
-		Alias = __Alias_JTextField.getText().trim();
-        TSID = __TSID_JTextField.getText().trim();
-	}
+	Alias = __Alias_JTextField.getText().trim();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
 	props.add("NewUnits=" + NewUnits);
-	if (Alias != null) {
-		props.add("Alias=" + Alias);
-	}
-    if (TSID != null) {
-        props.add("TSID=" + TSID);
-    }
+	props.add("Alias=" + Alias);
 	__Command_JTextArea.setText( __command.toString(props) );
 
 	// Refresh the Path Control text.
@@ -505,8 +435,7 @@ private void refresh() {
 }
 
 /**
-Refresh the PathControl text based on the contents of the input text field
-contents.
+Refresh the PathControl text based on the contents of the input text field contents.
 */
 private void refreshPathControl()
 {
@@ -518,8 +447,7 @@ private void refreshPathControl()
 		return;
 	}
 
-	// Check the path and determine what the label on the path button should
-	// be...
+	// Check the path and determine what the label on the path button should be...
 	if ( __path_JButton != null ) {
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
@@ -534,8 +462,7 @@ private void refreshPathControl()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 public void response ( boolean ok ) {
 	__ok = ok;

@@ -24,6 +24,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -38,7 +39,7 @@ import RTi.Util.String.StringUtil;
 This class initializes, checks, and runs the NewEndOfMonthTSFromDayTS() command.
 */
 public class NewEndOfMonthTSFromDayTS_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
     
 /**
@@ -188,68 +189,74 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "NewEndOfMonthTSFromDayTS_Command.parseCommand", message;
 
-	// Get the part of the command after the TS Alias =...
-	int pos = command.indexOf ( "=" );
-	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String token0 = command.substring ( 0, pos ).trim();
-	String token1 = command.substring ( pos + 1 ).trim();
-	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
-    if ( v == null ) {
-        message = "Syntax error in \"" + command +
-        "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";
-        Message.printWarning ( warning_level, routine, message);
-        throw new InvalidCommandSyntaxException ( message );
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
     }
-    String Alias = (String)v.get(1);
-    String DayTSID = null;
-    String Bracket = null;
-	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
-		// No parameters have = in them...
-		// TODO SAM 2008-09-23 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new syntax.
-		//
-		// Old syntax without named parameters.
-
-		v = StringUtil.breakStringList ( token1,"(),",
-		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
-		if ( (v == null) || (v.size() != 3) ) {
-			message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-        DayTSID = (String)v.get(1);
-        Bracket = (String)v.get(2);
-	}
-	else {
-        // Current syntax...
-        super.parseCommand( token1 );
-	}
+    else {
+    	// Get the part of the command after the TS Alias =...
+    	int pos = command.indexOf ( "=" );
+    	if ( pos < 0 ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String token0 = command.substring ( 0, pos ).trim();
+    	String token1 = command.substring ( pos + 1 ).trim();
+    	if ( (token0 == null) || (token1 == null) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+        if ( v == null ) {
+            message = "Syntax error in \"" + command +
+            "\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
+        }
+        String Alias = (String)v.get(1);
+        String DayTSID = null;
+        String Bracket = null;
+    	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
+    		// No parameters have = in them...
+    		// TODO SAM 2008-09-23 This whole block of code needs to be
+    		// removed as soon as commands have been migrated to the new syntax.
+    		//
+    		// Old syntax without named parameters.
     
-    // Set parameters and new defaults...
-
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    if ( Alias.length() > 0 ) {
-        parameters.set ( "Alias", Alias );
+    		v = StringUtil.breakStringList ( token1,"(),",
+    		        StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
+    		if ( (v == null) || (v.size() != 3) ) {
+    			message = "Syntax error in \"" + command +
+    			"\".  Expecting:  TS Alias = NewEndOfMonthTSFromDayTS(DayTSID,Bracket)";
+    			Message.printWarning ( warning_level, routine, message);
+    			throw new InvalidCommandSyntaxException ( message );
+    		}
+            DayTSID = (String)v.get(1);
+            Bracket = (String)v.get(2);
+    	}
+    	else {
+            // Current syntax...
+            super.parseCommand( token1 );
+    	}
+        
+        // Set parameters and new defaults...
+    
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        if ( Alias.length() > 0 ) {
+            parameters.set ( "Alias", Alias );
+        }
+        // Reset using above information
+        if ( (DayTSID != null) && (DayTSID.length() > 0) ) {
+            parameters.set ( "DayTSID", DayTSID );
+        }
+        if ( (Bracket != null) && (Bracket.length() > 0) ) {
+            parameters.set ( "Bracket", Bracket );
+        }
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
     }
-    // Reset using above information
-    if ( (DayTSID != null) && (DayTSID.length() > 0) ) {
-        parameters.set ( "DayTSID", DayTSID );
-    }
-    if ( (Bracket != null) && (Bracket.length() > 0) ) {
-        parameters.set ( "Bracket", Bracket );
-    }
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
 }
 
 /**
@@ -388,7 +395,11 @@ CommandWarningException, CommandException
 	    Message.printStatus ( 2, routine, "Changing interval..." );
 	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval();
 	    monthts = tsu.OLDchangeToMonthTS ( (DayTS)ts, 1, bracket, createData );
-		monthts.setAlias ( Alias );
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, monthts, Alias, status, commandPhase);
+            monthts.setAlias ( alias );
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error processing daily time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -410,7 +421,7 @@ CommandWarningException, CommandException
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
         // This makes sure the period is at least as long as the output period...
-    	List tslist = new Vector(1);
+    	List<TS> tslist = new Vector(1);
     	tslist.add ( monthts );
         int wc = TSCommandProcessorUtil.processTimeSeriesListAfterRead( processor, this, tslist );
         if ( wc > 0 ) {
@@ -452,11 +463,28 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
-{	if ( props == null ) {
-		return "TS Alias = " + getCommandName() + "()";
-	}
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 	String Alias = props.getValue( "Alias" );
 	String DayTSID = props.getValue( "DayTSID" );
 	String Bracket = props.getValue( "Bracket" );
@@ -473,7 +501,23 @@ public String toString ( PropList props )
 		}
 		b.append ( "Bracket=" + Bracket );
 	}
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

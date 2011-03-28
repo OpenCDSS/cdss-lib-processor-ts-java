@@ -1,16 +1,3 @@
-// ----------------------------------------------------------------------------
-// newDayTSFromMonthAndDayTS_JDialog - editor for newDayTSFromMonthAndDayTS()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 17 Jan 2001	Steven A. Malers, RTi	Initial version.
-// 2002-04-24	SAM, RTi		Clean up dialog.
-// 2003-12-16	SAM, RTi		Update to Swing.
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -33,11 +20,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
 import RTi.Util.GUI.JGUIUtil;
@@ -56,7 +43,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private NewDayTSFromMonthAndDayTS_Command __command = null;
 private JTextArea __command_JTextArea=null;// Command as JTextField
-private JTextField __Alias_JTextField =null;
+private TSFormatSpecifiersJPanel __Alias_JTextField =null;
 private JTextArea __NewTSID_JTextArea = null; // New TSID.
 private SimpleJButton __edit_JButton = null;    // Edit button
 private SimpleJButton __clear_JButton = null;   // Clear NewTSID button
@@ -215,13 +202,24 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "The period is taken from the global output period if set, or the daily time series." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Monthly time series for total:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MonthTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    __MonthTSID_JComboBox.setData ( tsids );
+    __MonthTSID_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MonthTSID_JComboBox,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( 30 );
-	JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	__Alias_JTextField.addKeyListener(this);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Daily time series for distribution:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DayTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    __DayTSID_JComboBox.setData ( tsids );
+    __DayTSID_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __DayTSID_JComboBox,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -242,24 +240,15 @@ private void initialize ( JFrame parent, Command command )
    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
        new SimpleJButton ( "Clear", "Clear", this ) ),
        4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Monthly time series for total:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MonthTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    __MonthTSID_JComboBox.setData ( tsids );
-    __MonthTSID_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MonthTSID_JComboBox,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Daily time series for distribution:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DayTSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    __DayTSID_JComboBox.setData ( tsids );
-    __DayTSID_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DayTSID_JComboBox,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   
+   JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+       0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+   __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+   __Alias_JTextField.addKeyListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+       1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+   JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+       3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -284,7 +273,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );

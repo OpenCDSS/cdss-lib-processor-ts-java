@@ -1,18 +1,3 @@
-//------------------------------------------------------------------------------
-// copy_Command - handle the TS Alias = copy() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-08-25	Steven A. Malers, RTi	Initial version.  Copy and modify
-//					scale().
-// 2005-08-29	SAM, RTi		Finish enabling runCommand().
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -39,6 +24,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -53,7 +39,8 @@ import RTi.Util.Time.TimeInterval;
 /**
 This class initializes, checks, and runs the Copy() command.
 */
-public class Copy_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class Copy_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
     
 /**
@@ -241,133 +228,139 @@ public void parseCommand ( String command )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "copy_Command.parseCommand", message;
-
-	// Get the part of the command after the TS Alias =...
-	int pos = command.indexOf ( "=" );
-	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String token0 = command.substring ( 0, pos ).trim();
-	String token1 = command.substring ( pos + 1 ).trim();
-	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-    // Alias is everything after "TS " (can include space in alias name)
-    String Alias = token0.trim().substring(3).trim();
-    String TSID = null;
-	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
-		// No parameters have = in them...
-		// TODO SAM 2005-08-25 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new syntax.
-		//
-		// Old syntax without named parameters.
-
-		List<String> v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
-		if ( v == null ) {
-			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-        // TSID is the only parameter
-        TSID = v.get(1);
-	}
-	else {
-        // Current syntax...
-        super.parseCommand( token1 );
-	}
-    
-    // Set parameters and new defaults...
-
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    if ( Alias.length() > 0 ) {
-        parameters.set ( "Alias", Alias );
-    }
-    // Reset using above information
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        parameters.set ( "TSID", TSID );
-    }
-    // Get from the parameters...
-    TSID = parameters.getValue( "TSID");
-    String NewTSID = parameters.getValue( "NewTSID");
-    if ( (NewTSID == null) || (NewTSID.length() == 0) ) {
-        // NewTSID is not specified.  The requirement that this be specified was added to
-        // avoid confusion between copies and the original.  However, this has caused a lot
-        // of migration issues.  Therefore, if TSID is specified and NewTSID is not, copy it to NewTSID and use
-        // "copy" for the scenario.  This can't be done with aliases because the interval is unknown.
-        if ( (TSID != null) && (TSID.length() > 0) ) {
-            // Try to evaluate whether it is an alias..
-            if ( StringUtil.patternCount(TSID, ".") >= 3 ) {
-                // Probably not an alias so try to process
-                try {
-                    TSIdent ident = TSIdent.parseIdentifier ( TSID );
-                    ident.setScenario ( "copy" );
-                    // Set the new identifier
-                    parameters.set ( "NewTSID", ident.toString(false) );
-                }
-                catch ( Exception e ) {
-                    // Don't set the NewTSID and force the user to set it when command validation occurs.
-                    message = "Unable to parse the TSID to use for NewTSID.";
-                    Message.printWarning( 3, routine, e);
-                    Message.printWarning ( warning_level, routine, message);
-                    throw new InvalidCommandSyntaxException ( message );
-                }
-            } 
-        }
-        else {
-            message = "NewTSID cannot be defaulted when the TSID to copy is an alias.";
-            Message.printWarning ( warning_level, routine, message);
-            throw new InvalidCommandSyntaxException ( message );
-        }
+	
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
     }
     else {
-        // Have NewTSID parameter but the interval may be invalid.  Copy from TSID if that is the case.
-        try {
-            TSIdent newident = TSIdent.parseIdentifier ( NewTSID );
-            try {
-                TimeInterval.parseInterval(newident.getInterval());
-            }
-            catch ( Exception e ) {
-                // Bad interval in NewTSID so try to use the one from TSID.  First have to parse out TSID
-                try {
-                    TSIdent ident = TSIdent.parseIdentifier ( TSID );
-                    // Make sure the interval is valid from the original (won't be able to get if Alias).
+    	// Get the part of the command after the TS Alias =...
+    	int pos = command.indexOf ( "=" );
+    	if ( pos < 0 ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String token0 = command.substring ( 0, pos ).trim();
+    	String token1 = command.substring ( pos + 1 ).trim();
+    	if ( (token0 == null) || (token1 == null) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = Copy(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+        // Alias is everything after "TS " (can include space in alias name)
+        String Alias = token0.trim().substring(3).trim();
+        String TSID = null;
+    	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
+    		// No parameters have = in them...
+    		// TODO SAM 2005-08-25 This whole block of code needs to be
+    		// removed as soon as commands have been migrated to the new syntax.
+    		//
+    		// Old syntax without named parameters.
+    
+    		List<String> v = StringUtil.breakStringList ( token1,"(),",	StringUtil.DELIM_SKIP_BLANKS );
+    		if ( v == null ) {
+    			message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = copy(TSID)";
+    			Message.printWarning ( warning_level, routine, message);
+    			throw new InvalidCommandSyntaxException ( message );
+    		}
+            // TSID is the only parameter
+            TSID = v.get(1);
+    	}
+    	else {
+            // Current syntax...
+            super.parseCommand( token1 );
+    	}
+        
+        // Set parameters and new defaults...
+    
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        if ( Alias.length() > 0 ) {
+            parameters.set ( "Alias", Alias );
+        }
+        // Reset using above information
+        if ( (TSID != null) && (TSID.length() > 0) ) {
+            parameters.set ( "TSID", TSID );
+        }
+        // Get from the parameters...
+        TSID = parameters.getValue( "TSID");
+        String NewTSID = parameters.getValue( "NewTSID");
+        if ( (NewTSID == null) || (NewTSID.length() == 0) ) {
+            // NewTSID is not specified.  The requirement that this be specified was added to
+            // avoid confusion between copies and the original.  However, this has caused a lot
+            // of migration issues.  Therefore, if TSID is specified and NewTSID is not, copy it to NewTSID and use
+            // "copy" for the scenario.  This can't be done with aliases because the interval is unknown.
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                // Try to evaluate whether it is an alias..
+                if ( StringUtil.patternCount(TSID, ".") >= 3 ) {
+                    // Probably not an alias so try to process
                     try {
-                        TimeInterval.parseInterval(ident.getInterval());
-                        newident.setInterval(ident.getInterval());
+                        TSIdent ident = TSIdent.parseIdentifier ( TSID );
+                        ident.setScenario ( "copy" );
                         // Set the new identifier
-                        parameters.set ( "NewTSID", newident.toString(false) );
+                        parameters.set ( "NewTSID", ident.toString(false) );
                     }
-                    catch ( Exception e3 ) {
-                        message = "Invalid TSID interval \"" + ident.getInterval() +
-                        "\" to fill in default NewTSID interval.";
-                        Message.printWarning( 3, routine, e3);
+                    catch ( Exception e ) {
+                        // Don't set the NewTSID and force the user to set it when command validation occurs.
+                        message = "Unable to parse the TSID to use for NewTSID.";
+                        Message.printWarning( 3, routine, e);
+                        Message.printWarning ( warning_level, routine, message);
+                        throw new InvalidCommandSyntaxException ( message );
+                    }
+                } 
+            }
+            else {
+                message = "NewTSID cannot be defaulted when the TSID to copy is an alias.";
+                Message.printWarning ( warning_level, routine, message);
+                throw new InvalidCommandSyntaxException ( message );
+            }
+        }
+        else {
+            // Have NewTSID parameter but the interval may be invalid.  Copy from TSID if that is the case.
+            try {
+                TSIdent newident = TSIdent.parseIdentifier ( NewTSID );
+                try {
+                    TimeInterval.parseInterval(newident.getInterval());
+                }
+                catch ( Exception e ) {
+                    // Bad interval in NewTSID so try to use the one from TSID.  First have to parse out TSID
+                    try {
+                        TSIdent ident = TSIdent.parseIdentifier ( TSID );
+                        // Make sure the interval is valid from the original (won't be able to get if Alias).
+                        try {
+                            TimeInterval.parseInterval(ident.getInterval());
+                            newident.setInterval(ident.getInterval());
+                            // Set the new identifier
+                            parameters.set ( "NewTSID", newident.toString(false) );
+                        }
+                        catch ( Exception e3 ) {
+                            message = "Invalid TSID interval \"" + ident.getInterval() +
+                            "\" to fill in default NewTSID interval.";
+                            Message.printWarning( 3, routine, e3);
+                            Message.printWarning ( warning_level, routine, message);
+                            throw new InvalidCommandSyntaxException ( message );
+                        }
+                    }
+                    catch ( Exception e2 ) {
+                        // Not able to parse the TSID so user will need to fix manually.
+                        message = "Unable to parse TSID to fill in the default NewTSID interval.";
+                        Message.printWarning( 3, routine, e2);
                         Message.printWarning ( warning_level, routine, message);
                         throw new InvalidCommandSyntaxException ( message );
                     }
                 }
-                catch ( Exception e2 ) {
-                    // Not able to parse the TSID so user will need to fix manually.
-                    message = "Unable to parse TSID to fill in the default NewTSID interval.";
-                    Message.printWarning( 3, routine, e2);
-                    Message.printWarning ( warning_level, routine, message);
-                    throw new InvalidCommandSyntaxException ( message );
-                }
+            }
+            catch ( Exception e ) {
+                // Don't set the NewTSID and force the user to set it when command validation occurs.
+                message = "Unable to parse NewTSID to check its interval.";
+                Message.printWarning( 3, routine, e);
+                Message.printWarning ( warning_level, routine, message);
+                throw new InvalidCommandSyntaxException ( message );
             }
         }
-        catch ( Exception e ) {
-            // Don't set the NewTSID and force the user to set it when command validation occurs.
-            message = "Unable to parse NewTSID to check its interval.";
-            Message.printWarning( 3, routine, e);
-            Message.printWarning ( warning_level, routine, message);
-            throw new InvalidCommandSyntaxException ( message );
-        }
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
     }
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
 }
 
 /**
@@ -529,9 +522,11 @@ CommandWarningException, CommandException
                 tscopy.addToGenesis("Copied TSID=\"" + ts.getIdentifier() + "\"");
             }
         }
-		tscopy.setAlias ( Alias );	// Do separate because setting
-						// the NewTSID might cause the
-						// alias set to fail below.
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, tscopy, Alias, status, commandPhase);
+            tscopy.setAlias ( alias );
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to copy time series \""+ ts.getIdentifier() + "\".";
@@ -549,7 +544,11 @@ CommandWarningException, CommandException
 			TSIdent tsident = new TSIdent ( NewTSID );
 			tscopy.setIdentifier ( tsident );
 		}
-		tscopy.setAlias ( Alias );
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, tscopy, Alias, status, commandPhase);
+            tscopy.setAlias ( alias );
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error setting the new time series identifier \"" + NewTSID + "\" (" + e + ").";
@@ -597,11 +596,28 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
-{	if ( props == null ) {
-		return getCommandName() + "()";
-	}
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 	String Alias = props.getValue( "Alias" );
 	String TSID = props.getValue( "TSID" );
 	String NewTSID = props.getValue( "NewTSID" );
@@ -632,7 +648,23 @@ public String toString ( PropList props )
         }
         b.append ( "CopyHistory=" + CopyHistory );
     }
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

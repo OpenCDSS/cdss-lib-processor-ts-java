@@ -20,6 +20,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -31,11 +32,10 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
-This class initializes, checks, and runs the TS Alias = ReadTimeSeries() command.
-</p>
+This class initializes, checks, and runs the ReadTimeSeries() command.
 */
-public class ReadTimeSeries_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadTimeSeries_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 /**
@@ -49,7 +49,7 @@ protected final String _Warn = "Warn";
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
-private List<TS> __discovery_TS_Vector = null;
+private List<TS> __discoveryTSList = null;
 
 /**
 Constructor.
@@ -65,8 +65,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -109,7 +108,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IfNotFound" );
@@ -142,7 +141,7 @@ Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
 {
-    return __discovery_TS_Vector;
+    return __discoveryTSList;
 }
 
 /**
@@ -179,67 +178,73 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
 	String routine = "ReadTimeSeries_Command.parseCommand", message;
 
-	// Get the part of the command after the TS Alias =...
-	int pos = command.indexOf ( "=" );
-	if ( pos < 0 ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = ReadTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	String token0 = command.substring ( 0, pos ).trim();
-	String token1 = command.substring ( pos + 1 ).trim();
-	if ( (token0 == null) || (token1 == null) ) {
-		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = ReadTimeSeries(...)";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	List v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
-    if ( v == null ) {
-        message = "Syntax error in \"" + command +
-        "\".  Expecting:  TS Alias = ReadTimeSeries(TSID)";
-        Message.printWarning ( warning_level, routine, message);
-        throw new InvalidCommandSyntaxException ( message );
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
     }
-    String Alias = (String)v.get(1);
-    String TSID = null;
-    String IfNotFound = null;
-	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
-		// No parameters have = in them...
-		// TODO SAM 2008-09-23 This whole block of code needs to be
-		// removed as soon as commands have been migrated to the new syntax.
-		//
-		// Old syntax without named parameters.
-
-		v = StringUtil.breakStringList ( token1,"(),",StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
-		if ( (v == null) || (v.size() != 2) ) {
-			message = "Syntax error in \"" + command +
-			"\".  Expecting:  TS Alias = ReadTimeSeries(TSID)";
-			Message.printWarning ( warning_level, routine, message);
-			throw new InvalidCommandSyntaxException ( message );
-		}
-        TSID = (String)v.get(1);
-        IfNotFound = _Warn; // Default required parameter
-	}
-	else {
-        // Current syntax...
-        super.parseCommand( token1 );
-	}
+    else {
+    	// Get the part of the command after the TS Alias =...
+    	int pos = command.indexOf ( "=" );
+    	if ( pos < 0 ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = ReadTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	String token0 = command.substring ( 0, pos ).trim();
+    	String token1 = command.substring ( pos + 1 ).trim();
+    	if ( (token0 == null) || (token1 == null) ) {
+    		message = "Syntax error in \"" + command + "\".  Expecting:  TS Alias = ReadTimeSeries(...)";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	List<String> v = StringUtil.breakStringList ( token0, " ", StringUtil.DELIM_SKIP_BLANKS );
+        if ( v == null ) {
+            message = "Syntax error in \"" + command +
+            "\".  Expecting:  TS Alias = ReadTimeSeries(TSID)";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
+        }
+        String Alias = (String)v.get(1);
+        String TSID = null;
+        String IfNotFound = null;
+    	if ( (token1.indexOf('=') < 0) && !token1.endsWith("()") ) {
+    		// No parameters have = in them...
+    		// TODO SAM 2008-09-23 This whole block of code needs to be
+    		// removed as soon as commands have been migrated to the new syntax.
+    		//
+    		// Old syntax without named parameters.
     
-    // Set parameters and new defaults...
-
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    if ( Alias.length() > 0 ) {
-        parameters.set ( "Alias", Alias );
+    		v = StringUtil.breakStringList ( token1,"(),",StringUtil.DELIM_SKIP_BLANKS|StringUtil.DELIM_ALLOW_STRINGS );
+    		if ( (v == null) || (v.size() != 2) ) {
+    			message = "Syntax error in \"" + command +
+    			"\".  Expecting:  TS Alias = ReadTimeSeries(TSID)";
+    			Message.printWarning ( warning_level, routine, message);
+    			throw new InvalidCommandSyntaxException ( message );
+    		}
+            TSID = v.get(1);
+            IfNotFound = _Warn; // Default required parameter
+    	}
+    	else {
+            // Current syntax...
+            super.parseCommand( token1 );
+    	}
+        
+        // Set parameters and new defaults...
+    
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        if ( Alias.length() > 0 ) {
+            parameters.set ( "Alias", Alias );
+        }
+        // Reset using above information
+        if ( (TSID != null) && (TSID.length() > 0) ) {
+            parameters.set ( "TSID", TSID );
+        }
+        if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
+            parameters.set ( "IfNotFound", IfNotFound );
+        }
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
     }
-    // Reset using above information
-    if ( (TSID != null) && (TSID.length() > 0) ) {
-        parameters.set ( "TSID", TSID );
-    }
-    if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
-        parameters.set ( "IfNotFound", IfNotFound );
-    }
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
 }
 
 /**
@@ -247,8 +252,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -275,8 +279,7 @@ Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -404,8 +407,10 @@ throws InvalidCommandParameterException,
                 ts.setDataUnits ( DefaultUnits );
             }
         }
-        if ( ts != null ) {
-            ts.setAlias( Alias );
+        if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, ts, Alias, status, commandPhase);
+            ts.setAlias ( alias );
         }
 	}
 	catch ( Exception e ) {
@@ -419,7 +424,7 @@ throws InvalidCommandParameterException,
                         message, "Check the log file - report the problem to software support." ) );
 	}
 	
-	List tslist = new Vector(1);
+	List<TS> tslist = new Vector(1);
     if ( ts != null ) {
         tslist.add ( ts );
     }
@@ -457,18 +462,35 @@ throws InvalidCommandParameterException,
 /**
 Set the list of time series read in discovery phase.
 */
-private void setDiscoveryTSList ( List discovery_TS_Vector )
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
 {
-    __discovery_TS_Vector = discovery_TS_Vector;
+    __discoveryTSList = discoveryTSList;
 }
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
-{	if ( props == null ) {
-		return "TS Alias = " + getCommandName() + "()";
-	}
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 	String Alias = props.getValue( "Alias" );
 	String TSID = props.getValue( "TSID" );
     String IfNotFound = props.getValue ( "IfNotFound" );
@@ -492,7 +514,23 @@ public String toString ( PropList props )
         }
         b.append("DefaultUnits=\"" + DefaultUnits + "\"");
     }
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

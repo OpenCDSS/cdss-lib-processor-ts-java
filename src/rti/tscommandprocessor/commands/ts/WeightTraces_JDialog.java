@@ -20,12 +20,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
 import RTi.Util.GUI.JGUIUtil;
@@ -50,7 +50,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private WeightTraces_Command __command = null;// Command to edit
 private JTextArea __command_JTextArea=null;// Command as JTextArea
-private JTextField __Alias_JTextField = null;// Field for time series alias
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Field for time series alias
 private SimpleJComboBox	__EnsembleID_JComboBox = null; // Time series available to operate on.
 private SimpleJComboBox	__SpecifyWeightsHow_JComboBox = null;// Indicates how weights are specified
 private JTextArea __Year_JTextArea = null; // Field for traces
@@ -258,19 +258,42 @@ private void initialize ( JFrame parent, Command command )
         "Any trace value that is missing will cause the weighted result to be missing."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ();
-	__Alias_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
     JLabel EnsembleID_JLabel = new JLabel ("Ensemble to process:");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID parts:" ),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewTSID_JTextArea = new JTextArea ( 3, 25 );
+    __NewTSID_JTextArea.setEditable(false);
+    __NewTSID_JTextArea.setLineWrap ( true );
+    __NewTSID_JTextArea.setWrapStyleWord ( true );
+    __NewTSID_JTextArea.addKeyListener ( this );
+    // Make 3-high to fit in the edit button...
+    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
+        1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Specify to avoid confusion with TSID from original TS."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    y += 2;
+    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
+        new SimpleJButton ( "Edit", "Edit", this ) ),
+        3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
+        new SimpleJButton ( "Clear", "Clear", this ) ),
+        4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Specify weights how?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -294,27 +317,6 @@ private void initialize ( JFrame parent, Command command )
 	__Weight_JTextArea.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, new JScrollPane(__Weight_JTextArea),
 		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID parts:" ),
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __NewTSID_JTextArea = new JTextArea ( 3, 25 );
-    __NewTSID_JTextArea.setEditable(false);
-    __NewTSID_JTextArea.setLineWrap ( true );
-    __NewTSID_JTextArea.setWrapStyleWord ( true );
-    __NewTSID_JTextArea.addKeyListener ( this );
-    // Make 3-high to fit in the edit button...
-    JGUIUtil.addComponent(main_JPanel, new JScrollPane(__NewTSID_JTextArea),
-        1, y, 2, 3, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Specify to avoid confusion with TSID from original TS."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    y += 2;
-    JGUIUtil.addComponent(main_JPanel, (__edit_JButton =
-        new SimpleJButton ( "Edit", "Edit", this ) ),
-        3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, (__clear_JButton =
-        new SimpleJButton ( "Clear", "Clear", this ) ),
-        4, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

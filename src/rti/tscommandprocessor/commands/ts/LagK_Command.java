@@ -44,7 +44,9 @@ import java.util.Vector;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
 import RTi.TS.TSIdent;
@@ -52,16 +54,19 @@ import RTi.TS.TSUtil;
 
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 
@@ -72,7 +77,8 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeUtil;
 
-public class LagK_Command extends AbstractCommand implements Command
+public class LagK_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 /**
@@ -80,44 +86,51 @@ Possible values for FillNearest parameter.
 */
 protected final String _False = "False";
 protected final String _True = "True";
-	
-private boolean  __param_FillNearest = false;	// Flag indicating that missing
-						// data points are filled with
-						// nearby non-missing data
-private double   __param_DefaultFlow = 0.0;	// Flow used in routing when
-						// missing data cannot be
-						// replaced by other means 
-private double   __param_lag;			// Time in input data intervals
-						// that the flow data will be
-						// delayed when there is no 
-						// attenuation (__param_k=0)
-private double   __param_k;			// Attenuation time in input
-						// data intervals. 
-						// K can be thought of as the
-						// ratio of storage to discharge
-	
-private int      __param_numStates;		// Number of initial values
-						// (states) required for the
-						// computation during the first
-						// calculation time steps
-private double[] __param_InflowStates;		// Inflow data values prior to
-						// the first calculation time
-						// step (
-						//__param_numStates values).
-						// __param_InflowStates[0] is
-						// the last value prior to the
-						// first calculation time step
-private double[] __param_OutflowStates;		// Outflow data values prior to
-						// the first calculation time
-						// step
-private double   __lag_fraction = 0.0;		// Fraction of a time interval
-						// to be lagged if __param_lag
-						// is not evenly divisible by
-						// the input data interval
-private int	 __searchWindowIntervals = 0;	// Number of intervals to search
-						// for non-missing data in both
-						// directions when
-						// __param_FillNearest is true
+
+/**
+List of time series read during discovery.  These are TS objects but with mainly the
+metadata (TSIdent) filled in.
+*/
+private List<TS> __discoveryTSList = null;
+
+/**
+Flag indicating that missing data points are filled with nearby non-missing data.
+*/
+private boolean __param_FillNearest = false;
+/**
+Flow used in routing when missing data cannot be replaced by other means.
+*/
+private double __param_DefaultFlow = 0.0;
+/**
+Time in input data intervals that the flow data will be delayed when there is no attenuation (__param_k=0).
+*/
+private double __param_lag;
+/**
+Attenuation time in input data intervals. 
+K can be thought of as the ratio of storage to discharge.
+*/
+private double __param_k;
+/**
+Number of initial values (states) required for the computation during the first calculation time steps
+*/
+private int __param_numStates;
+/**
+Inflow data values prior to the first calculation time step (__param_numStates values).
+__param_InflowStates[0] is the last value prior to the first calculation time step
+*/
+private double[] __param_InflowStates;
+/**
+Outflow data values prior to the first calculation time step
+*/
+private double[] __param_OutflowStates;
+/**
+Fraction of a time interval to be lagged if __param_lag is not evenly divisible by the input data interval
+ */
+private double __lag_fraction = 0.0;
+/**
+Number of intervals to search for non-missing data in both directions when __param_FillNearest is true
+*/
+private int	 __searchWindowIntervals = 0;
 
 /**
 Constructor.
@@ -145,6 +158,7 @@ throws InvalidCommandParameterException
     status.clearLog(CommandPhaseType.INITIALIZATION);
 	
 	// Get the properties from the PropList parameters.
+    String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID" );
 	String ObsTSID = parameters.getValue( "ObsTSID" );
 	String DefaultFlow = parameters.getValue( "DefaultFlow" );
@@ -153,6 +167,14 @@ throws InvalidCommandParameterException
 	String Lag = parameters.getValue( "Lag" );
 	String InflowStates = parameters.getValue( "InflowStates" );
 	String OutflowStates = parameters.getValue( "OutflowStates" );
+	
+    if ( (Alias == null) || (Alias.length() == 0) ) {
+        message = "The alias must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the alias for the time series to create." ) );
+    }
 	
 	// TSID - TSID will always be set from the lagK_JDialog when
 	// the OK button is pressed, but the user may edit the command without
@@ -280,7 +302,7 @@ throws InvalidCommandParameterException
 	// Throw an InvalidCommandParameterException in case of errors.
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Alias" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "ObsTSID" );
@@ -328,6 +350,34 @@ throws Throwable
 }
 
 /**
+Return the list of time series read in discovery phase.
+*/
+private List<TS> getDiscoveryTSList ()
+{
+    return __discoveryTSList;
+}
+
+/**
+Return the list of data objects read by this object in discovery mode.
+*/
+public List getObjectList ( Class c )
+{
+    List<TS> discovery_TS_Vector = getDiscoveryTSList ();
+    if ( (discovery_TS_Vector == null) || (discovery_TS_Vector.size() == 0) ) {
+        return null;
+    }
+    // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
+    TS datats = discovery_TS_Vector.get(0);
+    // Use the most generic for the base class...
+    if ( (c == TS.class) || (c == datats.getClass()) ) {
+        return discovery_TS_Vector;
+    }
+    else {
+        return null;
+    }
+}
+
+/**
 Parse the command string into a PropList of parameters.
 @param command A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
@@ -342,66 +392,77 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 	int warning_level = 2;
 
 	if ( Message.isDebugOn ) {
-		Message.printDebug ( 10, routine,
-		"Command to parse is: " + command );
+		Message.printDebug ( 10, routine, "Command to parse is: " + command );
 	}
-	 
-	String Alias = "";
-	     
-	// Since this command is of the type TS X = lagK (...), first parse the
-	// Alias (the X in the command)...
+	
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
+    }
+    else {
+    	String Alias = "";
+    	     
+    	// Since this command is of the type TS X = lagK (...), first parse the
+    	// Alias (the X in the command)...
+    
+    	String substring = command;
+    	if ( command.indexOf('=') >= 0 ) {
+    		// Because the parameters contain =, find the first = to break
+    		// the assignment TS X = lagK (...).
+    		int pos = command.indexOf('=');
+    		substring = command.substring(0,pos).trim();
+    		List<String> v = StringUtil.breakStringList ( substring, " ", StringUtil.DELIM_SKIP_BLANKS ); 
+    		// First field has format "TS Alias"
+    		Alias = (v.get(1)).trim();		
+    		// Get the main part of the command...
+    		substring = command.substring(pos + 1).trim();	
+    	}
+    	else {
+    	    // New blank command may not have alias so assign a default...
+    		Alias = "Alias";
+    	}
+    		
+    	// Split the substring into two parts: the command name and 
+    	// the parameters list within the parenthesis.
+    	List<String> tokens = StringUtil.breakStringList ( substring, "()", 0 );
+    	if ( (tokens == null) || tokens.size() < 2 ) {
+    		// Must have at least the command name and the parameter list.
+    		message = "Syntax error in \"" + command + "\".  Not enough tokens.";
+    		Message.printWarning ( warning_level, routine, message);
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    
+    	// Parse the parameters (second token in the tokens vector) needed to process the command.
+    	try {
+    		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), routine, "," ) );
+    		// If the Alias was found in the command added it to the parameters propList.	
+    		if ( (Alias != null) && (Alias.length() > 0) ) {
+    			setCommandParameter( "Alias", Alias );
+    			if ( Message.isDebugOn ) {
+    				message = "Alias is: " + Alias;
+    				Message.printDebug ( 10, routine, message );
+    			}
+    		} 	
+    	}
+    	catch ( Exception e ) {
+    		message = "Syntax error in \"" + command + "\".  Error parsing parameters.";
+    		Message.printWarning ( warning_level, routine, message );
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    }
+}
 
-	String substring = command;
-	if ( command.indexOf('=') >= 0 ) {
-		// Because the parameters contain =, find the first = to break
-		// the assignment TS X = lagK (...).
-		int pos = command.indexOf('=');
-		substring = command.substring(0,pos).trim();
-		List v = StringUtil.breakStringList (
-			substring, " ", StringUtil.DELIM_SKIP_BLANKS ); 
-		// First field has format "TS Alias"
-		Alias = ((String)v.get(1)).trim();		
-		// Get the main part of the command...
-		substring = command.substring(pos + 1).trim();	
-	}
-	else {	// New blank command may not have alias so assign a default...
-		Alias = "Alias";
-	}
-		
-	// Split the substring into two parts: the command name and 
-	// the parameters list within the parenthesis.
-	List tokens = StringUtil.breakStringList ( substring, "()", 0 );
-	if ( (tokens == null) || tokens.size() < 2 ) {
-		// Must have at least the command name and the parameter
-		// list.
-		message = "Syntax error in \"" + command +
-			"\".  Not enough tokens.";
-		Message.printWarning ( warning_level, routine, message);
-		throw new InvalidCommandSyntaxException ( message );
-	}
-
-	// Parse the parameters (second token in the tokens vector)
-	// needed to process the command.
-	try {
-		setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String) tokens.get(1), routine, "," ) );
-		// If the Alias was found in the command added it to the
-		// parameters propList.	
-		if ( (Alias != null) && (Alias.length() > 0) ) {
-			setCommandParameter( "Alias", Alias );
-			
-			if ( Message.isDebugOn ) {
-				message = "Alias is: " + Alias;
-				Message.printDebug ( 10, routine, message );
-			}
-		} 	
-	}
-	catch ( Exception e ) {
-		message = "Syntax error in \"" + command
-			+ "\".  Error parsing parameters.";
-		Message.printWarning ( warning_level, routine, message );
-		throw new InvalidCommandSyntaxException ( message );
-	}
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the
+command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
 }
 
 /**
@@ -412,8 +473,21 @@ Run the command.
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
-throws InvalidCommandParameterException, CommandWarningException,
-       CommandException
+throws InvalidCommandParameterException,
+CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more
+parameter values are invalid.
+*/
+public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "lagK_Command.runCommand", message = "";
     int dl = 10;
 	int log_level = 3;
@@ -424,7 +498,11 @@ throws InvalidCommandParameterException, CommandWarningException,
 	PropList parameters = getCommandParameters();
 	CommandProcessor processor = getCommandProcessor();
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Initialize the list
+        setDiscoveryTSList ( null );
+    }
 	
 	String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID"  );
@@ -434,86 +512,97 @@ throws InvalidCommandParameterException, CommandWarningException,
 	TS result_ts = null;		// Result time series
 	TS obs_ts = null;               // Optional observed ts
 		
-	//Get the reference (original_ts) to the time series to route
+	// Get the reference (original_ts) to the time series to route
 	
 	PropList request_params = new PropList ( "" );
-	request_params.set ( "TSID", TSID );
-	CommandProcessorRequestResultsBean bean = null;
-	int ts_pos = -1;	// No time series found
-	try { bean =
-		processor.processRequest( "IndexOf", request_params);
-		PropList bean_PropList = bean.getResultsPropList();
-		Object o_Index = bean_PropList.getContents ( "Index" );
-		if ( o_Index == null ) {
-			Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, "Null value for IndexOf(TSID=" + TSID + ") returned from processor." );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the time series to lag matches an available time series." ) );
-		}
-		else {
-		    ts_pos = ((Integer)o_Index).intValue();
-		}
-	}
-	catch ( Exception e ) {
-		Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, "Error requesting IndexOf(TSID=" + TSID + ") from processor." );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-	}
-	
-	try {
-		if ( ts_pos < 0 ) {
-			message = "The time series \"" + TSID + "\" was not defined in a previous command.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that the time series to lag matches an available time series." ) );
-		}
-		else {		
-			request_params = new PropList ( "" );
-			request_params.setUsingObject ( "Index", new Integer(ts_pos) );
-			bean = null;
-			try {
-			    bean = processor.processRequest( "GetTimeSeries", request_params);
-			}
-			catch ( Exception e ) {
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, "Error requesting GetTimeSeries(Index=" + ts_pos + "\") from processor." );
-                status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-			}
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "TS" );
-			if ( prop_contents == null ) {
-                message = "Null value for GetTimeSeries(Index=" + ts_pos + ") returned from processor.";
-				Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+    int ts_pos = -1; // No time series found
+    CommandProcessorRequestResultsBean bean = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            original_ts = tslist.get(0);
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	request_params.set ( "TSID", TSID );
+    	try { bean =
+    		processor.processRequest( "IndexOf", request_params);
+    		PropList bean_PropList = bean.getResultsPropList();
+    		Object o_Index = bean_PropList.getContents ( "Index" );
+    		if ( o_Index == null ) {
+    			Message.printWarning(log_level,
+    			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    			routine, "Null value for IndexOf(TSID=" + TSID + ") returned from processor." );
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that the time series to lag matches an available time series." ) );
-			}
-			else {
-			    original_ts = (TS)prop_contents;
-			}
-		}
-		
-	} catch ( Exception e ) {
-		message = "Unexpected error getting the time series to route.";
-		Message.printWarning ( warning_level,
-		MessageUtil.formatMessageTag(
-		command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the time series to lag matches an available time series." ) );
-	}
+    		}
+    		else {
+    		    ts_pos = ((Integer)o_Index).intValue();
+    		}
+    	}
+    	catch ( Exception e ) {
+    		Message.printWarning(log_level,
+    			MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    			routine, "Error requesting IndexOf(TSID=" + TSID + ") from processor." );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+    	}
+    	
+    	try {
+    		if ( ts_pos < 0 ) {
+    			message = "The time series \"" + TSID + "\" was not defined in a previous command.";
+    			Message.printWarning ( warning_level,
+    			MessageUtil.formatMessageTag(
+    			command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the time series to lag matches an available time series." ) );
+    		}
+    		else {		
+    			request_params = new PropList ( "" );
+    			request_params.setUsingObject ( "Index", new Integer(ts_pos) );
+    			bean = null;
+    			try {
+    			    bean = processor.processRequest( "GetTimeSeries", request_params);
+    			}
+    			catch ( Exception e ) {
+    				Message.printWarning(log_level,
+    					MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    					routine, "Error requesting GetTimeSeries(Index=" + ts_pos + "\") from processor." );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+    			}
+    			PropList bean_PropList = bean.getResultsPropList();
+    			Object prop_contents = bean_PropList.getContents ( "TS" );
+    			if ( prop_contents == null ) {
+                    message = "Null value for GetTimeSeries(Index=" + ts_pos + ") returned from processor.";
+    				Message.printWarning(warning_level,
+    					MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the time series to lag matches an available time series." ) );
+    			}
+    			else {
+    			    original_ts = (TS)prop_contents;
+    			}
+    		}
+    	}
+    	catch ( Exception e ) {
+    		message = "Unexpected error getting the time series to route.";
+    		Message.printWarning ( warning_level,
+    		MessageUtil.formatMessageTag(
+    		command_tag,++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the time series to lag matches an available time series." ) );
+    	}
+    }
 			
 	//Get the optional obs_ts
 	if( ObsTSID != null && ObsTSID.length() > 0 ) {
@@ -530,7 +619,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 					Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, "Null value for IndexOf(TSID=" + ObsTSID + ") returned from processor." );
-                    status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the time series to lag matches an available time series." ) );
 				}
@@ -543,7 +632,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 			}
@@ -553,7 +642,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 				Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count), routine, message);
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that the time series to lag matches an available time series." ) );
 			}
@@ -568,7 +657,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 					Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, "Error requesting GetTimeSeries(Index=" + ts_pos + ") from processor." );
-                    status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the time series to lag matches an available time series." ) );
 				}
@@ -578,7 +667,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 					Message.printWarning(warning_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, "Null value for GetTimeSeries(Index=" + ts_pos + ") returned from processor." );
-                    status.addToLog ( CommandPhaseType.RUN,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Verify that the time series to lag matches an available time series." ) );
 				}
@@ -591,7 +680,7 @@ throws InvalidCommandParameterException, CommandWarningException,
             Message.printWarning ( warning_level,
             MessageUtil.formatMessageTag(
             command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the time series to lag matches an available time series." ) );
 		}
@@ -611,7 +700,7 @@ throws InvalidCommandParameterException, CommandWarningException,
     		Message.printWarning ( warning_level,
     		MessageUtil.formatMessageTag(
     		command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Use ChangeInterval() to convert to a regular time series before routing." ) );
     	}
@@ -622,7 +711,7 @@ throws InvalidCommandParameterException, CommandWarningException,
     		Message.printWarning ( warning_level,
     		MessageUtil.formatMessageTag(
     		command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Change the default flow value." ) );
     	}
@@ -662,7 +751,7 @@ throws InvalidCommandParameterException, CommandWarningException,
     		Message.printWarning ( warning_level,
     		MessageUtil.formatMessageTag(
     		command_tag,++warning_count), routine, message );
-               status.addToLog ( CommandPhaseType.RUN,
+               status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that data exist for the time series." ) );
     	}
@@ -671,7 +760,7 @@ throws InvalidCommandParameterException, CommandWarningException,
     		Message.printWarning ( warning_level,
     		MessageUtil.formatMessageTag(
     		command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that data exist for the time series." ) );
     	}
@@ -682,7 +771,7 @@ throws InvalidCommandParameterException, CommandWarningException,
         original_ts.getIdentifier().getInterval() + ") - results may not be accurate.";
         Message.printWarning(log_level,
             MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.WARNING,
                 message, "Specify the K value as 0 or > .5 the time series interval." ) );
     }
@@ -696,239 +785,247 @@ throws InvalidCommandParameterException, CommandWarningException,
 			result_ts.copyHeader ( original_ts );
 			result_ts.setDate1 ( original_ts.getDate1() );
 			result_ts.setDate2 ( original_ts.getDate2() );
-			// Allocate memory
-			result_ts.allocateDataSpace(); 
+			if ( commandPhase == CommandPhaseType.RUN ) {
+    			// Allocate memory
+    			result_ts.allocateDataSpace(); 
+    
+        		// Compute the lag:
+        		// 1. Number of time steps
+        		
+        		int lag_timesteps = (int) (__param_lag/mult);
+        	
+        		// 2. Fraction as remainder, this is used for interpolation
+        		__lag_fraction = ( (double) __param_lag / (double ) mult ) - lag_timesteps;
+        					
+        		if ( Message.isDebugOn ) {
+        			Message.printDebug ( dl, routine,
+        				"Lagged timesteps: " + lag_timesteps +
+        				" Lagged fraction of timestep: "+__lag_fraction+
+        				" Delay in timesteps: " + __param_numStates );
+        		}
+        	
+        		// Read the states -- NOTE: These are user input or defaults. 
+        		// TSTool does curRently not read states from a file or database.
+        		// TODO SAM 2009-03-10 Evaluate code
+        
+        		warning_count = initializeStates ( command_tag, warning_level,warning_count );
+        
+        		// The final check on input errors.  It is done here because
+        		// initializing the states are the last use of input parameters.
+        
+        		if ( warning_count > 0 ) {
+        			// Input error (e.g., missing time series)...
+        			message = "The input data must be corrected before running the command.";
+        			Message.printWarning ( warning_level,
+        			MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+        			throw new InvalidCommandParameterException ( message );
+        		}
+        
+        		// Now loop through the data and fill in from the data array...
+        		double I1, I2, O1, O2;
+        		DateTime O2_date = new DateTime ( DateTime.DATE_FAST );
+        		int i;
+        		String inflow_string2 = "Inflow2";
+        		String outflow_string2 = "Outflow2";
+        		String inflow_string1 = "Inflow1";
+        		String outflow_string1 = "Outflow1";
+        		// Initialize the dates...
+        		// O2_date is date being processed...
+        		O2_date = new DateTime(date1);
+        		// O1_date is one interval less than the date being processed...
+        		DateTime O1_date = new DateTime(O2_date);
+        		O1_date.addInterval( base, -1*(int)mult );
+        		
+        		// I2_date is lag_timesteps before O2...
+        		// Note: lag_timesteps is an integer, fractional lags are dealt
+        		// with in the getDataValue routine
+        		DateTime I2_date = new DateTime(O2_date);
+        		I2_date.addInterval( base, (int) (-1*lag_timesteps*(int)mult) );
+        		// I1_date is one time step before I2...
+        		DateTime I1_date = new DateTime(I2_date);
+        		I1_date.addInterval( base, -1*(int)mult );
+        
+        		if ( Message.isDebugOn ) {
+        			Message.printDebug ( dl, routine,
+        				"INITIAL O2_date: " + O2_date.toString() +
+        				"  I1_date: " + I1_date.toString() +
+        				"  I2_date: " + I2_date.toString() +
+        				"  O1_date: " + O1_date.toString()
+        			);
+        		}
+        				
+        		for (	i = 0; O2_date.lessThanOrEqualTo(date2);
+        			I1_date.addInterval( base, mult ), 
+        			I2_date.addInterval( base, mult ), 
+        			O1_date.addInterval( base, mult ), 
+        			O2_date.addInterval( base, mult ), 
+        			i++ ) {
+        	
+        			if ( Message.isDebugOn ) {
+        				Message.printDebug ( dl, routine,
+        					"COMPUTING FOR Current O2_date: " +
+        					O2_date.toString() +
+        					"  I1_date: " + I1_date.toString() +
+        					"  I2_date: " + I2_date.toString() +
+        					"  O1_date: " + O1_date.toString()
+        				);
+        			}
+        	
+        			// Missing values should not occur.
+        			
+        			// Get the input flow values, relying on the input time
+        			// series and observed...
+        	
+        			// For the input values, get the data as follows:
+        			//
+        			// 1) Check the original_ts for a value, allow
+        			//    interpolation
+        			//
+        			// If missing....
+        			//
+        			// 2) Check for observed value.
+        			// 3) Check inflow time series for nearest value.
+        			// 4) Check observed time series for nearest value
+        			//    (should never happen but returns more reasonable
+        			//    value than 5).
+        			// 5) Use default flow.
+        
+        			I1 = getDataValue ( i,  true, inflow_string1,
+        					original_ts, I1_date,
+        					obs_ts, I1_date,
+        					obs_ts, I1_date, 
+        					__param_InflowStates, date1);
+        			I2 = getDataValue ( i,  true, inflow_string2,
+        					original_ts, I2_date,
+        					obs_ts, I2_date,
+        					obs_ts, I2_date, 
+        					__param_InflowStates, date1);
+        	
+        			// For the routed values, get the data as follows:
+        			//
+        			// 1) Check the result_ts for a value; do not allow
+        			//    interpolation because its values were computed
+        			//    using interpolated inflow data (if indicated by
+        			//    __param_lag)
+        			//
+        			// If missing....
+        			//
+        			// 2) Check for observed value if in first part of
+        			//    period.
+        			// 3) Check output time series for nearest value.
+        			// 4) Check inflow time series for nearest value (should
+        			//    never happen but returns more reasonable value
+        			//    than 5).
+        			// 5) Use default flow.
+        	
+        			O1 = getDataValue ( i,  false, outflow_string1,
+        					result_ts, O1_date,
+        					obs_ts, I1_date,
+        					original_ts, O1_date,
+        					__param_OutflowStates, date1);
+        	
+        			// If anything is missing, try to get the value similar
+        			// to other values...
+        	
+        			if (	original_ts.isDataMissing(I1) ||
+        				original_ts.isDataMissing(I2) ||
+        				result_ts.isDataMissing(O1) ) {
+        				// Don't have data to calculate so try to get
+        				// from other time series...
+        				//
+        				// 1) Check the result_ts for a value.
+        				//
+        				// If missing....
+        				//
+        				// 2) Check for observed value if in first part
+        				//    of period.
+        				// 3) Check output time series for nearest
+        				//    value.
+        				// 4) Use default flow.
+        				O2 = getDataValue ( i,  false, outflow_string2,
+        					result_ts, O2_date,
+        					obs_ts, I2_date,
+        					null, O2_date, 
+        					__param_OutflowStates, date1 );
+        			}
+        			else {
+        			    // Calculate the routed outflow...
+        				// This reduces to the following if no K (pass
+        				// through with no change in storage)
+        				//
+        				// O2 = I1 + I2 - O1
+        	
+        				O2 = (I1 + I2 - O1*(1.0 - 2.0*__param_k/mult))/(1.0 + 2.0*__param_k/mult);
+        			}
+        			
+        			if ( Message.isDebugOn ) {
+        				Message.printDebug ( 10, routine,
+        				"Current date: " + O2_date.toString() +
+        				"  I1: " + I1 +
+        				"  I2: " + I2 +
+        				"  O1: " + O1 +
+        				"  O2: " + O2 );
+        			}
+        	
+        			// This will then be used as O1 in next iteration...
+        			result_ts.setDataValue ( O2_date, O2 );
+        	
+        			// Do not save states at this time!
+        			// REVISIT
+        		}
+        
+        		// done	
+        		
+        		// Update the scenario
+        		TSIdent tsIdent = result_ts.getIdentifier();
+                if ( (Alias != null) && !Alias.equals("") ) {
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, result_ts, Alias, status, commandPhase);
+                    result_ts.setAlias ( alias );
+                }
+        		if ( tsIdent.getScenario().equals("") ) {
+        		    tsIdent.setScenario( "routed" );
+        		}
+        		else {
+        		    tsIdent.setScenario( tsIdent.getScenario() + "-routed" );
+        		}
+        		result_ts.setIdentifier( tsIdent );
+        		// Update the newly created time series genesis.
+        		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
+        		result_ts.addToGenesis ( "Lag: " + __param_lag + " K: "  + __param_k );
+        
+        		// Add the newly created time series to the software memory.
+        		List TSResultsList = (List) processor.getPropContents ( "TSResultsList" );
+        		TSResultsList.add( result_ts );
+        		processor.setPropContents ( "TSResultsList", TSResultsList );
+            }
+		    else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+		        // Set in the discovery list
+		        if ( result_ts != null ) {
+		            if ( (Alias != null) && !Alias.equals("") ) {
+		                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+		                    processor, result_ts, Alias, status, commandPhase);
+		                result_ts.setAlias ( alias );
+		            }
+		            List<TS> tslist = new Vector();
+		            tslist.add(result_ts);
+		            setDiscoveryTSList(tslist);
+		        }
+		    }
 		}
-		
-		// Compute the lag:
-		// 1. Number of time steps
-		
-		int lag_timesteps = (int) (__param_lag/mult);
-	
-		// 2. Fraction as remainder, this is used for interpolation
-		__lag_fraction = ( (double) __param_lag / (double ) mult ) - lag_timesteps;
-					
-		if ( Message.isDebugOn ) {
-			Message.printDebug ( dl, routine,
-				"Lagged timesteps: " + lag_timesteps +
-				" Lagged fraction of timestep: "+__lag_fraction+
-				" Delay in timesteps: " + __param_numStates );
-		}
-	
-		// Read the states -- NOTE: These are user input or defaults. 
-		// TSTool does curRently not read states from a file or database.
-		// TODO SAM 2009-03-10 Evaluate code
-
-		warning_count = initializeStates ( command_tag, warning_level,warning_count );
-
-		// The final check on input errors.  It is done here because
-		// initializing the states are the last use of input parameters.
-
-		if ( warning_count > 0 ) {
-			// Input error (e.g., missing time series)...
-			message = "The input data must be corrected before running the command.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-			throw new InvalidCommandParameterException ( message );
-		}
-
-		// Now loop through the data and fill in from the data array...
-		double I1, I2, O1, O2;
-		DateTime O2_date = new DateTime ( DateTime.DATE_FAST );
-		int i;
-		String inflow_string2 = "Inflow2";
-		String outflow_string2 = "Outflow2";
-		String inflow_string1 = "Inflow1";
-		String outflow_string1 = "Outflow1";
-		// Initialize the dates...
-		// O2_date is date being processed...
-		O2_date = new DateTime(date1);
-		// O1_date is one interval less than the date being processed...
-		DateTime O1_date = new DateTime(O2_date);
-		O1_date.addInterval( base, -1*(int)mult );
-		
-		// I2_date is lag_timesteps before O2...
-		// Note: lag_timesteps is an integer, fractional lags are dealt
-		// with in the getDataValue routine
-		DateTime I2_date = new DateTime(O2_date);
-		I2_date.addInterval( base, (int) (-1*lag_timesteps*(int)mult) );
-		// I1_date is one time step before I2...
-		DateTime I1_date = new DateTime(I2_date);
-		I1_date.addInterval( base, -1*(int)mult );
-
-		if ( Message.isDebugOn ) {
-			Message.printDebug ( dl, routine,
-				"INITIAL O2_date: " + O2_date.toString() +
-				"  I1_date: " + I1_date.toString() +
-				"  I2_date: " + I2_date.toString() +
-				"  O1_date: " + O1_date.toString()
-			);
-		}
-				
-		for (	i = 0; O2_date.lessThanOrEqualTo(date2);
-			I1_date.addInterval( base, mult ), 
-			I2_date.addInterval( base, mult ), 
-			O1_date.addInterval( base, mult ), 
-			O2_date.addInterval( base, mult ), 
-			i++ ) {
-	
-			if ( Message.isDebugOn ) {
-				Message.printDebug ( dl, routine,
-					"COMPUTING FOR Current O2_date: " +
-					O2_date.toString() +
-					"  I1_date: " + I1_date.toString() +
-					"  I2_date: " + I2_date.toString() +
-					"  O1_date: " + O1_date.toString()
-				);
-			}
-	
-			// Missing values should not occur.
-			
-			// Get the input flow values, relying on the input time
-			// series and observed...
-	
-			// For the input values, get the data as follows:
-			//
-			// 1) Check the original_ts for a value, allow
-			//    interpolation
-			//
-			// If missing....
-			//
-			// 2) Check for observed value.
-			// 3) Check inflow time series for nearest value.
-			// 4) Check observed time series for nearest value
-			//    (should never happen but returns more reasonable
-			//    value than 5).
-			// 5) Use default flow.
-
-			I1 = getDataValue ( i,  true, inflow_string1,
-					original_ts, I1_date,
-					obs_ts, I1_date,
-					obs_ts, I1_date, 
-					__param_InflowStates, date1);
-			I2 = getDataValue ( i,  true, inflow_string2,
-					original_ts, I2_date,
-					obs_ts, I2_date,
-					obs_ts, I2_date, 
-					__param_InflowStates, date1);
-	
-			// For the routed values, get the data as follows:
-			//
-			// 1) Check the result_ts for a value; do not allow
-			//    interpolation because its values were computed
-			//    using interpolated inflow data (if indicated by
-			//    __param_lag)
-			//
-			// If missing....
-			//
-			// 2) Check for observed value if in first part of
-			//    period.
-			// 3) Check output time series for nearest value.
-			// 4) Check inflow time series for nearest value (should
-			//    never happen but returns more reasonable value
-			//    than 5).
-			// 5) Use default flow.
-	
-			O1 = getDataValue ( i,  false, outflow_string1,
-					result_ts, O1_date,
-					obs_ts, I1_date,
-					original_ts, O1_date,
-					__param_OutflowStates, date1);
-	
-			// If anything is missing, try to get the value similar
-			// to other values...
-	
-			if (	original_ts.isDataMissing(I1) ||
-				original_ts.isDataMissing(I2) ||
-				result_ts.isDataMissing(O1) ) {
-				// Don't have data to calculate so try to get
-				// from other time series...
-				//
-				// 1) Check the result_ts for a value.
-				//
-				// If missing....
-				//
-				// 2) Check for observed value if in first part
-				//    of period.
-				// 3) Check output time series for nearest
-				//    value.
-				// 4) Use default flow.
-				O2 = getDataValue ( i,  false, outflow_string2,
-					result_ts, O2_date,
-					obs_ts, I2_date,
-					null, O2_date, 
-					__param_OutflowStates, date1 );
-			}
-			else {
-			    // Calculate the routed outflow...
-				// This reduces to the following if no K (pass
-				// through with no change in storage)
-				//
-				// O2 = I1 + I2 - O1
-	
-				O2 = (I1 + I2 - O1*(1.0 - 2.0*__param_k/mult))/(1.0 + 2.0*__param_k/mult);
-			}
-			
-			if ( Message.isDebugOn ) {
-				Message.printDebug ( 10, routine,
-				"Current date: " + O2_date.toString() +
-				"  I1: " + I1 +
-				"  I2: " + I2 +
-				"  O1: " + O1 +
-				"  O2: " + O2 );
-			}
-	
-			// This will then be used as O1 in next iteration...
-			result_ts.setDataValue ( O2_date, O2 );
-	
-			// Do not save states at this time!
-			// REVISIT
-		}
-
-		// done	
-		
-		// Update the scenario
-		TSIdent tsIdent = result_ts.getIdentifier();
-		tsIdent.setAlias ( Alias );
-		if ( tsIdent.getScenario().equals("") ) {
-		    tsIdent.setScenario( "routed" );
-		}
-		else {
-		    tsIdent.setScenario( tsIdent.getScenario() + "-routed" );
-		}
-		result_ts.setIdentifier( tsIdent );
-		// Update the newly created time series genesis.
-		result_ts.addToGenesis ( "Routed data from " + original_ts.getIdentifierString());
-		result_ts.addToGenesis ( "Lag: " + __param_lag + " K: "  + __param_k );
-
-		// Add the newly created time series to the software memory.
-		List TSResultsList = (List) processor.getPropContents ( "TSResultsList" );
-		TSResultsList.add( result_ts );
-		processor.setPropContents ( "TSResultsList", TSResultsList );
-		TSResultsList = null;
-		
-		I1_date       = null;
-		I2_date       = null;
-		O1_date       = null;
-		O2_date       = null;
-
 	} 
 	catch ( Exception e ) {
-        message ="Unexpected error lagging the time series (" + e + ").";
+        message = "Unexpected error lagging the time series (" + e + ").";
         Message.printWarning ( warning_level,
         MessageUtil.formatMessageTag(
         command_tag,++warning_count),routine,message );
         Message.printWarning(3,routine,e);
-           status.addToLog ( CommandPhaseType.RUN,
+           status.addToLog ( commandPhase,
              new CommandLogRecord(CommandStatusType.FAILURE,
             message, "See the log file for details." ) );
 		throw new CommandException ( message );
 	}
 
-	// Clean up
-	original_ts   = null;
-	result_ts     = null;
-	
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -938,7 +1035,7 @@ throws InvalidCommandParameterException, CommandWarningException,
 			routine, message );
 		throw new CommandWarningException ( message );
 	}
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -948,7 +1045,7 @@ private int getStatesIndex( TS ts, DateTime ts_date, DateTime sim_startdate) {
 
 	int dl = 30;
 
-	if ( (ts_date).lessThan(sim_startdate) ) {
+	if ( ts_date.lessThan(sim_startdate) ) {
 
 		int intervalsInStates = TimeUtil.getNumIntervals( ts_date, sim_startdate,
 				ts.getDataIntervalBase(),
@@ -1318,22 +1415,40 @@ throws CommandWarningException
 }
 
 /**
+Set the list of time series read in discovery phase.
+*/
+private void setDiscoveryTSList ( List<TS> discoveryTSList )
+{
+    __discoveryTSList = discoveryTSList;
+}
+
+/**
 Return the string representation of the command.
-@param props PropList of Command properties
+@param props parameters for the command
 */
 public String toString ( PropList props )
 {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 
 	// Get the properties from the command; 
 	String Alias = props.getValue( "Alias" );
-	if ( (Alias == null) || (Alias.length() == 0) ) {
-		// Can occur when first editing...
-		Alias = "X";	// Default
-	}
-
 	String TSID = props.getValue( "TSID" );
 	String ObsTSID = props.getValue("ObsTSID");
 	String DefaultFlow = props.getValue("DefaultFlow");
@@ -1388,8 +1503,23 @@ public String toString ( PropList props )
 		}
 		b.append ( "OutflowStates=\"" + OutflowStates + "\"" );
 	}
-	return "TS " + Alias + " = " +
-		getCommandName() + "(" + b.toString() + ")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

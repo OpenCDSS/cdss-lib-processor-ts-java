@@ -21,10 +21,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -35,7 +35,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private ReadTimeSeries_Command __command= null; // Command as Vector of String
 private JTextArea __command_JTextArea=null;// Command as TextField
-private JTextField __Alias_JTextField = null;// Field for time series alias
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Field for time series alias
 private JTextField __TSID_JTextField=null;
 private SimpleJComboBox __IfNotFound_JComboBox = null;
 private JTextField __DefaultUnits_JTextField = null; // Default units when blank time series is created.
@@ -48,7 +48,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadTimeSeries_JDialog (	JFrame parent, Command command )
+public ReadTimeSeries_JDialog (	JFrame parent, ReadTimeSeries_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -142,8 +142,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ReadTimeSeries_Command)command;
+private void initialize ( JFrame parent, ReadTimeSeries_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -172,19 +172,21 @@ private void initialize ( JFrame parent, Command command )
         "See also the CreateFromList() command."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( "", 60 );
-	__Alias_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel,new JLabel("Time series identifier:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JTextField = new JTextField ( 60 );
 	__TSID_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST );
+        
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel,new JLabel("If time series not found?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -233,7 +235,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );

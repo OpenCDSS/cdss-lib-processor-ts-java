@@ -23,6 +23,7 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -36,7 +37,8 @@ import RTi.Util.String.StringUtil;
 /**
 This class initializes, checks, and runs the WeightTraces() command.
 */
-public class WeightTraces_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class WeightTraces_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 /**
@@ -256,42 +258,48 @@ public List getObjectList ( Class c )
 Parse the command string into a PropList of parameters.  Only new syntax is
 supported because the command has not been used for a long time and now operates
 on an EnsembleID (very old used convoluted TSID with sequence number).
-@param command_string A string command to parse.
+@param commandString A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command_string )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {   int warning_level = 2;
     String routine = "WeightTraces_Command.parseCommand", message;
-    
-    // Get the part of the command after the TS Alias =...
-    int pos = command_string.indexOf ( "=" );
-    if ( pos < 0 ) {
-        message = "Syntax error in \"" + command_string + "\".  Expecting:  TS Alias = WeightTraces(...)";
-        Message.printWarning ( warning_level, routine, message);
-        throw new InvalidCommandSyntaxException ( message );
+
+    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(commandString);
     }
-    String token0 = command_string.substring ( 0, pos ).trim();    // TS Alias
-    String token1 = command_string.substring ( pos + 1 ).trim();   // command(...)
-    if ( (token0 == null) || (token1 == null) ) {
-        message = "Syntax error in \"" + command_string + "\".  Expecting:  TS Alias = WeightTraces(...)";
-        Message.printWarning ( warning_level, routine, message);
-        throw new InvalidCommandSyntaxException ( message );
+    else {
+        // Get the part of the command after the TS Alias =...
+        int pos = commandString.indexOf ( "=" );
+        if ( pos < 0 ) {
+            message = "Syntax error in \"" + commandString + "\".  Expecting:  TS Alias = WeightTraces(...)";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
+        }
+        String token0 = commandString.substring ( 0, pos ).trim();    // TS Alias
+        String token1 = commandString.substring ( pos + 1 ).trim();   // command(...)
+        if ( (token0 == null) || (token1 == null) ) {
+            message = "Syntax error in \"" + commandString + "\".  Expecting:  TS Alias = WeightTraces(...)";
+            Message.printWarning ( warning_level, routine, message);
+            throw new InvalidCommandSyntaxException ( message );
+        }
+        
+        // Get the alias from the first token before the equal sign...
+        
+        String Alias = StringUtil.getToken ( token0, " ", StringUtil.DELIM_SKIP_BLANKS, 1 );
+        super.parseCommand( token1 );
+        
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+        parameters.set ( "Alias", Alias );
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
+        setCommandParameters ( parameters );
     }
-    
-    // Get the alias from the first token before the equal sign...
-    
-    String Alias = StringUtil.getToken ( token0, " ", StringUtil.DELIM_SKIP_BLANKS, 1 );
-    super.parseCommand( token1 );
-    
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    parameters.set ( "Alias", Alias );
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
-    setCommandParameters ( parameters );
 }
 
 /**
@@ -299,8 +307,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -313,8 +320,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -327,12 +333,10 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
-throws InvalidCommandParameterException,
-CommandWarningException, CommandException
+throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "WeightTraces_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
@@ -464,7 +468,11 @@ CommandWarningException, CommandException
             // new time series identifier, and clear out the data.
             if ( newts == null ) {
                 newts = (TS)ts.clone();
-                newts.setAlias ( Alias );
+                if ( (Alias != null) && !Alias.equals("") ) {
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, newts, Alias, status, commandPhase);
+                    newts.setAlias ( alias );
+                }
                 newts.setIdentifier ( NewTSID );
                 // Set the description to empty since it will be reset in the TSUtil.add call below.
                 newts.setDescription("");
@@ -539,11 +547,28 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
-{	if ( props == null ) {
-		return "TS Alias = " + getCommandName() + "()";
-	}
+{
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
     String Alias = props.getValue( "Alias" );
 	String EnsembleID = props.getValue( "EnsembleID" );
 	String SpecifyWeightsHow = props.getValue( "SpecifyWeightsHow" );
@@ -574,8 +599,23 @@ public String toString ( PropList props )
         }
         b.append ( "NewTSID=\"" + NewTSID + "\"" );
     }
-
-	return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

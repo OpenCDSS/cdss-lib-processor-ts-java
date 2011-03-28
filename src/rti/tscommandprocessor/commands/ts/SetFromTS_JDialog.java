@@ -303,13 +303,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -321,7 +321,9 @@ private void initialize ( JFrame parent, Command command )
     __IndependentTSID_JLabel = new JLabel (
             "Independent TSID (for Independent TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __IndependentTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids, y );
+    List<String> tsids2 = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __IndependentTSID_JLabel, __IndependentTSID_JComboBox, tsids2, y );
     
     __IndependentEnsembleID_JLabel = new JLabel (
             "Independent EnsembleID (for Independent TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
@@ -495,11 +497,11 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __TSID_JComboBox.select ( TSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+            // Automatically add to the list after the blank...
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
@@ -539,17 +541,19 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __IndependentTSID_JComboBox, IndependentTSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __IndependentTSID_JComboBox.select ( IndependentTSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __IndependentTSID_JComboBox, IndependentTSID,
+            JGUIUtil.NONE, null, null ) ) {
+            __IndependentTSID_JComboBox.select ( IndependentTSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+            // Automatically add to the list after the blank...
             if ( (IndependentTSID != null) && (IndependentTSID.length() > 0) ) {
                 __IndependentTSID_JComboBox.insertItemAt ( IndependentTSID, 1 );
                 // Select...
                 __IndependentTSID_JComboBox.select ( IndependentTSID );
             }
-            else {  // Select the blank...
+            else {
+                // Select the blank...
                 __IndependentTSID_JComboBox.select ( 0 );
             }
         }
@@ -653,7 +657,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

@@ -25,6 +25,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -39,7 +40,7 @@ implements ActionListener, ItemListener, KeyListener, WindowListener
 private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private Disaggregate_Command __command = null;
-private JTextField __Alias_JTextField = null;// Alias for new time series
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Alias for new time series
 private SimpleJComboBox __TSID_JComboBox = null;// Time series available to operate on.
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox	__Method_JComboBox = null;// Disaggregation method.
@@ -193,12 +194,14 @@ private void initialize ( JFrame parent, Command command )
 		"The SameValue method can disaggregate Year->Month, Month->Day, Day->NHour, Hour->NMinute."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( "" );
-	__Alias_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Original time series:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -272,7 +275,7 @@ private void initialize ( JFrame parent, Command command )
 
 	// Visualize it...
 
-    setTitle ( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
+    setTitle ( "Edit " + __command.getCommandName() + "() Command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );

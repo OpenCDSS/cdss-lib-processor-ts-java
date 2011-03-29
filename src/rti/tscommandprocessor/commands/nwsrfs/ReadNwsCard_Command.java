@@ -1,23 +1,3 @@
-//------------------------------------------------------------------------------
-// readNwsCard_Command - handle the readNwsCard() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-11	Luiz Teixeira, RTi	Initial version.
-// 2005-05-16	Luiz Teixeira, RTi	Clean up and documentation.
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2005-12-06	J. Thomas Sapienza, RTi	Added Read24HourAsDay parameter.
-// 2005-12-12	JTS, RTi		readTimeSeries() call now passes in
-//					a control PropList.
-// 2006-01-04	JTS, RTi		Corrected many problems after review by
-//					SAM.
-// 2006-01-18	JTS, RTi		Moved from RTi.TS package.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-//------------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.nwsrfs;
 
 import javax.swing.JFrame;
@@ -34,6 +14,7 @@ import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -54,12 +35,10 @@ import RTi.Util.Time.DateTime;
 import RTi.DMI.NWSRFS_DMI.NWSCardTS;
 
 /**
-<p>
-This class initializes, checks, and runs the TS Alias and non-TS Alias 
-ReadNwsCard() commands.
-</p>
+This class initializes, checks, and runs the ReadNwsCard() command.
 */
-public class ReadNwsCard_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadNwsCard_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 protected static final String
@@ -79,15 +58,10 @@ TSEnsemble created in discovery mode (to provide the identifier for other comman
 private TSEnsemble __tsensemble = null;
 
 /**
-List of time series read during discovery.  These are TS objects but with maintly the
+List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
-
-/**
-Indicates whether the TS Alias version of the command is being used.
-*/
-protected boolean _use_alias = false;
 
 /**
 Constructor.
@@ -128,14 +102,6 @@ throws InvalidCommandParameterException
 	String Read24HourAsDay = parameters.getValue("Read24HourAsDay");
 	String Alias = parameters.getValue("Alias");
     
-	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
-	    message = "The Alias must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify an alias." ) );
-    }
-
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
             // do not allow spaces in the alias
@@ -330,14 +296,10 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-    if ( _use_alias ) {
-        valid_Vector.add ( "Alias" );
-    }
-    else {
-        valid_Vector.add ( "EnsembleID" );
-        valid_Vector.add ( "EnsembleName" );
-    }
+	List<String> valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "EnsembleName" );
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
@@ -349,8 +311,7 @@ throws InvalidCommandParameterException
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+				command_tag, warning_level ), warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -429,68 +390,70 @@ public List getObjectList ( Class c )
 
 /**
 Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
+@param commandString A string command to parse.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param warning_level The warning level to use when printing parse warnings (recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command_string )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	
-	int index = command_string.indexOf("(");
-	String str = command_string.substring(index);
-	index = str.indexOf("=");
 
-    // This is the new format of parsing, where parameters are
-	// specified as "InputFilter=", etc.
-	String routine = "ReadNwsCard_Command.parseCommand", message;
-	
-    String Alias = null;
-	int warning_count = 0;
-    if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-        // There is an alias specified.  Extract the alias from the full command.
-        _use_alias = true;
-        str = command_string.substring(3); 
-        index = str.indexOf("=");
-        int index2 = str.indexOf("(");
-        if (index2 < index) {
-            // no alias specified -- badly-formed command
-            Alias = "Invalid_Alias";
-            message = "No alias was specified, although the command started with \"TS ...\"";
-            Message.printWarning(warning_level, routine, message);
-                ++warning_count;
-            throw new InvalidCommandSyntaxException(message);
-        }
-
-        Alias = str.substring(0, index).trim();
-        // Parse the command parameters...
-        super.parseCommand ( command_string.substring(index+1).trim() );
-        PropList parameters = getCommandParameters();
-        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-        parameters.set ( "Alias", Alias );
-        parameters.setHowSet ( Prop.SET_UNKNOWN );
-        setCommandParameters ( parameters );
+    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(commandString);
     }
     else {
-        _use_alias = false;
-        super.parseCommand ( command_string );
+    	int index = commandString.indexOf("(");
+    	String str = commandString.substring(index);
+    	index = str.indexOf("=");
+    
+        // This is the new format of parsing, where parameters are
+    	// specified as "InputFilter=", etc.
+    	String routine = "ReadNwsCard_Command.parseCommand", message;
+    	
+        String Alias = null;
+    	int warning_count = 0;
+        if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
+            // There is an alias specified.  Extract the alias from the full command.
+            str = commandString.substring(3); 
+            index = str.indexOf("=");
+            int index2 = str.indexOf("(");
+            if (index2 < index) {
+                // no alias specified -- badly-formed command
+                Alias = "Invalid_Alias";
+                message = "No alias was specified, although the command started with \"TS ...\"";
+                Message.printWarning(warning_level, routine, message);
+                    ++warning_count;
+                throw new InvalidCommandSyntaxException(message);
+            }
+    
+            Alias = str.substring(0, index).trim();
+            // Parse the command parameters...
+            super.parseCommand ( commandString.substring(index+1).trim() );
+            PropList parameters = getCommandParameters();
+            parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+            parameters.set ( "Alias", Alias );
+            parameters.setHowSet ( Prop.SET_UNKNOWN );
+            setCommandParameters ( parameters );
+        }
+        else {
+            super.parseCommand ( commandString );
+        }
+     
+     	// The following is for backwards compatibility with old commands files.
+        PropList parameters = getCommandParameters ();
+    	if (parameters.getValue("InputStart") == null) {
+    		parameters.set("InputStart", parameters.getValue("ReadStart"));
+    	}
+    	if ( parameters.getValue("InputEnd") == null) {
+    		parameters.set("InputEnd", parameters.getValue(	"ReadEnd"));
+    	}
     }
- 
- 	// The following is for backwards compatibility with old commands files.
-    PropList parameters = getCommandParameters ();
-	if (parameters.getValue("InputStart") == null) {
-		parameters.set("InputStart", parameters.getValue("ReadStart"));
-	}
-	if ( parameters.getValue("InputEnd") == null) {
-		parameters.set("InputEnd", parameters.getValue(	"ReadEnd"));
-	}
 }
 
 /**
@@ -498,8 +461,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -512,8 +474,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -526,8 +487,7 @@ Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -701,7 +661,7 @@ throws InvalidCommandParameterException,
 	props.set("Read24HourAsDay=" + Read24HourAsDay);
 
 	// Read the NWS Card file.
-	List tslist = null;   // Keep the list of time series
+	List<TS> tslist = null;   // Keep the list of time series
     String InputFile_full = InputFile;
 	try {
         boolean read_data = true;
@@ -720,33 +680,22 @@ throws InvalidCommandParameterException,
         else {
     		tslist = NWSCardTS.readTimeSeriesList (
     			// TODO [LT 2005-05-17] May add the TSID parameter (1st parameter here) in the future.
-    			(TS) null,    		// Currently not used.
+    			(TS) null, // Currently not used.
     			InputFile_full,
     			InputStart_DateTime,
     			InputEnd_DateTime,
     			NewUnits,
     			read_data,
-    			props );			// whether to read 24 hour as day.
+    			props ); // whether to read 24 hour as day.
     			
     		if ( tslist != null ) {
     			int tscount = tslist.size();
-    			message = "Read \"" + tscount + "\" time series from \"" + InputFile_full + "\"";
+    			message = "Read \"" + tscount + "\" time series from NWS CARD file \"" + InputFile_full + "\"";
     			Message.printStatus ( 2, routine, message );
-    			TS ts = null;
-                if ( _use_alias ) {
-                    // There should only be one time series for this type of command.  Otherwise every
-                    // time series will get the same alias.
-                    if ( tscount > 1 ) {
-                        message = "The NwsCard file \"" + InputFile_full + "\" has multiple time series traces." +
-                        " All are being assigned the same alias.";
-                        status.addToLog(command_phase,
-                            new CommandLogRecord(
-                            CommandStatusType.WARNING, message,"Use the ReadNwsCard() command without the alias."));
-                    }
-                    for (int i = 0; i < tscount; i++) {
-                        ts = (TS)tslist.get(i);
-                        ts.setAlias(Alias);
-                    }
+                for ( TS ts : tslist ) {
+                    String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                        processor, ts, Alias, status, command_phase);
+                    ts.setAlias(alias);
                 }
     		}
         }
@@ -762,12 +711,6 @@ throws InvalidCommandParameterException,
 		throw new CommandException ( message );
 	}
     
-    int size = 0;
-    if ( tslist != null ) {
-        size = tslist.size();
-    }
-    Message.printStatus ( 2, routine, "Read " + size + " NWS Card time series." );
-
     if ( command_phase == CommandPhaseType.RUN ) {
         if ( tslist != null ) {
             // Further process the time series...
@@ -842,17 +785,28 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
 {
-	if ( props == null ) {
-	    if ( _use_alias ) {
-	        return "TS Alias = " + getCommandName() + "()";
-	    }
-	    else {
-	        return getCommandName() + "()";
-	    }
-	}
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 
 	String Alias = props.getValue("Alias");
 	String InputFile = props.getValue("InputFile" );
@@ -869,20 +823,18 @@ public String toString ( PropList props )
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
-	if ( !_use_alias ) {
-	    if ((EnsembleID != null) && (EnsembleID.length() > 0)) {
-	        if (b.length() > 0) {
-	            b.append(",");
-	        }
-	        b.append("EnsembleID=\"" + EnsembleID + "\"");
-	    }
-	    if ((EnsembleName != null) && (EnsembleName.length() > 0)) {
-	        if (b.length() > 0) {
-	            b.append(",");
-	        }
-	        b.append("EnsembleName=\"" + EnsembleName + "\"");
-	    }
-	}
+    if ((EnsembleID != null) && (EnsembleID.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("EnsembleID=\"" + EnsembleID + "\"");
+    }
+    if ((EnsembleName != null) && (EnsembleName.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("EnsembleName=\"" + EnsembleName + "\"");
+    }
 
 	// New Units
 	if ((NewUnits != null) && (NewUnits.length() > 0)) {
@@ -915,12 +867,23 @@ public String toString ( PropList props )
 		b.append("Read24HourAsDay=" + Read24HourAsDay + "");
 	}
 
-    String lead = "";
-	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
-		lead = "TS " + Alias + " = ";
-	}
-
-	return lead + getCommandName() + "(" + b.toString() + ")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
-} // end readNwsCard_Command
+}

@@ -1,16 +1,3 @@
-// ----------------------------------------------------------------------------
-// readNWSRFSFS5Files_JDialog - editor for TS x = readNWSRFSFS5Files() and
-//					readNWSRFSFS5Files().
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2004-09-11	Steven A. Malers, RTi	Initial version (copy and modify
-//					readHydroBase_JDialog).
-// 2007-02-26	SAM, RTi		Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.nwsrfs;
 
 import java.awt.FlowLayout;
@@ -26,8 +13,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.util.List;
-import java.util.Vector;
+//import java.util.List;
+//import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -41,23 +28,19 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-//import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
-import RTi.DMI.NWSRFS_DMI.NWSRFS_TS_InputFilter_JPanel;
-
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 
-import RTi.Util.GUI.InputFilter_JPanel;
+//import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 /**
-Editor dialog for the the TS Alias = ReadNwsrfsFS5Files() and ReadNwsrfsFS5Files commands (the latter is
-not yet enabled).
+Editor dialog for the the ReadNwsrfsFS5Files().
 */
 public class ReadNwsrfsFS5Files_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
@@ -71,8 +54,8 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__browse_JButton = null,	// To pick FS5Files dir
 			__path_JButton = null;	// Convert between relative and absolute paths
 private ReadNwsrfsFS5Files_Command __command = null;
-private JTextField	__Alias_JTextField = null,// Alias for time series.
-			__Location_JTextField,	// Location part of TSID
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;// Alias for time series.
+private JTextField __Location_JTextField, // Location part of TSID
 			__DataSource_JTextField,// Data source part of TSID
 			__DataType_JTextField,	// Data type part of TSID
 			__Interval_JTextField,	// Interval part of TSID
@@ -82,12 +65,11 @@ private JTextField	__Alias_JTextField = null,// Alias for time series.
 			__InputEnd_JTextField,
 			__Units_JTextField;	// Units to return
 private JTextArea __command_JTextArea = null;
-private List __input_filter_JPanel_Vector = new Vector();
-private InputFilter_JPanel __input_filter_NWSRFS_FS5Files_JPanel = null;
+//private List __input_filter_JPanel_Vector = new Vector();
+//private InputFilter_JPanel __input_filter_NWSRFS_FS5Files_JPanel = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up?
 private String __working_dir = null;	// Working directory.
 private boolean __first_time = true;
-private boolean __isAliasVersion = true;  // Currently only alias version is supported
 private boolean __ok = false;
 
 /**
@@ -95,7 +77,7 @@ Command editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Time series command to edit.
 */
-public ReadNwsrfsFS5Files_JDialog( JFrame parent, Command command )
+public ReadNwsrfsFS5Files_JDialog( JFrame parent, ReadNwsrfsFS5Files_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -178,10 +160,7 @@ private void checkInput ()
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
     String Units = __Units_JTextField.getText().trim();
-    String Alias = null;
-    if (__isAliasVersion) { 
-        Alias = __Alias_JTextField.getText().trim();
-    }
+    String Alias = __Alias_JTextField.getText().trim();
     
     __error_wait = false;
     
@@ -216,7 +195,7 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits()
-{
+{   String Alias = __Alias_JTextField.getText().trim();
     String TSID = __TSID_JTextField.getText().trim();
     String InputStart = __InputStart_JTextField.getText().trim();
     String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -226,11 +205,7 @@ private void commitEdits()
     __command.setCommandParameter("InputStart", InputStart);
     __command.setCommandParameter("InputEnd", InputEnd);
     __command.setCommandParameter("Units", Units);
-    
-    if (__isAliasVersion) {
-        String Alias = __Alias_JTextField.getText().trim();
-        __command.setCommandParameter("Alias", Alias);
-    }
+    __command.setCommandParameter("Alias", Alias);
 }
 
 /**
@@ -251,11 +226,10 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	String routine = "ReadNwsrfsFS5Files_JDialog.initialize";
-	__command = (ReadNwsrfsFS5Files_Command)command;
+private void initialize ( JFrame parent, ReadNwsrfsFS5Files_Command command )
+{
+	__command = command;
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
-	__isAliasVersion = true;
 
 	addWindowListener( this );
 
@@ -266,20 +240,9 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-	if ( __isAliasVersion ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from the NWSRFS FS5Files."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Read a single time series from the NWSRFS FS5Files and assign it an alias."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-	else {
-	    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read one or more time series from the NWSRFS FS5Files."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The data type and interval must be selected.  Constrain the " +
-		"query using the \"where\" clauses, if necessary." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Refer to the NWSRFS FS5Files Input Type documentation for " +
 		"possible data type and interval values." ), 
@@ -295,30 +258,23 @@ private void initialize ( JFrame parent, Command command )
 	"If the FS5Files directory is not specified, App Defaults will be used."),
 	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	if ( __isAliasVersion ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Alias_JTextField = new JTextField ( 30 );
-		__Alias_JTextField.addKeyListener ( this );
-		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Location:"),
+	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Location_JTextField = new JTextField ( "" );
+	__Location_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
+	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - station or area ID."),
+	3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Location:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Location_JTextField = new JTextField ( "" );
-		__Location_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: station or area ID."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-       	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data source:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__DataSource_JTextField = new JTextField ( "NWSRFS" );
-		__DataSource_JTextField.setEditable ( false );
-        	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	}
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data source:"),
+	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__DataSource_JTextField = new JTextField ( "NWSRFS" );
+	__DataSource_JTextField.setEditable ( false );
+    	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
+	1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Default to NWSRFS."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -326,7 +282,7 @@ private void initialize ( JFrame parent, Command command )
 	__DataType_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataType_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: MAP, QIN."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - for example: MAP, QIN."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"),
@@ -335,9 +291,10 @@ private void initialize ( JFrame parent, Command command )
 	__Interval_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Interval_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("For example: 6Hour, 24Hour."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - for example: 6Hour, 24Hour."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    /*
 	if ( !__isAliasVersion ) {
 		int buffer = 3;
 		Insets insets = new Insets(0,buffer,0,0);
@@ -358,50 +315,63 @@ private void initialize ( JFrame parent, Command command )
 			Message.printWarning ( 2, routine, e );
 		}
 	}
+	*/
 
-	if ( __isAliasVersion ) {
-	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "FS5Files directory:" ), 
-	    	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	    __InputName_JTextField = new JTextField ( 50 );
-	    __InputName_JTextField.addKeyListener ( this );
-	    JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
-	    		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	    __browse_JButton = new SimpleJButton ( "Browse", "Browse", this );
-	    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
-	    			6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If blank, use Apps Defaults."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-		
-       	JGUIUtil.addComponent(main_JPanel, new JLabel ( "TSID (full):"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__TSID_JTextField = new JTextField ( "" );
-		__TSID_JTextField.setEditable ( false );
-		// No listeners because field is not directly editable and other input will trigger refresh
-        	JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	}
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "FS5Files directory:" ), 
+    	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputName_JTextField = new JTextField ( 50 );
+    __InputName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __InputName_JTextField,
+    		1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browse_JButton = new SimpleJButton ( "Browse", "Browse", this );
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+    			6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If blank, use Apps Defaults."),
+	3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+	
+   	JGUIUtil.addComponent(main_JPanel, new JLabel ( "TSID (full):"),
+	0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__TSID_JTextField = new JTextField ( "" );
+	__TSID_JTextField.setEditable ( false );
+	// No listeners because field is not directly editable and other input will trigger refresh
+    	JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
+	1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    	
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Units:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Units_JTextField = new JTextField ( "" );
 	__Units_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
+    JGUIUtil.addComponent(main_JPanel, __Units_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"Indicate return units (e.g., CFS if database is CMS)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+	    "Optional - output units (e.g., CFS if database is CMS)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
@@ -429,12 +399,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-    if ( __isAliasVersion ) {
-        setTitle( "Edit TS Alias = " + __command.getCommandName() + "() Command" );
-    }
-    else {
-        setTitle( "Edit ReadNWSRFSFS5Files" + __command.getCommandName() + " Command" );
-    }
+    setTitle( "Edit " + __command.getCommandName() + " Command" );
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
@@ -479,14 +444,12 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "ReadNwsrfsFS5Files_JDialog.refresh";
+{	//String routine = "ReadNwsrfsFS5Files_JDialog.refresh";
 	String Alias = "";
 	__error_wait = false;
 	String TSID = "";
-	String DataType = "";
-	String Interval = "";
 	String InputName = "";
-	String filter_delim = ";";
+	//String filter_delim = ";";
 	String InputStart = "";
 	String InputEnd = "";
 	String Units = "";
@@ -503,6 +466,7 @@ private void refresh ()
         Alias = props.getValue("Alias");
 		TSID = props.getValue ( "TSID" );
 		
+		/*
 		if ( !__isAliasVersion ) {
 			if ( DataType != null ) {
 				__DataType_JTextField.setText(DataType);
@@ -511,28 +475,28 @@ private void refresh ()
 				__Interval_JTextField.setText(Interval);
 			}
 		}
-		if ( __isAliasVersion) {
-		    if ( Alias != null ) {
-		        __Alias_JTextField.setText ( Alias );
-		    }
-		    if ( TSID != null ) {
-		        try {
-		            TSIdent tsident = new TSIdent ( TSID );
-    				if ( __Location_JTextField != null ) {
-    					__Location_JTextField.setText ( tsident.getLocation() );
-    				}
-    				if ( __DataSource_JTextField != null ) {
-    					__DataSource_JTextField.setText( tsident.getSource() );
-    				}
-    				__DataType_JTextField.setText (	tsident.getType() );
-    				__Interval_JTextField.setText (	tsident.getInterval() );
-    				__InputName_JTextField.setText ( tsident.getInputName() );
-    			}
-    			catch ( Exception e ) {
-    				// For now do nothing.
-    			}
-		    }
-        }
+		*/
+	    if ( Alias != null ) {
+	        __Alias_JTextField.setText ( Alias );
+	    }
+	    if ( TSID != null ) {
+	        try {
+	            TSIdent tsident = new TSIdent ( TSID );
+				if ( __Location_JTextField != null ) {
+					__Location_JTextField.setText ( tsident.getLocation() );
+				}
+				if ( __DataSource_JTextField != null ) {
+					__DataSource_JTextField.setText( tsident.getSource() );
+				}
+				__DataType_JTextField.setText (	tsident.getType() );
+				__Interval_JTextField.setText (	tsident.getInterval() );
+				__InputName_JTextField.setText ( tsident.getInputName() );
+			}
+			catch ( Exception e ) {
+				// For now do nothing.
+			}
+	    }
+	    /*
 		if ( !__isAliasVersion ) {
 		    InputFilter_JPanel filter_panel = __input_filter_NWSRFS_FS5Files_JPanel;
     		int nfg = filter_panel.getNumFilterGroups();
@@ -551,7 +515,7 @@ private void refresh ()
     				}
     			}
     		}
-		}
+		}*/
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -567,37 +531,36 @@ private void refresh ()
 	InputStart = __InputStart_JTextField.getText().trim();
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	Units = __Units_JTextField.getText().trim();
-	if ( __isAliasVersion ) {
-		Alias = __Alias_JTextField.getText().trim();
-		//String fs5files_dir = "";	// Unknown
-		//if ( __nwsrfs_dmi != null ) {
-		//	fs5files_dir = __nwsrfs_dmi.getFS5FilesLocation();
-		//}
-		if ( InputName.length() == 0 ) {
-			// Don't show a file path...
-			// TODO SAM 2007-07-12 Evaluate whether should always show or
-			// use more formal data source
-			TSID =	__Location_JTextField.getText().trim() + "." +
-			__DataSource_JTextField.getText().trim() + "." +
-			__DataType_JTextField.getText().trim() + "." +
-			__Interval_JTextField.getText().trim() +
-			"~NWSRFS_FS5Files";
-			__TSID_JTextField.setText ( TSID );
-		}
-		else {
-			// Else show the path that was selected...
-			TSID =	__Location_JTextField.getText().trim() + "." +
-			__DataSource_JTextField.getText().trim() + "." +
-			__DataType_JTextField.getText().trim() + "." +
-			__Interval_JTextField.getText().trim() +
-			"~NWSRFS_FS5Files~" + InputName;
-			__TSID_JTextField.setText ( TSID );
-		}
+	Alias = __Alias_JTextField.getText().trim();
+	//String fs5files_dir = "";	// Unknown
+	//if ( __nwsrfs_dmi != null ) {
+	//	fs5files_dir = __nwsrfs_dmi.getFS5FilesLocation();
+	//}
+	if ( InputName.length() == 0 ) {
+		// Don't show a file path...
+		// TODO SAM 2007-07-12 Evaluate whether should always show or
+		// use more formal data source
+		TSID =	__Location_JTextField.getText().trim() + "." +
+		__DataSource_JTextField.getText().trim() + "." +
+		__DataType_JTextField.getText().trim() + "." +
+		__Interval_JTextField.getText().trim() +
+		"~NWSRFS_FS5Files";
+		__TSID_JTextField.setText ( TSID );
 	}
+	else {
+		// Else show the path that was selected...
+		TSID =	__Location_JTextField.getText().trim() + "." +
+		__DataSource_JTextField.getText().trim() + "." +
+		__DataType_JTextField.getText().trim() + "." +
+		__Interval_JTextField.getText().trim() +
+		"~NWSRFS_FS5Files~" + InputName;
+		__TSID_JTextField.setText ( TSID );
+	}
+	/*
 	else {
 	    DataType = __DataType_JTextField.getText().trim();
 		Interval = __Interval_JTextField.getText().trim();
-	}
+	}*/
 
 	/*
 	if ( !__isAliasVersion ) {
@@ -624,10 +587,8 @@ private void refresh ()
     props.add("InputStart=" + InputStart);
     props.add("InputEnd=" + InputEnd);
     props.add("Units=" + Units);
-    if ( __isAliasVersion ) {
-        props.add("Alias=" + Alias);
-        props.add("TSID=" + TSID);
-    }
+    props.add("Alias=" + Alias);
+    props.add("TSID=" + TSID);
     __command_JTextArea.setText( __command.toString(props) );
     
 	// Check the path and determine what the label on the path button should be...

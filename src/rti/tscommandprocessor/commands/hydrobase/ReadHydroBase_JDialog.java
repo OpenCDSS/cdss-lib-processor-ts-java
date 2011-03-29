@@ -1,11 +1,14 @@
 package rti.tscommandprocessor.commands.hydrobase;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -13,6 +16,7 @@ import java.awt.event.WindowListener;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,13 +25,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
@@ -36,22 +40,22 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 import DWR.DMI.HydroBaseDMI.HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel;
 
 /**
-The ReadHydroBase_JDialog edits the ReadHydroBase() and TS Alias = ReadHydroBase() command.
+Editor for the ReadHydroBase() command.
 */
 public class ReadHydroBase_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private ReadHydroBase_Command __command = null; // Command to edit
-private JTextField	__Alias_JTextField=null,// Alias for time series, alias version
-			__Location_JTextField,	// Location part of TSID, non-alias version
-			__DataSource_JTextField,// Data source part of TSID, non-alias version
-			__DataType_JTextField,	// Data type part of TSID, non-alias version
-			__Interval_JTextField,	// Interval part of TSID, non-alias version
-			__InputName_JTextField,	// Input name part of TSID, non-alias version
-			__TSID_JTextField,	// Full TSID, non-alias version
-			__InputStart_JTextField,// Text fields for query period, both versions.
+private TSFormatSpecifiersJPanel __Alias_JTextField = null; // Alias for time series, alias version
+private JTextField __Location_JTextField, // Location part of TSID, TSID version
+			__DataSource_JTextField, // Data source part of TSID, TSID version
+			__DataType_JTextField, // Data type part of TSID, both versions
+			__Interval_JTextField, // Interval part of TSID, both versions
+			__InputName_JTextField, // Input name part of TSID, both versions
+			__TSID_JTextField, // Full TSID, TSID version
+			__InputStart_JTextField, // Text fields for query period, both versions.
 			__InputEnd_JTextField,	
 			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
@@ -78,8 +82,7 @@ private SimpleJComboBox	__FillUsingDivComments_JComboBox;
 						// diversion comments.
 private SimpleJComboBox __IfMissing_JComboBox;
 			
-private JTextArea	__command_JTextArea = null;
-						// Command as JTextArea
+private JTextArea __command_JTextArea = null;
 private List __input_filter_JPanel_Vector = new Vector();
 //TODO SAM 2007-02-17 Need to enable CASS when resources allow
 //private InputFilter_JPanel __input_filter_HydroBase_CASS_JPanel = null;
@@ -117,17 +120,10 @@ private InputFilter_JPanel __input_filter_HydroBase_structure_sfut_JPanel =null;
 						// InputFilter_JPanel for
 						// HydroBase WIS time
 						// series.
-private HydroBaseDMI	__hbdmi = null;		// HydroBaseDMI to do queries.
-private boolean		__error_wait = false;	// Is there an error that we
-						// are waiting to be cleared up
-						// or Cancel?
-private boolean		__first_time = true;
-private boolean		__use_alias = false;	// Indicates if one time series
-						// is being read (TX Alias =...)
-						// or multiple time series.
-private boolean		__ok = false;		// Indicates whether OK was
-						// pressed when closing the
-						// dialog.
+private HydroBaseDMI __hbdmi = null; // HydroBaseDMI to do queries.
+private boolean __error_wait = false; // Is there an error to be cleared up
+private boolean __first_time = true;
+private boolean __ok = false; // Was OK pressed when closing the dialog.
 private int __numWhere = (HydroBaseDMI.getSPFlexMaxParameters() - 2); // Number of visible where fields
 
 /**
@@ -135,9 +131,8 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadHydroBase_JDialog ( JFrame parent, Command command )
+public ReadHydroBase_JDialog ( JFrame parent, ReadHydroBase_Command command )
 {	super(parent, true);
-
 	initialize ( parent, command );
 }
 
@@ -185,17 +180,15 @@ private void checkGUIState()
 		// TODO SAM 2006-04-25 Remove hard-coded types
 		// Should not need to hard-code these data types but there
 		// is no better way to do it at the moment.
-		if (	DataType.equalsIgnoreCase("DivTotal") ||
+		if ( DataType.equalsIgnoreCase("DivTotal") ||
 			DataType.equalsIgnoreCase("DivClass") ||
 			DataType.equalsIgnoreCase("RelTotal") ||
 			DataType.equalsIgnoreCase("RelClass") ) {
 			/* TODO SAM 2006-04-28 Review code
 			As per Ray Bennett always do the fill
 			if ( Interval.equalsIgnoreCase("Day") ) {
-				JGUIUtil.setEnabled (
-				__FillDailyDiv_JComboBox, true );
-				JGUIUtil.setEnabled (
-					__FillDailyDivFlag_JTextField, true );
+				JGUIUtil.setEnabled ( __FillDailyDiv_JComboBox, true );
+				JGUIUtil.setEnabled ( __FillDailyDivFlag_JTextField, true );
 			}
 			else {	JGUIUtil.setEnabled (
 				__FillDailyDiv_JComboBox, false );
@@ -227,36 +220,32 @@ private void checkInput ()
 	PropList props = new PropList ( "" );
 	__error_wait = false;
 	// Check parameters for the two command versions...
-	if ( __use_alias ) {
-		String Alias = __Alias_JTextField.getText().trim();
-		if ( Alias.length() > 0 ) {
-			props.set ( "Alias", Alias );
-		}
-		String TSID = __TSID_JTextField.getText().trim();
-		if ( TSID.length() > 0 ) {
-			props.set ( "TSID", TSID );
-		}
+	String Alias = __Alias_JTextField.getText().trim();
+	if ( Alias.length() > 0 ) {
+		props.set ( "Alias", Alias );
 	}
-	else {
-	    String DataType = __DataType_JTextField.getText().trim();
-		if ( DataType.length() > 0 ) {
-			props.set ( "DataType", DataType );
-		}
-		String Interval = __Interval_JTextField.getText().trim();
-		if ( Interval.length() > 0 ) {
-			props.set ( "Interval", Interval );
-		}
-		String InputName = __InputName_JTextField.getText().trim();
-		if ( InputName.length() > 0 ) {
-			props.set ( "InputName", InputName );
-		}
-		for ( int i = 1; i <= __numWhere; i++ ) {
-		    String where = getWhere ( i - 1 );
-		    if ( where.length() > 0 ) {
-		        props.set ( "Where" + i, where );
-		    }
+	String TSID = __TSID_JTextField.getText().trim();
+	if ( TSID.length() > 0 ) {
+		props.set ( "TSID", TSID );
+	}
+    String DataType = __DataType_JTextField.getText().trim();
+	if ( DataType.length() > 0 ) {
+		props.set ( "DataType", DataType );
+	}
+	String Interval = __Interval_JTextField.getText().trim();
+	if ( Interval.length() > 0 ) {
+		props.set ( "Interval", Interval );
+	}
+	String InputName = __InputName_JTextField.getText().trim();
+	if ( InputName.length() > 0 ) {
+		props.set ( "InputName", InputName );
+	}
+	for ( int i = 1; i <= __numWhere; i++ ) {
+	    String where = getWhere ( i - 1 );
+	    if ( where.length() > 0 ) {
+	        props.set ( "Where" + i, where );
 	    }
-	}
+    }
 	// Both command types use these...
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -290,7 +279,8 @@ private void checkInput ()
     if ( IfMissing.length() > 0 ) {
         props.set ("IfMissing",IfMissing);
     }
-	try {	// This will warn the user...
+	try {
+	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
 	}
 	catch ( Exception e ) {
@@ -304,26 +294,24 @@ Commit the edits to the command.  In this case the command parameters have
 already been checked and no errors were detected.
 */
 private void commitEdits ()
-{	if ( __use_alias ) {
-		String Alias = __Alias_JTextField.getText().trim();
-		__command.setCommandParameter ( "Alias", Alias );
-		String TSID = __TSID_JTextField.getText().trim();
-		__command.setCommandParameter ( "TSID", TSID );
-	}
-	else {	String DataType = __DataType_JTextField.getText().trim();
-		__command.setCommandParameter ( "DataType", DataType );
-		String Interval = __Interval_JTextField.getText().trim();
-		__command.setCommandParameter ( "Interval", Interval );
-		String InputName = __InputName_JTextField.getText().trim();
-		__command.setCommandParameter ( "InputName", InputName );
-		String delim = ";";
-		for ( int i = 1; i <= __numWhere; i++ ) {
-		    String where = getWhere ( i - 1 );
-		    if ( where.startsWith(delim) ) {
-		        where = "";
-		    }
-		    __command.setCommandParameter ( "Where" + i, where );
-		}
+{
+	String Alias = __Alias_JTextField.getText().trim();
+	__command.setCommandParameter ( "Alias", Alias );
+	String TSID = __TSID_JTextField.getText().trim();
+	__command.setCommandParameter ( "TSID", TSID );
+	String DataType = __DataType_JTextField.getText().trim();
+	__command.setCommandParameter ( "DataType", DataType );
+	String Interval = __Interval_JTextField.getText().trim();
+	__command.setCommandParameter ( "Interval", Interval );
+	String InputName = __InputName_JTextField.getText().trim();
+	__command.setCommandParameter ( "InputName", InputName );
+	String delim = ";";
+	for ( int i = 1; i <= __numWhere; i++ ) {
+	    String where = getWhere ( i - 1 );
+	    if ( where.startsWith(delim) ) {
+	        where = "";
+	    }
+	    __command.setCommandParameter ( "Where" + i, where );
 	}
 	// Both versions of the commands use these...
 	String InputStart = __InputStart_JTextField.getText().trim();
@@ -394,44 +382,18 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
+private void initialize ( JFrame parent, ReadHydroBase_Command command )
 {	String routine = "readHydroBase_JDialog.initialize";
-	__command = (ReadHydroBase_Command)command;
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
-
-	// Determine whether this is the "TS Alias =" version of the command.
-	PropList props = __command.getCommandParameters();
-	String Alias = props.getValue("Alias");
-	__use_alias = false;
-	if (Alias == null || Alias.trim().equalsIgnoreCase("")) {
-		if (((ReadHydroBase_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
-			// This indicates that a new command is being edited
-			// and the properties have not been defined yet.  The
-			// command string will have been set at initialization
-			// but not parsed (because this dialog interactively
-			// parses and checks input).
-		   	__use_alias = true;
-		}
-		else {
-            // A new command with no alias...
-			__use_alias = false;
-		}
-	}
-	else {
-        // An existing command that uses the alias.
-		__use_alias = true;
-	}
-	// Tell the new command what version it is because it was not parsed at
-	// initialization (doing so might prematurely warn the user)...
-	__command.setUseAlias ( __use_alias );
 
 	try { Object o = processor.getPropContents("HydroBaseDMIList");
 		if ( o != null ) {
 			// Use the first HydroBaseDMI instance, since input filter
 			// information should be relatively consistent...
-			List v = (List)o;
+			List<HydroBaseDMI> v = (List)o;
 			if ( v.size() > 0 ) {
-				__hbdmi = (HydroBaseDMI)v.get(0);
+				__hbdmi = v.get(0);
 			}
 			else {
 				String message = "No HydroBase connection is available to use with command editing.\n" +
@@ -456,24 +418,13 @@ private void initialize ( JFrame parent, Command command )
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-	if ( __use_alias ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a HydroBase database."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
-	else {
-	    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read one or more time series from a HydroBase database."),
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The data type and interval must be specified.  Constrain the " +
-		"query using the \"where\" clauses, if necessary." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel (
-            "<html><b>\"Where\" choices have only been fully implemented for structure time series " +
-            "(e.g., DivTotal, DivClass, RelTotal, RelClass).</b></html>" ), 
-            0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"Read 1+ time series from a HydroBase database, using options from the parameter groups below."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>\"Where\" choices have only been fully implemented for structure time series " +
+        "(e.g., DivTotal, DivClass, RelTotal, RelClass).</b></html>" ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Refer to the HydroBase Input Type documentation for possible values." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -484,32 +435,14 @@ private void initialize ( JFrame parent, Command command )
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Filling with diversion comments applies only to diversion and reservoir records."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-	if ( __use_alias ) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Alias_JTextField = new JTextField ( 30 );
-		__Alias_JTextField.addKeyListener ( this );
-		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Location:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Location_JTextField = new JTextField ( "" );
-		__Location_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Location_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example, station or structure ID."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JGUIUtil.addComponent(main_JPanel, new JLabel (	"Data source:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__DataSource_JTextField = new JTextField ( "" );
-		__DataSource_JTextField.addKeyListener ( this );
-       	JGUIUtil.addComponent(main_JPanel, __DataSource_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-       	JGUIUtil.addComponent(main_JPanel, new JLabel ( "For example: USGS, NWS."),
-		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	}
+   	
+   	JPanel tsidJPanel = new JPanel();
+   	tsidJPanel.setLayout(new GridBagLayout());
+   	JPanel inputFilterJPanel = new JPanel();
+   	inputFilterJPanel.setLayout(new GridBagLayout());
+   	
+    //JGUIUtil.addComponent(main_JPanel, inputFilterJPanel,
+    //    0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -538,186 +471,220 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - HydroBase connection name (blank for default)."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    tsidJPanel.setBorder(BorderFactory.createTitledBorder (
+        BorderFactory.createLineBorder(Color.black),"Match a single time series..."));
+    JGUIUtil.addComponent(main_JPanel, tsidJPanel,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    int y2 = 0;
+    JGUIUtil.addComponent(tsidJPanel, new JLabel ( "Location:"),
+        0, y2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __Location_JTextField = new JTextField ( "" );
+        __Location_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tsidJPanel, __Location_JTextField,
+        1, y2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsidJPanel, new JLabel ( "For example, station or structure WDID."),
+        3, y2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	if ( !__use_alias ) {
-		int buffer = 3;
-		Insets insets = new Insets(0,buffer,0,0);
-		/* TODO SAM 2004-08-29 - enable later -
-		right now it slows things down
-		try {	// Add input filters for stations...
+    JGUIUtil.addComponent(tsidJPanel, new JLabel ( "Data source:"),
+        0, ++y2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __DataSource_JTextField = new JTextField ( "" );
+        __DataSource_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tsidJPanel, __DataSource_JTextField,
+        1, y2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsidJPanel, new JLabel ( "For example: USGS, NWS."),
+        3, y2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(tsidJPanel, new JLabel ( "TSID (full):"),
+        0, ++y2, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID_JTextField = new JTextField ( "" );
+    __TSID_JTextField.setEditable ( false );
+    __TSID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(tsidJPanel, __TSID_JTextField,
+        1, y2, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(tsidJPanel, new JLabel ( "Created from above parameters."),
+        3, y2, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-			__input_filter_HydroBase_station_JPanel = new
-				HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel (
-				__hbdmi );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_station_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_station_JPanel );
-			__input_filter_HydroBase_station_JPanel.
-				addEventListeners ( this );
-			__input_filter_HydroBase_station_JPanel.setVisible (
-				false );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" stations." );
-			Message.printWarning ( 2, routine, e );
-		}
+	int buffer = 3;
+	Insets insets = new Insets(0,buffer,0,0);
+	/* TODO SAM 2004-08-29 - enable later -
+	right now it slows things down
+	try {	// Add input filters for stations...
 
-		try {	// Structure total (no SFUT)...
-
-			PropList filter_props = new PropList ( "" );
-			filter_props.set ( "NumFilterGroups=6" );
-			__input_filter_HydroBase_structure_JPanel = new
-				HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				__hbdmi, false, filter_props );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_structure_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_structure_JPanel);
-			__input_filter_HydroBase_structure_JPanel.
-				addEventListeners ( this );
-			__input_filter_HydroBase_structure_JPanel.setVisible (
-				false );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" structures." );
-			Message.printWarning ( 2, routine, e );
-		}
-		*/
-
-		try {
-		    // Structure with SFUT...
-			// Number of filters is the maximum - 2 (data type and interval)
-			__input_filter_HydroBase_structure_sfut_JPanel = new
-				HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
-				__hbdmi, true, __numWhere, -1 );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_structure_sfut_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.add ( __input_filter_HydroBase_structure_sfut_JPanel);
-			__input_filter_HydroBase_structure_sfut_JPanel.addEventListeners ( this );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine, "Unable to initialize input filter for HydroBase structures with SFUT." );
-			Message.printWarning ( 2, routine, e );
-		}
-
-		/* TODO SAM 2004-08-29 enable later
-		try {
-		    // Structure irrig summary TS...
-			__input_filter_HydroBase_irrigts_JPanel = new
-				HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( __hbdmi );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_irrigts_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_irrigts_JPanel);
-			__input_filter_HydroBase_irrigts_JPanel.
-				addEventListeners ( this );
-			__input_filter_HydroBase_irrigts_JPanel.setVisible (
-				false );
-		}
-		catch ( Exception e ) {
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" irrigation summary time series - old database?" );
-			Message.printWarning ( 2, routine, e );
-		}
-
-		try {	// CASS agricultural statistics...
-
-			__input_filter_HydroBase_CASS_JPanel = new
-				HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel (
-				__hbdmi );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_CASS_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_CASS_JPanel);
-			__input_filter_HydroBase_CASS_JPanel.
-				addEventListeners ( this );
-			__input_filter_HydroBase_CASS_JPanel.setVisible(false );
-		}
-		catch ( Exception e ) {
-			// Agricultural_CASS_crop_stats probably not in
-			// HydroBase...
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" agricultural_CASS_crop_stats - old database?" );
-			Message.printWarning ( 2, routine, e );
-		}
-
-		// NASS agricultural statistics...
-
-		try {	__input_filter_HydroBase_NASS_JPanel = new
-				HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel (
-				__hbdmi );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_NASS_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_NASS_JPanel);
-			__input_filter_HydroBase_NASS_JPanel.
-				addEventListeners ( this );
-			__input_filter_HydroBase_NASS_JPanel.setVisible( false);
-		}
-		catch ( Exception e ) {
-			// Agricultural_NASS_crop_stats probably not in
-			// HydroBase...
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" agricultural_NASS_crop_stats - old database?" );
-			Message.printWarning ( 2, routine, e );
-		}
-
-		try {	// Water information sheets...
-
-			__input_filter_HydroBase_WIS_JPanel = new
-				HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel (
-				__hbdmi );
-       			JGUIUtil.addComponent(main_JPanel,
-				__input_filter_HydroBase_WIS_JPanel,
-				0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-				GridBagConstraints.WEST );
-			__input_filter_JPanel_Vector.addElement (
-				__input_filter_HydroBase_WIS_JPanel);
-			__input_filter_HydroBase_WIS_JPanel.
-				addEventListeners ( this );
-			__input_filter_HydroBase_WIS_JPanel.
-				setVisible ( false );
-		}
-		catch ( Exception e ) {
-			// WIS tables probably not in HydroBase...
-			Message.printWarning ( 2, routine,
-			"Unable to initialize input filter for HydroBase" +
-			" WIS - data tables not in database?" );
-			Message.printWarning ( 2, routine, e );
-		}
-
-		*/
+		__input_filter_HydroBase_station_JPanel = new
+			HydroBase_GUI_StationGeolocMeasType_InputFilter_JPanel (
+			__hbdmi );
+   			JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_station_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.addElement (
+			__input_filter_HydroBase_station_JPanel );
+		__input_filter_HydroBase_station_JPanel.
+			addEventListeners ( this );
+		__input_filter_HydroBase_station_JPanel.setVisible (
+			false );
+	}
+	catch ( Exception e ) {
+		Message.printWarning ( 2, routine,
+		"Unable to initialize input filter for HydroBase" +
+		" stations." );
+		Message.printWarning ( 2, routine, e );
 	}
 
-	if ( __use_alias ) {
-        	JGUIUtil.addComponent(main_JPanel, new JLabel ( "TSID (full):"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__TSID_JTextField = new JTextField ( "" );
-		__TSID_JTextField.setEditable ( false );
-		__TSID_JTextField.addKeyListener ( this );
-        	JGUIUtil.addComponent(main_JPanel, __TSID_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+	try {	// Structure total (no SFUT)...
+
+		PropList filter_props = new PropList ( "" );
+		filter_props.set ( "NumFilterGroups=6" );
+		__input_filter_HydroBase_structure_JPanel = new
+			HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
+			__hbdmi, false, filter_props );
+   			JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_structure_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.addElement (
+			__input_filter_HydroBase_structure_JPanel);
+		__input_filter_HydroBase_structure_JPanel.
+			addEventListeners ( this );
+		__input_filter_HydroBase_structure_JPanel.setVisible (
+			false );
 	}
+	catch ( Exception e ) {
+		Message.printWarning ( 2, routine,
+		"Unable to initialize input filter for HydroBase" +
+		" structures." );
+		Message.printWarning ( 2, routine, e );
+	}
+	*/
+
+	try {
+	    // Structure with SFUT...
+		// Number of filters is the maximum - 2 (data type and interval)
+		__input_filter_HydroBase_structure_sfut_JPanel = new
+			HydroBase_GUI_StructureGeolocStructMeasType_InputFilter_JPanel (
+			__hbdmi, true, __numWhere, -1 );
+		__input_filter_HydroBase_structure_sfut_JPanel.setBorder(BorderFactory.createTitledBorder (
+	        BorderFactory.createLineBorder(Color.black),"Or, match 1+ time series by specifying criteria below..."));
+   		JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_structure_sfut_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.add ( __input_filter_HydroBase_structure_sfut_JPanel);
+		__input_filter_HydroBase_structure_sfut_JPanel.addEventListeners ( this );
+	}
+	catch ( Exception e ) {
+		Message.printWarning ( 2, routine, "Unable to initialize input filter for HydroBase structures with SFUT." );
+		Message.printWarning ( 3, routine, e );
+	}
+
+	/* TODO SAM 2004-08-29 enable later
+	try {
+	    // Structure irrig summary TS...
+		__input_filter_HydroBase_irrigts_JPanel = new
+			HydroBase_GUI_StructureIrrigSummaryTS_InputFilter_JPanel ( __hbdmi );
+   			JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_irrigts_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.addElement (
+			__input_filter_HydroBase_irrigts_JPanel);
+		__input_filter_HydroBase_irrigts_JPanel.
+			addEventListeners ( this );
+		__input_filter_HydroBase_irrigts_JPanel.setVisible (
+			false );
+	}
+	catch ( Exception e ) {
+		Message.printWarning ( 2, routine,
+		"Unable to initialize input filter for HydroBase" +
+		" irrigation summary time series - old database?" );
+		Message.printWarning ( 2, routine, e );
+	}
+
+	try {	// CASS agricultural statistics...
+
+		__input_filter_HydroBase_CASS_JPanel = new
+			HydroBase_GUI_AgriculturalCASSCropStats_InputFilter_JPanel (
+			__hbdmi );
+   			JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_CASS_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.addElement (
+			__input_filter_HydroBase_CASS_JPanel);
+		__input_filter_HydroBase_CASS_JPanel.
+			addEventListeners ( this );
+		__input_filter_HydroBase_CASS_JPanel.setVisible(false );
+	}
+	catch ( Exception e ) {
+		// Agricultural_CASS_crop_stats probably not in
+		// HydroBase...
+		Message.printWarning ( 2, routine,
+		"Unable to initialize input filter for HydroBase" +
+		" agricultural_CASS_crop_stats - old database?" );
+		Message.printWarning ( 2, routine, e );
+	}
+
+	// NASS agricultural statistics...
+
+	try {	__input_filter_HydroBase_NASS_JPanel = new
+			HydroBase_GUI_AgriculturalNASSCropStats_InputFilter_JPanel (
+			__hbdmi );
+   			JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_NASS_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.addElement (
+			__input_filter_HydroBase_NASS_JPanel);
+		__input_filter_HydroBase_NASS_JPanel.
+			addEventListeners ( this );
+		__input_filter_HydroBase_NASS_JPanel.setVisible( false);
+	}
+	catch ( Exception e ) {
+		// Agricultural_NASS_crop_stats probably not in
+		// HydroBase...
+		Message.printWarning ( 2, routine,
+		"Unable to initialize input filter for HydroBase" +
+		" agricultural_NASS_crop_stats - old database?" );
+		Message.printWarning ( 2, routine, e );
+	}
+
+	try {	// Water information sheets...
+
+		__input_filter_HydroBase_WIS_JPanel = new
+			HydroBase_GUI_SheetNameWISFormat_InputFilter_JPanel (
+			__hbdmi );
+   			JGUIUtil.addComponent(main_JPanel,
+			__input_filter_HydroBase_WIS_JPanel,
+			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+			GridBagConstraints.WEST );
+		__input_filter_JPanel_Vector.addElement (
+			__input_filter_HydroBase_WIS_JPanel);
+		__input_filter_HydroBase_WIS_JPanel.
+			addEventListeners ( this );
+		__input_filter_HydroBase_WIS_JPanel.
+			setVisible ( false );
+	}
+	catch ( Exception e ) {
+		// WIS tables probably not in HydroBase...
+		Message.printWarning ( 2, routine,
+		"Unable to initialize input filter for HydroBase" +
+		" WIS - data tables not in database?" );
+		Message.printWarning ( 2, routine, e );
+	}
+
+	*/
+	
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
+    __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -770,7 +737,7 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using diversion comments:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List FillUsingDivComments_Vector = new Vector ( 3 );
+    List<String> FillUsingDivComments_Vector = new Vector ( 3 );
 	FillUsingDivComments_Vector.add ( "" );
 	FillUsingDivComments_Vector.add ( __command._False );
 	FillUsingDivComments_Vector.add ( __command._True );
@@ -781,7 +748,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __FillUsingDivComments_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Optional - may result in more zero values (default=" + __command._False + ")."),
+		"Optional - whether to use diversion comments to fill more zero values (default=" + __command._False + ")."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill using diversion comments flag:"),
@@ -797,7 +764,7 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "If missing:"),
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List IfMissing_Vector = new Vector ( 3 );
+    List<String> IfMissing_Vector = new Vector ( 3 );
     IfMissing_Vector.add ( "" );
     IfMissing_Vector.add ( __command._Ignore );
     IfMissing_Vector.add ( __command._Warn );
@@ -834,11 +801,7 @@ private void initialize ( JFrame parent, Command command )
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	if ( __use_alias ) {
-		setTitle ( "Edit TS Alias = " + __command.getCommandName() + " Command" );
-	}
-	else {	setTitle ( "Edit " + __command.getCommandName() + " Command" );
-	}
+	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
 	// Dialogs do not need to be resizable...
 	setResizable ( true );
@@ -846,6 +809,14 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.center( this );
 	refresh();	// Sets the __path_JButton status
     super.setVisible( true );
+}
+
+/**
+Respond to ItemEvents.
+*/
+public void itemStateChanged ( ItemEvent event )
+{
+    refresh();
 }
 
 /**
@@ -916,11 +887,12 @@ private void refresh ()
 		FillUsingDivComments = props.getValue ( "FillUsingDivComments" );
 		FillUsingDivCommentsFlag = props.getValue ( "FillUsingDivCommentsFlag" );
 		IfMissing = props.getValue ( "IfMissing" );
-		if ( __use_alias && (Alias != null) ) {
-			__Alias_JTextField.setText ( Alias );
-		}
-		if ( __use_alias && (TSID != null) ) {
-			try {	TSIdent tsident = new TSIdent ( TSID );
+	    if ( Alias != null ) {
+		    __Alias_JTextField.setText ( Alias );
+	    }
+		if ( TSID != null ) {
+			try {
+			    TSIdent tsident = new TSIdent ( TSID );
 				if ( __Location_JTextField != null ) {
 					__Location_JTextField.setText (	tsident.getLocation() );
 				}
@@ -935,38 +907,32 @@ private void refresh ()
 				// For now do nothing.
 			}
 		}
-		if ( !__use_alias ) {
-			if ( DataType != null ) {
-				__DataType_JTextField.setText(DataType);
-			}
-			if ( Interval != null ) {
-				__Interval_JTextField.setText(Interval);
-			}
+		if ( DataType != null ) {
+			__DataType_JTextField.setText(DataType);
 		}
-		if ( !__use_alias ) {
-			if ( InputName != null ) {
-				__InputName_JTextField.setText (
-					InputName );
-			}
+		if ( Interval != null ) {
+			__Interval_JTextField.setText(Interval);
 		}
-		if ( !__use_alias ) {
-			InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
-			int nfg = filter_panel.getNumFilterGroups();
-			String where;
-			for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-				where = props.getValue ( "Where" + (ifg + 1) );
-				if ( (where != null) && (where.length() > 0) ) {
-					// Set the filter...
-					try {	filter_panel.setInputFilter (ifg, where, filter_delim );
-					}
-					catch ( Exception e ) {
-						Message.printWarning ( 1, routine,
-						"Error setting where information using \"" + where + "\"" );
-						Message.printWarning ( 2, routine, e );
-					}
+		if ( InputName != null ) {
+			__InputName_JTextField.setText (
+				InputName );
+		}
+		InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
+		int nfg = filter_panel.getNumFilterGroups();
+		String where;
+		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+			where = props.getValue ( "Where" + (ifg + 1) );
+			if ( (where != null) && (where.length() > 0) ) {
+				// Set the filter...
+				try {	filter_panel.setInputFilter (ifg, where, filter_delim );
+				}
+				catch ( Exception e ) {
+					Message.printWarning ( 1, routine,
+					"Error setting where information using \"" + where + "\"" );
+					Message.printWarning ( 2, routine, e );
 				}
 			}
-		} // end !__use_alias
+		}
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -1000,14 +966,16 @@ private void refresh ()
 			// Select default...
 			__FillUsingDivComments_JComboBox.select ( 0 );
 		}
-		else {	if (	JGUIUtil.isSimpleJComboBoxItem(
+		else {
+		    if (	JGUIUtil.isSimpleJComboBoxItem(
 				__FillUsingDivComments_JComboBox,
 				FillUsingDivComments, JGUIUtil.NONE, null,
 				null ) ) {
 				__FillUsingDivComments_JComboBox.select (
 				FillUsingDivComments);
 			}
-			else {	Message.printWarning ( 1, routine,
+			else {
+			    Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n" +
 				"FillUsingDivComments value \"" +
 				FillUsingDivComments +
@@ -1038,54 +1006,51 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	InputName = __InputName_JTextField.getText().trim();
-	if ( __use_alias ) {
-		Alias = __Alias_JTextField.getText().trim();
-		if ( InputName.length() == 0 ) {
-			// No input name...
-			TSID =	__Location_JTextField.getText().trim() + "." +
-				__DataSource_JTextField.getText().trim() + "." +
-				__DataType_JTextField.getText().trim() + "." +
-				__Interval_JTextField.getText().trim() +
-				"~HydroBase";
-		}
-		else {	// Input name is specified...
-			TSID =	__Location_JTextField.getText().trim() + "." +
-				__DataSource_JTextField.getText().trim() + "." +
-				__DataType_JTextField.getText().trim() + "." +
-				__Interval_JTextField.getText().trim() +
-				"~HydroBase~" + InputName;
-		}
-		__TSID_JTextField.setText ( TSID );
+	Alias = __Alias_JTextField.getText().trim();
+	String Location = __Location_JTextField.getText().trim();
+	String DataSource = __DataSource_JTextField.getText().trim();
+	StringBuffer b = new StringBuffer();
+	b.append ( Location );
+	b.append ( "." );
+	b.append ( DataSource );
+	b.append ( "." );
+	b.append ( __DataType_JTextField.getText().trim() );
+	b.append ( "." );
+	b.append ( __Interval_JTextField.getText().trim() );
+	b.append ( "~HydroBase" );
+	if ( InputName.length() > 0 ) {
+	    b.append ( "~" );
+	    b.append ( InputName );
 	}
-	else {
-	    DataType = __DataType_JTextField.getText().trim();
-		Interval = __Interval_JTextField.getText().trim();
+	TSID = b.toString();
+	if ( Location.equals("") || DataSource.equals("") ) {
+	    // Not enough information so assume using the where filters
+	    TSID = "";
 	}
+	__TSID_JTextField.setText ( TSID );
+    DataType = __DataType_JTextField.getText().trim();
+	Interval = __Interval_JTextField.getText().trim();
 	// Regardless, reset the command from the fields...
 	props = new PropList ( __command.getCommandName() );
-	if ( __use_alias ) {
-		props.add ( "Alias=" + Alias );
-		props.add ( "TSID=" + TSID );
-	}
-	else {
-	    props.add ( "DataType=" + DataType );
-		props.add ( "Interval=" + Interval );
-		props.add ( "InputName=" + InputName );
-		// Add the where clause...
-		// TODO SAM 2004-08-26 eventually allow filter panels similar
-		// to main GUI - right now only do water class...
-		InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
-		int nfg = filter_panel.getNumFilterGroups();
-		String where;
-		String delim = ";";	// To separate input filter parts
-		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-			where = filter_panel.toString(ifg,delim).trim();
-			// Make sure there is a field that is being checked in a where clause...
-			if ( (where.length() > 0) && !where.startsWith(delim) ) {
-	            // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
-	            //props.add ( "Where" + (ifg + 1) + "=" + where );
-	            props.set ( "Where" + (ifg + 1), where );
-			}
+	props.add ( "Alias=" + Alias );
+	props.add ( "TSID=" + TSID );
+    props.add ( "DataType=" + DataType );
+	props.add ( "Interval=" + Interval );
+	props.add ( "InputName=" + InputName );
+	// Add the where clause...
+	// TODO SAM 2004-08-26 eventually allow filter panels similar
+	// to main GUI - right now only do water class...
+	InputFilter_JPanel filter_panel = __input_filter_HydroBase_structure_sfut_JPanel;
+	int nfg = filter_panel.getNumFilterGroups();
+	String where;
+	String delim = ";";	// To separate input filter parts
+	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+		where = filter_panel.toString(ifg,delim).trim();
+		// Make sure there is a field that is being checked in a where clause...
+		if ( (where.length() > 0) && !where.startsWith(delim) ) {
+            // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
+            //props.add ( "Where" + (ifg + 1) + "=" + where );
+            props.set ( "Where" + (ifg + 1), where );
 		}
 	}
 	InputStart = __InputStart_JTextField.getText().trim();
@@ -1114,7 +1079,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -1147,4 +1112,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end readHydroBase_JDialog
+}

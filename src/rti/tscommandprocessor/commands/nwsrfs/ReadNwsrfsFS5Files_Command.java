@@ -16,6 +16,7 @@ import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -35,11 +36,10 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
-This class initializes, checks, and runs the TS Alias = ReadNwsrfsFS5Files() command.
-</p>
+This class initializes, checks, and runs the ReadNwsrfsFS5Files() command.
 */
-public class ReadNwsrfsFS5Files_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadNwsrfsFS5Files_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 protected static final String
@@ -58,11 +58,6 @@ List of time series read during discovery.  These are TS objects but with mainly
 metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
-
-/**
-Indicates whether the TS Alias version of the command is being used.
-*/
-protected boolean _use_alias = false;
 
 /**
 Constructor.
@@ -99,7 +94,7 @@ throws InvalidCommandParameterException
 	String InputEnd   = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
     
-	if ( _use_alias && ((Alias == null) || Alias.equals("")) ) {
+	if ( (Alias == null) || Alias.equals("") ) {
 	    message = "The Alias must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -129,60 +124,58 @@ throws InvalidCommandParameterException
         // Make sure that the parts are OK
         try {
             TSIdent tsident = new TSIdent ( TSID );
-            if ( _use_alias ) {
-                String Location = tsident.getLocation();
-                if ( Location.length() == 0 ) {
-                    message = "The location is not specified in the time series identifier.";
-                    warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the location in the time series identifier." ) );
-                }
-                // The data source is required because the NWSRFS DMI also theoretically handles card
-                // and ESP files, although separate commands are generally used
-                String DataSource = tsident.getSource();
-                if ( DataSource.length() == 0 ) {
-                    message = "The data source is not specified in the time series identifier.";
-                    warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify the data source in the time series identifier." ) );
-                }
-                // Adjust the working directory that was passed in by the specified
-                // directory.  If the directory does not exist, warn the user...
-                String inputName = tsident.getInputName();
-                if ( inputName.length() > 0 ) {
-                    String working_dir = null;
-                    try {
-                        Object o = processor.getPropContents ( "WorkingDir" );
-                        // Working directory is available so use it...
-                        if ( o != null ) {
-                            working_dir = (String)o;
-                            try {
-                                //String adjusted_path = 
-                                IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
-                                        TSCommandProcessorUtil.expandParameterValue(processor,this,inputName)));
-                            }
-                            catch ( Exception e ) {
-                                message = "The NWSRFS FS5 files directory:\n" +
-                                "    \"" + inputName +
-                                "\"\ncannot be adjusted using the working directory:\n" +
-                                "    \"" + working_dir + "\".";
-                                warning += "\n" + message;
-                                status.addToLog ( CommandPhaseType.INITIALIZATION,
-                                    new CommandLogRecord(CommandStatusType.FAILURE,
-                                            message, "Verify that input file and working directory paths are compatible." ) );
-                            }
+            String Location = tsident.getLocation();
+            if ( Location.length() == 0 ) {
+                message = "The location is not specified in the time series identifier.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the location in the time series identifier." ) );
+            }
+            // The data source is required because the NWSRFS DMI also theoretically handles card
+            // and ESP files, although separate commands are generally used
+            String DataSource = tsident.getSource();
+            if ( DataSource.length() == 0 ) {
+                message = "The data source is not specified in the time series identifier.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify the data source in the time series identifier." ) );
+            }
+            // Adjust the working directory that was passed in by the specified
+            // directory.  If the directory does not exist, warn the user...
+            String inputName = tsident.getInputName();
+            if ( inputName.length() > 0 ) {
+                String working_dir = null;
+                try {
+                    Object o = processor.getPropContents ( "WorkingDir" );
+                    // Working directory is available so use it...
+                    if ( o != null ) {
+                        working_dir = (String)o;
+                        try {
+                            //String adjusted_path = 
+                            IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
+                                    TSCommandProcessorUtil.expandParameterValue(processor,this,inputName)));
+                        }
+                        catch ( Exception e ) {
+                            message = "The NWSRFS FS5 files directory:\n" +
+                            "    \"" + inputName +
+                            "\"\ncannot be adjusted using the working directory:\n" +
+                            "    \"" + working_dir + "\".";
+                            warning += "\n" + message;
+                            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                                new CommandLogRecord(CommandStatusType.FAILURE,
+                                        message, "Verify that input file and working directory paths are compatible." ) );
                         }
                     }
-                    catch ( Exception e ) {
-                        message = "Error requesting WorkingDir from processor.";
-                        warning += "\n" + message;
-                        Message.printWarning(3, routine, message );
-                        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Specify an existing input file." ) );
-                    }
+                }
+                catch ( Exception e ) {
+                    message = "Error requesting WorkingDir from processor.";
+                    warning += "\n" + message;
+                    Message.printWarning(3, routine, message );
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                            new CommandLogRecord(CommandStatusType.FAILURE,
+                                    message, "Specify an existing input file." ) );
                 }
             }
             String DataType = tsident.getType();
@@ -289,11 +282,9 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
-    if ( _use_alias ) {
-        valid_Vector.add ( "Alias" );
-        valid_Vector.add ( "TSID" );
-    }
+	List<String> valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "TSID" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Units" );
@@ -303,8 +294,7 @@ throws InvalidCommandParameterException
 	if ( warning.length() > 0 ) {		
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
-				command_tag, warning_level ),
-			warning );
+				command_tag, warning_level ),warning );
 		throw new InvalidCommandParameterException ( warning );
 	}
     
@@ -364,56 +354,56 @@ public List getObjectList ( Class c )
 
 /**
 Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
+@param commandString A string command to parse.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
-@param warning_level The warning level to use when printing parse warnings
-(recommended is 2).
+@param warning_level The warning level to use when printing parse warnings (recommended is 2).
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command_string )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	//int warning_level = 2;
-    String Alias = null;
-	
-    _use_alias = false;
-    if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-        // There is an alias specified.  Extract the alias from the full command.
-        _use_alias = true;
-        Alias = StringUtil.getToken ( command_string, " =", StringUtil.DELIM_SKIP_BLANKS, 1);
-        // New syntax, can be blank parameter list.  Extract command name and parameters to parse
-        int index = command_string.indexOf("=");
-        super.parseCommand ( command_string.substring(index + 1).trim() );
+    
+    if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(commandString);
     }
     else {
-        super.parseCommand ( command_string );
-    }
-
-    PropList parameters = getCommandParameters();
-    parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-    if( _use_alias ) {
+        String Alias = null;
+        if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
+            // There is an alias specified.  Extract the alias from the full command.
+            Alias = StringUtil.getToken ( commandString, " =", StringUtil.DELIM_SKIP_BLANKS, 1);
+            // New syntax, can be blank parameter list.  Extract command name and parameters to parse
+            int index = commandString.indexOf("=");
+            super.parseCommand ( commandString.substring(index + 1).trim() );
+        }
+        else {
+            super.parseCommand ( commandString );
+        }
+    
+        PropList parameters = getCommandParameters();
+        parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
         parameters.set ( "Alias", Alias );
-    }
-    parameters.setHowSet ( Prop.SET_UNKNOWN );
- 
- 	// The following is for backwards compatibility with old commands files.
-	if ( (parameters.getValue("InputStart") == null) && (parameters.getValue("QueryStart") != null) ) {
-		parameters.set("InputStart", parameters.getValue("QueryStart"));
-	}
-	if ( (parameters.getValue("InputStart") != null) && parameters.getValue("InputStart").equals("*") ) {
-	    // Reset to current blank default
-	    parameters.set("InputStart","");
-	}
-	if ( (parameters.getValue("InputEnd") == null) && (parameters.getValue("QueryEnd") != null) ) {
-		parameters.set("InputEnd", parameters.getValue(	"QueryEnd"));
-	}
-    if ( (parameters.getValue("InputEnd") != null) && parameters.getValue("InputEnd").equals("*") ) {
-        // Reset to current blank default
-        parameters.set("InputEnd","");
+        parameters.setHowSet ( Prop.SET_UNKNOWN );
+     
+     	// The following is for backwards compatibility with old commands files.
+    	if ( (parameters.getValue("InputStart") == null) && (parameters.getValue("QueryStart") != null) ) {
+    		parameters.set("InputStart", parameters.getValue("QueryStart"));
+    	}
+    	if ( (parameters.getValue("InputStart") != null) && parameters.getValue("InputStart").equals("*") ) {
+    	    // Reset to current blank default
+    	    parameters.set("InputStart","");
+    	}
+    	if ( (parameters.getValue("InputEnd") == null) && (parameters.getValue("QueryEnd") != null) ) {
+    		parameters.set("InputEnd", parameters.getValue(	"QueryEnd"));
+    	}
+        if ( (parameters.getValue("InputEnd") != null) && parameters.getValue("InputEnd").equals("*") ) {
+            // Reset to current blank default
+            parameters.set("InputEnd","");
+        }
     }
 }
 
@@ -663,7 +653,7 @@ throws InvalidCommandParameterException,
         
         if ( nwsrfs_dmi == null ) {
             Message.printStatus( 2, routine, "No NWSRFS FS5Files are currently open.  Opening using path \"" +
-                        inputNameFull + "\"" );
+                inputNameFull + "\"" );
             nwsrfs_dmi = new NWSRFS_DMI( inputNameFull );
             // TODO SAM 2008-09-10 Evaluate whether to save in processor for future use.
         }
@@ -677,9 +667,10 @@ throws InvalidCommandParameterException,
             Message.printWarning ( 2, routine, e );
             throw new Exception ( message );
         }
-        if ( (_use_alias && ts != null) ) {
-            // Set the alias...
-            ts.setAlias ( Alias );
+        if ( (ts != null) && (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, ts, Alias, status, command_phase);
+            ts.setAlias ( alias );
         }
 	} 
 	catch ( Exception e ) {
@@ -754,17 +745,28 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
 {
-	if ( props == null ) {
-	    if ( _use_alias ) {
-	        return "TS Alias = " + getCommandName() + "()";
-	    }
-	    else {
-	        return getCommandName() + "()";
-	    }
-	}
+    return toString ( props, 10 );
+}
+
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
 
 	String Alias = props.getValue("Alias");
 	String TSID = props.getValue("TSID");
@@ -774,7 +776,7 @@ public String toString ( PropList props )
 
 	StringBuffer b = new StringBuffer ();
 	
-    if (_use_alias && (TSID != null) && (TSID.length() > 0)) {
+    if ( (TSID != null) && (TSID.length() > 0)) {
         if (b.length() > 0) {
             b.append(",");
         }
@@ -802,13 +804,23 @@ public String toString ( PropList props )
         }
         b.append("Units=\"" + Units + "\"");
     }
-
-    String lead = "";
-	if ( _use_alias && (Alias != null) && (Alias.length() > 0) ) {
-		lead = "TS " + Alias + " = ";
-	}
-
-	return lead + getCommandName() + "(" + b.toString() + ")";
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

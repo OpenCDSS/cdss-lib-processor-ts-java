@@ -46,6 +46,8 @@ import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandProgressListener;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -80,9 +82,10 @@ import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 import DWR.DMI.HydroBaseDMI.HydroBase_WISSheetNameWISFormat;
 
 /**
-This class initializes, checks, and runs the ReadHydroBase() and Alias = ReadHydroBase() commands.
+This class initializes, checks, and runs the ReadHydroBase() command.
 */
-public class ReadHydroBase_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
+public class ReadHydroBase_Command extends AbstractCommand
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 /**
@@ -104,15 +107,10 @@ protected String _Ignore = "Ignore";
 protected String _Warn = "Warn";
 
 /**
-List of time series read during discovery.  These are TS objects but with maintly the
+List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
 private List<TS> __discovery_TS_Vector = null;
-
-/**
-Indicates whether the TS Alias version of the command is being used.
-*/
-protected boolean _use_alias = false;
 
 /**
 Constructor.
@@ -137,122 +135,109 @@ throws InvalidCommandParameterException
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
-	if ( _use_alias ) {
-		String Alias = parameters.getValue ( "Alias" );
-		if ( (Alias == null) || Alias.equals("") ) {
-            message = "A time series alias must be specified.";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a time series alias." ) );
-		}
-		String TSID = parameters.getValue ( "TSID" );
-		if ( (TSID == null) || TSID.equals("") ) {
-            message = "A time series identifier must be specified.";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a time series identifier." ) );
-		}
-		else {	// Check the parts of the TSID...
-			TSIdent tsident = null;
-			try {
-                tsident = new TSIdent ( TSID );
-				String Location = tsident.getLocation();
-				String DataSource = tsident.getSource();
-				String DataType = tsident.getType();
-				String Interval = tsident.getInterval();
-				if ( Location.length() == 0 ) {
-                    message = "The location must be specified.";
-					warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify a location for the time series identifier." ) );
-				}
-				if ( DataSource.length() == 0 ) {
-                    message = "The data source must be specified.";
-					warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify a data source for the time series identifier." ) );
-				}
-				if ( DataType.length() == 0 ) {
-                    message = "The data type must be specified.";
-					warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Specify a data type for the time series identifier." ) );
-				}
-				if ( Interval.length() == 0 ) {
-                    message = "The interval must be specified.";
-					warning += "\n" + message;
-                    status.addToLog ( CommandPhaseType.INITIALIZATION,
-                            new CommandLogRecord(CommandStatusType.FAILURE,
-                                    message, "Specify an interal for the time series identifier." ) );
-				}
-				else {
-                    // TODO SAM 2006-04-25
-					// Most likely the following will not be executed because parsing the TSID will generate an
-					// InvalidTimeIntervalException (caught below).  This may cause the user to
-					// do two checks to catch all input errors.
-					try { TimeInterval.parseInterval (Interval);
-					}
-					catch ( Exception e ) {
-                        message = "The data interval \"" + Interval + "\" is invalid";
-						warning += "\n" + message;
-                        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                                new CommandLogRecord(CommandStatusType.FAILURE,
-                                        message, "Specify a valid data interval." ) );
-					}
-				}
-			}
-			catch ( InvalidTimeIntervalException e ) {
-				// Will not even be able to print it...
-                message = "The data interval in the time series identifier \"" + TSID + "\" is invalid";
+    
+    String TSID = parameters.getValue ( "TSID" );
+	if ( (TSID != null) && !TSID.equals("") ) {
+	    // Check the parts of the TSID...
+		TSIdent tsident = null;
+		try {
+            tsident = new TSIdent ( TSID );
+			String Location = tsident.getLocation();
+			String DataSource = tsident.getSource();
+			String DataType = tsident.getType();
+			String Interval = tsident.getInterval();
+			if ( Location.length() == 0 ) {
+                message = "The location part of the TSID must be specified.";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a valid data interval." ) );
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a location for the time series identifier." ) );
 			}
-			catch ( Exception e ) {
-                message = "Unable to parse TSID \"" + TSID + "\" to check its parts.";
+			if ( DataSource.length() == 0 ) {
+                message = "The data source part of the TSID must be specified.";
 				warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a data source for the time series identifier." ) );
+			}
+			if ( DataType.length() == 0 ) {
+                message = "The data type must be specified.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a data type for the time series identifier." ) );
+			}
+			if ( Interval.length() == 0 ) {
+                message = "The TSID interval must be specified.";
+				warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify an interval for the time series identifier." ) );
+			}
+			else {
+                // TODO SAM 2006-04-25
+				// Most likely the following will not be executed because parsing the TSID will generate an
+				// InvalidTimeIntervalException (caught below).  This may cause the user to
+				// do two checks to catch all input errors.
+				try { TimeInterval.parseInterval (Interval);
+				}
+				catch ( Exception e ) {
+                    message = "The TSID data interval \"" + Interval + "\" is invalid";
+					warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
                         new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the time series identifier." ) );
+                            message, "Specify a valid data interval." ) );
+				}
 			}
 		}
-		// InputName is optional.
+		catch ( InvalidTimeIntervalException e ) {
+			// Will not even be able to print it...
+            message = "The data interval in the time series identifier \"" + TSID + "\" is invalid";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid data interval." ) );
+		}
+		catch ( Exception e ) {
+            message = "Unable to parse TSID \"" + TSID + "\" to check its parts.";
+			warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify the time series identifier." ) );
+		}
 	}
-	else {	String DataType = parameters.getValue ( "DataType" );
-		if ( (DataType == null) || (DataType.length() == 0) ) {
+	// InputName is optional.
+	if ( (TSID == null) || TSID.equals("") ) {
+    	String DataType = parameters.getValue ( "DataType" );
+    	if ( (DataType == null) || (DataType.length() == 0) ) {
             message = "The data type must be specified.";
-			warning += "\n" + message;
+    		warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify the data type." ) );
-		}
-		String Interval = parameters.getValue ( "Interval" );
-		if ( (Interval == null) || (Interval.length() == 0) ) {
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the data type." ) );
+    	}
+    	String Interval = parameters.getValue ( "Interval" );
+    	if ( (Interval == null) || (Interval.length() == 0) ) {
             message = "The data interval must be specified.";
-			warning += "\n" + message;
+    		warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the data interval." ) );
-		}
-		else {	try { TimeInterval.parseInterval (Interval);
-			}
-			catch ( Exception e ) {
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the data interval." ) );
+    	}
+    	else {
+    	    try { TimeInterval.parseInterval (Interval);
+    		}
+    		catch ( Exception e ) {
                 message = "The data interval \"" + Interval + "\" is invalid";
-				warning += "\n" + message;
+    			warning += "\n" + message;
                 status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify a valid data interval." ) );
-			}
-		}
-		// InputName is optional.
-		// TODO SAM 2006-04-24 Need to check the WhereN parameters.
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid data interval." ) );
+    		}
+    	}
 	}
+	// InputName is optional.
+	// TODO SAM 2006-04-24 Need to check the WhereN parameters.
 
 	// Used with both versions of the command...
 
@@ -334,18 +319,14 @@ throws InvalidCommandParameterException
         }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
-    if ( _use_alias ) {
-        valid_Vector.add ( "Alias" );
-        valid_Vector.add ( "TSID" );
-    }
-    else {
-        valid_Vector.add ( "DataType" );
-        valid_Vector.add ( "Interval" );
-        int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
-        for ( int i = 1; i <= numFilters; i++ ) { 
-            valid_Vector.add ( "Where" + i );
-        }
+    List<String> valid_Vector = new Vector();
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "DataType" );
+    valid_Vector.add ( "Interval" );
+    int numFilters = HydroBaseDMI.getSPFlexMaxParameters() - 2; // Maximum minus data type and interval
+    for ( int i = 1; i <= numFilters; i++ ) { 
+        valid_Vector.add ( "Where" + i );
     }
     valid_Vector.add ( "InputName" );
     valid_Vector.add ( "InputStart" );
@@ -406,96 +387,99 @@ public boolean editCommand ( JFrame parent )
 
 /**
 Parse the command string into a PropList of parameters.
-@param command_string A string command to parse.
+@param commandString A string command to parse.
 @exception InvalidCommandSyntaxException if during parsing the command is
 determined to have invalid syntax.
-syntax of the command are bad.
 @exception InvalidCommandParameterException if during parsing the command
 parameters are determined to be invalid.
 */
-public void parseCommand ( String command_string )
+public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	String routine = "ReadHydroBase_Command.parseCommand", message;
 	int warning_level = 2;
 	int warning_count = 0;
-    
-    CommandStatus status = getCommandStatus();
-	
-    List tokens = StringUtil.breakStringList ( command_string, "()", 0 );
-	if ( tokens == null ) {
-		// Must have at least the command name and something to indicate the read...
-		message = "Syntax error in \"" + command_string + "\".";
-		Message.printWarning ( warning_level, routine, message);
-		++warning_count;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Edit the command in the command editor." ) );
-		throw new InvalidCommandSyntaxException ( message );
-	}
 
-	// Parse everything after the (, which should be command parameters...
-	
-	try {
-        setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
-			(String)tokens.get(1), routine, "," ) );
-	}
-	catch ( Exception e ) {
-		message = "Syntax error in \"" + command_string + "\".";
-		Message.printWarning ( warning_level, routine, message);
-		++warning_count;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Edit the command in the command editor." ) );
-		throw new InvalidCommandSyntaxException ( message );
-	}
-	PropList parameters = getCommandParameters();
-
-	// Evaluate whether the command is a TS Alias version...
-
-	String Alias = null;
-	_use_alias = false;
-	if (StringUtil.startsWithIgnoreCase(command_string, "TS ")) {
-		// There is an alias specified.  Extract the alias from the full command...
-		String str = command_string.substring(3);	
-		int index = str.indexOf("=");
-		int index2 = str.indexOf("(");
-		if (index2 < index) {
-			// No alias specified -- badly-formed command
-			message = "No alias was specified, although the command started with \"TS ...\"";
-			Message.printWarning(warning_level, routine, message);
-			++warning_count;
+   if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(commandString);
+    }
+    else {
+        CommandStatus status = getCommandStatus();
+    	
+        List<String> tokens = StringUtil.breakStringList ( commandString, "()", 0 );
+    	if ( tokens == null ) {
+    		// Must have at least the command name and something to indicate the read...
+    		message = "Syntax error in \"" + commandString + "\".";
+    		Message.printWarning ( warning_level, routine, message);
+    		++warning_count;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Edit the command in the command editor - specify an alias." ) );
-			throw new InvalidCommandSyntaxException(message);
-		}
-
-		Alias = str.substring(0, index);
-	}
-	else {
-		Alias = null;
-	}
-
-	if ( Alias != null ) {
-		parameters.set ( "Alias", Alias.trim() );
-		_use_alias = true;
-	}
-
-	// Convert QueryStart and QueryEnd to new syntax InputStart and InputEnd...
-	String QueryStart = parameters.getValue ( "QueryStart" );
-	if ( (QueryStart != null) && (QueryStart.length() > 0) ) {
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "InputStart", QueryStart );
-		parameters.unSet ( QueryStart );
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-	}
-	String QueryEnd = parameters.getValue ( "QueryEnd" );
-	if ( (QueryEnd != null) && (QueryEnd.length() > 0) ) {
-		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
-		parameters.set ( "InputEnd", QueryEnd );
-		parameters.unSet ( QueryStart );
-		parameters.setHowSet ( Prop.SET_UNKNOWN );
-	}
+                            message, "Edit the command in the command editor." ) );
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    
+    	// Parse everything after the (, which should be command parameters...
+    	
+    	try {
+            setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT,
+    			tokens.get(1), routine, "," ) );
+    	}
+    	catch ( Exception e ) {
+    		message = "Syntax error in \"" + commandString + "\".";
+    		Message.printWarning ( warning_level, routine, message);
+    		++warning_count;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Edit the command in the command editor." ) );
+    		throw new InvalidCommandSyntaxException ( message );
+    	}
+    	PropList parameters = getCommandParameters();
+    
+    	// Evaluate whether the command is a TS Alias version...
+    
+    	String Alias = null;
+    	if (StringUtil.startsWithIgnoreCase(commandString, "TS ")) {
+    		// There is an alias specified.  Extract the alias from the full command...
+    		String str = commandString.substring(3);	
+    		int index = str.indexOf("=");
+    		int index2 = str.indexOf("(");
+    		if (index2 < index) {
+    			// No alias specified -- badly-formed command
+    			message = "No alias was specified, although the command started with \"TS ...\"";
+    			Message.printWarning(warning_level, routine, message);
+    			++warning_count;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Edit the command in the command editor - specify an alias." ) );
+    			throw new InvalidCommandSyntaxException(message);
+    		}
+    
+    		Alias = str.substring(0, index);
+    	}
+    	else {
+    		Alias = null;
+    	}
+    
+    	if ( Alias != null ) {
+    		parameters.set ( "Alias", Alias.trim() );
+    	}
+    
+    	// Convert QueryStart and QueryEnd to new syntax InputStart and InputEnd...
+    	String QueryStart = parameters.getValue ( "QueryStart" );
+    	if ( (QueryStart != null) && (QueryStart.length() > 0) ) {
+    		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+    		parameters.set ( "InputStart", QueryStart );
+    		parameters.unSet ( QueryStart );
+    		parameters.setHowSet ( Prop.SET_UNKNOWN );
+    	}
+    	String QueryEnd = parameters.getValue ( "QueryEnd" );
+    	if ( (QueryEnd != null) && (QueryEnd.length() > 0) ) {
+    		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
+    		parameters.set ( "InputEnd", QueryEnd );
+    		parameters.unSet ( QueryStart );
+    		parameters.setHowSet ( Prop.SET_UNKNOWN );
+    	}
+    }
 }
 
 /**
@@ -503,8 +487,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -517,8 +500,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -531,8 +513,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
 throws InvalidCommandParameterException,
@@ -704,14 +685,14 @@ CommandWarningException, CommandException
 
 	// Now try to read...
 
-	List tslist = new Vector();	// Vector for time series results.
+	List<TS> tslist = new Vector();	// List for time series results.
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
-        if ( _use_alias ) {
-			// TS Alias = version....
-			String Alias = parameters.getValue ( "Alias" );
-			String TSID = parameters.getValue ( "TSID" );
+        String Alias = parameters.getValue ( "Alias" );
+        String TSID = parameters.getValue ( "TSID" );
+        if ( (TSID != null) && !TSID.equals("") ) {
+			// Version that reads a single time series using the TSID
 
 			Message.printStatus ( 2, routine,"Reading HydroBase time series \"" + TSID + "\"" );
 			TS ts = null;
@@ -726,7 +707,7 @@ CommandWarningException, CommandException
                             message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
-			List hbdmi_Vector = (List)o;
+			List<HydroBaseDMI> hbdmi_Vector = (List<HydroBaseDMI>)o;
 			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, tsident.getInputName() );
 			if ( hbdmi == null ) {
 				message = "Could not find HydroBase connection with input name \"" +
@@ -738,7 +719,6 @@ CommandWarningException, CommandException
 				throw new Exception ( message );
 			}
 			try {
-			    ts = null;
                 ts = hbdmi.readTimeSeries (	TSID, InputStart_DateTime,InputEnd_DateTime, null,read_data, HydroBase_props );
 			}
 			catch ( Exception e ) {
@@ -768,7 +748,10 @@ CommandWarningException, CommandException
 			}
 			if ( ts != null ) {
 				// Set the alias...
-				ts.setAlias ( Alias );
+			    if ( Alias != null ) {
+			        ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+		                    processor, ts, Alias, status, command_phase) );
+			    }
 				tslist.add ( ts );
 			}
 		}
@@ -781,7 +764,7 @@ CommandWarningException, CommandException
 			if ( InputName == null ) {
 				InputName = "";
 			}
-			List WhereN_Vector = new Vector ( 6 );
+			List<String> WhereN_Vector = new Vector ( 6 );
 			String WhereN;
 			int nfg = 0;	// Used below.
 			for ( nfg = 0; nfg < 1000; nfg++ ) {
@@ -802,7 +785,7 @@ CommandWarningException, CommandException
                         message, "Verify that a HydroBase database connection has been opened." ) );
 				throw new Exception ( message );
 			}
-			List hbdmi_Vector = (List)o;
+			List<HydroBaseDMI> hbdmi_Vector = (List<HydroBaseDMI>)o;
 			HydroBaseDMI hbdmi = HydroBase_Util.lookupHydroBaseDMI ( hbdmi_Vector, InputName );
 			if ( hbdmi == null ) {
 				message ="Could not find HydroBase connection with input name \"" + InputName + "\" to query data.";
@@ -1025,8 +1008,9 @@ CommandWarningException, CommandException
 						+ "." + Interval
 						+ "~HydroBase" + input_name;
 				}
-	
-				Message.printStatus ( 2, routine, "Reading time series for \"" +tsident_string + "\"..." );
+	            // Update the progress
+				message = "Reading HydroBase time series " + (i + 1) + " of " + size + " \"" + tsident_string + "\"";
+                notifyCommandProgressListeners ( i, size, (float)-1.0, message );
 				try {
 				    ts = hbdmi.readTimeSeries (
 						tsident_string,
@@ -1034,6 +1018,10 @@ CommandWarningException, CommandException
 						InputEnd_DateTime, null, read_data,
 						HydroBase_props );
 					// Add the time series to the temporary list.  It will be further processed below...
+	                if ( Alias != null ) {
+	                    ts.setAlias ( TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+	                        processor, ts, Alias, status, command_phase) );
+	                }
 					tslist.add ( ts );
 				}
 				catch ( Exception e ) {
@@ -1138,70 +1126,72 @@ private void setDiscoveryTSList ( List discovery_TS_Vector )
 }
 
 /**
-Set whether the alias version of the command is being used.  This method can
-be called from an edit dialog in cases where parseCommand() may not have been
-called at startup.
-@param use_alias Indicate whether an alias is being used with the command.
+Return the string representation of the command.
+@param props parameters for the command
 */
-protected void setUseAlias ( boolean use_alias )
-{	_use_alias = use_alias;
+public String toString ( PropList props )
+{
+    return toString ( props, 10 );
 }
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
 */
-public String toString ( PropList props )
-{	StringBuffer b = new StringBuffer ();
-	if ( props == null ) {
-		if ( _use_alias ) {
-			return "TS Alias = " + getCommandName() + "()";
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
+	StringBuffer b = new StringBuffer ();
+	String Alias = props.getValue("Alias"); // Alias added at end
+	String TSID = props.getValue("TSID");
+	if ( (TSID != null) && (TSID.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
 		}
-		else {
-		    return getCommandName() + "()";
-		}
+		b.append ( "TSID=\"" + TSID + "\"" );
 	}
-	if ( _use_alias ) {
-		String TSID = props.getValue("TSID");
-		if ( (TSID != null) && (TSID.length() > 0) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "TSID=\"" + TSID + "\"" );
-		}
+	if ( (TSID == null) || TSID.equals("") ) {
+	    // The following need to be explicitly specified when not using the TSID
+        String DataType = props.getValue("DataType");
+    	if ( (DataType != null) && (DataType.length() > 0) ) {
+    		if ( b.length() > 0 ) {
+    			b.append ( "," );
+    		}
+    		b.append ( "DataType=\"" + DataType + "\"" );
+    	}
+    	String Interval = props.getValue("Interval");
+    	if ( (Interval != null) && (Interval.length() > 0) ) {
+    		if ( b.length() > 0 ) {
+    			b.append ( "," );
+    		}
+    		b.append ( "Interval=\"" + Interval + "\"" );
+    	}
 	}
-	else {
-	    String DataType = props.getValue("DataType");
-		if ( (DataType != null) && (DataType.length() > 0) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "DataType=\"" + DataType + "\"" );
+	String InputName = props.getValue("InputName");
+	if ( (InputName != null) && (InputName.length() > 0) ) {
+		if ( b.length() > 0 ) {
+			b.append ( "," );
 		}
-		String Interval = props.getValue("Interval");
-		if ( (Interval != null) && (Interval.length() > 0) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "Interval=\"" + Interval + "\"" );
-		}
-		String InputName = props.getValue("InputName");
-		if ( (InputName != null) && (InputName.length() > 0) ) {
-			if ( b.length() > 0 ) {
-				b.append ( "," );
-			}
-			b.append ( "InputName=\"" + InputName + "\"" );
-		}
-		String delim = ";";
-	    for ( int i = 1; i <= __numWhere; i++ ) {
-        	String where = props.getValue("Where" + i);
-        	if ( (where != null) && (where.length() > 0) && !where.startsWith(delim) ) {
-        		if ( b.length() > 0 ) {
-        			b.append ( "," );
-        		}
-        		b.append ( "Where" + i + "=\"" + where + "\"" );
-        	}
-	    }
+		b.append ( "InputName=\"" + InputName + "\"" );
 	}
+	String delim = ";";
+    for ( int i = 1; i <= __numWhere; i++ ) {
+    	String where = props.getValue("Where" + i);
+    	if ( (where != null) && (where.length() > 0) && !where.startsWith(delim) ) {
+    		if ( b.length() > 0 ) {
+    			b.append ( "," );
+    		}
+    		b.append ( "Where" + i + "=\"" + where + "\"" );
+    	}
+    }
 	String InputStart = props.getValue("InputStart");
 	if ( (InputStart != null) && (InputStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -1253,22 +1243,23 @@ public String toString ( PropList props )
         }
         b.append ( "IfMissing=" + IfMissing );
     }
-	if ( _use_alias ) {
-		String Alias = props.getValue ( "Alias" );
-		return "TS " + Alias + " = " + getCommandName() + "(" + b.toString() + ")";
-	}
-	else {
-	    return getCommandName() + "(" + b.toString() + ")";
-	}
-}
-
-/**
-Indicate whether the alias version of the command is being used.  This method
-will return a reliable value only after the parseCommandParameters() method is
-called.
-*/
-protected boolean useAlias ()
-{	return _use_alias;
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

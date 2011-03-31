@@ -2,6 +2,7 @@ package rti.tscommandprocessor.commands.ensemble;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
@@ -289,7 +290,13 @@ CommandWarningException, CommandException
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryEnsemble ( null );
     }
-    
+
+    String TSList = parameters.getValue ( "TSList" );
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = null;  // Default is don't add time series
+    }
+    String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
     List<TS> tslist = null; // Time series to add to the new ensemble
     int nts = 0; // Number of time series
     DateTime InputStart_DateTime = null;
@@ -310,15 +317,15 @@ CommandWarningException, CommandException
     // FIXME SAM 2009-10-10 Always make false until technical issues can be resolved
     CopyTimeSeries_boolean = false;
 
-    if ( commandPhase == CommandPhaseType.RUN ) {
-        // Get all the necessary data
-    	String TSList = parameters.getValue ( "TSList" );
-        if ( (TSList == null) || TSList.equals("") ) {
-            TSList = null;  // Default is don't add time series
-        }
-    	String TSID = parameters.getValue ( "TSID" );
-        String EnsembleID = parameters.getValue ( "EnsembleID" );
-    
+    boolean createData = true;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
+        createData = false;
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
     	// Get the time series to process...
     	
         if ( (TSList != null) && !TSList.equals("") ) {
@@ -496,31 +503,27 @@ CommandWarningException, CommandException
     
     try {
         TSEnsemble ensemble = null;
-        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-            // Create a discovery ensemble with ID and name
-            ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, null );
-            setDiscoveryEnsemble ( ensemble );
+		// Convert time series to ensemble...
+		Message.printStatus ( 2, routine, "Using " + nts + " time series to create ensemble \"" +
+		    NewEnsembleID + "\"." );
+		TSUtil_NewEnsemble tsu = new TSUtil_NewEnsemble( NewEnsembleID, NewEnsembleName, tslist,
+		     InputStart_DateTime, InputEnd_DateTime, CopyTimeSeries_boolean );
+		ensemble = tsu.newEnsemble();
+		List<String> problems = tsu.getProblems();
+        for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
+            message = problems.get(iprob);
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+            // No recommendation since it is a user-defined check
+            // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
         }
-        else if ( commandPhase == CommandPhaseType.RUN ) {
-    		// Convert time series to ensemble...
-    		Message.printStatus ( 2, routine, "Using " + nts + " time series to create ensemble \"" +
-    		    NewEnsembleID + "\"." );
-    		TSUtil_NewEnsemble tsu = new TSUtil_NewEnsemble( NewEnsembleID, NewEnsembleName, tslist,
-    		     InputStart_DateTime, InputEnd_DateTime, CopyTimeSeries_boolean );
-    		ensemble = tsu.newEnsemble();
-    		List<String> problems = tsu.getProblems();
-            for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
-                message = problems.get(iprob);
-                Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
-                // No recommendation since it is a user-defined check
-                // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
-                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
+        // Add the ensemble to the processor if created
+        if ( ensemble != null ) {
+            if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+                setDiscoveryEnsemble ( ensemble );
             }
-            // Add the ensemble to the processor if created
-            if ( ensemble != null ) {
-                TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
-            }
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
         }
 	}
 	catch ( Exception e ) {

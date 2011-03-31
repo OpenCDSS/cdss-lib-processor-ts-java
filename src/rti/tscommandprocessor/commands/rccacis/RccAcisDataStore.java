@@ -834,8 +834,11 @@ throws URISyntaxException, IOException
             }
             else if ( imod9 == 8 ) {
                 // Last column in the table is blank
-                __variableTableRecordList.add(new RccAcisVariableTableRecord(major, minor, name, method,
-                       measureInterval, reportInterval, units, source));
+                // TODO SAM 2011-03-31 Only include daily data as per Bill Noon - need to figure out aggregations
+                if ( reportInterval.equalsIgnoreCase("DAILY") ) {
+                    __variableTableRecordList.add(new RccAcisVariableTableRecord(major, minor, name, method,
+                           measureInterval, reportInterval, units, source));
+                }
             }
         }
     }

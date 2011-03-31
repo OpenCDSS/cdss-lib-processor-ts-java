@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// changeInterval_Command - editor for TS X = changeInterval()
+// changeInterval_Command - editor ChangeInterval()
 //
 // TODO SAM 2005-02-12
 //		In the future may also support changeInterval() to operate on
@@ -37,6 +37,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 
 import RTi.TS.TS;
+import RTi.TS.TSEnsemble;
 import RTi.TS.TSStatisticType;
 import RTi.TS.TSUtil_CalculateTimeSeriesStatistic;
 import RTi.TS.TSUtil_ChangeInterval;
@@ -50,8 +51,8 @@ import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
-import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.CommandProcessorRequestResultsBean;
+import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
@@ -67,8 +68,11 @@ import RTi.Util.Time.TimeInterval;
 import RTi.Util.Time.TimeScaleType;
 import RTi.Util.Time.YearType;
 
+/**
+This command initializes and runs the ChangeInterval() command.
+*/
 public class ChangeInterval_Command extends AbstractCommand
-implements Command, CommandDiscoverable, ObjectListProvider
+implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
 // Defines used by this class and its changeInterval_Dialog counterpart.
@@ -80,12 +84,15 @@ protected final String _IncludeFirstOnly = "IncludeFirstOnly";
 protected final String _AverageEndpoints = "AverageEndpoints";
 
 /**
+TSEnsemble created in discovery mode (basically to get the identifier for other commands).
+*/
+private TSEnsemble __tsensemble = null;
+
+/**
 List of time series read during discovery.  These are TS objects but with mainly the
 metadata (TSIdent) filled in.
 */
 private List<TS> __discoveryTSList = null;
-
-private final boolean __read_one = true;	// For now only enable the TS Alias notation.
 
 /**
 Command constructor.
@@ -115,6 +122,8 @@ throws InvalidCommandParameterException
 	// Get the properties from the PropList parameters.
 	String Alias = parameters.getValue( "Alias" );
 	String TSID = parameters.getValue( "TSID" );
+	String EnsembleID = parameters.getValue( "EnsembleID" );
+	String NewEnsembleID = parameters.getValue( "NewEnsembleID" );
 	String NewInterval = parameters.getValue( "NewInterval" );
 	String OldTimeScale = parameters.getValue( "OldTimeScale" );
 	String NewTimeScale = parameters.getValue( "NewTimeScale" );
@@ -129,7 +138,7 @@ throws InvalidCommandParameterException
 	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
 	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
 
-	// Alias must be specified.
+	// Alias must be specified - for historical command syntax (and generally a good idea)
 	// TODO [LT 2005-05-24] How about the __read_one issue (see parseCommand() method)
 	if ( Alias == null || Alias.length() == 0 ) {
         message = "The time series alias must be specified.";
@@ -140,21 +149,6 @@ throws InvalidCommandParameterException
                 "Provide a time series alias when defining the command."));
 	}
 	
-	// TSID - TSID will always be set from the changeInterval_JDialog when
-	// the OK button is pressed, but the user may edit the command without
-	// using the changeInterval_JDialog editor and try to run it, so this
-	// method should at least make sure the TSID property is given.
-	// TODO [LT 2005-05-26] Better test may be put in place here, to make
-	// sure the given TSID is actually a valid time series in the system.
-	if ( TSID == null || TSID.length() == 0 ) {
-        message = "The identifier for the time series to convert must be specified.";
-        warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(
-                CommandStatusType.FAILURE, message,
-                "Provide a time series identifier when defining the command."));
-	}
-
 	// Check if the alias for the new time series is the same as the 
 	// alias used by one of the time series in memory.
 	// If so print a warning...
@@ -177,6 +171,16 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message,
                 "Specify different time series for input and output."));
+	}
+	
+	// Verify that a NewEnsembleID is specified only if an input EnsembleID is specified
+	if ( (NewEnsembleID != null) && !NewEnsembleID.equals("") && ((EnsembleID == null) || EnsembleID.equals(""))) {
+        message = "The NewEnsembleID can only be specified when the input time series are specified using EnsembleID.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify input as an ensemble or clear the NewEnsembleID.")); 
 	}
 	
     TimeInterval newInterval = null;
@@ -432,8 +436,12 @@ throws InvalidCommandParameterException
     
     // Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
-    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
+    valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "NewEnsembleID" );
+    valid_Vector.add ( "NewEnsembleName" );
     valid_Vector.add ( "NewInterval" );
     valid_Vector.add ( "OldTimeScale" );
     valid_Vector.add ( "NewTimeScale" );
@@ -481,6 +489,14 @@ throws Throwable
 }
 
 /**
+Return the ensemble that is read by this class when run in discovery mode.
+*/
+private TSEnsemble getDiscoveryEnsemble()
+{
+    return __tsensemble;
+}
+
+/**
 Return the list of time series read in discovery phase.
 */
 private List<TS> getDiscoveryTSList ()
@@ -493,15 +509,25 @@ Return the list of data objects created by this object in discovery mode.
 */
 public List getObjectList ( Class c )
 {
+    TSEnsemble tsensemble = getDiscoveryEnsemble();
     List<TS> discoveryTSList = getDiscoveryTSList ();
-    if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
-        return null;
-    }
+
+    // TODO SAM 2011-03-31 Does the following work as intended?
     // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)
     TS datats = discoveryTSList.get(0);
     // Use the most generic for the base class...
     if ( (c == TS.class) || (c == datats.getClass()) ) {
-        return discoveryTSList;
+        if ( (discoveryTSList == null) || (discoveryTSList.size() == 0) ) {
+            return null;
+        }
+        else {
+            return discoveryTSList;
+        }
+    }
+    else if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
+        List<TSEnsemble> v = new Vector();
+        v.add ( tsensemble );
+        return v;
     }
     else {
         return null;
@@ -525,61 +551,76 @@ throws 	InvalidCommandSyntaxException, InvalidCommandParameterException
 		mssg = "Command to parse is: " + command;
 		Message.printDebug ( 10, mthd, mssg );
 	}
-	 
-	String Alias = "";
 	
-    // TODO SAM 2007-11-29 Is this envisioned to process multiple time series?
-	// Since this command is of the type TS X = changeInterval (...), we
-	// first need to parse the Alias (the X in the command). 
-	String substring = "";
-	if ( command.indexOf('=') >= 0 ) {
-		// Because the parameters contain =, find the first = to break
-		// the assignment TS X = changeInterval (...).
-		int pos = -1;	// Will be incremented to zero if !__read_one.
-		if ( __read_one ) {
+    if ( !command.trim().toUpperCase().startsWith("TS") ) {
+        // New style syntax using simple parameter=value notation
+        super.parseCommand(command);
+    }
+    else {
+    	String Alias = "";
+    	
+        // TODO SAM 2007-11-29 Is this envisioned to process multiple time series?
+    	// Since this command is of the type TS X = changeInterval (...), we
+    	// first need to parse the Alias (the X in the command). 
+    	String substring = "";
+    	if ( command.indexOf('=') >= 0 ) {
+    		// Because the parameters contain =, find the first = to break
+    		// the assignment TS X = changeInterval (...).
+    		int pos = -1;	// Will be incremented to zero if !__read_one.
 			// TS X = changeInterval (...)
 			pos = command.indexOf('=');
 			substring = command.substring(0,pos).trim();
 			List<String> v = StringUtil.breakStringList ( substring, " ", StringUtil.DELIM_SKIP_BLANKS ); 
 			// First field has format "TS X"
 			Alias = (v.get(1)).trim();		
-		}
-		
-		// Substring, eliminating "TS X =" when __read_one is true.
-		// The result substring in any case will contain only the
-		// changeInterval (...) part of the command.
-		substring = command.substring(pos + 1).trim();	
-			
-		// Split the substring into two parts: the command name and 
-		// the parameters list within the parenthesis.
-		List<String> tokens = StringUtil.breakStringList ( substring, "()", 0 );
-		if ( tokens == null ) {
-			// Must have at least the command name and the parameter list.
-			mssg = "Syntax error in \"" + command + "\".";
-			Message.printWarning ( warning_level, mthd, mssg);
-			throw new InvalidCommandSyntaxException ( mssg );
-		}
-	
-		// Parse the parameters (second token in the tokens vector)
-		// needed to process the command.
-		try {
-			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), mthd, "," ) );
-			// If the Alias was found in the command added it to the parameters propList.	
-			if ( Alias != null && Alias.length() > 0 ) {
-				setCommandParameter( "Alias", Alias );
-				
-				if ( Message.isDebugOn ) {
-					mssg = "Alias is: " + Alias;
-					Message.printDebug ( 10, mthd, mssg );
-				}
-			} 	
-		}
-		catch ( Exception e ) {
-			mssg = "Syntax error in \"" + command + "\".  Not enough tokens.";
-			Message.printWarning ( warning_level, mthd, mssg );
-			throw new InvalidCommandSyntaxException ( mssg );
-		}
-	}
+    		
+    		// Substring, eliminating "TS X =" when __read_one is true.
+    		// The result substring in any case will contain only the
+    		// changeInterval (...) part of the command.
+    		substring = command.substring(pos + 1).trim();	
+    			
+    		// Split the substring into two parts: the command name and 
+    		// the parameters list within the parenthesis.
+    		List<String> tokens = StringUtil.breakStringList ( substring, "()", 0 );
+    		if ( tokens == null ) {
+    			// Must have at least the command name and the parameter list.
+    			mssg = "Syntax error in \"" + command + "\".";
+    			Message.printWarning ( warning_level, mthd, mssg);
+    			throw new InvalidCommandSyntaxException ( mssg );
+    		}
+    	
+    		// Parse the parameters (second token in the tokens vector)
+    		// needed to process the command.
+    		try {
+    			setCommandParameters ( PropList.parse ( Prop.SET_FROM_PERSISTENT, tokens.get(1), mthd, "," ) );
+    			// If the Alias was found in the command added it to the parameters propList.	
+    			if ( Alias != null && Alias.length() > 0 ) {
+    				setCommandParameter( "Alias", Alias );
+    				
+    				if ( Message.isDebugOn ) {
+    					mssg = "Alias is: " + Alias;
+    					Message.printDebug ( 10, mthd, mssg );
+    				}
+    			} 	
+    		}
+    		catch ( Exception e ) {
+    			mssg = "Syntax error in \"" + command + "\".  Not enough tokens.";
+    			Message.printWarning ( warning_level, mthd, mssg );
+    			throw new InvalidCommandSyntaxException ( mssg );
+    		}
+    	}
+    }
+    // Possible because of support of legacy and new format that "TS Alias = TSID" equivalent was parsed
+    // but TSID is not specified.  Therefore, handle conversion
+    PropList parameters = getCommandParameters();
+    String TSID = parameters.getValue("TSID");
+    String TSList = parameters.getValue("TSList");
+    if ( (TSID != null) && !TSID.equals("") ) {
+        if ( (TSList == null) || TSList.equals("") ) {
+            // Legacy behavior was to match last matching TSID
+            parameters.set("TSList=" + TSListType.LAST_MATCHING_TSID );
+        }
+    }
 }
 
 /**
@@ -631,11 +672,20 @@ CommandWarningException, CommandException
     status.clearLog(commandPhase);
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTSList ( null );
+        setDiscoveryEnsemble ( null );
     }
+    TSCommandProcessor processor = (TSCommandProcessor)getCommandProcessor();
 	
 	PropList parameters = getCommandParameters();
-	String Alias = parameters.getValue( "Alias" );
-	String TSID = parameters.getValue( "TSID"  );
+    String TSList = parameters.getValue ( "TSList" );
+    if ( (TSList == null) || TSList.equals("") ) {
+        TSList = "" + TSListType.ALL_TS;
+    }
+    String TSID = parameters.getValue ( "TSID" );
+    String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String Alias = parameters.getValue ( "Alias" );
+    String NewEnsembleID = parameters.getValue( "NewEnsembleID"  );
+    String NewEnsembleName = parameters.getValue( "NewEnsembleName"  );
 	String NewInterval = parameters.getValue( "NewInterval"  );
 	TimeInterval newInterval = null;
 	try {
@@ -697,62 +747,76 @@ CommandWarningException, CommandException
 	        TSUtil_ChangeInterval_HandleMissingInputHowType.valueOfIgnoreCase(HandleMissingInputHow);
 	}
 	
-	// Get the original time series to change interval from.  Currently just one can be processed.
-	
-	CommandProcessor processor = getCommandProcessor();
-	TS original_ts = null;
+    // Get the time series to process.
+
+    List<TS> tslist = null;
+    boolean createData = true; // Whether to fill in the data array
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         // Get the discovery time series list from all time series above this command
-        String TSList = "" + TSListType.LAST_MATCHING_TSID;
-        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
-            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
-        if ( (tslist != null) && (tslist.size() > 0) ) {
-            original_ts = tslist.get(0);
-        }
+        // FIXME - SAM 2011-02-02 This gets all the time series, not just the ones matching the request!
+        tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, EnsembleID );
+        createData = false;
     }
     else if ( commandPhase == CommandPhaseType.RUN ) {
-    	PropList request_params = new PropList ( "" );
-    	request_params.set ( "CommandTag", command_tag );
-    	request_params.set ( "TSID", TSID );
-    	CommandProcessorRequestResultsBean bean = null;
-    	try {
-    	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-    	}
-    	catch ( Exception e ) {
-    		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-    		Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
+        PropList request_params = new PropList ( "" );
+        request_params.set ( "TSList", TSList );
+        request_params.set ( "TSID", TSID );
+        request_params.set ( "EnsembleID", EnsembleID );
+        CommandProcessorRequestResultsBean bean = null;
+        try {
+            bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
+        }
+        catch ( Exception e ) {
+            message = "Error requesting GetTimeSeriesToProcess(TSList=\"" + TSList +
+            "\", TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\") from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
             status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
-    	}
-    	PropList bean_PropList = bean.getResultsPropList();
-    	Object o_TS = bean_PropList.getContents ( "TS");
-    	if ( o_TS == null ) {
-    		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-    		Message.printWarning(log_level,
-    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-    				routine, message );
+        }
+        if ( bean == null ) {
+            Message.printStatus ( 2, routine, "Bean is null.");
+        }
+        PropList bean_PropList = bean.getResultsPropList();
+        Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
+        if ( o_TSList == null ) {
+            message = "Null TSToProcessList returned from processor for GetTimeSeriesToProcess(TSList=\"" + TSList +
+            "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+            Message.printWarning ( log_level,
+            MessageUtil.formatMessageTag(
+            command_tag,++warning_count), routine, message );
             status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-    	}
-    	else {
-    		original_ts = (TS)o_TS;
-    	}
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message,
+                            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+        }
+        else {
+            tslist = (List)o_TSList;
+            if ( tslist.size() == 0 ) {
+                message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
+                "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
+                Message.printWarning ( log_level,
+                    MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE, message,
+                        "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+            }
+        }
     }
-	
-	if ( original_ts == null ){
-		message = "Cannot determine the time series to process for TSID=\"" + TSID + "\".";
-		Message.printWarning(warning_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, message );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify the time series identifier.  A previous error may also cause this problem." ) );
-		throw new CommandWarningException ( message);
-	}
+    
+    int nts = tslist.size();
+    if ( nts == 0 ) {
+        message = "Unable to find time series to process using TSList=\"" + TSList + "\" TSID=\"" + TSID +
+            "\", EnsembleID=\"" + EnsembleID + "\".";
+        Message.printWarning ( warning_level,
+        MessageUtil.formatMessageTag(
+        command_tag,++warning_count), routine, message );
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message,
+            "Verify that the TSID parameter matches one or more time series - may be OK for partial run." ) );
+    }
 	
     if ( warning_count > 0 ) {
         // Input error...
@@ -764,55 +828,75 @@ CommandWarningException, CommandException
     }
 	
 	// If here, have enough input to attempt the changing the interval
+    TS original_ts = null; // Original (input) time series
 	TS result_ts = null; // Result time series
-	boolean createData = true;
-    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        createData = false;
-    }
-	try {
-		// Process the change of interval
-	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
-            oldTimeScale, newTimeScale, statisticType, outputYearType, NewDataType, NewUnits, tolerance,
-            handleEndpointsHow, outputFillMethod, handleMissingInputHow, allowMissingCount,
-            null ); // AllowMissingPercent (not implemented in command)
-		result_ts = tsu.changeInterval ( createData );
-		
-		// Update the newly created time series alias (alias is required)
-		result_ts.setAlias(Alias);
-
-		// Add the newly created time series to the software memory.
-	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-	        // Just want time series headers initialized
-	        List<TS> discoveryTSList = new Vector();
-	        discoveryTSList.add ( result_ts );
-	        setDiscoveryTSList ( discoveryTSList );
-	    }
-	    else if ( commandPhase == CommandPhaseType.RUN ) {
-	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
-	    }
-	}
-    catch ( IllegalArgumentException e ) {
-      message = "Error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		Message.printWarning ( log_level, routine, e );
-        status.addToLog ( commandPhase,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Consult documentation for available parameter combinations." ) );
-        throw new CommandWarningException ( message );
-    }
-	catch ( Exception e ) {
-		message = "Unexpected error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		Message.printWarning ( log_level, routine, e );
-        status.addToLog ( commandPhase,
+	List<TS> resultList = new Vector();
+    for ( int its = 0; its < nts; its++ ) {
+        original_ts = tslist.get(its);
+    	try {
+    		// Process the change of interval
+    	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
+                oldTimeScale, newTimeScale, statisticType, outputYearType, NewDataType, NewUnits, tolerance,
+                handleEndpointsHow, outputFillMethod, handleMissingInputHow, allowMissingCount,
+                null ); // AllowMissingPercent (not implemented in command)
+    		result_ts = tsu.changeInterval ( createData );
+    		resultList.add(result_ts);
+    		
+    		// Update the newly created time series alias (alias is required)
+            if ( (Alias != null) && !Alias.equals("") ) {
+                String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                    processor, result_ts, Alias, status, commandPhase);
+                result_ts.setAlias ( alias );
+            }
+    
+    		// Add the newly created time series to the software memory.
+    	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+    	        // Just want time series headers initialized
+    	        setDiscoveryTSList ( resultList ); // OK to reset each time
+    	    }
+    	    if ( commandPhase == CommandPhaseType.RUN ) {
+    	        // Add single time series
+    	        TSCommandProcessorUtil.appendTimeSeriesToResultsList(processor, this, result_ts );
+    	    }
+    	}
+        catch ( IllegalArgumentException e ) {
+            message = "Error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
+    		Message.printWarning(warning_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+    		Message.printWarning ( log_level, routine, e );
+            status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support." ) );
-		throw new CommandWarningException ( message );
-	}
+                    message, "Consult documentation for available parameter combinations." ) );
+            throw new CommandWarningException ( message );
+        }
+    	catch ( Exception e ) {
+    		message = "Unexpected error changing the interval for TSID=\"" + TSID + "\" (" + e + ").";
+    		Message.printWarning(warning_level,
+    				MessageUtil.formatMessageTag( command_tag, ++warning_count),
+    				routine, message );
+    		Message.printWarning ( log_level, routine, e );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support." ) );
+    		throw new CommandWarningException ( message );
+    	}
+    }
+    
+    // If processing an ensemble, create the new ensemble
+    
+    if ( (NewEnsembleID != null) && !NewEnsembleID.equals("") ) {
+        if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Create a discovery ensemble with ID and name
+            TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, resultList );
+            setDiscoveryEnsemble ( ensemble );
+        }
+        else if ( commandPhase == CommandPhaseType.RUN ) {
+            // Add the ensemble to the processor if created
+            TSEnsemble ensemble = new TSEnsemble ( NewEnsembleID, NewEnsembleName, resultList );
+            TSCommandProcessorUtil.appendEnsembleToResultsEnsembleList(processor, this, ensemble);
+        }
+    }
 
 	// Throw CommandWarningException in case of problems.
 	if ( warning_count > 0 ) {
@@ -826,6 +910,14 @@ CommandWarningException, CommandException
 }
 
 /**
+Set the ensemble that is processed by this class in discovery mode.
+*/
+private void setDiscoveryEnsemble ( TSEnsemble tsensemble )
+{
+    __tsensemble = tsensemble;
+}
+
+/**
 Set the list of time series read in discovery phase.
 @param discoveryTSList list of time series created during discovery phase
 */
@@ -836,16 +928,36 @@ private void setDiscoveryTSList ( List<TS> discoveryTSList )
 
 /**
 Return the string representation of the command.
+@param props parameters for the command
 */
 public String toString ( PropList props )
 {
-	if ( props == null ) {
-		return getCommandName() + "()";
-	}
+    return toString ( props, 10 );
+}
 
-	// Get the properties from the command; 
+/**
+Return the string representation of the command.
+@param props parameters for the command
+@param majorVersion the major version for software - if less than 10, the "TS Alias = " notation is used,
+allowing command files to be saved for older software.
+*/
+public String toString ( PropList props, int majorVersion )
+{   if ( props == null ) {
+        if ( majorVersion < 10 ) {
+            return "TS Alias = " + getCommandName() + "()";
+        }
+        else {
+            return getCommandName() + "()";
+        }
+    }
+
+	// Get the properties from the command
+    String TSList = props.getValue( "TSList" );
+    String TSID = props.getValue( "TSID" );
+    String EnsembleID = props.getValue( "EnsembleID" );
 	String Alias = props.getValue( "Alias" );
-	String TSID = props.getValue( "TSID" );
+	String NewEnsembleID = props.getValue( "NewEnsembleID" );
+	String NewEnsembleName = props.getValue( "NewEnsembleName" );
 	String NewInterval = props.getValue( "NewInterval" );
 	String OldTimeScale = props.getValue( "OldTimeScale" );
 	String NewTimeScale = props.getValue( "NewTimeScale" );
@@ -866,84 +978,107 @@ public String toString ( PropList props )
 	// This StringBuffer will contain all parameters for the command.
 	StringBuffer b = new StringBuffer();
 
-	if ( TSID != null && TSID.length() > 0 ) {
-		if ( b.length() > 0 ) b.append ( "," );
-		b.append ( "TSID=\"" + TSID + "\"" );
-	}
-
+    if ( (TSList != null) && (TSList.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSList=" + TSList );
+    }
+    if ( (TSID != null) && (TSID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "TSID=\"" + TSID + "\"" );
+    }
+    if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (NewEnsembleID != null) && (NewEnsembleID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewEnsembleID=\"" + NewEnsembleID + "\"" );
+    }
+    if ( (NewEnsembleName != null) && (NewEnsembleName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "NewEnsembleName=\"" + NewEnsembleName + "\"" );
+    }
 	if ( NewInterval != null && NewInterval.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewInterval=" + NewInterval );
 	}
-
 	if ( OldTimeScale != null && OldTimeScale.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "OldTimeScale=" + OldTimeScale );
 	}
-
 	if ( NewTimeScale != null && NewTimeScale.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewTimeScale=" + NewTimeScale  );
 	}
-	
     if ( Statistic != null && Statistic.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "Statistic=" + Statistic  );
     }
-	
     if ( (OutputYearType != null) && (OutputYearType.length() > 0) ) {
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "OutputYearType=" + OutputYearType );
     }
-
 	if ( NewDataType != null && NewDataType.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "NewDataType=" + NewDataType );
 	}
-	
     if ( NewUnits != null && NewUnits.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "NewUnits=" + NewUnits );
     }
-
     if ( Tolerance != null && Tolerance.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "Tolerance=" + Tolerance );
     }
-	
     if ( HandleEndpointsHow != null && HandleEndpointsHow.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
         b.append ( "HandleEndpointsHow=" + HandleEndpointsHow );
     }
-
 	if ( AllowMissingCount != null && AllowMissingCount.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "AllowMissingCount=" + AllowMissingCount );
 	}
-	
 	// Adding the AllowMissingPercent
 	/* TODO SAM 2005-02-18 may enable later
 	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "AllowMissingPercent=" + AllowMissingPercent );
 	} */
-	
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "OutputFillMethod=" + OutputFillMethod );
 	}
-	
 	if ( HandleMissingInputHow != null && HandleMissingInputHow.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "HandleMissingInputHow=" + HandleMissingInputHow );
 	}
-	
-	String commandString = getCommandName() + "(" + b.toString() + ")";
-	if ( __read_one ) {
-		commandString = "TS " + Alias + " = " + commandString;
-	} 
-	
-	return commandString;
+    if ( majorVersion < 10 ) {
+        if ( (Alias == null) || Alias.equals("") ) {
+            Alias = "Alias";
+        }
+        return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
+    }
+    else {
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.insert(0, "Alias=\"" + Alias + "\",");
+            }
+            else {
+                b.append ( "Alias=\"" + Alias + "\"" );
+            }
+        }
+        return getCommandName() + "("+ b.toString()+")";
+    }
 }
 
 }

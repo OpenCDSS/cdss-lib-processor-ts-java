@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -15,6 +16,7 @@ import java.awt.Insets;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,7 +27,10 @@ import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
+import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSUtil_ChangeInterval;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
@@ -44,8 +49,16 @@ public class ChangeInterval_JDialog extends JDialog
 // box and documentation.
 private ChangeInterval_Command __command = null;// Command object.
 
-private JTextField	__Alias_JTextField = null;
-private SimpleJComboBox	__TSID_JComboBox = null;
+private SimpleJComboBox __TSList_JComboBox = null;
+private JLabel __TSID_JLabel = null;
+private SimpleJComboBox __TSID_JComboBox = null;
+private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
+private JLabel __NewEnsembleID_JLabel = null;
+private JTextField __NewEnsembleID_JTextField;
+private JLabel __NewEnsembleName_JLabel = null;
+private JTextField __NewEnsembleName_JTextField;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__NewInterval_JComboBox = null;
 private SimpleJComboBox	__OldTimeScale_JComboBox = null;
 private SimpleJComboBox	__NewTimeScale_JComboBox = null;
@@ -120,6 +133,37 @@ Check the GUI state to make sure that appropriate components are enabled/disable
 */
 private void checkGUIState ()
 {   String routine = "ChangeInterval_JDialog.checkGUIState";
+
+    // Handle TSList-related parameter editing...
+
+    String TSList = __TSList_JComboBox.getSelected();
+    if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        __TSID_JComboBox.setEnabled(true);
+        __TSID_JLabel.setEnabled ( true );
+    }
+    else {
+        __TSID_JComboBox.setEnabled(false);
+        __TSID_JLabel.setEnabled ( false );
+    }
+    if ( TSListType.ENSEMBLE_ID.equals(TSList)) {
+        __EnsembleID_JLabel.setEnabled ( true );
+        __EnsembleID_JComboBox.setEnabled(true);
+        __NewEnsembleID_JLabel.setEnabled ( true );
+        __NewEnsembleID_JTextField.setEnabled(true);
+        __NewEnsembleName_JLabel.setEnabled ( true );
+        __NewEnsembleName_JTextField.setEnabled(true);
+    }
+    else {
+        __EnsembleID_JLabel.setEnabled ( false );
+        __EnsembleID_JComboBox.setEnabled(false);
+        __NewEnsembleID_JLabel.setEnabled ( false );
+        __NewEnsembleID_JTextField.setEnabled(false);
+        __NewEnsembleName_JLabel.setEnabled ( false );
+        __NewEnsembleName_JTextField.setEnabled(false);
+    }
+
     // initially set the following to gray and only enable based on input and output scale.
 
     __OutputYearType_JLabel.setEnabled ( false );
@@ -260,8 +304,12 @@ Check the user input for errors and set __error_wait accordingly.
 */
 private void checkInput ()
 {	// Get the values from the interface.
+    String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
+    String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
-	String TSID = __TSID_JComboBox.getSelected();
 	String NewInterval  = __NewInterval_JComboBox.getSelected();
 	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewTimeScale  = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
@@ -279,11 +327,23 @@ private void checkInput ()
 	
 	// Put together the list of parameters to check...
 	PropList props = new PropList ( "" );
+    if ( TSList.length() > 0 ) {
+        props.set ( "TSList", TSList );
+    }
+    if ( TSID.length() > 0 ) {
+        props.set ( "TSID", TSID );
+    }
+    if ( EnsembleID.length() > 0 ) {
+        props.set ( "EnsembleID", EnsembleID );
+    }
+    if ( NewEnsembleID.length() > 0 ) {
+        props.set ( "NewEnsembleID", NewEnsembleID );
+    }
+    if ( NewEnsembleName.length() > 0 ) {
+        props.set ( "NewEnsembleName", NewEnsembleName );
+    }
 	if ( Alias != null && Alias.length() > 0 ) {
 		props.set( "Alias", Alias );
-	}
-	if ( TSID != null && TSID.length() > 0 ) {
-		props.set( "TSID", TSID );
 	}
 	if ( NewInterval != null && NewInterval.length() > 0 ) {
 		props.set( "NewInterval", NewInterval );
@@ -348,8 +408,12 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {
 	// Get the values from the interface.
+    String TSList = __TSList_JComboBox.getSelected();
+    String TSID = __TSID_JComboBox.getSelected();
+    String EnsembleID = __EnsembleID_JComboBox.getSelected();
+    String NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
+    String NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
-	String TSID = __TSID_JComboBox.getSelected();
 	String NewInterval = __NewInterval_JComboBox.getSelected();
 	String OldTimeScale = StringUtil.getToken( __OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	String NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
@@ -366,8 +430,12 @@ private void commitEdits ()
 	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
 
 	// Commit the values to the command object.
+    __command.setCommandParameter ( "TSList", TSList );
+    __command.setCommandParameter ( "TSID", TSID );
+    __command.setCommandParameter ( "EnsembleID", EnsembleID );
+    __command.setCommandParameter ( "NewEnsembleID", NewEnsembleID );
+    __command.setCommandParameter ( "NewEnsembleName", NewEnsembleName );
 	__command.setCommandParameter ( "Alias", Alias );
-	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "NewInterval", NewInterval );
 	__command.setCommandParameter ( "OldTimeScale", OldTimeScale );
 	__command.setCommandParameter ( "NewTimeScale", NewTimeScale );
@@ -437,11 +505,14 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Create a new time series by changing the data interval of an existing time series."),
+		"Create new time series by changing the data interval of each input time series."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Use the alias to reference the new time series - " +
-        "other time series information will be copied from the original."),
+        "The output time series will have an identifier that is the same as the input, but with the new" +
+        " interval."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"If the input is an ensemble, then a new ensemble can be created for output."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The conversion process depends on whether the original and "
@@ -452,36 +523,69 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>Many of the advanced parameters depend on the input data interval, " +
-        "which can only be confirmed at run time,</b></html>."),
+        "which may only be confirmed when commands are run,</b></html>."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>and are mainly for intervals less than a day.  " +  
         "Parameters are enabled/disabled as much as possible but see the documentation for details.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	// Time series alias
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( 20 );
-	__Alias_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-	// List of time series available for conversion
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to convert:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	
-    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-    			(TSCommandProcessor)__command.getCommandProcessor(), __command );
-    if ( tsids == null ) {
-        tsids = new Vector();
-    }
-	__TSID_JComboBox = new SimpleJComboBox ( true ); // Allow edit because discovery may not work with some commands
-	__TSID_JComboBox.setData ( tsids );
-	__TSID_JComboBox.addItemListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JPanel tslist_JPanel = new JPanel();
+    tslist_JPanel.setBorder(BorderFactory.createTitledBorder (
+        BorderFactory.createLineBorder(Color.black),"Time series to process"));
+    tslist_JPanel.setLayout( new GridBagLayout() );
+    
+    int yTslist = 0;
+    __TSList_JComboBox = new SimpleJComboBox(false);
+    yTslist = CommandEditorUtil.addTSListToEditorDialogPanel ( this, tslist_JPanel, __TSList_JComboBox, yTslist );
 
+    __TSID_JLabel = new JLabel ("TSID (for TSList=*TSID:");
+    __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yTslist = CommandEditorUtil.addTSIDToEditorDialogPanel (
+        this, this, tslist_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yTslist );
+    
+    __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
+    __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    yTslist = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, tslist_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yTslist );
+    
+    JGUIUtil.addComponent(main_JPanel, tslist_JPanel,
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.EAST);
+    
+    __NewEnsembleID_JLabel = new JLabel ( "New ensemble ID:" );
+    JGUIUtil.addComponent(main_JPanel, __NewEnsembleID_JLabel, 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewEnsembleID_JTextField = new JTextField ( "", 20 );
+    __NewEnsembleID_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __NewEnsembleID_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - to create ensemble when input is an ensemble."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __NewEnsembleName_JLabel = new JLabel ( "New ensemble name:" );
+    JGUIUtil.addComponent(main_JPanel, __NewEnsembleName_JLabel,
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __NewEnsembleName_JTextField = new JTextField ( "", 30 );
+    __NewEnsembleName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __NewEnsembleName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - name for new ensemble."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+	// Time series alias
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+	
 	// New interval
     JGUIUtil.addComponent(main_JPanel, new JLabel( "New interval:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -761,9 +865,12 @@ Refresh the command from the other text field contents.
 private void refresh ()
 {	
 	String mthd = "ChangeInterval_JDialog.refresh", mssg;
-	
+    String TSList = "";
+    String TSID = "";
+    String EnsembleID = "";
+    String NewEnsembleID = "";
+    String NewEnsembleName = "";
 	String Alias = "";
-	String TSID = "";
 	String NewInterval = "";
 	String OldTimeScale = "";
 	String NewTimeScale = "";
@@ -780,17 +887,17 @@ private void refresh ()
 	String HandleMissingInputHow = "";
 	
 	__error_wait = false;
-	
 	PropList props 	= null;
-	
 	if ( __first_time ) {
-		
 		__first_time = false;
-		
 		// Get the properties from the command
-		props = __command.getCommandParameters(); 
+		props = __command.getCommandParameters();
+        TSList = props.getValue ( "TSList" );
+        TSID = props.getValue ( "TSID" );
+        EnsembleID = props.getValue ( "EnsembleID" );
+        NewEnsembleID = props.getValue ( "NewEnsembleID" );
+        NewEnsembleName = props.getValue ( "NewEnsembleName" );
 		Alias = props.getValue( "Alias" );
-		TSID = props.getValue( "TSID" );
 		NewInterval = props.getValue( "NewInterval" );
 	    OldTimeScale = props.getValue( "OldTimeScale" );
 	    NewTimeScale = props.getValue( "NewTimeScale" );
@@ -806,30 +913,60 @@ private void refresh ()
 		*/
 		OutputFillMethod = props.getValue( "OutputFillMethod" );
 		HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
-		
+
+        if ( TSList == null ) {
+            // Select default...
+            __TSList_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __TSList_JComboBox,TSList, JGUIUtil.NONE, null, null ) ) {
+                __TSList_JComboBox.select ( TSList );
+            }
+            else {
+                Message.printWarning ( 1, mthd,
+                "Existing command references an invalid\nTSList value \"" + TSList +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
+                JGUIUtil.NONE, null, null ) ) {
+                __TSID_JComboBox.select ( TSID );
+        }
+        else {  // Automatically add to the list after the blank...
+            if ( (TSID != null) && (TSID.length() > 0) ) {
+                __TSID_JComboBox.insertItemAt ( TSID, 1 );
+                // Select...
+                __TSID_JComboBox.select ( TSID );
+            }
+            else {  // Select the blank...
+                __TSID_JComboBox.select ( 0 );
+            }
+        }
+        if ( EnsembleID == null ) {
+            // Select default...
+            __EnsembleID_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __EnsembleID_JComboBox,EnsembleID, JGUIUtil.NONE, null, null ) ) {
+                __EnsembleID_JComboBox.select ( EnsembleID );
+            }
+            else {
+                Message.printWarning ( 1, mthd,
+                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( NewEnsembleID != null ) {
+            __NewEnsembleID_JTextField.setText ( NewEnsembleID );
+        }
+        if ( NewEnsembleName != null ) {
+            __NewEnsembleName_JTextField.setText ( NewEnsembleName );
+        }
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
-		
-		// Update TSID text field	
-		// Select the item in the list.  If not a match, print a warning.
-		if ( TSID == null || TSID.equals("") ) {
-			// Select a default...
-            if ( __TSID_JComboBox.getItemCount() > 0 ) {
-                __TSID_JComboBox.select ( 0 );
-            }
-		} 
-		else { 
-			if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
-				__TSID_JComboBox.select ( TSID );
-			}
-            else {	
-				mssg = "Existing command references a non-existent\n" + "time series \""
-					+ TSID + "\".  Select a\ndifferent time series or Cancel.";
-				Message.printWarning ( 1, mthd, mssg );
-			}
-		}
-		
 		// Update NewInterval text field
 		// Select the item in the list.  If not a match, print a warning.
 		if ( NewInterval == null || NewInterval.equals("") ) {
@@ -991,8 +1128,12 @@ private void refresh ()
 	
 	// Regardless, reset the command from the fields.  This is only  visible
 	// information that has not been committed in the command.
+    TSList = __TSList_JComboBox.getSelected();
+    TSID = __TSID_JComboBox.getSelected();
+    EnsembleID = __EnsembleID_JComboBox.getSelected();
+    NewEnsembleID = __NewEnsembleID_JTextField.getText().trim();
+    NewEnsembleName = __NewEnsembleName_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
-	TSID = __TSID_JComboBox.getSelected();
 	NewInterval = __NewInterval_JComboBox.getSelected();
 	OldTimeScale = StringUtil.getToken(	__OldTimeScale_JComboBox.getSelected(), " ", 0, 0 );
 	NewTimeScale = StringUtil.getToken( __NewTimeScale_JComboBox.getSelected(), " ", 0, 0 );
@@ -1010,8 +1151,12 @@ private void refresh ()
 	
 	// And set the command properties.
 	props = new PropList ( __command.getCommandName() );
+    props.add ( "TSList=" + TSList );
+    props.add ( "TSID=" + TSID );
+    props.add ( "EnsembleID=" + EnsembleID );
+    props.add ( "NewEnsembleID=" + NewEnsembleID );
+    props.add ( "NewEnsembleName=" + NewEnsembleName );
 	props.add ( "Alias=" + Alias );
-	props.add ( "TSID=" + TSID );
 	props.add ( "NewInterval=" + NewInterval );
 	props.add ( "OldTimeScale=" + OldTimeScale );
 	props.add ( "OutputYearType=" + OutputYearType );
@@ -1038,7 +1183,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 public void response ( boolean ok )

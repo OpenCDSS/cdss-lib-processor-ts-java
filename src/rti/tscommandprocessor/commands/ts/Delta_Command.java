@@ -240,7 +240,6 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 
 /**
 Run the command.
-ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
@@ -255,7 +254,6 @@ CommandWarningException, CommandException
 
 /**
 Run the command.
-ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).

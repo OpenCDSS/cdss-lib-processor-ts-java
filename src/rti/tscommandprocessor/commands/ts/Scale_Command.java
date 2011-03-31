@@ -48,9 +48,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the Scale() command.
-</p>
 */
 public class Scale_Command extends AbstractCommand implements Command
 {
@@ -253,7 +251,6 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Run the command.
-ScaleValue can be "DaysInMonth" or "DaysInMonthInverse".
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).

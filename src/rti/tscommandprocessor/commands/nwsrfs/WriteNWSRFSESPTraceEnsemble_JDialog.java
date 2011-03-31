@@ -313,10 +313,6 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file " +
-		"to overwrite (or edit the file name after selection)."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"To be understood by the NWS ESPADP program, the file name should adhere to the format:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -342,7 +338,7 @@ private void initialize ( JFrame parent, Command command )
 	__CarryoverGroup_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __CarryoverGroup_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Carryover group (optional)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (	"Optional - carryover group."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Forecast group:"),
@@ -351,7 +347,7 @@ private void initialize ( JFrame parent, Command command )
 	__ForecastGroup_JTextField.addKeyListener(this);
 	JGUIUtil.addComponent(main_JPanel, __ForecastGroup_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Forecast group (optional)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - forecast group."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Segment:"),
@@ -361,7 +357,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __Segment_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Segment (optional) - default is 1st part of file name."),
+		"Optional - segment (default is 1st part of file name)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Segment description:"),
@@ -371,7 +367,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __SegmentDescription_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Segment description (optional) - default is from first time eries."),
+		"Optional - segment description (default is from first time series)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
      JGUIUtil.addComponent(main_JPanel, new JLabel ("Latitude:"),
@@ -381,7 +377,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __Latitude_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Latitude, decimal degrees (optional)."),
+		"Optional - Latitude, decimal degrees."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Longitude:"),
@@ -391,7 +387,7 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __Longitude_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Longitude, decimal degrees (optional)."),
+		"Optional - Longitude, decimal degrees."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("RFC:"),
@@ -401,23 +397,23 @@ private void initialize ( JFrame parent, Command command )
 	JGUIUtil.addComponent(main_JPanel, __RFC_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"River Forecast Center abbreviation (optional)."),
+		"Optional - River Forecast Center abbreviation."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("TS list:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    List tslist_Vector = new Vector();
+    List<String> tslist_Vector = new Vector();
 	tslist_Vector.add ( "" );
-	tslist_Vector.add ( TSListType.SELECTED_TS.toString() );
 	tslist_Vector.add ( TSListType.ALL_TS.toString() );
     tslist_Vector.add ( TSListType.ENSEMBLE_ID.toString() );
+    tslist_Vector.add ( TSListType.SELECTED_TS.toString() );
 	__TSList_JComboBox = new SimpleJComboBox(false);
 	__TSList_JComboBox.setData ( tslist_Vector );
 	__TSList_JComboBox.addItemListener (this);
 	JGUIUtil.addComponent(main_JPanel, __TSList_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Indicates the time series to output.  Default is AllTS."),
+		"Optional - indicates the time series to output (default=" + TSListType.ALL_TS + "."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");

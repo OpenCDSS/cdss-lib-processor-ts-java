@@ -9,8 +9,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
+import rti.tscommandprocessor.commands.ts.ReadTimeSeries_Command;
+
 import RTi.TS.TS;
 import RTi.TS.TSEnsemble;
+import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandLogRecord;
@@ -194,6 +197,49 @@ public static void closeRegressionTestReportFile ()
     
     __regression_test_fp.close();
     __regression_test_fp = null;
+}
+
+/**
+Convert a time series identifier to a read command.
+@param processor the time series command processor that manages data, needed to retrieve data stores, etc.
+@param tsid a time series identifier to control the conversion to a read command.
+@param requireSpecific if true then a specific ReadXXX() command is required; if false then it is OK
+to convert to the more general ReadTimeSeries() command.
+*/
+public static Command convertTSIDToReadCommand ( TSCommandProcessor processor, String tsid, boolean requireSpecific )
+throws Exception
+{
+    // First create a TSIdent object
+    TSIdent tsident = new TSIdent ( tsid );
+    // Figure out if there is an input type and name...
+    String inputType = tsident.getInputType();
+    String inputName = tsident.getInputName();
+    // TODO SAM 2011-04-04 Here need to check for matching data stores, etc. to know the command to use
+    // for the TSID.
+    boolean specificCreated = false; // Whether specific read command was created
+    if ( requireSpecific ) {
+        // Try to create a specific read command as requested.
+    }
+    if ( !specificCreated ) {
+        if ( requireSpecific ) {
+            // Could not create a specific command but it was requested
+            throw new RuntimeException ( "Conversion of TSID to specific read command for TSID=\"" + tsid +
+                 "\" has not been implemented.  Use ReadTimeSeries() instead." );
+        }
+        else {
+            // Create a ReadTimeSeriesCommand and let it do the rest of the error handling during discovery
+            // and run modes.
+            ReadTimeSeries_Command readCommand = new ReadTimeSeries_Command();
+            readCommand.getCommandParameters().set("TSID",tsid);
+            // TODO SAM 2011-04-04 Later need to phase out alias when commands have been converted to
+            // Version 10 syntax
+            readCommand.getCommandParameters().set("Alias","SpecifyAlias");
+            readCommand.setCommandProcessor(processor);
+            Message.printStatus(2, "", "Created new command \"" + readCommand + "\"" );
+            return readCommand;
+        }
+    }
+    return null;
 }
 
 /**
@@ -641,6 +687,27 @@ protected static List<TS> getDiscoveryTSFromCommands ( List<Command> commands, b
                 }
             }
         }
+        else if ( command.getCommandName().equalsIgnoreCase("Free") ) {
+            // Need to remove matching time series identifiers that are in the list
+            // (otherwise editing commands will show extra time series as of that point in the workflow, which will
+            // be confusing and may lead to errors, e.g., if consistent units are expected but the units are
+            // not consistent).
+            // First get the matching time series for the Free() command parameters
+            PropList parameters = command.getCommandParameters();
+            // TODO SAM 2011-04-04 Need to get ensembles above command
+            List<TSEnsemble> ensemblesFromCommands = new Vector();
+            TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters(tslist, ensemblesFromCommands,
+                parameters.getValue("TSList"), parameters.getValue("TSID"),
+                parameters.getValue("TSPosition"), parameters.getValue("EnsembleID") );
+            // Loop through the list of matching time series and remove identifiers at the matching positions
+            // (the time series list and identifier lists should match in position).
+            int [] pos = tsToProcess.getTimeSeriesPositions();
+            // Loop backwards so that position values don't need to be adjusted.
+            for ( int ipos = pos.length - 1; ipos >= 0; ipos--  ) {
+                //Message.printStatus(2,"", "Removing time series " + pos[ipos] + ": " + tslist.get(pos[ipos]));
+                tslist.remove(pos[ipos]);
+            }
+        }
     }
     /*
     if ( sort ) {
@@ -1059,7 +1126,7 @@ fully loaded method.  The output list is not sorted and does NOT contain the inp
 @param commands Time series commands to search.
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
-private static List<String> getTSIdentifiersFromCommands ( List commands )
+private static List<String> getTSIdentifiersFromCommands ( List<Command> commands )
 {	// Default behavior...
 	return getTSIdentifiersFromCommands ( commands, false, false );
 }
@@ -1077,50 +1144,54 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
 }
 
 /**
-Get a list of identifiers from a list of commands (as String or Command to allow
-for migration to full Command instance processing).  These strings are suitable for drop-down lists, etc.
+Get a list of identifiers from a list of commands.  These strings are suitable for drop-down lists, etc.
 Time series identifiers are determined as follows:
 <ol>
 <li>    Commands that implement ObjectListProvider have their getObjectList(TS) method called.
         The time series identifiers from the time series list are examined and those with alias
         will have the alias returned.  Otherwise, the full time series identifier is returned with or
         with input path as requested.</li>
-<li>    Command strings that start with "TS ? = " have the alias returned.</li>
+<li>    Command strings that start with "TS ? = " have the alias (?) returned.</li>
 <li>    Lines that are time series identifiers are returned, including the full path as requested.</li>
 </ol>
-@param commands Time series commands to search.
+@param commands commands to search, in order of first command to process to last.
 @param include_input If true, include the input type and name in the returned
-values.  If false, only include the 5-part information.
-@param sort Should output be sorted by identifier.
+values.  If false, only include the 5-part TSID information.  If an alias is returned, it is not
+impacted by this parameter.
+@param sort Should output be sorted by identifier (currently ignored)
 @return list of time series identifiers or an empty non-null list if nothing found.
 */
 protected static List<String> getTSIdentifiersFromCommands ( List<Command> commands, boolean include_input, boolean sort )
 {	if ( commands == null ) {
 		return new Vector();
 	}
-	List<String> v = new Vector ( 10, 10 );
+	List<String> tsidsFromCommands = new Vector (); // The String TSID or alias
+	List<TS> tsFromCommands = new Vector(); // The ts for available TS, used to store each TSIdent
 	int size = commands.size();
-	String command = null;
+	String commandString = null;
 	List<String> tokens = null;
 	boolean in_comment = false;
-	Object command_o = null;	// Command as object
+	Object command_o = null; // Command as object
+	String commandName; // Command name
 	for ( int i = 0; i < size; i++ ) {
 		command_o = commands.get(i);
+		commandName = ""; // Only care about instances of Free() commands below
 		if ( command_o instanceof Command ) {
-			command = command_o.toString().trim();
+			commandString = command_o.toString().trim();
+			commandName = ((Command)command_o).getCommandName();
 		}
 		else if ( command_o instanceof String ) {
-			command = ((String)command_o).trim();
+			commandString = ((String)command_o).trim();
 		}
-		if ( (command == null) || command.startsWith("#") || (command.length() == 0) ) {
+		if ( (commandString == null) || commandString.startsWith("#") || (commandString.length() == 0) ) {
 			// Make sure comments are ignored...
 			continue;
 		}
-		if ( command.startsWith("/*") ) {
+		if ( commandString.startsWith("/*") ) {
 			in_comment = true;
 			continue;
 		}
-		else if ( command.startsWith("*/") ) {
+		else if ( commandString.startsWith("*/") ) {
 			in_comment = false;
 			continue;
 		}
@@ -1129,7 +1200,7 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
 		}
         if ( (command_o != null) && (command_o instanceof ObjectListProvider) ) {
             // Try to get the list of identifiers using the interface method.
-            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias.
+            // TODO SAM 2007-12-07 Evaluate the automatic use of the alias (takes priority over TSID) - probably good.
             List<TS> list = ((ObjectListProvider)command_o).getObjectList ( new TS().getClass() );
             if ( list != null ) {
                 int tssize = list.size();
@@ -1138,39 +1209,97 @@ protected static List<String> getTSIdentifiersFromCommands ( List<Command> comma
                     ts = list.get(its);
                     if ( !ts.getAlias().equals("") ) {
                         // Use the alias if it is available.
-                        v.add( ts.getAlias() );
+                        tsidsFromCommands.add( ts.getAlias() );
                     }
                     else {
                         // Use the identifier.
-                        v.add ( ts.getIdentifier().toString(include_input) );
+                        tsidsFromCommands.add ( ts.getIdentifier().toString(include_input) );
                     }
+                    tsFromCommands.add( ts );
                 }
             }
         }
-		else if ( StringUtil.startsWithIgnoreCase(command,"TS ") ) {
+		else if ( StringUtil.startsWithIgnoreCase(commandString,"TS ") ) {
+		    // TODO SAM 2011-04-04 Remove this code after some period - TSTool version 10.00.00 removed the
+		    // TS Alias syntax, which should be migrated as commands are parsed.
 			// Use the alias...
-			tokens = StringUtil.breakStringList( command.substring(3)," =",	StringUtil.DELIM_SKIP_BLANKS);
+			tokens = StringUtil.breakStringList( commandString.substring(3)," =", StringUtil.DELIM_SKIP_BLANKS);
 			if ( (tokens != null) && (tokens.size() > 0) ) {
-				v.add ( tokens.get(0) );
+			    String alias = tokens.get(0);
+				tsidsFromCommands.add ( alias );
 				//+ " (alias)" );
+				// Treat as an alias
+				TS ts = new TS();
+				TSIdent tsident = new TSIdent();
+				tsident.setAlias(alias);
+				try {
+				    ts.setIdentifier(tsident);
+				}
+				catch ( Exception e ) {
+				    // This code should be phased out so don't worry about this issue
+				}
+                tsFromCommands.add( ts );
 			}
-			tokens = null;
 		}
-		else if ( isTSID(command) ) {
+		else if ( isTSID(commandString) ) {
 			// Reasonably sure it is an identifier.  Only add the
 			// 5-part TSID and not the trailing input type and name.
-			int pos = command.indexOf("~");
+			int pos = commandString.indexOf("~");
+			String tsid;
 			if ( (pos < 0) || include_input ) {
 				// Add the whole thing...
-				v.add ( command );
+				tsid = commandString;
 			}
 			else {
 			    // Add the part before the input fields...
-				v.add ( command.substring(0,pos) );
+				tsid = commandString.substring(0,pos);
 			}
+			tsidsFromCommands.add ( tsid );
+			// For the purpose of handling TSIdents for Free(), treat as an alias
+            TS ts = new TS();
+			TSIdent tsident = null;
+			try {
+			    tsident = new TSIdent(tsid);
+			}
+			catch ( Exception e ) {
+			    // Should not happen because isTSID() called at start of code block
+			}
+			// Also set the identifier as the alias...
+            tsident.setAlias(tsid);
+            try {
+                ts.setIdentifier(tsident);
+            }
+            catch ( Exception e ) {
+                // Should not happen because isTSID() called at start of code block
+            }
+            tsFromCommands.add( ts );
+		}
+		else if ( commandName.equalsIgnoreCase("Free") ) {
+		    // Need to remove matching time series identifiers that are in the list
+		    // (otherwise editing commands will show extra time series as of that point in the workflow, which will
+		    // be confusing and may lead to errors, e.g., if consistent units are expected but the units are
+		    // not consistent).
+		    // First get the matching time series for the Free() command parameters
+		    Command commandInst = (Command)command_o;
+		    PropList parameters = commandInst.getCommandParameters();
+		    // TODO SAM 2011-04-04 Need to get ensembles above command
+		    List<TSEnsemble> ensemblesFromCommands = new Vector();
+		    TimeSeriesToProcess tsToProcess = getTSMatchingTSListParameters(tsFromCommands, ensemblesFromCommands,
+	            parameters.getValue("TSList"), parameters.getValue("TSID"),
+	            parameters.getValue("TSPosition"), parameters.getValue("EnsembleID") );
+		    // Loop through the list of matching time series and remove identifiers at the matching positions
+		    // (the time series list and identifier lists should match in position).
+		    int [] pos = tsToProcess.getTimeSeriesPositions();
+		    //Message.printStatus(2,"", "Detected Free() command, have " + pos.length + " time series to check." ); 
+		    // Loop backwards so that position values don't need to be adjusted.
+		    for ( int ipos = pos.length - 1; ipos >= 0; ipos--  ) {
+	            //Message.printStatus(2,"", "Removing time series " + pos[ipos] + ": " + tsidsFromCommands.get(pos[ipos]));
+		        tsFromCommands.remove(pos[ipos]);
+		        tsidsFromCommands.remove(pos[ipos]);
+		    }
 		}
 	}
-	return v;
+	return tsidsFromCommands;
 }
 
 /**

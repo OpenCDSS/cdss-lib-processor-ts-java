@@ -684,8 +684,8 @@ CommandWarningException, CommandException
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String Alias = parameters.getValue ( "Alias" );
-    String NewEnsembleID = parameters.getValue( "NewEnsembleID"  );
-    String NewEnsembleName = parameters.getValue( "NewEnsembleName"  );
+    String NewEnsembleID = parameters.getValue( "NewEnsembleID" );
+    String NewEnsembleName = parameters.getValue( "NewEnsembleName" );
 	String NewInterval = parameters.getValue( "NewInterval"  );
 	TimeInterval newInterval = null;
 	try {

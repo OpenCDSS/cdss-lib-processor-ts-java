@@ -337,7 +337,7 @@ throws InvalidCommandParameterException,
             }
         }
         catch ( TimeSeriesNotFoundException e ) {
-            message = "Time series could not be found using identifier \"" + TSID + "\".";
+            message = "Time series could not be read using identifier \"" + TSID + "\".";
             if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                 status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
@@ -359,6 +359,7 @@ throws InvalidCommandParameterException,
                 status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that the identifier information is correct." ) );
+                Message.printWarning ( 3, routine, e );
             }
             else {
                 // Non-fatal - ignoring or defaulting time series.

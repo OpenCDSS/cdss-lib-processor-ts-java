@@ -558,8 +558,8 @@ throws MalformedURLException, Exception
         ts.setDate2(dataEnd);
         ts.setDate1Original(dataStart);
         ts.setDate2Original(dataEnd);
-        DateTime date;
-        String [] dataStringParts;
+        DateTime date = null;
+        String [] dataStringParts = null;
         // Nolan Doesken and Bill Noon indicate that 0 is what people use
         double traceValue = 0.0;
         double missing = ts.getMissing(); // Should be Double.NaN
@@ -614,20 +614,50 @@ throws MalformedURLException, Exception
                             ts.setDataValue(date,Double.parseDouble(dataStringParts[1]));
                         }
                     }
+                    catch ( NumberFormatException e ) {
+                        Message.printWarning(3,routine,"Error parsing data point \"" +
+                            dataStringsArray[i] + "\" (" + e + ") - treating as flagged data.");
+                        // TODO SAM 2011-04-04 Have seen data values like "S", "0.20A".  Should these be
+                        // considered valid data points or treated as missing because they failed some test?
+                        // Submitted an email request to the ACIS contact page to see if I can get an answer.
+                        // For now, strip the characters off the end and treat as the flag and use the numerical
+                        // part (if present) for the value.
+                        int lastDigitPos = -1;
+                        String dataStringPart = dataStringParts[1];
+                        for ( int iChar = dataStringPart.length() - 1; iChar >= 0; iChar-- ) {
+                            if ( Character.isDigit(dataStringPart.charAt(iChar)) ) {
+                                lastDigitPos = iChar;
+                                break;
+                            }
+                        }
+                        if ( lastDigitPos >= 0 ) {
+                            String number = dataStringPart.substring(0,lastDigitPos);
+                            if ( StringUtil.isDouble(number) ) {
+                                ts.setDataValue(date,Double.parseDouble(number),
+                                    dataStringPart.substring(lastDigitPos + 1),0);
+                            }
+                            else {
+                                // Set the entire string as the flag
+                                ts.setDataValue(date,ts.getMissing(),dataStringPart,0);
+                            }
+                        }
+                        else {
+                            ts.setDataValue(date,ts.getMissing(),dataStringPart,0);
+                        }
+                    }
                     catch ( Exception e ) {
                         Message.printWarning(3,routine,"Error parsing data point \"" +
                             dataStringsArray[i] + "\" (" + e + ").");
-                        continue;
                     }
                 }
             }
         }
         if ( tCount > 0 ) {
-            // Add a data type 
+            // Add a specific data flag type 
             ts.addDataFlagMetadata(new TSDataFlagMetadata("T", "Trace - value of " + traceValue + " is used."));
         }
         if ( mCount > 0 ) {
-            // Add a data type 
+            // Add a specific data flag type 
             ts.addDataFlagMetadata(new TSDataFlagMetadata("M", "Missing value."));
         }
     }

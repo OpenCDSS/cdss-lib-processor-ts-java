@@ -135,31 +135,38 @@ private void initialize ( JFrame parent, Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"This command sets the global output year type, which is recognized by some output commands " +
-	"(e.g., for model and summary output)."),
-	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	"This command sets the global output year type, which is recognized by some output commands"),
+    	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"The following output year types are available:" ),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "(e.g., for model and summary output and as the default period when creating new time series)."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"    Calendar year (default):  January to December."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	"The following global output year types are available:" ),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"    Water year:  October (year - 1) to September (year) (e.g., water year 1970 is Oct 1969 to Sep 1970)."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	"    Calendar year (default):  January to December."),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-	"    NovToOct:  November (year - 1) to October(year) (e.g., year 1970 is Nov 1969 to Oct 1970)."),
-	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	"    Water year:  October (year - 1) to September (year) (e.g., water year 1970 is Oct 1969 to Sep 1970)."),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    	"    NovToOct:  November (year - 1) to October(year) (e.g., year 1970 is Nov 1969 to Oct 1970)."),
+    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Additional output year types may be enabled for specific commands." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output year type:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputYearType_JComboBox = new SimpleJComboBox ( false );
+	// Only include types that have been tested for all output.  More specific types may be included in
+	// some commands where local handling is enabled.
     __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
     __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
     __OutputYearType_JComboBox.add ( "" + YearType.WATER );
 	__OutputYearType_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
-		1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - global output year type."),
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 

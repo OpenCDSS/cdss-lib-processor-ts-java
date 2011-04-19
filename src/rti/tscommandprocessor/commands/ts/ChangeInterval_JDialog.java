@@ -74,6 +74,8 @@ private JLabel __HandleEndpointsHow_JLabel = null;
 private SimpleJComboBox __HandleEndpointsHow_JComboBox = null;
 private JLabel __AllowMissingCount_JLabel = null;
 private JTextField __AllowMissingCount_JTextField = null;
+private JLabel __AllowMissingConsecutive_JLabel = null;
+private JTextField __AllowMissingConsecutive_JTextField = null;
 /* TODO SAM 2005-02-18 may enable later
 private JTextField	__AllowMissingPercent_JTextField = null; // % missing to allow in input when converting.
 */
@@ -174,6 +176,8 @@ private void checkGUIState ()
     __HandleEndpointsHow_JComboBox.setEnabled ( false );
     __AllowMissingCount_JLabel.setEnabled ( false );
     __AllowMissingCount_JTextField.setEnabled ( false );
+    __AllowMissingConsecutive_JLabel.setEnabled ( false );
+    __AllowMissingConsecutive_JTextField.setEnabled ( false );
     __OutputFillMethod_JLabel.setEnabled ( false );
     __OutputFillMethod_JComboBox.setEnabled ( false );
     __HandleMissingInputHow_JLabel.setEnabled ( false );
@@ -209,6 +213,8 @@ private void checkGUIState ()
         (newTimeScaleType == TimeScaleType.MEAN) || (newTimeScaleType == TimeScaleType.ACCM)) {
         __AllowMissingCount_JLabel.setEnabled ( true );
         __AllowMissingCount_JTextField.setEnabled ( true );
+        __AllowMissingConsecutive_JLabel.setEnabled ( true );
+        __AllowMissingConsecutive_JTextField.setEnabled ( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
         __HandleMissingInputHow_JComboBox.setEnabled ( true );
         __OutputFillMethod_JLabel.setEnabled ( true );
@@ -223,6 +229,8 @@ private void checkGUIState ()
     else if ( (oldTimeScaleType == TimeScaleType.INST) && (newTimeScaleType == TimeScaleType.MEAN) ) {
         __AllowMissingCount_JLabel.setEnabled ( true );
         __AllowMissingCount_JTextField.setEnabled ( true );
+        __AllowMissingConsecutive_JLabel.setEnabled ( true );
+        __AllowMissingConsecutive_JTextField.setEnabled ( true );
         __HandleMissingInputHow_JLabel.setEnabled ( true );
         __HandleMissingInputHow_JComboBox.setEnabled ( true );
         __OutputFillMethod_JLabel.setEnabled ( true );
@@ -248,6 +256,8 @@ private void checkGUIState ()
             
             __AllowMissingCount_JLabel.setEnabled ( true );
             __AllowMissingCount_JTextField.setEnabled ( true );
+            __AllowMissingConsecutive_JLabel.setEnabled ( true );
+            __AllowMissingConsecutive_JTextField.setEnabled ( true );
         }
     }
     
@@ -295,6 +305,8 @@ private void checkGUIState ()
         if ( (statistic != null) && (statistic.length() > 0) ) {
             __AllowMissingCount_JLabel.setEnabled ( true );
             __AllowMissingCount_JTextField.setEnabled ( true );
+            __AllowMissingConsecutive_JLabel.setEnabled ( true );
+            __AllowMissingConsecutive_JTextField.setEnabled ( true );
         }
     }
 }
@@ -322,6 +334,7 @@ private void checkInput ()
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	/* TODO LT 2005-05-24 may enable later		
 	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
+	String AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
 	
@@ -381,6 +394,9 @@ private void checkInput ()
 	if ( AllowMissingPercent != null && AllowMissingPercent.length() > 0 ) {
 		props.set( "AllowMissingPercent", AllowMissingPercent );
 	} */
+    if ( AllowMissingConsecutive != null && AllowMissingConsecutive.length() > 0 ) {
+        props.set( "AllowMissingConsecutive", AllowMissingConsecutive );
+    }
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
 		props.set( "OutputFillMethod", OutputFillMethod );
 	}
@@ -426,6 +442,7 @@ private void commitEdits ()
 	String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	/* TODO LT 2005-05-24 may enable later		
 	String AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
+	String AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	String OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	String HandleMissingInputHow = __HandleMissingInputHow_JComboBox.getSelected();
 
@@ -448,6 +465,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "AllowMissingCount", AllowMissingCount );
 	/* TODO LT 2005-05-24 may enable later
 	__command.setCommandParameter ( "AllowMissingPercent", AllowMissingPercent ); */
+	__command.setCommandParameter ( "AllowMissingConsecutive", AllowMissingConsecutive );
 	__command.setCommandParameter ( "OutputFillMethod", OutputFillMethod );
 	__command.setCommandParameter ( "HandleMissingInputHow", HandleMissingInputHow );
 }
@@ -648,6 +666,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
     __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
     __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
     __OutputYearType_JComboBox.add ( "" + YearType.WATER );
+    __OutputYearType_JComboBox.add ( "" + YearType.YEAR_MAY_TO_APR );
     __OutputYearType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -731,6 +750,18 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
 		"processing interval."),
 		3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	*/
+    
+    // Allow missing consecutive
+    __AllowMissingConsecutive_JLabel = new JLabel("Allow consecutive missing:");
+    JGUIUtil.addComponent(main_JPanel, __AllowMissingConsecutive_JLabel,
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowMissingConsecutive_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __AllowMissingConsecutive_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __AllowMissingConsecutive_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - number of consecutive missing values allowed in input interval (default=AllowMissingCount)."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 	// Output fill method
     __OutputFillMethod_JLabel = new JLabel( "Output fill method:");
@@ -881,6 +912,7 @@ private void refresh ()
 	String Tolerance = "";
 	String HandleEndpointsHow = "";
 	String AllowMissingCount = "";
+	String AllowMissingConsecutive = "";
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent = ""; */
 	String OutputFillMethod	 = "";
@@ -911,6 +943,7 @@ private void refresh ()
 		/* TODO SAM 2005-02-18 may enable later
 		AllowMissingPercent = props.getValue( "AllowMissingPercent"  );
 		*/
+		AllowMissingConsecutive = props.getValue( "AllowMissingConsecutive" );
 		OutputFillMethod = props.getValue( "OutputFillMethod" );
 		HandleMissingInputHow = props.getValue( "HandleMissingInputHow");
 
@@ -1070,9 +1103,13 @@ private void refresh ()
 		        JGUIUtil.selectTokenMatches ( __HandleEndpointsHow_JComboBox, true, " ", 0, 0, HandleEndpointsHow, null );
 			}
 			catch ( Exception e ) {
-				mssg = "Existing command references an unrecognized\nHandleEndpointsHow value \""
-					+ HandleEndpointsHow + "\".  Using the user value.";
-				Message.printWarning ( 2, mthd, mssg );
+			    // Only an issue when going from INST to MEAN
+			    if ( OldTimeScale.equalsIgnoreCase("" + TimeScaleType.INST) &&
+			        NewTimeScale.equalsIgnoreCase("" + TimeScaleType.MEAN) ) {
+    				mssg = "Existing command references an unrecognized HandleEndpointsHow value \""
+    					+ HandleEndpointsHow + "\".  Using the user value.";
+    				Message.printWarning ( 2, mthd, mssg );
+			    }
 				__HandleEndpointsHow_JComboBox.setText ( HandleEndpointsHow );
 			}
 		}
@@ -1088,6 +1125,9 @@ private void refresh ()
 				AllowMissingPercent );
 		}
 		*/
+       if ( AllowMissingConsecutive != null ) {
+            __AllowMissingConsecutive_JTextField.setText ( AllowMissingConsecutive );
+        }
 		// Update OutputFillMethod text field
 		// Select the item in the list. If not a match, print a warning.
 		if ( OutputFillMethod == null ) {
@@ -1146,6 +1186,7 @@ private void refresh ()
 	AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
 	/* TODO LT 2005-05-24 may enable later		
 	AllowMissingPercent = __AllowMissingPercent_JTextField.getText().trim(); */
+	AllowMissingConsecutive = __AllowMissingConsecutive_JTextField.getText().trim();
 	OutputFillMethod = __OutputFillMethod_JComboBox.getSelected();
 	HandleMissingInputHow =	__HandleMissingInputHow_JComboBox.getSelected();
 	
@@ -1173,6 +1214,7 @@ private void refresh ()
 	props.add ( "AllowMissingCount=" + AllowMissingCount );
 	/* TODO LT 2005-05-24 may enable later	
 	props.add ( "AllowMissingPercent=" + AllowMissingPercent   ); */
+	props.add ( "AllowMissingConsecutive=" + AllowMissingConsecutive );
 	if ( __OutputFillMethod_JComboBox.isEnabled() ) {
 	    props.add ( "OutputFillMethod=" + OutputFillMethod );
 	}

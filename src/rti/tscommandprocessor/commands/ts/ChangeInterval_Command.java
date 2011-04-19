@@ -135,6 +135,7 @@ throws InvalidCommandParameterException
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent= parameters.getValue("AllowMissingPercent");
 	*/
+	String AllowMissingConsecutive = parameters.getValue("AllowMissingConsecutive" );
 	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
 	String HandleMissingInputHow = parameters.getValue( "HandleMissingInputHow" );
 
@@ -338,15 +339,45 @@ throws InvalidCommandParameterException
     }
 	
 	// If the AllowMissingCount is specified, it should be an integer.
-	if ( AllowMissingCount!=null && (AllowMissingCount.length()>0) &&
-		!StringUtil.isInteger(AllowMissingCount) ) {
-        message = "Allow missing count \"" + AllowMissingCount + "\" is not an integer."; 
-		warning += "\n" + message;
-        status.addToLog(CommandPhaseType.INITIALIZATION,
+    Integer allowMissingCount = null;
+	if ( AllowMissingCount!=null && (AllowMissingCount.length()>0) ) {
+	    if ( !StringUtil.isInteger(AllowMissingCount) ) {
+            message = "Allow missing count \"" + AllowMissingCount + "\" is not an integer."; 
+    		warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(
                 CommandStatusType.FAILURE, message, "Specify the allowed missing count as an interger."));
-
+	    }
+	    else {
+	        allowMissingCount = new Integer(AllowMissingCount);
+	    }
 	}
+	
+	// If the AllowMissingConsecutive is specified, it should be an integer.
+	Integer allowMissingConsecutive = null;
+    if ( AllowMissingConsecutive!=null && (AllowMissingConsecutive.length()>0) ) {
+        if ( !StringUtil.isInteger(AllowMissingConsecutive) ) {
+            message = "Allow missing consecutive value \"" + AllowMissingConsecutive + "\" is not an integer."; 
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify the allowed missing consecutive value as an interger."));
+        }
+        else {
+            allowMissingConsecutive = new Integer(AllowMissingConsecutive);
+        }
+    }
+    
+    if ( (allowMissingCount != null) && (allowMissingConsecutive != null) &&
+        (allowMissingCount < allowMissingConsecutive) ) {
+        message = "Allow missing consecutive value \"" + AllowMissingConsecutive +
+            "\" is > the allowed missing count (" + allowMissingCount + ")."; 
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify the allowed missing consecutive value <= the allowed missing count"));
+    }
 
 	// If the Tolerance is specified, it should be a double.
 	if ( Tolerance!=null && (Tolerance.length()>0) &&
@@ -452,6 +483,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Tolerance" );
     valid_Vector.add ( "HandleEndpointsHow" );
     valid_Vector.add ( "AllowMissingCount" );
+    valid_Vector.add ( "AllowMissingConsecutive" );
     valid_Vector.add ( "OutputFillMethod" );
     valid_Vector.add ( "HandleMissingInputHow" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -735,6 +767,11 @@ CommandWarningException, CommandException
 	/* TODO SAM 2005-02-18 may enable later
 	String	AllowMissingPercent= _parameters.getValue("AllowMissingPercent");
 	*/
+    String AllowMissingConsecutive = parameters.getValue("AllowMissingConsecutive" );
+    Integer allowMissingConsecutive = null;
+    if ( StringUtil.isInteger(AllowMissingConsecutive) ) {
+        allowMissingConsecutive = new Integer(AllowMissingConsecutive);
+    }
 	String OutputFillMethod = parameters.getValue( "OutputFillMethod" );
 	TSUtil_ChangeInterval_OutputFillMethodType outputFillMethod = null;
 	if ( (OutputFillMethod != null) && !OutputFillMethod.equals("") ) {
@@ -838,7 +875,8 @@ CommandWarningException, CommandException
     	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,
                 oldTimeScale, newTimeScale, statisticType, outputYearType, NewDataType, NewUnits, tolerance,
                 handleEndpointsHow, outputFillMethod, handleMissingInputHow, allowMissingCount,
-                null ); // AllowMissingPercent (not implemented in command)
+                null,  // AllowMissingPercent (not implemented in command)
+                allowMissingConsecutive );
     		result_ts = tsu.changeInterval ( createData );
     		resultList.add(result_ts);
     		
@@ -971,6 +1009,7 @@ public String toString ( PropList props, int majorVersion )
 	/* TODO SAM 2005-02-18 may enable later
 	String AllowMissingPercent = props.getValue( "AllowMissingPercent" );
 	*/
+	String AllowMissingConsecutive = props.getValue( "AllowMissingConsecutive" );
 	String OutputFillMethod = props.getValue( "OutputFillMethod" );
 	String HandleMissingInputHow= props.getValue( "HandleMissingInputHow");
 	
@@ -1054,6 +1093,10 @@ public String toString ( PropList props, int majorVersion )
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "AllowMissingPercent=" + AllowMissingPercent );
 	} */
+    if ( AllowMissingConsecutive != null && AllowMissingConsecutive.length() > 0 ) {
+        if ( b.length() > 0 ) b.append ( "," );
+        b.append ( "AllowMissingConsecutive=" + AllowMissingConsecutive );
+    }
 	if ( OutputFillMethod != null && OutputFillMethod.length() > 0 ) {
 		if ( b.length() > 0 ) b.append ( "," );
 		b.append ( "OutputFillMethod=" + OutputFillMethod );

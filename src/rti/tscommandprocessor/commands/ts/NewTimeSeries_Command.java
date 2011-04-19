@@ -20,7 +20,6 @@ import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
 import RTi.Util.IO.CommandProcessor;
-import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandSavesMultipleVersions;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
@@ -30,8 +29,10 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.WarningCount;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeRange;
 import RTi.Util.Time.TimeInterval;
 
 /**
@@ -309,11 +310,11 @@ parameter values are invalid.
 public void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "newTimeSeries.runCommand", message;
+{	String routine = "NewTimeSeries.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3; // Level for non-user warnings to go to log file.
+	int logLevel = 3; // Level for non-user warnings to go to log file.
 
 	// Make sure there are time series available to operate on...
 	
@@ -345,162 +346,13 @@ CommandWarningException, CommandException
 	}
 
 	// Figure out the dates to use for the Set...
-	DateTime SetStart_DateTime = null;
-	DateTime SetEnd_DateTime = null;
-	
-    DateTime setStartProcessor_DateTime = null;
-    DateTime setEndProcessor_DateTime = null;
-    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Need to walk the commands for SetOutputPeriod() commands to get the period
-        try {
-            PropList requestParams = new PropList ( "" );
-            requestParams.setUsingObject ( "Command", this );
-            CommandProcessorRequestResultsBean bean =
-                processor.processRequest( "GetOutputPeriodForCommand", requestParams);
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "OutputStart" );
-            if ( prop_contents != null ) {
-                setStartProcessor_DateTime = (DateTime)prop_contents;
-            }
-            prop_contents = bean_PropList.getContents ( "OutputEnd" );
-            if ( prop_contents != null ) {
-                setEndProcessor_DateTime = (DateTime)prop_contents;
-            }
-        }
-        catch ( Exception e ) {
-            message = "Error getting request GetOutputPeriodForCommand.";
-            Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            Message.printWarning(2, routine, e);
-            status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "This is likely a software error - contact software support." ) );
-        }
-    }
-	
-	try {
-		if ( (SetStart == null) || SetStart.equals("") ) {
-			// Try to set SetStart from global OutputStart...
-		    if ( commandPhase == CommandPhaseType.RUN ) {
-    			PropList request_params = new PropList ( "" );
-    			request_params.set ( "DateTime", "OutputStart" );
-    			CommandProcessorRequestResultsBean bean = null;
-    			bean = processor.processRequest( "DateTime", request_params);
-    			PropList bean_PropList = bean.getResultsPropList();
-    			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-    			if ( prop_contents != null ) {
-    			    setStartProcessor_DateTime = (DateTime)prop_contents;
-    			}
-	        }
-    		if ( setStartProcessor_DateTime == null ) {
-				message = "Null value for SetStart DateTime(DateTime=OutputStart) returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Use a SetOutputPeriod() command or specify the set start." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {
-			    SetStart_DateTime = setStartProcessor_DateTime;
-			}
-		}
-		else {
-			// Try to set from what user specified...
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", SetStart );
-			CommandProcessorRequestResultsBean bean = null;
-			bean = processor.processRequest( "DateTime", request_params);
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
-				message = "Null value for SetStart DateTime(DateTime=" +SetStart +	") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Use a SetOutputPeriod() command or specify the set start." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {	SetStart_DateTime = (DateTime)prop_contents;
-			}
-		}
-	}
-	catch ( Exception e ) {
-		message = "SetStart \"" + SetStart + "\" is invalid.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-		Message.printWarning(2, routine, e);
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid set start date/time, or as OutputStart or OutputEnd." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
-	
-	try {
-		if ( (SetEnd == null) || SetEnd.equals("") ) {
-			// Try to set SetEnd from global OutputEnd...
-	        if ( commandPhase == CommandPhaseType.RUN ) {
-    			PropList request_params = new PropList ( "" );
-    			request_params.set ( "DateTime", "OutputEnd" );
-    			CommandProcessorRequestResultsBean bean = null;
-    			bean = processor.processRequest( "DateTime", request_params);
-    			PropList bean_PropList = bean.getResultsPropList();
-    			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-                if ( prop_contents != null ) {
-                    setEndProcessor_DateTime = (DateTime)prop_contents;
-                }
-	        }
-			if ( setEndProcessor_DateTime == null ) {
-				message = "Null value for SetEnd DateTime(DateTime=\"OutputEnd\") returned from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Use a SetOutputPeriod() command or specify the set end." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {
-			    SetEnd_DateTime = setEndProcessor_DateTime;
-			}
-		}
-		else {
-			// Try to set from what user specified...
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", SetEnd );
-			CommandProcessorRequestResultsBean bean = null;
-			bean = processor.processRequest( "DateTime", request_params);
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( (prop_contents == null) && (commandPhase == CommandPhaseType.RUN) ) {
-				message = "Null value for SetStart DateTime(DateTime=" + SetEnd + "\") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Use a SetOutputPeriod() command or specify the set end." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {
-			    SetEnd_DateTime = (DateTime)prop_contents;
-			}
-		}
-	}
-	catch ( Exception e ) {
-		message = "SetEnd \"" + SetEnd + "\" is invalid.";
-		Message.printWarning(warning_level,
-				MessageUtil.formatMessageTag( command_tag, ++warning_count),
-				routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid set start date/time, or as OutputStart or OutputEnd." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
+	WarningCount warningCount = new WarningCount();
+	DateTimeRange setStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
+	    this, commandPhase, "SetStart", SetStart,  "SetEnd", SetEnd,
+	    logLevel, command_tag, warning_level, warningCount );
+	warning_count += warningCount.getCount();
+	DateTime SetStart_DateTime = setStartAndEnd.getStart();
+	DateTime SetEnd_DateTime = setStartAndEnd.getEnd();
 	
 	// Now process the time series...
 

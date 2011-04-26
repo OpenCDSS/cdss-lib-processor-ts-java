@@ -47,7 +47,6 @@ private JLabel __TSID_JLabel = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
-private SimpleJComboBox __ValueToCheck_JComboBox = null;
 private SimpleJComboBox __CheckCriteria_JComboBox = null;
 private JTextField __Value1_JTextField = null;
 private JTextField __Value2_JTextField = null;
@@ -127,7 +126,6 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
 	String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String ValueToCheck = __ValueToCheck_JComboBox.getSelected();
     String CheckCriteria = __CheckCriteria_JComboBox.getSelected();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String Value2 = __Value2_JTextField.getText().trim();
@@ -148,9 +146,6 @@ private void checkInput ()
 	}
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
-    }
-    if ( ValueToCheck.length() > 0 ) {
-        parameters.set ( "ValueToCheck", ValueToCheck );
     }
     if ( CheckCriteria.length() > 0 ) {
         parameters.set ( "CheckCriteria", CheckCriteria );
@@ -200,7 +195,6 @@ private void commitEdits ()
 {	String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String ValueToCheck = __ValueToCheck_JComboBox.getSelected();
     String CheckCriteria = __CheckCriteria_JComboBox.getSelected();
 	String Value1 = __Value1_JTextField.getText().trim();
 	String Value2 = __Value2_JTextField.getText().trim();
@@ -214,7 +208,6 @@ private void commitEdits ()
     __command.setCommandParameter ( "TSList", TSList );
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "ValueToCheck", ValueToCheck );
     __command.setCommandParameter ( "CheckCriteria", CheckCriteria );
 	__command.setCommandParameter ( "Value1", Value1 );
 	__command.setCommandParameter ( "Value2", Value2 );
@@ -264,7 +257,7 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
 	int y = 0;
 
 	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Check time series values and statistics for critical values." ), 
+		"Check time series data values for critical values (see also the CheckTimeSeriesStatistic() command)." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "A warning will be generated for each case where a value matches the specified condition(s)." ), 
@@ -282,36 +275,21 @@ private void initialize ( JFrame parent, CheckTimeSeries_Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Value to check:" ), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ValueToCheck_JComboBox = new SimpleJComboBox ( 10, true );    // Allow edit
-    __ValueToCheck_JComboBox.add ( "" );
-    __ValueToCheck_JComboBox.add ( __command._DataValue );
-    // TODO SAM 2009-04-23 Enable in the future.
-    //__ValueToCheck_JComboBox.add ( __command._Statistic );
-    __ValueToCheck_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __ValueToCheck_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "<html>Optional - check data values or statistic? (default=" + __command._DataValue +
-        "). <b>Statistic is not enabled.</b></html>"), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Check criteria:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __CheckCriteria_JComboBox = new SimpleJComboBox ( 12, false );    // Do not allow edit
-    List checkCriteriaChoices = TSUtil_CheckTimeSeries.getCheckCriteriaChoices();
+    List<String> checkCriteriaChoices = TSUtil_CheckTimeSeries.getCheckCriteriaChoicesAsStrings();
     __CheckCriteria_JComboBox.setData ( checkCriteriaChoices );
     __CheckCriteria_JComboBox.addItemListener ( this );
     __CheckCriteria_JComboBox.setMaximumRowCount(checkCriteriaChoices.size());
@@ -493,7 +471,6 @@ private void refresh ()
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String ValueToCheck = "";
     String CheckCriteria = "";
 	String Value1 = "";
 	String Value2 = "";
@@ -511,7 +488,6 @@ private void refresh ()
         TSList = props.getValue ( "TSList" );
 		TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
-        ValueToCheck = props.getValue ( "ValueToCheck" );
         CheckCriteria = props.getValue ( "CheckCriteria" );
 		Value1 = props.getValue ( "Value1" );
 		Value2 = props.getValue ( "Value2" );
@@ -562,21 +538,6 @@ private void refresh ()
             else {
                 Message.printWarning ( 1, routine,
                 "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
-                "\".  Select a different value or Cancel.");
-                __error_wait = true;
-            }
-        }
-        if ( ValueToCheck == null ) {
-            // Select default...
-            __ValueToCheck_JComboBox.select ( 0 );
-        }
-        else {
-            if ( JGUIUtil.isSimpleJComboBoxItem( __ValueToCheck_JComboBox,ValueToCheck, JGUIUtil.NONE, null, null ) ) {
-                __ValueToCheck_JComboBox.select ( ValueToCheck );
-            }
-            else {
-                Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nValueToCheck value \"" + ValueToCheck +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -640,7 +601,6 @@ private void refresh ()
     TSList = __TSList_JComboBox.getSelected();
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    ValueToCheck = __ValueToCheck_JComboBox.getSelected();
     CheckCriteria = __CheckCriteria_JComboBox.getSelected();
     Value2 = __Value2_JTextField.getText().trim();
 	Value1 = __Value1_JTextField.getText().trim();
@@ -655,7 +615,6 @@ private void refresh ()
     props.add ( "TSList=" + TSList );
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
-    props.add ( "ValueToCheck=" + ValueToCheck );
     props.add ( "CheckCriteria=" + CheckCriteria );
     props.add ( "Value1=" + Value1 );
     props.add ( "Value2=" + Value2 );

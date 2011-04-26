@@ -8,6 +8,7 @@ import rti.tscommandprocessor.core.TSListType;
 import java.util.List;
 import java.util.Vector;
 
+import RTi.TS.CheckType;
 import RTi.TS.TS;
 import RTi.TS.TSUtil_CheckTimeSeries;
 import RTi.Util.Message.Message;
@@ -28,19 +29,11 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the CheckTimeSeries() command.
-</p>
 */
 public class CheckTimeSeries_Command extends AbstractCommand implements Command
 {
     
-/**
-Values for ValueToCheck parameter.
-*/
-protected final String _DataValue = "DataValue";
-protected final String _Statistic = "Statistic";
-
 /**
 Values for Action parameter.
 */
@@ -67,7 +60,6 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {   //String TSID = parameters.getValue ( "TSID" );
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
-    String ValueToCheck = parameters.getValue ( "ValueToCheck" );
     String AnalysisStart = parameters.getValue ( "AnalysisStart" );
     String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
     String Value1 = parameters.getValue ( "Value1" );
@@ -80,14 +72,6 @@ throws InvalidCommandParameterException
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
 
-    if ( (ValueToCheck != null) && !ValueToCheck.equalsIgnoreCase(_DataValue) &&
-        !ValueToCheck.equalsIgnoreCase(_Statistic)) {
-        message = "The value to check (" + ValueToCheck + ") is not valid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the value to check as " + _DataValue + " (default), or " + _Statistic + ".") );
-    }
-    
     if ( (CheckCriteria == null) || CheckCriteria.equals("") ) {
         message = "The check criteria must be specified.";
         warning += "\n" + message;
@@ -96,24 +80,20 @@ throws InvalidCommandParameterException
     }
     else {
         // Make sure that it is in the supported list
-        List<String> criteriaSupported = TSUtil_CheckTimeSeries.getCheckCriteriaChoices();
-        boolean found = false;
-        for ( int i = 0; i < criteriaSupported.size(); i++ ) {
-           if ( criteriaSupported.get(i).equalsIgnoreCase(CheckCriteria) ) {
-               found = true;
-               break;
-           }
-        }
-        if ( !found ) {
+        CheckType checkType = CheckType.valueOfIgnoreCase(CheckCriteria);
+        if ( checkType == null ) {
             message = "The check criteria (" + CheckCriteria + ") is not recognized.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Select a supported criteria using the command editor." ) );
         }
-        
+
         // Additional checks that depend on the criteria
         
-        int nRequiredValues = TSUtil_CheckTimeSeries.getRequiredNumberOfValuesForCheckCriteria ( CheckCriteria );
+        int nRequiredValues = 0;
+        if ( checkType != null ) {
+            nRequiredValues = TSUtil_CheckTimeSeries.getRequiredNumberOfValuesForCheckCriteria ( checkType );
+        }
         
         if ( nRequiredValues >= 1 ) {
             if ( (Value1 == null) || Value1.equals("") ) {
@@ -187,11 +167,10 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "ValueToCheck" );
     valid_Vector.add ( "CheckCriteria" );
     valid_Vector.add ( "Value1" );
     valid_Vector.add ( "Value2" );
@@ -252,8 +231,8 @@ CommandWarningException, CommandException
     }
     String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String ValueToCheck = parameters.getValue ( "ValueToCheck" );
     String CheckCriteria = parameters.getValue ( "CheckCriteria" );
+    CheckType checkCriteria = CheckType.valueOfIgnoreCase(CheckCriteria);
     String Value1 = parameters.getValue ( "Value1" );
     Double Value1_Double = null;
     if ( (Value1 != null) && !Value1.equals("") ) {
@@ -451,7 +430,7 @@ CommandWarningException, CommandException
             
             try {
                 // Do the check...
-                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, ValueToCheck, CheckCriteria,
+                TSUtil_CheckTimeSeries check = new TSUtil_CheckTimeSeries(ts, checkCriteria,
                     AnalysisStart_DateTime, AnalysisEnd_DateTime, Value1_Double, Value2_Double, ProblemType,
                     Flag, FlagDesc, Action );
                 check.checkTimeSeries();
@@ -522,7 +501,6 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String ValueToCheck = parameters.getValue( "ValueToCheck" );
     String CheckCriteria = parameters.getValue( "CheckCriteria" );
     String Value1 = parameters.getValue( "Value1" );
     String Value2 = parameters.getValue( "Value2" );
@@ -553,12 +531,6 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
-    }
-    if ( (ValueToCheck != null) && (ValueToCheck.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "ValueToCheck=\"" + ValueToCheck + "\"" );
     }
     if ( (CheckCriteria != null) && (CheckCriteria.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -17,6 +17,7 @@ import RTi.Util.String.StringUtil;
 
 // Data checks (for now keep separate from logging and data tests)
 import rti.tscommandprocessor.commands.bndss.ReadColoradoBNDSS_Command;
+import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.OpenCheckFile_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
@@ -349,6 +350,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("CheckTimeSeries") ) {
         return new CheckTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("CheckTimeSeriesStatistic") ) {
+        return new CheckTimeSeriesStatistic_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("CompareFiles") ) {
 		return new CompareFiles_Command ();

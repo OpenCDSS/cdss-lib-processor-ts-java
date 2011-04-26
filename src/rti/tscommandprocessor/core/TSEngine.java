@@ -642,9 +642,11 @@
 
 package rti.tscommandprocessor.core;
 
+import java.awt.Desktop;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.String;
+import java.net.URI;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -3734,11 +3736,22 @@ throws IOException
                 try {
                     // Write the content to a temporary file and then view
                     String tempfile = IOUtil.tempFileName("ts", "html");
+                    // Tell VM to delete this file when the application is exited
+                    File file = new File(tempfile);
+                    file.deleteOnExit();
                     ofp = new PrintWriter ( new FileOutputStream(tempfile) );
                     ofp.print ( html );
                     ofp.close();
-                    ofp = null;
-                    IOUtil.openURL( tempfile );
+                    ofp = null; // To avoid closing again below
+                    // The following uses the Desktop class to select the browser
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open ( new File(tempfile) );
+                    }
+                    catch ( Exception e ) {
+                        Message.printWarning(2, routine, "Could not open application to view \"" + tempfile +
+                            "\" (" + e + ").");
+                    }
                 }
                 catch ( Exception e ) {
                     Message.printWarning ( 1, routine, "Error displaying time series HTML summary (" + e + ")." );

@@ -460,10 +460,29 @@ CommandWarningException, CommandException
     WarningCount warningCount = new WarningCount();
     DateTimeRange setStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
         this, commandPhase, "SetStart", SetStart,  "SetEnd", SetEnd,
+        true, // Use global output period from SetOutputPeriod()
         log_level, command_tag, warning_level, warningCount );
     warning_count += warningCount.getCount();
     DateTime SetStart_DateTime = setStartAndEnd.getStart();
     DateTime SetEnd_DateTime = setStartAndEnd.getEnd();
+    if ( SetStart_DateTime == null ) {
+        message = "SetStart is not set.";
+        Message.printWarning(log_level,
+            MessageUtil.formatMessageTag( command_tag, warningCount.incrementCount()), routine, message );
+        status.addToLog ( commandPhase,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the SetStart parameter or use a SetOutputPeriod() command.") );
+        throw new InvalidCommandParameterException ( message );
+    }
+    if ( SetEnd_DateTime == null ) {
+        message = "SetEnd is not set.";
+        Message.printWarning(log_level,
+            MessageUtil.formatMessageTag( command_tag, warningCount.incrementCount()), routine, message );
+        status.addToLog ( commandPhase,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the SetEnd parameter or use a SetOutputPeriod() command.") );
+        throw new InvalidCommandParameterException ( message );
+    }
 
 	// Now process the time series...
 

@@ -29,9 +29,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 
 /**
-<p>
 This class initializes, checks, and runs the SetTimeSeriesProperty() command.
-</p>
 */
 public class SetTimeSeriesProperty_Command extends AbstractCommand implements Command
 {

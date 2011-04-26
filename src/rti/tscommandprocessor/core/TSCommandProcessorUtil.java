@@ -841,12 +841,29 @@ public static List<String> getEnsembleIdentifiersFromCommandsBeforeCommand( TSCo
 }
 
 /**
-Determine the output period for the command.  The string parameters equivalent to the output period
-(may be a set period, output period, etc., depending on the command) are used to look up the output
-period.  This method is used to shorten parameter-handling code in the "run" method of many commands.
+Determine the output period for the command, first by evaluating the string properties that are passed in and
+second by optionally using the global output period.  This method is used to shorten parameter-handling code
+in the "run" method of many commands and can be used to determine the set period, analysis period, output period,
+etc., for a command.
+@param command the command requesting the period
+@param commandPhase the processing phase - discovery phase examines SetOutputPeriod() commands.
+@param startParameter the name of the start parameter, for messaging (e.g, "OutputStart", "AnalysisStart")
+@param periodStart the value of the start parameter (e.g., YYYY-MM-DD or "OutputStart" to use the global value)
+@param endParameter the name of the end parameter, for messaging (e.g, "OutputEnd", "AnalysisEnd")
+@param periodEnd the value of the end parameter (e.g., YYYY-MM-DD or "OutputEnd" to use the global value)
+@param defaultToGlobalOutputPeriod if false, only the parameter value will be interpreted; if true and the
+parameter value cannot be evaluated to a date/time, then the global output period is determined and returned
+@param logLevel for logging messages
+@param commandTag for logging messages
+@param warningLevel for warning messages
+@param warningCount to count warnings in this code - commands will check the count and generate an overall
+warning if > 0
+@return the date/time range for the requested period - date/times will be null if unable to determine or the
+global output period is not set and is used as a default
 */
 public static DateTimeRange getOutputPeriodForCommand ( Command command, CommandPhaseType commandPhase,
-    String startParameter, String periodStart, String endParameter, String periodEnd, 
+    String startParameter, String periodStart, String endParameter, String periodEnd,
+    boolean defaultToGlobalOutputPeriod,
     int logLevel, String commandTag, int warningLevel, WarningCount warningCount )
 throws InvalidCommandParameterException
 {   String routine = "TSCommandProcessorUtil.getOutputPeriodForCommand";
@@ -863,8 +880,12 @@ throws InvalidCommandParameterException
     DateTime setEndProcessor_DateTime = null;
     DateTime start_DateTime = null;
     DateTime end_DateTime = null;
-    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
-        // Need to walk the commands for SetOutputPeriod() commands to get the period
+    // TODO SAM 2011-04-20 Need to figure out how to handle run-time properties and special values like OutputStart
+    if ( (commandPhase == CommandPhaseType.DISCOVERY) && defaultToGlobalOutputPeriod ) {
+        // Need to walk the commands for SetOutputPeriod() commands to get the global period
+        // Also do this if the start or end rely on OutputStart or OutputEnd because the
+        // global period will be needed.
+        // If command phase is RUN below, this information will be regenerated for each property
         try {
             PropList requestParams = new PropList ( "" );
             requestParams.setUsingObject ( "Command", command );
@@ -894,28 +915,21 @@ throws InvalidCommandParameterException
     
     try {
         if ( (periodStart == null) || periodStart.equals("") ) {
-            // Try to determine start from global OutputStart...
-            if ( commandPhase == CommandPhaseType.RUN ) {
-                PropList request_params = new PropList ( "" );
-                request_params.set ( "DateTime", "OutputStart" );
-                CommandProcessorRequestResultsBean bean = null;
-                bean = processor.processRequest( "DateTime", request_params);
-                PropList bean_PropList = bean.getResultsPropList();
-                Object prop_contents = bean_PropList.getContents ( "DateTime" );
-                if ( prop_contents != null ) {
-                    setStartProcessor_DateTime = (DateTime)prop_contents;
+            // Parameter is empty.
+            if ( defaultToGlobalOutputPeriod ) {
+                // Try to determine start from global OutputStart...
+                if ( commandPhase == CommandPhaseType.RUN ) {
+                    PropList request_params = new PropList ( "" );
+                    request_params.set ( "DateTime", "OutputStart" );
+                    CommandProcessorRequestResultsBean bean = null;
+                    bean = processor.processRequest( "DateTime", request_params);
+                    PropList bean_PropList = bean.getResultsPropList();
+                    Object prop_contents = bean_PropList.getContents ( "DateTime" );
+                    if ( prop_contents != null ) {
+                        setStartProcessor_DateTime = (DateTime)prop_contents;
+                    }
                 }
-            }
-            if ( setStartProcessor_DateTime == null ) {
-                message = "Null value for " + startParameter + " DateTime(DateTime=OutputStart) returned from processor.";
-                Message.printWarning(logLevel,
-                    MessageUtil.formatMessageTag( commandTag, warningCount.incrementCount()), routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Use a SetOutputPeriod() command or specify the " + startParameter + ".") );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {
+                // OK to set to null
                 start_DateTime = setStartProcessor_DateTime;
             }
         }
@@ -937,7 +951,8 @@ throws InvalidCommandParameterException
                         message, "Use a SetOutputPeriod() command or specify the " + startParameter + "." ) );
                 throw new InvalidCommandParameterException ( message );
             }
-            else {  start_DateTime = (DateTime)prop_contents;
+            else {
+                start_DateTime = (DateTime)prop_contents;
             }
         }
     }
@@ -955,29 +970,20 @@ throws InvalidCommandParameterException
     
     try {
         if ( (periodEnd == null) || periodEnd.equals("") ) {
-            // Try to determine end from global OutputEnd...
-            if ( commandPhase == CommandPhaseType.RUN ) {
-                PropList request_params = new PropList ( "" );
-                request_params.set ( "DateTime", "OutputEnd" );
-                CommandProcessorRequestResultsBean bean = null;
-                bean = processor.processRequest( "DateTime", request_params);
-                PropList bean_PropList = bean.getResultsPropList();
-                Object prop_contents = bean_PropList.getContents ( "DateTime" );
-                if ( prop_contents != null ) {
-                    setEndProcessor_DateTime = (DateTime)prop_contents;
+            if ( defaultToGlobalOutputPeriod ) {
+                // Try to determine end from global OutputEnd...
+                if ( commandPhase == CommandPhaseType.RUN ) {
+                    PropList request_params = new PropList ( "" );
+                    request_params.set ( "DateTime", "OutputEnd" );
+                    CommandProcessorRequestResultsBean bean = null;
+                    bean = processor.processRequest( "DateTime", request_params);
+                    PropList bean_PropList = bean.getResultsPropList();
+                    Object prop_contents = bean_PropList.getContents ( "DateTime" );
+                    if ( prop_contents != null ) {
+                        setEndProcessor_DateTime = (DateTime)prop_contents;
+                    }
                 }
-            }
-            if ( setEndProcessor_DateTime == null ) {
-                message = "Null value for " + endParameter + " DateTime(DateTime=\"OutputEnd\") returned from processor.";
-                Message.printWarning(logLevel,
-                    MessageUtil.formatMessageTag( commandTag, warningCount.incrementCount()),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Use a SetOutputPeriod() command or specify the " + endParameter + "." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {
+                // OK to set to null...
                 end_DateTime = setEndProcessor_DateTime;
             }
         }

@@ -108,6 +108,7 @@ import rti.tscommandprocessor.commands.summary.WriteSummary_Command;
 
 import rti.tscommandprocessor.commands.table.CompareTables_Command;
 import rti.tscommandprocessor.commands.table.CopyTable_Command;
+import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Command;
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
@@ -379,6 +380,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("Copy") ) {
 		return new Copy_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("CopyTimeSeriesPropertiesToTable") ) {
+        return new CopyTimeSeriesPropertiesToTable_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("CreateEnsembleFromOneTimeSeries") ||
         commandName.equalsIgnoreCase("CreateEnsemble")) {
         // The command name changed...

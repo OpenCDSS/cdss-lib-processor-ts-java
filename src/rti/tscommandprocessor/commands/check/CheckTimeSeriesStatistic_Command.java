@@ -330,7 +330,7 @@ public boolean checkTimeSeriesStatistic ( TS ts, TSUtil_CalculateTimeSeriesStati
         problems.add ( "Statistic was not computed - unable to check its value." );
         return false;
     }
-    boolean matchesCriteria = false;
+    boolean meetsCriteria = false;
     if ( statisticValue instanceof Double ) {
         // Do comparisons on doubles
         Double statisticDouble = (Double)statisticValue;
@@ -339,37 +339,37 @@ public boolean checkTimeSeriesStatistic ( TS ts, TSUtil_CalculateTimeSeriesStati
         }
         else if ( checkCriteria == CheckType.IN_RANGE ) {
             if ( (statisticDouble >= checkValue1) && (statisticDouble <= checkValue2) ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.OUT_OF_RANGE ) {
             if ( (statisticDouble < checkValue1) || (statisticDouble > checkValue2) ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.LESS_THAN ) {
             if ( statisticDouble < checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.LESS_THAN_OR_EQUAL_TO ) {
             if ( statisticDouble <= checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.GREATER_THAN ) {
             if ( statisticDouble > checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.GREATER_THAN_OR_EQUAL_TO ) {
             if ( statisticDouble >= checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.EQUAL_TO ) {
             if ( statisticDouble == checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else {
@@ -382,37 +382,37 @@ public boolean checkTimeSeriesStatistic ( TS ts, TSUtil_CalculateTimeSeriesStati
         Integer statisticInteger = (Integer)statisticValue;
         if ( checkCriteria == CheckType.IN_RANGE ) {
             if ( (statisticInteger >= checkValue1) && (statisticInteger <= checkValue2) ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.OUT_OF_RANGE ) {
             if ( (statisticInteger < checkValue1) || (statisticInteger > checkValue2) ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.LESS_THAN ) {
             if ( statisticInteger < checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.LESS_THAN_OR_EQUAL_TO ) {
             if ( statisticInteger <= checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.GREATER_THAN ) {
             if ( statisticInteger > checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.GREATER_THAN_OR_EQUAL_TO ) {
             if ( statisticInteger >= checkValue1 ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
         else if ( checkCriteria == CheckType.EQUAL_TO ) {
             if ( statisticInteger == (int)checkValue1.doubleValue() ) {
-                matchesCriteria = true;
+                meetsCriteria = true;
             }
         }
     }
@@ -420,13 +420,13 @@ public boolean checkTimeSeriesStatistic ( TS ts, TSUtil_CalculateTimeSeriesStati
         // Don't know how to handle
         problems.add ( "Statistic is not a floating point number or integer - unable to check its value." );
     }
-    if ( matchesCriteria ) {
+    if ( meetsCriteria ) {
         if ( (propertyName != null) && !propertyName.equals("") &&
             (propertyValue != null) && !propertyValue.equals("") ) {
             ts.setProperty(propertyName, propertyValue);
         }
     }
-    return matchesCriteria;
+    return meetsCriteria;
 }
 
 /**
@@ -733,7 +733,8 @@ CommandWarningException, CommandException
                         commandStatusType = CommandStatusType.FAILURE;
                     }
                     StringBuffer b = new StringBuffer();
-                    b.append ( "Statistic " + Statistic + " matches criteria " + CheckCriteria );
+                    b.append ( "Statistic " + Statistic + " (" + tsStatistic.getStatisticResult() +
+                        ") meets criteria " + CheckCriteria );
                     if ( (CheckValue1 != null) && !CheckValue1.equals("") ) {
                         b.append ( " " + CheckValue1 );
                     }

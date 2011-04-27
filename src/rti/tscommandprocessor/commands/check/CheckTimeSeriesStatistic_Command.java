@@ -728,6 +728,7 @@ CommandWarningException, CommandException
                     CheckValue1_Double, CheckValue2_Double,
                     IfCriteriaMet, ProblemType, PropertyName, PropertyValue, problems );
                 if ( ifCriteriaMet ) {
+                    // Generate a warning
                     CommandStatusType commandStatusType = CommandStatusType.WARNING;
                     if ( IfCriteriaMet.equals(_Fail) ) {
                         commandStatusType = CommandStatusType.FAILURE;
@@ -744,8 +745,10 @@ CommandWarningException, CommandException
                     b.append ( " for time series " + ts.getIdentifier().toStringAliasAndTSID() );
                     Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag(command_tag,++warning_count),routine,b.toString() );
-                    status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(commandStatusType,
-                        ProblemType, b.toString(), "Time series should be treated accordingly." ) );
+                    if ( !IfCriteriaMet.equalsIgnoreCase(_Ignore) ) {
+                        status.addToLog ( CommandPhaseType.RUN,new CommandLogRecord(commandStatusType,
+                            ProblemType, b.toString(), "Time series should be treated accordingly." ) );
+                    }
                 }
                 int problemsSize = problems.size();
                 for ( int iprob = 0; iprob < problemsSize; iprob++ ) {

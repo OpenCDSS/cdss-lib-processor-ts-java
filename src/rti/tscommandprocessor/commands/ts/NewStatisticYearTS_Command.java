@@ -528,7 +528,7 @@ CommandWarningException, CommandException
 	DateTime AnalysisStart_DateTime = null;
 	DateTime AnalysisEnd_DateTime = null;
 	try {
-		if ( AnalysisStart != null ) {
+		if ( (AnalysisStart != null) && !AnalysisStart.equals("") ) {
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", AnalysisStart );
 			CommandProcessorRequestResultsBean bean = null;
@@ -577,7 +577,7 @@ CommandWarningException, CommandException
 	}
 	
 	try {
-		if ( AnalysisEnd != null ) {
+		if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") ) {
 			PropList request_params = new PropList ( "" );
 			request_params.set ( "DateTime", AnalysisEnd );
 			CommandProcessorRequestResultsBean bean = null;

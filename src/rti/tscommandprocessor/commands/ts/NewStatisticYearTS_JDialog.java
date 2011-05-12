@@ -399,6 +399,7 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
     __OutputYearType_JComboBox.add ( "" + YearType.CALENDAR );
     __OutputYearType_JComboBox.add ( "" + YearType.NOV_TO_OCT );
     __OutputYearType_JComboBox.add ( "" + YearType.WATER );
+    __OutputYearType_JComboBox.add ( "" + YearType.YEAR_MAY_TO_APR );
     __OutputYearType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __OutputYearType_JComboBox,
         1, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

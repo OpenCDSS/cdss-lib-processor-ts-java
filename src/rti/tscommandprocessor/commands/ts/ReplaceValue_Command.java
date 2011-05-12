@@ -86,9 +86,9 @@ throws InvalidCommandParameterException
     }
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
-	//String FillFlag = parameters.getValue ( "SetFlag" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
 	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
+	String SetFlag = parameters.getValue ( "SetFlag" );
 	String warning = "";
     String message;
     
@@ -234,16 +234,6 @@ throws InvalidCommandParameterException
                     message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
         }
     }
-	
-    /*
-	if ( (FillFlag != null) && (FillFlag.length() != 1) ) {
-        message = "The fill flag must be 1 character long.";
-		warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
-	}
-    */
     
 	// Check for invalid parameters...
 	List valid_Vector = new Vector();
@@ -258,7 +248,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SetEnd" );
     valid_Vector.add ( "AnalysisWindowStart" );
     valid_Vector.add ( "AnalysisWindowEnd" );
-    //valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "SetFlag" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -515,7 +505,7 @@ CommandWarningException, CommandException
 
 	String SetStart = parameters.getValue("SetStart");
 	String SetEnd = parameters.getValue("SetEnd");
-	//String FillFlag = parameters.getValue("SetFlag");
+	String SetFlag = parameters.getValue("SetFlag");
 
 	// Figure out the dates to use for the analysis...
 	DateTime SetStart_DateTime = null;
@@ -710,7 +700,7 @@ CommandWarningException, CommandException
 		    NewValue + ", action=\"" + Action + "\"." );
 		try {
             TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double,
-                NewValue_double, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime );
+                NewValue_double, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SetFlag );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error replacing values in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -753,7 +743,7 @@ public String toString ( PropList props )
 	String SetEnd = props.getValue("SetEnd");
     String AnalysisWindowStart = props.getValue( "AnalysisWindowStart" );
     String AnalysisWindowEnd = props.getValue( "AnalysisWindowEnd" );
-	//String FillFlag = props.getValue("FillFlag");
+	String SetFlag = props.getValue("SetFlag");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -821,13 +811,12 @@ public String toString ( PropList props )
         }
         b.append ( "AnalysisWindowEnd=\"" + AnalysisWindowEnd + "\"" );
     }
-    /*
-	if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
+	if ( (SetFlag != null) && (SetFlag.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
 		}
-		b.append ( "FillFlag=\"" + FillFlag + "\"" );
-	}*/
+		b.append ( "SetFlag=\"" + SetFlag + "\"" );
+	}
 	return getCommandName() + "(" + b.toString() + ")";
 }
 

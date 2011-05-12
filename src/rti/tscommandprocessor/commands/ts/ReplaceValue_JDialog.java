@@ -60,6 +60,7 @@ private JTextField __SetEnd_JTextField = null; // Last date to reset.
 private JCheckBox __AnalysisWindow_JCheckBox = null;
 private DateTime_JPanel __AnalysisWindowStart_JPanel = null;  // Fields for analysis window within a year
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
+private JTextField __SetFlag_JTextField = null;
 private boolean __error_wait = false;	// Is there an error waiting to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false;       // Indicates whether OK button has been pressed.
@@ -148,6 +149,7 @@ private void checkInput ()
     String NewValue = __NewValue_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
+    String SetFlag = __SetFlag_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
     
     __error_wait = false;
@@ -189,6 +191,9 @@ private void checkInput ()
             parameters.set ( "AnalysisWindowEnd", AnalysisWindowEnd );
         }
     }
+    if ( SetFlag.length() > 0 ) {
+        parameters.set ( "SetFlag", SetFlag );
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -213,6 +218,7 @@ private void commitEdits ()
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
     String Action = __Action_JComboBox.getSelected();
+    String SetFlag = __SetFlag_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -228,6 +234,7 @@ private void commitEdits ()
         __command.setCommandParameter ( "AnalysisWindowStart", AnalysisWindowStart );
         __command.setCommandParameter ( "AnalysisWindowEnd", AnalysisWindowEnd );
     }
+    __command.setCommandParameter ( "SetFlag", SetFlag );
 }
 
 /**
@@ -284,13 +291,13 @@ private void initialize ( JFrame parent, Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -335,7 +342,7 @@ private void initialize ( JFrame parent, Command command )
     __Action_JComboBox.setMaximumRowCount(actionChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Action_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=no action)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - action for matched values (default=just replace)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Replacement start:"), 
@@ -378,6 +385,15 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - analysis window within each year (default=full year)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Set flag:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SetFlag_JTextField = new JTextField ( "", 10 );
+    __SetFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SetFlag_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - string to mark replaced data."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -468,6 +484,7 @@ private void refresh ()
     String SetEnd = "";
     String AnalysisWindowStart = "";
     String AnalysisWindowEnd = "";
+    String SetFlag = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -483,6 +500,7 @@ private void refresh ()
         SetEnd = props.getValue ( "SetEnd" );
         AnalysisWindowStart = props.getValue ( "AnalysisWindowStart" );
         AnalysisWindowEnd = props.getValue ( "AnalysisWindowEnd" );
+        SetFlag = props.getValue ( "SetFlag" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -588,6 +606,9 @@ private void refresh ()
         else {
             __AnalysisWindow_JCheckBox.setSelected ( false );
         }
+        if ( SetFlag != null ) {
+            __SetFlag_JTextField.setText ( SetFlag );
+        }
     }
     // Regardless, reset the command from the fields...
     checkGUIState();
@@ -600,6 +621,7 @@ private void refresh ()
     Action = __Action_JComboBox.getSelected();
     SetStart = __SetStart_JTextField.getText().trim();
     SetEnd = __SetEnd_JTextField.getText().trim();
+    SetFlag = __SetFlag_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -616,12 +638,13 @@ private void refresh ()
         props.add ( "AnalysisWindowStart=" + AnalysisWindowStart );
         props.add ( "AnalysisWindowEnd=" + AnalysisWindowEnd );
     }
+    props.add ( "SetFlag=" + SetFlag );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

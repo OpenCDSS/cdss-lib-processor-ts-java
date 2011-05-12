@@ -48,6 +48,7 @@ Values for the HandleMissingHow parameter.
 */
 protected final String _IgnoreMissing = "IgnoreMissing";
 protected final String _SetMissing = "SetMissing";
+protected final String _SetOnlyMissingValues = "SetOnlyMissingValues";
 
 /**
 Constructor.
@@ -73,6 +74,7 @@ throws InvalidCommandParameterException
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String TransferHow = parameters.getValue ( "TransferHow" );
 	String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
+	String SetDataFlags = parameters.getValue ( "SetDataFlags" );
 	String RecalcLimits = parameters.getValue ( "RecalcLimits" );
 	String warning = "";
     String message;
@@ -154,13 +156,23 @@ throws InvalidCommandParameterException
 
     if ( (HandleMissingHow != null) && !HandleMissingHow.equals("") &&
             !HandleMissingHow.equalsIgnoreCase(_IgnoreMissing) &&
-            !HandleMissingHow.equalsIgnoreCase(_SetMissing) ) {
+            !HandleMissingHow.equalsIgnoreCase(_SetMissing) &&
+            !HandleMissingHow.equalsIgnoreCase(_SetOnlyMissingValues)) {
         message = "The HandleMissingHow parameter (" + HandleMissingHow + ") is invalid.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify HandleMissingHow as " + _IgnoreMissing + ", or " +
-                _SetMissing + " (default if blank).") );
+                message, "Specify HandleMissingHow as " + _IgnoreMissing + ", " +
+                _SetMissing + " (default if blank), or " + _SetOnlyMissingValues + ".") );
+    }
+    
+    if ( (SetDataFlags != null) && !SetDataFlags.equals("") &&
+        !SetDataFlags.equalsIgnoreCase( "true" ) && !SetDataFlags.equalsIgnoreCase("false") ) {
+        message = "The SetDataFlags parameter must be blank, " + _False + " or " + _True + " (default if blank).";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a SetDataFlags as " + _False + " or " + _True + ".") );
     }
 
     if ( (RecalcLimits != null) && !RecalcLimits.equals("") &&
@@ -169,11 +181,11 @@ throws InvalidCommandParameterException
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a 1-character fill flag or Auto." ) );
+                message, "Specify a RecalcLimits as " + _False + " or " + _True + ".") );
     }
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -184,6 +196,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SetEnd" );
     valid_Vector.add ( "TransferHow" );
     valid_Vector.add ( "HandleMissingHow" );
+    valid_Vector.add ( "SetDataFlags" );
     valid_Vector.add ( "RecalcLimits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -427,10 +440,8 @@ Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -456,13 +467,18 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String RecalcLimits = parameters.getValue ( "RecalcLimits" );
-    boolean RecalcLimits_boolean = false;   // Default
-    if ( (RecalcLimits != null) && RecalcLimits.equalsIgnoreCase("true") ) {
-        RecalcLimits_boolean = true;
-    }
     String HandleMissingHow = parameters.getValue ( "HandleMissingHow" );
     if ( (HandleMissingHow == null) || HandleMissingHow.equals("") ) {
         HandleMissingHow = _SetMissing; // Default
+    }
+    String SetDataFlags = parameters.getValue ( "SetDataFlags" );
+    boolean SetDataFlags_boolean = true; // Default
+    if ( (SetDataFlags != null) && SetDataFlags.equalsIgnoreCase("false") ) {
+        SetDataFlags_boolean = false;
+    }
+    boolean RecalcLimits_boolean = false; // Default
+    if ( (RecalcLimits != null) && RecalcLimits.equalsIgnoreCase("true") ) {
+        RecalcLimits_boolean = true;
     }
 
 	// Get the time series to process...
@@ -839,7 +855,7 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "Setting \"" + ts.getIdentifier()+ "\" from \"" +
                 independent_ts.getIdentifier() + "\"." );
 		try {
-            TSUtil.setFromTS ( ts, independent_ts, SetStart_DateTime, SetEnd_DateTime, setprops );
+            TSUtil.setFromTS ( ts, independent_ts, SetStart_DateTime, SetEnd_DateTime, setprops, SetDataFlags_boolean );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error setting time series \"" + ts.getIdentifier() + "\" from \"" +
@@ -898,6 +914,7 @@ public String toString ( PropList props )
     String TransferHow = props.getValue( "TransferHow" );
     String HandleMissingHow = props.getValue( "HandleMissingHow" );
 	//String FillFlag = props.getValue("FillFlag");
+    String SetDataFlags = props.getValue( "SetDataFlags" );
     String RecalcLimits = props.getValue( "RecalcLimits" );
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -959,6 +976,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "HandleMissingHow=\"" + HandleMissingHow + "\"" );
+    }
+    if ( ( SetDataFlags != null) && (SetDataFlags.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SetDataFlags=" + SetDataFlags );
     }
     if ( ( RecalcLimits != null) && (RecalcLimits.length() > 0) ) {
         if ( b.length() > 0 ) {

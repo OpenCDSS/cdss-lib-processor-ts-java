@@ -283,7 +283,7 @@ private void initialize ( JFrame parent, Command command )
     __Password_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Password_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional, case-sensitive (default=anonymous)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - case-sensitive (default=anonymous)."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Remote folder:" ), 

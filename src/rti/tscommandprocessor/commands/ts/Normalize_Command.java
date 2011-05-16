@@ -439,7 +439,11 @@ CommandWarningException, CommandException
         if ( commandPhase == CommandPhaseType.RUN ) {
             TSUtil.normalize ( tsnew, MinValueMethod_MinFromTS_boolean, MinValue_double, MaxValue_double );
         }
-		tsnew.setAlias ( Alias );
+        if ( (Alias != null) && !Alias.equals("") ) {
+            String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, tsnew, Alias, status, commandPhase);
+            tsnew.setAlias ( alias );
+        }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to normalize time series \""+ ts.getIdentifier() + "\".";
@@ -520,6 +524,15 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
+    if ( majorVersion >= 10 ) {
+        // Add as a parameter
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.append ( "," );
+            }
+            b.append ( "Alias=\"" + Alias + "\"" );
+        }
+    }
     if ( (MinValueMethod != null) && (MinValueMethod.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -539,20 +552,13 @@ public String toString ( PropList props, int majorVersion )
         b.append ( "MaxValue=" + MaxValue );
     }
     if ( majorVersion < 10 ) {
+        // Old syntax...
         if ( (Alias == null) || Alias.equals("") ) {
             Alias = "Alias";
         }
         return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
     }
     else {
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.insert(0, "Alias=\"" + Alias + "\",");
-            }
-            else {
-                b.append ( "Alias=\"" + Alias + "\"" );
-            }
-        }
         return getCommandName() + "("+ b.toString()+")";
     }
 }

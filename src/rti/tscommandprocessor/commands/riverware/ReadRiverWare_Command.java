@@ -699,6 +699,15 @@ public String toString ( PropList props, int majorVersion )
 	if ((InputFile != null) && (InputFile.length() > 0)) {
 		b.append("InputFile=\"" + InputFile + "\"");
 	}
+    if ( majorVersion >= 10 ) {
+        // Add as a parameter
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.append ( "," );
+            }
+            b.append ( "Alias=\"" + Alias + "\"" );
+        }
+    }
 	// Units
 	if ((Units != null) && (Units.length() > 0)) {
 		if (b.length() > 0) {
@@ -723,20 +732,13 @@ public String toString ( PropList props, int majorVersion )
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
     if ( majorVersion < 10 ) {
+        // Old syntax...
         if ( (Alias == null) || Alias.equals("") ) {
             Alias = "Alias";
         }
         return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
     }
     else {
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.insert(0, "Alias=\"" + Alias + "\",");
-            }
-            else {
-                b.append ( "Alias=\"" + Alias + "\"" );
-            }
-        }
         return getCommandName() + "("+ b.toString()+")";
     }
 }

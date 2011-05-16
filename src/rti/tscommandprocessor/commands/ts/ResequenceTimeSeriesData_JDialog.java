@@ -29,6 +29,7 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -60,7 +61,7 @@ private SimpleJComboBox __TableRowEnd_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;// Start of period for output
 private SimpleJComboBox __OutputYearType_JComboBox = null;
 private JTextField __NewScenario_JTextField = null;
-private JTextField __Alias_JTextField = null; // Alias to assign to result
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private boolean	__error_wait = false;	// Is there an error to be cleared up?
 private boolean	__first_time = true;
 private boolean	__ok = false; // Indicates whether the user has pressed OK to close the dialog.
@@ -381,9 +382,8 @@ private void initialize ( JFrame parent, Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new JTextField ( 30 );
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
     __Alias_JTextField.addKeyListener ( this );
-    __Alias_JTextField.setToolTipText("%L for location, %T for data type, %Z for scenario.");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),

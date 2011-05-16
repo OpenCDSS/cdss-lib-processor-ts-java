@@ -13,7 +13,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -286,15 +285,6 @@ private void initialize ( JFrame parent, Command command )
 		"new time series will be mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
-    __Alias_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
@@ -305,6 +295,15 @@ private void initialize ( JFrame parent, Command command )
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

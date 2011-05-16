@@ -27,6 +27,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
 import RTi.TS.TSUtil_NewStatisticYearTS;
@@ -50,7 +51,7 @@ private SimpleJButton __cancel_JButton = null,// Cancel button
 private JFrame __parent_JFrame = null;	// parent JFrame
 private NewStatisticYearTS_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;
-private JTextField __Alias_JTextField = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate
 private JTextArea __NewTSID_JTextArea = null; // New TSID.
 private SimpleJComboBox	__Statistic_JComboBox = null; // Statistic to analyze.
@@ -304,21 +305,11 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 		" information be specified for the output time series to avoid confusing the output with the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( "" );
-	__Alias_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Required - for output, typically the location from the TSID, or a short string."), 
-		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series to analyze (TSID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
 	
-	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
 			(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	if ( tsids == null ) {
@@ -331,6 +322,15 @@ private void initialize ( JFrame parent, NewStatisticYearTS_Command command )
 	__TSID_JComboBox.getJTextComponent().addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New time series ID:" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

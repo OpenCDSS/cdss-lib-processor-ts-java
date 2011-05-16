@@ -495,6 +495,15 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "DayTSID=\"" + DayTSID + "\"" );
 	}
+    if ( majorVersion >= 10 ) {
+        // Add as a parameter
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.append ( "," );
+            }
+            b.append ( "Alias=\"" + Alias + "\"" );
+        }
+    }
 	if ( (Bracket != null) && (Bracket.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -502,20 +511,13 @@ public String toString ( PropList props, int majorVersion )
 		b.append ( "Bracket=" + Bracket );
 	}
     if ( majorVersion < 10 ) {
+        // Old syntax...
         if ( (Alias == null) || Alias.equals("") ) {
             Alias = "Alias";
         }
         return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
     }
     else {
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.insert(0, "Alias=\"" + Alias + "\",");
-            }
-            else {
-                b.append ( "Alias=\"" + Alias + "\"" );
-            }
-        }
         return getCommandName() + "("+ b.toString()+")";
     }
 }

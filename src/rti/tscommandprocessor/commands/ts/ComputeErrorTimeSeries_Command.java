@@ -29,9 +29,7 @@ import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 
 /**
-<p>
 This class initializes, checks, and runs the ComputeErrorTimeSeries() command.
-</p>
 */
 public class ComputeErrorTimeSeries_Command extends AbstractCommand
 implements Command

@@ -20,11 +20,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -40,7 +40,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private RelativeDiff_Command __command = null;
 private JTextArea __command_JTextArea=null;// Command as JTextField
-private JTextField __Alias_JTextField = null;// Field for time series alias
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__TSID1_JComboBox = null;
 private SimpleJComboBox	__TSID2_JComboBox = null;
 private SimpleJComboBox	__Divisor_JComboBox =null;
@@ -175,13 +175,6 @@ private void initialize ( JFrame parent, Command command )
         "The metadata for the result is a copy of TS1 except for the alias."), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series alias:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( "" );
-	__Alias_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time series 1 (TS1):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID1_JComboBox = new SimpleJComboBox ( true );    // Allow edit
@@ -208,6 +201,17 @@ private void initialize ( JFrame parent, Command command )
 	__Divisor_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Divisor_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - specify time series for divisor."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

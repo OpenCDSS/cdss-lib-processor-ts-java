@@ -25,6 +25,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -40,7 +41,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
 private Normalize_Command __command = null; // Command as Vector of String
 private JTextArea __command_JTextArea=null;// Command as TextField
-private JTextField __Alias_JTextField = null;// Field for time series alias
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private SimpleJComboBox	__MinValueMethod_JComboBox = null;
 private JTextField __MinValue_JTextField = null;
@@ -175,13 +176,6 @@ private void initialize ( JFrame parent, Command command )
 		"  Data units are set to blank because the result is dimensionless."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Alias_JTextField = new JTextField ( 20 );
-	__Alias_JTextField.addKeyListener ( this );
-        JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
     JGUIUtil.addComponent(main_JPanel, new JLabel("Time Series to Normalize:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
@@ -191,6 +185,15 @@ private void initialize ( JFrame parent, Command command )
     __TSID_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
         1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
+    __Alias_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Minimum data value to process:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

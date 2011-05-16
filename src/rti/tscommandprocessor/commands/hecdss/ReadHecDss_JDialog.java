@@ -24,6 +24,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
@@ -57,8 +58,8 @@ private JTextField
 			__InputStart_JTextField,
 			__InputEnd_JTextField,
 			__InputFile_JTextField = null,
-			__Location_JTextField = null,
-			__Alias_JTextField = null; // Alias for time series.
+			__Location_JTextField = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			//__NewUnits_JTextField = null; // Units to convert to at read
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
@@ -393,18 +394,23 @@ private void initialize(JFrame parent, Command command) {
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 		*/
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( "", 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( "", 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start (default=read all)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end (default=read all)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel("TSID location to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -418,9 +424,8 @@ private void initialize(JFrame parent, Command command) {
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new JTextField ( 30 );
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
     __Alias_JTextField.addKeyListener ( this );
-    __Alias_JTextField.setToolTipText("%L for location (A-part:B-part), %T for data type (C-part), %Z for scenario (F-part).");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),

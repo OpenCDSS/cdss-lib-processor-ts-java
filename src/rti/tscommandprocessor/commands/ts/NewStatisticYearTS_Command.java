@@ -762,7 +762,9 @@ CommandWarningException, CommandException
     	        outputYearType, AnalysisStart_DateTime, AnalysisEnd_DateTime,
                 AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SearchStart_DateTime );
     		TS stats_ts = tsu.newStatisticYearTS ( createData );
-    		stats_ts.setAlias ( Alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
+    		String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
+                processor, stats_ts, Alias, status, commandPhase);
+    		stats_ts.setAlias ( alias ); // Do separate because setting the NewTSID might cause the alias set to fail below.
     
     		// Update the data to the processor so that appropriate actions are taken...
     	    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -853,6 +855,15 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "TSID=\"" + TSID + "\"" );
 	}
+    if ( majorVersion >= 10 ) {
+        // Add as a parameter
+        if ( (Alias != null) && (Alias.length() > 0) ) {
+            if ( b.length() > 0 ) {
+                b.append ( "," );
+            }
+            b.append ( "Alias=\"" + Alias + "\"" );
+        }
+    }
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -920,20 +931,13 @@ public String toString ( PropList props, int majorVersion )
         b.append ( "SearchStart=\"" + SearchStart + "\"" );
     }
     if ( majorVersion < 10 ) {
+        // Old syntax...
         if ( (Alias == null) || Alias.equals("") ) {
             Alias = "Alias";
         }
         return "TS " + Alias + " = " + getCommandName() + "("+ b.toString()+")";
     }
     else {
-        if ( (Alias != null) && (Alias.length() > 0) ) {
-            if ( b.length() > 0 ) {
-                b.insert(0, "Alias=\"" + Alias + "\",");
-            }
-            else {
-                b.append ( "Alias=\"" + Alias + "\"" );
-            }
-        }
         return getCommandName() + "("+ b.toString()+")";
     }
 }

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.ts;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
 import java.awt.event.ActionEvent;
@@ -47,7 +48,7 @@ private SimpleJButton	__cancel_JButton = null,// Cancel button
 private JFrame __parent_JFrame = null;	// parent JFrame
 private VariableLagK_Command __command = null;	// Command to edit.
 private JTextArea __command_JTextArea=null;// Command as JTextField
-private JTextField __Alias_JTextField = null;// Field for time series alias
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox __TSID_JComboBox = null;// Time series available to operate on.
 private JTextArea __NewTSID_JTextArea = null; // New TSID.
 private SimpleJButton __edit_JButton = null;	// Edit button
@@ -371,15 +372,14 @@ private void initialize ( JFrame parent, VariableLagK_Command command )
         "Optional - separate values by commas (default=0 for all)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series alias:" ),
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new JTextField ( "" );
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
     __Alias_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-    1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel(
-    "Optional - alternate ID, (e.g., location from the TSID)."),
-    3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

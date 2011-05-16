@@ -32,9 +32,7 @@ import RTi.Util.Message.MessageUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs ReadHecDss() command.
-</p>
 */
 public class ReadHecDss_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -560,7 +558,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     }
 
 	// Read the file.
-    List tslist = null;   // Keep the list of time series
+    List<TS> tslist = null;   // Keep the list of time series
 	try {
         boolean read_data = true;
         if ( command_phase == CommandPhaseType.DISCOVERY ){

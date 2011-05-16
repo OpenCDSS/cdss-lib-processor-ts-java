@@ -30,6 +30,7 @@ import rti.tscommandprocessor.ui.CommandEditorUtil;
 
 import java.util.List;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
@@ -61,7 +62,7 @@ private SimpleJComboBox __SimulatedTSID_JComboBox = null;
 private JLabel __SimulatedEnsembleID_JLabel = null;
 private SimpleJComboBox __SimulatedEnsembleID_JComboBox = null;
 private SimpleJComboBox __ErrorMeasure_JComboBox = null;
-private JTextField __Alias_JTextField = null;
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -297,13 +298,13 @@ private void initialize ( JFrame parent, Command command )
 
     __ObservedTSID_JLabel = new JLabel ("Observed TSID (for ObservedTSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __ObservedTSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __ObservedTSID_JLabel, __ObservedTSID_JComboBox, tsids, y );
     
     __ObservedEnsembleID_JLabel = new JLabel ("Observed ensembleID (for ObservedTSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __ObservedEnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
             (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
             this, this, main_JPanel, __ObservedEnsembleID_JLabel, __ObservedEnsembleID_JComboBox, EnsembleIDs, y );
@@ -345,17 +346,17 @@ private void initialize ( JFrame parent, Command command )
 	__ErrorMeasure_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __ErrorMeasure_JComboBox,
 		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - indicates how to compute error."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Alias to assign:" ), 
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Alias_JTextField = new JTextField ( "", 20 );
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
     __Alias_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default is no alias assigned)."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

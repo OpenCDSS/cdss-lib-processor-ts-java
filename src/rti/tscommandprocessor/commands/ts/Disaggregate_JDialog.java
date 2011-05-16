@@ -194,6 +194,16 @@ private void initialize ( JFrame parent, Command command )
 		"The SameValue method can disaggregate Year->Month, Month->Day, Day->NHour, Hour->NMinute."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Original time series:"),
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+    __TSID_JComboBox.setData ( tsids );
+    __TSID_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -202,16 +212,6 @@ private void initialize ( JFrame parent, Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Original time series:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __TSID_JComboBox = new SimpleJComboBox ( true );    // Allow edit
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    __TSID_JComboBox.setData ( tsids );
-    __TSID_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __TSID_JComboBox,
-        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Method:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -222,6 +222,8 @@ private void initialize ( JFrame parent, Command command )
 	__Method_JComboBox.addItemListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Method_JComboBox,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - disaggregation method."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "New interval:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

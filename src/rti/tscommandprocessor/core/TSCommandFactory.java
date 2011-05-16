@@ -19,7 +19,6 @@ import RTi.Util.String.StringUtil;
 import rti.tscommandprocessor.commands.bndss.ReadColoradoBNDSS_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
-import rti.tscommandprocessor.commands.check.OpenCheckFile_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
 
 // DateValue commands
@@ -541,14 +540,8 @@ throws UnknownCommandException
 
 	// "O" commands...
 
-    else if ( commandName.equalsIgnoreCase("OpenCheckFile") ) {
-        return new OpenCheckFile_Command ();
-    }
 	else if ( commandName.equalsIgnoreCase("OpenHydroBase") ) {
 		return new OpenHydroBase_Command ();
-	}
-	else if ( commandName.equalsIgnoreCase("OpenNDFD") ) {
-		//return new openNDFD_Command ();
 	}
 
 	// "P" commands...

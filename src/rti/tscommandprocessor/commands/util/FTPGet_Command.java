@@ -534,8 +534,9 @@ private void downloadFiles(FTPClient ftp, String remoteFolder, String FilePatter
                 Message.printWarning(3, routine, message);
             throw new RuntimeException();
         }
-    } catch (IOException ex) {
-        String message = "Error changing CWD to \"" + remoteFolder + "\".";
+    }
+    catch (IOException ex) {
+        String message = "Error changing CWD to \"" + remoteFolder + "\" (" + ex + ").";
         getCommandStatus().addToLog(CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the remove directory exists."));

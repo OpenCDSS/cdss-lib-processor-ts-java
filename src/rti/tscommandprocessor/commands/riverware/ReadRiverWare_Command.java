@@ -121,6 +121,10 @@ throws InvalidCommandParameterException
     else {
         String working_dir = null;
         try {
+            // TODO SAM 2011-05-23 The below is higher overhead but deals with dynamic folder changes
+            // Why doesn't it work?
+            //working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, this );
+            //Message.printStatus(2, routine, "Working directory = \"" + working_dir + "\".");
             Object o = processor.getPropContents ( "WorkingDir" );
             // Working directory is available so use it...
             if ( o != null ) {
@@ -137,6 +141,7 @@ throws InvalidCommandParameterException
         }
     
         try {
+            Message.printStatus(2, routine, "Working directory is \"" + working_dir + "\"" );
             //String adjusted_path = 
             IOUtil.verifyPathForOS(IOUtil.adjustPath (working_dir,
                     TSCommandProcessorUtil.expandParameterValue(processor,this,InputFile)));

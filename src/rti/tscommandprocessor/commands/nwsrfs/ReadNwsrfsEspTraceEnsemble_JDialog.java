@@ -24,6 +24,7 @@ import javax.swing.JTextField;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
+import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
@@ -49,10 +50,10 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__ok_JButton = null;	// Ok Button
 private ReadNwsrfsEspTraceEnsemble_Command	__command = null;
 private String __working_dir = null;
-private JTextField	__Alias_JTextField = null,// Alias for time series.
+private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 			//__InputStart_JTextField,
 			//__InputEnd_JTextField,
-			__InputFile_JTextField = null;
+private JTextField __InputFile_JTextField = null;
 			//__NewUnits_JTextField = null;
 				// Units to convert to at read
 //private SimpleJComboBox	__Read24HourAsDay_JComboBox = null;
@@ -62,6 +63,7 @@ private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up
 private boolean __first_time = true;
 
+// TODO SAM 2011-05-23 Need to evaluate if needed since TSTool version 10 changes
 private boolean __isAliasVersion = false;	
 			// Whether this dialog is being opened for the version
 			// of the command that returns an alias or not
@@ -354,12 +356,14 @@ private void initialize(JFrame parent, Command command) {
         */
 
 	if (__isAliasVersion) {
+	    /*
 	    JGUIUtil.addComponent(main_JPanel, new JLabel("Time series alias:"),
 			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 		__Alias_JTextField = new JTextField ( 30 );
 		__Alias_JTextField.addKeyListener ( this );
 		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
 			1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+			*/
 	}
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble file to read:" ), 
@@ -378,7 +382,7 @@ private void initialize(JFrame parent, Command command) {
     __EnsembleID_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleID_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required identifier for ensemble."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - identifier for ensemble."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Ensemble name:" ),
@@ -387,17 +391,17 @@ private void initialize(JFrame parent, Command command) {
     __EnsembleName_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __EnsembleName_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Specify if reading an ensemble file."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - ensemble name."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     if ( !__isAliasVersion) {
-        JGUIUtil.addComponent(main_JPanel, new JLabel ( "Alias to assign:" ), 
-                0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        __Alias_JTextField = new JTextField ( "", 20 );
+        JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
+            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
         __Alias_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JGUIUtil.addComponent(main_JPanel, new JLabel( "Default is Location_Trace_HistYear."), 
+            1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - default is Location_Trace_HistYear."), 
             3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 

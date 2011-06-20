@@ -539,8 +539,8 @@ throws MalformedURLException, Exception
             }
         }
         else {
-            // CSV, each newline delimited row has YYYY-MM-DD,value, with the first line being the
-            // station name
+            // CSV, each newline delimited row has YYYY-MM-DD,valueFlag
+            // (Flag character is optional) with the first line being the station name
             dataStringsArray = resultString.split("\n");
             Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data values." );
             if ( dataStringsArray.length > 1 ) {
@@ -560,7 +560,10 @@ throws MalformedURLException, Exception
         ts.setDate2Original(dataEnd);
         DateTime date = null;
         String [] dataStringParts = null;
-        // Nolan Doesken and Bill Noon indicate that 0 is what people use
+        String valueString; // string containing value and optionally flag part of data
+        String flagString; // string containing flag part of data
+        int valueStringLength;
+        // Nolan Doesken and Bill Noon indicate that 0 is what people use for trace
         double traceValue = 0.0;
         double missing = ts.getMissing(); // Should be Double.NaN
         if ( readData ) {
@@ -572,19 +575,48 @@ throws MalformedURLException, Exception
                         dataStringParts = dataStringsArray[i].split(",");
                         dataStringParts[0] = dataStringParts[0].substring(2,14);
                         dataStringParts[1] = dataStringParts[1].substring(1,dataStringParts[1].length() - 2);
-                        date = DateTime.parse(dataStringsArray[i]);
-                        if ( dataStringParts[1].equals("M") ) {
-                            // Missing.  Do set a flag since ACIS specific sets a flag
+                        valueString = dataStringParts[1];
+                        valueStringLength = valueString.length();
+                        date = DateTime.parse(dataStringsArray[i]); // TODO SAM is this correct?
+                        if ( valueString.equals("M") ) {
+                            // No value and missing flag.  Do set a flag since ACIS specific sets a flag
                             ts.setDataValue(date, missing, "M", 0 );
                             ++mCount;
                         }
-                        else if ( dataStringParts[1].equals("T") ) {
-                            // Missing.  Do set a flag since ACIS specific sets a flag
+                        else if ( valueString.equals("T") ) {
+                            // No value and trace flag.  Do set a flag since ACIS specific sets a flag
                             ts.setDataValue(date, traceValue, "T", 0 );
                             ++tCount;
                         }
+                        // Check for data string form ##F or ##F1 (two one-character flags may occur, with
+                        // the second flag possibly being a character or digit)
+                        else if ( (valueString.length() > 0) &&
+                            Character.isLetter(valueString.charAt(valueStringLength - 1)) ) {
+                            flagString = valueString.substring(valueStringLength - 1);
+                            valueString = valueString.substring(0,valueStringLength - 1);
+                            if ( valueString.length() > 0 ) {
+                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                            }
+                            else {
+                                // Only flag was available
+                                ts.setDataValue(date, missing, flagString, 0 );
+                            }
+                        }
+                        else if ( (valueString.length() > 1) &&
+                            Character.isLetter(valueString.charAt(valueStringLength - 2)) ) {
+                            flagString = valueString.substring(valueStringLength - 2);
+                            valueString = valueString.substring(0,valueStringLength - 2);
+                            ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                            if ( valueString.length() > 0 ) {
+                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                            }
+                            else {
+                                // Only flag was available
+                                ts.setDataValue(date, missing, flagString, 0 );
+                            }
+                        }
                         else {
-                            ts.setDataValue(date,Double.parseDouble(dataStringParts[1]));
+                            ts.setDataValue(date,Double.parseDouble(valueString));
                         }
                     }
                     catch ( Exception e ) {
@@ -595,23 +627,53 @@ throws MalformedURLException, Exception
                 }
             }
             else {
-                // Start in second row since first is the station name
+                // CSV data - start in second row since first is the station name
                 for ( int i = 1; i < dataStringsArray.length; i++ ) {
                     try {
                         dataStringParts = dataStringsArray[i].split(",");
                         date = DateTime.parse(dataStringParts[0]);
-                        if ( dataStringParts[1].equals("M") ) {
-                            // Missing.  Do set a flag since ACIS specific sets a flag
+                        valueString = dataStringParts[1];
+                        valueStringLength = valueString.length();
+                        if ( valueString.equals("M") ) {
+                            // No value and missing flag.  Do set a flag since ACIS specific sets a flag
                             ts.setDataValue(date, missing, "M", 0 );
                             ++mCount;
                         }
-                        else if ( dataStringParts[1].equals("T") ) {
-                            // Missing.  Do set a flag since ACIS specific sets a flag
+                        else if ( valueString.equals("T") ) {
+                            // No value and trace flag.  Do set a flag since ACIS specific sets a flag
                             ts.setDataValue(date, traceValue, "T", 0 );
                             ++tCount;
                         }
+                        // Check for data string form ##F or ##F1 (two one-character flags may occur, with
+                        // the second flag possibly being a character or digit)
+                        else if ( (valueString.length() > 0) &&
+                            Character.isLetter(valueString.charAt(valueStringLength - 1)) ) {
+                            flagString = valueString.substring(valueStringLength - 1);
+                            valueString = valueString.substring(0,valueStringLength - 1);
+                            if ( valueString.length() > 0 ) {
+                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                            }
+                            else {
+                                // Only flag was available
+                                ts.setDataValue(date, missing, flagString, 0 );
+                            }
+                        }
+                        else if ( (valueString.length() > 1) &&
+                            Character.isLetter(valueString.charAt(valueStringLength - 2)) ) {
+                            flagString = valueString.substring(valueStringLength - 2);
+                            valueString = valueString.substring(0,valueStringLength - 2);
+                            ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                            if ( valueString.length() > 0 ) {
+                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                            }
+                            else {
+                                // Only flag was available
+                                ts.setDataValue(date, missing, flagString, 0 );
+                            }
+                        }
                         else {
-                            ts.setDataValue(date,Double.parseDouble(dataStringParts[1]));
+                            // Just the data value
+                            ts.setDataValue(date,Double.parseDouble(valueString));
                         }
                     }
                     catch ( NumberFormatException e ) {

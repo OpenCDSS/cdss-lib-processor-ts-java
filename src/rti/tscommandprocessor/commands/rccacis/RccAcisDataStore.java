@@ -327,7 +327,8 @@ throws IOException, MalformedURLException
         Message.printDebug(1,routine,"Returned data="+resultString);
     }
     if ( b.indexOf("error") >= 0 ) {
-        throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
+        throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " +
+            resultString + " (" + b + ")." );
     }
     else {
         // Parse the JSON
@@ -444,6 +445,14 @@ throws MalformedURLException, Exception
     URL url = new URL ( urlStringEncoded );
     // Open the input stream...
     HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+    // TODO SAM 2011-06-21 Set the timeouts if a property in the datastore file.
+    // This may be necessary if network performance
+    // is very slow.  However, the default of 0 means no timeout... so why does this sometimes throw
+    // a timeout exception?  Is there a timeout of a sub-process on the other end that gets enforced?
+    //urlConnection.setConnectTimeout(5000);
+    //urlConnection.setReadTimeout(5000);
+    //Message.printStatus(2, routine, "Default connect timeout=" + urlConnection.getConnectTimeout() );
+    //Message.printStatus(2, routine, "Default read timeout=" + urlConnection.getReadTimeout() );
     InputStream in = null;
     Message.printStatus(2, routine, "Response code=" + urlConnection.getResponseCode() +
         " Response message = \"" + urlConnection.getResponseMessage() + "\"" );
@@ -479,7 +488,8 @@ throws MalformedURLException, Exception
         Message.printDebug(1,routine,"Returned data="+resultString);
     }
     if ( b.indexOf("error") >= 0 ) {
-        throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
+        throw new IOException ( "Error retrieving data for URL \"" + urlStringEncoded +
+            "\":  " + resultString + " (" + b + ")." );
     }
     else {
         if ( requestJSON ) {

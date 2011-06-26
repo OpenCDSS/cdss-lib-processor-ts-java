@@ -215,6 +215,7 @@ import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Comm
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
+import rti.tscommandprocessor.commands.util.PrintTextFile_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import rti.tscommandprocessor.commands.util.RunDSSUTL_Command;
@@ -546,6 +547,9 @@ throws UnknownCommandException
 
 	// "P" commands...
 
+    else if ( commandName.equalsIgnoreCase("PrintTextFile") ) {
+        return new PrintTextFile_Command ();
+    }
 	else if ( commandName.equalsIgnoreCase("ProcessTSProduct") ) {
 		return new ProcessTSProduct_Command ();
 	}

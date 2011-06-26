@@ -259,14 +259,14 @@ throws InvalidCommandParameterException
     setSkipRows ( null );
     if ( (SkipRows != null) && !SkipRows.equals("") ) {
         try {
-            setSkipRows ( StringUtil.parseIntegerRangeSequence(SkipRows, ",", 0) );
+            setSkipRows ( StringUtil.parseIntegerRangeSequence(SkipRows, ",", 0, 0) );
         }
         catch ( Exception e ) {
             message = "The rows to skip (" + SkipRows + ") is invalid (" + e + ").";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify as comma-separated rows (1+) or ranges a-b." ) );
+                    message, "Specify as comma-separated rows (1+) and/or ranges a-b." ) );
         }
     }
 

@@ -73,6 +73,7 @@ private SimpleJComboBox __ShowPageCount_JComboBox = null;
 private JTextField __Pages_JTextField = null;
 private SimpleJComboBox __DoubleSided_JComboBox = null;
 private SimpleJComboBox __IfNotFound_JComboBox = null;
+private SimpleJComboBox __ShowDialog_JComboBox = null;
 private JTextArea __command_JTextArea = null;
 private String __working_dir = null; // Working directory.
 private boolean __error_wait = false;
@@ -111,7 +112,8 @@ public void actionPerformed( ActionEvent event )
 		if ( last_directory_selected != null ) {
 			fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
 		}
-		else {	fc = JFileChooserFactory.createJFileChooser(__working_dir );
+		else {
+		    fc = JFileChooserFactory.createJFileChooser(__working_dir );
 		}
 		fc.setDialogTitle( "Select File to Print");
 		
@@ -194,6 +196,7 @@ private void checkInput ()
 	String ShowPageCount = __ShowPageCount_JComboBox.getSelected();
 	String Pages = __Pages_JTextField.getText().trim();
 	String DoubleSided = __DoubleSided_JComboBox.getSelected();
+	String ShowDialog = __ShowDialog_JComboBox.getSelected();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	
 	__error_wait = false;
@@ -245,6 +248,9 @@ private void checkInput ()
     if ( DoubleSided.length() > 0 ) {
         props.set ( "DoubleSided", DoubleSided );
     }
+    if ( ShowDialog.length() > 0 ) {
+        props.set ( "ShowDialog", ShowDialog );
+    }
 	if ( IfNotFound.length() > 0 ) {
 		props.set ( "IfNotFound", IfNotFound );
 	}
@@ -279,6 +285,7 @@ private void commitEdits ()
     String ShowPageCount = __ShowPageCount_JComboBox.getSelected();
     String Pages = __Pages_JTextField.getText().trim();
     String DoubleSided = __DoubleSided_JComboBox.getSelected();
+    String ShowDialog = __ShowDialog_JComboBox.getSelected();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
 	__command.setCommandParameter ( "PrinterName", PrinterName );
@@ -296,6 +303,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ShowPageCount", ShowPageCount );
 	__command.setCommandParameter ( "Pages", Pages );
 	__command.setCommandParameter ( "DoubleSided", DoubleSided );
+	__command.setCommandParameter ( "ShowDialog", ShowDialog );
 	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
 
@@ -361,6 +369,10 @@ private void initialize ( JFrame parent, Command command )
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Determining supported printer settings may take a few seconds." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The margins agree with the orientation (e.g., for letter size portrait orientation, " +
+        "left margin is long edge; for landscape, left margin is for short edge)." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -567,6 +579,20 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - print double-sided? (default=" + __command._False + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show dialog?:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ShowDialog_JComboBox = new SimpleJComboBox ( false );
+    __ShowDialog_JComboBox.addItem ( "" );  // Default
+    __ShowDialog_JComboBox.addItem ( __command._False );
+    __ShowDialog_JComboBox.addItem ( __command._True );
+    __ShowDialog_JComboBox.select ( 0 );
+    __ShowDialog_JComboBox.addActionListener ( this );
+   JGUIUtil.addComponent(main_JPanel, __ShowDialog_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - show printer dialog? (default=" + __command._False + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
    JGUIUtil.addComponent(main_JPanel, new JLabel ( "If not found?:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -702,6 +728,7 @@ private void refresh ()
 	String ShowPageCount = "";
 	String Pages = "";
 	String DoubleSided = "";
+	String ShowDialog = "";
 	String IfNotFound = "";
     PropList parameters = null;
 	if ( __first_time ) {
@@ -723,6 +750,7 @@ private void refresh ()
 		ShowPageCount = parameters.getValue ( "ShowPageCount" );
 		Pages = parameters.getValue ( "Pages" );
 		DoubleSided = parameters.getValue ( "DoubleSided" );
+		ShowDialog = parameters.getValue ( "ShowDialog" );
 		IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
 			__InputFile_JTextField.setText ( InputFile );
@@ -845,6 +873,19 @@ private void refresh ()
                 "DoubleSided parameter \"" + DoubleSided + "\".  Select a\n value or Cancel." );
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__ShowDialog_JComboBox, ShowDialog,JGUIUtil.NONE, null, null ) ) {
+            __ShowDialog_JComboBox.select ( ShowDialog );
+        }
+        else {
+            if ( (ShowDialog == null) || ShowDialog.equals("") ) {
+                // New command...select the default...
+                __ShowDialog_JComboBox.select ( 0 );
+            }
+            else {  // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "ShowDialog parameter \"" + ShowDialog + "\".  Select a\n value or Cancel." );
+            }
+        }
 		if ( JGUIUtil.isSimpleJComboBoxItem(__IfNotFound_JComboBox, IfNotFound,JGUIUtil.NONE, null, null ) ) {
 			__IfNotFound_JComboBox.select ( IfNotFound );
 		}
@@ -877,6 +918,7 @@ private void refresh ()
     ShowPageCount = __ShowPageCount_JComboBox.getSelected();
     Pages = __Pages_JTextField.getText().trim();
     DoubleSided = __DoubleSided_JComboBox.getSelected();
+    ShowDialog = __ShowDialog_JComboBox.getSelected();
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
 	props.add ( "InputFile=" + InputFile );
@@ -895,6 +937,7 @@ private void refresh ()
 	props.add ( "ShowPageCount=" + ShowPageCount );
 	props.add ( "Pages=" + Pages );
 	props.add ( "DoubleSided=" + DoubleSided );
+	props.add ( "ShowDialog=" + ShowDialog );
 	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
 	// Check the path and determine what the label on the path button should be...

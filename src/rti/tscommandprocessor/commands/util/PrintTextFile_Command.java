@@ -68,8 +68,9 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String InputFile = parameters.getValue ( "InputFile" );
     // TODO SAM 2011-06-25 Might be nice to verify these at load, but it can be slow and don't have time to code now
+    // Parameters will be verified when editing and running
     //String PrinterName = parameters.getValue ( "PrinterName" );
-    //String PaperSize = parameters.getValue ( "PaperSize" );
+    String PaperSize = parameters.getValue ( "PaperSize" );
     //String PaperSource = parameters.getValue ( "PaperSource" );
     String Orientation = parameters.getValue ( "Orientation" );
     String MarginLeft = parameters.getValue ( "MarginLeft" );
@@ -81,6 +82,7 @@ throws InvalidCommandParameterException
     String ShowPageCount = parameters.getValue ( "ShowPageCount" );
     String Pages = parameters.getValue ( "Pages" );
     //String DoubleSided = parameters.getValue ( "DoubleSided" );
+    String ShowDialog = parameters.getValue ( "ShowDialog" );
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	String warning = "";
 	String message;
@@ -109,29 +111,55 @@ throws InvalidCommandParameterException
                     message, "Specify the parameter as " + landscape + " or " + portrait + " (default)."));
         }
     }
-	if ( (MarginLeft != null) && !MarginLeft.equals("") && !StringUtil.isDouble(MarginLeft) ) {
-        message = "The left margin value (" + MarginLeft + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the left margin as a number." ) );
+    // All margins must be specified, or none at all
+    int setCount = 0;
+	if ( (MarginLeft != null) && !MarginLeft.equals("") ) {
+	    ++setCount;
+	    if ( !StringUtil.isDouble(MarginLeft) ) {
+            message = "The left margin value (" + MarginLeft + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the left margin as a number." ) );
+	    }
     }
-    if ( (MarginRight != null) && !MarginRight.equals("") && !StringUtil.isDouble(MarginRight) ) {
-        message = "The right margin value (" + MarginRight + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the right margin as a number." ) );
+    if ( (MarginRight != null) && !MarginRight.equals("") ) {
+        ++setCount;
+        if ( !StringUtil.isDouble(MarginRight) ) {
+            message = "The right margin value (" + MarginRight + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the right margin as a number." ) );
+        }
     }
-    if ( (MarginTop != null) && !MarginTop.equals("") && !StringUtil.isDouble(MarginTop) ) {
-        message = "The top margin value (" + MarginTop + ") is invalid.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the top margin as a number." ) );
+    if ( (MarginTop != null) && !MarginTop.equals("") ) {
+        ++setCount;
+        if ( !StringUtil.isDouble(MarginTop) ) {
+            message = "The top margin value (" + MarginTop + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the top margin as a number." ) );
+        }
     }
-    if ( (MarginBottom != null) && !MarginBottom.equals("") && !StringUtil.isDouble(MarginBottom) ) {
-        message = "The bottom margin value (" + MarginBottom + ") is invalid.";
+    if ( (MarginBottom != null) && !MarginBottom.equals("") ) {
+        ++setCount;
+        if ( !StringUtil.isDouble(MarginBottom) ) {
+            message = "The bottom margin value (" + MarginBottom + ") is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the bottom margin as a number." ) );
+        }
+    }
+    if ( (setCount != 0) && (setCount != 4) ) {
+        message = "All margins must be set (or none should be set).";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify the bottom margin as a number." ) );
+            message, "Specify all margins, or specify none." ) );
+    }
+    if ( (setCount != 0) && ((PaperSize == null) || (PaperSize.length() == 0)) ) {
+        message = "Margins can only be set when the paper is specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+            message, "Specify the paper size to set margins." ) );
     }
     if ( (LinesPerPage != null) && !LinesPerPage.equals("") && !StringUtil.isInteger(LinesPerPage) ) {
         message = "The lines per page value (" + LinesPerPage + ") is invalid.";
@@ -155,6 +183,14 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the parameter as " + _False + " or " + _True + " (default)."));
     }
+    if ( (ShowDialog != null) && !ShowDialog.equals("") &&
+            !ShowDialog.equalsIgnoreCase(_False) && !ShowDialog.equalsIgnoreCase(_True) ) {
+            message = "The ShowDialog parameter \"" + ShowDialog + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + _False + " (default) or " + _True + "."));
+        }
     if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
         if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
             message = "The IfNotFound parameter \"" + IfNotFound + "\" is invalid.";
@@ -195,6 +231,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "ShowPageCount" );
 	valid_Vector.add ( "Pages" );
 	valid_Vector.add ( "DoubleSided" );
+	valid_Vector.add ( "ShowDialog" );
 	valid_Vector.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -281,8 +318,12 @@ CommandWarningException, CommandException
     if ( (ShowPageCount != null) && ShowPageCount.equalsIgnoreCase("false") ) {
         showPageCount = false;
     }
-    String Pages = parameters.getValue ( "Pages" );
-    String DoubleSided = parameters.getValue ( "DoubleSided" );
+    String ShowDialog = parameters.getValue ( "ShowDialog" );
+    boolean showDialog = false; // Default
+    if ( (ShowDialog != null) && ShowDialog.equalsIgnoreCase("true") ) {
+        showDialog = true;
+    }
+    //String DoubleSided = parameters.getValue ( "DoubleSided" );
     boolean doubleSided = false; // TODO SAM 2011-06-25 Need to enable parameter
 	String IfNotFound = parameters.getValue ( "IfNotFound" );
 	if ( (IfNotFound == null) || IfNotFound.equals("")) {
@@ -343,7 +384,7 @@ CommandWarningException, CommandException
                 showPageCount,
                 __requestedPages,
                 doubleSided,
-                true ); // batch
+                showDialog );
     	}
     	catch ( Exception e ) {
     		message = "Unexpected error printing file \"" + InputFile_full + "\" (" + e + ").";
@@ -391,6 +432,7 @@ public String toString ( PropList parameters )
     String ShowPageCount = parameters.getValue ( "ShowPageCount" );
     String Pages = parameters.getValue ( "Pages" );
     String DoubleSided = parameters.getValue ( "DoubleSided" );
+    String ShowDialog = parameters.getValue ( "ShowDialog" );
 	String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (InputFile != null) && (InputFile.length() > 0) ) {
@@ -485,6 +527,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "DoubleSided=" + DoubleSided );
+    }
+    if ( (ShowDialog != null) && (ShowDialog.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ShowDialog=" + ShowDialog );
     }
 	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
 		if ( b.length() > 0 ) {

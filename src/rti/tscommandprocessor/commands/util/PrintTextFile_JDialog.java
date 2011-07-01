@@ -49,11 +49,16 @@ Editor for PrintTextFile command.
 public class PrintTextFile_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private final String __AddWorkingDirectoryFile = "Add Working Directory";
-private final String __RemoveWorkingDirectoryFile = "Remove Working Directory";
+private final String __AddWorkingDirectoryInput = "Add Working Directory (Input)";
+private final String __RemoveWorkingDirectoryInput = "Remove Working Directory (Input)";
 
-private SimpleJButton __browse_JButton = null;
+private final String __AddWorkingDirectoryOutput = "Add Working Directory (Output)";
+private final String __RemoveWorkingDirectoryOutput = "Remove Working Directory (Output)";
+
+private SimpleJButton __browse_JButton = null; // input file
+private SimpleJButton __browse2_JButton = null; // output file
 private SimpleJButton __path_JButton = null;
+private SimpleJButton __path2_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
 private JTextField __InputFile_JTextField = null;
@@ -72,6 +77,7 @@ private SimpleJComboBox __ShowLineCount_JComboBox = null;
 private SimpleJComboBox __ShowPageCount_JComboBox = null;
 private JTextField __Pages_JTextField = null;
 private SimpleJComboBox __DoubleSided_JComboBox = null;
+private JTextField __OutputFile_JTextField = null;
 private SimpleJComboBox __IfNotFound_JComboBox = null;
 private SimpleJComboBox __ShowDialog_JComboBox = null;
 private JTextArea __command_JTextArea = null;
@@ -133,6 +139,25 @@ public void actionPerformed( ActionEvent event )
 			}
 		}
 	}
+    else if ( o == __browse2_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser(last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser(__working_dir );
+        }
+        fc.setDialogTitle("Specify Output (Print) File to Write");
+    
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String path = fc.getSelectedFile().getPath(); 
+            JGUIUtil.setLastFileDialogDirectory(directory);
+            __OutputFile_JTextField.setText(path);
+            refresh();
+        }   
+    }
 	else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
@@ -144,10 +169,10 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 	else if ( o == __path_JButton ) {
-		if ( __path_JButton.getText().equals(__AddWorkingDirectoryFile) ) {
+		if ( __path_JButton.getText().equals(__AddWorkingDirectoryInput) ) {
 			__InputFile_JTextField.setText (IOUtil.toAbsolutePath(__working_dir,__InputFile_JTextField.getText() ) );
 		}
-		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectoryFile) ) {
+		else if ( __path_JButton.getText().equals(__RemoveWorkingDirectoryInput) ) {
 			try {
                 __InputFile_JTextField.setText ( IOUtil.toRelativePath ( __working_dir,
                         __InputFile_JTextField.getText() ) );
@@ -159,6 +184,22 @@ public void actionPerformed( ActionEvent event )
 		}
 		refresh ();
 	}
+    else if ( o == __path2_JButton ) {
+        if (__path2_JButton.getText().equals(__AddWorkingDirectoryOutput)) {
+            __OutputFile_JTextField.setText (
+            IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText()));
+        }
+        else if (__path2_JButton.getText().equals(__RemoveWorkingDirectoryOutput)) {
+            try {
+                __OutputFile_JTextField.setText (
+                IOUtil.toRelativePath (__working_dir, __OutputFile_JTextField.getText()));
+            }
+            catch (Exception e) {
+                Message.printWarning (1, "PrintNetwork_JDialog", "Error converting file to relative path.");
+            }
+        }
+        refresh ();
+    }
 	else {
 	    // Choices...
 		refresh();
@@ -196,6 +237,7 @@ private void checkInput ()
 	String ShowPageCount = __ShowPageCount_JComboBox.getSelected();
 	String Pages = __Pages_JTextField.getText().trim();
 	String DoubleSided = __DoubleSided_JComboBox.getSelected();
+	String OutputFile = __OutputFile_JTextField.getText().trim();
 	String ShowDialog = __ShowDialog_JComboBox.getSelected();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	
@@ -248,6 +290,9 @@ private void checkInput ()
     if ( DoubleSided.length() > 0 ) {
         props.set ( "DoubleSided", DoubleSided );
     }
+    if (OutputFile.length() > 0) {
+        props.set ( "OutputFile", OutputFile );
+    }
     if ( ShowDialog.length() > 0 ) {
         props.set ( "ShowDialog", ShowDialog );
     }
@@ -285,6 +330,7 @@ private void commitEdits ()
     String ShowPageCount = __ShowPageCount_JComboBox.getSelected();
     String Pages = __Pages_JTextField.getText().trim();
     String DoubleSided = __DoubleSided_JComboBox.getSelected();
+    String OutputFile = __OutputFile_JTextField.getText().trim();
     String ShowDialog = __ShowDialog_JComboBox.getSelected();
 	String IfNotFound = __IfNotFound_JComboBox.getSelected();
 	__command.setCommandParameter ( "InputFile", InputFile );
@@ -303,6 +349,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "ShowPageCount", ShowPageCount );
 	__command.setCommandParameter ( "Pages", Pages );
 	__command.setCommandParameter ( "DoubleSided", DoubleSided );
+	__command.setCommandParameter ( "OutputFile", OutputFile );
 	__command.setCommandParameter ( "ShowDialog", ShowDialog );
 	__command.setCommandParameter ( "IfNotFound", IfNotFound );
 }
@@ -327,7 +374,7 @@ Return the short page size, including only the string before the note.
 private String getShortPaperSize ( String longPaperSize )
 {
     if ( (longPaperSize == null) || (longPaperSize.length() == 0) ) {
-        return null;
+        return "";
     }
     else {
         int pos = longPaperSize.indexOf ( " " );
@@ -580,6 +627,19 @@ private void initialize ( JFrame parent, Command command )
         "Optional - print double-sided? (default=" + __command._False + ")."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Print file:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputFile_JTextField = new JTextField (35);
+    __OutputFile_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+        1, y, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browse2_JButton = new SimpleJButton ("Browse", this);
+    JGUIUtil.addComponent(main_JPanel, __browse2_JButton,
+        6, y, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - can use when printing to PDF or another file format."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Show dialog?:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __ShowDialog_JComboBox = new SimpleJComboBox ( false );
@@ -627,8 +687,10 @@ private void initialize ( JFrame parent, Command command )
 
 	if ( __working_dir != null ) {
 		// Add the buttons to allow conversion to/from relative path...
-		__path_JButton = new SimpleJButton( __RemoveWorkingDirectoryFile,this);
+		__path_JButton = new SimpleJButton( __RemoveWorkingDirectoryInput,this);
 		button_JPanel.add ( __path_JButton );
+       __path2_JButton = new SimpleJButton( __RemoveWorkingDirectoryOutput, this);
+        button_JPanel.add (__path2_JButton);
 	}
 	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
 	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
@@ -728,6 +790,7 @@ private void refresh ()
 	String ShowPageCount = "";
 	String Pages = "";
 	String DoubleSided = "";
+	String OutputFile = "";
 	String ShowDialog = "";
 	String IfNotFound = "";
     PropList parameters = null;
@@ -750,6 +813,7 @@ private void refresh ()
 		ShowPageCount = parameters.getValue ( "ShowPageCount" );
 		Pages = parameters.getValue ( "Pages" );
 		DoubleSided = parameters.getValue ( "DoubleSided" );
+	    OutputFile = parameters.getValue ( "OutputFile" );
 		ShowDialog = parameters.getValue ( "ShowDialog" );
 		IfNotFound = parameters.getValue ( "IfNotFound" );
 		if ( InputFile != null ) {
@@ -873,6 +937,9 @@ private void refresh ()
                 "DoubleSided parameter \"" + DoubleSided + "\".  Select a\n value or Cancel." );
             }
         }
+        if ( OutputFile != null ) {
+            __OutputFile_JTextField.setText ( OutputFile );
+        }
         if ( JGUIUtil.isSimpleJComboBoxItem(__ShowDialog_JComboBox, ShowDialog,JGUIUtil.NONE, null, null ) ) {
             __ShowDialog_JComboBox.select ( ShowDialog );
         }
@@ -918,6 +985,7 @@ private void refresh ()
     ShowPageCount = __ShowPageCount_JComboBox.getSelected();
     Pages = __Pages_JTextField.getText().trim();
     DoubleSided = __DoubleSided_JComboBox.getSelected();
+    OutputFile = __OutputFile_JTextField.getText().trim();
     ShowDialog = __ShowDialog_JComboBox.getSelected();
 	IfNotFound = __IfNotFound_JComboBox.getSelected();
 	PropList props = new PropList ( __command.getCommandName() );
@@ -937,6 +1005,7 @@ private void refresh ()
 	props.add ( "ShowPageCount=" + ShowPageCount );
 	props.add ( "Pages=" + Pages );
 	props.add ( "DoubleSided=" + DoubleSided );
+	props.add ( "OutputFile=" + OutputFile );
 	props.add ( "ShowDialog=" + ShowDialog );
 	props.add ( "IfNotFound=" + IfNotFound );
 	__command_JTextArea.setText( __command.toString(props) );
@@ -945,12 +1014,22 @@ private void refresh ()
 		__path_JButton.setEnabled ( true );
 		File f = new File ( InputFile );
 		if ( f.isAbsolute() ) {
-			__path_JButton.setText (__RemoveWorkingDirectoryFile);
+			__path_JButton.setText (__RemoveWorkingDirectoryInput);
 		}
 		else {
-            __path_JButton.setText (__AddWorkingDirectoryFile );
+            __path_JButton.setText (__AddWorkingDirectoryInput );
 		}
 	}
+    if ( __path2_JButton != null ) {
+        __path2_JButton.setEnabled ( true );
+        File f = new File ( OutputFile );
+        if ( f.isAbsolute() ) {
+            __path2_JButton.setText (__RemoveWorkingDirectoryOutput);
+        }
+        else {
+            __path2_JButton.setText (__AddWorkingDirectoryOutput );
+        }
+    }
 }
 
 /**

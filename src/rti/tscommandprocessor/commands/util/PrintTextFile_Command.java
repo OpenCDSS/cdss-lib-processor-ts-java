@@ -231,6 +231,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "ShowPageCount" );
 	valid_Vector.add ( "Pages" );
 	valid_Vector.add ( "DoubleSided" );
+	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "ShowDialog" );
 	valid_Vector.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -318,6 +319,12 @@ CommandWarningException, CommandException
     if ( (ShowPageCount != null) && ShowPageCount.equalsIgnoreCase("false") ) {
         showPageCount = false;
     }
+    String OutputFile = parameters.getValue ( "OutputFile" );
+    String OutputFile_full = null;
+    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
+        OutputFile_full = TSCommandProcessorUtil.expandParameterValue(processor,this,
+            IOUtil.verifyPathForOS(IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile )) );
+    }
     String ShowDialog = parameters.getValue ( "ShowDialog" );
     boolean showDialog = false; // Default
     if ( (ShowDialog != null) && ShowDialog.equalsIgnoreCase("true") ) {
@@ -365,7 +372,7 @@ CommandWarningException, CommandException
 	        // Allow printer name to be a system property
 	        String printerName = null;
 	        if ( (PrinterName != null) && (PrinterName.length() > 0) ) {
-	            printerName = TSCommandProcessorUtil.expandParameterValue(processor,this,printerName);
+	            printerName = TSCommandProcessorUtil.expandParameterValue(processor,this,PrinterName);
 	        }
             new TextPrinterJob ( fileAsList,
                 InputFile_full, // Printer job name
@@ -384,6 +391,7 @@ CommandWarningException, CommandException
                 showPageCount,
                 __requestedPages,
                 doubleSided,
+                OutputFile_full,
                 showDialog );
     	}
     	catch ( Exception e ) {
@@ -432,6 +440,7 @@ public String toString ( PropList parameters )
     String ShowPageCount = parameters.getValue ( "ShowPageCount" );
     String Pages = parameters.getValue ( "Pages" );
     String DoubleSided = parameters.getValue ( "DoubleSided" );
+    String OutputFile = parameters.getValue ( "OutputFile" );
     String ShowDialog = parameters.getValue ( "ShowDialog" );
 	String IfNotFound = parameters.getValue("IfNotFound");
 	StringBuffer b = new StringBuffer ();
@@ -533,6 +542,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ShowDialog=" + ShowDialog );
+    }
+    if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputFile=\"" + OutputFile + "\"" );
     }
 	if ( (IfNotFound != null) && (IfNotFound.length() > 0) ) {
 		if ( b.length() > 0 ) {

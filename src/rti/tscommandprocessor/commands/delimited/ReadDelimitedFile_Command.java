@@ -73,6 +73,16 @@ Data types for each time series being processed.
 private List<String> __dataType = new Vector();
 
 /**
+Date column name, expanded for runtime, consistent with the ColumnNames runtime values.
+*/
+private String __dateColumnRuntime = null;
+
+/**
+Time column name, expanded for runtime, consistent with the ColumnNames runtime values.
+*/
+private String __timeColumnRuntime = null;
+
+/**
 Date/time column name, expanded for runtime, consistent with the ColumnNames runtime values.
 */
 private String __dateTimeColumnRuntime = null;
@@ -167,8 +177,8 @@ throws InvalidCommandParameterException
     String TreatConsecutiveDelimitersAsOne = parameters.getValue("TreatConsecutiveDelimitersAsOne" );
     String ColumnNames = parameters.getValue("ColumnNames" );
     String DateTimeColumn = parameters.getValue("DateTimeColumn" );
-    // String DateColumn = parameters.getValue("DateColumn" ); // Not implemented
-    // String TimeColumn = parameters.getValue("TimeColumn" ); // Not implemented
+    String DateColumn = parameters.getValue("DateColumn" );
+    String TimeColumn = parameters.getValue("TimeColumn" );
     String ValueColumn = parameters.getValue("ValueColumn" );
     String Comment = parameters.getValue("Comment" );  // No checks, but needed to process column names
     if ( Comment == null ) {
@@ -322,16 +332,56 @@ throws InvalidCommandParameterException
     }
     setColumnNamesRuntime ( columnNamesRuntime );
     
+    // Either DateTimeColumn or DateColumn must be specified.
+    // If TimeColumn is specified, then DateTimeColumn must not be specified and DateColumn must be specified
     String dateTimeColumnRuntime = null;
+    String dateColumnRuntime = null;
+    String timeColumnRuntime = null;
     setDateTimeColumnRuntime (dateTimeColumnRuntime);
-    if ( (DateTimeColumn == null) || (DateTimeColumn.length() == 0) ) {
-        message = "The date/time column must be specified.";
+    setDateColumnRuntime (dateColumnRuntime);
+    setTimeColumnRuntime (timeColumnRuntime);
+    boolean dateTimeColumnSpecified = false;
+    boolean dateColumnSpecified = false;
+    boolean timeColumnSpecified = false;
+    if ( (DateTimeColumn != null) && (DateTimeColumn.length() > 0) ) {
+        dateTimeColumnSpecified = true;
+    }
+    if ( (DateColumn != null) && (DateColumn.length() > 0) ) {
+        dateColumnSpecified = true;
+    }
+    if ( (TimeColumn != null) && (TimeColumn.length() > 0) ) {
+        timeColumnSpecified = true;
+    }
+    if ( !dateTimeColumnSpecified && !dateColumnSpecified ) {
+        message = "The date/time or date column must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify a date/time column as one of the values from ColumnNames." ) );
+                message, "Specify a date/time or date column as one of the values from ColumnNames." ) );
     }
-    else {
+    if ( dateTimeColumnSpecified && dateColumnSpecified ) {
+        message = "The date/time or date column must be specified (but not both).";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a date/time OR date column as one of the values from ColumnNames." ) );
+    }
+    if ( dateTimeColumnSpecified && timeColumnSpecified ) {
+        message = "The time column can only be specified with the date column (not the date/time column).";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the date column as one of the values from ColumnNames when a time column is specified." ) );
+    }
+    if ( !dateColumnSpecified && timeColumnSpecified ) {
+        message = "The time column can only be specified when the date column also is specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the date column as one of the values from ColumnNames when a time column is specified." ) );
+    }
+    
+    if ( dateTimeColumnSpecified ) {
         if ( StringUtil.indexOfIgnoreCase(DateTimeColumn,_FC, 0) >= 0 ) {
             // Original string used slice notation for column name in file
             try {
@@ -363,6 +413,76 @@ throws InvalidCommandParameterException
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify a date/time column as one of the values from ColumnNames." ) );
+        }
+    }
+    
+    if ( dateColumnSpecified ) {
+        if ( StringUtil.indexOfIgnoreCase(DateColumn,_FC, 0) >= 0 ) {
+            // Original string used slice notation for column name in file
+            try {
+                List<String> dateColumnName = new Vector();
+                dateColumnName.add ( DateColumn ); // Only one
+                dateColumnName = readColumnNamesFromFile(InputFile_full, dateColumnName,
+                    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
+                    getSkipRowsAfterComments() );
+                dateColumnRuntime = dateColumnName.get(0);
+            }
+            catch ( Exception e ) {
+                message = "Error getting the date column name to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the date column name is specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        else {
+            // Just use the column names as specified for runtime
+            dateColumnRuntime = DateColumn;
+        }
+        setDateColumnRuntime ( dateColumnRuntime );
+        // Now check the value of the date column versus the available columns
+        if ( getColumnNumberFromName(getDateColumnRuntime(), getColumnNamesRuntime()) < 0 ) {
+            message = "The DateColumn (" + getDateColumnRuntime() + ") is not a recognized column name.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a date column as one of the values from ColumnNames." ) );
+        }
+    }
+    
+    if ( timeColumnSpecified ) {
+        if ( StringUtil.indexOfIgnoreCase(TimeColumn,_FC, 0) >= 0 ) {
+            // Original string used slice notation for column name in file
+            try {
+                List<String> timeColumnName = new Vector();
+                timeColumnName.add ( TimeColumn ); // Only one
+                timeColumnName = readColumnNamesFromFile(InputFile_full, timeColumnName,
+                    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
+                    getSkipRowsAfterComments() );
+                timeColumnRuntime = timeColumnName.get(0);
+            }
+            catch ( Exception e ) {
+                message = "Error getting the time column name to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the time column name is specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        else {
+            // Just use the column names as specified for runtime
+            timeColumnRuntime = TimeColumn;
+        }
+        setTimeColumnRuntime ( timeColumnRuntime );
+        // Now check the value of the time column versus the available columns
+        if ( getColumnNumberFromName(getTimeColumnRuntime(), getColumnNamesRuntime()) < 0 ) {
+            message = "The TimeColumn (" + getTimeColumnRuntime() + ") is not a recognized column name.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a time column as one of the values from ColumnNames." ) );
         }
     }
     
@@ -733,7 +853,8 @@ throws InvalidCommandParameterException
 Determine the time series end date/time by reading the end of the file to determine the last date.
 This opens a temporary connection, reads the end of the file, and parses out data to get the date.
 */
-private DateTime determineEndDateTimeFromFile ( String inputFileFull, int dateTimePos, String delim, int parseFlag )
+private DateTime determineEndDateTimeFromFile ( String inputFileFull, int dateTimePos, int datePos, int timePos,
+    String delim, int parseFlag )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getName() + ".determineEndDateTimeFromFile";
     int dl = 30;
@@ -758,7 +879,9 @@ throws FileNotFoundException, IOException
     // record because it is likely that a complete record was not found in the first record.
     int size = v.size();
     String string = null;
-    String date2_string = null;
+    String dateTimeString = null;
+    String dateString = null;
+    String timeString = null;
     List<String> tokens = null;
     for ( int i = 1; i < size; i++ ) {
         string = (v.get(i)).trim();
@@ -767,19 +890,31 @@ throws FileNotFoundException, IOException
             continue;
         }
         tokens = StringUtil.breakStringList( string, delim, parseFlag | StringUtil.DELIM_ALLOW_STRINGS );
-        // Set the date string - overwrite for each line until all the end lines are processed
-        date2_string = tokens.get(dateTimePos);
+        if ( dateTimePos >= 0 ) {
+            // Set the date string - overwrite for each line until all the end lines are processed
+            dateTimeString = tokens.get(dateTimePos);
+        }
+        else if ( datePos >= 0 ) {
+            dateString = tokens.get(datePos);
+            if ( timePos >= 0 ) {
+                timeString = tokens.get(timePos);
+                dateTimeString = dateString + ":" + timeString;
+            }
+            else {
+                dateTimeString = dateString;
+            }
+        }
     }
     // Whatever came out of the last record will remain.
     DateTime datetime = null;
     try {
         if ( Message.isDebugOn ) {
-            Message.printDebug( 2, routine, "Got end date/time string \"" + date2_string + "\" from line \"" + string + "\"" );
+            Message.printDebug( 2, routine, "Got end date/time string \"" + dateTimeString + "\" from line \"" + string + "\"" );
         }
-        datetime = DateTime.parse(date2_string);
+        datetime = DateTime.parse(dateTimeString);
     }
     catch ( Exception e ) {
-        Message.printWarning ( 3, routine, "Error parsing end date/time \"" + date2_string + "\" from file \"" +
+        Message.printWarning ( 3, routine, "Error parsing end date/time \"" + dateTimeString + "\" from file \"" +
             inputFileFull + "\"." );
         datetime = null;
     }
@@ -857,6 +992,14 @@ Return the data type list.
 private List<String> getDataType()
 {
     return __dataType;
+}
+
+/**
+Return the date column name expanded for runtime.
+*/
+private String getDateColumnRuntime ()
+{
+    return __dateColumnRuntime;
 }
 
 /**
@@ -952,6 +1095,14 @@ private int getSkipRowsAfterComments()
 }
 
 /**
+Return the time column name expanded for runtime.
+*/
+private String getTimeColumnRuntime ()
+{
+    return __timeColumnRuntime;
+}
+
+/**
 Return whether consecutive delimiters should be treated as one.
 */
 private boolean getTreatConsecutiveDelimitersAsOne()
@@ -1043,7 +1194,7 @@ throws IOException
         }
         // Else handle the line
         ++row;
-        Message.printStatus(2, routine, "Processing line " + row + ": " + s );
+        //Message.printStatus(2, routine, "Processing line " + row + ": " + s );
         if ( Message.isDebugOn ) {
             Message.printDebug(dl, routine, "Processing line " + row + ": " + s );
         }
@@ -1137,6 +1288,8 @@ Read a list of time series from a delimited file.
 @param columnNames names of columns to use when mapping columns
 @param readColumnNamesFromFile if true, then the column names will be read from the file
 @param dateTimeColumn the date/time column name
+@param dateColumn the date column name
+@param timeColumn the time column name
 @param valueColumns the data value column names
 @param commentChar character(s) that indicates comments lines, if the first character of a line
 (or null if not specified).  Only 1-character is checked but more than one special character can be indicated.
@@ -1156,7 +1309,8 @@ Read a list of time series from a delimited file.
 */
 private List<TS> readTimeSeriesList ( String inputFileFull,
     String delim, boolean treatConsecutiveDelimitersAsOne,
-    List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, List<String> valueColumns,
+    List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, String dateColumn,
+    String timeColumn, List<String> valueColumns,
     String commentChar, int[][] skipRows, int skipRowsAfterComments,
     List<String> ids, List<String> providers, List<String> datatypes, TimeInterval interval,
     List<String> scenarios, List<String> units, List<String> missing,
@@ -1171,6 +1325,8 @@ throws IOException
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime
     int dateTimePos = getColumnNumberFromName(dateTimeColumn,columnNames);
+    int datePos = getColumnNumberFromName(dateColumn,columnNames);
+    int timePos = getColumnNumberFromName(timeColumn,columnNames);
     int [] valuePos = getColumnNumbersFromNames(valueColumns,columnNames);
     // Create the time series - at this time meta-data are not read from the file
     // If this changes, then some values may need to be (re)set when the file is read
@@ -1222,7 +1378,7 @@ throws IOException
         TS ts = null; // Time series to read
         boolean rowIsComment;
         List<String> tokens;
-        String dateTimeString, valueString;
+        String dateTimeString = null, dateString, timeString, valueString;
         DateTime dateTime;
         int breakFlag = 0;
         if ( treatConsecutiveDelimitersAsOne ) {
@@ -1302,7 +1458,19 @@ throws IOException
                 continue;
             }
             // Determine the date/time...
-            dateTimeString = tokens.get(dateTimePos);
+            if ( dateTimePos >= 0 ) {
+                dateTimeString = tokens.get(dateTimePos);
+            }
+            else if ( datePos >= 0 ) {
+                dateString = tokens.get(datePos);
+                if ( timePos >= 0 ) {
+                    timeString = tokens.get(timePos);
+                    dateTimeString = dateString + ":" + timeString;
+                }
+                else {
+                    dateTimeString = dateString;
+                }
+            }
             dateTime = null;
             try {
                 dateTime = DateTime.parse(dateTimeString);
@@ -1325,13 +1493,26 @@ throws IOException
                 ts = tslist.get(ival);
                 // If the first row being processed, need to allocate the data space for all the time series
                 // This also requires reading from the end of the file to get the end date
+                // Because some files have data in reverse chronological order (newest at top), compare
+                // the start and end date/times before setting.
                 if ( (readColumnNamesFromFile && (dataRowCount == 2)) ||
                      (!readColumnNamesFromFile && dataRowCount == 1) ) {
                     // The first date will be set from the first row of data
-                    ts.setDate1(dateTime);
-                    ts.setDate1Original(dateTime);
-                    ts.setDate2 ( determineEndDateTimeFromFile ( inputFileFull, dateTimePos, delim, breakFlag ) );
-                    ts.setDate2Original ( ts.getDate2() );
+                    DateTime lastFileDateTime = determineEndDateTimeFromFile (
+                        inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag );
+                    DateTime earliest = null, latest = null;
+                    if ( dateTime.greaterThan(lastFileDateTime)) {
+                        earliest = lastFileDateTime;
+                        latest = dateTime;
+                    }
+                    else {
+                        earliest = dateTime;
+                        latest = lastFileDateTime;
+                    }
+                    ts.setDate1(earliest);
+                    ts.setDate1Original(earliest);
+                    ts.setDate2(latest);
+                    ts.setDate2Original(latest);
                     ts.addToGenesis ( "Read time series from file \"" + inputFileFull + "\" for period " +
                         ts.getDate1() + " to " + ts.getDate2() );
                     if ( readData ) {
@@ -1417,8 +1598,10 @@ throws IOException, FileNotFoundException
         Delimiter = ",";    // Default
     }
     else {
-        // Replace \t literal with tab character...
+        // Replace \t literal with tab character and \s with literal space...
         Delimiter = Delimiter.replaceAll("\\\\t", "\t" );
+        Delimiter = Delimiter.replaceAll("\\\\s", " " );
+        Message.printStatus(2, routine, "Delimiter is \"" + Delimiter + "\"" );
     }
     
     List ColumnNames_List = null;
@@ -1818,16 +2001,28 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // TODO SAM 2011-03-11 Evaluate whether this should be more explicit
         // If any parameters refer to the column names, then the column names are expected to be in the file
         boolean readColumnNamesFromFile = false;
-        if ( StringUtil.indexOfIgnoreCase(parameters.getValue("ColumnNames"),_FC,0) >= 0 ) {
+        if ( (parameters.getValue("ColumnNames") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("ColumnNames"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
-        else if ( StringUtil.indexOfIgnoreCase(parameters.getValue("DateTimeColumn"),_FC,0) >= 0 ) {
+        else if ( (parameters.getValue("DateTimeColumn") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("DateTimeColumn"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
-        else if ( StringUtil.indexOfIgnoreCase(parameters.getValue("ValueColumn"),_FC,0) >= 0 ) {
+        else if ( (parameters.getValue("DateColumn") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("DateColumn"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
-        else if ( StringUtil.indexOfIgnoreCase(parameters.getValue("LocationID"),_FC,0) >= 0 ) {
+        else if ( (parameters.getValue("TimeColumn") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("TimeColumn"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
+        else if ( (parameters.getValue("ValueColumn") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("ValueColumn"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
+        else if ( (parameters.getValue("LocationID") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("LocationID"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
         // Check some run-time information
@@ -1849,7 +2044,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Read the time series
         tslist = readTimeSeriesList ( InputFile_full, StringUtil.literalToInternal(Delimiter),
             getTreatConsecutiveDelimitersAsOne(),
-            getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(), getValueColumnsRuntime(),
+            getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(), getDateColumnRuntime(),
+            getTimeColumnRuntime(), getValueColumnsRuntime(),
             Comment, getSkipRows(), getSkipRowsAfterComments(),
             getLocationIDRuntime(), getProvider(), getDataType(), getInterval(), getScenario(),
             getUnits(), getMissingValue(),
@@ -1957,6 +2153,14 @@ private void setDataType ( List<String> dataType )
 }
 
 /**
+Set date column expanded for runtime.
+*/
+private void setDateColumnRuntime ( String dateColumnRuntime )
+{
+    __dateColumnRuntime = dateColumnRuntime;
+}
+
+/**
 Set date/time column expanded for runtime.
 */
 private void setDateTimeColumnRuntime ( String dateTimeColumnRuntime )
@@ -2026,6 +2230,14 @@ Set the number of rows to skip after the header comments.
 private void setSkipRowsAfterComments ( int skipRowsAfterComments )
 {
     __skipRowsAfterComments = skipRowsAfterComments;
+}
+
+/**
+Set time column expanded for runtime.
+*/
+private void setTimeColumnRuntime ( String timeColumnRuntime )
+{
+    __timeColumnRuntime = timeColumnRuntime;
 }
 
 /**

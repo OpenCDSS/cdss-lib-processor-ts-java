@@ -473,7 +473,7 @@ private void initialize(JFrame parent, Command command) {
     JGUIUtil.addComponent(main_JPanel, __Delimiter_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - delimiter character (use \\t for tab)."),
+        "Required - delimiter character (use \\t for tab or \\s for space)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Treat consecutive delimiters as one?:" ), 
@@ -551,30 +551,24 @@ private void initialize(JFrame parent, Command command) {
         "Optional - date/time format MM/DD/YYYY, etc. (under development)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
-    JLabel DateColumn_JLabel = new JLabel ("Date column:");
-    DateColumn_JLabel.setEnabled( false );
-    JGUIUtil.addComponent(main_JPanel, DateColumn_JLabel,
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Date column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DateColumn_JTextField = new JTextField (10);
-    __DateColumn_JTextField.setEnabled( false );
     __DateColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __DateColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - if date and time are in separate columns (under development)."),
+        "Required - if date and time are in separate columns (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JLabel TimeColumn_JLabel = new JLabel ("Time column:");
-    TimeColumn_JLabel.setEnabled( false );
-    JGUIUtil.addComponent(main_JPanel, TimeColumn_JLabel,
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Time column:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __TimeColumn_JTextField = new JTextField (10);
-    __TimeColumn_JTextField.setEnabled( false);
     __TimeColumn_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __TimeColumn_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - if date and time are in separate columns (under development)."),
+        "Required - if date and time are in separate columns (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Value column(s):"),

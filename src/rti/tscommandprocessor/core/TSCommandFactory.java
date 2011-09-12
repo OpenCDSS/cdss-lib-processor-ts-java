@@ -74,6 +74,7 @@ import rti.tscommandprocessor.commands.nwsrfs.WriteNWSRFSESPTraceEnsemble_Comman
 
 // Reclamation HDB commands
 
+import rti.tscommandprocessor.commands.rccacis.ReadRccAcis_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
 
@@ -589,6 +590,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("ReadPatternFile") ) {
         return new ReadPatternFile_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadRccAcis") ) {
+        return new ReadRccAcis_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadReclamationHDB") ) {
         return new ReadReclamationHDB_Command ();

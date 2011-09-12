@@ -125,8 +125,9 @@ public String [] getSIds()
 
 /**
 Get the preferred station ID for use in time series identifiers.  This includes the station ID type as a
-"domain:" prefix.  The preferred identifier may at some point be based on a numbered order of agencies; however
-for how always return the ACIS identifier.
+"domain:" prefix.  The preferred identifier may at some point be based on a numbered order of agencies.
+Always return the ACIS identifier as the final option (in this case it may be indicative of ACIS adding station types
+and this code not knowing about it).
 @param prefixDomain if true, prefix the returned string (if not empty) with the station ID type (e.g., "ACIS:").
 @return the preferred ID, or a blank string if no ID is determined.
 */
@@ -134,7 +135,8 @@ public String getIDPreferred ( boolean prefix )
 {   // TODO SAM 2011-01-08 This preferred order could be specified in a configuration file, but need to
     // be careful because don't want user experience to be too varied.
     // List order from Bill Noon (2011-01-13).
-    String [] preferredIDOrder = { "COOP", "ICAO", "NWSLI", "FAA", "WMO", "WBAN", "ThreadEx", "AWDN", "ACIS" };
+    String [] preferredIDOrder = { "COOP", "ICAO", "NWSLI", "FAA", "WMO", "WBAN",
+        "ThreadEx", "AWDN", "GHCN", "CoCoRaHS", "ACIS" };
     for ( int i = 0; i < preferredIDOrder.length; i++ ) {
         String id = getIDSpecific(preferredIDOrder[i]);
         if ( !id.equals("") ) {
@@ -179,6 +181,24 @@ public String getIDSpecific(String stationIDType)
         }
     }
     return "";
+}
+
+/**
+Return the time series identifier corresponding to the metadata.
+@param dataStoreName the name of the data store to include at the end of the TSID, or null to ignore.
+@return the TSID string of the form ID.ACIS.MajorVariableNumber.Day[~DataStoreName]
+*/
+public String getTSID ( String dataStoreName )
+{
+    StringBuffer tsid = new StringBuffer();
+    tsid.append ( getIDPreferred(true) + "." );
+    tsid.append ( "ACIS." ); // Providing organization might be better?
+    tsid.append ( getVariable().getMajor());
+    tsid.append ( ".Day" );
+    if ( (dataStoreName != null) && !dataStoreName.equals("") ) {
+        tsid.append ( "~" + dataStoreName );
+    }
+    return tsid.toString();
 }
 
 /**

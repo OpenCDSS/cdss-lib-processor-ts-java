@@ -46,68 +46,48 @@ public void setFilters ( int numFilterGroups )
     //List<String> geolocCountyList = dmi.getGeolocCountyList();
     //List<String> geolocStateList = dmi.getGeolocStateList();
     
-    String [] postalArray = {
-        "AL - Alabama",
-        "AK - Alaska",
-        "AZ - Arizona",
-        "AR - Arkansas",
-        "CA - California",
-        "CO - Colorado",
-        "CT - Connecticut",
-        "DE - Delaware",
-        "DC - District of Columbia",
-        "FL - Florida",
-        "GA - Georgia",
-        "HI - Hawaii",
-        "ID - Idaho",
-        "IL - Illinois",
-        "IN - Indiana",
-        "IA - Iowa",
-        "KS - Kansas",
-        "KY - Kentucky",
-        "LA - Louisiana",
-        "ME - Maine",
-        "MT - Montana",
-        "NE - Nebraska",
-        "NV - Nevada",
-        "NH - New Hampshire",
-        "NJ - New Jersey",
-        "NM - New Mexico",
-        "NY - New York",
-        "NC - North Carolina",
-        "ND - North Dakota",
-        "OH - Ohio",
-        "OK - Oklahoma",
-        "OR - Oregon",
-        "MD - Maryland",
-        "MA - Massachusetts",
-        "MI - Michigan",
-        "MN - Minnesota",
-        "MS - Mississippi",
-        "MO - Missouri",
-        "PA - Pennsylvania",
-        "RI - Rhode Island",
-        "SC - South Carolina",
-        "SD - South Dakota",
-        "TN - Tennessee",
-        "TX - Texas",
-        "UT - Utah",
-        "VT - Vermont",
-        "VA - Virginia",
-        "WA - Washington",
-        "WV - West Virginia",
-        "WI - Wisconsin",
-        "WY - Wyoming"
-    };
+    // Get the global state FIPS data
+    List<FIPSState> states = FIPSState.getData();
+    String [] postalArray = new String[states.size()];
+    int i = 0;
+    for ( FIPSState fips : states ) {
+        postalArray[i++] = fips.getAbbreviation() + " - " + fips.getName() + " (" + fips.getCode() + ")";
+    }
+    
+    // Get the global county FIPS data
+    List<FIPSCounty> counties = FIPSCounty.getData();
+    String [] countyFipsArray = new String[counties.size()];
+    i = 0;
+    for ( FIPSCounty fips : counties ) {
+        countyFipsArray[i++] = fips.getCode() + " - " + fips.getName() + ", " + fips.getStateAbbreviation();
+    }
+    
+    // Get the global climate division data
+    List<ClimateDivision> climateDivs = ClimateDivision.getData();
+    String [] climateDivsArray = new String[climateDivs.size()];
+    i = 0;
+    for ( ClimateDivision div : climateDivs ) {
+        // Look up the state abbreviation
+        FIPSState state = FIPSState.lookupByName(div.getStateName());
+        if ( state == null ) {
+            // Should not happen
+            continue;
+        }
+        // Format for ACIS web service is state abbreviation and 2 digit climate division
+        climateDivsArray[i++] = state.getAbbreviation() +
+            StringUtil.formatString(div.getCode(),"%02d") + " - " + div.getName();
+    }
 
     filters.add(new InputFilter("Bounding Box",
         "bbox", "bbox",
         StringUtil.TYPE_STRING, null, null, true, "Bounding box in decimal degrees west,south,east,north " +
             " (e.g., -90,40,-88,41)"));
     
+    List<String> climateDivsList = Arrays.asList(climateDivsArray);
     filters.add(new InputFilter("Climate Division",
         "clim_div", "clim_div",
-        StringUtil.TYPE_STRING, null, null, true,
+        StringUtil.TYPE_STRING, climateDivsList, climateDivsList,
+        true,
         "Specify 2 digits (e.g., 01, 10) if postal is specified or combine here (e.g., NY01, NY10)" +
         " (see: http://www.esrl.noaa.gov/psd/data/usclimate/map.html)"));
     
@@ -116,21 +96,24 @@ public void setFilters ( int numFilterGroups )
         StringUtil.TYPE_STRING, null, null, true,
         "For example 01080205 (see: http://water.usgs.gov/GIS/huc.html)"));
     
+    List<String> countyFipsList = Arrays.asList(countyFipsArray);
     filters.add(new InputFilter("FIPS County",
         "county", "county",
-        StringUtil.TYPE_STRING, null, null, true, "Federal Information Processing Standard " +
-        "county (e.g., 09001) (see: http://www.epa.gov/enviro/html/codes/state.html)"));
+        StringUtil.TYPE_STRING, countyFipsList, countyFipsList,
+        true, // Allow edits because more than one county can be specified
+        "Federal Information Processing Standard (FIPS) county (e.g., 09001)"));
     
     filters.add(new InputFilter("NWS County Warning Area",
         "cwa", "cwa",
         StringUtil.TYPE_STRING, null, null, true,
         "For example BOI (see: http://www.aprs-is.net/WX/NWSZones.aspx)"));
     
+    List<String>postalList = Arrays.asList(postalArray);
     filters.add(new InputFilter("Postal (State) Code",
         "postal", "postal",
-        StringUtil.TYPE_STRING, Arrays.asList(postalArray), Arrays.asList(postalArray),
+        StringUtil.TYPE_STRING, postalList, postalList,
         true, // Allow edits because more than one state can be specified
-        "State abbreviation") );
+        "State abbreviation (can specify more than one separated by commas)") );
     
     setToolTipText("RCC ACIS queries can be filtered based on location and time series metadata");
     setInputFilters(filters, numFilterGroups, 25);

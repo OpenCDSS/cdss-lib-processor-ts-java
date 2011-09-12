@@ -3,7 +3,8 @@ package rti.tscommandprocessor.commands.rccacis;
 /**
 Station type information to allow lookup/translation of numeric station code and string type.
 This information is not currently available from a web service request but might be - hence why this is not
-in an enumeration.
+in an enumeration.  Currently instances are initialized in the RccAcisDataStore based on the "Station Id Type"
+table here:  http://data.rcc-acis.org/doc/index.html
 */
 public class RccAcisStationType
 {

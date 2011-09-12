@@ -47,6 +47,17 @@ import RTi.Util.Time.DateTime;
 
 /**
 Data store for NCDC ACIS web services.  This class maintains the web service information in a general way.
+To deal with slow performance, the following was done:
+<pre>
+Date:   Thu, 25 Aug 2011 11:00:57 -0400
+From:   Keith Eggleston <kle1@cornell.edu>
+If you don't need to get the AWDN sites, Bill has instituted a patch to ignore them, thus speeding up access to the other stations. Here's the note I received:
+
+"As a temporary work-around for the AWDN problems I have added a parameter to the MultiStnData call that will ignore any AWDN stations.
+Just add a parameter 'no_awdn' to the parameter list:
+curl "http://data.rcc-acis.org/MultiStnData?postal=NE&elems=1,2&meta=sIds,name&no_awdn=1&date=20110801&output=json"
+--Bill"
+</pre>
 @author sam
 */
 public class RccAcisDataStore extends AbstractWebServiceDataStore
@@ -80,8 +91,10 @@ throws URISyntaxException, IOException
     __stationTypeList.add ( new RccAcisStationType(3,"FAA","3-character FAA id"));
     __stationTypeList.add ( new RccAcisStationType(4,"WMO","5-digit WMO id"));
     __stationTypeList.add ( new RccAcisStationType(5,"ICAO","4-character ICAO id"));
+    __stationTypeList.add ( new RccAcisStationType(6,"GHCN","?-character GHCN id"));
     __stationTypeList.add ( new RccAcisStationType(7,"NWSLI","5-character NWSLI"));
     __stationTypeList.add ( new RccAcisStationType(9,"ThreadEx","6-character ThreadEx id"));
+    __stationTypeList.add ( new RccAcisStationType(10,"CoCoRaHS","5+ character CoCoRaHS identifier"));
     __stationTypeList.add ( new RccAcisStationType(16,"AWDN","7-character HPRCC AWDN id"));
 }
 
@@ -242,13 +255,15 @@ throws IOException, MalformedURLException
     // Form the URL - ask for as much metadata as possible
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() +
         "/MultiStnData?meta=sIds,uid,name,postal,county,ll,elev,valid_daterange" );
+    // The following helps with performance
+    urlString.append("&no_awdn=1");
     // Specify constraints from input filter
     // Element being read...
     urlString.append("&elems="+variable.getMajor());
     // Bounding box...
     List<String> bboxList = ifp.getInput(null, "bbox", true, null);
     if ( bboxList.size() > 1 ) {
-        throw new IOException ( "<= 1 bounding box can be specified." );
+        throw new IOException ( "<= 1 bounding box filters can be specified." );
     }
     else if ( bboxList.size() == 1 ) {
         String bbox = bboxList.get(0).trim();
@@ -257,34 +272,34 @@ throws IOException, MalformedURLException
     // Climate division...
     List<String> clim_divList = ifp.getInput(null, "clim_div", true, null);
     if ( clim_divList.size() > 1 ) {
-        throw new IOException ( "<= 1 climate division can be specified." );
+        throw new IOException ( "<= 1 climate division filters can be specified." );
     }
     else if ( clim_divList.size() == 1 ) {
-        String clim_div = clim_divList.get(0).trim();
+        String clim_div = clim_divList.get(0).split("-")[0].trim();
         urlString.append("&clim_div="+URLEncoder.encode(clim_div,"UTF-8"));
     }
     // FIPS county...
     List<String> countyList = ifp.getInput(null, "county", true, null);
     if ( countyList.size() > 1 ) {
-        throw new IOException ( "<= 1 FIPS county can be specified." );
+        throw new IOException ( "<= 1 FIPS county filters can be specified." );
     }
     else if ( countyList.size() == 1 ) {
-        String county = countyList.get(0).trim();
+        String county = countyList.get(0).split("-")[0].trim();
         urlString.append("&county="+URLEncoder.encode(county,"UTF-8"));
     }
     // NWS CWA...
     List<String> cwaList = ifp.getInput(null, "cwa", true, null);
     if ( cwaList.size() > 1 ) {
-        throw new IOException ( "<= 1 NWS CWA county can be specified." );
+        throw new IOException ( "<= 1 NWS CWA county filters can be specified." );
     }
     else if ( cwaList.size() == 1 ) {
         String cwa = cwaList.get(0).trim();
         urlString.append("&cwa="+URLEncoder.encode(cwa,"UTF-8"));
     }
-    // Drainage basin...
+    // Drainage basin (HUC)...
     List<String> basinList = ifp.getInput(null, "basin", true, null);
     if ( basinList.size() > 1 ) {
-        throw new IOException ( "<= 1 basin can be specified." );
+        throw new IOException ( "<= 1 basin filters can be specified." );
     }
     else if ( basinList.size() == 1 ) {
         String basin = basinList.get(0).trim();
@@ -293,7 +308,7 @@ throws IOException, MalformedURLException
     // Postal code...
     List<String> postalList = ifp.getInput(null, "postal", true, null);
     if ( postalList.size() > 1 ) {
-        throw new IOException ( "<= 1 postal code can be specified." );
+        throw new IOException ( "<= 1 postal code filters can be specified." );
     }
     else if ( postalList.size() == 1 ) {
         String postal = postalList.get(0).split("-")[0].trim();
@@ -354,15 +369,20 @@ throws IOException, MalformedURLException
                 // TODO SAM 2011-01-07 Some metadata like HUC do not return so may need to set based
                 // on whether the information was entered in the filter
             }
+            // Remove records that have no period
+            try {
+                metadataListObject.cleanupData();
+            }
+            catch ( Exception e ) {
+                Message.printWarning(3, routine, e);
+            }
+            return metadataListObject.getData();
         }
-        // Remove records that have no period
-        try {
-            metadataListObject.cleanupData();
+        else {
+            // Return an empty list
+            List<RccAcisStationTimeSeriesMetadata> data = new Vector();
+            return data;
         }
-        catch ( Exception e ) {
-            Message.printWarning(3, routine, e);
-        }
-        return metadataListObject.getData();
     }
 }
 
@@ -387,12 +407,13 @@ throws MalformedURLException, Exception
     // Look up the metadata for the data name
     RccAcisVariableTableRecord variable = lookupVariable ( tsident.getType() );
     // The station ID needs to specify the location type...
-    String stationID = readTimeSeries_FormHttpRequestStationID ( tsident.getLocation() );
+    String stationIDAndStationType = readTimeSeries_FormHttpRequestStationID ( tsident.getLocation() );
     // The start and end date are required.
     String readStartString = "por";
     String readEndString = "por";
     if ( !readData ) {
         // Specify a minimal period to try a query and make sure that the time series is defined.
+        // If this period is not valid for the time series, a missing value will come back.
         readStart = DateTime.parse("2011-01-01");
         readEnd = DateTime.parse("2011-01-01");
     }
@@ -428,8 +449,9 @@ throws MalformedURLException, Exception
     // Only one data type is requested as per readTimeSeries() conventions
     String elems = "" + variable.getMajor();
     // Form the URL - no need to ask for metadata?
+    // Always specify the station id type to avoid ambiguity
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() +
-         "/StnData?meta=sIds,uid,name,postal,county,ll,elev&sId=" + URLEncoder.encode(stationID,"UTF-8") +
+         "/StnData?meta=sIds,uid,name,postal,county,ll,elev&sId=" + URLEncoder.encode(stationIDAndStationType,"UTF-8") +
          "&elems=" + elems + "&sDate=" + readStartString + "&eDate=" + readEndString );
     // Always want JSON results...
     boolean requestJSON = false;
@@ -516,6 +538,7 @@ throws MalformedURLException, Exception
         // Create the time series.
         ts = TSUtil.newTimeSeries(tsidentString, true);
         ts.setIdentifier(tsidentString);
+        ts.setMissing(Double.NaN);// Use this instead of legacy default -999
         // Parse the data into short strings
         String [] dataStringsArray = new String[0];
         DateTime dataStart = null;
@@ -552,7 +575,7 @@ throws MalformedURLException, Exception
             // CSV, each newline delimited row has YYYY-MM-DD,valueFlag
             // (Flag character is optional) with the first line being the station name
             dataStringsArray = resultString.split("\n");
-            Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data values." );
+            Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data records (first is station name)." );
             if ( dataStringsArray.length > 1 ) {
                 stationName = dataStringsArray[0];
                 commaPos = dataStringsArray[1].indexOf(",");

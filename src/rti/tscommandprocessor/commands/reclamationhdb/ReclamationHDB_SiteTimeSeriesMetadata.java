@@ -2,13 +2,12 @@ package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.util.Date;
 
-import RTi.DMI.DMIDataObject;
 import RTi.DMI.DMIUtil;
 
 /**
 Hold data from the Reclamation HDB database that is a join of site, object, data type, and time series metadata.
 */
-public class ReclamationHDB_SiteTimeSeriesMetadata extends DMIDataObject
+public class ReclamationHDB_SiteTimeSeriesMetadata extends ReclamationHDB_Site
 {
 // Data fields that are not in the database but are important metadata
 // Whether Real or Model
@@ -22,24 +21,7 @@ private int __objectTypeID = DMIUtil.MISSING_INT;
 private String __objectTypeName = "";
 private String __objectTypeTag = "";
 
-// From HDB_SITE
-private int __siteID = DMIUtil.MISSING_INT;
-private String __siteName = "";
-private String __siteCommonName = "";
-private String __stateCode = "";
-private int __basinID = DMIUtil.MISSING_INT;
-private double __latitude = DMIUtil.MISSING_DOUBLE;
-private double __longitude = DMIUtil.MISSING_DOUBLE;
-private String __huc = ""; // String in DB
-private int __segmentNo = DMIUtil.MISSING_INT;
-private float __riverMile = DMIUtil.MISSING_FLOAT;
-private float __elevation = DMIUtil.MISSING_FLOAT;
-private String __description = "";
-private String __nwsCode = "";
-private String __scsID = "";
-private String __shefCode = "";
-private String __usgsID = "";
-private String __dbSiteCode = "";
+// HDB_SITE data are in base class
 
 // From HDB_DATATYPE
 private String __dataTypeName= "";
@@ -70,11 +52,6 @@ public ReclamationHDB_SiteTimeSeriesMetadata ()
 {   super();
 }
 
-public int getBasinID ()
-{
-    return __basinID;
-}
-
 public String getDataInterval ()
 {
     return __dataInterval;
@@ -90,39 +67,9 @@ public String getDataTypeName ()
     return __dataTypeName;
 }
 
-public String getDbSiteCode ()
-{
-    return __dbSiteCode;
-}
-
-public String getDescription ()
-{
-    return __description;
-}
-
-public float getElevation ()
-{
-    return __elevation;
-}
-
-public String getHuc ()
-{
-    return __huc;
-}
-
 public String getHydrologicIndicator ()
 {
     return __hydrologicIndicator;
-}
-
-public double getLatitude ()
-{
-    return __latitude;
-}
-
-public double getLongitude ()
-{
-    return __longitude;
 }
 
 public String getModelName ()
@@ -143,11 +90,6 @@ public int getModelRunID ()
 public String getModelRunName ()
 {
     return __modelRunName;
-}
-
-public String getNwsCode ()
-{
-    return __nwsCode;
 }
 
 public int getObjectTypeID ()
@@ -175,44 +117,9 @@ public String getRealModelType ()
     return __realModelType;
 }
 
-public float getRiverMile ()
-{
-    return __riverMile;
-}
-
-public String getScsID ()
-{
-    return __scsID;
-}
-
-public int getSegmentNo ()
-{
-    return __segmentNo;
-}
-
-public String getShefCode ()
-{
-    return __shefCode;
-}
-
 public int getSiteDataTypeID ()
 {
     return __siteDataTypeID;
-}
-
-public String getSiteCommonName ()
-{
-    return __siteCommonName;
-}
-
-public int getSiteID ()
-{
-    return __siteID;
-}
-
-public String getSiteName ()
-{
-    return __siteName;
 }
 
 public Date getStartDateTimeMax ()
@@ -223,11 +130,6 @@ public Date getStartDateTimeMax ()
 public Date getStartDateTimeMin ()
 {
     return __startDateTimeMin;
-}
-
-public String getStateCode ()
-{
-    return __stateCode;
 }
 
 /**
@@ -266,16 +168,6 @@ public String getUnitCommonName ()
     return __unitCommonName;
 }
 
-public String getUsgsID ()
-{
-    return __usgsID;
-}
-
-public void setBasinID ( int basinID )
-{
-    __basinID = basinID;
-}
-
 public void setDataInterval ( String dataInterval )
 {
     __dataInterval = dataInterval;
@@ -291,39 +183,9 @@ public void setDataTypeName ( String dataTypeName )
     __dataTypeName = dataTypeName;
 }
 
-public void setDbSiteCode ( String dbSiteCode )
-{
-    __dbSiteCode = dbSiteCode;
-}
-
-public void setDescription ( String description )
-{
-    __description = description;
-}
-
-public void setElevation ( float elevation )
-{
-    __elevation = elevation;
-}
-
-public void setHuc ( String huc )
-{
-    __huc = huc;
-}
-
 public void setHydrologicIndicator ( String hydrologicIndicator )
 {
     __hydrologicIndicator = hydrologicIndicator;
-}
-
-public void setLatitude ( double latitude )
-{
-    __latitude = latitude;
-}
-
-public void setLongitude ( double longitude )
-{
-    __longitude = longitude;
 }
 
 public void setModelName ( String modelName )
@@ -344,11 +206,6 @@ public void setModelRunID ( int modelRunID )
 public void setModelRunName ( String modelRunName )
 {
     __modelRunName = modelRunName;
-}
-
-public void setNwsCode ( String nwsCode )
-{
-    __nwsCode = nwsCode;
 }
 
 public void setObjectTypeID ( int objectTypeID )
@@ -376,44 +233,9 @@ public void setRealModelType ( String realModelType )
     __realModelType = realModelType;
 }
 
-public void setRiverMile ( float riverMile )
-{
-    __riverMile = riverMile;
-}
-
-public void setScsID ( String scsID )
-{
-    __scsID = scsID;
-}
-
-public void setSegmentNo ( int segmentNo )
-{
-    __segmentNo = segmentNo;
-}
-
-public void setShefCode ( String shefCode )
-{
-    __shefCode = shefCode;
-}
-
 public void setSiteDataTypeID ( int siteDataTypeID )
 {
     __siteDataTypeID = siteDataTypeID;
-}
-
-public void setSiteCommonName ( String siteCommonName )
-{
-    __siteCommonName = siteCommonName;
-}
-
-public void setSiteID ( int siteID )
-{
-    __siteID = siteID;
-}
-
-public void setSiteName ( String siteName )
-{
-    __siteName = siteName;
 }
 
 public void setStartDateTimeMax ( Date startDateTimeMax )
@@ -426,19 +248,9 @@ public void setStartDateTimeMin ( Date startDateTimeMin )
     __startDateTimeMin = startDateTimeMin;
 }
 
-public void setStateCode ( String stateCode )
-{
-    __stateCode = stateCode;
-}
-
 public void setUnitCommonName ( String unitCommonName )
 {
     __unitCommonName = unitCommonName;
-}
-
-public void setUsgsID ( String usgsID )
-{
-    __usgsID = usgsID;
 }
 
 }

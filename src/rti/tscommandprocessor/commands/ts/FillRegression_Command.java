@@ -104,7 +104,7 @@ throws InvalidCommandParameterException
 	String Transformation = parameters.getValue ( "Transformation" );
 	String LEZeroLogValue = parameters.getValue ( "LEZeroLogValue" );
 	String Intercept = parameters.getValue ( "Intercept" );
-    String MinimumDataCount = parameters.getValue ( "MinimumDataCount" );
+    String MinimumSampleSize = parameters.getValue ( "MinimumSampleSize" );
     String MinimumR = parameters.getValue ( "MinimumR" );
     String ConfidenceInterval = parameters.getValue ( "ConfidenceInterval" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
@@ -229,13 +229,13 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-	// Make sure MinimumDataCount was given and is a valid integer
-    if ( (MinimumDataCount != null) && !MinimumDataCount.equals("") && !StringUtil.isInteger(MinimumDataCount)) {
-        message = "Minimum data count (" + MinimumDataCount + ") is not an integer.";
+	// Make sure MinimumSampleSize was given and is a valid integer
+    if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") && !StringUtil.isInteger(MinimumSampleSize)) {
+        message = "The minimum sample size (" + MinimumSampleSize + ") is not an integer.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the minimum data count as an integer." ) );
+                message, "Specify the minimum sample size as an integer." ) );
     }
         
     // Make sure MinimumR, if given is a valid double. If not given set to the default 0.5.
@@ -318,7 +318,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Transformation" );
     valid_Vector.add ( "Intercept" );
     valid_Vector.add ( "LEZeroLogValue" );
-    valid_Vector.add ( "MinimumDataCount" );
+    valid_Vector.add ( "MinimumSampleSize" );
     valid_Vector.add ( "MinimumR" );
     valid_Vector.add ( "ConfidenceInterval" );
     valid_Vector.add ( "AnalysisStart" );
@@ -672,10 +672,10 @@ CommandWarningException, CommandException
     if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") ) {
         leZeroLogValue = Double.parseDouble(LEZeroLogValue);
     }
-    String MinimumDataCount = parameters.getValue("MinimumDataCount");
-    Integer minimumDataCount = null;
-    if ( (MinimumDataCount != null) && !MinimumDataCount.equals("") ) {
-        minimumDataCount = Integer.parseInt(MinimumDataCount);
+    String MinimumSampleSize = parameters.getValue("MinimumSampleSize");
+    Integer minimumSampleSize = null;
+    if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") ) {
+        minimumSampleSize = Integer.parseInt(MinimumSampleSize);
     }
     String MinimumR = parameters.getValue("MinimumR");
     Double minimumR = null;
@@ -842,7 +842,7 @@ CommandWarningException, CommandException
             analysisMonths,
             transformation,
             leZeroLogValue,
-            minimumDataCount,
+            minimumSampleSize,
             minimumR,
             confidenceInterval,
             dependentAnalysisStart, dependentAnalysisEnd,
@@ -957,15 +957,22 @@ throws Exception
     if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
         numEquations = 12;
     }
-    // List in a reasonable order
-    String [] statistics =
-        { "NX", "MeanX", "SX", "N1", "MeanX1", "SX1", "N2", "MeanX2", "SX2",
-            "MeanY1", "SY1", "MeanY", "SY", "a", "b", "R", "MeanY1est", "SY1est" };
+    // List in a reasonable order - see the command documentation for more
+    // X=independent
+    // Y=dependent
+    String [] statistics = {
+        "N1", "MeanX1", "SX1", "N2", "MeanX2", "SX2",
+        "MeanY1", "SY1", "NY", "MeanY", "SY", "a", "b", "R", "R2", "MeanY1est", "SY1est",
+        "RMSE", "SEE", "SEP", "SESlope", "TestScore", "TestQuantile", "TestRelated"
+        // TODO SAM 2010-12-18 put these in for comparison for MSM?
+        // "NY", "NYfilled", "MeanYfilled", "SYfilled", "Skew", etc. from MSM statistics
+        };
     int countStatisticTotal = statistics.length*numEquations; // The total number of statistics columns to add
     String [] statisticColumnNames = new String[countStatisticTotal]; // names in table
     int [] statisticColumnNumbers = new int[countStatisticTotal]; // columns in table
     Double [] statisticValueDouble = new Double[countStatisticTotal];
     Integer [] statisticValueInteger = new Integer[countStatisticTotal];
+    String [] statisticValueString = new String[countStatisticTotal];
     int countStatistic = -1; // The count of statistics added (0-index) for array access
     for ( int iEquation = 1; iEquation <= numEquations; iEquation++ ) {
         for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
@@ -1043,6 +1050,70 @@ throws Exception
                         // No value computed.  Leave as null for output.
                     }
                 }
+                else if ( statistics[iStatistic].equals("R2") ) {
+                    try {
+                        double r = regressionResults.getCorrelationCoefficient();
+                        statisticValueDouble[countStatistic] = new Double(r*r);
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("RMSE") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getRMSE());
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("SEE") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfEstimate());
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                /* FIXME SAM 2011-01-06
+                else if ( statistics[iStatistic].equals("SESlope") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfSlope());
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("TestScore") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestScore());
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("TestQuantile") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestQuantile());
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("TestIsRelated") ) {
+                    try {
+                        boolean related = regressionResults.getTestIsRelated();
+                        if ( related ) {
+                            statisticValueString[countStatistic] = "Yes";
+                        }
+                        else {
+                            statisticValueString[countStatistic] = "No";
+                        }
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
                 else if ( statistics[iStatistic].equals("SX") ) {
                     try {
                         statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX());
@@ -1091,6 +1162,7 @@ throws Exception
                         // No value computed.  Leave as null for output.
                     }
                 }
+                */
             }
             else {
                 // Monthly so add subscript
@@ -1178,6 +1250,70 @@ throws Exception
                         // No value computed.  Leave as null for output.
                     }
                 }
+                else if ( statistics[iStatistic].equals("R2") ) {
+                    try {
+                        double r = regressionResults.getCorrelationCoefficient(iEquation);
+                        statisticValueDouble[countStatistic] = new Double(r*r);
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("RMSE") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getRMSE(iEquation));
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("SEE") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfEstimate(iEquation));
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                /* FIXME SAM 2011-01-06
+                else if ( statistics[iStatistic].equals("SESlope") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfSlope(iEquation));
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("TestScore") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestScore(iEquation));
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("TestQuantile") ) {
+                    try {
+                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestQuantile(iEquation));
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
+                else if ( statistics[iStatistic].equals("TestIsRelated") ) {
+                    try {
+                        boolean related = regressionResults.getTestIsRelated(iEquation);
+                        if ( related ) {
+                            statisticValueString[countStatistic] = "Yes";
+                        }
+                        else {
+                            statisticValueString[countStatistic] = "No";
+                        }
+                    }
+                    catch ( Exception e ) {
+                        // No value computed.  Leave as null for output.
+                    }
+                }
                 else if ( statistics[iStatistic].equals("SX") ) {
                     try {
                         statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX(iEquation));
@@ -1245,6 +1381,7 @@ throws Exception
                 // Get the corresponding column number for row-edits below
                 statisticColumnNumbers[countStatistic] =
                     table.getFieldIndex(statisticColumnNames[countStatistic]);
+                    */
             }
         }
     }
@@ -1336,7 +1473,7 @@ public String toString ( PropList props )
 	String Transformation = props.getValue("Transformation");
 	String Intercept = props.getValue("Intercept");
     String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
-    String MinimumDataCount = props.getValue ( "MinimumDataCount" );
+    String MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
     String MinimumR = props.getValue ( "MinimumR" );
     String ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 	String AnalysisStart = props.getValue("AnalysisStart");
@@ -1385,9 +1522,9 @@ public String toString ( PropList props )
 		}
 		b.append ( "Intercept=" + Intercept );
 	}
-    if ( MinimumDataCount != null && MinimumDataCount.length() > 0 ) {
+    if ( MinimumSampleSize != null && MinimumSampleSize.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );
-        b.append ( "MinimumDataCount=" + MinimumDataCount);
+        b.append ( "MinimumSampleSize=" + MinimumSampleSize);
     }
     if ( MinimumR != null && MinimumR.length() > 0 ) {
         if ( b.length() > 0 ) b.append ( "," );

@@ -96,7 +96,7 @@ private SimpleJComboBox	__AnalysisMonth_JComboBox = null;
 private SimpleJComboBox	__Transformation_JComboBox=null;
 private JTextField __Intercept_JTextField = null;
 private JTextField __LEZeroLogValue_JTextField = null;
-private JTextField __MinimumDataCount_JTextField = null;
+private JTextField __MinimumSampleSize_JTextField = null;
 private JTextField __MinimumR_JTextField = null;
 private JTextField __ConfidenceInterval_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
@@ -175,7 +175,7 @@ private void checkInput ()
 	String Transformation = __Transformation_JComboBox.getSelected();
 	String Intercept = __Intercept_JTextField.getText().trim();
 	String LEZeroLogValue = __LEZeroLogValue_JTextField.getText().trim();
-    String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
+    String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String MinimumR = __MinimumR_JTextField.getText().trim();
     String ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -203,8 +203,8 @@ private void checkInput ()
     if ( LEZeroLogValue.length() > 0 ) {
         props.set ( "LEZeroLogValue", LEZeroLogValue );
     }
-    if ( MinimumDataCount.length() > 0 ) {
-        props.set ( "MinimumDataCount", MinimumDataCount );
+    if ( MinimumSampleSize.length() > 0 ) {
+        props.set ( "MinimumSampleSize", MinimumSampleSize );
     }
     if ( MinimumR.length() > 0 ) {
         props.set ( "MinimumR", MinimumR );
@@ -258,7 +258,7 @@ private void commitEdits ()
 	String Transformation = __Transformation_JComboBox.getSelected();
 	String Intercept = __Intercept_JTextField.getText().trim();
     String LEZeroLogValue = __LEZeroLogValue_JTextField.getText().trim();
-    String MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
+    String MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     String MinimumR = __MinimumR_JTextField.getText().trim();
     String ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -276,7 +276,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Transformation", Transformation );
 	__command.setCommandParameter ( "Intercept", Intercept );
 	__command.setCommandParameter ( "LEZeroLogValue", LEZeroLogValue );
-	__command.setCommandParameter ( "MinimumDataCount", MinimumDataCount );
+	__command.setCommandParameter ( "MinimumSampleSize", MinimumSampleSize );
 	__command.setCommandParameter ( "MinimumR", MinimumR );
 	__command.setCommandParameter ( "ConfidenceInterval", ConfidenceInterval );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
@@ -427,12 +427,12 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 		"Optional - blank or 0.0 are allowed with no transformation."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Minimum Data Count
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum data count:" ),
+    // Minimum sample size
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Minimum sample size:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __MinimumDataCount_JTextField = new JTextField ( 10 );
-    __MinimumDataCount_JTextField.addKeyListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __MinimumDataCount_JTextField,
+    __MinimumSampleSize_JTextField = new JTextField ( 10 );
+    __MinimumSampleSize_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MinimumSampleSize_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - minimum number of overlapping points required for analysis (default=no limit)."),
@@ -629,7 +629,7 @@ private void refresh ()
 	String Transformation = "";
 	String Intercept = "";
 	String LEZeroLogValue = "";
-    String MinimumDataCount = "";
+    String MinimumSampleSize = "";
     String MinimumR = "";
     String ConfidenceInterval = "";
 	String AnalysisStart = "";
@@ -652,7 +652,7 @@ private void refresh ()
 		Transformation = props.getValue("Transformation");
 		Intercept = props.getValue("Intercept");
 		LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
-	    MinimumDataCount = props.getValue ( "MinimumDataCount" );
+	    MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
 	    MinimumR = props.getValue ( "MinimumR" );
 	    ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 		AnalysisStart = props.getValue("AnalysisStart");
@@ -774,8 +774,8 @@ private void refresh ()
         if ( LEZeroLogValue != null ) {
             __LEZeroLogValue_JTextField.setText ( LEZeroLogValue );
         }
-        if ( MinimumDataCount != null ) {
-            __MinimumDataCount_JTextField.setText ( MinimumDataCount );
+        if ( MinimumSampleSize != null ) {
+            __MinimumSampleSize_JTextField.setText ( MinimumSampleSize );
         }
         if ( MinimumR != null ) {
             __MinimumR_JTextField.setText ( MinimumR );
@@ -829,7 +829,7 @@ private void refresh ()
 	Transformation = __Transformation_JComboBox.getSelected();
 	Intercept = __Intercept_JTextField.getText().trim();
 	LEZeroLogValue = __LEZeroLogValue_JTextField.getText().trim();
-    MinimumDataCount = __MinimumDataCount_JTextField.getText().trim();
+    MinimumSampleSize = __MinimumSampleSize_JTextField.getText().trim();
     MinimumR = __MinimumR_JTextField.getText().trim();
     ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
@@ -850,7 +850,7 @@ private void refresh ()
 	props.add ( "Transformation=" + Transformation );
 	props.add ( "Intercept=" + Intercept );
 	props.add ( "LEZeroLogValue=" + LEZeroLogValue );
-    props.add ( "MinimumDataCount=" + MinimumDataCount );
+    props.add ( "MinimumSampleSize=" + MinimumSampleSize );
     props.add ( "MinimumR=" + MinimumR );
     props.add ( "ConfidenceInterval=" + ConfidenceInterval );
 	props.add ( "AnalysisStart=" + AnalysisStart );

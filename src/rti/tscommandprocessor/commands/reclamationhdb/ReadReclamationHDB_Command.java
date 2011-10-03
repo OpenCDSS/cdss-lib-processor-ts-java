@@ -422,7 +422,7 @@ CommandWarningException, CommandException
 		// Initialize an input filter based on the data type...
 
 		ReclamationHDB_TimeSeries_InputFilter_JPanel filterPanel =
-		    new ReclamationHDB_TimeSeries_InputFilter_JPanel((ReclamationHDBDataStore)dataStore, null, getNumFilterGroups());
+		    new ReclamationHDB_TimeSeries_InputFilter_JPanel((ReclamationHDBDataStore)dataStore, getNumFilterGroups());
 
 		// Populate with the where information from the command...
 

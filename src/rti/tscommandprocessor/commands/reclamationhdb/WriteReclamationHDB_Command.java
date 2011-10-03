@@ -53,6 +53,12 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String DataStore = parameters.getValue ( "DataStore" );
+    String SiteCommonName = parameters.getValue ( "SiteCommonName" );
+    String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+    String ModelName = parameters.getValue ( "ModelName" );
+    String ModelRunName = parameters.getValue ( "ModelRunName" );
+    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
+    String ModelRunDate = parameters.getValue ( "ModelRunDate" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
@@ -70,8 +76,62 @@ throws InvalidCommandParameterException
                 message, "Specify the data store." ) );
     }
     
+    if ( (SiteCommonName == null) || SiteCommonName.equals("") ) {
+        message = "The site common name must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the site common name." ) );
+    }
+    
+    if ( (DataTypeCommonName == null) || DataTypeCommonName.equals("") ) {
+        message = "The data type common name must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data type common name." ) );
+    }
+    
+    if ( (ModelName == null) || ModelName.equals("") ) {
+        message = "The model name must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the model name." ) );
+    }
+    
+    if ( (ModelRunName == null) || ModelRunName.equals("") ) {
+        message = "The model run name must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the model run name." ) );
+    }
+    
+    if ( (HydrologicIndicator == null) || HydrologicIndicator.equals("") ) {
+        message = "The hydrologic indicator must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the hydrologic indicator." ) );
+    }
+    
+    if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
+        try {
+            DateTime.parse(ModelRunDate);
+        }
+        catch ( Exception e ) {
+            message = "The model run date is invalid.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the model run date as YYYY-MM-DD hh:mm:ss." ) );
+        }
+    }
+    
 	if ( (OutputStart != null) && !OutputStart.equals("")) {
-		try {	DateTime datetime1 = DateTime.parse(OutputStart);
+		try {
+		    DateTime datetime1 = DateTime.parse(OutputStart);
 			if ( datetime1 == null ) {
 				throw new Exception ("bad date");
 			}
@@ -85,7 +145,8 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (OutputEnd != null) && !OutputEnd.equals("")) {
-		try {	DateTime datetime2 = DateTime.parse(OutputEnd);
+		try {
+		    DateTime datetime2 = DateTime.parse(OutputEnd);
 			if ( datetime2 == null ) {
 				throw new Exception ("bad date");
 			}
@@ -100,10 +161,18 @@ throws InvalidCommandParameterException
 	}
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
+	valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-	valid_Vector.add ( "DataStore" );
+    valid_Vector.add ( "SiteCommonName" );
+    valid_Vector.add ( "DataTypeCommonName" );
+    valid_Vector.add ( "ModelName" );
+    valid_Vector.add ( "ModelRunName" );
+    valid_Vector.add ( "HydrologicIndicator" );
+    valid_Vector.add ( "ModelRunDate" );
+    valid_Vector.add ( "ValidationFlag" );
+    valid_Vector.add ( "DataFlags" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -153,6 +222,14 @@ CommandWarningException, CommandException
     }
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
+    String SiteCommonName = parameters.getValue ( "SiteCommonName" );
+    String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+    String ModelName = parameters.getValue ( "ModelName" );
+    String ModelRunName = parameters.getValue ( "ModelRunName" );
+    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
+    String ModelRunDate = parameters.getValue ( "ModelRunDate" );
+    String ValidationFlag = parameters.getValue ( "ValidationFlag" );
+    String DataFlags = parameters.getValue ( "DataFlags" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -313,7 +390,20 @@ CommandWarningException, CommandException
         ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
         Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" +
             dataStore.getName() + "\"" );
-        dmi.writeTimeSeriesList ( tslist, OutputStart_DateTime, OutputEnd_DateTime );
+        boolean isEnsemble = false;
+        DateTime modelRunDate = null;
+        String loadingApp = "TSTool";
+        message = "Command is not fully implemented - not writing time series to Reclamation HDB database.";
+        Message.printWarning(3, routine, message);
+        status.addToLog ( CommandPhaseType.RUN,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Check log file for details." ) );
+        boolean doWrite = false;
+        if ( doWrite ) {
+            dmi.writeTimeSeriesList ( tslist, loadingApp, isEnsemble, SiteCommonName,
+                DataTypeCommonName, ModelName, ModelRunName, HydrologicIndicator,
+                modelRunDate, ValidationFlag, DataFlags, OutputStart_DateTime, OutputEnd_DateTime );
+        }
     }
     catch ( Exception e ) {
         message = "Unexpected error writing time series to Reclamation HDB data store \"" +
@@ -342,6 +432,14 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
+    String SiteCommonName = parameters.getValue( "SiteCommonName" );
+    String DataTypeCommonName = parameters.getValue( "DataTypeCommonName" );
+    String ModelName = parameters.getValue( "ModelName" );
+    String ModelRunName = parameters.getValue( "ModelRunName" );
+    String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
+    String ModelRunDate = parameters.getValue( "ModelRunDate" );
+    String ValidationFlag = parameters.getValue( "ValidationFlag" );
+    String DataFlags = parameters.getValue( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	StringBuffer b = new StringBuffer ();
@@ -368,6 +466,60 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( SiteCommonName == null ) {
+        Message.printStatus(2, "XXX", "Site common name is null value." );
+    }
+    else {
+        Message.printStatus(2, "XXX", "Site common name is string value \"" + SiteCommonName + "\"" );
+    }
+    if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SiteCommonName=\"" + SiteCommonName + "\"" );
+    }
+    if ( (DataTypeCommonName != null) && (DataTypeCommonName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataTypeCommonName=\"" + DataTypeCommonName + "\"" );
+    }
+    if ( (ModelName != null) && (ModelName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelName=\"" + ModelName + "\"" );
+    }
+    if ( (ModelRunName != null) && (ModelRunName.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelRunName=\"" + ModelRunName + "\"" );
+    }
+    if ( (HydrologicIndicator != null) && (HydrologicIndicator.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "HydrologicIndicator=\"" + HydrologicIndicator + "\"" );
+    }
+    if ( (ModelRunDate != null) && (ModelRunDate.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelRunDate=\"" + ModelRunDate + "\"" );
+    }
+    if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ValidationFlag=\"" + ValidationFlag + "\"" );
+    }
+    if ( (DataFlags != null) && (DataFlags.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "DataFlags=\"" + DataFlags + "\"" );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

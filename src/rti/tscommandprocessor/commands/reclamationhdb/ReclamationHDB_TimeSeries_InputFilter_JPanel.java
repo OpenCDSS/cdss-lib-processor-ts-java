@@ -22,26 +22,20 @@ private ReclamationHDBDataStore __dataStore = null;
 /**
 Constructor.
 @param dataStore the data store to use to connect to the Reclamation HDB database.  Cannot be null.
-@param subjectType the initial subject type to display, or null to default to county.  TODO SAM 2010-10-19
-Evaluate whether model needs special identifier.
 @param numFilterGroups the number of filter groups to display
 */
-public ReclamationHDB_TimeSeries_InputFilter_JPanel( ReclamationHDBDataStore dataStore, String subjectType, int numFilterGroups )
+public ReclamationHDB_TimeSeries_InputFilter_JPanel( ReclamationHDBDataStore dataStore, int numFilterGroups )
 {   super();
     __dataStore = dataStore;
     ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)dataStore.getDMI();
-    setFilters ( dmi, subjectType, numFilterGroups );
+    setFilters ( dmi, numFilterGroups );
 }
 
 /**
 Set the filter data.  This method is called at setup and when refreshing the list with a new subject type.
-@param subjectType the initial subject type to display, or null to default to county.
 */
-public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilterGroups )
+public void setFilters ( ReclamationHDB_DMI dmi, int numFilterGroups )
 {   //String routine = getClass().getName() + ".setFilters";
-    if ( subjectType == null ) {
-        subjectType = "";//BNDSSSubjectType.COUNTY; // Default
-    }
     //String rd = dmi.getRightIdDelim();
     //String ld = dmi.getLeftIdDelim();
 
@@ -98,6 +92,11 @@ public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilt
     filters.add(new InputFilter("Site - ID",
         "HDB_SITE.SITE_ID", "",
         StringUtil.TYPE_INTEGER, null, null, true));
+    
+    filters.add(new InputFilter("Site - Data Type ID",
+        "HDB_SITE_DATATYPE.SITE_DATATYPE_ID", "",
+        StringUtil.TYPE_INTEGER, null, null, true));
+    
     /* FIXME SAM 2010-10-29 Disable for now because in the database these are strings - difficult to filter
     filters.add(new InputFilter("Site - Latitude",
         "HDB_SITE.LAT", "",
@@ -155,10 +154,6 @@ public void setFilters ( ReclamationHDB_DMI dmi, String subjectType, int numFilt
     filters.add(new InputFilter("Data - Physical Quantity Name",
         "HDB_DATATYPE.PHYSICAL_QUANTITY_NAME", "",
         StringUtil.TYPE_STRING, null, null, true));
-        
-    filters.add(new InputFilter("Data - Site Data Type ID",
-        "HDB_SITE_DATATYPE.SITE_DATATYPE_ID", "",
-        StringUtil.TYPE_INTEGER, null, null, true));
     
     filters.add(new InputFilter("Data - Units",
         "HDB_UNIT.UNIT_COMMON_NAME", "",

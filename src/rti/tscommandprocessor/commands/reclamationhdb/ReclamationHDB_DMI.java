@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -35,7 +36,32 @@ public class ReclamationHDB_DMI extends DMI
 Connection to the database.
 */
 private JavaConnections __hdbConnection = null;
-    
+
+/**
+Database parameters from REF_DB_PARAMETER.
+*/
+private Hashtable<String, String> __databaseParameterList = new Hashtable();
+
+/**
+Data types from HDB_DATATYPE.
+*/
+private List<ReclamationHDB_DataType> __dataTypeList = new Vector();
+
+/**
+Loading applications from HDB_LOADING_APPLICATION.
+*/
+private List<ReclamationHDB_LoadingApplication> __loadingApplicationList = new Vector();
+
+/**
+Models from HDB_MODEL.
+*/
+private List<ReclamationHDB_Model> __modelList = new Vector();
+
+/**
+Loading applications from HDB_VALIDATION.
+*/
+private List<ReclamationHDB_Validation> __validationList = new Vector();
+
 /** 
 Constructor for a database server and database name, to use an automatically created URL.
 Because Dave King's DMI code is used for low-level database work, this DMI is just a wrapper
@@ -94,14 +120,16 @@ Convert a start date/time for an entire time series to an internal date/time sui
 for the time series period start/end.
 @param startDateTime min/max start date/time from time series data records as per HDB conventions
 @param intervalBase time series interval base
+@param timeZone time zone abbreviation (e.g., "MST" to use for hourly and instantaneous data)
 @return internal date/time that can be used to set the time series start/end, for memory allocation
 */
-private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int intervalBase )
+private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int intervalBase, String timeZone )
 {   DateTime dateTime = new DateTime(startDateTime);
     if ( intervalBase == TimeInterval.HOUR ) {
         // The date/time using internal conventions is one hour later
         // FIXME SAM 2010-11-01 Are there any instantaneous 1hour values?
         dateTime.addHour(1);
+        dateTime.setTimeZone(timeZone);
     }
     // Otherwise for DAY, MONTH, YEAR the starting date/time is correct when precision is considered
     return dateTime;
@@ -155,6 +183,20 @@ Determine the database version.
 public void determineDatabaseVersion()
 {
     // TODO SAM 2010-10-18 Need to enable
+}
+
+/**
+Return the global time zone that is used for time series values more precise than daily.
+@return the global time zone that is used for time series values more precise than daily.  An empty
+string is returned if the time zone is not available.
+*/
+public String getDatabaseTimeZone ()
+{
+    String tz = __databaseParameterList.get("TIME_ZONE");
+    if ( tz == null ) {
+        tz = "";
+    }
+    return tz;
 }
 
 /**
@@ -309,7 +351,7 @@ private List<String> getWhereClausesFromInputFilter ( DMI dmi, InputFilter_JPane
     String where_clause=""; // A where clause that is being formed.
     for ( int ifg = 0; ifg < nfg; ifg++ ) {
         filter = panel.getInputFilter ( ifg );  
-        where_clause = DMIUtil.getWhereClauseFromInputFilter(dmi, filter,panel.getOperator(ifg));
+        where_clause = DMIUtil.getWhereClauseFromInputFilter(dmi, filter,panel.getOperator(ifg), true);
         if (where_clause != null) {
             where_clauses.add(where_clause);
         }
@@ -321,7 +363,7 @@ private List<String> getWhereClausesFromInputFilter ( DMI dmi, InputFilter_JPane
 Create a where string given an InputFilter_JPanel.  The InputFilter
 instances that are managed by the InputFilter_JPanel must have been defined with
 the database table and field names in the internal (non-label) data.
-@return a list of where clauses, each of which can be added to a DMI statement.
+@return a list of where clauses as a string, each of which can be added to a DMI statement.
 @param dmi The DMI instance being used, which may be checked for specific formatting.
 @param panel The InputFilter_JPanel instance to be converted.  If null, an empty list will be returned.
 @param tableName the name of the table for which to get where clauses.  This will be the leading XXXX. of
@@ -338,8 +380,10 @@ private String getWhereClauseStringFromInputFilter ( DMI dmi, InputFilter_JPanel
     StringBuffer whereString = new StringBuffer();
     String tableNameDot = (tableName + ".").toUpperCase();
     for ( String whereClause : whereClauses ) {
-        if ( !whereClause.toUpperCase().startsWith(tableNameDot) ) {
-            // Not for the requested table
+        // TODO SAM 2011-09-30 If the new code works then remove the following old code
+        //if ( !whereClause.toUpperCase().startsWith(tableNameDot) ) {
+        if ( whereClause.toUpperCase().indexOf(tableNameDot) >= 0 ) {
+            // Not for the requested table so don't include the where clause
             continue;
         }
         if ( (whereString.length() > 0)  ) {
@@ -352,6 +396,14 @@ private String getWhereClauseStringFromInputFilter ( DMI dmi, InputFilter_JPanel
         whereString.append("\n");
     }
     return whereString.toString();
+}
+
+/**
+Return the list of global validation flags.
+*/
+public List<ReclamationHDB_Validation> getHdbValidationList()
+{
+    return __validationList;
 }
 
 /**
@@ -388,6 +440,7 @@ public void open ()
     // Set the connection in the base class so it can be used with utility code
     setConnection ( __hdbConnection.ourConn );
     Message.printStatus(2, routine, "Opened the database connection." );
+    readGlobalData();
 }
 
 /**
@@ -408,8 +461,502 @@ Read global data for the database, to keep in memory and improve performance.
 */
 @Override
 public void readGlobalData()
-{
-    // TODO SAM 2010-10-18 Need to enable
+{   String routine = getClass().getName() + ".readGlobalData";
+    // Don't do a lot of caching at this point since database performance seems to be good
+    // Do get the global database controlling parameters and other small reference table data
+    // Database properties include database timezone for hourly date/times
+    try {
+        __databaseParameterList = readRefDbParameterList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,"Error reading database parameters (" + e + ").");
+    }
+    // Data types
+    try {
+        __dataTypeList = readHdbDataTypeList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,"Error reading data types (" + e + ").");
+    }
+    // Loading applications needed to convert "TSTool" to HDB identifier for writing data
+    try {
+        __loadingApplicationList = readHdbLoadingApplicationList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,"Error reading loading applications (" + e + ").");
+    }
+    // Validation flags are used when writing time series
+    try {
+        __validationList = readHdbValidationList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,"Error reading validation flags (" + e + ").");
+    }
+    // Models, used when writing time series
+    try {
+        __modelList = readHdbModelList();
+    }
+    catch ( SQLException e ) {
+        Message.printWarning(3,routine,"Error reading models (" + e + ").");
+    }
+}
+
+/**
+Read the database data types from the HDB_DATATYPE table.
+@return the list of data types
+*/
+public List<ReclamationHDB_DataType> readHdbDataTypeList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbDataTypeList";
+    List<ReclamationHDB_DataType> results = new Vector();
+    String sqlCommand = "select HDB_DATATYPE.DATATYPE_ID, " +
+        "HDB_DATATYPE.DATATYPE_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME, " +
+        "HDB_DATATYPE.PHYSICAL_QUANTITY_NAME, HDB_DATATYPE.UNIT_ID, HDB_DATATYPE.ALLOWABLE_INTERVALS, " +
+        "HDB_DATATYPE.AGEN_ID, HDB_DATATYPE.CMMNT from HDB_DATATYPE";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_DataType data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_DataType();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setDataTypeID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setDataTypeName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setDataTypeCommonName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setPhysicalQuantityName(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setUnitID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setAllowableIntervals(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setAgenID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting loading data types from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the database parameters from the REF_DB_PARAMETER table.
+@return the list of loading application data
+*/
+private List<ReclamationHDB_LoadingApplication> readHdbLoadingApplicationList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbLoadingApplication";
+    List<ReclamationHDB_LoadingApplication> results = new Vector();
+    String sqlCommand = "select HDB_LOADING_APPLICATION.LOADING_APPLICATION_ID, " +
+    	"HDB_LOADING_APPLICATION.LOADING_APPLICATION_NAME, HDB_LOADING_APPLICATION.MANUAL_EDIT_APP, " +
+    	"HDB_LOADING_APPLICATION.CMMNT from HDB_LOADING_APPLICATION";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_LoadingApplication data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_LoadingApplication();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setLoadingApplicationID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setLoadingApplicationName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setManualEditApp(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting loading application data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the database models from the HDB_MODEL table.
+@return the list of models
+*/
+public List<ReclamationHDB_Model> readHdbModelList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbModelList";
+    List<ReclamationHDB_Model> results = new Vector();
+    String sqlCommand = "select HDB_MODEL.MODEL_ID, " +
+        "HDB_MODEL.MODEL_NAME, HDB_MODEL.COORDINATED, " +
+        "HDB_MODEL.CMMNT from HDB_MODEL";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_Model data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_Model();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setModelID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setModelName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCoordinated(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting loading application data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the database site data types from the HDB_SITE_DATATYPE table, also joining to HDB_SITE and
+HDB_DATATYPE to get the common names.
+@return the list of site data types.
+*/
+public List<ReclamationHDB_SiteDataType> readHdbSiteDataTypeList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbSiteDataTypeList";
+    List<ReclamationHDB_SiteDataType> results = new Vector();
+    String sqlCommand = "select HDB_SITE_DATATYPE.SITE_ID, HDB_SITE_DATATYPE.DATATYPE_ID, " +
+        "HDB_SITE_DATATYPE.SITE_DATATYPE_ID, HDB_SITE.SITE_COMMON_NAME, HDB_DATATYPE.DATATYPE_COMMON_NAME " +
+        "from HDB_SITE_DATATYPE, HDB_SITE, HDB_DATATYPE " +
+        "where HDB_SITE_DATATYPE.SITE_ID = HDB_SITE.SITE_ID and " +
+        "HDB_SITE_DATATYPE.DATATYPE_ID = HDB_DATATYPE.DATATYPE_ID";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_SiteDataType data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_SiteDataType();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setSiteID(i);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setDataTypeID(i);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setSiteDataTypeID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setSiteCommonName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setDataTypeCommonName(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting loading site data types from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+// TODO SAM 2010-12-10 Evaluate joins with reference tables - for now get raw data.
+/**
+Read the database sites from the HDB_SITE table.
+Currently the main focus of this is to provide lists to TSTool commands.
+@return the list of sites
+*/
+public List<ReclamationHDB_Site> readHdbSiteList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbSiteList";
+    List<ReclamationHDB_Site> results = new Vector();
+    String sqlCommand = "select HDB_SITE.SITE_ID," +
+    " HDB_SITE.SITE_NAME," +
+    " HDB_SITE.SITE_COMMON_NAME,\n" +
+    //" HDB_SITE.STATE_ID," + // Use the reference table string instead of numeric key
+    //" HDB_STATE.STATE_CODE,\n" +
+    //" HDB_SITE.BASIN_ID," + // Use the reference table string instead of numeric key
+    //" HDB_BASIN.BASIN_CODE," +
+    //" HDB_SITE.BASIN_ID," + // Change to above later when find basin info
+    " HDB_SITE.LAT," +
+    " HDB_SITE.LONGI," +
+    " HDB_SITE.HYDROLOGIC_UNIT," +
+    " HDB_SITE.SEGMENT_NO," +
+    " HDB_SITE.RIVER_MILE," +
+    " HDB_SITE.ELEVATION,\n" +
+    " HDB_SITE.DESCRIPTION," +
+    " HDB_SITE.NWS_CODE," +
+    " HDB_SITE.SCS_ID," +
+    " HDB_SITE.SHEF_CODE," +
+    " HDB_SITE.USGS_ID," +
+    " HDB_SITE.DB_SITE_CODE from HDB_SITE";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        float f;
+        int record = 0;
+        int col;
+        ReclamationHDB_Site data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_Site();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setSiteID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setSiteName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setSiteCommonName(s);
+            }
+            // Latitude and longitude are varchars in the DB - convert to numbers if able
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                if ( StringUtil.isDouble(s) ) {
+                    data.setLatitude(Double.parseDouble(s));
+                }
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                if ( StringUtil.isDouble(s) ) {
+                    data.setLongitude(Double.parseDouble(s));
+                }
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setHuc(s);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setSegmentNo(i);
+            }
+            f = rs.getFloat(col++);
+            if ( !rs.wasNull() ) {
+                data.setRiverMile(f);
+            }
+            f = rs.getFloat(col++);
+            if ( !rs.wasNull() ) {
+                data.setElevation(f);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setDescription(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setNwsCode(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setScsID(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setShefCode(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setUsgsID(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setDbSiteCode(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting loading application data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the database parameters from the REF_DB_PARAMETER table.
+@return the database parameters as a hashtable
+*/
+private Hashtable<String,String> readRefDbParameterList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readRefDbParameter";
+
+    Hashtable<String,String> results = new Hashtable();
+    /* TODO SAM 2010-12-08 This is a real dog - 
+    try {
+        if ( !DMIUtil.databaseHasTable(this, "REF_DB_PARAMETER") ) {
+            return results;
+        }
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error determining whether REF_DB_PARAMETER table exists (" + e + ").");
+        return results;
+    }
+    */
+    // Unique combination of many terms (distinct may not be needed).
+    // Include newlines to simplify troubleshooting when pasting into other code.
+    String sqlCommand = "select REF_DB_PARAMETER.PARAM_NAME, REF_DB_PARAMETER.PARAM_VALUE from " +
+        "REF_DB_PARAMETER";
+    Message.printStatus(2, routine, "SQL is:\n" + sqlCommand );
+
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        String propName, propValue;
+        while (rs.next()) {
+            propName = rs.getString(1);
+            propValue = rs.getString(2);
+            results.put ( propName, propValue );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting database parameters data from HDB \"" +
+            getDatabaseName() + "\" (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
 }
 
 /**
@@ -424,34 +971,34 @@ throws SQLException
     // Replace ? with . in names - ? is a place-holder because . interferes with TSID specification
     siteCommonName = siteCommonName.replace('?', '.');
     if ( (siteCommonName != null) && !siteCommonName.equals("") ) {
-        whereString.append( "(HDB_SITE.SITE_COMMON_NAME = '" + siteCommonName + "')" );
+        whereString.append( "(upper(HDB_SITE.SITE_COMMON_NAME) = '" + siteCommonName.toUpperCase() + "')" );
     }
     if ( (dataTypeCommonName != null) && !dataTypeCommonName.equals("") ) {
         if ( whereString.length() > 0 ) {
             whereString.append ( " and " );
         }
-        whereString.append( "(HDB_DATATYPE.DATATYPE_COMMON_NAME = '" + dataTypeCommonName + "')" );
+        whereString.append( "(upper(HDB_DATATYPE.DATATYPE_COMMON_NAME) = '" + dataTypeCommonName.toUpperCase() + "')" );
     }
     if ( (modelName != null) && !modelName.equals("") ) {
         modelName = modelName.replace('?', '.');
         if ( whereString.length() > 0 ) {
             whereString.append ( " and " );
         }
-        whereString.append( "(HDB_MODEL.MODEL_NAME = '" + modelName + "')" );
+        whereString.append( "(upper(HDB_MODEL.MODEL_NAME) = '" + modelName.toUpperCase() + "')" );
     }
     if ( (modelRunName != null) && !modelRunName.equals("") ) {
         modelRunName = modelRunName.replace('?', '.');
         if ( whereString.length() > 0 ) {
             whereString.append ( " and " );
         }
-        whereString.append( "(REF_MODEL_RUN.MODEL_RUN_NAME = '" + modelRunName + "')" );
+        whereString.append( "(upper(REF_MODEL_RUN.MODEL_RUN_NAME) = '" + modelRunName.toUpperCase() + "')" );
     }
     if ( (hydrologicIndicator != null) && !hydrologicIndicator.equals("") ) {
         hydrologicIndicator = hydrologicIndicator.replace('?', '.');
         if ( whereString.length() > 0 ) {
             whereString.append ( " and " );
         }
-        whereString.append( "(REF_MODEL_RUN.HYDROLOGIC_INDICATOR = '" + hydrologicIndicator + "')" );
+        whereString.append( "(upper(REF_MODEL_RUN.HYDROLOGIC_INDICATOR) = '" + hydrologicIndicator.toUpperCase() + "')" );
     }
     if ( (modelRunDate != null) && !modelRunDate.equals("") ) {
         if ( whereString.length() > 0 ) {
@@ -493,14 +1040,14 @@ throws SQLException
         }
         Message.printStatus(2, routine, "dataType=\"" + dataType + "\" + dataTypeCommon=\"" +
             dataTypeCommon + "\"");
-        dataTypeWhereString = "HDB_DATATYPE.DATATYPE_COMMON_NAME = '" + dataTypeCommon + "'";
+        dataTypeWhereString = "upper(HDB_DATATYPE.DATATYPE_COMMON_NAME) = '" + dataTypeCommon.toUpperCase() + "'";
     }
 
     // Determine whether real and/or model results should be returned.  Get the user value from the
     // "Real or Model Data" input filter choice
     boolean returnReal = false;
     boolean returnModel = false;
-    List<String> realModelType = ifp.getInput("Real or Model Data", true, null);
+    List<String> realModelType = ifp.getInput("Real or Model Data", null, true, null);
     for ( String userInput: realModelType ) {
         if ( userInput.toUpperCase().indexOf("REAL") >= 0 ) {
             returnReal = true;
@@ -752,12 +1299,13 @@ throws Exception
     
     // Set the time series metadata...
     
+    String timeZone = getDatabaseTimeZone();
     ts.setDataUnits(tsMetadata.getUnitCommonName() );
     ts.setDate1Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMin(),
-        intervalBase ) );
+        intervalBase, timeZone ) );
     ts.setDate2Original(convertHDBStartDateTimeToInternal ( tsMetadata.getStartDateTimeMax(),
-        intervalBase ) );
-    // Set the missing value to 
+        intervalBase, timeZone ) );
+    // Set the missing value to NaN (HDB missing records typically are not even written to the DB).
     ts.setMissing(Double.NaN);
     
     // Now read the data...
@@ -771,6 +1319,9 @@ throws Exception
             // The date/time will be internal representation, but need to convert to hdb data record start
             hdbReqStartDateMin = convertInternalDateTimeToHDBStartString ( readStart, intervalBase );
             ts.setDate1(readStart);
+            if ( intervalBase == TimeInterval.HOUR ) {
+                ts.getDate1().setTimeZone(timeZone);
+            }
         }
         else {
             ts.setDate1(ts.getDate1Original());
@@ -779,6 +1330,9 @@ throws Exception
             // The date/time will be internal representation, but need to convert to hdb data record start
             hdbReqStartDateMax = convertInternalDateTimeToHDBStartString ( readEnd, intervalBase );
             ts.setDate2(readEnd);
+            if ( intervalBase == TimeInterval.HOUR ) {
+                ts.getDate2().setTimeZone(timeZone);
+            }
         }
         else {
             ts.setDate2(ts.getDate2Original());
@@ -918,6 +1472,56 @@ throws Exception
         }
     }
     return ts;
+}
+
+/**
+Read the data from the HDB_VALIDATION table.
+@return the list of validation data
+*/
+private List<ReclamationHDB_Validation> readHdbValidationList ( )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbValidation";
+    List<ReclamationHDB_Validation> results = new Vector();
+    String sqlCommand = "select HDB_VALIDATION.VALIDATION, HDB_VALIDATION.CMMNT from HDB_VALIDATION";
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand);
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        String s;
+        int record = 0;
+        int col;
+        ReclamationHDB_Validation data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_Validation();
+            col = 1;
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setValidation(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting validation data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
 }
 
 /**
@@ -1135,8 +1739,15 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
 
 /**
 Write a list of time series to the database.
+@param tslist list of time series to write.
+@param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool").
+@param outputStart start of period to write (if null write full period).
+@param outputEnd end of period to write (if null write full period).
 */
-public void writeTimeSeriesList ( List<TS> tslist, DateTime outputStart, DateTime outputEnd )
+public void writeTimeSeriesList ( List<TS> tslist, String loadingApp,
+    boolean isEnsemble, String siteCommonName,
+    String dataTypeCommonName, String modelName, String modelRunName, String hydrologicIndicator,
+    DateTime modelRunDate, String validationFlag, String dataFlags, DateTime outputStart, DateTime outputEnd )
 {
     
 }

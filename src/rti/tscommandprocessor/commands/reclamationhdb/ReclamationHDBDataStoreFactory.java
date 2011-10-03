@@ -42,7 +42,7 @@ public DataStore create ( PropList props )
     }
     catch ( Exception e ) {
         // TODO SAM 2010-09-02 Wrap the exception because need to move from default Exception
-        throw new RuntimeException ( e );
+        throw new RuntimeException ( "Error opening database connection", e );
     }
 }
 

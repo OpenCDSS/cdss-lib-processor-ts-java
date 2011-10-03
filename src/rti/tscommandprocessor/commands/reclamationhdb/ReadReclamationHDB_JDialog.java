@@ -305,7 +305,7 @@ private void initialize ( JFrame parent, ReadReclamationHDB_Command command )
 	try {
 	    // Add input filters for ReclamationHDB time series...
 		__inputFilter_JPanel = new ReclamationHDB_TimeSeries_InputFilter_JPanel(
-		    getSelectedDataStore(), null, __command.getNumFilterGroups() );
+		    getSelectedDataStore(), __command.getNumFilterGroups() );
 		JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
 			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );

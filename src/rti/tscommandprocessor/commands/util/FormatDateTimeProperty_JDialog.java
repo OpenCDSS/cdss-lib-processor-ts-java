@@ -1,0 +1,419 @@
+package rti.tscommandprocessor.commands.util;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.List;
+import java.util.Vector;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+
+import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
+import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.PropList;
+import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeFormatterType;
+import RTi.Util.Time.StrftimeDateTimeFormatterSpecifiersJPanel;
+
+public class FormatDateTimeProperty_JDialog extends JDialog
+implements ActionListener, ItemListener, KeyListener, WindowListener
+{
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private FormatDateTimeProperty_Command __command = null;
+private JTextArea __command_JTextArea = null;
+private JTextField __PropertyName_JTextField = null;
+private SimpleJComboBox __DateTimePropertyName_JComboBox = null;
+private SimpleJComboBox __FormatterType_JComboBox = null;
+private StrftimeDateTimeFormatterSpecifiersJPanel __Format_JTextField = null;
+private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
+private boolean __first_time = true;
+private boolean __ok = false; // Indicates whether OK button has been pressed.
+
+/**
+Command dialog constructor.
+@param parent JFrame class instantiating this class.
+@param command Command to edit.
+*/
+public FormatDateTimeProperty_JDialog ( JFrame parent, FormatDateTimeProperty_Command command )
+{	super(parent, true);
+	initialize ( parent, command );
+}
+
+/**
+Responds to ActionEvents.
+@param event ActionEvent object
+*/
+public void actionPerformed( ActionEvent event )
+{	Object o = event.getSource();
+
+	if ( o == __cancel_JButton ) {
+		response ( false );
+	}
+	else if ( o == __ok_JButton ) {
+		refresh ();
+		checkInput();
+		if ( !__error_wait ) {
+			response ( true );
+		}
+	}
+}
+
+/**
+Check the GUI state to make sure that appropriate components are enabled/disabled.
+*/
+private void checkGUIState ()
+{
+    // TODO SAM 2008-01-30 Anything to do?
+}
+
+/**
+Check the input.  If errors exist, warn the user and set the __error_wait flag
+to true.  This should be called before response() is allowed to complete.
+*/
+private void checkInput ()
+{	// Put together a list of parameters to check...
+	PropList parameters = new PropList ( "" );
+	String PropertyName = __PropertyName_JTextField.getText().trim();
+	String DateTimePropertyName = __DateTimePropertyName_JComboBox.getSelected();
+    String FormatterType = __FormatterType_JComboBox.getSelected();
+	String Format = __Format_JTextField.getText().trim();
+
+	__error_wait = false;
+
+	if ( PropertyName.length() > 0 ) {
+	    parameters.set ( "PropertyName", PropertyName );
+	}
+    if ( DateTimePropertyName.length() > 0 ) {
+        parameters.set ( "DateTimePropertyName", DateTimePropertyName );
+    }
+    if ( FormatterType.length() > 0 ) {
+        parameters.set ( "FormatterType", FormatterType );
+    }
+	if ( Format.length() > 0 ) {
+		parameters.set ( "Format", Format );
+	}
+
+	try {
+	    // This will warn the user...
+		__command.checkCommandParameters ( parameters, null, 1 );
+	}
+	catch ( Exception e ) {
+		// The warning would have been printed in the check code.
+		__error_wait = true;
+	}
+}
+
+/**
+Commit the edits to the command.  In this case the command parameters have
+already been checked and no errors were detected.
+*/
+private void commitEdits ()
+{	String PropertyName = __PropertyName_JTextField.getText().trim();
+    String DateTimePropertyName = __DateTimePropertyName_JComboBox.getSelected();
+    String FormatterType = __FormatterType_JComboBox.getSelected(); 
+	String Format = __Format_JTextField.getText().trim();
+	__command.setCommandParameter ( "PropertyName", PropertyName );
+    __command.setCommandParameter ( "DateTimePropertyName", DateTimePropertyName );
+    __command.setCommandParameter ( "FormatterType", FormatterType );
+    __command.setCommandParameter ( "Format", Format );
+}
+
+/**
+Free memory for garbage collection.
+*/
+protected void finalize ()
+throws Throwable
+{	__FormatterType_JComboBox = null;
+	__Format_JTextField = null;
+	__PropertyName_JTextField = null;
+	__cancel_JButton = null;
+	__command_JTextArea = null;
+	__command = null;
+	__ok_JButton = null;
+	super.finalize ();
+}
+
+/**
+Instantiates the GUI components.
+@param parent JFrame class instantiating this class.
+@param title Dialog title.
+@param command The command to edit.
+*/
+private void initialize ( JFrame parent, FormatDateTimeProperty_Command command )
+{	__command = command;
+    CommandProcessor processor = __command.getCommandProcessor();
+
+	addWindowListener( this );
+
+    Insets insetsTLBR = new Insets(2,2,2,2);
+
+	JPanel main_JPanel = new JPanel();
+	main_JPanel.setLayout( new GridBagLayout() );
+	getContentPane().add ( "North", main_JPanel );
+	int y = 0;
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+		"Format a date/time property to create a new string property." ), 
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The property can be referenced in parameters of some commands using ${Property} notation." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "For example, use the string property to create file names that include date/time information." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __PropertyName_JTextField = new JTextField ( 20 );
+    __PropertyName_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __PropertyName_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required - new property (do not use spaces $, { or } in name)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Date/time property name:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __DateTimePropertyName_JComboBox = new SimpleJComboBox(false);
+    List<String> propertyList = new Vector(TSCommandProcessorUtil.getPropertyNameList(processor));
+    // Remove all but DateTime instances
+    Object property;
+    for ( int i = 0; i < propertyList.size(); i++ ) {
+        try {
+            property = processor.getPropContents(propertyList.get(i));
+        }
+        catch ( Exception e ) {
+            property = null;
+        }
+        if ( (property == null) || !(property instanceof DateTime) ) {
+            propertyList.remove(i);
+            --i;
+        }
+    }
+    __DateTimePropertyName_JComboBox.setData ( propertyList );
+    __DateTimePropertyName_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DateTimePropertyName_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required - existing date/time property to format."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Formatter type:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FormatterType_JComboBox = new SimpleJComboBox ( false );
+    __FormatterType_JComboBox.addItem ( "" );
+    //__FormatterType_JComboBox.addItem ( DateTimeFormatterType.EXCEL );
+    __FormatterType_JComboBox.addItem ( DateTimeFormatterType.STRFTIME );
+    __FormatterType_JComboBox.select ( "" );
+    __FormatterType_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FormatterType_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - formatting to use (default=" + DateTimeFormatterType.STRFTIME + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Format:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__Format_JTextField = new StrftimeDateTimeFormatterSpecifiersJPanel ( 20 );
+	__Format_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Format_JTextField,
+		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - format string for formatter."), 
+		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
+		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+	__command_JTextArea = new JTextArea ( 4, 55 );
+	__command_JTextArea.setLineWrap ( true );
+	__command_JTextArea.setWrapStyleWord ( true );
+	__command_JTextArea.setEditable ( false );
+	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
+		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+	// Refresh the contents...
+    checkGUIState();
+	refresh ();
+
+	// South Panel: North
+	JPanel button_JPanel = new JPanel();
+	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JGUIUtil.addComponent(main_JPanel, button_JPanel, 
+		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+
+	button_JPanel.add(__cancel_JButton = new SimpleJButton("Cancel", this));
+	button_JPanel.add ( __ok_JButton = new SimpleJButton("OK", this) );
+
+	setTitle ( "Edit " + __command.getCommandName() + "() Command" );
+	setResizable ( true );
+    pack();
+    JGUIUtil.center( this );
+    super.setVisible( true );
+}
+
+/**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{	checkGUIState();
+    refresh();
+}
+
+/**
+Respond to KeyEvents.
+*/
+public void keyPressed ( KeyEvent event )
+{	int code = event.getKeyCode();
+
+	if ( code == KeyEvent.VK_ENTER ) {
+		refresh ();
+		checkInput();
+		if ( !__error_wait ) {
+			response ( true );
+		}
+	}
+	else {
+	    // Combo box...
+		refresh();
+	}
+}
+
+public void keyReleased ( KeyEvent event )
+{	refresh();
+}
+
+public void keyTyped ( KeyEvent event ) {;}
+
+/**
+Indicate if the user pressed OK (cancel otherwise).
+@return true if the edits were committed, false if the user canceled.
+*/
+public boolean ok ()
+{	return __ok;
+}
+
+/**
+Refresh the command from the other text field contents.
+*/
+private void refresh ()
+{	String routine = "FormatDateTimeProperty_JDialog.refresh";
+    String PropertyName = "";
+    String DateTimePropertyName = "";
+    String FormatterType = "";
+	String Format = "";
+	PropList props = __command.getCommandParameters();
+	if ( __first_time ) {
+		__first_time = false;
+		// Get the parameters from the command...
+		PropertyName = props.getValue ( "PropertyName" );
+		DateTimePropertyName = props.getValue ( "DateTimePropertyName" );
+        FormatterType = props.getValue ( "FormatterType" );
+		Format = props.getValue ( "Format" );
+	    if ( PropertyName != null ) {
+	         __PropertyName_JTextField.setText ( PropertyName );
+	    }
+        if ( DateTimePropertyName == null ) {
+            // Select default...
+            __DateTimePropertyName_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem(
+                __DateTimePropertyName_JComboBox, DateTimePropertyName, JGUIUtil.NONE, null, null ) ) {
+                __DateTimePropertyName_JComboBox.select ( DateTimePropertyName );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command " +
+                "references an invalid\nDateTimePropertyName value \"" +
+                DateTimePropertyName + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+        if ( FormatterType == null ) {
+            // Select default...
+            __FormatterType_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __FormatterType_JComboBox,FormatterType, JGUIUtil.NONE, null, null ) ) {
+                __FormatterType_JComboBox.select ( FormatterType );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nFormatterType value \"" + FormatterType +
+                "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
+		if ( Format != null ) {
+		    __Format_JTextField.setText ( Format );
+		}
+	}
+	// Regardless, reset the command from the fields...
+	PropertyName = __PropertyName_JTextField.getText().trim();
+	DateTimePropertyName = __FormatterType_JComboBox.getSelected();
+    FormatterType = __FormatterType_JComboBox.getSelected();
+	Format = __Format_JTextField.getText().trim();
+	props = new PropList ( __command.getCommandName() );
+	props.add ( "PropertyName=" + PropertyName );
+	props.add ( "DateTimePropertyName=" + DateTimePropertyName );
+    props.add ( "FormatterType=" + FormatterType );
+	props.add ( "Format=" + Format );
+	__command_JTextArea.setText( __command.toString ( props ) );
+}
+
+/**
+React to the user response.
+@param ok if false, then the edit is canceled.  If true, the edit is committed
+and the dialog is closed.
+*/
+private void response ( boolean ok )
+{	__ok = ok;	// Save to be returned by ok()
+	if ( ok ) {
+		// Commit the changes...
+		commitEdits ();
+		if ( __error_wait ) {
+			// Not ready to close out!
+			return;
+		}
+	}
+	// Now close out...
+	setVisible( false );
+	dispose();
+}
+
+/**
+Responds to WindowEvents.
+@param event WindowEvent object
+*/
+public void windowClosing( WindowEvent event )
+{	response ( false );
+}
+
+public void windowActivated( WindowEvent evt ){;}
+public void windowClosed( WindowEvent evt ){;}
+public void windowDeactivated( WindowEvent evt ){;}
+public void windowDeiconified( WindowEvent evt ){;}
+public void windowIconified( WindowEvent evt ){;}
+public void windowOpened( WindowEvent evt ){;}
+
+}

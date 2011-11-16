@@ -325,12 +325,12 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
             }
             else {
                 // Parse the old command...
-            	List tokens = StringUtil.breakStringList ( commandString,
+            	List<String> tokens = StringUtil.breakStringList ( commandString,
                     "(,)", StringUtil.DELIM_ALLOW_STRINGS );
                 if ( tokens.size() != 4 ) {
                     message =
                     "Invalid syntax for legacy command \"" + commandString +
-                    "\".  Expecting TS Alias = ReadUsgsNwis(OutputFile,InputStart,InputEnd).";
+                    "\".  Expecting TS Alias = ReadUsgsNwis(InputFile,InputStart,InputEnd).";
                     Message.printWarning ( warning_level, routine, message);
                     CommandStatus status = getCommandStatus();
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -338,9 +338,9 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                                     message, "Verify command syntax or edit with command editor." ) );
                     throw new InvalidCommandSyntaxException ( message );
                 }
-                InputFile = ((String)tokens.get(1)).trim();
-                InputStart = ((String)tokens.get(2)).trim();
-                InputEnd = ((String)tokens.get(3)).trim();
+                InputFile = tokens.get(1).trim();
+                InputStart = tokens.get(2).trim();
+                InputEnd = tokens.get(3).trim();
                 PropList parameters = getCommandParameters();
                 parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
                 parameters.set ( "InputFile", InputFile );
@@ -369,8 +369,8 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
     	if ( parameters.getValue("InputEnd") == null) {
     		parameters.set("InputEnd", parameters.getValue(	"QueryEnd"));
     	}
-       if ( (parameters.getValue("InputEnd") != null) &&
-                parameters.getValue("InputEnd").equals("*") ) {
+        if ( (parameters.getValue("InputEnd") != null) &&
+            parameters.getValue("InputEnd").equals("*") ) {
             // Reset to more recent blank default
             parameters.set("InputEnd","");
         }

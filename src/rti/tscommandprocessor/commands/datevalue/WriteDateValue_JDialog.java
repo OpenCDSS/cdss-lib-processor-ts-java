@@ -305,11 +305,10 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"The Browse button can be used to select an existing file " +
-		"to overwrite (or edit the file name after selection)."),
+		"The output filename can be specified using ${Property} notation to utilize global properties."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter date/times to a "+
-		"precision appropriate for output time series."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Enter date/times to a precision appropriate for output time series."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);

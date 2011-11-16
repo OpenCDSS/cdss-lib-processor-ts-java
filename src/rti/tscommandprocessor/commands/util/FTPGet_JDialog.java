@@ -250,12 +250,14 @@ private void initialize ( JFrame parent, Command command )
 		"This command uses file transfer protocol (FTP) to retrieve files from a remote site and " +
 		"save on the local file system." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The destination folder can be specified using ${Property} notation to utilize global properties."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"It is recommended that the local folder name be relative to the working directory, which is:"),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    	JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"    " + __working_dir),
+    	JGUIUtil.addComponent(main_JPanel, new JLabel ("    " + __working_dir),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     }
 
@@ -265,7 +267,7 @@ private void initialize ( JFrame parent, Command command )
     __RemoteSite_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RemoteSite_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - FTP site (can use ${Property})."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Login:" ), 
@@ -292,7 +294,7 @@ private void initialize ( JFrame parent, Command command )
     __RemoteFolder_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __RemoteFolder_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=/ root on FTP server)." ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=/ root on FTP server, can use ${Property})." ), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("File pattern:" ), 
@@ -301,7 +303,7 @@ private void initialize ( JFrame parent, Command command )
     __FilePattern_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __FilePattern_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=*)."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional (default=*, can use ${Property})."), 
         3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
             
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Destination folder:" ), 

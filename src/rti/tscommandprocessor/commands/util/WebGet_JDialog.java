@@ -208,6 +208,9 @@ private void initialize ( JFrame parent, WebGet_Command command )
 		"This command retrieves content from the web using a Uniform Resource Identifier (URI) and" +
 		" saves the content to a local file." ),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The URI and local file can be specified using ${Property} notation to utilize global properties."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     if ( __working_dir != null ) {
     	JGUIUtil.addComponent(main_JPanel, new JLabel (
     		"It is recommended that the local file name be relative to the working directory, which is:"),

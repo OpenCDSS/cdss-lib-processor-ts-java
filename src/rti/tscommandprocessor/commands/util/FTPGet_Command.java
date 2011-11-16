@@ -206,8 +206,7 @@ Run the command.
 @param command_line Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
@@ -224,6 +223,9 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	String RemoteSite = parameters.getValue ( "RemoteSite" );
+	if ( RemoteSite != null ) {
+	    RemoteSite = TSCommandProcessorUtil.expandParameterValue(processor,this,RemoteSite);
+	}
     String Login = parameters.getValue ( "Login" );
     if ( (Login == null) || (Login.length() == 0) ) {
         Login = "anonymous";
@@ -233,7 +235,13 @@ CommandWarningException, CommandException
         Password = "anonymous";
     }
     String RemoteFolder = parameters.getValue ( "RemoteFolder" );
+    if ( RemoteFolder != null ) {
+        RemoteFolder = TSCommandProcessorUtil.expandParameterValue(processor,this,RemoteFolder);
+    }
     String FilePattern = parameters.getValue ( "FilePattern" );
+    if ( FilePattern != null ) {
+        FilePattern = TSCommandProcessorUtil.expandParameterValue(processor,this,FilePattern);
+    }
     String DestinationFolder = parameters.getValue ( "DestinationFolder" );
     String TransferMode = parameters.getValue ( "TransferMode" );
     if ( (TransferMode == null) || (TransferMode.length() == 0) ) {
@@ -251,7 +259,8 @@ CommandWarningException, CommandException
     }
 
 	String DestinationFolder_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),DestinationFolder ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,DestinationFolder) ) );
     File file = new File ( DestinationFolder_full );
 	if ( !file.exists() ) {
         message = "Destination folder \"" + DestinationFolder_full + "\" does not exist.";

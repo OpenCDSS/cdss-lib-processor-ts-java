@@ -128,7 +128,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "URI" );
 	valid_Vector.add ( "LocalFile" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -200,10 +200,14 @@ CommandWarningException, CommandException
 	status.clearLog(CommandPhaseType.RUN);
 	
 	String URI = parameters.getValue ( "URI" );
+	if ( URI != null ) {
+	    URI = TSCommandProcessorUtil.expandParameterValue(processor,this,URI);
+	}
     String LocalFile = parameters.getValue ( "LocalFile" );
 
 	String LocalFile_full = IOUtil.verifyPathForOS(
-            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),LocalFile ) );
+        IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+            TSCommandProcessorUtil.expandParameterValue(processor,this,LocalFile) ) );
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";

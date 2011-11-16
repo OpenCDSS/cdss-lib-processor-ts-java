@@ -68,7 +68,7 @@ throws InvalidCommandParameterException
 	DateTime OutputEnd_DateTime = null;
 	if ( (OutputStart != null) && !OutputStart.equals("") ) {
 		try {
-		    // This handles special syntax like "NowToHour" and "NowToHour - 6Hour"
+		    // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour"
 			OutputStart_DateTime = DateTime.parse(OutputStart, dateprops );
 		}
 		catch ( Exception e ) {

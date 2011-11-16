@@ -25,12 +25,9 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
-import RTi.Util.Time.TimeUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the SetProperty() command.
-</p>
 */
 public class SetProperty_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -62,8 +59,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -111,12 +107,19 @@ throws InvalidCommandParameterException
 	}
 	else {
 	    // Check the value given the type.
-	    if ( PropertyType.equalsIgnoreCase(_DateTime) && !TimeUtil.isDateTime(PropertyValue) ) {
-	        message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
-	        warning += "\n" + message;
-	        status.addToLog ( CommandPhaseType.INITIALIZATION,
-	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Specify the property value as a date/time (e.g., YYYY-MM-DD if a date)" ));
+	    if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
+	        // Try parsing because the parse method recognizes the special values CurrentToHour, etc.
+	        try {
+	            // This handles special syntax like "CurrentToHour" and "CurrentToHour - 6Hour"
+	            DateTime.parse(PropertyValue, null );
+	        }
+	        catch ( Exception e ) {
+	            message = "The property value \"" + PropertyValue + "\" is not a valid date/time.";
+	            warning += "\n" + message;
+	            status.addToLog ( CommandPhaseType.INITIALIZATION,
+	                new CommandLogRecord(CommandStatusType.FAILURE,
+	                    message, "Specify the property value as a date/time (e.g., YYYY-MM-DD if a date)" ));
+	        }
 	    }
 	    else if ( PropertyType.equalsIgnoreCase(_Double) && !StringUtil.isDouble(PropertyValue) ) {
     		message = "The property value \"" + PropertyValue + "\" is not a number.";
@@ -257,7 +260,9 @@ CommandWarningException, CommandException
 
 	    Object Property_Object = null;
 	    if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
-	        Property_Object = DateTime.parse(PropertyValue);
+	        // This handles special strings like CurrentToHour
+	        // Have to specify a PropList to ensure the special syntax is handled
+	        Property_Object = DateTime.parse(PropertyValue,(PropList)null);
 	    }
 	    else if ( PropertyType.equalsIgnoreCase(_Double) ) {
 	        Property_Object = Double.valueOf(PropertyValue);

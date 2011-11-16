@@ -160,8 +160,26 @@ private void initialize ( JFrame parent, Command command )
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Set a property for the processor." +
-		"  The property can be referenced in parameters using ${Property} notation." ), 
+		"  The property can be referenced in parameters of some commands using ${Property} notation." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Special values are also recognized for date/times (for all precisions):"),
+        0, ++y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    CurrentToYear = the current date to year precision"),
+        0, ++y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    CurrentToMinute = the current date/time to minute precision"),
+        0, ++y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    CurrentToMinute - 7Day = current date/time minus 7 days"),
+        0, ++y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "    CurrentToMinute + 7Day = current date/time plus 7 days"),
+        0, ++y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property name:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -185,7 +203,7 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __PropertyType_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Required - to ensure proper initialization."), 
+        "Required - to ensure proper initialization and checks."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Property value:" ), 
@@ -194,7 +212,7 @@ private void initialize ( JFrame parent, Command command )
 	__PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - property value."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

@@ -33,7 +33,6 @@ import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -68,7 +67,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public WriteProperty_JDialog (	JFrame parent, Command command )
+public WriteProperty_JDialog (	JFrame parent, WriteProperty_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -207,8 +206,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (WriteProperty_Command)command;
+private void initialize ( JFrame parent, WriteProperty_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 

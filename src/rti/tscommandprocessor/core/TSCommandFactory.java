@@ -215,6 +215,7 @@ import rti.tscommandprocessor.commands.util.CompareFiles_Command;
 import rti.tscommandprocessor.commands.util.CreateRegressionTestCommandFile_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import rti.tscommandprocessor.commands.util.FTPGet_Command;
+import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.PrintTextFile_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
@@ -468,6 +469,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("FillUsingDiversionComments") ) {
 		return new FillUsingDiversionComments_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("FormatDateTimeProperty") ) {
+        return new FormatDateTimeProperty_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("Free") ) {
         return new Free_Command ();
     }

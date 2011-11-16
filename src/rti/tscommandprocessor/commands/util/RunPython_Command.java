@@ -36,9 +36,7 @@ import RTi.Util.IO.PropList;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the RunPython() command.
-</p>
 */
 public class RunPython_Command extends AbstractCommand implements Command
 {
@@ -242,6 +240,9 @@ CommandWarningException, CommandException
 
 	String InputFile = parameters.getValue ( "InputFile" );
 	String Arguments = parameters.getValue ( "Arguments" );
+	if ( Arguments != null ) {
+	    Arguments = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Arguments);
+	}
 	String Interpreter = parameters.getValue ( "Interpreter" );
 	String PythonPath = parameters.getValue ( "PythonPath" );
 	
@@ -278,14 +279,14 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine,
 		"Processing Python script file \"" + InputFile_full + "\" using " + Interpreter + " interpreter.");
 
+		String [] args = StringUtil.toArray(StringUtil.breakStringList(Arguments, " ", StringUtil.DELIM_ALLOW_STRINGS));
         if ( Interpreter.equalsIgnoreCase(_JythonEmbedded) ) {
-            runJythonEmbedded ( command_tag, InputFile_full,
-                StringUtil.toArray(StringUtil.breakStringList(Arguments, " ", 0)), WorkingDir, pathParts );
+            runJythonEmbedded ( command_tag, InputFile_full, args, WorkingDir, pathParts );
             Message.printStatus ( 2, routine,"...done processing Python file." );
         }
         else {
 		    warning_count = runPython ( command_tag, warning_count, getPythonProgram(Interpreter),
-	            InputFile_full, Arguments, WorkingDir, pathParts );
+	            InputFile_full, args, WorkingDir, pathParts );
 		    Message.printStatus ( 2, routine,"...done processing Python file." );
 		}
 	}
@@ -401,17 +402,17 @@ Run the Python script by making a system call to Python.
 @param pythonProgram the name of the python program to run, either a simple filename, in which case the PATH
 will be used to find the program, or a full path to the program.
 @param pyfile Python file to run.
-@param Arguments Arguments to pass to Python.
+@param args Arguments to pass to Python.
 @param WorkingDir The working directory in which to run the script.
 @param pathParts the folders to append to the normal path, to find library *.py files.
 */
 private int runPython ( String command_tag, int warning_count, String pythonProgram, 
-        String pyfile, String Arguments, String WorkingDir, String[] pathParts )
+        String pyfile, String [] args, String WorkingDir, String[] pathParts )
 throws PyException
 {   String routine = "RynPython_Command.runPython", message;
     // Expand ${} parameters...
-    String args = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Arguments );
-    String commandLine = null;
+    String [] commandLineArray = new String[args.length + 2];
+    /*
     // Use a command line because arguments are one string
     if ( pythonProgram.indexOf(" ") > 0 ) {
         // Program has spaces so surround the program name with quotes
@@ -420,10 +421,18 @@ throws PyException
     else {
         commandLine = pythonProgram + " \"" + pyfile + "\" " + args;
     }
+    */
+    commandLineArray[0] = pythonProgram;
+    commandLineArray[1] = pyfile;
+    for ( int i = 0; i < args.length; i++ ) {
+        commandLineArray[2+i] = args[i];
+    }
     int warning_level = 2;
     
+    ProcessManager pm = new ProcessManager ( commandLineArray );
+    String commandLine = pm.getCommand();
     Message.printStatus ( 2, routine, "Running:  " + commandLine );
-    ProcessManager pm = new ProcessManager ( commandLine );
+    
     // Add the requested path to the PYTHONPATH environment variable
     if ( pathParts.length > 0 ) {
         StringBuffer path = new StringBuffer();
@@ -460,7 +469,7 @@ throws PyException
                     		"line before running in TSTool."));
     }
     // Echo the output to the log file.
-    List output = pm.getOutputList();
+    List<String> output = pm.getOutputList();
     int size = 0;
     if ( output != null ) {
         size = output.size();

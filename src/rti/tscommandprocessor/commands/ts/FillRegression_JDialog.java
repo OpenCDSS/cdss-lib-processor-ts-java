@@ -337,6 +337,10 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 		"Specify dates with precision appropriate for the data, " +
 		"use blank for all available data, OutputStart, or OutputEnd."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The MinimumSampleSize, MinimumR, and ConfidenceInterval parameters constrain filling - " +
+        "if criteria are not met, the filling will not occur." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series to fill (dependent):" ),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

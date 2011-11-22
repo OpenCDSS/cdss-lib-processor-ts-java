@@ -34,6 +34,7 @@ import javax.swing.JFrame;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
+import rti.tscommandprocessor.core.TSListType;
 
 import java.util.List;
 import java.util.Vector;
@@ -49,6 +50,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.Command;
+import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandException;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
@@ -59,6 +61,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.InvalidCommandSyntaxException;
+import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -71,13 +74,18 @@ import RTi.Util.Time.TimeUtil;
 /**
 This class initializes, checks, and runs the FillRegression() command.
 */
-public class FillRegression_Command extends AbstractCommand implements Command
+public class FillRegression_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
 
 /**
 Protected data members shared with the dialog and other related classes.
 */
 protected final String _Linear = "Linear";	// obsolete... use None
+
+/**
+The table that is (optionally) created with statistics information.
+*/
+private DataTable __table = null;
 
 /**
 Constructor.
@@ -356,6 +364,27 @@ public boolean editCommand ( JFrame parent )
 }
 
 /**
+Return the table that is read by this class when run in discovery mode.
+*/
+private DataTable getDiscoveryTable()
+{
+    return __table;
+}
+
+/**
+Return a list of objects of the requested type.  This class only keeps a list of DataTable objects.
+*/
+public List getObjectList ( Class c )
+{   DataTable table = getDiscoveryTable();
+    List v = null;
+    if ( (table != null) && (c == table.getClass()) ) {
+        v = new Vector();
+        v.add ( table );
+    }
+    return v;
+}
+
+/**
 Parse the command string into a PropList of parameters.  This method currently
 supports very-old syntax (separate commands for different combinations of
 parameters), newer syntax (one command but fixed-parameter list), and current
@@ -502,14 +531,37 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 
 /**
 Run the command.
-@param command_number Number of command in sequence.
+@param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
-@exception InvalidCommandParameterException Thrown if parameter one or more
-parameter values are invalid.
 */
 public void runCommand ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{   
+    runCommandInternal ( command_number, CommandPhaseType.RUN );
+}
+
+/**
+Run the command in discovery mode.
+@param command_number Command number in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+*/
+public void runCommandDiscovery ( int command_number )
+throws InvalidCommandParameterException, CommandWarningException, CommandException
+{
+    runCommandInternal ( command_number, CommandPhaseType.DISCOVERY );
+}
+
+/**
+Run the command.
+@param command_number Number of command in sequence.
+@exception CommandWarningException Thrown if non-fatal warnings occur (the command could produce some results).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
+@exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
+*/
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "FillRegression_Command.runCommand", message;
@@ -524,88 +576,109 @@ CommandWarningException, CommandException
 	CommandProcessor processor = getCommandProcessor();
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(CommandPhaseType.RUN);
+    status.clearLog(commandPhase);
 
 	String TSID = parameters.getValue ( "TSID" );
 	
 	PropList request_params = new PropList ( "" );
-	request_params.set ( "CommandTag", command_tag );
-	request_params.set ( "TSID", TSID );
-	CommandProcessorRequestResultsBean bean = null;
-	try { bean =
-		processor.processRequest( "GetTimeSeriesForTSID", request_params);
-	}
-	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-		Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-	}
-	PropList bean_PropList = bean.getResultsPropList();
-	Object o_TS = bean_PropList.getContents ( "TS");
-	TS tsToFill = null;
-	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
-		Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the dependent TSID matches a time series." ) );
-	}
-	else {
-		tsToFill = (TS)o_TS;
-	}
+    TS tsToFill = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            tsToFill = tslist.get(0);
+        }
+    }
+    else if ( commandPhase == CommandPhaseType.RUN ) {
+    	request_params.set ( "CommandTag", command_tag );
+    	request_params.set ( "TSID", TSID );
+    	CommandProcessorRequestResultsBean bean = null;
+    	try { bean =
+    		processor.processRequest( "GetTimeSeriesForTSID", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+    		Message.printWarning(log_level,
+    			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+    	}
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TS = bean_PropList.getContents ( "TS");
+    	if ( o_TS == null ) {
+    		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + TSID + "\") from processor.";
+    		Message.printWarning(log_level,
+    			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the dependent TSID matches a time series." ) );
+    	}
+    	else {
+    		tsToFill = (TS)o_TS;
+    	}
+    }
 	
 	if ( tsToFill == null ) {
         message = "Unable to find dependent time series \"" + TSID+"\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message);
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify that the dependent TSID matches a time series." ) );
 	}
 	// The independent identifier may or may not have TEMPTS at the front
 	// but is handled by getTimeSeries...
 	String IndependentTSID = parameters.getValue ( "IndependentTSID" );
-	
-	request_params = new PropList ( "" );
-	request_params.set ( "CommandTag", command_tag );
-	request_params.set ( "TSID", IndependentTSID );
-	bean = null;
-	try {
-	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
-	}
-	catch ( Exception e ) {
-		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID +
-		"\") from processor.";
-		Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Report the problem to software support." ) );
-	}
-	bean_PropList = bean.getResultsPropList();
-	o_TS = bean_PropList.getContents ( "TS");
-	TS tsIndependent = null;
-	if ( o_TS == null ) {
-		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID + "\") from processor.";
-		Message.printWarning(log_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that the independent TSID matches a time series." ) );
-	}
-	else {
-		tsIndependent = (TS)o_TS;
-	}
+    TS tsIndependent = null;
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        // Get the discovery time series list from all time series above this command
+        String TSList = "" + TSListType.LAST_MATCHING_TSID;
+        List<TS> tslist = TSCommandProcessorUtil.getDiscoveryTSFromCommandsBeforeCommand(
+            (TSCommandProcessor)processor, this, TSList, TSID, null, null );
+        if ( (tslist != null) && (tslist.size() > 0) ) {
+            tsIndependent = tslist.get(0);
+        }
+    }
+    if ( commandPhase == CommandPhaseType.RUN ) {
+    	request_params = new PropList ( "" );
+    	request_params.set ( "CommandTag", command_tag );
+    	request_params.set ( "TSID", IndependentTSID );
+        CommandProcessorRequestResultsBean bean = null;
+    	try {
+    	    bean = processor.processRequest( "GetTimeSeriesForTSID", request_params);
+    	}
+    	catch ( Exception e ) {
+    		message = "Error requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID +
+    		"\") from processor.";
+    		Message.printWarning(log_level,
+    			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Report the problem to software support." ) );
+    	}
+    	PropList bean_PropList = bean.getResultsPropList();
+    	Object o_TS = bean_PropList.getContents ( "TS");
+    	if ( o_TS == null ) {
+    		message = "Null TS requesting GetTimeSeriesForTSID(TSID=\"" + IndependentTSID + "\") from processor.";
+    		Message.printWarning(log_level,
+    			MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the independent TSID matches a time series." ) );
+    	}
+    	else {
+    		tsIndependent = (TS)o_TS;
+    	}
+    }
 	
 	if ( tsIndependent == null ) {
         message = "Unable to find independent time series \"" + IndependentTSID + "\".";
 		Message.printWarning ( warning_level,
 		MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify that the independent TSID matches a time series." ) );
 	}
@@ -693,10 +766,12 @@ CommandWarningException, CommandException
     String TableTSIDFormat = parameters.getValue ( "TableTSIDFormat" );
     
     DataTable table = null;
+    boolean newTable = false; // true if a new table had to be created
     if ( (TableID != null) && !TableID.equals("") ) {
         // Get the table to be updated
         request_params = new PropList ( "" );
         request_params.set ( "TableID", TableID );
+        CommandProcessorRequestResultsBean bean = null;
         try {
             bean = processor.processRequest( "GetTable", request_params);
         }
@@ -704,27 +779,54 @@ CommandWarningException, CommandException
             message = "Error requesting GetTable(TableID=\"" + TableID + "\") from processor.";
             Message.printWarning(warning_level,
                 MessageUtil.formatMessageTag( command_tag, ++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+            status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Report problem to software support." ) );
         }
-        bean_PropList = bean.getResultsPropList();
+        PropList bean_PropList = bean.getResultsPropList();
         Object o_Table = bean_PropList.getContents ( "Table" );
         if ( o_Table == null ) {
-            message = "Unable to find table to process using TableID=\"" + TableID + "\".";
-            Message.printWarning ( warning_level,
-            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Verify that a table exists with the requested ID." ) );
+            Message.printStatus ( 2, routine, "Unable to find table to process using TableID=\"" + TableID +
+                "\" - creating empty table." );
+            // Create an empty table matching the identifier
+            table = new DataTable( new Vector() );
+            table.setTableID ( TableID );
+
         }
         else {
             table = (DataTable)o_Table;
+        }
+    }
+    if ( newTable ) {
+        if ( commandPhase == CommandPhaseType.RUN ) {
+            // Set the table in the processor...
+            
+            request_params = new PropList ( "" );
+            request_params.setUsingObject ( "Table", table );
+            try {
+                processor.processRequest( "SetTable", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting SetTable(Table=...) from processor.";
+                Message.printWarning(warning_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                           message, "Report problem to software support." ) );
+            }
+        }
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+            // Create an empty table and set the ID
+            table = new DataTable();
+            table.setTableID ( TableID );
+            setDiscoveryTable ( table );
         }
     }
 
 	if ( warning_count > 0 ) {
         // Input error...
         message = "Insufficient data to run command.";
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
         new CommandLogRecord(CommandStatusType.FAILURE, message, "Check input to command." ) );
         Message.printWarning(3, routine, message );
         throw new CommandException ( message );
@@ -735,12 +837,12 @@ CommandWarningException, CommandException
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
 	DateTime FillEnd_DateTime = null;
-
+    
 	try {
 		if ( FillStart != null ) {
 			request_params = new PropList ( "" );
 			request_params.set ( "DateTime", FillStart );
-			bean = null;
+			CommandProcessorRequestResultsBean bean = null;
 			try {
 			    bean = processor.processRequest( "DateTime", request_params);
 			}
@@ -749,13 +851,13 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 
-			bean_PropList = bean.getResultsPropList();
+			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
 				message = "Null value for FillStart DateTime(DateTime=" +
@@ -763,7 +865,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -777,7 +879,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputStart." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -787,7 +889,7 @@ CommandWarningException, CommandException
 		if ( FillEnd != null ) {
 			request_params = new PropList ( "" );
 			request_params.set ( "DateTime", FillEnd );
-			bean = null;
+			CommandProcessorRequestResultsBean bean = null;
 			try { bean =
 				processor.processRequest( "DateTime", request_params);
 			}
@@ -797,13 +899,13 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 						MessageUtil.formatMessageTag( command_tag, ++warning_count),
 						routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
 			}
 
-			bean_PropList = bean.getResultsPropList();
+			PropList bean_PropList = bean.getResultsPropList();
 			Object prop_contents = bean_PropList.getContents ( "DateTime" );
 			if ( prop_contents == null ) {
 				message = "Null value for FillStart DateTime(DateTime=" +
@@ -811,7 +913,7 @@ CommandWarningException, CommandException
 				Message.printWarning(log_level,
 					MessageUtil.formatMessageTag( command_tag, ++warning_count),
 					routine, message );
-                status.addToLog ( CommandPhaseType.RUN,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report the problem to software support." ) );
 				throw new InvalidCommandParameterException ( message );
@@ -825,7 +927,7 @@ CommandWarningException, CommandException
 			Message.printWarning(warning_level,
 				MessageUtil.formatMessageTag( command_tag, ++warning_count),
 				routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time or OutputEnd." ) );
 			throw new InvalidCommandParameterException ( message );
@@ -834,67 +936,69 @@ CommandWarningException, CommandException
 	// Fill the dependent time series...
 	// This will result in the time series in the original data being modified...
 	try {
-	    TSRegression regressionResults = TSUtil.fillRegress ( 
-			tsToFill, tsIndependent,
-			null, // No previously computed TSRegression object
-			RegressionType.OLS_REGRESSION, numberOfEquations,
-            intercept,
-            analysisMonths,
-            transformation,
-            leZeroLogValue,
-            minimumSampleSize,
-            minimumR,
-            confidenceInterval,
-            dependentAnalysisStart, dependentAnalysisEnd,
-            null, //independentAnalysisStart - used with MOVE2
-            null, //independentAnalysisEnd - used with MOVE2
-            FillStart_DateTime, FillEnd_DateTime,
-            FillFlag,
-            null );// use default descriptionString
-	    if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
-	        if ( regressionResults.getN1() == 0 ) {
-	            message = "Number of overlapping points is 0.";
-	            Message.printWarning ( warning_level,
-	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-	            status.addToLog ( CommandPhaseType.RUN,
-                    new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Verify that time series have overlapping periods." ) );
-	        }
-	    }
-	    else {
-	        for ( int i = 1; i <= 12; i++ ) {
-	            if ( regressionResults.getN1(i) == 0 ) {
-	                message = "Number of overlapping points in month " + i + " (" +
-                    TimeUtil.monthAbbreviation(i) + ") is 0.";
-	                Message.printWarning ( warning_level,
-	                MessageUtil.formatMessageTag(
-	                command_tag,++warning_count), routine, message );
-	                status.addToLog ( CommandPhaseType.RUN,
+	    if ( commandPhase == CommandPhaseType.RUN ) {
+    	    TSRegression regressionResults = TSUtil.fillRegress ( 
+    			tsToFill, tsIndependent,
+    			null, // No previously computed TSRegression object
+    			RegressionType.OLS_REGRESSION, numberOfEquations,
+                intercept,
+                analysisMonths,
+                transformation,
+                leZeroLogValue,
+                minimumSampleSize,
+                minimumR,
+                confidenceInterval,
+                dependentAnalysisStart, dependentAnalysisEnd,
+                null, //independentAnalysisStart - used with MOVE2 but not OLS_REGRESSION
+                null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
+                FillStart_DateTime, FillEnd_DateTime,
+                FillFlag,
+                null );// use default descriptionString
+    	    if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
+    	        if ( regressionResults.getN1() == 0 ) {
+    	            message = "Number of overlapping points is 0.";
+    	            Message.printWarning ( warning_level,
+    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+    	            status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.WARNING,
                             message, "Verify that time series have overlapping periods." ) );
-	            }
-	        }
+    	        }
+    	    }
+    	    else {
+    	        for ( int i = 1; i <= 12; i++ ) {
+    	            if ( regressionResults.getN1(i) == 0 ) {
+    	                message = "Number of overlapping points in month " + i + " (" +
+                        TimeUtil.monthAbbreviation(i) + ") is 0.";
+    	                Message.printWarning ( warning_level,
+    	                MessageUtil.formatMessageTag(
+    	                command_tag,++warning_count), routine, message );
+    	                status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that time series have overlapping periods." ) );
+    	            }
+    	        }
+    	    }
+    	    // Print the results to the log file and optionally an output table...
+    	    if ( regressionResults != null ) {
+    			Message.printStatus ( 2, routine, "Fill results are..." );
+    			Message.printStatus ( 2, routine, regressionResults.toString() );
+                // Now set in the table
+    		    if ( (TableID != null) && !TableID.equals("") ) {
+        			saveStatisticsToTable ( tsToFill, regressionResults, table, TableID,
+        			    TableTSIDColumn, TableTSIDFormat, numberOfEquations );
+    		    }
+    		}
+    		else {
+                message = "Unable to compute regression.";
+    			Message.printWarning ( warning_level,
+    			MessageUtil.formatMessageTag(
+    			command_tag,++warning_count), routine, message );
+                status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that time series have overlapping periods." ) );
+    			throw new CommandException ( message );
+    		}
 	    }
-	    // Print the results to the log file and optionally an output table...
-	    if ( regressionResults != null ) {
-			Message.printStatus ( 2, routine, "Fill results are..." );
-			Message.printStatus ( 2, routine, regressionResults.toString() );
-            // Now set in the table
-		    if ( (TableID != null) && !TableID.equals("") ) {
-    			saveStatisticsToTable ( tsToFill, regressionResults, table, TableID,
-    			    TableTSIDColumn, TableTSIDFormat, numberOfEquations );
-		    }
-		}
-		else {
-            message = "Unable to compute regression.";
-			Message.printWarning ( warning_level,
-			MessageUtil.formatMessageTag(
-			command_tag,++warning_count), routine, message );
-            status.addToLog ( CommandPhaseType.RUN,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that time series have overlapping periods." ) );
-			throw new CommandException ( message );
-		}
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error performing regression for \""+toString() +"\" (" + e + ").";
@@ -902,7 +1006,7 @@ CommandWarningException, CommandException
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count), routine, message );
 		Message.printWarning ( 3, routine, e );
-        status.addToLog ( CommandPhaseType.RUN,
+        status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Verify that time series are of same interval and overlap - " +
                         " also check the log file for details." ) );
@@ -918,7 +1022,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
     
-    status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -960,6 +1064,7 @@ throws Exception
     // List in a reasonable order - see the command documentation for more
     // X=independent
     // Y=dependent
+    //String [] statistics = { };
     String [] statistics = {
         "N1", "MeanX1", "SX1", "N2", "MeanX2", "SX2",
         "MeanY1", "SY1", "NY", "MeanY", "SY", "a", "b", "R", "R2", "MeanY1est", "SY1est",
@@ -969,11 +1074,14 @@ throws Exception
         };
     int countStatisticTotal = statistics.length*numEquations; // The total number of statistics columns to add
     String [] statisticColumnNames = new String[countStatisticTotal]; // names in table
-    int [] statisticColumnNumbers = new int[countStatisticTotal]; // columns in table
+    // Arrays for the statistics, although mixing doubles and ints will result in some statistic
+    // values being null
     Double [] statisticValueDouble = new Double[countStatisticTotal];
     Integer [] statisticValueInteger = new Integer[countStatisticTotal];
     String [] statisticValueString = new String[countStatisticTotal];
-    int countStatistic = -1; // The count of statistics added (0-index) for array access
+    // The count of statistics added (0-index), necessary because when dealing with monthly statistics
+    // the 12 months are flattened into a linear array matching column headings
+    int countStatistic = -1;
     for ( int iEquation = 1; iEquation <= numEquations; iEquation++ ) {
         for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
             // Set statistics to null (one will be set below).
@@ -1385,9 +1493,10 @@ throws Exception
             }
         }
     }
-    // By here the table should have the proper columns
+    // By here the statistics will have been computed and are matched with the column name array
     // Now loop through again and process the row for the dependent and independent time series
     // First format the dependent and independent time series identifiers for to match the table...
+    // Dependent time series identifier is configurable from parameter
     String tableTSIDDependent = null;
     if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
         // Format the TSID using the specified format
@@ -1400,6 +1509,7 @@ throws Exception
             tableTSIDDependent = ts.getIdentifierString();
         }
     }
+    // Get the independent time series identifier
     String tableTSIDIndependent = null;
     if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
         // Format the TSID using the specified format
@@ -1407,13 +1517,44 @@ throws Exception
     }
     else {
         // Use the alias if available and then the TSID
-        tableTSIDDependent = regressionResults.getIndependentTS().getAlias();
-        if ( (tableTSIDDependent == null) || tableTSIDDependent.equals("") ) {
+        tableTSIDIndependent = regressionResults.getIndependentTS().getAlias();
+        if ( (tableTSIDIndependent == null) || tableTSIDIndependent.equals("") ) {
             tableTSIDIndependent = regressionResults.getIndependentTS().getIdentifierString();
         }
     }
+    // Need to make sure that the table has the statistic column names, and look up the column numbers from
+    // the names in order to do the insert...
+    int [] statisticColumnNumbers = new int[countStatisticTotal]; // columns in table
+    countStatistic = -1;
+    for ( int iEquation = 0; iEquation < numEquations; iEquation++ ) {
+        for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
+            ++countStatistic;
+            try {
+                statisticColumnNumbers[countStatistic] = table.getFieldIndex ( statisticColumnNames[countStatistic] );
+            }
+            catch ( Exception e ) {
+                statisticColumnNumbers[countStatistic] = -1; // Indicates no column name matched in table
+            }
+            if ( statisticColumnNumbers[countStatistic] < 0 ) {
+                // Add the statistics columns, initialize with null (not nonValue)
+                if ( statisticValueDouble[countStatistic] != null ) {
+                    statisticColumnNumbers[countStatistic] =
+                        table.addField(new TableField(
+                            TableField.DATA_TYPE_DOUBLE,statisticColumnNames[countStatistic],-1,8), null );
+                }
+                else if ( statisticValueInteger[countStatistic] != null ) {
+                    statisticColumnNumbers[countStatistic] =
+                        table.addField(new TableField(
+                            TableField.DATA_TYPE_INT,statisticColumnNames[countStatistic],-1,-1), null );
+                }
+                Message.printStatus(2,routine,"Added column \"" + statisticColumnNames[countStatistic] +"\" at index "
+                     + statisticColumnNumbers[countStatistic] );
+            }
+        }
+    }
     // Next, find the record that has the dependent and independent identifiers...
-    // Find the record that matches the dependent and independent identifiers (should only be one)
+    // Find the record that matches the dependent and independent identifiers (should only be one but
+    // handle multiple matches)
     List<String> tableColumnNames = new Vector(); // The dependent and independent TSID column names
     tableColumnNames.add ( tableTSIDColumnName );
     tableColumnNames.add ( tableTSIDColumnNameIndependent );
@@ -1421,42 +1562,45 @@ throws Exception
     tableColumnValues.add ( tableTSIDDependent );
     tableColumnValues.add ( tableTSIDIndependent );
     List<TableRecord> recList = table.getRecords ( tableColumnNames, tableColumnValues );
-    TableRecord rec = null;
-    //Message.printStatus(2,routine,"Searched column\"" + TableTSIDColumn + "\" for \"" +
-    //    tableTSIDDependent + "\" ... found " + rec );
+    Message.printStatus(2,routine,"Searched for records with columns matching \"" +
+        tableTSIDColumnName + "\"=\"" + tableTSIDDependent + "\" " +
+        tableTSIDColumnNameIndependent + "\"=\"" + tableTSIDIndependent + "\"... found " + recList.size() );
     if ( recList.size() == 0 ) {
         // No record in the table so add one with TSID column values and blank statistic values...
+        TableRecord rec = null;
         table.addRecord(rec=table.emptyRecord());
         rec.setFieldValue(tableTSIDColumnNumber, tableTSIDDependent);
         rec.setFieldValue(tableTSIDColumnNumberIndependent, tableTSIDIndependent);
+        recList.add ( rec );
     }
-    else if ( recList.size() == 1 ) {
-        // Record already exists so use it
-        rec = recList.get(0);
-    }
-    else {
-        // For some reason more than one record was matched.  Insert into the first row
-        rec = recList.get(0);
-        Message.printWarning(3,routine, "Columns " + tableTSIDColumnName + "=" + tableTSIDDependent + ", " +
-            tableTSIDColumnNameIndependent + "=" + tableTSIDIndependent +
-            " has > 1 matching records - inserting into first matching row." );
-    }
-    // Finally loop through the statistics and insert into the row matched above
-    countStatistic = -1;
-    for ( int iEquation = 0; iEquation < numEquations; iEquation++ ) {
-        for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
-            // Set the value...
-            ++countStatistic;
-            if ( statisticValueDouble[countStatistic] != null ) {
-                rec.setFieldValue(statisticColumnNumbers[countStatistic],
-                     statisticValueDouble[countStatistic]);
-            }
-            if ( statisticValueInteger[countStatistic] != null ) {
-                rec.setFieldValue(statisticColumnNumbers[countStatistic],
-                     statisticValueInteger[countStatistic]);
+    // Finally loop through the statistics and insert into the rows matched above.  Although multiple
+    // records may have been matched, the normal case will be that one record is matched.  Offset the column
+    // number by 2 to account for the dependent and independent time series identifier columns
+    for ( TableRecord rec : recList ) {
+        countStatistic = -1;
+        for ( int iEquation = 0; iEquation < numEquations; iEquation++ ) {
+            for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
+                // Set the value based on the object type for the statistic...
+                ++countStatistic;
+                if ( statisticValueDouble[countStatistic] != null ) {
+                    rec.setFieldValue(statisticColumnNumbers[countStatistic],
+                         statisticValueDouble[countStatistic]);
+                }
+                if ( statisticValueInteger[countStatistic] != null ) {
+                    rec.setFieldValue(statisticColumnNumbers[countStatistic],
+                         statisticValueInteger[countStatistic]);
+                }
             }
         }
     }
+}
+
+/**
+Set the table that is read by this class in discovery mode.
+*/
+private void setDiscoveryTable ( DataTable table )
+{
+    __table = table;
 }
 
 /**

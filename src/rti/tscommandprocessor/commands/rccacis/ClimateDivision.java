@@ -137,6 +137,14 @@ public String getStateName ()
 }
 
 /**
+Return the state number for the climate division.
+*/
+public int getStateNumber ()
+{
+    return this.__stateNumber;
+}
+
+/**
 Look up the climate division entry from the state name and the climate division code.
 @return the matching climate division entry for the state name and climate division code
 */

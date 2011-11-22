@@ -166,7 +166,7 @@ private void initialize ( JFrame parent, Command command )
         "Specify date/times using standard notations to appropriate precision (e.g., YYYY-MM-DD hh:mm:ss)." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Special values are also recognized for date/times (for all precisions):"),
+        "Special values also are recognized for date/times (for all precisions):"),
         0, ++y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "    CurrentToYear = the current date to year precision"),
@@ -212,7 +212,7 @@ private void initialize ( JFrame parent, Command command )
 	__PropertyValue_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(main_JPanel, __PropertyValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - property value."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - property value, can use ${Property}."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 

@@ -107,6 +107,7 @@ throws InvalidCommandParameterException
 	}
 	else {
 	    // Check the value given the type.
+	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
 	    if ( PropertyType.equalsIgnoreCase(_DateTime) ) {
 	        // Try parsing because the parse method recognizes the special values CurrentToHour, etc.
 	        try {
@@ -201,8 +202,7 @@ Run the command.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -215,8 +215,7 @@ Run the command in discovery mode.
 @param command_number Command number in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 */
 public void runCommandDiscovery ( int command_number )
 throws InvalidCommandParameterException, CommandWarningException, CommandException
@@ -230,8 +229,7 @@ Run the command.
 @param command_phase The command phase that is being run (RUN or DISCOVERY).
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -255,6 +253,9 @@ CommandWarningException, CommandException
 	String PropertyName = parameters.getValue ( "PropertyName" );
     String PropertyType = parameters.getValue ( "PropertyType" );
 	String PropertyValue = parameters.getValue ( "PropertyValue" );
+	if ( PropertyValue != null ) {
+	    PropertyValue = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, PropertyValue);
+	}
 	
 	try {
 

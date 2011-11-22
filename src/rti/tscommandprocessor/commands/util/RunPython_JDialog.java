@@ -244,7 +244,7 @@ private void initialize ( JFrame parent, Command command )
 		"Specify a full or relative path to the script file (relative to working directory)." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Strings with special meaning include:" ), 
+        "Strings with special meaning can be specified for any parameter and include:" ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "   \\\" - literal quote, needed to surround arguments that include spaces." ), 
@@ -254,6 +254,9 @@ private void initialize ( JFrame parent, Command command )
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "   ${WorkingDir} - the working directory (location of command file)." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "   ${Property} - other global properties." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	if ( __working_dir != null ) {
         JGUIUtil.addComponent(main_JPanel, new JLabel("The working directory is: " + __working_dir ), 

@@ -160,7 +160,7 @@ throws InvalidCommandParameterException
     }
 
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "Interpreter" );
     valid_Vector.add ( "Program" );
     valid_Vector.add ( "PythonPath" );
@@ -244,6 +244,9 @@ CommandWarningException, CommandException
 	    Arguments = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Arguments);
 	}
 	String Interpreter = parameters.getValue ( "Interpreter" );
+	if ( Interpreter != null ) {
+	    Interpreter = TSCommandProcessorUtil.expandParameterValue(getCommandProcessor(), this, Interpreter);
+	}
 	String PythonPath = parameters.getValue ( "PythonPath" );
 	
 	if ( warning_count > 0 ) {

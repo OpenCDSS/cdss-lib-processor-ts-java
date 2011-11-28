@@ -646,7 +646,6 @@ import java.awt.Desktop;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.String;
-import java.net.URI;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -786,6 +785,7 @@ public final int OUTPUT_PredictedValueResidual_GRAPH = 28;  // Predicted Value R
 public final int OUTPUT_SUMMARY_HTML = 29; // Summary as HTML, annotated with fill information
 public final int OUTPUT_AREA_GRAPH = 30; // Area graph
 public final int OUTPUT_AREA_STACKED_GRAPH = 31; // Stacked area graph
+public final int OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH = 32; // Exceedance probability graph
 
 /**
 Filter indicating that output should be data (default).
@@ -954,10 +954,10 @@ DMI instances to see if they implement TSProductAnnotationProvider.  If so,
 call the TSViewJFrame.addTSProductAnnotationProvider() method with the instance.
 */
 private void addTSViewTSProductAnnotationProviders ( TSViewJFrame view )
-{	List ap_Vector = getTSProductAnnotationProviders();
+{	List<TSProductAnnotationProvider> ap_Vector = getTSProductAnnotationProviders();
 	int size = ap_Vector.size();
 	for ( int i = 0; i < size; i++ ) {
-		view.addTSProductAnnotationProvider((TSProductAnnotationProvider)ap_Vector.get(i), null );
+		view.addTSProductAnnotationProvider(ap_Vector.get(i), null );
 	}
 }
 
@@ -3342,6 +3342,9 @@ throws IOException
 		else if ( prop_value.equalsIgnoreCase("-oduration_graph")){
 			output_format = OUTPUT_DURATION_GRAPH;
 		}
+        else if ( prop_value.equalsIgnoreCase("-oexceedance_graph")){
+            output_format = OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH;
+        }
 		else if ( prop_value.equalsIgnoreCase("-olinegraph")){
 			output_format = OUTPUT_LINEGRAPH;
 		}
@@ -3946,6 +3949,10 @@ throws IOException
     		else if ( output_format == OUTPUT_DURATION_GRAPH ) {
     			graphprops.set("GraphType=Duration");
     		}
+            else if ( output_format == OUTPUT_EXCEEDANCE_PROBABILITY_GRAPH ) {
+                graphprops.set("GraphType=ExceedanceProbability");
+                // TODO SAM 2011-11-24 Need to set default propertie here? 
+            }
     		else if ( output_format == OUTPUT_LINELOGYGRAPH ) {
     			graphprops.set("YAxisType=Log");
     			// Handle flags...

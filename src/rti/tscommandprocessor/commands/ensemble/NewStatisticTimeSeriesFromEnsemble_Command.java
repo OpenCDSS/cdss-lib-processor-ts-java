@@ -32,9 +32,11 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
+import RTi.Util.IO.WarningCount;
 
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeRange;
 
 /**
 This class initializes, checks, and runs the NewStatisticTimeSeriesFromEnsemble() command.
@@ -419,196 +421,23 @@ CommandWarningException, CommandException
 
 	// Figure out the dates to use for the analysis...
 
-	DateTime AnalysisStart_DateTime = null;
-	DateTime AnalysisEnd_DateTime = null;
-	try {
-		if ( AnalysisStart != null ) {
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", AnalysisStart );
-			CommandProcessorRequestResultsBean bean = null;
-			try {
-                bean = processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting AnalysisStart DateTime(DateTime=" + AnalysisStart + ") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),routine, message );
-				status.addToLog ( commandPhase,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for AnalysisStart DateTime(DateTime=" + AnalysisStart + ") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-				status.addToLog ( commandPhase,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify the AnalysisStart information." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {	AnalysisStart_DateTime = (DateTime)prop_contents;
-			}
-		}
-		}
-		catch ( Exception e ) {
-			message = "AnalysisStart \"" + AnalysisStart + "\" is invalid.";
-			Message.printWarning(warning_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-			status.addToLog ( commandPhase,
-					new CommandLogRecord(CommandStatusType.FAILURE,
-							message, "Verify the AnalysisStart information." ) );
-			throw new InvalidCommandParameterException ( message );
-		}
-		
-		try {
-		if ( AnalysisEnd != null ) {
-			PropList request_params = new PropList ( "" );
-			request_params.set ( "DateTime", AnalysisEnd );
-			CommandProcessorRequestResultsBean bean = null;
-			try { bean =
-				processor.processRequest( "DateTime", request_params);
-			}
-			catch ( Exception e ) {
-				message = "Error requesting AnalysisEnd DateTime(DateTime=" + AnalysisEnd + ") from processor.";
-				Message.printWarning(log_level,
-						MessageUtil.formatMessageTag( command_tag, ++warning_count),
-						routine, message );
-				status.addToLog ( commandPhase,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Report the problem to software support." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-
-			PropList bean_PropList = bean.getResultsPropList();
-			Object prop_contents = bean_PropList.getContents ( "DateTime" );
-			if ( prop_contents == null ) {
-				message = "Null value for AnalysisEnd DateTime(DateTime=" +	AnalysisStart +	") returned from processor.";
-				Message.printWarning(log_level,
-					MessageUtil.formatMessageTag( command_tag, ++warning_count),
-					routine, message );
-				status.addToLog ( commandPhase,
-						new CommandLogRecord(CommandStatusType.FAILURE,
-								message, "Verify the AnalysisEnd information." ) );
-				throw new InvalidCommandParameterException ( message );
-			}
-			else {	AnalysisEnd_DateTime = (DateTime)prop_contents;
-			}
-		}
-	}
-	catch ( Exception e ) {
-		message = "AnalysisEnd \"" + AnalysisEnd + "\" is invalid.";
-		Message.printWarning(warning_level,
-			MessageUtil.formatMessageTag( command_tag, ++warning_count),
-			routine, message );
-		status.addToLog ( commandPhase,
-				new CommandLogRecord(CommandStatusType.FAILURE,
-						message, "Verify the AnalysisEnd information." ) );
-		throw new InvalidCommandParameterException ( message );
-	}
+    WarningCount warningCount = new WarningCount();
+    DateTimeRange analysisStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
+        this, commandPhase, "AnalysisStart", AnalysisStart,  "AnalysisEnd", AnalysisEnd,
+        false,
+        log_level, command_tag, warning_level, warningCount );
+    warning_count += warningCount.getCount();
+    DateTime AnalysisStart_DateTime = analysisStartAndEnd.getStart();
+    DateTime AnalysisEnd_DateTime = analysisStartAndEnd.getEnd();
 	
-    DateTime OutputStart_DateTime = null;
-    DateTime OutputEnd_DateTime = null;
-    try {
-        if ( OutputStart != null ) {
-            PropList request_params = new PropList ( "" );
-            request_params.set ( "DateTime", OutputStart );
-            CommandProcessorRequestResultsBean bean = null;
-            try { bean =
-                processor.processRequest( "DateTime", request_params);
-            }
-            catch ( Exception e ) {
-                message = "Error requesting OutputStart DateTime(DateTime=" +
-                OutputStart + ") from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report the problem to software support." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-
-            PropList bean_PropList = bean.getResultsPropList();
-            Object prop_contents = bean_PropList.getContents ( "DateTime" );
-            if ( prop_contents == null ) {
-                message = "Null value for OutputStart DateTime(DateTime=" +
-                OutputStart + ") returned from processor.";
-                Message.printWarning(log_level,
-                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                    routine, message );
-                status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Verify the OutputStart information." ) );
-                throw new InvalidCommandParameterException ( message );
-            }
-            else {  OutputStart_DateTime = (DateTime)prop_contents;
-            }
-        }
-    }
-    catch ( Exception e ) {
-        message = "OutputStart \"" + OutputStart + "\" is invalid.";
-        Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the OutputStart information." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
-    
-    try {
-	    if ( OutputEnd != null ) {
-	        PropList request_params = new PropList ( "" );
-	        request_params.set ( "DateTime", OutputEnd );
-	        CommandProcessorRequestResultsBean bean = null;
-	        try { bean =
-	            processor.processRequest( "DateTime", request_params);
-	        }
-	        catch ( Exception e ) {
-	            message = "Error requesting OutputEnd DateTime(DateTime=" +
-	            OutputEnd + "\" from processor.";
-	            Message.printWarning(log_level,
-	                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                    routine, message );
-	            status.addToLog ( commandPhase,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Report the problem to software support." ) );
-	            throw new InvalidCommandParameterException ( message );
-	        }
-
-	        PropList bean_PropList = bean.getResultsPropList();
-	        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-	        if ( prop_contents == null ) {
-	            message = "Null value for OutputEnd DateTime(DateTime=" +
-	            OutputStart + ") returned from processor.";
-	            Message.printWarning(log_level,
-	                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-	                routine, message );
-	            status.addToLog ( commandPhase,
-	                    new CommandLogRecord(CommandStatusType.FAILURE,
-	                            message, "Verify the OutputEnd information." ) );
-	            throw new InvalidCommandParameterException ( message );
-	        }
-	        else {  OutputEnd_DateTime = (DateTime)prop_contents;
-	        }
-	    }
-    }
-    catch ( Exception e ) {
-        message = "OutputEnd \"" + OutputEnd + "\" is invalid.";
-        Message.printWarning(warning_level,
-            MessageUtil.formatMessageTag( command_tag, ++warning_count),
-            routine, message );
-        status.addToLog ( commandPhase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify the OutputEnd information." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
+    warningCount = new WarningCount();
+    DateTimeRange outputStartAndEnd = TSCommandProcessorUtil.getOutputPeriodForCommand (
+        this, commandPhase, "OutputStart", OutputStart,  "OutputEnd", OutputEnd,
+        true, // Use global output period from SetOutputPeriod()
+        log_level, command_tag, warning_level, warningCount );
+    warning_count += warningCount.getCount();
+    DateTime OutputStart_DateTime = outputStartAndEnd.getStart();
+    DateTime OutputEnd_DateTime = outputStartAndEnd.getEnd();
 
 	// Get the time series to process.  The time series list is searched backwards until the first match...
     

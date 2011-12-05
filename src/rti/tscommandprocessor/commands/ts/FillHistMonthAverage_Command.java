@@ -52,9 +52,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
 This class initializes, checks, and runs the FillHistMonthAverage() command.
-</p>
 */
 public class FillHistMonthAverage_Command extends AbstractCommand implements Command
 {
@@ -143,7 +141,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "FillStart" );
@@ -279,7 +277,7 @@ CommandWarningException, CommandException
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
-	List tslist = null;
+	List<TS> tslist = null;
 	if ( o_TSList == null ) {
 		message = "Unable to find time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 		Message.printWarning ( warning_level,
@@ -290,7 +288,7 @@ CommandWarningException, CommandException
                         message, "Report the problem to software support." ) );
 	}
 	else {
-        tslist = (List)o_TSList;
+        tslist = (List<TS>)o_TSList;
 		if ( tslist.size() == 0 ) {
 			message = "Unable to find time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( warning_level,
@@ -313,7 +311,8 @@ CommandWarningException, CommandException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Report the problem to software support." ) );
 	}
-	else {	tspos = (int [])o_Indices;
+	else {
+	    tspos = (int [])o_Indices;
 		if ( tspos.length == 0 ) {
 			message = "Unable to find indices for time series to fill using TSList=\"" + TSList + "\" TSID=\"" + TSID + "\".";
 			Message.printWarning ( warning_level,

@@ -1705,7 +1705,8 @@ public void fill ( )
                             independentAnalysisStart, independentAnalysisEnd,
                             fillStart, fillEnd,
                             fillFlag2,
-                            null ); // No description string	    
+                            null,
+                            true );	    
 	  	    		}
 	  	    		else {
 	  	    		    // Fill the entire time series...
@@ -1723,7 +1724,8 @@ public void fill ( )
     	  	    		    independentAnalysisStart, independentAnalysisEnd,
     	  	    		    fillStart, fillEnd,
     	  	    		    fillFlag2,
-    	  	    		    null ); // No description string
+    	  	    		    null,
+    	  	    		    true );
 	  	    		}
 	  	    		// TODO SAM 2010-06-06 Is there a way to do this check without calling missingCount
 	  	    		// above and here?  The problem is the loop "continue" statements

@@ -42,6 +42,7 @@ import java.util.Vector;
 import RTi.TS.TS;
 import RTi.TS.TSRegression;
 import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_FillRegression;
 
 import RTi.Util.Math.DataTransformationType;
 import RTi.Util.Math.NumberOfEquationsType;
@@ -66,8 +67,6 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
-import RTi.Util.Table.TableField;
-import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeUtil;
 
@@ -80,7 +79,13 @@ public class FillRegression_Command extends AbstractCommand implements Command, 
 /**
 Protected data members shared with the dialog and other related classes.
 */
-protected final String _Linear = "Linear";	// obsolete... use None
+protected final String _Linear = "Linear";	// obsolete... use DataTransformationType.NONE
+
+/**
+Possible data values for Fill parameter.
+*/
+protected final String _False = "False";
+protected final String _True = "True";
 
 /**
 The table that is (optionally) created with statistics information.
@@ -117,9 +122,9 @@ throws InvalidCommandParameterException
     String ConfidenceInterval = parameters.getValue ( "ConfidenceInterval" );
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
+	String Fill = parameters.getValue ( "Fill" );
 	String FillStart = parameters.getValue ( "FillStart" );
 	String FillEnd = parameters.getValue ( "FillEnd" );
-	String FillFlag = parameters.getValue ( "FillFlag" );
 	String warning = "";
     String message;
     
@@ -192,6 +197,14 @@ throws InvalidCommandParameterException
                     DataTransformationType.NONE + " (default).") );
 		}
 	}
+    // Make sure LEZeroLogValue, if given is a valid double.
+    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") && !StringUtil.isDouble( LEZeroLogValue ) ) {
+        message = "The <= zero log value (" + LEZeroLogValue + ") is not a number.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the <= log value as a number." ) );
+    }
 	if ( (Intercept != null) && !Intercept.equals("") ) {
 		if ( !StringUtil.isDouble(Intercept) ) {
             message = "The intercept: \"" + Intercept + "\" is not a number.";
@@ -216,14 +229,6 @@ throws InvalidCommandParameterException
                             message, "Specify the intercept as blank or change the transformation to None.") );
 		}
 	}
-    // Make sure LEZeroLogValue, if given is a valid double.
-    if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") && !StringUtil.isDouble( LEZeroLogValue ) ) {
-        message = "The <= zero log value (" + LEZeroLogValue + ") is not a number.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the <= log value as a number." ) );
-    }
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") ) {
 		try {	DateTime.parse(AnalysisStart);
@@ -277,63 +282,71 @@ throws InvalidCommandParameterException
     }
     
 	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( AnalysisEnd);
+		try {
+		    DateTime.parse( AnalysisEnd);
 		}
 		catch ( Exception e ) {
             message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
+    if ( (Fill != null) && !Fill.equals("") ) {
+        if ( !Fill.equalsIgnoreCase(_False) && !Fill.equalsIgnoreCase(_True) ) {
+            message = "The Fill (" + Fill +
+            ") parameter must be  " + _False + " or " + _True + " (default).";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the Fill parameter as " + _False + " or " + _True + " (default).") );
+        }
+    }
 	if ( (FillStart != null) && !FillStart.equals("") && !FillStart.equalsIgnoreCase("OutputStart")){
-		try {	DateTime.parse(FillStart);
+		try {
+		    DateTime.parse(FillStart);
 		}
 		catch ( Exception e ) {
             message = "The fill start date/time \"" + FillStart + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputStart." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
 	if ( (FillEnd != null) && !FillEnd.equals("") && !FillEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( FillEnd);
+		try {
+		    DateTime.parse( FillEnd);
 		}
 		catch ( Exception e ) {
             message = "The fill end date/time \"" + FillStart + "\" is not a valid date/time.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time or OutputEnd." ) );
-		}
-	}
-	if ( (FillFlag != null) && (FillFlag.length() > 1) ) {
-        message = "The fill flag must be 1 character long.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a 1-character fill flag or blank to not use a flag." ) );
+                    message, "Specify a valid date/time or OutputEnd." ) );
+		}
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "IndependentTSID" );
     valid_Vector.add ( "NumberOfEquations" );
     valid_Vector.add ( "AnalysisMonth" );
     valid_Vector.add ( "Transformation" );
-    valid_Vector.add ( "Intercept" );
     valid_Vector.add ( "LEZeroLogValue" );
+    valid_Vector.add ( "Intercept" );
     valid_Vector.add ( "MinimumSampleSize" );
     valid_Vector.add ( "MinimumR" );
     valid_Vector.add ( "ConfidenceInterval" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
+    valid_Vector.add ( "Fill" );
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
     valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "FillFlagDesc" );
     valid_Vector.add ( "TableID" );
     valid_Vector.add ( "TableTSIDColumn" );
     valid_Vector.add ( "TableTSIDFormat" );
@@ -357,9 +370,8 @@ not (e.g., "Cancel" was pressed.
 */
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
-    List<String> tableIDChoices =
-        TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)getCommandProcessor(), this);
+    List<String> tableIDChoices = TSCommandProcessorUtil.getTableIdentifiersFromCommandsBeforeCommand(
+        (TSCommandProcessor)getCommandProcessor(), this);
 	return (new FillRegression_JDialog ( parent, this, tableIDChoices )).ok();
 }
 
@@ -629,8 +641,7 @@ CommandWarningException, CommandException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Verify that the dependent TSID matches a time series." ) );
 	}
-	// The independent identifier may or may not have TEMPTS at the front
-	// but is handled by getTimeSeries...
+	// Get the independent time series
 	String IndependentTSID = parameters.getValue ( "IndependentTSID" );
     TS tsIndependent = null;
     if ( commandPhase == CommandPhaseType.DISCOVERY ) {
@@ -730,9 +741,15 @@ CommandWarningException, CommandException
         }
     }
 
+    String Fill = parameters.getValue ( "Fill" );
+    boolean Fill_boolean = true;
+    if ( (Fill != null) && Fill.equalsIgnoreCase("False") ) {
+        Fill_boolean = false;
+    }
 	String FillStart = parameters.getValue("FillStart");
 	String FillEnd = parameters.getValue("FillEnd");
 	String FillFlag = parameters.getValue("FillFlag");
+	String FillFlagDesc = parameters.getValue("FillFlagDesc");
 
 	String Intercept = parameters.getValue("Intercept");
 	Double intercept = null;
@@ -839,7 +856,7 @@ CommandWarningException, CommandException
 	DateTime FillEnd_DateTime = null;
     
 	try {
-		if ( FillStart != null ) {
+		if ( (FillStart != null) && !FillStart.equals("")  ) {
 			request_params = new PropList ( "" );
 			request_params.set ( "DateTime", FillStart );
 			CommandProcessorRequestResultsBean bean = null;
@@ -886,7 +903,7 @@ CommandWarningException, CommandException
 		}
 		
 		try {
-		if ( FillEnd != null ) {
+		if ( (FillEnd != null) && !FillEnd.equals("") ) {
 			request_params = new PropList ( "" );
 			request_params.set ( "DateTime", FillEnd );
 			CommandProcessorRequestResultsBean bean = null;
@@ -937,10 +954,12 @@ CommandWarningException, CommandException
 	// This will result in the time series in the original data being modified...
 	try {
 	    if ( commandPhase == CommandPhaseType.RUN ) {
+	        TSUtil_FillRegression tsufr = new TSUtil_FillRegression ();
     	    TSRegression regressionResults = TSUtil.fillRegress ( 
     			tsToFill, tsIndependent,
     			null, // No previously computed TSRegression object
-    			RegressionType.OLS_REGRESSION, numberOfEquations,
+    			RegressionType.OLS_REGRESSION,
+    			numberOfEquations,
                 intercept,
                 analysisMonths,
                 transformation,
@@ -953,7 +972,8 @@ CommandWarningException, CommandException
                 null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
                 FillStart_DateTime, FillEnd_DateTime,
                 FillFlag,
-                null );// use default descriptionString
+                FillFlagDesc,
+                Fill_boolean );
     	    if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
     	        if ( regressionResults.getN1() == 0 ) {
     	            message = "Number of overlapping points is 0.";
@@ -984,7 +1004,7 @@ CommandWarningException, CommandException
     			Message.printStatus ( 2, routine, regressionResults.toString() );
                 // Now set in the table
     		    if ( (TableID != null) && !TableID.equals("") ) {
-        			saveStatisticsToTable ( tsToFill, regressionResults, table, TableID,
+        			tsufr.saveStatisticsToTable ( tsToFill, regressionResults, table,
         			    TableTSIDColumn, TableTSIDFormat, numberOfEquations );
     		    }
     		}
@@ -1026,576 +1046,6 @@ CommandWarningException, CommandException
 }
 
 /**
-Save the statistics to the table.
-*/
-private void saveStatisticsToTable ( TS ts, TSRegression regressionResults, DataTable table,
-    String TableID, String tableTSIDColumnName, String TableTSIDFormat, NumberOfEquationsType numberOfEquations )
-throws Exception
-{   String routine = getClass().getName() + ".saveStatisticsToTable";
-    // Verify that the TSID table columns are available for dependent and independent time series
-    String tableTSIDColumnNameIndependent = tableTSIDColumnName + "_Independent";
-    int tableTSIDColumnNumber = -1;
-    int tableTSIDColumnNumberIndependent = -1;
-    // If the column name does not exist, add it to the table
-    try {
-        tableTSIDColumnNumber = table.getFieldIndex(tableTSIDColumnName);
-    }
-    catch ( Exception e2 ) {
-        // Automatically add to the table, initialize with null (not nonValue)
-        table.addField(new TableField(TableField.DATA_TYPE_STRING,tableTSIDColumnName,-1,-1), null );
-        // Get the corresponding column number for row-edits below
-        tableTSIDColumnNumber = table.getFieldIndex(tableTSIDColumnName);
-    }
-    try {
-        tableTSIDColumnNumberIndependent = table.getFieldIndex(tableTSIDColumnNameIndependent);
-    }
-    catch ( Exception e2 ) {
-        // Automatically add to the table, initialize with null (not nonValue)
-        table.addField(new TableField(TableField.DATA_TYPE_STRING,tableTSIDColumnNameIndependent,-1,-1), null );
-        // Get the corresponding column number for row-edits below
-        tableTSIDColumnNumberIndependent = table.getFieldIndex(tableTSIDColumnNameIndependent);
-    }
-    // Loop through the statistics, creating table column names if necessary
-    // Do this first so that all columns are fully defined.  Then process the row values below.
-    int numEquations = 1;
-    if ( numberOfEquations == NumberOfEquationsType.MONTHLY_EQUATIONS ) {
-        numEquations = 12;
-    }
-    // List in a reasonable order - see the command documentation for more
-    // X=independent
-    // Y=dependent
-    //String [] statistics = { };
-    String [] statistics = {
-        "N1", "MeanX1", "SX1", "N2", "MeanX2", "SX2",
-        "MeanY1", "SY1", "NY", "MeanY", "SY", "a", "b", "R", "R2", "MeanY1est", "SY1est",
-        "RMSE", "SEE", "SEP", "SESlope", "TestScore", "TestQuantile", "TestRelated"
-        // TODO SAM 2010-12-18 put these in for comparison for MSM?
-        // "NY", "NYfilled", "MeanYfilled", "SYfilled", "Skew", etc. from MSM statistics
-        };
-    int countStatisticTotal = statistics.length*numEquations; // The total number of statistics columns to add
-    String [] statisticColumnNames = new String[countStatisticTotal]; // names in table
-    // Arrays for the statistics, although mixing doubles and ints will result in some statistic
-    // values being null
-    Double [] statisticValueDouble = new Double[countStatisticTotal];
-    Integer [] statisticValueInteger = new Integer[countStatisticTotal];
-    String [] statisticValueString = new String[countStatisticTotal];
-    // The count of statistics added (0-index), necessary because when dealing with monthly statistics
-    // the 12 months are flattened into a linear array matching column headings
-    int countStatistic = -1;
-    for ( int iEquation = 1; iEquation <= numEquations; iEquation++ ) {
-        for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
-            // Set statistics to null (one will be set below).
-            ++countStatistic;
-            statisticValueDouble[countStatistic] = null;
-            statisticValueInteger[countStatistic] = null;
-            // Column name for the statistic...
-            if ( numEquations == 1 ) {
-                statisticColumnNames[countStatistic] = statistics[iStatistic];
-                if ( statistics[iStatistic].equals("a") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getA());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("b") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getB());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanX") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanX());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanY") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanY());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanY1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanY1());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanY1est") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanY1Estimated());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("NX") ) {
-                    statisticValueInteger[countStatistic] = new Integer(regressionResults.getN1() +
-                        regressionResults.getN2());
-                }
-                else if ( statistics[iStatistic].equals("N1") ) {
-                    statisticValueInteger[countStatistic] = new Integer(regressionResults.getN1());
-                }
-                else if ( statistics[iStatistic].equals("N2") ) {
-                    statisticValueInteger[countStatistic] = new Integer(regressionResults.getN2());
-                }
-                else if ( statistics[iStatistic].equals("R") ) {
-                    try {
-                        statisticValueDouble[countStatistic] =
-                            new Double(regressionResults.getCorrelationCoefficient());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("R2") ) {
-                    try {
-                        double r = regressionResults.getCorrelationCoefficient();
-                        statisticValueDouble[countStatistic] = new Double(r*r);
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("RMSE") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getRMSE());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SEE") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfEstimate());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                /* FIXME SAM 2011-01-06
-                else if ( statistics[iStatistic].equals("SESlope") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfSlope());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("TestScore") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestScore());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("TestQuantile") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestQuantile());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("TestIsRelated") ) {
-                    try {
-                        boolean related = regressionResults.getTestIsRelated();
-                        if ( related ) {
-                            statisticValueString[countStatistic] = "Yes";
-                        }
-                        else {
-                            statisticValueString[countStatistic] = "No";
-                        }
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SX") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SX1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX1());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SX2") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX2());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SY") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationY());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SY1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationY1());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SY1est") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationY1Estimated());
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                */
-            }
-            else {
-                // Monthly so add subscript
-                statisticColumnNames[countStatistic] = statistics[iStatistic] + "_" + iEquation;
-                if ( statistics[iStatistic].equals("a") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getA(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("b") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getB(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanX") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanX(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanX1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanX1(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanX2") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanX2(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanY") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanY(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanY1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanY1(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("MeanY1est") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getMeanY1Estimated(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("NX") ) {
-                    statisticValueInteger[countStatistic] = new Integer(regressionResults.getN1(iEquation) +
-                        regressionResults.getN2(iEquation));
-                }
-                else if ( statistics[iStatistic].equals("N1") ) {
-                    statisticValueInteger[countStatistic] = new Integer(regressionResults.getN1(iEquation));
-                }
-                else if ( statistics[iStatistic].equals("N2") ) {
-                    statisticValueInteger[countStatistic] = new Integer(regressionResults.getN2(iEquation));
-                }
-                else if ( statistics[iStatistic].equals("R") ) {
-                    try {
-                        statisticValueDouble[countStatistic] =
-                            new Double(regressionResults.getCorrelationCoefficient(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("R2") ) {
-                    try {
-                        double r = regressionResults.getCorrelationCoefficient(iEquation);
-                        statisticValueDouble[countStatistic] = new Double(r*r);
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("RMSE") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getRMSE(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SEE") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfEstimate(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                /* FIXME SAM 2011-01-06
-                else if ( statistics[iStatistic].equals("SESlope") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardErrorOfSlope(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("TestScore") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestScore(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("TestQuantile") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getTestQuantile(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("TestIsRelated") ) {
-                    try {
-                        boolean related = regressionResults.getTestIsRelated(iEquation);
-                        if ( related ) {
-                            statisticValueString[countStatistic] = "Yes";
-                        }
-                        else {
-                            statisticValueString[countStatistic] = "No";
-                        }
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SX") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SX1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX1(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SX2") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationX2(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SY") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationY(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SY1") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationY1(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-                else if ( statistics[iStatistic].equals("SY1est") ) {
-                    try {
-                        statisticValueDouble[countStatistic] = new Double(regressionResults.getStandardDeviationY1Estimated(iEquation));
-                    }
-                    catch ( Exception e ) {
-                        // No value computed.  Leave as null for output.
-                    }
-                }
-            }
-            // If the column name does not exist, add it to the table
-            try {
-                statisticColumnNumbers[countStatistic] = table.getFieldIndex(statisticColumnNames[countStatistic]);
-            }
-            catch ( Exception e2 ) {
-                // Automatically add to the table, initialize with null (not nonValue)
-                // TODO SAM 2010-12-16 Evaluate field width and precision
-                if ( statisticValueInteger != null ) {
-                    table.addField(new TableField(
-                        TableField.DATA_TYPE_INT,statisticColumnNames[countStatistic],-1,-1), null );
-                }
-                else if ( statisticValueDouble != null ) {
-                    table.addField(new TableField(
-                         TableField.DATA_TYPE_DOUBLE,statisticColumnNames[countStatistic],10,4), null );
-                }
-                // Get the corresponding column number for row-edits below
-                statisticColumnNumbers[countStatistic] =
-                    table.getFieldIndex(statisticColumnNames[countStatistic]);
-                    */
-            }
-        }
-    }
-    // By here the statistics will have been computed and are matched with the column name array
-    // Now loop through again and process the row for the dependent and independent time series
-    // First format the dependent and independent time series identifiers for to match the table...
-    // Dependent time series identifier is configurable from parameter
-    String tableTSIDDependent = null;
-    if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
-        // Format the TSID using the specified format
-        tableTSIDDependent = ts.formatLegend ( TableTSIDFormat );
-    }
-    else {
-        // Use the alias if available and then the TSID
-        tableTSIDDependent = ts.getAlias();
-        if ( (tableTSIDDependent == null) || tableTSIDDependent.equals("") ) {
-            tableTSIDDependent = ts.getIdentifierString();
-        }
-    }
-    // Get the independent time series identifier
-    String tableTSIDIndependent = null;
-    if ( (TableTSIDFormat != null) && !TableTSIDFormat.equals("") ) {
-        // Format the TSID using the specified format
-        tableTSIDIndependent = regressionResults.getIndependentTS().formatLegend ( TableTSIDFormat );
-    }
-    else {
-        // Use the alias if available and then the TSID
-        tableTSIDIndependent = regressionResults.getIndependentTS().getAlias();
-        if ( (tableTSIDIndependent == null) || tableTSIDIndependent.equals("") ) {
-            tableTSIDIndependent = regressionResults.getIndependentTS().getIdentifierString();
-        }
-    }
-    // Need to make sure that the table has the statistic column names, and look up the column numbers from
-    // the names in order to do the insert...
-    int [] statisticColumnNumbers = new int[countStatisticTotal]; // columns in table
-    countStatistic = -1;
-    for ( int iEquation = 0; iEquation < numEquations; iEquation++ ) {
-        for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
-            ++countStatistic;
-            try {
-                statisticColumnNumbers[countStatistic] = table.getFieldIndex ( statisticColumnNames[countStatistic] );
-            }
-            catch ( Exception e ) {
-                statisticColumnNumbers[countStatistic] = -1; // Indicates no column name matched in table
-            }
-            if ( statisticColumnNumbers[countStatistic] < 0 ) {
-                // Add the statistics columns, initialize with null (not nonValue)
-                if ( statisticValueDouble[countStatistic] != null ) {
-                    statisticColumnNumbers[countStatistic] =
-                        table.addField(new TableField(
-                            TableField.DATA_TYPE_DOUBLE,statisticColumnNames[countStatistic],-1,8), null );
-                }
-                else if ( statisticValueInteger[countStatistic] != null ) {
-                    statisticColumnNumbers[countStatistic] =
-                        table.addField(new TableField(
-                            TableField.DATA_TYPE_INT,statisticColumnNames[countStatistic],-1,-1), null );
-                }
-                Message.printStatus(2,routine,"Added column \"" + statisticColumnNames[countStatistic] +"\" at index "
-                     + statisticColumnNumbers[countStatistic] );
-            }
-        }
-    }
-    // Next, find the record that has the dependent and independent identifiers...
-    // Find the record that matches the dependent and independent identifiers (should only be one but
-    // handle multiple matches)
-    List<String> tableColumnNames = new Vector(); // The dependent and independent TSID column names
-    tableColumnNames.add ( tableTSIDColumnName );
-    tableColumnNames.add ( tableTSIDColumnNameIndependent );
-    List<String> tableColumnValues = new Vector(); // The dependent and independent TSID values
-    tableColumnValues.add ( tableTSIDDependent );
-    tableColumnValues.add ( tableTSIDIndependent );
-    List<TableRecord> recList = table.getRecords ( tableColumnNames, tableColumnValues );
-    Message.printStatus(2,routine,"Searched for records with columns matching \"" +
-        tableTSIDColumnName + "\"=\"" + tableTSIDDependent + "\" " +
-        tableTSIDColumnNameIndependent + "\"=\"" + tableTSIDIndependent + "\"... found " + recList.size() );
-    if ( recList.size() == 0 ) {
-        // No record in the table so add one with TSID column values and blank statistic values...
-        TableRecord rec = null;
-        table.addRecord(rec=table.emptyRecord());
-        rec.setFieldValue(tableTSIDColumnNumber, tableTSIDDependent);
-        rec.setFieldValue(tableTSIDColumnNumberIndependent, tableTSIDIndependent);
-        recList.add ( rec );
-    }
-    // Finally loop through the statistics and insert into the rows matched above.  Although multiple
-    // records may have been matched, the normal case will be that one record is matched.  Offset the column
-    // number by 2 to account for the dependent and independent time series identifier columns
-    for ( TableRecord rec : recList ) {
-        countStatistic = -1;
-        for ( int iEquation = 0; iEquation < numEquations; iEquation++ ) {
-            for ( int iStatistic = 0; iStatistic < statistics.length; iStatistic++ ) {
-                // Set the value based on the object type for the statistic...
-                ++countStatistic;
-                if ( statisticValueDouble[countStatistic] != null ) {
-                    rec.setFieldValue(statisticColumnNumbers[countStatistic],
-                         statisticValueDouble[countStatistic]);
-                }
-                if ( statisticValueInteger[countStatistic] != null ) {
-                    rec.setFieldValue(statisticColumnNumbers[countStatistic],
-                         statisticValueInteger[countStatistic]);
-                }
-            }
-        }
-    }
-}
-
-/**
 Set the table that is read by this class in discovery mode.
 */
 private void setDiscoveryTable ( DataTable table )
@@ -1615,16 +1065,18 @@ public String toString ( PropList props )
 	String NumberOfEquations = props.getValue("NumberOfEquations");
 	String AnalysisMonth = props.getValue("AnalysisMonth");
 	String Transformation = props.getValue("Transformation");
-	String Intercept = props.getValue("Intercept");
     String LEZeroLogValue = props.getValue ( "LEZeroLogValue" );
+	String Intercept = props.getValue("Intercept");
     String MinimumSampleSize = props.getValue ( "MinimumSampleSize" );
     String MinimumR = props.getValue ( "MinimumR" );
     String ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 	String AnalysisStart = props.getValue("AnalysisStart");
 	String AnalysisEnd = props.getValue("AnalysisEnd");
+    String Fill = props.getValue ( "Fill" );
 	String FillStart = props.getValue("FillStart");
 	String FillEnd = props.getValue("FillEnd");
 	String FillFlag = props.getValue("FillFlag");
+	String FillFlagDesc = props.getValue("FillFlagDesc");
     String TableID = props.getValue ( "TableID" );
     String TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
     String TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
@@ -1690,6 +1142,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "AnalysisEnd=\"" + AnalysisEnd + "\"" );
 	}
+    if ( (Fill != null) && (Fill.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Fill=" + Fill );
+    }
 	if ( (FillStart != null) && (FillStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );
@@ -1708,6 +1166,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "FillFlag=\"" + FillFlag + "\"" );
 	}
+    if ( (FillFlagDesc != null) && (FillFlagDesc.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillFlagDesc=\"" + FillFlagDesc + "\"" );
+    }
     if ( (TableID != null) && (TableID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

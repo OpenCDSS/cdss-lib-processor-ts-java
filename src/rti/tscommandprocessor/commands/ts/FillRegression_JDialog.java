@@ -89,6 +89,7 @@ private JTextField __AnalysisEnd_JTextField;
 private JTextField __FillStart_JTextField;
 private JTextField __FillEnd_JTextField;
 private JTextField __FillFlag_JTextField;
+private JTextField __FillFlagDesc_JTextField;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private SimpleJComboBox	__IndependentTSID_JComboBox= null;
 private SimpleJComboBox	__NumberOfEquations_JComboBox = null;
@@ -102,6 +103,7 @@ private JTextField __ConfidenceInterval_JTextField = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null;
+private SimpleJComboBox __Fill_JComboBox = null;
 private boolean __error_wait = false; // True if there is an error in the input.
 private boolean __first_time = true;
 private boolean __ok = false; // Was OK pressed last (false=cancel)?
@@ -183,9 +185,11 @@ private void checkInput ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
 	String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String Fill = __Fill_JComboBox.getSelected();
 	__error_wait = false;
 
 	if ( TSID.length() > 0 ) {
@@ -227,6 +231,9 @@ private void checkInput ()
 	if ( FillFlag.length() > 0 ) {
 		props.set ( "FillFlag", FillFlag );
 	}
+    if ( FillFlagDesc.length() > 0 ) {
+        props.set ( "FillFlagDesc", FillFlagDesc );
+    }
     if ( TableID.length() > 0 ) {
         props.set ( "TableID", TableID );
     }
@@ -235,6 +242,9 @@ private void checkInput ()
     }
     if ( TableTSIDFormat.length() > 0 ) {
         props.set ( "TableTSIDFormat", TableTSIDFormat );
+    }
+    if ( Fill.length() > 0 ) {
+        props.set ( "Fill", Fill );
     }
 	try {
 	    // This will warn the user...
@@ -266,9 +276,11 @@ private void commitEdits ()
 	String FillStart = __FillStart_JTextField.getText().trim();
 	String FillEnd = __FillEnd_JTextField.getText().trim();
 	String FillFlag = __FillFlag_JTextField.getText().trim();
+	String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
     String TableID = __TableID_JComboBox.getSelected();
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
+    String Fill = __Fill_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSID", TSID );
 	__command.setCommandParameter ( "IndependentTSID", IndependentTSID );
 	__command.setCommandParameter ( "NumberOfEquations", NumberOfEquations);
@@ -284,9 +296,11 @@ private void commitEdits ()
 	__command.setCommandParameter ( "FillStart", FillStart );
 	__command.setCommandParameter ( "FillEnd", FillEnd );
 	__command.setCommandParameter ( "FillFlag", FillFlag );
+	__command.setCommandParameter ( "FillFlagDesc", FillFlagDesc );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
+    __command.setCommandParameter ( "Fill", Fill );
 }
 
 /**
@@ -328,6 +342,9 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 		"Fill missing data using ordinary least squares (OLS) regression."),
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>This command is in the process of being enhanced to include the data checks and table output.</b></html>."),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"The analysis period is used to determine relationships used for filling." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -348,8 +365,8 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 
 	// Get the time series identifiers from the processor...
 	
-	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-			(TSCommandProcessor)__command.getCommandProcessor(), __command );
+	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+		(TSCommandProcessor)__command.getCommandProcessor(), __command );
 	
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addKeyListener ( this );
@@ -483,6 +500,21 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - ending date/time (default=full period)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Fill_JComboBox = new SimpleJComboBox ( false );
+    __Fill_JComboBox.addItem ( "" );
+    __Fill_JComboBox.addItem ( "" + __command._False );
+    __Fill_JComboBox.addItem ( "" + __command._True );
+    __Fill_JComboBox.select ( 0 );
+    __Fill_JComboBox.setToolTipText ( "Use False to calculate statistics but do not fill." );
+    __Fill_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Fill_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - fill missing values in dependent time series (blank=" + __command._True + ")."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel,new JLabel( "Fill start:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -512,6 +544,16 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - string to indicate filled values."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __FillFlag_JTextField.setToolTipText ( "Specify with leading + to append." );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FillFlagDesc_JTextField = new JTextField ( 15 );
+    __FillFlagDesc_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for fill flag."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID for output:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -545,7 +587,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea ( 5, 65 );
@@ -615,7 +657,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -638,9 +680,11 @@ private void refresh ()
     String ConfidenceInterval = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
+    String Fill = "";
 	String FillStart = "";
 	String FillEnd = "";
 	String FillFlag = "";
+    String FillFlagDesc = "";
     String TableID = "";
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
@@ -661,9 +705,11 @@ private void refresh ()
 	    ConfidenceInterval = props.getValue ( "ConfidenceInterval" );
 		AnalysisStart = props.getValue("AnalysisStart");
 		AnalysisEnd = props.getValue("AnalysisEnd");
+        Fill = props.getValue ( "Fill" );
 		FillStart = props.getValue("FillStart");
 		FillEnd = props.getValue("FillEnd");
 		FillFlag = props.getValue("FillFlag");
+		FillFlagDesc = props.getValue("FillFlagDesc");
         TableID = props.getValue ( "TableID" );
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
@@ -733,10 +779,8 @@ private void refresh ()
 			else {
                 // Bad user command...
 				Message.printWarning ( 1,
-				"fillRegression_JDialog.refresh", "Existing " +
-				"fillRegression() references an invalid\n"+
-				"number of equations \"" + NumberOfEquations +
-				"\".  Select a\ndifferent value or Cancel." );
+				routine, "Existing command references an invalid number of equations \"" + NumberOfEquations +
+				"\".  Select a different value or Cancel." );
 			}
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem( __AnalysisMonth_JComboBox, AnalysisMonth, JGUIUtil.NONE, null, null ) ) {
@@ -749,11 +793,8 @@ private void refresh ()
 			}
 			else {
 			    // Bad user command...
-				Message.printWarning ( 1,
-				"fillRegression_JDialog.refresh", "Existing " +
-				"fillRegression() references an invalid\n"+
-				"analysis month \"" + AnalysisMonth +
-				"\".  Select a\ndifferent value or Cancel." );
+				Message.printWarning ( 1, routine, "Existing command references an invalid analysis month \"" +
+				    AnalysisMonth + "\".  Select a different value or Cancel." );
 			}
 		}
 		if ( JGUIUtil.isSimpleJComboBoxItem( __Transformation_JComboBox, Transformation, JGUIUtil.NONE, null, null ) ) {
@@ -764,12 +805,9 @@ private void refresh ()
 				// Set default...
 				__Transformation_JComboBox.select ( 0 );
 			}
-			else {	Message.printWarning ( 1,
-				"fillRegression_JDialog.refresh", "Existing " +
-				"fillRegression() references an invalid\n"+
-				"transformation \"" + Transformation +
-				"\".  Select a\n" +
-				"different type or Cancel." );
+			else {
+			    Message.printWarning ( 1, routine, "Existing command references an invalid transformation \"" +
+			        Transformation + "\".  Select a different type or Cancel." );
 			}
 		}
 		if ( Intercept != null ) {
@@ -793,6 +831,19 @@ private void refresh ()
 		if ( AnalysisEnd != null ) {
 			__AnalysisEnd_JTextField.setText ( AnalysisEnd );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem( __Fill_JComboBox, Fill, JGUIUtil.NONE, null, null ) ) {
+            __Fill_JComboBox.select ( Fill );
+        }
+        else {
+            if ( (Fill == null) || Fill.equals("") ) {
+                // Set default...
+                __Fill_JComboBox.select ( 0 );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "Fill \"" + Fill + "\".  Select a different type or Cancel." );
+            }
+        }
 		if ( FillStart != null ) {
 			__FillStart_JTextField.setText( FillStart );
 		}
@@ -802,6 +853,9 @@ private void refresh ()
 		if ( FillFlag != null ) {
 			__FillFlag_JTextField.setText ( FillFlag );
 		}
+        if ( FillFlagDesc != null ) {
+            __FillFlagDesc_JTextField.setText ( FillFlagDesc );
+        }
         if ( TableID == null ) {
             // Select default...
             __TableID_JComboBox.select ( 0 );
@@ -838,9 +892,11 @@ private void refresh ()
     ConfidenceInterval = __ConfidenceInterval_JTextField.getText().trim();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
+    Fill = __Fill_JComboBox.getSelected();
 	FillStart = __FillStart_JTextField.getText().trim();
 	FillEnd = __FillEnd_JTextField.getText().trim();
 	FillFlag = __FillFlag_JTextField.getText().trim();
+	FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
     TableID = __TableID_JComboBox.getSelected();
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
@@ -852,16 +908,18 @@ private void refresh ()
 		props.add ( "AnalysisMonth=" + AnalysisMonth );
 	}
 	props.add ( "Transformation=" + Transformation );
-	props.add ( "Intercept=" + Intercept );
 	props.add ( "LEZeroLogValue=" + LEZeroLogValue );
+	props.add ( "Intercept=" + Intercept );
     props.add ( "MinimumSampleSize=" + MinimumSampleSize );
     props.add ( "MinimumR=" + MinimumR );
     props.add ( "ConfidenceInterval=" + ConfidenceInterval );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
+    props.add ( "Fill=" + Fill );
 	props.add ( "FillStart=" + FillStart );
 	props.add ( "FillEnd=" + FillEnd );
 	props.add ( "FillFlag=" + FillFlag );
+	props.add ( "FillFlagDesc=" + FillFlagDesc );
     props.add ( "TableID=" + TableID );
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );

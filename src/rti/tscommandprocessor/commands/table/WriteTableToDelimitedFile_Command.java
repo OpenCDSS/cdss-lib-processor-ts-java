@@ -248,7 +248,7 @@ CommandWarningException, CommandException
 		// Convert to an absolute path...
 		OutputFile_full = IOUtil.verifyPathForOS(
             IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
-		Message.printStatus ( 2, routine, "Writing Summary file \"" + OutputFile_full + "\"" );
+		Message.printStatus ( 2, routine, "Writing table to file \"" + OutputFile_full + "\"" );
 		warning_count = writeTable ( table, OutputFile_full, warning_level, command_tag, warning_count );
 		// Save the output file name...
 		setOutputFile ( new File(OutputFile_full));
@@ -324,12 +324,15 @@ throws IOException
 
     // Get the comments to add to the top of the file.
 
-    List<String> OutputComments_Vector = null;
-    try { Object o = processor.getPropContents ( "OutputComments" );
+    List<String> outputCommentsList = new Vector();
+    try {
+        Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
         if ( o != null ) {
-            OutputComments_Vector = (List<String>)o;
+            outputCommentsList.addAll((List<String>)o);
         }
+        // Also add internal comments specific to the table.
+        outputCommentsList.addAll ( table.getComments() );
     }
     catch ( Exception e ) {
         // Not fatal, but of use to developers.
@@ -338,11 +341,11 @@ throws IOException
     }
 	
 	try {
-		Message.printStatus ( 2, routine, "Writing summary file \"" + OutputFile + "\"" );
-		table.writeDelimitedFile(OutputFile, ",", true, OutputComments_Vector);
+		Message.printStatus ( 2, routine, "Writing table file \"" + OutputFile + "\"" );
+		table.writeDelimitedFile(OutputFile, ",", true, outputCommentsList);
 	}
 	catch ( Exception e ) {
-		message = "Unexpected error writing summary to file \"" + OutputFile + "\" (" + e + ")";
+		message = "Unexpected error writing table to file \"" + OutputFile + "\" (" + e + ")";
 		Message.printWarning ( warning_level, 
 			MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
 		status.addToLog ( CommandPhaseType.RUN,

@@ -20,6 +20,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -30,14 +32,13 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
 public class ReadStateCUB_JDialog extends JDialog
-implements ActionListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
 			__cancel_JButton = null,// Cancel Button
@@ -63,7 +64,7 @@ Command editor dialog constructor.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-public ReadStateCUB_JDialog ( JFrame parent, Command command )
+public ReadStateCUB_JDialog ( JFrame parent, ReadStateCUB_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -132,6 +133,37 @@ public void actionPerformed( ActionEvent event )
 		refresh ();
 	}
 }
+
+// Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the input.  If errors exist, warn the user and set the __error_wait flag
@@ -205,8 +237,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (ReadStateCUB_Command)command;
+private void initialize ( JFrame parent, ReadStateCUB_Command command )
+{	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 

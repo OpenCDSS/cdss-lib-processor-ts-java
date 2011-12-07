@@ -24,6 +24,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -43,7 +45,7 @@ import RTi.Util.Time.TimeScaleType;
 import RTi.Util.Time.YearType;
 
 public class ChangeInterval_JDialog extends JDialog
-	implements ActionListener, ItemListener, KeyListener, WindowListener
+	implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 // Controls are defined in logical order -- The order they appear in the dialog
 // box and documentation.
@@ -129,6 +131,37 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 }
+
+// Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -599,6 +632,7 @@ private void initialize ( JFrame parent, ChangeInterval_Command command )
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(15);
     __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.getDocument().addDocumentListener( this );
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - use %L for location, etc."),

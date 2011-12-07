@@ -22,6 +22,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
@@ -36,7 +38,7 @@ import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.StrftimeDateTimeFormatterSpecifiersJPanel;
 
 public class FormatDateTimeProperty_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -79,6 +81,37 @@ public void actionPerformed( ActionEvent event )
 	}
 }
 
+// Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
+
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
 */
@@ -96,6 +129,9 @@ private void checkInput ()
 	PropList parameters = new PropList ( "" );
 	String PropertyName = __PropertyName_JTextField.getText().trim();
 	String DateTimePropertyName = __DateTimePropertyName_JComboBox.getSelected();
+    if ( DateTimePropertyName == null ) {
+        DateTimePropertyName = "";
+    }
     String FormatterType = __FormatterType_JComboBox.getSelected();
 	String Format = __Format_JTextField.getText().trim();
 
@@ -131,6 +167,9 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {	String PropertyName = __PropertyName_JTextField.getText().trim();
     String DateTimePropertyName = __DateTimePropertyName_JComboBox.getSelected();
+    if ( DateTimePropertyName == null ) {
+        DateTimePropertyName = "";
+    }
     String FormatterType = __FormatterType_JComboBox.getSelected(); 
 	String Format = __Format_JTextField.getText().trim();
 	__command.setCommandParameter ( "PropertyName", PropertyName );
@@ -223,8 +262,8 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __FormatterType_JComboBox = new SimpleJComboBox ( false );
     __FormatterType_JComboBox.addItem ( "" );
-    //__FormatterType_JComboBox.addItem ( DateTimeFormatterType.EXCEL );
-    __FormatterType_JComboBox.addItem ( DateTimeFormatterType.STRFTIME );
+    //__FormatterType_JComboBox.addItem ( "" + DateTimeFormatterType.EXCEL );
+    __FormatterType_JComboBox.addItem ( "" + DateTimeFormatterType.STRFTIME );
     __FormatterType_JComboBox.select ( "" );
     __FormatterType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FormatterType_JComboBox,
@@ -237,6 +276,7 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__Format_JTextField = new StrftimeDateTimeFormatterSpecifiersJPanel ( 20 );
 	__Format_JTextField.addKeyListener ( this );
+	__Format_JTextField.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Format_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - format string for formatter."), 
@@ -335,7 +375,12 @@ private void refresh ()
 	    }
         if ( DateTimePropertyName == null ) {
             // Select default...
-            __DateTimePropertyName_JComboBox.select ( 0 );
+            if ( __DateTimePropertyName_JComboBox.getItemCount() == 0 ) {
+                __DateTimePropertyName_JComboBox.select ( null );
+            }
+            else {
+                __DateTimePropertyName_JComboBox.select ( 0 );
+            }
         }
         else {
             if ( JGUIUtil.isSimpleJComboBoxItem(
@@ -370,7 +415,10 @@ private void refresh ()
 	}
 	// Regardless, reset the command from the fields...
 	PropertyName = __PropertyName_JTextField.getText().trim();
-	DateTimePropertyName = __FormatterType_JComboBox.getSelected();
+	DateTimePropertyName = __DateTimePropertyName_JComboBox.getSelected();
+    if ( DateTimePropertyName == null ) {
+        DateTimePropertyName = "";
+    }
     FormatterType = __FormatterType_JComboBox.getSelected();
 	Format = __Format_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );

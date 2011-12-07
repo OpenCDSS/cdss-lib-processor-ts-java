@@ -20,6 +20,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import java.util.List;
 
@@ -32,7 +34,6 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -40,7 +41,7 @@ import RTi.Util.Message.Message;
 Command editor dialog for the SetTimeSeriesProperty() command.
 */
 public class SetTimeSeriesProperty_JDialog extends JDialog
-implements ActionListener, KeyListener, ItemListener, WindowListener
+implements ActionListener, DocumentListener, KeyListener, ItemListener, WindowListener
 {
 
 private SimpleJButton __cancel_JButton = null; // Cancel Button
@@ -68,7 +69,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public SetTimeSeriesProperty_JDialog (	JFrame parent, Command command )
+public SetTimeSeriesProperty_JDialog ( JFrame parent, SetTimeSeriesProperty_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -91,6 +92,37 @@ public void actionPerformed( ActionEvent event )
 		}
 	}
 }
+
+// Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -224,8 +256,8 @@ Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (SetTimeSeriesProperty_Command)command;
+private void initialize ( JFrame parent, SetTimeSeriesProperty_Command command )
+{	__command = command;
 	
     addWindowListener( this );
 
@@ -267,6 +299,7 @@ private void initialize ( JFrame parent, Command command )
     __Description_JTextField = new TSFormatSpecifiersJPanel(10);
     __Description_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __Description_JTextField.addKeyListener ( this );
+    __Description_JTextField.getDocument().addDocumentListener(this);
     __Description_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(main_JPanel, __Description_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

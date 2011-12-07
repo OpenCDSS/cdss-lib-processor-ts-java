@@ -23,6 +23,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -33,7 +35,6 @@ import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -42,10 +43,10 @@ import RTi.Util.Message.Message;
 import RTi.Util.Time.TimeInterval;
 
 /**
-Editor for the TS Alias = readDateValue() and non-TS Alias ReadDateValue() commands.
+Editor for the ReadDateValue() command.
 */
 public class ReadDelimitedFile_JDialog extends JDialog
-implements ActionListener, ItemListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton	__browse_JButton = null,// File browse button
 			__path_JButton = null,	// Convert between relative and absolute path.
@@ -77,11 +78,6 @@ private JTextField __MissingValue_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
-
-//private boolean __isAliasVersion = false;	
-			// Whether this dialog is being opened for the version
-			// of the command that returns an alias or not
-            // TODO SAM 2008-01-31 Evaluate whether alias version is appropriate - for now don't implement
 private boolean __ok = false;			
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 private final String __AddWorkingDirectory = "Add Working Directory";
@@ -91,7 +87,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadDelimitedFile_JDialog ( JFrame parent, Command command )
+public ReadDelimitedFile_JDialog ( JFrame parent, ReadDelimitedFile_Command command )
 {
 	super(parent, true);
 
@@ -182,6 +178,37 @@ try{
     Message.printWarning(2, "Action performed", e );
 }
 }
+
+// Start event handlers for DocumentListener...
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void changedUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void insertUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+/**
+Handle DocumentEvent events.
+@param e DocumentEvent to handle.
+*/
+public void removeUpdate ( DocumentEvent e )
+{   checkGUIState();
+    refresh();
+}
+
+// ...End event handlers for DocumentListener
 
 /**
 Check the GUI state to make sure that appropriate components are enabled/disabled.
@@ -393,8 +420,8 @@ Instantiates the GUI components.
 @param app_PropList Properties from application.
 @param command Command to edit.
 */
-private void initialize(JFrame parent, Command command) {
-	__command = (ReadDelimitedFile_Command)command;
+private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
+	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
 	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -661,6 +688,7 @@ private void initialize(JFrame parent, Command command) {
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
     __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __Alias_JTextField.addKeyListener ( this );
+    __Alias_JTextField.getDocument().addDocumentListener(this);
     __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);

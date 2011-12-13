@@ -1574,7 +1574,7 @@ protected void notifyCommandProcessorListenersOfCommandCancelled ( int icommand,
 {	// This method is protected to allow TSEngine to call
 	if ( __CommandProcessorListener_array != null ) {
 		for ( int i = 0; i < __CommandProcessorListener_array.length; i++ ) {
-			__CommandProcessorListener_array[i].commandCancelled(icommand,ncommand,command,-1.0F,"Command cancelled.");
+			__CommandProcessorListener_array[i].commandCanceled(icommand,ncommand,command,-1.0F,"Command cancelled.");
 		}
 	}
 }

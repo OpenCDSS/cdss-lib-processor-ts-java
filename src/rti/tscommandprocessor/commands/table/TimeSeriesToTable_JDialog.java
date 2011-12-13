@@ -13,6 +13,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -37,6 +38,10 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
+import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeWindow;
+import RTi.Util.Time.DateTime_JPanel;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor for TimeSeriesToTable command.
@@ -60,6 +65,9 @@ private TSFormatSpecifiersJPanel __DataColumn_JTextField = null;
 private JTextField __DataRow_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private JCheckBox __OutputWindow_JCheckBox = null;
+private DateTime_JPanel __OutputWindowStart_JPanel = null; // Fields for output window within a year
+private DateTime_JPanel __OutputWindowEnd_JPanel = null;
 private SimpleJComboBox __IfTableNotFound_JComboBox = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up?
 private boolean __first_time = true;
@@ -93,6 +101,10 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else {
+        checkGUIState();
+        refresh ();
+    }
 }
 
 // Start event handlers for DocumentListener...
@@ -150,6 +162,16 @@ private void checkGUIState ()
         __EnsembleID_JComboBox.setEnabled(false);
         __EnsembleID_JLabel.setEnabled ( false );
     }
+    
+    if ( __OutputWindow_JCheckBox.isSelected() ) {
+        // Checked so enable the date panels
+        __OutputWindowStart_JPanel.setEnabled ( true );
+        __OutputWindowEnd_JPanel.setEnabled ( true );
+    }
+    else {
+        __OutputWindowStart_JPanel.setEnabled ( false );
+        __OutputWindowEnd_JPanel.setEnabled ( false );
+    }
 }
 
 /**
@@ -201,6 +223,16 @@ private void checkInput ()
     if ( IfTableNotFound.length() > 0 ) {
         props.set ( "IfTableNotFound", IfTableNotFound );
     }
+    if ( __OutputWindow_JCheckBox.isSelected() ){
+        String OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
+        String OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
+        if ( OutputWindowStart.length() > 0 ) {
+            props.set ( "OutputWindowStart", OutputWindowStart );
+        }
+        if ( OutputWindowEnd.length() > 0 ) {
+            props.set ( "OutputWindowEnd", OutputWindowEnd );
+        }
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( props, null, 1 );
@@ -236,6 +268,16 @@ private void commitEdits ()
     __command.setCommandParameter ( "OutputStart", OutputStart );
     __command.setCommandParameter ( "OutputEnd", OutputEnd );
     __command.setCommandParameter ( "IfTableNotFound", IfTableNotFound );
+    if ( __OutputWindow_JCheckBox.isSelected() ){
+        String OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
+        String OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
+        __command.setCommandParameter ( "OutputWindowStart", OutputWindowStart );
+        __command.setCommandParameter ( "OutputWindowEnd", OutputWindowEnd );
+    }
+    else {
+        __command.setCommandParameter ( "OutputWindowStart", "" );
+        __command.setCommandParameter ( "OutputWindowEnd", "" );
+    }
 }
 
 /**
@@ -271,13 +313,13 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Copy time series to a new table." ), 
+		"Copy time series date/time and value pairs to columns in a new table." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The date/times and data values will be put in columns of the table." ), 
+        "The time series must have the same data interval." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The time series must have the same data interval." ), 
+        "If the output window is specified, use a date/time precision consistent with data." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -292,9 +334,9 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-            this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -364,6 +406,30 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (default=copy all)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
+    // Always request month to minute because don't know for sure what time series interval is specified
+    __OutputWindow_JCheckBox = new JCheckBox ( "Output window:", false );
+    __OutputWindow_JCheckBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __OutputWindow_JCheckBox, 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JPanel OutputWindow_JPanel = new JPanel();
+    OutputWindow_JPanel.setLayout(new GridBagLayout());
+    __OutputWindowStart_JPanel = new DateTime_JPanel ( "Start", TimeInterval.MONTH, TimeInterval.MINUTE, null );
+    __OutputWindowStart_JPanel.addActionListener(this);
+    __OutputWindowStart_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(OutputWindow_JPanel, __OutputWindowStart_JPanel,
+        1, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    // TODO SAM 2008-01-23 Figure out how to display the correct limits given the time series interval
+    __OutputWindowEnd_JPanel = new DateTime_JPanel ( "End", TimeInterval.MONTH, TimeInterval.MINUTE, null );
+    __OutputWindowEnd_JPanel.addActionListener(this);
+    __OutputWindowEnd_JPanel.addKeyListener ( this );
+    JGUIUtil.addComponent(OutputWindow_JPanel, __OutputWindowEnd_JPanel,
+        4, 0, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, OutputWindow_JPanel,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - output window within each year (default=full year)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Action if table not found:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__IfTableNotFound_JComboBox = new SimpleJComboBox ( false );
@@ -377,7 +443,7 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-            0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
     __command_JTextArea.setWrapStyleWord ( true );
@@ -459,6 +525,8 @@ private void refresh ()
     String DataRow = "";
     String OutputStart = "";
     String OutputEnd = "";
+    String OutputWindowStart = "";
+    String OutputWindowEnd = "";
     String IfTableNotFound = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -470,6 +538,8 @@ private void refresh ()
         TableID = props.getValue ( "TableID" );
         OutputStart = props.getValue ( "OutputStart" );
         OutputEnd = props.getValue ( "OutputEnd" );
+        OutputWindowStart = props.getValue ( "OutputWindowStart" );
+        OutputWindowEnd = props.getValue ( "OutputWindowEnd" );
         DateTimeColumn = props.getValue ( "DateTimeColumn" );
         DataColumn = props.getValue ( "DataColumn" );
         DataRow = props.getValue ( "DataRow" );
@@ -551,6 +621,39 @@ private void refresh ()
         if ( OutputEnd != null ) {
             __OutputEnd_JTextField.setText ( OutputEnd );
         }
+        if ( (OutputWindowStart != null) && (OutputWindowStart.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime OutputWindowStart_DateTime = DateTime.parse (
+                    "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowStart );
+                Message.printStatus(2, routine, "Setting window start to " + OutputWindowStart_DateTime );
+                __OutputWindowStart_JPanel.setDateTime ( OutputWindowStart_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "OutputWindowStart (" + OutputWindowStart +
+                    ") prepended with " + DateTimeWindow.WINDOW_YEAR + " is not a valid date/time." );
+            }
+        }
+        if ( (OutputWindowEnd != null) && (OutputWindowEnd.length() > 0) ) {
+            try {
+                // Add year because it is not part of the parameter value...
+                DateTime OutputWindowEnd_DateTime = DateTime.parse (
+                    "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowEnd );
+                Message.printStatus(2, routine, "Setting window end to " + OutputWindowEnd_DateTime );
+                __OutputWindowEnd_JPanel.setDateTime ( OutputWindowEnd_DateTime );
+            }
+            catch ( Exception e ) {
+                Message.printWarning( 1, routine, "OutputWindowEnd (" + OutputWindowEnd +
+                    ") prepended with " + DateTimeWindow.WINDOW_YEAR + " is not a valid date/time." );
+            }
+        }
+        if ( ((OutputWindowStart != null) && (OutputWindowStart.length() != 0)) ||
+            ((OutputWindowEnd != null) && (OutputWindowEnd.length() != 0)) ) {
+            __OutputWindow_JCheckBox.setSelected ( true );
+        }
+        else {
+            __OutputWindow_JCheckBox.setSelected ( false );
+        }
         if ( IfTableNotFound == null ) {
             // Select default...
             __IfTableNotFound_JComboBox.select ( 0 );
@@ -570,6 +673,7 @@ private void refresh ()
         }
 	}
     // Regardless, reset the command from the fields...
+    checkGUIState();
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
@@ -592,6 +696,12 @@ private void refresh ()
     props.add ( "OutputStart=" + OutputStart );
     props.add ( "OutputEnd=" + OutputEnd );
     props.add ( "IfTableNotFound=" + IfTableNotFound );
+    if ( __OutputWindow_JCheckBox.isSelected() ) {
+        OutputWindowStart = __OutputWindowStart_JPanel.toString(false,true).trim();
+        OutputWindowEnd = __OutputWindowEnd_JPanel.toString(false,true).trim();
+        props.add ( "OutputWindowStart=" + OutputWindowStart );
+        props.add ( "OutputWindowEnd=" + OutputWindowEnd );
+    }
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

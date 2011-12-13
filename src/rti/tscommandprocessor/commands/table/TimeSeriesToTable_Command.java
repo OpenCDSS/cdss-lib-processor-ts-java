@@ -32,6 +32,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableField;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeWindow;
 
 /**
 This class initializes, checks, and runs the TimeSeriesToTable() command.
@@ -76,6 +77,8 @@ throws InvalidCommandParameterException
     String DataRow = parameters.getValue ( "DataRow" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+    String OutputWindowStart = parameters.getValue ( "OutputWindowStart" );
+    String OutputWindowEnd = parameters.getValue ( "OutputWindowEnd" );
     String IfTableNotFound = parameters.getValue ( "IfTableNotFound" );
 	String warning = "";
     String message;
@@ -172,6 +175,35 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputEnd." ) );
 		}
 	}
+    if ( (OutputWindowStart != null) && !OutputWindowStart.equals("") ) {
+        String outputWindowStart = "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowStart;
+        try {
+            DateTime.parse( outputWindowStart );
+        }
+        catch ( Exception e ) {
+            message = "The Output window start \"" + OutputWindowStart + "\" (prepended with " +
+            DateTimeWindow.WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
+    
+    if ( (OutputWindowEnd != null) && !OutputWindowEnd.equals("") ) {
+        String outputWindowEnd = "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowEnd;
+        try {
+            DateTime.parse( outputWindowEnd );
+        }
+        catch ( Exception e ) {
+            message = "The Output window end \"" + OutputWindowEnd + "\" (prepended with " +
+            DateTimeWindow.WINDOW_YEAR + ") is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time using MM, MM-DD, MM-DD hh, or MM-DD hh:mm." ) );
+        }
+    }
 	if ( (IfTableNotFound != null) && !IfTableNotFound.equals("") &&
 	    !IfTableNotFound.equalsIgnoreCase(_Create) && !IfTableNotFound.equalsIgnoreCase(_Warn)) {
         message = "The IfTableNotFound parameter is invalid.";
@@ -200,6 +232,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataRow" );
     valid_Vector.add ( "OutputStart" );
     valid_Vector.add ( "OutputEnd" );
+    valid_Vector.add ( "OutputWindowStart" );
+    valid_Vector.add ( "OutputWindowEnd" );
     valid_Vector.add ( "IfTableNotFound" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -352,6 +386,8 @@ CommandWarningException, CommandException
     List<TS> tslist = null;
     DateTime OutputStart_DateTime = null;
     DateTime OutputEnd_DateTime = null;
+    DateTime OutputWindowStart_DateTime = null;
+    DateTime OutputWindowEnd_DateTime = null;
     boolean createTable = false;
     int DateTimeColumn_int = -1;
     int [] DataColumn_int = null; // Determined below.  Columns 0+ for each time series data
@@ -599,7 +635,40 @@ CommandWarningException, CommandException
                             message, "Specify a valid date/time or OutputEnd." ) );
     		throw new InvalidCommandParameterException ( message );
     	}
-        
+    	
+        String OutputWindowStart = parameters.getValue ( "OutputWindowStart" );
+        String OutputWindowEnd = parameters.getValue ( "OutputWindowEnd" );
+        if ( (OutputWindowStart != null) && (OutputWindowStart.length() > 0) ) {
+            try {
+                // The following works with ISO formats...
+                OutputWindowStart_DateTime =
+                    DateTime.parse ( "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowStart );
+            }
+            catch ( Exception e ) {
+                message = "OutputWindowStart \"" + OutputWindowStart +
+                    "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+                throw new InvalidCommandParameterException ( message );
+            }
+        }
+        if ( (OutputWindowEnd != null) && (OutputWindowEnd.length() > 0) ) {
+            try {
+                // The following works with ISO formats...
+                OutputWindowEnd_DateTime =
+                    DateTime.parse ( "" + DateTimeWindow.WINDOW_YEAR + "-" + OutputWindowEnd );
+            }
+            catch ( Exception e ) {
+                message = "OutputWindowEnd \"" + OutputWindowEnd +
+                    "\" is invalid.  Expecting MM, MM-DD, MM-DD hh, or MM-DD hh:mm";
+                Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+                throw new InvalidCommandParameterException ( message );
+            }
+        }
+    	
         String DateTimeColumn = parameters.getValue("DateTimeColumn");
         String DataColumn = parameters.getValue("DataColumn");
         String DataRow = parameters.getValue("DataRow");
@@ -634,10 +703,11 @@ CommandWarningException, CommandException
     try {
         if ( commandPhase == CommandPhaseType.RUN ) {
     		// Convert to a table...
+            DateTimeWindow outputWindow = new DateTimeWindow ( OutputWindowStart_DateTime, OutputWindowEnd_DateTime );
     		Message.printStatus ( 2, routine, "Copying " + tslist.size() + " time series to table \"" +
     		    TableID + "\"." );
     		TSUtil_TimeSeriesToTable tsu = new TSUtil_TimeSeriesToTable(table, tslist, DateTimeColumn_int,
-    		    DataColumn_int, DataRow_int, OutputStart_DateTime, OutputEnd_DateTime, true );
+    		    DataColumn_int, DataRow_int, OutputStart_DateTime, OutputEnd_DateTime, outputWindow, true );
     		tsu.timeSeriesToTable();
     		List<String> problems = tsu.getProblems();
             for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
@@ -713,6 +783,8 @@ public String toString ( PropList props )
     String DataRow = props.getValue( "DataRow" );
 	String OutputStart = props.getValue("OutputStart");
 	String OutputEnd = props.getValue("OutputEnd");
+    String OutputWindowStart = props.getValue( "OutputWindowStart" );
+    String OutputWindowEnd = props.getValue( "OutputWindowEnd" );
 	String IfTableNotFound = props.getValue("IfTableNotFound");
 	StringBuffer b = new StringBuffer ();
 	if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -766,6 +838,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
 	}
+    if ( (OutputWindowStart != null) && (OutputWindowStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputWindowStart=\"" + OutputWindowStart + "\"" );
+    }
+    if ( (OutputWindowEnd != null) && (OutputWindowEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "OutputWindowEnd=\"" + OutputWindowEnd + "\"" );
+    }
 	if ( (IfTableNotFound != null) && (IfTableNotFound.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

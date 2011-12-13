@@ -88,7 +88,7 @@ throws InvalidCommandParameterException
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String AnalysisWindowStart = parameters.getValue ( "AnalysisWindowStart" );
 	String AnalysisWindowEnd = parameters.getValue ( "AnalysisWindowEnd" );
-	String SetFlag = parameters.getValue ( "SetFlag" );
+	//String SetFlag = parameters.getValue ( "SetFlag" );
 	String warning = "";
     String message;
     

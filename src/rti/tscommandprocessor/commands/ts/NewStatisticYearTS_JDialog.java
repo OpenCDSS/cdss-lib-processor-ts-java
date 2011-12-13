@@ -48,10 +48,10 @@ public class NewStatisticYearTS_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null,// Cancel button
-			__ok_JButton = null;	// Ok button
-private JFrame __parent_JFrame = null;	// parent JFrame
-private NewStatisticYearTS_Command __command = null;	// Command to edit.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JFrame __parent_JFrame = null;
+private NewStatisticYearTS_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox	__TSID_JComboBox = null;// Time series to evaluate
@@ -61,15 +61,15 @@ private JTextField __TestValue_JTextField = null; // Test value for the statisti
 private JTextField __AllowMissingCount_JTextField = null; // Missing data count allowed in analysis interval.
 private JTextField __MinimumSampleSize_JTextField = null;
 private SimpleJComboBox __OutputYearType_JComboBox = null;
-private JTextField __AnalysisStart_JTextField = null;  // Fields for analysis period (time series period)
+private JTextField __AnalysisStart_JTextField = null; // Fields for analysis period (time series period)
 private JTextField __AnalysisEnd_JTextField = null;
 private JCheckBox __AnalysisWindow_JCheckBox = null;
-private DateTime_JPanel __AnalysisWindowStart_JPanel = null;  // Fields for analysis window within a year
+private DateTime_JPanel __AnalysisWindowStart_JPanel = null; // Fields for analysis window within a year
 private DateTime_JPanel __AnalysisWindowEnd_JPanel = null;
 private JTextField __SearchStart_JTextField = null;
-private SimpleJButton __edit_JButton = null;	// Edit button
-private SimpleJButton __clear_JButton = null;	// Clear NewTSID button
-private boolean __error_wait = false;	// Is there an error to be cleared up?
+private SimpleJButton __edit_JButton = null; // Edit TSID button
+private SimpleJButton __clear_JButton = null; // Clear NewTSID button
+private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
 
@@ -624,7 +624,7 @@ private void refresh ()
 			__Statistic_JComboBox.select ( 0 );
 		}
 		else {
-		    if (	JGUIUtil.isSimpleJComboBoxItem( __Statistic_JComboBox, Statistic, JGUIUtil.NONE, null, null ) ) {
+		    if ( JGUIUtil.isSimpleJComboBoxItem( __Statistic_JComboBox, Statistic, JGUIUtil.NONE, null, null ) ) {
 				__Statistic_JComboBox.select ( Statistic );
 			}
 			else {

@@ -317,8 +317,8 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel("Ensemble to analyze (EnsembleID):"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__EnsembleID_JComboBox = new SimpleJComboBox ( true );	// Allow edit
-	List tsensembleids = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
-			(TSCommandProcessor)__command.getCommandProcessor(), __command );
+	List<String> tsensembleids = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+	    (TSCommandProcessor)__command.getCommandProcessor(), __command );
 	if ( tsensembleids == null ) {
 		// User will not be able to select anything.
         tsensembleids = new Vector();
@@ -551,9 +551,14 @@ private void refresh ()
 			__EnsembleID_JComboBox.select ( EnsembleID );
 		}
 		else {
-		    // Automatically add to the list after the blank...
+		    // Automatically add to the list at the start...
 			if ( (EnsembleID != null) && (EnsembleID.length() > 0) ) {
-				__EnsembleID_JComboBox.insertItemAt ( EnsembleID, 1 );
+			    if ( __EnsembleID_JComboBox.getItemCount() > 0 ) {
+			        __EnsembleID_JComboBox.insertItemAt ( EnsembleID, 1 );
+			    }
+			    else {
+			        __EnsembleID_JComboBox.add( EnsembleID );
+			    }
 				// Select...
 				__EnsembleID_JComboBox.select ( EnsembleID );
 			}

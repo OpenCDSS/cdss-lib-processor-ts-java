@@ -42,7 +42,7 @@ import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemb
 
 import rti.tscommandprocessor.commands.products.ProcessTSProduct_Command;
 
-//HEC-DSS commands.
+// HEC-DSS commands.
 
 import rti.tscommandprocessor.commands.hecdss.ReadHecDss_Command;
 import rti.tscommandprocessor.commands.hecdss.WriteHecDss_Command;
@@ -77,6 +77,11 @@ import rti.tscommandprocessor.commands.nwsrfs.WriteNWSRFSESPTraceEnsemble_Comman
 import rti.tscommandprocessor.commands.rccacis.ReadRccAcis_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.ReadReclamationHDB_Command;
 import rti.tscommandprocessor.commands.reclamationhdb.WriteReclamationHDB_Command;
+
+// RiversideDB commands
+
+import rti.tscommandprocessor.commands.riversidedb.ReadRiversideDB_Command;
+import rti.tscommandprocessor.commands.riversidedb.WriteRiversideDB_Command;
 
 // RiverWare commands
 
@@ -601,6 +606,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ReadReclamationHDB") ) {
         return new ReadReclamationHDB_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("ReadRiversideDB") ) {
+        return new ReadRiversideDB_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ReadRiverWare") ) {
         return new ReadRiverWare_Command ();
     }
@@ -805,6 +813,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("WriteReclamationHDB") ) {
         return new WriteReclamationHDB_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteRiversideDB") ) {
+        return new WriteRiversideDB_Command ();
     }
 	else if ( commandName.equalsIgnoreCase("WriteRiverWare") ) {
 		return new WriteRiverWare_Command ();

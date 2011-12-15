@@ -199,7 +199,6 @@ private void commitEdits ()
 	    }
 	    __command.setCommandParameter ( "Where" + i, where );
 	}
-	// Both versions of the commands use these...
 	String InputStart = __InputStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -623,7 +622,6 @@ private void setDataTypeChoices ()
     __DataType_JComboBox.setData ( dataTypes );
     __DataType_JComboBox.select ( 0 );
 }
-
 
 /**
 Set the input filters in response to a new data store being selected.

@@ -32,9 +32,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the FillFromTS() command.
-</p>
 */
 public class FillFromTS_Command extends AbstractCommand implements Command
 {
@@ -59,8 +57,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -160,7 +157,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -169,6 +166,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "IndependentEnsembleID" );
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
+    valid_Vector.add ( "FillFlag" );
+    valid_Vector.add ( "FillFlagDesc" );
     //valid_Vector.add ( "TransferHow" );
     valid_Vector.add ( "RecalcLimits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -200,7 +199,7 @@ Get the time series to process.
 @param tspos Positions in time series processor time series array.
 */
 private TS getTimeSeriesToProcess ( int its, int[] tspos, String command_tag, int warning_count )
-{   String routine = "FillFromTS_Command.getTimeSeriesToProcess";
+{   String routine = getClass().getName() + ".getTimeSeriesToProcess";
     TS ts = null;
     PropList request_params = new PropList ( "" );
     request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
@@ -265,7 +264,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String command_string )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "FillFromTS_Command.parseCommand", message;
+	String routine = getClass().getName() + ".parseCommand", message;
 
 	if ( (command_string.indexOf('=') > 0) || command_string.endsWith("()")) {
         // Current syntax...
@@ -406,15 +405,14 @@ Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "FillFromTS_Command.runCommand", message;
+{	String routine = getClass().getName() + ".runCommand", message;
 	int warning_count = 0;
 	int warningLevel = 2;
 	String command_tag = "" + command_number;
@@ -643,6 +641,8 @@ CommandWarningException, CommandException
 
 	String FillStart = parameters.getValue("FillStart");
 	String FillEnd = parameters.getValue("FillEnd");
+    String FillFlag = parameters.getValue("FillFlag");
+    String FillFlagDesc = parameters.getValue("FillFlagDesc");
 
 	// Figure out the dates to use for the analysis...
 	DateTime FillStart_DateTime = null;
@@ -801,7 +801,7 @@ CommandWarningException, CommandException
 		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" from \"" +
                 independent_ts.getIdentifier() + "\"." );
 		try {
-            TSUtil.fillFromTS ( ts, independent_ts, FillStart_DateTime, FillEnd_DateTime );
+            TSUtil.fillFromTS ( ts, independent_ts, FillStart_DateTime, FillEnd_DateTime, FillFlag, FillFlagDesc );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error filling time series \"" + ts.getIdentifier() + "\" from \"" +
@@ -857,6 +857,8 @@ public String toString ( PropList props )
     String IndependentEnsembleID = props.getValue( "IndependentEnsembleID" );
 	String FillStart = props.getValue("FillStart");
 	String FillEnd = props.getValue("FillEnd");
+	String FillFlag = props.getValue("FillFlag");
+	String FillFlagDesc = props.getValue("FillFlagDesc");
     String TransferHow = props.getValue( "TransferHow" );
 	//String FillFlag = props.getValue("FillFlag");
     String RecalcLimits = props.getValue( "RecalcLimits" );
@@ -909,6 +911,18 @@ public String toString ( PropList props )
 		}
 		b.append ( "FillEnd=\"" + FillEnd + "\"" );
 	}
+    if ( (FillFlag != null) && (FillFlag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillFlag=\"" + FillFlag + "\"" );
+    }
+    if ( (FillFlagDesc != null) && (FillFlagDesc.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "FillFlagDesc=\"" + FillFlagDesc + "\"" );
+    }
     if ( (TransferHow != null) && (TransferHow.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

@@ -33,7 +33,6 @@ import java.util.List;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -44,10 +43,10 @@ public class FillFromTS_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, ListSelectionListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private FillFromTS_Command __command = null; // Command to edit
-private JTextArea __command_JTextArea=null;// Command as JTextField
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private FillFromTS_Command __command = null;
+private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -60,6 +59,8 @@ private JLabel __IndependentEnsembleID_JLabel = null;
 private SimpleJComboBox __IndependentEnsembleID_JComboBox = null;
 private JTextField __FillStart_JTextField;
 private JTextField __FillEnd_JTextField;
+private JTextField __FillFlag_JTextField;
+private JTextField __FillFlagDesc_JTextField;
 private SimpleJComboBox __RecalcLimits_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
@@ -70,7 +71,7 @@ Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public FillFromTS_JDialog ( JFrame parent, Command command )
+public FillFromTS_JDialog ( JFrame parent, FillFromTS_Command command )
 {   super(parent, true);
     initialize ( parent, command );
 }
@@ -155,6 +156,8 @@ private void checkInput ()
     String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
     String FillStart = __FillStart_JTextField.getText().trim();
     String FillEnd = __FillEnd_JTextField.getText().trim();
+    String FillFlag = __FillFlag_JTextField.getText().trim();
+    String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
     String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
     __error_wait = false;
@@ -182,6 +185,12 @@ private void checkInput ()
     }
     if ( FillEnd.length() > 0 ) {
         props.set ( "FillEnd", FillEnd );
+    }
+    if ( FillFlag.length() > 0 ) {
+        props.set ( "FillFlag", FillFlag );
+    }
+    if ( FillFlagDesc.length() > 0 ) {
+        props.set ( "FillFlagDesc", FillFlagDesc );
     }
     /*
     if ( TransferHow.length() > 0 ) {
@@ -214,6 +223,8 @@ private void commitEdits ()
     String IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected(); 
     String FillStart = __FillStart_JTextField.getText().trim();
     String FillEnd = __FillEnd_JTextField.getText().trim();
+    String FillFlag = __FillFlag_JTextField.getText().trim();
+    String FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
     String RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     //String TransferHow = __TransferHow_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
@@ -224,6 +235,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "IndependentEnsembleID", IndependentEnsembleID );
     __command.setCommandParameter ( "FillStart", FillStart );
     __command.setCommandParameter ( "FillEnd", FillEnd );
+    __command.setCommandParameter ( "FillFlag", FillFlag );
+    __command.setCommandParameter ( "FillFlagDesc", FillFlagDesc );
     //__command.setCommandParameter ( "TransferHow", TransferHow );
     __command.setCommandParameter ( "RecalcLimits", RecalcLimits );
 }
@@ -247,8 +260,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (FillFromTS_Command)command;
+private void initialize ( JFrame parent, FillFromTS_Command command )
+{   __command = command;
 
 	addWindowListener( this );
 
@@ -333,6 +346,25 @@ private void initialize ( JFrame parent, Command command )
          1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
      JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - end of period to fill (default=fill all)."),
          3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag:" ), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __FillFlag_JTextField = new JTextField ( 5 );
+     __FillFlag_JTextField.addKeyListener ( this );
+     JGUIUtil.addComponent(main_JPanel, __FillFlag_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel(
+         "Optional - string to indicate filled values (default=no flag)."), 
+         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     
+     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Fill flag description:" ), 
+         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+     __FillFlagDesc_JTextField = new JTextField ( 15 );
+     __FillFlagDesc_JTextField.addKeyListener ( this );
+     JGUIUtil.addComponent(main_JPanel, __FillFlagDesc_JTextField,
+         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - description for fill flag."), 
+         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Recalculate limits:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -413,7 +445,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {   return __ok;
@@ -423,7 +455,7 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "FillFromTS_JDialog.refresh";
+{   String routine = getClass().getName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
@@ -433,6 +465,8 @@ private void refresh ()
     //String TransferHow = "";
     String FillStart = "";
     String FillEnd = "";
+    String FillFlag = "";
+    String FillFlagDesc = "";
     String RecalcLimits = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -446,6 +480,8 @@ private void refresh ()
         IndependentEnsembleID = props.getValue ( "IndependentEnsembleID" );
         FillStart = props.getValue ( "FillStart" );
         FillEnd = props.getValue ( "FillEnd" );
+        FillFlag = props.getValue("FillFlag");
+        FillFlagDesc = props.getValue("FillFlagDesc");
         //TransferHow = props.getValue ( "TransferHow" );
         RecalcLimits = props.getValue ( "RecalcLimits" );
         if ( TSList == null ) {
@@ -543,6 +579,12 @@ private void refresh ()
         if ( FillEnd != null ) {
             __FillEnd_JTextField.setText ( FillEnd );
         }
+        if ( FillFlag != null ) {
+            __FillFlag_JTextField.setText ( FillFlag );
+        }
+        if ( FillFlagDesc != null ) {
+            __FillFlagDesc_JTextField.setText ( FillFlagDesc );
+        }
         /*
         if ( TransferHow == null ) {
             // Select default...
@@ -575,6 +617,8 @@ private void refresh ()
     IndependentEnsembleID = __IndependentEnsembleID_JComboBox.getSelected();
     FillStart = __FillStart_JTextField.getText().trim();
     FillEnd = __FillEnd_JTextField.getText().trim();
+    FillFlag = __FillFlag_JTextField.getText().trim();
+    FillFlagDesc = __FillFlagDesc_JTextField.getText().trim();
     RecalcLimits = __RecalcLimits_JComboBox.getSelected();
     //TransferHow = __TransferHow_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
@@ -586,6 +630,8 @@ private void refresh ()
     props.add ( "IndependentEnsembleID=" + IndependentEnsembleID );
     props.add ( "FillStart=" + FillStart );
     props.add ( "FillEnd=" + FillEnd );
+    props.add ( "FillFlag=" + FillFlag );
+    props.add ( "FillFlagDesc=" + FillFlagDesc );
     //props.add ( "TransferHow=" + TransferHow );
     props.add ( "RecalcLimits=" + RecalcLimits);
     __command_JTextArea.setText( __command.toString ( props ) );
@@ -593,7 +639,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -650,4 +696,4 @@ public void windowOpened( WindowEvent evt )
 {
 }
 
-} // end fillFromTS_JDialog
+}

@@ -506,7 +506,7 @@ CommandWarningException, CommandException
                     TSIterator tsi = tscopy.iterator();
                     TSData tsdata;
                     while ( (tsdata = tsi.next()) != null ) {
-                        tscopy.setDataValue(tsdata.getDate(), tsdata.getData(), "", tsdata.getDuration() );
+                        tscopy.setDataValue(tsdata.getDate(), tsdata.getDataValue(), "", tsdata.getDuration() );
                     }
                 }
             }

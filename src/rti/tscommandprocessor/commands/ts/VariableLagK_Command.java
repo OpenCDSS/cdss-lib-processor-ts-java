@@ -872,7 +872,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     while ((tsd = tsi.next()) != null) {
                         tso.next();
                         dt = tsd.getDate();
-                        double dataIn = tsd.getData();
+                        double dataIn = tsd.getDataValue();
                         double lagVal = lagK.solveMethod(tsd.getDate(), prev);
                         lagK.doCarryOver(tsd.getDate());
                         b.setLength(0);

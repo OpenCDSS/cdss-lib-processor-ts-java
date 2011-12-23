@@ -685,10 +685,10 @@ CommandWarningException, CommandException
 					// This is not overly efficient but currently the iterator does not have
 					// a way to set a data point...
 					tsdata1 = ts1.getDataPoint ( date, tsdata1 );
-					value1_orig = tsdata1.getData ();
+					value1_orig = tsdata1.getDataValue ();
 					flag1 = tsdata1.getDataFlag().trim();
 					tsdata2 = ts2.getDataPoint ( date, tsdata2 );
-					value2_orig = tsdata2.getData ();
+					value2_orig = tsdata2.getDataValue ();
 					flag2 = tsdata2.getDataFlag().trim();
 					if ( Precision != null ) {
 						// Need to round.  For now do with strings, which handles the rounding...

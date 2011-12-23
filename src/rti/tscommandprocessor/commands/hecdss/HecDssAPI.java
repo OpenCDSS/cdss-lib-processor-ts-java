@@ -1588,7 +1588,7 @@ throws IOException, Exception
         // Iterate through the time series and transfer the date and corresponding values from
         // the RTi time series to the HEC time series container.
         for ( int ival = 0; ((dataPoint = tsi.next()) != null) && (ival < numValues); ival++ ) {
-            value = dataPoint.getData();
+            value = dataPoint.getDataValue();
             date = dataPoint.getDate();
             // Check for missing values in the RTi time series and set the the HEC missing value for output
             if( ts.isDataMissing( value ) ) {

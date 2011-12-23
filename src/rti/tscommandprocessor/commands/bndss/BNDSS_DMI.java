@@ -1529,7 +1529,7 @@ throws Exception
             ts.allocateDataSpace();
             for ( int i = 0; i < size; i++ ) {
                 d1 = (TSData)v.get(i);
-                ts.setDataValue(d1.getDate(), d1.getData());
+                ts.setDataValue(d1.getDate(), d1.getDataValue());
             }
         }
     }
@@ -1765,7 +1765,7 @@ throws SQLException
         }
         d = rs.getDouble ( index++ );
         if ( !rs.wasNull() ) {
-            data.setData ( d );
+            data.setDataValue ( d );
         }
         v.add(data);
     }

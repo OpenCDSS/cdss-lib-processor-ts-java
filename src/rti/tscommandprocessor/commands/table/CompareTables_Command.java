@@ -75,6 +75,9 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	String Table1ID = parameters.getValue ( "Table1ID" );
     String Table2ID = parameters.getValue ( "Table2ID" );
+    String Precision = parameters.getValue ( "Precision" );
+    String Tolerance = parameters.getValue ( "Tolerance" );
+    String AllowedDiff = parameters.getValue ( "AllowedDiff" );
     String NewTableID = parameters.getValue ( "NewTableID" );
     String OutputFile = parameters.getValue ( "OutputFile" );
     String IfDifferent = parameters.getValue ( "IfDifferent" );
@@ -118,6 +121,50 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the second table identifier." ) );
+    }
+    
+    if ( (Precision != null) && !Precision.equals("") ) {
+        if ( !StringUtil.isInteger(Precision) ) {
+            message = "The precision: \"" + Precision + "\" is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the precision as an integer (or blank to not round)." ) );
+            
+        }
+        if ( StringUtil.atoi(Precision) < 0 ) {
+            message = "The precision: \"" + Precision + "\" must be >= 0.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the precision as an integer >= 0 (or blank to not round)." ) );
+        }
+    }
+    
+    if ( (Tolerance != null) && !Tolerance.equals("") ) {
+        if ( !StringUtil.isDouble(Tolerance) ) {
+            message = "The tolerance: \"" + Tolerance + "\" is not a number.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the tolerance as a number." ) );
+            
+        }
+        if ( StringUtil.atod(Tolerance) < 0.0 ) {
+            message = "The tolerance: \"" + Tolerance + "\" must be >= 0.0.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify the tolerance as a number >= 0.0." ) );
+        }
+    }
+    
+    if ( (AllowedDiff != null) && !AllowedDiff.equals("") && !StringUtil.isInteger(AllowedDiff) ) {
+        message = "The number of allowed differences \"" + AllowedDiff + "\" is invalid.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                 message, "Specify the parameter as an integer."));
     }
     
     if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
@@ -183,6 +230,9 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Table2ID" );
     valid_Vector.add ( "CompareColumns1" );
     valid_Vector.add ( "CompareColumns2" );
+    valid_Vector.add ( "Precision" );
+    valid_Vector.add ( "Tolerance" );
+    valid_Vector.add ( "AllowedDiff" );
     valid_Vector.add ( "NewTableID" );
     valid_Vector.add ( "OutputFile" );
     valid_Vector.add ( "IfDifferent" );
@@ -287,7 +337,7 @@ Run the command.
 @exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more parameter values are invalid.
 */
-private void runCommandInternal ( int command_number, CommandPhaseType command_phase )
+private void runCommandInternal ( int command_number, CommandPhaseType commandPhase )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
 {	String routine = "CompareTables_Command.runCommand",message = "";
@@ -299,8 +349,8 @@ CommandWarningException, CommandException
     setOutputFile ( null );
     
     CommandStatus status = getCommandStatus();
-    status.clearLog(command_phase);
-    if ( command_phase == CommandPhaseType.DISCOVERY ) {
+    status.clearLog(commandPhase);
+    if ( commandPhase == CommandPhaseType.DISCOVERY ) {
         setDiscoveryTable ( null );
     }
 
@@ -313,8 +363,23 @@ CommandWarningException, CommandException
     String Table2ID = parameters.getValue ( "Table2ID" );
     String CompareColumns1 = parameters.getValue ( "CompareColumns1" );
     String CompareColumns2 = parameters.getValue ( "CompareColumns2" );
+    String Precision = parameters.getValue ( "Precision" );
+    Integer Precision_Integer = null;
+    if ( (Precision != null) && !Precision.equals("") ) {
+        Precision_Integer = new Integer ( Precision );
+    }
+    String Tolerance = parameters.getValue ( "Tolerance" );
+    Double Tolerance_Double = null;
+    if ( (Tolerance != null) && !Tolerance.equals("") ) {
+        Tolerance_Double = new Double ( Tolerance );
+    }
+    String AllowedDiff = parameters.getValue ( "AllowedDiff" );
+    int AllowedDiff_int = 0;
+    if ( StringUtil.isInteger(AllowedDiff) ) {
+        AllowedDiff_int = Integer.parseInt(AllowedDiff);
+    }
     String NewTableID = parameters.getValue ( "NewTableID" );
-    String newTableID = "ComparisonTable";
+    String newTableID = Table1ID + "-" + Table2ID + "-comparison";
     if ( (NewTableID != null) && !NewTableID.equals("") ) {
         newTableID = NewTableID;
     }
@@ -324,7 +389,7 @@ CommandWarningException, CommandException
     }
     String IfDifferent = parameters.getValue ( "IfDifferent" );
     CommandStatusType IfDifferent_CommandStatusType = CommandStatusType.UNKNOWN;
-    if ( IfDifferent == null ) {
+    if ( (IfDifferent == null) || IfDifferent.equals("") ) {
         IfDifferent = _Ignore; // default
     }
     else {
@@ -334,7 +399,7 @@ CommandWarningException, CommandException
     }
     String IfSame = parameters.getValue ( "IfSame" );
     CommandStatusType IfSame_CommandStatusType = CommandStatusType.UNKNOWN;
-    if ( IfSame == null ) {
+    if ( (IfSame == null) || IfSame.equals("") ) {
         IfSame = _Ignore; // default
     }
     else {
@@ -361,7 +426,7 @@ CommandWarningException, CommandException
     // Get the table to process.
 
     DataTable table1 = null;
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (Table1ID != null) && !Table1ID.equals("") ) {
@@ -394,7 +459,7 @@ CommandWarningException, CommandException
     }
     
     DataTable table2 = null;
-    if ( command_phase == CommandPhaseType.RUN ) {
+    if ( commandPhase == CommandPhaseType.RUN ) {
         PropList request_params = null;
         CommandProcessorRequestResultsBean bean = null;
         if ( (Table2ID != null) && !Table2ID.equals("") ) {
@@ -438,14 +503,14 @@ CommandWarningException, CommandException
 	try {
     	// Create the table...
 	    String OutputFile_full = OutputFile;
-	    if ( command_phase == CommandPhaseType.RUN ) {
+	    if ( commandPhase == CommandPhaseType.RUN ) {
 	        if ( OutputFile != null ) {
     	        OutputFile_full = IOUtil.verifyPathForOS(
     	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 	        }
 	        DataTableComparer comparer = new DataTableComparer ( table1, table2,
 	            StringUtil.toList(compareColumns1),
-	            StringUtil.toList(compareColumns2), newTableID );
+	            StringUtil.toList(compareColumns2), Precision_Integer, Tolerance_Double, newTableID );
 	        comparer.compare ();
 	        comparer.writeHtmlFile ( OutputFile_full );
 	        DataTable comparisonTable = comparer.getComparisonTable();
@@ -469,18 +534,19 @@ CommandWarningException, CommandException
                     Message.printWarning(warning_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                    status.addToLog ( command_phase,
+                    status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                            message, "Report problem to software support." ) );
                 }
 	        }
         }
-        else if ( command_phase == CommandPhaseType.DISCOVERY ) {
+        else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
             if ( (NewTableID != null) && !NewTableID.equals("") ) {
                 // Create an empty table and set the ID
                 DataTable comparisonTable = new DataTable();
                 comparisonTable.setTableID ( NewTableID );
                 setDiscoveryTable ( comparisonTable );
+                Message.printStatus(2,routine,"Setting discovery table " + comparisonTable.getTableID() );
             }
         }
 	}
@@ -488,17 +554,31 @@ CommandWarningException, CommandException
 		Message.printWarning ( 3, routine, e );
 		message = "Unexpected error comparing tables (" + e + ").";
 		Message.printWarning ( 2, MessageUtil.formatMessageTag(command_tag, ++warning_count), routine,message );
-        status.addToLog ( command_phase, new CommandLogRecord(CommandStatusType.FAILURE,
+        status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Report problem to software support." ) );
 		throw new CommandWarningException ( message );
 	}
-	// TODO SAM 2010-12-17 Might enable this parameter like CompareFiles()
-	int AllowedDiff_int = 0;
-    if ( (diffCount > AllowedDiff_int) && ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
+	int allowedDiffPositive = AllowedDiff_int;
+	if ( AllowedDiff_int < 0 ) {
+	    allowedDiffPositive = AllowedDiff_int;
+	}
+	if ( diffCount > 0 ) {
+	    // Have some differences - action is as per user request
+        message = "" + diffCount + " table values were different, " +
+        StringUtil.formatString(100.0*(double)diffCount/(double)tableCellCount, "%.2f") +
+        "% (compared " + tableCellCount + " values).";
+        Message.printStatus ( 2, routine, message );
+	    boolean needToNotify = false;
+	    if ( (AllowedDiff_int < 0) && (diffCount > allowedDiffPositive) ) {
+	        needToNotify = true; // Too many differences (not expected)
+	    }
+	    else if ( (AllowedDiff_int >= 0) && (diffCount != AllowedDiff_int) ) {
+	        needToNotify = true; // Does not match exact number of differences
+	    }
+        if ( needToNotify &&
+           ((IfDifferent_CommandStatusType == CommandStatusType.WARNING) ||
            (IfDifferent_CommandStatusType == CommandStatusType.FAILURE)) ) {
-           message = "" + diffCount + " table values were different, " +
-               StringUtil.formatString(100.0*(double)diffCount/(double)tableCellCount, "%.2f") +
-               "% (compared " + tableCellCount + " values).";
+           // Have differences and need to warn
            Message.printWarning ( warning_level,
            MessageUtil.formatMessageTag( command_tag,++warning_count),
            routine, message );
@@ -506,10 +586,14 @@ CommandWarningException, CommandException
                new CommandLogRecord(IfDifferent_CommandStatusType,
                    message, "Check files because difference is not expected.") );
            throw new CommandException ( message );
-       }
-       if ( (diffCount == 0) && ((IfSame_CommandStatusType == CommandStatusType.WARNING) ||
-           (IfSame_CommandStatusType == CommandStatusType.FAILURE))) {
-           message = "No table values were different (the tables are the same).";
+        }
+    }
+	else {
+	    // No differences were reported
+        message = "No table values were different (the tables are the same).";
+        Message.printStatus ( 2, routine, message );
+	    if ( (IfSame_CommandStatusType == CommandStatusType.WARNING) ||
+	       (IfSame_CommandStatusType == CommandStatusType.FAILURE)) {
            Message.printWarning ( warning_level,
            MessageUtil.formatMessageTag( command_tag,++warning_count),
            routine, message );
@@ -517,6 +601,7 @@ CommandWarningException, CommandException
                new CommandLogRecord(IfSame_CommandStatusType,
                    message, "Check files because match is not expected.") );
            throw new CommandException ( message );
+	    }
     }
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings processing the command.";
@@ -525,7 +610,7 @@ CommandWarningException, CommandException
 		throw new CommandWarningException ( message );
 	}
 
-    status.refreshPhaseSeverity(command_phase,CommandStatusType.SUCCESS);
+    status.refreshPhaseSeverity(commandPhase,CommandStatusType.SUCCESS);
 }
 
 /**
@@ -555,6 +640,9 @@ public String toString ( PropList props )
     String Table2ID = props.getValue( "Table2ID" );
 	String CompareColumns1 = props.getValue( "IncludeColumns" );
 	String CompareColumns2 = props.getValue( "CompareColumns2" );
+    String Precision = props.getValue("Precision");
+    String Tolerance = props.getValue("Tolerance");
+    String AllowedDiff = props.getValue("AllowedDiff");
     String NewTableID = props.getValue( "NewTableID" );
     String OutputFile = props.getValue ( "OutputFile" );
     String IfDifferent = props.getValue("IfDifferent");
@@ -583,6 +671,24 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "CompareColumns2=\"" + CompareColumns2 + "\"" );
+    }
+    if ( (Precision != null) && (Precision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Precision=" + Precision );
+    }
+    if ( (Tolerance != null) && (Tolerance.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Tolerance=" + Tolerance );
+    }
+    if ( (AllowedDiff != null) && (AllowedDiff.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AllowedDiff=\"" + AllowedDiff + "\"" );
     }
     if ( (NewTableID != null) && (NewTableID.length() > 0) ) {
         if ( b.length() > 0 ) {

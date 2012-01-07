@@ -37,6 +37,9 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+/**
+Editor dialog for the CompareTables() command.
+*/
 public class CompareTables_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
@@ -49,6 +52,9 @@ private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __Table1ID_JComboBox = null;
 private SimpleJComboBox __Table2ID_JComboBox = null;
+private JTextField __Precision_JTextField = null;
+private JTextField __Tolerance_JTextField = null;
+private JTextField __AllowedDiff_JTextField = null;
 private JTextField __CompareColumns1_JTextField = null;
 private JTextField __CompareColumns2_JTextField = null;
 private JTextField __NewTableID_JTextField = null;
@@ -158,6 +164,9 @@ private void checkInput ()
 	String Table2ID = __Table2ID_JComboBox.getSelected();
     String CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
 	String CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+    String Precision = __Precision_JTextField.getText().trim();
+    String Tolerance = __Tolerance_JTextField.getText().trim();
+    String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
     String NewTableID = __NewTableID_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IfDifferent = __IfDifferent_JComboBox.getSelected();
@@ -176,6 +185,15 @@ private void checkInput ()
 	if ( CompareColumns2.length() > 0 ) {
 		props.set ( "CompareColumns2", CompareColumns2 );
 	}
+    if ( Precision.length() > 0 ) {
+        props.set ( "Precision", Precision );
+    }
+    if ( Tolerance.length() > 0 ) {
+        props.set ( "Tolerance", Tolerance );
+    }
+    if ( AllowedDiff.length() > 0 ) {
+        props.set ( "AllowedDiff", AllowedDiff );
+    }
     if ( NewTableID.length() > 0 ) {
         props.set ( "NewTableID", NewTableID );
     }
@@ -208,6 +226,9 @@ private void commitEdits ()
     String Table2ID = __Table2ID_JComboBox.getSelected();
     String CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
     String CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+    String Precision = __Precision_JTextField.getText().trim();
+    String Tolerance = __Tolerance_JTextField.getText().trim();
+    String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
     String NewTableID = __NewTableID_JTextField.getText().trim();
     String OutputFile = __OutputFile_JTextField.getText().trim();
     String IfDifferent = __IfDifferent_JComboBox.getSelected();
@@ -216,6 +237,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "Table2ID", Table2ID );
     __command.setCommandParameter ( "CompareColumns1", CompareColumns1 );
 	__command.setCommandParameter ( "CompareColumns2", CompareColumns2 );
+    __command.setCommandParameter ( "Precision", Precision );
+	__command.setCommandParameter ( "Tolerance", Tolerance );
+	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
 	__command.setCommandParameter ( "NewTableID", NewTableID );
 	__command.setCommandParameter ( "OutputFile", OutputFile );
     __command.setCommandParameter ( "IfDifferent", IfDifferent );
@@ -261,18 +285,19 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
 	int yy = 0;
     
    	JGUIUtil.addComponent(paragraph, new JLabel (
-        "This command compares two tables and highlights differences."),
+        "This command compares two tables and optionally creates a new comparison table."),
         0, yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
         "By default, all columns (and rows) from the specified tables are compared; however, the columns to " +
         "compare can be specified."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The table is compared by formatting cell values as strings."),
+        "The table is compared by formatting cell values as strings.  If necessary, " +
+        "specify precision and tolerance for floating point comparisons."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(paragraph, new JLabel (
-        "The results are placed in a new table, which if written as HTML indicates differences " +
-        "(the normal table view will not color the differences)."),
+        "The results table, if written as HTML, indicates differences as colored cells " +
+        "(the simple table view will not color the differences)."),
         0, ++yy, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	JGUIUtil.addComponent(main_JPanel, paragraph,
@@ -318,6 +343,35 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Precision_JTextField = new JTextField ( 5 );
+    __Precision_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - digits after decimal to compare (default=use precision set for column)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Tolerance_JTextField = new JTextField ( 15 );
+    __Tolerance_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Tolerance_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - tolerance(s) to indicate difference (e.g., .01, .1, default=exact comparison)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Allowed # of different values:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowedDiff_JTextField = new JTextField ( 5 );
+    __AllowedDiff_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __AllowedDiff_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - when checking for differences (default=0)"), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("New table ID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -453,6 +507,9 @@ private void refresh ()
     String Table2ID = "";
     String CompareColumns1 = "";
     String CompareColumns2 = "";
+    String Precision = "";
+    String Tolerance = "";
+    String AllowedDiff = "";
     String NewTableID = "";
     String OutputFile = "";
     String IfDifferent = "";
@@ -464,6 +521,9 @@ private void refresh ()
         Table2ID = props.getValue ( "Table2ID" );
         CompareColumns1 = props.getValue ( "CompareColumns1" );
         CompareColumns2 = props.getValue ( "CompareColumns2" );
+        Precision = props.getValue ( "Precision" );
+        Tolerance = props.getValue ( "Tolerance" );
+        AllowedDiff = props.getValue ( "AllowedDiff" );
         NewTableID = props.getValue ( "NewTableID" );
         OutputFile = props.getValue ( "OutputFile" );
         IfDifferent = props.getValue ( "IfDifferent" );
@@ -504,6 +564,15 @@ private void refresh ()
 		if ( CompareColumns2 != null ) {
 			__CompareColumns2_JTextField.setText ( CompareColumns2 );
 		}
+        if ( Precision != null ) {
+            __Precision_JTextField.setText ( Precision );
+        }
+        if ( Tolerance != null ) {
+            __Tolerance_JTextField.setText ( Tolerance );
+        }
+        if ( AllowedDiff != null ) {
+            __AllowedDiff_JTextField.setText ( AllowedDiff );
+        }
         if ( NewTableID != null ) {
             __NewTableID_JTextField.setText ( NewTableID );
         }
@@ -546,6 +615,9 @@ private void refresh ()
 	Table2ID = __Table2ID_JComboBox.getSelected();
     CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
 	CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+    Precision = __Precision_JTextField.getText().trim();
+    Tolerance = __Tolerance_JTextField.getText().trim();
+    AllowedDiff = __AllowedDiff_JTextField.getText().trim();
     NewTableID = __NewTableID_JTextField.getText().trim();
     OutputFile = __OutputFile_JTextField.getText().trim();
     IfDifferent = __IfDifferent_JComboBox.getSelected();
@@ -555,6 +627,9 @@ private void refresh ()
     props.add ( "Table2ID=" + Table2ID );
     props.add ( "CompareColumns1=" + CompareColumns1 );
 	props.add ( "CompareColumns2=" + CompareColumns2 );
+	props.add ( "Precision=" + Precision );
+	props.add ( "Tolerance=" + Tolerance );
+	props.add ( "AllowedDiff=" + AllowedDiff );
     props.add ( "NewTableID=" + NewTableID );
     props.add ( "OutputFile=" + OutputFile );
     props.add ( "IfDifferent=" + IfDifferent );

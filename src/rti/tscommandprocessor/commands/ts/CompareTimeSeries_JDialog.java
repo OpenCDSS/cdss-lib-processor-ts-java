@@ -1,30 +1,3 @@
-// ----------------------------------------------------------------------------
-// compareTimeSeries_JDialog - editor for compareTimeSeries()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 2005-05-10	Steven A. Malers, RTi	Initial version (copy and modify
-//					sortTimeSeries_Dialog).
-// 2005-05-12	SAM, RTi		Add Precision parameter.
-// 2005-05-16	SAM, RTi		Add DiffFlag parameter.
-// 2005-05-18	SAM, RTi		* Add AnalysisStart, AnalysisEnd
-//					  parameters.
-//					* Add MatchLocation, MatchDataType
-//					  parameters.
-// 2005-05-19	SAM, RTi		* Move from TSTool package to TS.
-// 2005-05-22	SAM, RTi		* Add WarnIfDifferent parameter.
-// 2005-05-25	SAM, RTi		* The WarnIfDifferent parameter was not
-//					  getting set properly for an existing
-//					  command.
-// 2006-05-02	SAM, RTi		* Add the WarnIfSame parameter to allow
-//					  for automated testing.
-// 2007-04-08	SAM, RTi		* Add CreateDiffTS=True|False parameter to
-//						facilitate evaluating differences.
-//						Clean up code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -37,7 +10,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -50,42 +22,39 @@ import javax.swing.JTextField;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
+/**
+Editor dialog for CompareTimeSeries() command.
+*/
 public class CompareTimeSeries_JDialog extends JDialog
 implements ActionListener, KeyListener, WindowListener
 {
-private SimpleJButton	__cancel_JButton = null,	// Cancel Button
-			__ok_JButton = null;		// Ok Button
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
 private SimpleJComboBox	__MatchLocation_JComboBox =null;
 private SimpleJComboBox	__MatchDataType_JComboBox =null;
-private JTextField	__Precision_JTextField = null;	// Precision
-private JTextField	__Tolerance_JTextField = null;	// Tolerance as
-							// JTextField
-private JTextField	__AnalysisStart_JTextField,	// Text fields for
-			__AnalysisEnd_JTextField;	// dependent time series
-							// analysis period.
-private JTextField	__DiffFlag_JTextField = null;	// Flag to note
-							// differences.
+private JTextField __Precision_JTextField = null;
+private JTextField __Tolerance_JTextField = null;
+private JTextField __AnalysisStart_JTextField;
+private JTextField __AnalysisEnd_JTextField;
+private JTextField __DiffFlag_JTextField = null;
 private SimpleJComboBox	__CreateDiffTS_JComboBox =null;
 private SimpleJComboBox	__WarnIfDifferent_JComboBox =null;
 private SimpleJComboBox	__WarnIfSame_JComboBox =null;
-private JTextArea	__command_JTextArea = null;	// Command as JTextField
-private boolean		__error_wait = false;
-private boolean		__first_time = true;
-private CompareTimeSeries_Command __command = null;	// Command to edit
-private boolean		__ok = false;		// Indicates whether the user
-						// has pressed OK to close the
-						// dialog.
+private JTextArea __command_JTextArea = null;
+private boolean __error_wait = false;
+private boolean __first_time = true;
+private CompareTimeSeries_Command __command = null;
+private boolean __ok = false; // Indicates whether user has pressed OK to close the dialog.
+
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public CompareTimeSeries_JDialog ( JFrame parent, Command command )
+public CompareTimeSeries_JDialog ( JFrame parent, CompareTimeSeries_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -223,8 +192,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (CompareTimeSeries_Command)command;
+private void initialize ( JFrame parent, CompareTimeSeries_Command command )
+{	__command = command;
 
 	addWindowListener( this );
 
@@ -421,16 +390,10 @@ public boolean ok ()
 }
 
 /**
-Refresh the command from the other text field contents.  The command is
-of the form:
-<pre>
-compareTimeSeries(MatchLocation=X,MatchDataType=X,Precision=X,
-Tolerance="X,X,...",AnalysisStart="X",AnalysisEnd="X",DiffFlag="X",
-WarnIfDifferent=X,WarnIfSame=X)
-</pre>
+Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String routine = "compareTimeSeries_JDialog.refresh";
+{	String routine = getClass().getName() + ".refresh";
 	String MatchLocation = "";
 	String MatchDataType = "";
 	String Precision = "";
@@ -441,20 +404,9 @@ private void refresh ()
 	String CreateDiffTS = "";
 	String WarnIfDifferent = "";
 	String WarnIfSame = "";
+	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
-		List v = StringUtil.breakStringList (
-			__command.toString(),"()",
-			StringUtil.DELIM_SKIP_BLANKS );
-		PropList props = null;
-		if (	(v != null) && (v.size() > 1) &&
-			(((String)v.get(1)).indexOf("=") > 0) ) {
-			props = PropList.parse (
-				(String)v.get(1), routine, "," );
-		}
-		if ( props == null ) {
-			props = new PropList ( __command.getCommandName() );
-		}
 		MatchLocation = props.getValue ( "MatchLocation" );
 		MatchDataType = props.getValue ( "MatchDataType" );
 		Precision = props.getValue ( "Precision" );
@@ -465,34 +417,32 @@ private void refresh ()
 		CreateDiffTS = props.getValue ( "CreateDiffTS" );
 		WarnIfDifferent = props.getValue ( "WarnIfDifferent" );
 		WarnIfSame = props.getValue ( "WarnIfSame" );
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__MatchLocation_JComboBox, MatchLocation,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem(__MatchLocation_JComboBox, MatchLocation,JGUIUtil.NONE, null, null ) ) {
 			__MatchLocation_JComboBox.select ( MatchLocation );
 		}
-		else {	if (	(MatchLocation == null) ||
-				MatchLocation.equals("") ) {
+		else {
+		    if ( (MatchLocation == null) || MatchLocation.equals("") ) {
 				// New command...select the default...
 				__MatchLocation_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+			    // Bad user command...
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"MatchLocation parameter \"" + MatchLocation +
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__MatchDataType_JComboBox, MatchDataType,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem( __MatchDataType_JComboBox, MatchDataType, JGUIUtil.NONE, null, null ) ) {
 			__MatchDataType_JComboBox.select ( MatchDataType );
 		}
-		else {	if (	(MatchDataType == null) ||
-				MatchDataType.equals("") ) {
+		else {
+		    if ( (MatchDataType == null) || MatchDataType.equals("") ) {
 				// New command...select the default...
 				__MatchDataType_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
+			else {
+			    // Bad user command...
 				Message.printWarning ( 1, routine,
 				"Existing command references an invalid\n"+
 				"MatchDataType parameter \"" + MatchDataType +
@@ -514,58 +464,48 @@ private void refresh ()
 		if ( DiffFlag != null ) {
 			__DiffFlag_JTextField.setText ( DiffFlag );
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-				__CreateDiffTS_JComboBox, CreateDiffTS,
-				JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem(__CreateDiffTS_JComboBox, CreateDiffTS, JGUIUtil.NONE, null, null ) ) {
 				__CreateDiffTS_JComboBox.select ( CreateDiffTS );
 		}
-		else {	if (	(CreateDiffTS == null) ||
-				CreateDiffTS.equals("") ) {
+		else {
+		    if ( (CreateDiffTS == null) || CreateDiffTS.equals("") ) {
 				// New command...select the default...
 				__CreateDiffTS_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
-				Message.printWarning ( 1, routine,
-				"Existing command references an invalid\n"+
-				"CreateDiffTS parameter \"" +
-				CreateDiffTS +
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"CreateDiffTS parameter \"" + CreateDiffTS +
 				"\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__WarnIfDifferent_JComboBox, WarnIfDifferent,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem(__WarnIfDifferent_JComboBox, WarnIfDifferent, JGUIUtil.NONE, null, null ) ) {
 			__WarnIfDifferent_JComboBox.select ( WarnIfDifferent );
 		}
-		else {	if (	(WarnIfDifferent == null) ||
-				WarnIfDifferent.equals("") ) {
+		else {
+		    if ( (WarnIfDifferent == null) || WarnIfDifferent.equals("") ) {
 				// New command...select the default...
 				__WarnIfDifferent_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
-				Message.printWarning ( 1, routine,
-				"Existing command references an invalid\n"+
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
 				"WarnIfDifferent parameter \"" +
-				WarnIfDifferent +
-				"\".  Select a\ndifferent value or Cancel." );
+				WarnIfDifferent + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
-		if (	JGUIUtil.isSimpleJComboBoxItem(
-			__WarnIfSame_JComboBox, WarnIfSame,
-			JGUIUtil.NONE, null, null ) ) {
+		if ( JGUIUtil.isSimpleJComboBoxItem(__WarnIfSame_JComboBox, WarnIfSame, JGUIUtil.NONE, null, null ) ) {
 			__WarnIfSame_JComboBox.select ( WarnIfSame );
 		}
-		else {	if (	(WarnIfSame == null) ||
-				WarnIfSame.equals("") ) {
+		else {
+		    if ( (WarnIfSame == null) || WarnIfSame.equals("") ) {
 				// New command...select the default...
 				__WarnIfSame_JComboBox.select ( 0 );
 			}
-			else {	// Bad user command...
-				Message.printWarning ( 1, routine,
-				"Existing command references an invalid\n"+
-				"WarnIfSame parameter \"" +
-				WarnIfSame +
-				"\".  Select a\ndifferent value or Cancel." );
+			else {
+			    // Bad user command...
+				Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+				"WarnIfSame parameter \"" + WarnIfSame + "\".  Select a\ndifferent value or Cancel." );
 			}
 		}
 	}
@@ -581,7 +521,7 @@ private void refresh ()
 	CreateDiffTS = __CreateDiffTS_JComboBox.getSelected();
 	WarnIfDifferent = __WarnIfDifferent_JComboBox.getSelected();
 	WarnIfSame = __WarnIfSame_JComboBox.getSelected();
-	PropList props = new PropList ( __command.getCommandName() );
+	props = new PropList ( __command.getCommandName() );
 	props.add ( "MatchLocation=" + MatchLocation );
 	props.add ( "MatchDataType=" + MatchDataType );
 	props.add ( "Precision=" + Precision );
@@ -597,7 +537,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 public void response ( boolean ok )
@@ -630,4 +570,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end compareTimeSeries_JDialog
+}

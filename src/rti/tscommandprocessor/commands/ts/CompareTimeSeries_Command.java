@@ -1,66 +1,3 @@
-//------------------------------------------------------------------------------
-// compareTimeSeries_Command - handle the compareTimeSeries() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-05-10	Steven A. Malers, RTi	Initial version.
-// 2005-05-16	SAM, RTi		Add the ability to flag the values that
-//					are different.
-// 2005-05-18	SAM, RTi		* Add AnalysisStart and AnalysisEnd
-//					  parameters.
-//					* Add an average error, allowing
-//					  positive and negative to cancel.
-//					* Print the data flag for values that
-//					  are different, to facilitate finding
-//					  filled values that are different.
-//					* Add MatchLocation, MatchDataType
-//					  parameters.
-// 2005-05-19	SAM, RTi		* Change so printed values use the
-//					  given precision, or a default of 6.
-//					* Change to print out the maximum
-//					  difference as an actual value (not
-//					  absolute value).
-//					* Fix problem with matching if only the
-//					  location is being used to match time
-//					  series.
-//					* Move from TSTool package to TS.
-// 2005-05-21	SAM, RTi		* Minor changes to printed results.
-//					* Add the WarnIfDifferent parameter to
-//					  help automate testing.
-// 2005-05-25	SAM, RTi		* Make sure that time series being
-//					  compared have the same interval.
-//					* Change to using a TSIterator to loop
-//					  through data, to handle irregular
-//					  data.  The logic is OK since all data
-//					  access is relative to the first time
-//					  series.
-// 2005-06-01	SAM, RTi		* Change so that missing in one time
-//					  series but not another is considered
-//					  a difference.
-//					* Change so that by default the longest
-//					  overlapping period is used for the
-//					  comparison, if the analysis period
-//					  is not specified.
-// 2005-06-07	SAM, RTi		* Fix bug where "no differences" was
-//					  being indicated in some cases - the
-//					  check was being zeroed out for each
-//					  tolerance.
-// 2005-06-10	SAM, RTi		* Format a summary of the results at the
-//					  end, to use in reports.
-// 2005-07-08	SAM, RTi		* Clarify in messages that differences
-//					  are computed as TS2 - TS1.
-// 2006-05-02	SAM, RTi		* Add WarnIfSame parameter.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-04-08	SAM, RTi		* Add CreateDiffTS to help checking CDSS old
-//					and new data sets.
-// 2007-04-13	SAM, RTi		* Add summary of only differences, to facilitate
-//					documentation preparation.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.util.List;
@@ -92,9 +29,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the CompareTimeSeries() command.
-</p>
 */
 public class CompareTimeSeries_Command extends AbstractCommand
 implements Command
@@ -176,7 +111,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	if ( (Tolerance != null) && !Tolerance.equals("") ) {
-		List v = StringUtil.breakStringList(Tolerance,", ",0);
+		List<String> v = StringUtil.breakStringList(Tolerance,", ",0);
 		int size = 0;
 		if ( v != null ) {
 			size = v.size();
@@ -184,7 +119,7 @@ throws InvalidCommandParameterException
 		// Make sure that each tolerance is a number...
 		String string;
 		for ( int i = 0; i < size; i++ ) {
-			string = (String)v.get(i);
+			string = v.get(i);
 			if ( !StringUtil.isDouble(string) ) {
                 message = "The tolerance: \"" + string + "\" is not a number.";
 				warning += "\n" + message;
@@ -263,7 +198,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "MatchLocation" );
 	valid_Vector.add ( "MatchDataType" );
 	valid_Vector.add ( "Precision" );

@@ -36,7 +36,6 @@ import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.Table.DataTableMath;
 
 public class TableTimeSeriesMath_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
@@ -276,6 +275,9 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
         "The table value is determined from a row with a matching time series identifier (TSID) and by " +
         "specifying the column from which to get a value." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Missing values in the time series generally cannot be modified, other than by the assignment (=) operator." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
     y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
@@ -296,7 +298,7 @@ private void initialize ( JFrame parent, TableTimeSeriesMath_Command command, Li
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Math operator:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Operator_JComboBox = new SimpleJComboBox ( 12, false );// Do not allow edit
-    __Operator_JComboBox.setData ( DataTableMath.getOperatorChoicesAsStrings() );
+    __Operator_JComboBox.setData ( __command.getOperatorChoicesAsStrings() );
     __Operator_JComboBox.addItemListener ( this );
     //__Statistic_JComboBox.setMaximumRowCount(statisticChoices.size());
     JGUIUtil.addComponent(main_JPanel, __Operator_JComboBox,

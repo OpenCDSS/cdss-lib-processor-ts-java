@@ -202,11 +202,26 @@ Get the list of operators that can be used.
 public List<DataTableMathOperatorType> getOperatorChoices()
 {
     List<DataTableMathOperatorType> choices = new Vector();
+    choices.add ( DataTableMathOperatorType.ASSIGN );
     choices.add ( DataTableMathOperatorType.ADD );
     choices.add ( DataTableMathOperatorType.SUBTRACT );
     choices.add ( DataTableMathOperatorType.MULTIPLY );
     choices.add ( DataTableMathOperatorType.DIVIDE );
     return choices;
+}
+
+/**
+Get the list of operators that can be performed.
+@return the operator display names as strings.
+*/
+public List<String> getOperatorChoicesAsStrings()
+{
+    List<DataTableMathOperatorType> choices = getOperatorChoices();
+    List<String> stringChoices = new Vector();
+    for ( int i = 0; i < choices.size(); i++ ) {
+        stringChoices.add ( "" + choices.get(i) );
+    }
+    return stringChoices;
 }
 
 // Parse command is in the base class
@@ -463,26 +478,32 @@ CommandWarningException, CommandException
                         continue;
                     }
                 }
+                // TODO SAM 2012-01-13 add analysis start and end to command parameters 
                 // Do the calculation...
                 if ( operator == DataTableMathOperatorType.ADD ) {
                     ts.addToGenesis("Table \"" + TableID + "\" column \"" + TableInputColumn +
                         "\" value " + tableValue + " used for add." );
                     TSUtil.addConstant(ts, null, null, tableValue);
                 }
-                else if ( operator == DataTableMathOperatorType.SUBTRACT ) {
+                else if ( (operator == DataTableMathOperatorType.ASSIGN) && (tableValue != 0.0) ) {
                     ts.addToGenesis("Table \"" + TableID + "\" column \"" + TableInputColumn +
-                        "\" value " + tableValue + " used for subtract." );
-                    TSUtil.addConstant(ts, null, null, -tableValue);
+                        "\" value " + tableValue + " assigned to time series." );
+                    TSUtil.setConstant(ts, null, null, tableValue);
+                }
+                else if ( (operator == DataTableMathOperatorType.DIVIDE) && (tableValue != 0.0) ) {
+                    ts.addToGenesis("Table \"" + TableID + "\" column \"" + TableInputColumn +
+                        "\" value " + tableValue + " used for divide (multiply 1/" + tableValue + "." );
+                    TSUtil.scale(ts, null, null, 1.0/tableValue);
                 }
                 else if ( operator == DataTableMathOperatorType.MULTIPLY ) {
                     ts.addToGenesis("Table \"" + TableID + "\" column \"" + TableInputColumn +
                         "\" value " + tableValue + " used for multiply." );
                     TSUtil.scale(ts, null, null, tableValue);
                 }
-                else if ( (operator == DataTableMathOperatorType.DIVIDE) && (tableValue != 0.0) ) {
+                else if ( operator == DataTableMathOperatorType.SUBTRACT ) {
                     ts.addToGenesis("Table \"" + TableID + "\" column \"" + TableInputColumn +
-                        "\" value " + tableValue + " used for divide (multiply 1/" + tableValue + "." );
-                    TSUtil.scale(ts, null, null, 1.0/tableValue);
+                        "\" value " + tableValue + " used for subtract." );
+                    TSUtil.addConstant(ts, null, null, -tableValue);
                 }
             }
             catch ( Exception e ) {

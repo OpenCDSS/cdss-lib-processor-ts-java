@@ -1,33 +1,3 @@
-//------------------------------------------------------------------------------
-// fillRegression_Command - handle the fillRegression() command
-//------------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-//------------------------------------------------------------------------------
-// History:
-//
-// 2005-04-29	Steven A. Malers, RTi	Initial version.
-// 2005-05-09	SAM, RTi		* Add full_initialization flag to the
-//					  initialize() method.
-//					* Add toString(PropList).
-// 2005-05-11	SAM, RTi		Update initialize() to not call
-//					parseCommand() since the base class
-//					method does it.
-// 2005-05-12	SAM, RTi		Add FillFlag parameter.
-// 2005-05-19	SAM, RTi		Move from TSTool package to TS.
-// 2005-05-24	SAM, RTi		Add command_tag to getTimeSeries() call.
-// 2005-05-31	SAM, RTi		The parameters for date/times were not
-//					being processed correctly if specified.
-// 2005-06-30	SAM, RTi		Fix bug where Intercept was not being
-//					recognized in runCommand().
-// 2006-01-24	SAM, RTi		Fix bug where intercept without a
-//					transformation was getting a null
-//					pointer.
-// 2007-02-16	SAM, RTi		Use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-03-03	SAM, RTi		Fix bug where parse() was failing on old syntax.
-//------------------------------------------------------------------------------
-// EndHeader
-
 package rti.tscommandprocessor.commands.ts;
 
 import javax.swing.JFrame;
@@ -41,6 +11,7 @@ import java.util.Vector;
 
 import RTi.TS.TS;
 import RTi.TS.TSRegression;
+import RTi.TS.TSRegressionAnalysis;
 import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_FillRegression;
 
@@ -231,7 +202,8 @@ throws InvalidCommandParameterException
 	}
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") ) {
-		try {	DateTime.parse(AnalysisStart);
+		try {
+		    DateTime.parse(AnalysisStart);
 		}
 		catch ( Exception e ) {
             message = "The analysis start date/time \"" + AnalysisStart + "\" is not a valid date/time.";
@@ -241,6 +213,18 @@ throws InvalidCommandParameterException
                             message, "Specify a valid date/time or OutputStart." ) );
 		}
 	}
+    if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
+        try {
+            DateTime.parse( AnalysisEnd);
+        }
+        catch ( Exception e ) {
+            message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time or OutputEnd." ) );
+        }
+    }
 	
 	// Make sure MinimumSampleSize was given and is a valid integer
     if ( (MinimumSampleSize != null) && !MinimumSampleSize.equals("") && !StringUtil.isInteger(MinimumSampleSize)) {
@@ -281,18 +265,6 @@ throws InvalidCommandParameterException
         }
     }
     
-	if ( (AnalysisEnd != null) && !AnalysisEnd.equals("") && !AnalysisEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {
-		    DateTime.parse( AnalysisEnd);
-		}
-		catch ( Exception e ) {
-            message = "The analysis end date/time \"" + AnalysisEnd + "\" is not a valid date/time.";
-            warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify a valid date/time or OutputEnd." ) );
-		}
-	}
     if ( (Fill != null) && !Fill.equals("") ) {
         if ( !Fill.equalsIgnoreCase(_False) && !Fill.equalsIgnoreCase(_True) ) {
             message = "The Fill (" + Fill +
@@ -426,16 +398,14 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// the Intercept= syntax)...
 		// Parse up front.  Don't parse with spaces because a
 		// TEMPTS may be present.
-    	List v = StringUtil.breakStringList(command_string,
-			"(),\t", StringUtil.DELIM_SKIP_BLANKS |
-			StringUtil.DELIM_ALLOW_STRINGS );
+    	List<String> v = StringUtil.breakStringList(command_string,
+			"(),\t", StringUtil.DELIM_SKIP_BLANKS | StringUtil.DELIM_ALLOW_STRINGS );
 		int ntokens = 0;
 		if ( v != null ) {
 			ntokens = v.size();
 		}
 		if ( ntokens < 5 ) {
-			message = "Syntax error in \"" + command_string +
-			"\".  Not enough tokens.";
+			message = "Syntax error in \"" + command_string + "\".  Not enough tokens.";
 			Message.printWarning ( warning_level, routine, message);
 			throw new InvalidCommandSyntaxException ( message );
 		}
@@ -453,18 +423,18 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		String FillStart = "";
 		String FillEnd = "";
 		int ic = 1;		// Position 0 is the command name
-		TSID = ((String)v.get(ic++)).trim();
-		IndependentTSID = ((String)v.get(ic++)).trim();
-		NumberOfEquations=((String)v.get(ic++)).trim();
-		Transformation = ((String)v.get(ic++)).trim();
+		TSID = v.get(ic++).trim();
+		IndependentTSID = v.get(ic++).trim();
+		NumberOfEquations = v.get(ic++).trim();
+		Transformation = v.get(ic++).trim();
 		int icmax = ic + 1;
 		if ( ntokens >= icmax ) {
-			AnalysisStart = ((String)v.get(ic++)).trim();
+			AnalysisStart = v.get(ic++).trim();
 			if ( AnalysisStart.equals("*") ) {
 				AnalysisStart = "";// Current default
 			}
 			if ( ntokens >= (icmax + 1) ) {
-				AnalysisEnd =((String)v.get(ic++)).trim();
+				AnalysisEnd = v.get(ic++).trim();
 			}
 			if ( AnalysisEnd.equals("*") ) {
 				AnalysisEnd = "";// Current default
@@ -472,25 +442,25 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		}
 		// All others have the fill period...
 		if ( ntokens >= icmax ) {
-			FillStart = ((String)v.get(ic++)).trim();
+			FillStart = v.get(ic++).trim();
 		}
 		if ( FillStart.equals("*") ) {
 			FillStart = "";	// Current default.
 		}
 		if ( ntokens >= (icmax + 1) ) {
-			FillEnd = ((String)v.get(ic++)).trim();
+			FillEnd = v.get(ic++).trim();
 		}
 		if ( FillEnd.equals("*") ) {
-			FillEnd = "";	// Current default.
+			FillEnd = ""; // Current default.
 		}
 
 		// Check for new-style properties (only Intercept=)...
 
 		String token, token0;
-		List v2;
+		List<String> v2;
 		for ( ic = 0; ic < ntokens; ic++ ) {
 			// Check for an '=' in the token...
-			token = (String)v.get(ic);
+			token = v.get(ic);
 			if ( token.indexOf('=') < 0 ) {
 				continue;
 			}
@@ -498,12 +468,11 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 			if ( v2.size() < 2 ) {
 				continue;
 			}
-			token0 = ((String)v2.get(0)).trim();
+			token0 = v2.get(0).trim();
 			if ( token0.equalsIgnoreCase("Intercept") ) {
-				Intercept = ((String)v2.get(1)).trim();
+				Intercept = v2.get(1).trim();
 			}
 		}
-		v = null;
 		PropList parameters = new PropList ( getCommandName() );
 		parameters.setHowSet ( Prop.SET_FROM_PERSISTENT );
 		if ( TSID.length() > 0 ) {
@@ -728,6 +697,7 @@ CommandWarningException, CommandException
         }
         catch ( Exception e ) {
             // Should not happen
+            Message.printWarning(3,routine,e);
         }
     }
 	String AnalysisEnd = parameters.getValue("AnalysisEnd");
@@ -738,6 +708,7 @@ CommandWarningException, CommandException
         }
         catch ( Exception e ) {
             // Should not happen
+            Message.printWarning(3,routine,e);
         }
     }
 
@@ -752,9 +723,9 @@ CommandWarningException, CommandException
 	String FillFlagDesc = parameters.getValue("FillFlagDesc");
 
 	String Intercept = parameters.getValue("Intercept");
-	Double intercept = null;
+	Double forcedIntercept = null;
 	if ( (Intercept != null) && !Intercept.equals("") ) {
-		intercept = Double.parseDouble(Intercept);
+		forcedIntercept = Double.parseDouble(Intercept);
 	}
 	
     String LEZeroLogValue = parameters.getValue("LEZeroLogValue");
@@ -954,70 +925,150 @@ CommandWarningException, CommandException
 	// This will result in the time series in the original data being modified...
 	try {
 	    if ( commandPhase == CommandPhaseType.RUN ) {
-	        TSUtil_FillRegression tsufr = new TSUtil_FillRegression ();
-    	    TSRegression regressionResults = TSUtil.fillRegress ( 
-    			tsToFill, tsIndependent,
-    			null, // No previously computed TSRegression object
-    			RegressionType.OLS_REGRESSION,
-    			numberOfEquations,
-                intercept,
-                analysisMonths,
-                transformation,
-                leZeroLogValue,
-                minimumSampleSize,
-                minimumR,
-                confidenceInterval,
-                dependentAnalysisStart, dependentAnalysisEnd,
-                null, //independentAnalysisStart - used with MOVE2 but not OLS_REGRESSION
-                null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
-                FillStart_DateTime, FillEnd_DateTime,
-                FillFlag,
-                FillFlagDesc,
-                Fill_boolean );
-    	    if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
-    	        if ( regressionResults.getN1() == 0 ) {
-    	            message = "Number of overlapping points is 0.";
-    	            Message.printWarning ( warning_level,
-    	            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-    	            status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.WARNING,
-                            message, "Verify that time series have overlapping periods." ) );
-    	        }
-    	    }
-    	    else {
-    	        for ( int i = 1; i <= 12; i++ ) {
-    	            if ( regressionResults.getN1(i) == 0 ) {
-    	                message = "Number of overlapping points in month " + i + " (" +
-                        TimeUtil.monthAbbreviation(i) + ") is 0.";
-    	                Message.printWarning ( warning_level,
-    	                MessageUtil.formatMessageTag(
-    	                command_tag,++warning_count), routine, message );
-    	                status.addToLog ( commandPhase,
+	        boolean doLegacy = false;
+	        if ( doLegacy ) {
+        	    TSRegression regressionResults = TSUtil.fillRegress ( 
+        			tsToFill, tsIndependent,
+        			null, // No previously computed TSRegression object
+        			RegressionType.OLS_REGRESSION,
+        			numberOfEquations,
+                    forcedIntercept,
+                    analysisMonths,
+                    transformation,
+                    leZeroLogValue,
+                    minimumSampleSize,
+                    minimumR,
+                    confidenceInterval,
+                    dependentAnalysisStart, dependentAnalysisEnd,
+                    null, //independentAnalysisStart - used with MOVE2 but not OLS_REGRESSION
+                    null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
+                    FillStart_DateTime, FillEnd_DateTime,
+                    FillFlag,
+                    FillFlagDesc,
+                    Fill_boolean );
+                if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
+                    if ( regressionResults.getN1() == 0 ) {
+                        message = "Number of overlapping points is 0.";
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        status.addToLog ( commandPhase,
                             new CommandLogRecord(CommandStatusType.WARNING,
                                 message, "Verify that time series have overlapping periods." ) );
-    	            }
-    	        }
-    	    }
-    	    // Print the results to the log file and optionally an output table...
-    	    if ( regressionResults != null ) {
-    			Message.printStatus ( 2, routine, "Fill results are..." );
-    			Message.printStatus ( 2, routine, regressionResults.toString() );
-                // Now set in the table
-    		    if ( (TableID != null) && !TableID.equals("") ) {
-        			tsufr.saveStatisticsToTable ( tsToFill, regressionResults, table,
-        			    TableTSIDColumn, TableTSIDFormat, numberOfEquations );
-    		    }
-    		}
-    		else {
-                message = "Unable to compute regression.";
-    			Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag(
-    			command_tag,++warning_count), routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that time series have overlapping periods." ) );
-    			throw new CommandException ( message );
-    		}
+                    }
+                }
+                else {
+                    for ( int i = 1; i <= 12; i++ ) {
+                        if ( regressionResults.getN1(i) == 0 ) {
+                            message = "Number of overlapping points in month " + i + " (" +
+                            TimeUtil.monthAbbreviation(i) + ") is 0.";
+                            Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag(
+                            command_tag,++warning_count), routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that time series have overlapping periods." ) );
+                        }
+                    }
+                }
+                // Print the results to the log file and optionally an output table...
+                if ( regressionResults != null ) {
+                    Message.printStatus ( 2, routine, "Fill results are..." );
+                    Message.printStatus ( 2, routine, regressionResults.toString() );
+                    // Now set in the table
+                    // TODO SAM 2012-01-15 Not enabled for legacy code
+                    //if ( (TableID != null) && !TableID.equals("") ) {
+                    //    tsufr.saveStatisticsToTable ( tsToFill, regressionResults, table,
+                    //        TableTSIDColumn, TableTSIDFormat, numberOfEquations );
+                    //}
+                }
+                else {
+                    message = "Unable to compute regression.";
+                    Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                    command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that time series have overlapping periods." ) );
+                    throw new CommandException ( message );
+                }
+	        }
+	        else {
+	            // New code that is more modular and consistent with FillMixedStation().
+	            // First analyze the time series
+	            TSUtil_FillRegression tsufr = new TSUtil_FillRegression (
+                    tsToFill, tsIndependent,
+                    RegressionType.OLS_REGRESSION,
+                    numberOfEquations,
+                    analysisMonths,
+                    transformation,
+                    leZeroLogValue,
+                    forcedIntercept,
+                    dependentAnalysisStart, dependentAnalysisEnd,
+                    null, //independentAnalysisStart - used with MOVE2 but not OLS_REGRESSION
+                    null, //independentAnalysisEnd - used with MOVE2 but not OLS_REGRESSION
+                    minimumSampleSize,
+                    minimumR,
+                    confidenceInterval,
+                    FillStart_DateTime, FillEnd_DateTime,
+                    FillFlag,
+                    FillFlagDesc,
+                    Fill_boolean,
+                    null ); // No user-specified description
+	            // Fill the missing values in the dependent
+	            tsufr.fillRegression ();
+	            TSRegressionAnalysis ra = tsufr.getTSRegressionAnalysis();
+	            List<String> problems = tsufr.getProblems();
+	            for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
+	                message = problems.get(iprob);
+	                Message.printWarning ( warning_level,
+	                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+	                // No recommendation since it is a user-defined check
+	                // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+	                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
+	            }
+                if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
+                    if ( ra.getTSRegressionData().getSingleEquationRegressionData().getN1() == 0 ) {
+                        message = "Number of overlapping points is 0.";
+                        Message.printWarning ( warning_level,
+                        MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                        status.addToLog ( commandPhase,
+                            new CommandLogRecord(CommandStatusType.WARNING,
+                                message, "Verify that time series have overlapping periods." ) );
+                    }
+                }
+                else {
+                    for ( int iMonth = 1; iMonth <= 12; iMonth++ ) {
+                        if ( ra.getTSRegressionData().getMonthlyEquationRegressionData(iMonth).getN1() == 0 ) {
+                            message = "Number of overlapping points in month " + iMonth + " (" +
+                            TimeUtil.monthAbbreviation(iMonth) + ") is 0.";
+                            Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag(
+                            command_tag,++warning_count), routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that time series have overlapping periods." ) );
+                        }
+                    }
+                }
+                // Print the results to the log file and optionally an output table...
+                if ( ra != null ) {
+                    // Now set in the table
+                    if ( (TableID != null) && !TableID.equals("") ) {
+                        tsufr.saveStatisticsToTable ( tsToFill, table,
+                            TableTSIDColumn, TableTSIDFormat, numberOfEquations, transformation );
+                    }
+                }
+                else {
+                    message = "Unable to compute regression.";
+                    Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(
+                    command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that time series have overlapping periods." ) );
+                    throw new CommandException ( message );
+                }
+	        }
 	    }
 	}
 	catch ( Exception e ) {

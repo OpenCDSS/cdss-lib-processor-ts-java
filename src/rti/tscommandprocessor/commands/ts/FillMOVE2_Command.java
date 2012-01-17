@@ -984,39 +984,29 @@ CommandWarningException, CommandException
 
 	try {
 	    if ( commandPhase == CommandPhaseType.RUN ) {
-	        TSUtil_FillRegression tsufr = new TSUtil_FillRegression ();
-    	    TSRegression regressionResults = TSUtil.fillRegress ( tsToFill, tsIndependent,
-                null, // No previously computed TSRegression object
-                RegressionType.MOVE2,
-                numberOfEquations,
-                null, //Double intercept,
-                null, //int [] analysisMonths,
-                transformation,
-                leZeroLogValue,
-                minimumSampleSize,
-                minimumR,
-                confidenceInterval,
-                dependentAnalysisStart, dependentAnalysisEnd,
-                independentAnalysisStart, independentAnalysisEnd,
-                FillStart_DateTime, FillEnd_DateTime,
-                FillFlag,
-                FillFlagDesc,
-                Fill_boolean );
-            if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
-                if ( regressionResults.getN1() == 0 ) {
-                    message = "Number of overlapping points is 0.";
-                    Message.printWarning ( warning_level,
-                    MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                    status.addToLog ( commandPhase,
-                        new CommandLogRecord(CommandStatusType.WARNING,
-                            message, "Verify that time series have overlapping periods." ) );
-                }
-            }
-            else {
-                for ( int i = 1; i <= 12; i++ ) {
-                    if ( regressionResults.getN1(i) == 0 ) {
-                        message = "Number of overlapping points in month " + i + "(" +
-                        TimeUtil.monthAbbreviation(i) + ") is 0.";
+            boolean doLegacy = false;
+            if ( doLegacy ) {
+    	        //TSUtil_FillRegression tsufr = new TSUtil_FillRegression ();
+        	    TSRegression regressionResults = TSUtil.fillRegress ( tsToFill, tsIndependent,
+                    null, // No previously computed TSRegression object
+                    RegressionType.MOVE2,
+                    numberOfEquations,
+                    null, //Double intercept,
+                    null, //int [] analysisMonths,
+                    transformation,
+                    leZeroLogValue,
+                    minimumSampleSize,
+                    minimumR,
+                    confidenceInterval,
+                    dependentAnalysisStart, dependentAnalysisEnd,
+                    independentAnalysisStart, independentAnalysisEnd,
+                    FillStart_DateTime, FillEnd_DateTime,
+                    FillFlag,
+                    FillFlagDesc,
+                    Fill_boolean );
+                if ( numberOfEquations == NumberOfEquationsType.ONE_EQUATION ) {
+                    if ( regressionResults.getN1() == 0 ) {
+                        message = "Number of overlapping points is 0.";
                         Message.printWarning ( warning_level,
                         MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
                         status.addToLog ( commandPhase,
@@ -1024,25 +1014,39 @@ CommandWarningException, CommandException
                                 message, "Verify that time series have overlapping periods." ) );
                     }
                 }
-            }
-    		// Print the results to the log file...
-    		if ( regressionResults != null ) {
-    			Message.printStatus ( 2, routine,"Analysis results are..." );
-    			Message.printStatus ( 2, routine,regressionResults.toString() );
-                if ( (TableID != null) && !TableID.equals("") ) {
-                    tsufr.saveStatisticsToTable ( tsToFill, regressionResults, table,
-                        TableTSIDColumn, TableTSIDFormat, numberOfEquations );
+                else {
+                    for ( int i = 1; i <= 12; i++ ) {
+                        if ( regressionResults.getN1(i) == 0 ) {
+                            message = "Number of overlapping points in month " + i + "(" +
+                            TimeUtil.monthAbbreviation(i) + ") is 0.";
+                            Message.printWarning ( warning_level,
+                            MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                            status.addToLog ( commandPhase,
+                                new CommandLogRecord(CommandStatusType.WARNING,
+                                    message, "Verify that time series have overlapping periods." ) );
+                        }
+                    }
                 }
-    		}
-    		else {
-                message = "Unable to compute regression.";
-    			Message.printWarning ( warning_level,
-    			MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that time series have overlapping periods." ) );
-    			throw new CommandException ( message );
-    		}
+        		// Print the results to the log file...
+        		if ( regressionResults != null ) {
+        			Message.printStatus ( 2, routine,"Analysis results are..." );
+        			Message.printStatus ( 2, routine,regressionResults.toString() );
+                    if ( (TableID != null) && !TableID.equals("") ) {
+                        // TODO SAM 2012-01-16 Need to enable, similar to FillRegression()
+                        //tsufr.saveStatisticsToTable ( tsToFill, regressionResults, table,
+                        //    TableTSIDColumn, TableTSIDFormat, numberOfEquations );
+                    }
+        		}
+        		else {
+                    message = "Unable to compute regression.";
+        			Message.printWarning ( warning_level,
+        			MessageUtil.formatMessageTag( command_tag,++warning_count), routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that time series have overlapping periods." ) );
+        			throw new CommandException ( message );
+        		}
+            }
 	    }
 	}
 	catch ( Exception e ) {

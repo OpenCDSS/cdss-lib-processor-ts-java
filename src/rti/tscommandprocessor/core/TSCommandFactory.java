@@ -117,6 +117,7 @@ import rti.tscommandprocessor.commands.table.CopyTimeSeriesPropertiesToTable_Com
 import rti.tscommandprocessor.commands.table.ManipulateTableString_Command;
 import rti.tscommandprocessor.commands.table.NewTable_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDBF_Command;
+import rti.tscommandprocessor.commands.table.ReadTableFromDataStore_Command;
 import rti.tscommandprocessor.commands.table.ReadTableFromDelimitedFile_Command;
 import rti.tscommandprocessor.commands.table.SetTimeSeriesPropertiesFromTable_Command;
 import rti.tscommandprocessor.commands.table.TableMath_Command;
@@ -628,6 +629,9 @@ throws UnknownCommandException
 	}
     else if ( commandName.equalsIgnoreCase("ReadTableFromDBF") ) {
         return new ReadTableFromDBF_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadTableFromDataStore") ) {
+        return new ReadTableFromDataStore_Command ();
     }
     else if ( commandName.equalsIgnoreCase("ReadTableFromDelimitedFile") ) {
         return new ReadTableFromDelimitedFile_Command ();

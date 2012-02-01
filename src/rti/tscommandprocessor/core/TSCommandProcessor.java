@@ -98,6 +98,7 @@ import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 // NWSRFS_DMI commands.
 
+import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.NWSRFS_DMI.NWSRFS_DMI;
 import RTi.GRTS.TSProductAnnotationProvider;
 
@@ -754,8 +755,19 @@ is compatible with intended use - specify as null to not match class
 public DataStore getDataStoreForName ( String name, Class dataStoreClass )
 {   for ( DataStore dataStore : getDataStores() ) {
         if ( dataStore.getName().equalsIgnoreCase(name) ) {
-            if ( (dataStoreClass != null) && (dataStore.getClass() != dataStoreClass) ) {
-                dataStore = null;
+            if ( dataStoreClass != null ) {
+                if (dataStore.getClass() == dataStoreClass ) {
+                    ; // Match is OK
+                }
+                // Also check for common base classes
+                // TODO SAM 2012-01-31 Why not just use instanceof all the time?
+                else if ( (dataStoreClass == DatabaseDataStore.class) && dataStore instanceof DatabaseDataStore ) {
+                    ; // Match is OK
+                }
+                else {
+                    // Does not match class
+                    dataStore = null;
+                }
             }
             return dataStore;
         }
@@ -781,7 +793,13 @@ is guaranteed, but the list may be empty.
 public List<DataStore> getDataStoresByType ( Class dataStoreClass )
 {   List<DataStore> dataStoreList = new Vector();
     for ( DataStore dataStore : getDataStores() ) {
+        // Check for exact match on class
         if ( dataStore.getClass() == dataStoreClass ) {
+            dataStoreList.add(dataStore);
+        }
+        // Also check for common base classes
+        // TODO SAM 2012-01-31 Why not just use instanceof all the time?
+        else if ( (dataStoreClass == DatabaseDataStore.class) && dataStore instanceof DatabaseDataStore ) {
             dataStoreList.add(dataStore);
         }
     }

@@ -280,8 +280,11 @@ private RiversideDBDataStore getSelectedDataStore ()
     RiversideDBDataStore dataStore = (RiversideDBDataStore)((TSCommandProcessor)
         __command.getCommandProcessor()).getDataStoreForName(
         DataStore, RiversideDBDataStore.class );
-    if ( dataStore == null ) {
-        Message.printStatus(2, routine, "Selected data store is \"" + DataStore + "\"." );
+    if ( dataStore != null ) {
+        Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
+    }
+    else {
+        Message.printStatus(2, routine, "Cannot get data store for \"" + DataStore + "\"." );
     }
     return dataStore;
 }

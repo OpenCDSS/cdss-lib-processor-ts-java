@@ -29,6 +29,7 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Table.DataTable;
 import RTi.Util.Table.ResultSetToDataTableFactory;
 
@@ -233,36 +234,59 @@ CommandWarningException, CommandException
         // Create the query.
         DMISelectStatement q = new DMISelectStatement(dmi);
         q.addTable(DataStoreTable);
+        // Always get the columns from the database to check parameters, to guard against SQL injection
+        List<String> columns = null;
+        try {
+            columns = DMIUtil.getTableColumns(dmi,DataStoreTable);
+        }
+        catch ( Exception e ) {
+            message = "Error getting table columns for table \"" + DataStoreTable + "\".";
+            Message.printWarning ( 2, routine, message );
+            status.addToLog ( commandPhase,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the database for data store \"" + DataStore +
+                    "\" is accessible.") );
+        }
         // Get the columns to query
         if ( (DataStoreColumns != null) && !DataStoreColumns.equals("") ) {
             // Use the columns from the parameter
-            String [] columns = DataStoreColumns.split(",");
-            for ( int i = 0; i < columns.length; i++ ) {
-                q.addField(columns[i].trim());
+            String [] columnsReq = DataStoreColumns.split(",");
+            for ( int i = 0; i < columnsReq.length; i++ ) {
+                if ( StringUtil.indexOf(columns,columnsReq[i]) < 0 ) {
+                    message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
+                    Message.printWarning ( 2, routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the database table/view contais column \"" + columnsReq[i] +
+                            "\".") );
+                }
+                else {
+                    q.addField(columnsReq[i].trim());
+                }
             }
         }
         else {
-            // Get the columns from the database
-            try {
-                List<String> columns = DMIUtil.getTableColumns(dmi,DataStoreTable);
-                for ( String column: columns ) {
-                    q.addField(column);
-                }
-            }
-            catch ( Exception e ) {
-                message = "Error getting table columns for table \"" + DataStoreTable + "\".";
-                Message.printWarning ( 2, routine, message );
-                status.addToLog ( commandPhase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the database for data store \"" + DataStore +
-                        "\" is accessible.") );
+            // Use all the columns from the database
+            for ( String column: columns ) {
+                q.addField(column);
             }
         }
         // Set the order by information to query
         if ( (OrderBy != null) && !OrderBy.equals("") ) {
-            String [] columns = OrderBy.split(",");
-            for ( int i = 0; i < columns.length; i++ ) {
-                q.addOrderByClause(columns[i].trim());
+            String [] columnsReq = OrderBy.split(",");
+            for ( int i = 0; i < columnsReq.length; i++ ) {
+                // Check for table to guard against SQL injection
+                if ( StringUtil.indexOfIgnoreCase(columns,columnsReq[i]) < 0 ) {
+                    message = "Database table/view does not contain columnn \"" + columnsReq[i] + "\".";
+                    Message.printWarning ( 2, routine, message );
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Verify that the database table/view contais column \"" + columnsReq[i] +
+                            "\".") );
+                }
+                else {
+                    q.addOrderByClause(columnsReq[i].trim());
+                }
             }
         }
         try {

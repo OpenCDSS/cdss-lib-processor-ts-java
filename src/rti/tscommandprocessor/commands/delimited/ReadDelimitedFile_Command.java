@@ -863,12 +863,19 @@ throws FileNotFoundException, IOException
     }
     RandomAccessFile ra = new RandomAccessFile ( inputFileFull, "r" );
     long length = ra.length();
-    // Skip to 5000 bytes from the end.  This should get some actual data
+    // Skip to "blobLength" bytes from the end.  This should get some actual data
     // lines.  Save in a temporary array in memory.
-    if ( length >= 5000 ) {
-        ra.seek ( length - 5000 );
-    } // Otherwise just read from the top of the file to get all content
-    byte[] b = new byte[5000];
+    // TODO SAM 2012-02-04 5000 characters may not be enough for files with very long lines
+    //    might need to put in a loop to make sure that at least one full line is read
+    int blobLength = 5000;
+    if ( length >= blobLength ) {
+        ra.seek ( length - blobLength );
+    }
+    else {
+        // Otherwise just read from the top of the file to get all content
+        blobLength = (int)length;
+    }
+    byte[] b = new byte[blobLength];
     ra.read ( b );
     ra.close();
     ra = null;
@@ -878,15 +885,27 @@ throws FileNotFoundException, IOException
     // Loop through and figure out the last date.  Start at the second
     // record because it is likely that a complete record was not found in the first record.
     int size = v.size();
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"Number of lines to check="+ size);
+    }
     String string = null;
+    List<String> tokens = null;
+    // For small files less than the blob that is read, make sure to process
+    // single line files.  Otherwise, ignore the first line because it may be incomplete.
+    int iStart = 1;
+    if ( size == 1 ) {
+        iStart = 0;
+    }
     String dateTimeString = null;
     String dateString = null;
     String timeString = null;
-    List<String> tokens = null;
-    for ( int i = 1; i < size; i++ ) {
+    for ( int i = iStart; i < size; i++ ) {
         string = (v.get(i)).trim();
+        if ( Message.isDebugOn ) {
+            Message.printDebug(30, routine, "Line to parse=\"" + string + "\"" );
+        }
         if ( (string.length() == 0) || (string.charAt(0) == '#') || (string.charAt(0) == '<') ) {
-            // Ignore blank lines, comments, and HTML-enclosing tags.
+            // Ignore blank lines, comments, and lines with HTML-enclosing tags.
             continue;
         }
         tokens = StringUtil.breakStringList( string, delim, parseFlag | StringUtil.DELIM_ALLOW_STRINGS );
@@ -904,8 +923,13 @@ throws FileNotFoundException, IOException
                 dateTimeString = dateString;
             }
         }
+        else {
+            Message.printWarning(3,routine,"A column for date/time or date has not been specified." );
+            return null;
+        }
     }
-    // Whatever came out of the last record will remain.
+    //Message.printStatus(2,routine,"Date/time string to parse=\""+ dateTimeString + "\"");
+    // Whatever came out of the last record will remain as the last record, which is examined.
     DateTime datetime = null;
     try {
         if ( Message.isDebugOn ) {
@@ -1328,6 +1352,8 @@ throws IOException
     int datePos = getColumnNumberFromName(dateColumn,columnNames);
     int timePos = getColumnNumberFromName(timeColumn,columnNames);
     int [] valuePos = getColumnNumbersFromNames(valueColumns,columnNames);
+    Message.printStatus(2, routine, "Date/time column=" + dateTimePos + " date column=" +
+        datePos + " time column=" + timePos );
     // Create the time series - at this time meta-data are not read from the file
     // If this changes, then some values may need to be (re)set when the file is read
     for ( int its = 0; its < valuePos.length; its++ ) {
@@ -1500,6 +1526,10 @@ throws IOException
                     // The first date will be set from the first row of data
                     DateTime lastFileDateTime = determineEndDateTimeFromFile (
                         inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag );
+                    if ( lastFileDateTime == null ) {
+                        throw new IOException ( "Unable to determine date/time from last line in file." );
+                    }
+                    //Message.printStatus(2,routine,"Latest date/time in file is " + lastFileDateTime );
                     DateTime earliest = null, latest = null;
                     if ( dateTime.greaterThan(lastFileDateTime)) {
                         earliest = lastFileDateTime;

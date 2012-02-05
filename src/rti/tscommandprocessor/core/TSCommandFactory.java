@@ -174,6 +174,7 @@ import rti.tscommandprocessor.commands.ts.Free_Command;
 //import rti.tscommandprocessor.commands.ts.FreeEnsemble_Command;
 import rti.tscommandprocessor.commands.ts.Delta_Command;
 import rti.tscommandprocessor.commands.ts.LagK_Command;
+import rti.tscommandprocessor.commands.ts.LookupTimeSeriesFromTable_Command;
 import rti.tscommandprocessor.commands.ts.Multiply_Command;
 import rti.tscommandprocessor.commands.ts.NewDayTSFromMonthAndDayTS_Command;
 import rti.tscommandprocessor.commands.ts.NewEndOfMonthTSFromDayTS_Command;
@@ -501,6 +502,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("LagK") ) {
 		return new LagK_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("LookupTimeSeriesFromTable") ) {
+        return new LookupTimeSeriesFromTable_Command ();
+    }
 	
 	// "M" commands...
 	

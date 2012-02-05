@@ -28,7 +28,7 @@ import RTi.Util.Table.DataTable;
 import RTi.Util.Table.TableRecord;
 
 /**
-This class initializes, checks, and runs the TableMath() command.
+This class initializes, checks, and runs the SetTimeSeriesPropertiesFromTable() command.
 */
 public class SetTimeSeriesPropertiesFromTable_Command extends AbstractCommand implements Command
 {

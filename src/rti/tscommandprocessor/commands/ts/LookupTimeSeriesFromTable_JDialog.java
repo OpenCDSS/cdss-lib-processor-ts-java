@@ -333,17 +333,17 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
 	getContentPane().add ( "North", main_JPanel );
 	int y = 0;
 
-	JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development - parameter editing is enabled; however all output " +
-        "is missing.</b></html>." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Create a new time series by using an input time series and lookup table." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify new time series identifier (TSID) information for the copy to avoid errors " +
 		"with the copy being mistaken for the original." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>Currently the lookup table must only contain data for only one input time series and the effective" +
+        " date is not checked.</b></html>." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel("Input time series:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -406,6 +406,7 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Optional - column name for input time series TSID."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __TableTSIDColumn_JTextField.setEnabled(false);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Format of TSID:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -418,6 +419,7 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=alias or TSID)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    __TableTSIDFormat_JTextField.setEnabled(false);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Column for input value:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -458,6 +460,7 @@ private void initialize ( JFrame parent, LookupTimeSeriesFromTable_Command comma
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Optional - column for lookup data effective date."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __EffectiveDateColumn_JTextField.setEnabled(false);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Lookup method:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);

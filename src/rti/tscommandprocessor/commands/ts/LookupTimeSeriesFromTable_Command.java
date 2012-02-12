@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.TSData;
 import RTi.TS.TSIdent;
-import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_LookupTimeSeriesFromTable;
 
@@ -346,6 +344,7 @@ private DataTable getLookupTable( DataTable table, int tsidCol, String tsidForma
         lookupTable = table;
     }
     // Now sort based on the value1 column
+    // TODO SAM 2012-02-11 Add later, the analysis code checks for sort and throws an exception if not sorted
     //lookupTable.sort ( value1Col ):
     return lookupTable;
 }
@@ -589,13 +588,19 @@ CommandWarningException, CommandException
         outOfRangeLookupMethodType = OutOfRangeLookupMethodType.valueOfIgnoreCase(OutOfRangeLookupMethod);
     }
     String OutOfRangeNotification = parameters.getValue ( "OutOfRangeNotification" );
+    if ( (OutOfRangeNotification == null) || OutOfRangeNotification.equals("") ) {
+        OutOfRangeNotification = _Ignore; // default
+    }
     String Transformation = parameters.getValue("Transformation");
     DataTransformationType transformation = DataTransformationType.NONE; // Default
     if ( (Transformation != null) && !Transformation.equals("") ) {
         transformation = DataTransformationType.valueOfIgnoreCase(Transformation);
     }
+    if ( transformation == null ) {
+        transformation = DataTransformationType.NONE;
+    }
     String LEZeroLogValue = parameters.getValue("LEZeroLogValue");
-    double leZeroLogValue = .001;
+    double leZeroLogValue = .001; // Default
     if ( (LEZeroLogValue != null) && !LEZeroLogValue.equals("") ) {
         leZeroLogValue = Double.parseDouble(LEZeroLogValue);
     }
@@ -807,7 +812,7 @@ CommandWarningException, CommandException
                 transformation, leZeroLogValue,
                 AnalysisStart_DateTime, AnalysisEnd_DateTime );
             tsu.lookupTimeSeriesFromTable();
-            List<String> problems = tsu.getProblems();
+            List<String> problems = tsu.getProblemsWarning();
             for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
                 message = problems.get(iprob);
                 Message.printWarning ( warning_level,
@@ -816,11 +821,20 @@ CommandWarningException, CommandException
                 // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
                 status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.WARNING, message, "" ) );
             }
+            problems = tsu.getProblemsFailure();
+            for ( int iprob = 0; iprob < problems.size(); iprob++ ) {
+                message = problems.get(iprob);
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,message );
+                // No recommendation since it is a user-defined check
+                // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+                status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE, message, "" ) );
+            }
         }
 	}
 	catch ( Exception e ) {
 		message = "Unexpected error trying to lookup time series from time series " +
-		ts.getIdentifier().toStringAliasAndTSID() +  " and table \"" + TableID + "\"";
+		ts.getIdentifier().toStringAliasAndTSID() +  " and table \"" + TableID + "\" (" + e + ").";
 		Message.printWarning ( warning_level,
 			MessageUtil.formatMessageTag(
 			command_tag,++warning_count),routine,message );

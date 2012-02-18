@@ -31,10 +31,16 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Time.DateTime;
 
 /**
-This class initializes, checks, and runs the WriteReclamationHDB() command.
+This class initializes, checks, and runs the WriteRiversideDB() command.
 */
 public class WriteRiversideDB_Command extends AbstractCommand implements Command
 {
+
+/**
+Values for CopyDataFlags
+*/
+protected String _False = "False";
+protected String _True = "True";
 
 /**
 Constructor.
@@ -55,12 +61,13 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String DataStore = parameters.getValue ( "DataStore" );
-    String SiteCommonName = parameters.getValue ( "SiteCommonName" );
-    String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
-    String ModelName = parameters.getValue ( "ModelName" );
-    String ModelRunName = parameters.getValue ( "ModelRunName" );
-    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
-    String ModelRunDate = parameters.getValue ( "ModelRunDate" );
+    String Location = parameters.getValue ( "Location" );
+    String DataSource = parameters.getValue ( "DataSource" );
+    String DataType = parameters.getValue ( "DataType" );
+    String DataSubType = parameters.getValue ( "DataSubType" );
+    String Interval = parameters.getValue ( "Interval" );
+    String Scenario = parameters.getValue ( "Scenario" );
+    String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
@@ -77,57 +84,56 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    
-    if ( (SiteCommonName == null) || SiteCommonName.equals("") ) {
-        message = "The site common name must be specified.";
+
+    if ( (Location == null) || Location.equals("") ) {
+        message = "The location must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the site common name." ) );
+                message, "Specify the location name." ) );
     }
-    
-    if ( (DataTypeCommonName == null) || DataTypeCommonName.equals("") ) {
-        message = "The data type common name must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the data type common name." ) );
-    }
-    
-    if ( (ModelName == null) || ModelName.equals("") ) {
+
+    if ( (DataSource == null) || DataSource.equals("") ) {
         message = "The model name must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the model name." ) );
     }
-    
-    if ( (ModelRunName == null) || ModelRunName.equals("") ) {
-        message = "The model run name must be specified.";
+
+    if ( (DataType == null) || DataType.equals("") ) {
+        message = "The data type must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the model run name." ) );
+                message, "Specify the data type." ) );
     }
     
-    if ( (HydrologicIndicator == null) || HydrologicIndicator.equals("") ) {
-        message = "The hydrologic indicator must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the hydrologic indicator." ) );
-    }
+    // DataSubType may be blank
     
-    if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
+    if ( (Interval != null) && !Interval.equals("") ) {
         try {
-            DateTime.parse(ModelRunDate);
+            DateTime.parse(Interval);
         }
         catch ( Exception e ) {
-            message = "The model run date is invalid.";
+            message = "The data interval is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Specify the model run date as YYYY-MM-DD hh:mm:ss." ) );
+                    message, "Select the interval from the command editor choices." ) );
+        }
+    }
+    
+    // Scenario OK to be blank
+    
+    if ( (CopyDataFlags != null) && !CopyDataFlags.equals("") ) {
+        if ( !CopyDataFlags.equalsIgnoreCase(_False) && !CopyDataFlags.equalsIgnoreCase(_True) ) {
+            message = "The CopyDataFlags parameter \"" + CopyDataFlags + "\" must be " + _False +
+            " or " + _True + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify the parameter as " + _False + " or " + _True + "."));
         }
     }
     
@@ -167,14 +173,13 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "SiteCommonName" );
-    valid_Vector.add ( "DataTypeCommonName" );
-    valid_Vector.add ( "ModelName" );
-    valid_Vector.add ( "ModelRunName" );
-    valid_Vector.add ( "HydrologicIndicator" );
-    valid_Vector.add ( "ModelRunDate" );
-    valid_Vector.add ( "ValidationFlag" );
-    valid_Vector.add ( "DataFlags" );
+    valid_Vector.add ( "Location" );
+    valid_Vector.add ( "DataSource" );
+    valid_Vector.add ( "DataType" );
+    valid_Vector.add ( "DataSubType" );
+    valid_Vector.add ( "Interval" );
+    valid_Vector.add ( "Scenario" );
+    valid_Vector.add ( "CopyDataFlags" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -434,14 +439,13 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String SiteCommonName = parameters.getValue( "SiteCommonName" );
-    String DataTypeCommonName = parameters.getValue( "DataTypeCommonName" );
-    String ModelName = parameters.getValue( "ModelName" );
-    String ModelRunName = parameters.getValue( "ModelRunName" );
-    String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
-    String ModelRunDate = parameters.getValue( "ModelRunDate" );
-    String ValidationFlag = parameters.getValue( "ValidationFlag" );
-    String DataFlags = parameters.getValue( "DataFlags" );
+    String Location = parameters.getValue( "Location" );
+    String DataType = parameters.getValue( "DataType" );
+    String DataSubType = parameters.getValue( "DataSubType" );
+    String DataSource = parameters.getValue( "DataSource" );
+    String Interval = parameters.getValue( "Interval" );
+    String Scenario = parameters.getValue( "Scenario" );
+    String CopyDataFlags = parameters.getValue( "CopyDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	StringBuffer b = new StringBuffer ();
@@ -469,59 +473,53 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( SiteCommonName == null ) {
+    if ( Location == null ) {
         Message.printStatus(2, "XXX", "Site common name is null value." );
     }
     else {
-        Message.printStatus(2, "XXX", "Site common name is string value \"" + SiteCommonName + "\"" );
+        Message.printStatus(2, "XXX", "Site common name is string value \"" + Location + "\"" );
     }
-    if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
+    if ( (Location != null) && (Location.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "SiteCommonName=\"" + SiteCommonName + "\"" );
+        b.append ( "Location=\"" + Location + "\"" );
     }
-    if ( (DataTypeCommonName != null) && (DataTypeCommonName.length() > 0) ) {
+    if ( (DataSource != null) && (DataSource.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "DataTypeCommonName=\"" + DataTypeCommonName + "\"" );
+        b.append ( "DataSource=\"" + DataSource + "\"" );
     }
-    if ( (ModelName != null) && (ModelName.length() > 0) ) {
+    if ( (DataType != null) && (DataType.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ModelName=\"" + ModelName + "\"" );
+        b.append ( "DataType=\"" + DataType + "\"" );
     }
-    if ( (ModelRunName != null) && (ModelRunName.length() > 0) ) {
+    if ( (DataSubType != null) && (DataSubType.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ModelRunName=\"" + ModelRunName + "\"" );
+        b.append ( "DataSubType=\"" + DataSubType + "\"" );
     }
-    if ( (HydrologicIndicator != null) && (HydrologicIndicator.length() > 0) ) {
+    if ( (Interval != null) && (Interval.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "HydrologicIndicator=\"" + HydrologicIndicator + "\"" );
+        b.append ( "Interval=\"" + Interval + "\"" );
     }
-    if ( (ModelRunDate != null) && (ModelRunDate.length() > 0) ) {
+    if ( (Scenario != null) && (Scenario.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ModelRunDate=\"" + ModelRunDate + "\"" );
+        b.append ( "ValidationFlag=\"" + Scenario + "\"" );
     }
-    if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
+    if ( (CopyDataFlags != null) && (CopyDataFlags.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ValidationFlag=\"" + ValidationFlag + "\"" );
-    }
-    if ( (DataFlags != null) && (DataFlags.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "DataFlags=\"" + DataFlags + "\"" );
+        b.append ( "CopyDataFlags=\"" + CopyDataFlags + "\"" );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.riversidedb;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,11 +14,13 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -31,14 +34,19 @@ import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 import rti.tscommandprocessor.core.TSListType;
 import rti.tscommandprocessor.ui.CommandEditorUtil;
 
+import RTi.DMI.DMIUtil;
+import RTi.DMI.DatabaseDataStore;
 import RTi.DMI.RiversideDB_DMI.RiversideDBDataStore;
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
+import RTi.DMI.RiversideDB_DMI.RiversideDB_DataType;
+import RTi.DMI.RiversideDB_DMI.RiversideDB_MeasType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
+import RTi.Util.String.StringUtil;
 
 /**
 Command editor dialog for the WriteRiversideDB() command.
@@ -57,22 +65,25 @@ private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
+private SimpleJComboBox __EnsembleID_JComboBox = null;
 private WriteRiversideDB_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox __SiteCommonName_JComboBox = null;
-private SimpleJComboBox __DataTypeCommonName_JComboBox = null;
-private SimpleJComboBox __ModelName_JComboBox = null;
-private SimpleJComboBox __ModelRunName_JComboBox = null;
-private JTextField __HydrologicIndicator_JTextField = null;
-private SimpleJComboBox __ModelRunDate_JComboBox = null;
-private SimpleJComboBox __ValidationFlag_JComboBox = null;
-private JTextField __DataFlags_JTextField = null;
+private SimpleJComboBox __Location_JComboBox = null;
+private SimpleJComboBox __DataSource_JComboBox = null;
+private SimpleJComboBox __DataType_JComboBox = null;
+private SimpleJComboBox __DataSubType_JComboBox = null;
+private SimpleJComboBox __Interval_JComboBox = null;
+private SimpleJComboBox __Scenario_JComboBox = null;
+//private SimpleJComboBox __SequenceNumber_JComboBox = null; // TODO SAM 2012-02-17 For ensembles - future
+private SimpleJComboBox __CopyDataFlags_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
-private SimpleJComboBox __EnsembleID_JComboBox = null;
+private RiversideDBDataStore __dataStore = null; // selected RiversideDB_DataStore
+private RiversideDB_DMI __dmi = null; // RiversideDB_DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog?
+private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
 //private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector(); // Corresponds to displayed list
 
@@ -103,6 +114,39 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+}
+
+/**
+Refresh the data type choices in response to the currently selected RiversideDB data store.
+@param value if non-null, then the selection is from the command initialization, in which case the
+specified data type should be selected
+*/
+private void actionPerformedDataStoreSelected ( )
+{
+    if ( __DataStore_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    __dataStore = getSelectedDataStore();
+    __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
+    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
+    // Now populate the data type choices corresponding to the data store
+    populateDataTypeChoices ( __dmi );
+}
+
+/**
+Refresh the query choices for the currently selected RiversideDB data store.
+@param value if non-null, then the selection is from the command initialization, in which case the
+specified data type should be selected
+*/
+private void actionPerformedDataTypeSelected ( )
+{
+    if ( __DataType_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // Now populate the interval choices corresponding to the data type
+    populateIntervalChoices ( __dmi );
 }
 
 /**
@@ -142,14 +186,13 @@ private void checkInput ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
-    String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
-    String ModelName = __ModelName_JComboBox.getSelected();
-    String ModelRunName = __ModelRunName_JComboBox.getSelected();
-    String HydrologicIndicator = __HydrologicIndicator_JTextField.getText().trim();
-    String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
-    String ValidationFlag = __ValidationFlag_JComboBox.getSelected();
-    String DataFlags = __DataFlags_JTextField.getText().trim();
+    String Location = __Location_JComboBox.getSelected();
+    String DataSource = __DataSource_JComboBox.getSelected();
+    String DataType = __DataType_JComboBox.getSelected();
+    String DataSubType = __DataSubType_JComboBox.getSelected();
+    String Interval = __Interval_JComboBox.getSelected();
+    String Scenario = __Scenario_JComboBox.getSelected();
+    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 
@@ -167,29 +210,26 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-    if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
-        parameters.set ( "SiteCommonName", SiteCommonName );
+    if ( (Location != null) && (Location.length() > 0) ) {
+        parameters.set ( "Location", Location );
     }
-    if ( (DataTypeCommonName != null) && (DataTypeCommonName.length() > 0) ) {
-        parameters.set ( "DataTypeCommonName", DataTypeCommonName );
+    if ( (DataSource != null) && (DataSource.length() > 0) ) {
+        parameters.set ( "DataSource", DataSource );
     }
-    if ( (ModelName != null) && (ModelName.length() > 0) ) {
-        parameters.set ( "ModelName", ModelName );
+    if ( (DataType != null) && (DataType.length() > 0) ) {
+        parameters.set ( "DataType", DataType );
     }
-    if ( (ModelRunName != null) && (ModelRunName.length() > 0) ) {
-        parameters.set ( "ModelRunName", ModelRunName );
+    if ( (DataSubType != null) && (DataSubType.length() > 0) ) {
+        parameters.set ( "DataSubType", DataSubType );
     }
-    if ( HydrologicIndicator.length() > 0 ) {
-        parameters.set ( "HydrologicIndicator", HydrologicIndicator );
+    if ( (Interval != null) && (Interval.length() > 0) ) {
+        parameters.set ( "Interval", Interval );
     }
-    if ( (ModelRunDate != null) && (ModelRunDate.length() > 0) ) {
-        parameters.set ( "ModelRunDate", ModelRunDate );
+    if ( (Scenario != null) && (Scenario.length() > 0) ) {
+        parameters.set ( "Scenario", Scenario );
     }
-    if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
-        parameters.set ( "ValidationFlag", ValidationFlag );
-    }
-    if ( DataFlags.length() > 0 ) {
-        parameters.set ( "DataFlags", DataFlags );
+    if ( (CopyDataFlags != null) && (CopyDataFlags.length() > 0) ) {
+        parameters.set ( "CopyDataFlags", CopyDataFlags );
     }
 	if ( OutputStart.length() > 0 ) {
 		parameters.set ( "OutputStart", OutputStart );
@@ -217,28 +257,26 @@ private void commitEdits ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String SiteCommonName = __SiteCommonName_JComboBox.getSelected();
-    String DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
-    String ModelName = __ModelName_JComboBox.getSelected();
-    String ModelRunName = __ModelRunName_JComboBox.getSelected();
-    String HydrologicIndicator = __HydrologicIndicator_JTextField.getText().trim();
-    String ModelRunDate = __ModelRunDate_JComboBox.getSelected();
-    String ValidationFlag = __ValidationFlag_JComboBox.getSelected();
-    String DataFlags = __DataFlags_JTextField.getText().trim();
+    String Location = __Location_JComboBox.getSelected();
+    String DataSource = __DataSource_JComboBox.getSelected();
+    String DataType = __DataType_JComboBox.getSelected();
+    String DataSubType = __DataSubType_JComboBox.getSelected();
+    String Interval = __Interval_JComboBox.getSelected();
+    String Scenario = __Scenario_JComboBox.getSelected();
+    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "SiteCommonName", SiteCommonName );
-    __command.setCommandParameter ( "DataTypeCommonName", DataTypeCommonName );
-    __command.setCommandParameter ( "ModelName", ModelName );
-    __command.setCommandParameter ( "ModelRunName", ModelRunName );
-    __command.setCommandParameter ( "HydrologicIndicator", HydrologicIndicator );
-    __command.setCommandParameter ( "ModelRunDate", ModelRunDate );
-    __command.setCommandParameter ( "ValidationFlag", ValidationFlag );
-    __command.setCommandParameter ( "DataFlags", DataFlags );
+    __command.setCommandParameter ( "Location", Location );
+    __command.setCommandParameter ( "DataSource", DataSource );
+    __command.setCommandParameter ( "DataType", DataType );
+    __command.setCommandParameter ( "DataSubType", DataSubType );
+    __command.setCommandParameter ( "Interval", Interval );
+    __command.setCommandParameter ( "Scenario", Scenario );
+    __command.setCommandParameter ( "CopyDataFlags", CopyDataFlags );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
@@ -259,23 +297,29 @@ throws Throwable
 }
 
 /**
-Return the selected data store, used to provide intelligent parameter choices.
-@return the selected data store, or null if nothing selected (or none available)
+Return the RiversideDB_DMI that is currently being used for database interaction, based on the selected data store.
+*/
+private RiversideDB_DMI getRiversideDB_DMI ()
+{
+    return __dmi;
+}
+
+/**
+Get the selected data store.
 */
 private RiversideDBDataStore getSelectedDataStore ()
-{   
-    List<DataStore> dataStoreList =
-        ((TSCommandProcessor)__command.getCommandProcessor()).getDataStoresByType(
-            RiversideDBDataStore.class );
-    String dataStoreNameSelected = __DataStore_JComboBox.getSelected();
-    if ( (dataStoreNameSelected != null) && !dataStoreNameSelected.equals("") ) {
-        for ( DataStore dataStore : dataStoreList ) {
-            if ( dataStore.getName().equalsIgnoreCase(dataStoreNameSelected) ) {
-                return (RiversideDBDataStore)dataStore;
-            }
-        }
+{   String routine = getClass().getName() + ".getSelectedDataStore";
+    String DataStore = __DataStore_JComboBox.getSelected();
+    RiversideDBDataStore dataStore = (RiversideDBDataStore)((TSCommandProcessor)
+        __command.getCommandProcessor()).getDataStoreForName(
+        DataStore, RiversideDBDataStore.class );
+    if ( dataStore != null ) {
+        Message.printStatus(2, routine, "Selected data store is \"" + dataStore.getName() + "\"." );
     }
-    return null;
+    else {
+        Message.printStatus(2, routine, "Cannot get data store for \"" + DataStore + "\"." );
+    }
+    return dataStore;
 }
 
 /**
@@ -306,17 +350,19 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is very much under development - DO NOT USE IN PRODUCTION WORK.</b></html>." ),
-        0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "<html><b>This command currently will only write one time series.  " +
+        "Use parameters to match a time series in the database.</b></html>." ),
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Write one time series or one ensemble to a RiversideDB database." ),
+		"Use the parameters to match a specific time series; " +
+		"choices will be updated based on selections above a specific parameter." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "TSTool will only write time series records.  TSTool will not write records for " +
-        "time series metadata (must have been previously defined)."),
+        "time series metadata (the time series must have been previously defined)."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter output date/times to a " +
 		"precision appropriate for output time series."),
@@ -353,90 +399,89 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Site common name:"), 
+  
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __SiteCommonName_JComboBox = new SimpleJComboBox (false);
-    __SiteCommonName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SiteCommonName_JComboBox,
+    __DataType_JComboBox = new SimpleJComboBox (false);
+    __DataType_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - used with data type common name to determine site_datatype_id."),
+        "Required - matching (main) data type in the database."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type common name:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data sub-type:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataTypeCommonName_JComboBox = new SimpleJComboBox (false);
-    __DataTypeCommonName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DataTypeCommonName_JComboBox,
+    __DataSubType_JComboBox = new SimpleJComboBox (false);
+    __DataSubType_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DataSubType_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - used with site common name to determine site_datatype_id."),
+        "Required - matching (sub) data type in the database (may be blank)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Model name:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ModelName_JComboBox = new SimpleJComboBox (false);
-    __ModelName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ModelName_JComboBox,
+    __Interval_JComboBox = new SimpleJComboBox (false);
+    __Interval_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - used to determine the model run number."),
+        "Required - matching data interval in the database."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Model run name:"), 
+    // Put the following after data type and interval so that the list of locations is reasonably short
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Location (station/area) ID:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ModelRunName_JComboBox = new SimpleJComboBox (false);
-    __ModelRunName_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ModelRunName_JComboBox,
+    __Location_JComboBox = new SimpleJComboBox (false);
+    __Location_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Location_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - used to determine the model run number."),
+        "Required - matching location ID in the database."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Hydrologic indicator:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data source abbreviation:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __HydrologicIndicator_JTextField = new JTextField (45);
-    __HydrologicIndicator_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __HydrologicIndicator_JTextField,
+    __DataSource_JComboBox = new SimpleJComboBox (false);
+    __DataSource_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __DataSource_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - used to determine the model run number."),
+        "Required - matching data source in the database."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Model run date:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Scenario:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ModelRunDate_JComboBox = new SimpleJComboBox (false);
-    __ModelRunDate_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ModelRunDate_JComboBox,
+    __Scenario_JComboBox = new SimpleJComboBox ( false );
+    __Scenario_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Scenario_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Required - YYYY-MM-DD hh:mm:ss, used to determine the model run number."),
+        "Required - matching scenario in the database (may be blank)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Validation flag:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Copy data flags?:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __ValidationFlag_JComboBox = new SimpleJComboBox ( false );
-    __ValidationFlag_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __ValidationFlag_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - standard flag (default=no flag)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data flags:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataFlags_JTextField = new JTextField (20);
-    __DataFlags_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DataFlags_JTextField,
+    __CopyDataFlags_JComboBox = new SimpleJComboBox ( false );
+    __CopyDataFlags_JComboBox.addItemListener (this);
+    List<String> copyDataFlagsList = new Vector();
+    copyDataFlagsList.add("");
+    copyDataFlagsList.add(__command._False);
+    copyDataFlagsList.add(__command._True);
+    __CopyDataFlags_JComboBox.setData ( copyDataFlagsList );
+    __CopyDataFlags_JComboBox.select(0);
+    JGUIUtil.addComponent(main_JPanel, __CopyDataFlags_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - user-defined flag (default=no flag)."),
+        "Optional - should data flags be copied? (default=" + __command._True + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
@@ -500,22 +545,30 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged (ItemEvent e)
-{   //checkGUIState();
-    // FIXME SAM 2011-09-30 the above causes a recursive call
-    // This command is just a prototype
-    if ( true ) {
-        return;
+{   checkGUIState();
+
+    if ( !__ignoreItemEvents ) {
+        if ( (e.getSource() == __DataStore_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
+            // User has selected a data store.
+            actionPerformedDataStoreSelected ();
+        }
+        else if ( (e.getSource() == __DataType_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
+            // User has selected a data store.
+            actionPerformedDataTypeSelected ();
+        }
+        /* TODO SAM 2012-02-18 ReadRiversideDB uses the above so see if that works 
+        if ( (source == __DataStore_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
+            itemStateChangedSelectDataStore();
+        }
+        else if ( (source == __Location_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
+            itemStateChangedSelectSiteCommonName();
+        }
+        else if ( (source == __DataType_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
+            itemStateChangedSelectDataTypeCommonName();
+        }
+        */
     }
-    Object source = e.getSource();
-    if ( (source == __DataStore_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
-        itemStateChangedSelectDataStore();
-    }
-    else if ( (source == __SiteCommonName_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
-        itemStateChangedSelectSiteCommonName();
-    }
-    else if ( (source == __DataTypeCommonName_JComboBox) && (e.getStateChange() == ItemEvent.SELECTED) ) {
-        itemStateChangedSelectDataTypeCommonName();
-    }
+ 
 	refresh();
 }
 
@@ -663,6 +716,108 @@ public boolean ok ()
 }
 
 /**
+Populate the data type list based on the selected database.
+*/
+private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
+{   String routine = getClass().getName() + "populateDataTypeChoices";
+    __DataType_JComboBox.removeAll ();
+    List<RiversideDB_MeasType> mts = null;
+    List<RiversideDB_DataType> dts = null;
+    try {
+        if ( rdmi == null ) {
+            Message.printStatus(2, routine, "RiversideDB_DMI is null." );
+            return; // Nothing selected
+        }
+        mts = rdmi.readMeasTypeListForDistinctData_type();
+        dts = rdmi.readDataTypeList();
+    }
+    catch ( Exception e ) {
+        Message.printWarning ( 1, routine, "Error getting time series for data type choices (" + e + ")." );
+        Message.printWarning ( 3, routine, e );
+        Message.printWarning ( 3, routine, rdmi.getLastSQLString() );
+        mts = null;
+    }
+    int size = 0;
+    if ( mts != null ) {
+        size = mts.size();
+    }
+    int dataTypeLengthMax = 80;
+    if ( size > 0 ) {
+        RiversideDB_MeasType mt = null;
+        int pos;
+        String data_type;
+        for ( int i = 0; i < size; i++ ) {
+            mt = mts.get(i);
+            pos = RiversideDB_DataType.indexOf (dts, mt.getData_type() );
+            if ( pos < 0 ) {
+                __DataType_JComboBox.add(mt.getData_type() );
+            }
+            else {
+                data_type = mt.getData_type() + " - " + dts.get(pos).getDescription();
+                if ( data_type.length() > dataTypeLengthMax ) {
+                    __DataType_JComboBox.add( data_type.substring(0,dataTypeLengthMax) + "..." );
+                }
+                else {
+                    __DataType_JComboBox.add( data_type );
+                }
+            }
+        }
+        // Select first choice (may get reset from existing parameter values).
+        __DataType_JComboBox.select ( null );
+        if ( __DataType_JComboBox.getItemCount() > 0 ) {
+            __DataType_JComboBox.select ( 0 );
+        }
+    }
+}
+
+/**
+Populate the interval choices.
+*/
+private void populateIntervalChoices ( RiversideDB_DMI dmi )
+{   String routine = getClass().getName() + ".populateIntervalChoices";
+    String dataType = StringUtil.getToken(__DataType_JComboBox.getSelected()," ",0,0).trim();
+    List<RiversideDB_MeasType> v = null;
+    try {
+        v = dmi.readMeasTypeListForTSIdent ( ".." + dataType + ".." );
+    }
+    catch ( Exception e ) {
+        Message.printWarning(2, routine, "Error getting time steps from RiversideDB \"" +
+            __dataStore.getName() + "(" + e + ").");
+        Message.printWarning(2, routine, e);
+        v = null;
+    }
+    int size = 0;
+    if ( v != null ) {
+        size = v.size();
+    }
+    RiversideDB_MeasType mt = null;
+    String timestep;
+    String time_step_base;
+    long time_step_mult;
+    __Interval_JComboBox.removeAll ();
+    for ( int i = 0; i < size; i++ ) {
+        mt = v.get(i);
+        // Only add if not already listed. Alternatively - add a "distinct" query
+        time_step_base = mt.getTime_step_base();
+        time_step_mult = mt.getTime_step_mult();
+        if ( time_step_base.equalsIgnoreCase( "IRREGULAR") || DMIUtil.isMissing(time_step_mult) ) {
+            timestep = mt.getTime_step_base();
+        }
+        else {
+            timestep = "" + mt.getTime_step_mult() + mt.getTime_step_base();
+        }
+        if ( !JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, timestep, JGUIUtil.NONE, null, null)){
+            __Interval_JComboBox.add(timestep);
+        }
+    }
+    // Select first choice (may get reset from existing parameter values).
+    __Interval_JComboBox.select ( null );
+    if ( __Interval_JComboBox.getItemCount() > 0 ) {
+        __Interval_JComboBox.select ( 0 );
+    }
+}
+
+/**
 Refresh the command from the other text field contents.
 */
 private void refresh ()
@@ -671,14 +826,13 @@ private void refresh ()
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String SiteCommonName = "";
-    String DataTypeCommonName = "";
-    String ModelName = "";
-    String ModelRunName = "";
-    String HydrologicIndicator = "";
-    String ModelRunDate = "";
-    String ValidationFlag = "";
-    String DataFlags = "";
+    String Location = "";
+    String DataType = "";
+    String DataSource = "";
+    String DataSubType = "";
+    String Interval = "";
+    String Scenario = "";
+    String CopyDataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	__error_wait = false;
@@ -691,14 +845,13 @@ private void refresh ()
         TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
-        SiteCommonName = parameters.getValue ( "SiteCommonName" );
-        DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
-        ModelName = parameters.getValue ( "ModelName" );
-        ModelRunName = parameters.getValue ( "ModelRunName" );
-        HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
-        ModelRunDate = parameters.getValue ( "ModelRunDate" );
-        ValidationFlag = parameters.getValue ( "ValidationFlag" );
-        DataFlags = parameters.getValue ( "DataFlags" );
+        Location = parameters.getValue ( "Location" );
+        DataSource = parameters.getValue ( "DataSource" );
+        DataType = parameters.getValue ( "DataType" );
+        DataSubType = parameters.getValue ( "DataSubType" );
+        Interval = parameters.getValue ( "Interval" );
+        Scenario = parameters.getValue ( "Scenario" );
+        CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
@@ -762,107 +915,119 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__SiteCommonName_JComboBox, SiteCommonName, JGUIUtil.NONE, null, null ) ) {
-            __SiteCommonName_JComboBox.select ( SiteCommonName );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Location_JComboBox, Location, JGUIUtil.NONE, null, null ) ) {
+            __Location_JComboBox.select ( Location );
         }
         else {
-            if ( (SiteCommonName == null) || SiteCommonName.equals("") ) {
+            if ( (Location == null) || Location.equals("") ) {
                 // New command...select the default...
-                if ( __SiteCommonName_JComboBox.getItemCount() > 0 ) {
-                    __SiteCommonName_JComboBox.select ( 0 );
+                if ( __Location_JComboBox.getItemCount() > 0 ) {
+                    __Location_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "SiteCommonName parameter \"" + SiteCommonName + "\".  Select a different value or Cancel." );
+                  "Location parameter \"" + Location + "\".  Select a different value or Cancel." );
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataTypeCommonName_JComboBox, DataTypeCommonName, JGUIUtil.NONE, null, null ) ) {
-            __DataTypeCommonName_JComboBox.select ( DataTypeCommonName );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataSource_JComboBox, DataSource, JGUIUtil.NONE, null, null ) ) {
+            __DataSource_JComboBox.select ( DataSource );
         }
         else {
-            if ( (DataTypeCommonName == null) || DataTypeCommonName.equals("") ) {
+            if ( (DataSource == null) || DataSource.equals("") ) {
                 // New command...select the default...
-                if ( __DataTypeCommonName_JComboBox.getItemCount() > 0 ) {
-                    __DataTypeCommonName_JComboBox.select ( 0 );
+                if ( __DataSource_JComboBox.getItemCount() > 0 ) {
+                    __DataSource_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataTypeCommonName parameter \"" + DataTypeCommonName + "\".  Select a different value or Cancel." );
+                  "DataSource parameter \"" + DataSource + "\".  Select a different value or Cancel." );
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__ModelName_JComboBox, ModelName, JGUIUtil.NONE, null, null ) ) {
-            __ModelName_JComboBox.select ( ModelName );
+        // First populate the data type choices...
+        populateDataTypeChoices(getRiversideDB_DMI() );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null ) ) {
+            __DataType_JComboBox.select ( DataType );
         }
         else {
-            if ( (ModelName == null) || ModelName.equals("") ) {
+            if ( (DataType == null) || DataType.equals("") ) {
                 // New command...select the default...
-                if ( __ModelName_JComboBox.getItemCount() > 0 ) {
-                    __ModelName_JComboBox.select ( 0 );
+                if ( __DataType_JComboBox.getItemCount() > 0 ) {
+                    __DataType_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "ModelName parameter \"" + ModelName + "\".  Select a different value or Cancel." );
+                  "DataType parameter \"" + DataType + "\".  Select a different value or Cancel." );
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__ModelRunName_JComboBox, ModelRunName, JGUIUtil.NONE, null, null ) ) {
-            __ModelRunName_JComboBox.select ( ModelRunName );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataSubType_JComboBox, DataSubType, JGUIUtil.NONE, null, null ) ) {
+            __DataSubType_JComboBox.select ( DataSubType );
         }
         else {
-            if ( (ModelRunName == null) || ModelRunName.equals("") ) {
+            if ( (DataSubType == null) || DataSubType.equals("") ) {
                 // New command...select the default...
-                if ( __ModelRunName_JComboBox.getItemCount() > 0 ) {
-                    __ModelRunName_JComboBox.select ( 0 );
+                if ( __DataSubType_JComboBox.getItemCount() > 0 ) {
+                    __DataSubType_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "ModelRunName parameter \"" + ModelRunName + "\".  Select a different value or Cancel." );
+                  "DataSubType parameter \"" + DataSubType + "\".  Select a different value or Cancel." );
             }
         }
-        if ( HydrologicIndicator != null ) {
-            __HydrologicIndicator_JTextField.setText (HydrologicIndicator);
-        }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__ModelRunDate_JComboBox, ModelRunDate, JGUIUtil.NONE, null, null ) ) {
-            __ModelRunDate_JComboBox.select ( ModelRunDate );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
+            __Interval_JComboBox.select ( Interval );
         }
         else {
-            if ( (ModelRunDate == null) || ModelRunDate.equals("") ) {
+            if ( (Interval == null) || Interval.equals("") ) {
                 // New command...select the default...
-                if ( __ModelRunDate_JComboBox.getItemCount() > 0 ) {
-                    __ModelRunDate_JComboBox.select ( 0 );
+                if ( __Interval_JComboBox.getItemCount() > 0 ) {
+                    __Interval_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "ModelRunDate parameter \"" + ModelRunDate + "\".  Select a different value or Cancel." );
+                  "Interval parameter \"" + Interval + "\".  Select a different value or Cancel." );
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__ValidationFlag_JComboBox, ValidationFlag, JGUIUtil.NONE, null, null ) ) {
-            __ValidationFlag_JComboBox.select ( ValidationFlag );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Scenario_JComboBox, Scenario, JGUIUtil.NONE, null, null ) ) {
+            __Scenario_JComboBox.select ( Scenario );
         }
         else {
-            if ( (ValidationFlag == null) || ValidationFlag.equals("") ) {
+            if ( (Scenario == null) || Scenario.equals("") ) {
                 // New command...select the default...
-                if ( __ValidationFlag_JComboBox.getItemCount() > 0 ) {
-                    __ValidationFlag_JComboBox.select ( 0 );
+                if ( __Scenario_JComboBox.getItemCount() > 0 ) {
+                    __Scenario_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "ValidationFlag parameter \"" + ValidationFlag + "\".  Select a different value or Cancel." );
+                  "Scenario parameter \"" + Scenario + "\".  Select a different value or Cancel." );
             }
         }
-        if ( DataFlags != null ) {
-            __DataFlags_JTextField.setText (DataFlags);
+        if ( JGUIUtil.isSimpleJComboBoxItem(__CopyDataFlags_JComboBox, CopyDataFlags, JGUIUtil.NONE, null, null ) ) {
+            __CopyDataFlags_JComboBox.select ( CopyDataFlags );
+        }
+        else {
+            if ( (CopyDataFlags == null) || CopyDataFlags.equals("") ) {
+                // New command...select the default...
+                if ( __CopyDataFlags_JComboBox.getItemCount() > 0 ) {
+                    __CopyDataFlags_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "CopyDataFlags parameter \"" + CopyDataFlags + "\".  Select a different value or Cancel." );
+            }
         }
 		if ( OutputStart != null ) {
 			__OutputStart_JTextField.setText (OutputStart);
@@ -884,32 +1049,34 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     // FIXME SAM 2011-10-03 Should be able to remove check for null if events and list population are
     // implemented correctly
-    SiteCommonName = __SiteCommonName_JComboBox.getSelected();
-    if ( SiteCommonName == null ) {
-        SiteCommonName = "";
+    Location = __Location_JComboBox.getSelected();
+    if ( Location == null ) {
+        Location = "";
     }
-    DataTypeCommonName = __DataTypeCommonName_JComboBox.getSelected();
-    if ( DataTypeCommonName == null ) {
-        DataTypeCommonName = "";
+    DataSource = __DataSource_JComboBox.getSelected();
+    if ( DataSource == null ) {
+        DataSource = "";
     }
-    ModelName = __ModelName_JComboBox.getSelected();
-    if ( ModelName == null ) {
-        ModelName = "";
+    DataType = __DataType_JComboBox.getSelected();
+    if ( DataType == null ) {
+        DataType = "";
     }
-    ModelRunName = __ModelRunName_JComboBox.getSelected();
-    if ( ModelRunName == null ) {
-        ModelRunName = "";
+    DataSubType = __DataSubType_JComboBox.getSelected();
+    if ( DataSubType == null ) {
+        DataSubType = "";
     }
-    HydrologicIndicator = __HydrologicIndicator_JTextField.getText().trim();
-    ModelRunDate = __ModelRunDate_JComboBox.getSelected();
-    if ( ModelRunDate == null ) {
-        ModelRunDate = "";
+    Interval = __Interval_JComboBox.getSelected();
+    if ( Interval == null ) {
+        Interval = "";
     }
-    ValidationFlag = __ValidationFlag_JComboBox.getSelected();
-    if ( ValidationFlag == null ) {
-        ValidationFlag = "";
+    Scenario = __Scenario_JComboBox.getSelected();
+    if ( Scenario == null ) {
+        Scenario = "";
     }
-    DataFlags = __DataFlags_JTextField.getText().trim();
+    CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
+    if ( CopyDataFlags == null ) {
+        CopyDataFlags = "";
+    }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
@@ -917,14 +1084,13 @@ private void refresh ()
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
     parameters.add ( "EnsembleID=" + EnsembleID );
-    parameters.add ( "SiteCommonName=" + SiteCommonName );
-    parameters.add ( "DataTypeCommonName=" + DataTypeCommonName );
-    parameters.add ( "ModelName=" + ModelName );
-    parameters.add ( "ModelRunName=" + ModelRunName );
-    parameters.add ( "HydrologicIndicator=" + HydrologicIndicator );
-    parameters.add ( "ModelRunDate=" + ModelRunDate );
-    parameters.add ( "ValidationFlag=" + ValidationFlag );
-    parameters.add ( "DataFlags=" + DataFlags );
+    parameters.add ( "Location=" + Location );
+    parameters.add ( "DataType=" + DataType );
+    parameters.add ( "DataSource=" + DataSource );
+    parameters.add ( "DataSubType=" + DataSubType );
+    parameters.add ( "Interval=" + Interval );
+    parameters.add ( "Scenario=" + Scenario );
+    parameters.add ( "CopyDataFlags=" + CopyDataFlags );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );

@@ -473,12 +473,6 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( Location == null ) {
-        Message.printStatus(2, "XXX", "Site common name is null value." );
-    }
-    else {
-        Message.printStatus(2, "XXX", "Site common name is string value \"" + Location + "\"" );
-    }
     if ( (Location != null) && (Location.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

@@ -37,7 +37,7 @@ public class WriteRiversideDB_Command extends AbstractCommand implements Command
 {
 
 /**
-Values for CopyDataFlags
+Values for WriteDataFlags
 */
 protected String _False = "False";
 protected String _True = "True";
@@ -67,7 +67,7 @@ throws InvalidCommandParameterException
     String DataSubType = parameters.getValue ( "DataSubType" );
     String Interval = parameters.getValue ( "Interval" );
     String Scenario = parameters.getValue ( "Scenario" );
-    String CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
+    String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
@@ -126,9 +126,9 @@ throws InvalidCommandParameterException
     
     // Scenario OK to be blank
     
-    if ( (CopyDataFlags != null) && !CopyDataFlags.equals("") ) {
-        if ( !CopyDataFlags.equalsIgnoreCase(_False) && !CopyDataFlags.equalsIgnoreCase(_True) ) {
-            message = "The CopyDataFlags parameter \"" + CopyDataFlags + "\" must be " + _False +
+    if ( (WriteDataFlags != null) && !WriteDataFlags.equals("") ) {
+        if ( !WriteDataFlags.equalsIgnoreCase(_False) && !WriteDataFlags.equalsIgnoreCase(_True) ) {
+            message = "The WriteDataFlags parameter \"" + WriteDataFlags + "\" must be " + _False +
             " or " + _True + ".";
             warning += "\n" + message;
             status.addToLog(CommandPhaseType.INITIALIZATION,
@@ -179,7 +179,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataSubType" );
     valid_Vector.add ( "Interval" );
     valid_Vector.add ( "Scenario" );
-    valid_Vector.add ( "CopyDataFlags" );
+    valid_Vector.add ( "WriteDataFlags" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -445,7 +445,7 @@ public String toString ( PropList parameters )
     String DataSource = parameters.getValue( "DataSource" );
     String Interval = parameters.getValue( "Interval" );
     String Scenario = parameters.getValue( "Scenario" );
-    String CopyDataFlags = parameters.getValue( "CopyDataFlags" );
+    String WriteDataFlags = parameters.getValue( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	StringBuffer b = new StringBuffer ();
@@ -509,11 +509,11 @@ public String toString ( PropList parameters )
         }
         b.append ( "ValidationFlag=\"" + Scenario + "\"" );
     }
-    if ( (CopyDataFlags != null) && (CopyDataFlags.length() > 0) ) {
+    if ( (WriteDataFlags != null) && (WriteDataFlags.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "CopyDataFlags=\"" + CopyDataFlags + "\"" );
+        b.append ( "WriteDataFlags=\"" + WriteDataFlags + "\"" );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

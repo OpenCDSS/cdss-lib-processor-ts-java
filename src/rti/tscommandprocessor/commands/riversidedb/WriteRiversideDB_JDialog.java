@@ -72,7 +72,7 @@ private SimpleJComboBox __DataSubType_JComboBox = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private SimpleJComboBox __Scenario_JComboBox = null;
 private SimpleJComboBox __SequenceNumber_JComboBox = null;
-private SimpleJComboBox __CopyDataFlags_JComboBox = null;
+private SimpleJComboBox __WriteDataFlags_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private RiversideDBDataStore __dataStore = null; // selected RiversideDB_DataStore
@@ -83,6 +83,11 @@ private boolean __ok = false; // Has user pressed OK to close the dialog?
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
 //private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector(); // Corresponds to displayed list
+
+// List in the order of the UI (NOT the TSID!)
+private enum Parameter {
+    DATA_TYPE, DATA_SUBTYPE, INTERVAL, LOCATION, DATA_SOURCE, SCENARIO, SEQUENCE_NUMBER
+};
 
 /**
 Command editor constructor.
@@ -222,7 +227,7 @@ private void checkInput ()
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JComboBox.getSelected();
     String SequenceNumber = __SequenceNumber_JComboBox.getSelected();
-    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
+    String WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 
@@ -261,8 +266,8 @@ private void checkInput ()
     if ( (SequenceNumber != null) && (SequenceNumber.length() > 0) ) {
         parameters.set ( "SequenceNumber", SequenceNumber );
     }
-    if ( (CopyDataFlags != null) && (CopyDataFlags.length() > 0) ) {
-        parameters.set ( "CopyDataFlags", CopyDataFlags );
+    if ( (WriteDataFlags != null) && (WriteDataFlags.length() > 0) ) {
+        parameters.set ( "WriteDataFlags", WriteDataFlags );
     }
 	if ( OutputStart.length() > 0 ) {
 		parameters.set ( "OutputStart", OutputStart );
@@ -305,7 +310,7 @@ private void commitEdits ()
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JComboBox.getSelected();
     String SequenceNumber = __SequenceNumber_JComboBox.getSelected();
-    String CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
+    String WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	__command.setCommandParameter ( "DataStore", DataStore );
@@ -319,7 +324,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Interval", Interval );
     __command.setCommandParameter ( "Scenario", Scenario );
     __command.setCommandParameter ( "SequenceNumber", SequenceNumber );
-    __command.setCommandParameter ( "CopyDataFlags", CopyDataFlags );
+    __command.setCommandParameter ( "WriteDataFlags", WriteDataFlags );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 }
@@ -378,6 +383,94 @@ private RiversideDB_DMI getSelectedDMI()
 }
 
 /**
+Form a TSID string from the selected parameters.  Checks are done based on the parameter that is being
+processed, to reflect the cascade of changes that occur as a user selects parameter values.
+The further down the sequence of selecting parameters, the more information is added to the TSID.  However,
+the information is not added left to right because the order of TSID parts presented to the user starts with
+data type so as to present a more reasonable (short) lists of choices.
+The parameters are listed in the order of cascading choices, as values from the component (may be null if
+component data are not initialized).
+@param parameter the parameter to include in the TSID, which should be one "less" than the current parameter
+being processed to create a list (e.g., if the choices for location are being populated, pass the UI parameter
+above this (interval).
+*/
+private String getTSIDFromParameters ( Parameter parameter, String dataType, String dataSubType, String interval,
+    String location, String dataSource, String scenario, String sequenceNumber )
+{   // Strings used in the final formatting of the TSID
+    String location2 = "";
+    String dataSource2 = "";
+    String dataType2 = "";
+    String interval2 = "";
+    String scenario2 = "";
+    String sequenceNumber2 = "";
+    // Data type is selected first
+    if ( parameter.ordinal() >= Parameter.DATA_TYPE.ordinal() ) {
+        if ( dataType == null ) {
+            // This is always going to be a problem
+            return null;
+        }
+        if ( dataType.indexOf(" ") > 0 ) {
+            // Should be of form "dataType - Description"
+            dataType2 = StringUtil.getToken(dataType," ",0,0).trim();
+        }
+        else {
+            dataType2 = dataType.trim();
+        }
+    }
+    if ( parameter.ordinal() >= Parameter.DATA_SUBTYPE.ordinal() ) {
+        if ( dataSubType == null ) {
+            return null;
+        }
+        dataSubType = dataSubType.trim();
+        if ( dataSubType.length() > 0 ) {
+            // Modify the data type
+            dataType2 = dataType2 + "-" + dataSubType;
+        }
+    }
+    if ( parameter.ordinal() >= Parameter.INTERVAL.ordinal() ) {
+        if ( interval == null ) {
+            return null;
+        }
+        interval2 = interval.trim();
+    }
+    if ( parameter.ordinal() >= Parameter.LOCATION.ordinal() ) {
+        if ( location == null ) {
+            return null;
+        }
+        location2 = location.trim();
+    }
+    if ( parameter.ordinal() >= Parameter.DATA_SOURCE.ordinal() ) {
+        if ( dataSource == null ) {
+            return null;
+        }
+        dataSource2 = dataSource.trim();
+    }
+    if ( parameter.ordinal() >= Parameter.SCENARIO.ordinal() ) {
+        if ( scenario == null ) {
+            return null;
+        }
+        scenario2 = scenario.trim();
+    }
+    if ( parameter.ordinal() >= Parameter.SEQUENCE_NUMBER.ordinal() ) {
+        if ( sequenceNumber == null ) {
+            return null;
+        }
+        sequenceNumber2 = sequenceNumber.trim();
+        if ( sequenceNumber2.length() > 0 ) {
+            sequenceNumber2 = "[" + sequenceNumber2 + "]";
+        }
+    }
+    StringBuffer tsid = new StringBuffer ( "" );
+    tsid.append ( location2 + "." );
+    tsid.append ( dataSource2 + "." );
+    tsid.append ( dataType2 + "." );
+    tsid.append ( interval2 + "." );
+    tsid.append ( scenario2 );
+    tsid.append ( sequenceNumber2 );
+    return tsid.toString();
+}
+
+/**
 Instantiates the GUI components.
 @param parent Frame class instantiating this class.
 @param command Command to edit.
@@ -396,12 +489,12 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command currently will only write one time series.  " +
-        "Use parameters to match a time series in the database.</b></html>." ),
+        "<html><b>This command currently will write only one time series.  " +
+        "Use parameters to match a single time series in the database.</b></html>." ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Use the parameters to match a specific time series; " +
-		"choices will be updated based on selections above a specific parameter." ),
+		"choices will be updated based on previous selections." ),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "TSTool will only write time series records.  TSTool will not write records for " +
@@ -519,20 +612,20 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
         "Required - for ensembles, the sequence number (trace starting year)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Copy data flags?:"), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Write data flags?:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __CopyDataFlags_JComboBox = new SimpleJComboBox ( false );
-    __CopyDataFlags_JComboBox.addItemListener (this);
-    List<String> copyDataFlagsList = new Vector();
-    copyDataFlagsList.add("");
-    copyDataFlagsList.add(__command._False);
-    copyDataFlagsList.add(__command._True);
-    __CopyDataFlags_JComboBox.setData ( copyDataFlagsList );
-    __CopyDataFlags_JComboBox.select(0);
-    JGUIUtil.addComponent(main_JPanel, __CopyDataFlags_JComboBox,
+    __WriteDataFlags_JComboBox = new SimpleJComboBox ( false );
+    __WriteDataFlags_JComboBox.addItemListener (this);
+    List<String> writeDataFlagsList = new Vector();
+    writeDataFlagsList.add("");
+    writeDataFlagsList.add(__command._False);
+    writeDataFlagsList.add(__command._True);
+    __WriteDataFlags_JComboBox.setData ( writeDataFlagsList );
+    __WriteDataFlags_JComboBox.select(0);
+    JGUIUtil.addComponent(main_JPanel, __WriteDataFlags_JComboBox,
         1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - should data flags be copied? (default=" + __command._True + ")."),
+        "Optional - should data flags be written? (default=" + __command._True + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
@@ -660,7 +753,7 @@ Populate the data sub-type choices for the given data type.
 */
 private void populateDataSubTypeChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateDataSubTypeChoices";
-    if ( (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ) {
+    if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ) {
         // Still in initialization
         return;
     }
@@ -708,18 +801,15 @@ private void populateDataSubTypeChoices ( RiversideDB_DMI dmi )
 Populate the data type list based on the selected database.
 */
 private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
-{   String routine = getClass().getName() + "populateDataTypeChoices";
-    if ( __DataType_JComboBox == null ) {
+{   String routine = getClass().getName() + ".populateDataTypeChoices";
+    if ( (rdmi == null) || (__DataType_JComboBox == null) ) {
+        // Initialization
         return;
     }
     __DataType_JComboBox.removeAll ();
     List<RiversideDB_MeasType> measTypeList = null;
     List<RiversideDB_DataType> dataTypeList = null;
     try {
-        if ( rdmi == null ) {
-            Message.printStatus(2, routine, "RiversideDB_DMI is null." );
-            return; // Nothing selected
-        }
         measTypeList = rdmi.readMeasTypeListForDistinctData_type();
         dataTypeList = rdmi.readDataTypeList();
     }
@@ -767,60 +857,47 @@ Populate the interval choices.
 */
 private void populateIntervalChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateIntervalChoices";
-    if ( (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ) {
+    if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ) {
         // Initialization
         return;
     }
-    String dataType = __DataType_JComboBox.getSelected();
-    if ( dataType == null ) {
-        return;
-    }
-    dataType = StringUtil.getToken(dataType," ",0,0).trim();
-    String dataSubType = __DataSubType_JComboBox.getSelected();
-    if ( dataSubType == null ) {
-        return;
-    }
-    dataSubType = dataSubType.trim();
+    String tsid = getTSIDFromParameters ( Parameter.DATA_SUBTYPE, __DataType_JComboBox.getSelected(),
+            __DataSubType_JComboBox.getSelected(),
+            __Interval_JComboBox.getSelected(),
+            null, // location
+            null, // data source
+            null, // scenario
+            null ); // sequence number
     List<RiversideDB_MeasType> measTypeList = null;
     try {
-        if ( dataSubType.equals("") ) {
-            measTypeList = dmi.readMeasTypeListForTSIdent ( ".." + dataType + ".." );
-        }
-        else {
-            measTypeList = dmi.readMeasTypeListForTSIdent ( ".." + dataType + "-" + dataSubType+ ".." );
-        }
+        measTypeList = dmi.readMeasTypeListForTSIdent ( tsid );
     }
     catch ( Exception e ) {
         Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
-            __dataStore.getName() + "(" + e + ").");
+            __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
         Message.printWarning(2, routine, e);
-        measTypeList = null;
+        return;
     }
-    int size = 0;
-    if ( measTypeList != null ) {
-        size = measTypeList.size();
-    }
-    RiversideDB_MeasType mt = null;
     String timestep;
     String time_step_base;
     long time_step_mult;
     __Interval_JComboBox.removeAll ();
-    for ( int i = 0; i < size; i++ ) {
-        mt = measTypeList.get(i);
+    for ( RiversideDB_MeasType measType : measTypeList ) {
         // Only add if not already listed. Alternatively - need to enable a "distinct" query
-        time_step_base = mt.getTime_step_base();
-        time_step_mult = mt.getTime_step_mult();
+        time_step_base = measType.getTime_step_base();
+        time_step_mult = measType.getTime_step_mult();
         if ( time_step_base.equalsIgnoreCase( "IRREGULAR") || DMIUtil.isMissing(time_step_mult) ) {
-            timestep = mt.getTime_step_base();
+            timestep = measType.getTime_step_base();
         }
         else {
-            timestep = "" + mt.getTime_step_mult() + mt.getTime_step_base();
+            timestep = "" + measType.getTime_step_mult() + measType.getTime_step_base();
         }
         if ( !JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, timestep, JGUIUtil.NONE, null, null)){
             __Interval_JComboBox.add(timestep);
         }
     }
     // Select first choice (may get reset from existing parameter values).
+    // TODO SAM 2012-02-19 Need a way to intelligently sort the intervals
     __Interval_JComboBox.select ( null );
     if ( __Interval_JComboBox.getItemCount() > 0 ) {
         __Interval_JComboBox.select ( 0 );
@@ -832,41 +909,31 @@ Populate the location choices.
 */
 private void populateLocationChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateLocationChoices";
-    if ( (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) || (__Interval_JComboBox == null) ) {
+    if ( (dmi == null) || (__DataType_JComboBox == null) ||
+        (__DataSubType_JComboBox == null) || (__Interval_JComboBox == null) ||
+        (__Location_JComboBox == null)) {
         // Initialization
         return;
     }
-    String dataType = __DataType_JComboBox.getSelected();
-    if ( dataType == null ) {
+    String tsid = getTSIDFromParameters ( Parameter.INTERVAL, __DataType_JComboBox.getSelected(),
+        __DataSubType_JComboBox.getSelected(),
+        __Interval_JComboBox.getSelected(),
+        __Location_JComboBox.getSelected(), // location
+        null, // data source
+        null, // scenario
+        null ); // sequence number
+    if ( tsid == null ) {
         return;
     }
-    dataType = StringUtil.getToken(dataType," ",0,0).trim();
-    String dataSubType = __DataSubType_JComboBox.getSelected();
-    if ( dataSubType == null ) {
-        return;
-    }
-    dataSubType = dataSubType.trim();
-    String interval = __Interval_JComboBox.getSelected();
-    if ( interval == null ) {
-        return;
-    }
-    interval = interval.trim();
-    List<RiversideDB_MeasType> measTypeList = null;
-    String tsid = "";
+    List<RiversideDB_MeasType> measTypeList;
     try {
-        if ( dataSubType.equals("") ) {
-            tsid = ".." + dataType + "." + interval + ".";
-        }
-        else {
-            tsid = ".." + dataType + "-" + dataSubType+ "." + interval + ".";
-        }
         measTypeList = dmi.readMeasTypeListForTSIdent ( tsid );
     }
     catch ( Exception e ) {
         Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
             __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
         Message.printWarning(2, routine, e);
-        measTypeList = null;
+        return;
     }
     Message.printStatus(2, routine, "Got " + measTypeList.size() + " MeasType using tsid=\"" + tsid + "\"." );
     __Location_JComboBox.removeAll ();
@@ -922,7 +989,7 @@ private void refresh ()
     String Interval = "";
     String Scenario = "";
     String SequenceNumber = "";
-    String CopyDataFlags = "";
+    String WriteDataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
 	__error_wait = false;
@@ -942,7 +1009,7 @@ private void refresh ()
         Interval = parameters.getValue ( "Interval" );
         Scenario = parameters.getValue ( "Scenario" );
         SequenceNumber = parameters.getValue ( "SequenceNumber" );
-        CopyDataFlags = parameters.getValue ( "CopyDataFlags" );
+        WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
@@ -1148,20 +1215,20 @@ private void refresh ()
                   "SequenceNumber parameter \"" + SequenceNumber + "\".  Select a different value or Cancel." );
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__CopyDataFlags_JComboBox, CopyDataFlags, JGUIUtil.NONE, null, null ) ) {
-            __CopyDataFlags_JComboBox.select ( CopyDataFlags );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteDataFlags_JComboBox, WriteDataFlags, JGUIUtil.NONE, null, null ) ) {
+            __WriteDataFlags_JComboBox.select ( WriteDataFlags );
         }
         else {
-            if ( (CopyDataFlags == null) || CopyDataFlags.equals("") ) {
+            if ( (WriteDataFlags == null) || WriteDataFlags.equals("") ) {
                 // New command...select the default...
-                if ( __CopyDataFlags_JComboBox.getItemCount() > 0 ) {
-                    __CopyDataFlags_JComboBox.select ( 0 );
+                if ( __WriteDataFlags_JComboBox.getItemCount() > 0 ) {
+                    __WriteDataFlags_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "CopyDataFlags parameter \"" + CopyDataFlags + "\".  Select a different value or Cancel." );
+                  "WriteDataFlags parameter \"" + WriteDataFlags + "\".  Select a different value or Cancel." );
             }
         }
 		if ( OutputStart != null ) {
@@ -1220,9 +1287,9 @@ private void refresh ()
     if ( SequenceNumber == null ) {
         SequenceNumber = "";
     }
-    CopyDataFlags = __CopyDataFlags_JComboBox.getSelected();
-    if ( CopyDataFlags == null ) {
-        CopyDataFlags = "";
+    WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
+    if ( WriteDataFlags == null ) {
+        WriteDataFlags = "";
     }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
@@ -1238,7 +1305,7 @@ private void refresh ()
     parameters.add ( "DataSource=" + DataSource );
     parameters.add ( "Scenario=" + Scenario );
     parameters.add ( "SequenceNumber=" + SequenceNumber );
-    parameters.add ( "CopyDataFlags=" + CopyDataFlags );
+    parameters.add ( "WriteDataFlags=" + WriteDataFlags );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
@@ -1265,14 +1332,6 @@ private void response ( boolean ok )
 }
 
 /**
-Set the HDB site list corresponding to the displayed list.
-*/
-private void setSiteDataTypeList ( )//List<ReclamationHDB_SiteDataType> siteDataTypeList )
-{
-    //__siteDataTypeList = siteDataTypeList;
-}
-
-/**
 Responds to WindowEvents.
 @param event WindowEvent object
 */
@@ -1286,10 +1345,5 @@ public void windowDeactivated( WindowEvent evt ){;}
 public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
-
-private Object makeSiteListObject ( final String item )  {
-    return new Object() {
-        public String toString() { return item; } };
-  }
 
 }

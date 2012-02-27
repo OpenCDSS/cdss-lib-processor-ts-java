@@ -713,7 +713,7 @@ import RTi.TS.TSLimits;
 import RTi.TS.TSSupplier;
 import RTi.TS.TSUtil;
 import RTi.TS.TSUtil_ChangeInterval;
-import RTi.TS.UsgsNwisTS;
+import RTi.TS.UsgsNwisRdbTS;
 import RTi.TS.YearTS;
 
 import RTi.Util.GUI.ReportJFrame;
@@ -4583,13 +4583,15 @@ throws Exception
             ts = null;
         }
     }
-	else if ((inputType != null) && inputType.equalsIgnoreCase("USGSNWIS") ) {
+	else if ((inputType != null) &&
+	    (inputType.equalsIgnoreCase("USGSNWIS") || // Legacy input type, replaced with the following...
+	    inputType.equalsIgnoreCase("UsgsNwisRdb")) ) { // Current input type
 		// New style TSID~input_type
 		try {
-            ts = UsgsNwisTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
+            ts = UsgsNwisRdbTS.readTimeSeries ( tsidentString2, inputNameFull, readStart, readEnd, units, readData );
 		}
 		catch ( Exception te ) {
-		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from USGS NWIS file." );
+		    Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 + "\" from USGS NWIS Rdb file." );
             Message.printWarning ( 3, routine, te );
 			ts = null;
 		}

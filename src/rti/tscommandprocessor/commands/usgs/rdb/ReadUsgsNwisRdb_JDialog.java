@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.usgs;
+package rti.tscommandprocessor.commands.usgs.rdb;
 
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -37,7 +37,7 @@ import RTi.Util.Message.Message;
 /**
 Editor dialog for the ReadUsgsNwis() command.
 */
-public class ReadUsgsNwis_JDialog extends JDialog
+public class ReadUsgsNwisRdb_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
     
@@ -49,7 +49,7 @@ private SimpleJButton	__browse_JButton = null,// File browse button
 			__path_JButton = null,	// Convert between relative and absolute path.
 			__cancel_JButton = null,// Cancel Button
 			__ok_JButton = null;	// Ok Button
-private ReadUsgsNwis_Command __command = null;// Command to edit
+private ReadUsgsNwisRdb_Command __command = null;// Command to edit
 private String __working_dir = null; // Working directory.
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField
@@ -66,7 +66,7 @@ Editor dialog constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public ReadUsgsNwis_JDialog ( JFrame parent, ReadUsgsNwis_Command command )
+public ReadUsgsNwisRdb_JDialog ( JFrame parent, ReadUsgsNwisRdb_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -250,7 +250,7 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, ReadUsgsNwis_Command command )
+private void initialize ( JFrame parent, ReadUsgsNwisRdb_Command command )
 {	__command = command;
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)__command.getCommandProcessor(), __command );
 
@@ -264,12 +264,12 @@ private void initialize ( JFrame parent, ReadUsgsNwis_Command command )
 	int y = 0;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Read a single time series from a USGS NWIS format file.  " +
+		"Read a single time series from a USGS NWIS RDB format file.  " +
 		"Currently only daily streamflow is supported." ), 
 		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
-		"directory) for a USGS NWIS file to read." ), 
+		"directory) for a USGS NWIS RDB file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specifying the period will limit data that are available " +
@@ -285,7 +285,7 @@ private void initialize ( JFrame parent, ReadUsgsNwis_Command command )
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
 
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "USGS NWIS file to read:" ), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "USGS NWIS RDB file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__InputFile_JTextField = new JTextField ( 50 );
 	__InputFile_JTextField.addKeyListener ( this );

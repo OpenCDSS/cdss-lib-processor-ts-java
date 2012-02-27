@@ -211,7 +211,7 @@ import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
 // USGS commands
 
-import rti.tscommandprocessor.commands.usgs.ReadUsgsNwis_Command;
+import rti.tscommandprocessor.commands.usgs.rdb.ReadUsgsNwisRdb_Command;
 
 // Utility commands.
 
@@ -643,8 +643,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ReadTimeSeries") ) {
         return new ReadTimeSeries_Command ();
     }
-    else if ( commandName.equalsIgnoreCase("ReadUsgsNwis") ) {
-        return new ReadUsgsNwis_Command ();
+    else if ( commandName.equalsIgnoreCase("ReadUsgsNwis") || commandName.equalsIgnoreCase("ReadUsgsNwisRdb")) {
+        // Automatically convert legacy command to new name
+        return new ReadUsgsNwisRdb_Command ();
     }
     else if ( commandName.equalsIgnoreCase("RelativeDiff") ) {
         return new RelativeDiff_Command ();

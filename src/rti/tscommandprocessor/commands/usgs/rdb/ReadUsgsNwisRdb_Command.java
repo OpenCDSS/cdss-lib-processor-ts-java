@@ -1,4 +1,4 @@
-package rti.tscommandprocessor.commands.usgs;
+package rti.tscommandprocessor.commands.usgs.rdb;
 
 import javax.swing.JFrame;
 
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
-import RTi.TS.UsgsNwisTS;
+import RTi.TS.UsgsNwisRdbTS;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
@@ -33,9 +33,9 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-This class initializes, checks, and runs the ReadUsgsNwis() command.
+This class initializes, checks, and runs the ReadUsgsNwisRdb() command.
 */
-public class ReadUsgsNwis_Command extends AbstractCommand
+public class ReadUsgsNwisRdb_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider, CommandSavesMultipleVersions
 {
 
@@ -59,10 +59,10 @@ private List<TS> __discovery_TS_Vector = null;
 /**
 Constructor.
 */
-public ReadUsgsNwis_Command ()
+public ReadUsgsNwisRdb_Command ()
 {
 	super();
-	setCommandName ( "ReadUsgsNwis" );
+	setCommandName ( "ReadUsgsNwisRdb" );
 }
 
 /**
@@ -247,7 +247,7 @@ not (e.g., "Cancel" was pressed).
 public boolean editCommand ( JFrame parent )
 {	
 	// The command will be modified if changed...
-	return ( new ReadUsgsNwis_JDialog ( parent, this ) ).ok();
+	return ( new ReadUsgsNwisRdb_JDialog ( parent, this ) ).ok();
 }
 
 /**
@@ -304,7 +304,7 @@ parameters are determined to be invalid.
 public void parseCommand ( String commandString )
 throws InvalidCommandSyntaxException, InvalidCommandParameterException
 {	int warning_level = 2;
-	String routine = "ReadUsgsNwis_Command.parseCommand", message;
+	String routine = "ReadUsgsNwisRdb_Command.parseCommand", message;
 	
     if ( !commandString.trim().toUpperCase().startsWith("TS") ) {
         // New style syntax using simple parameter=value notation
@@ -330,7 +330,7 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
                 if ( tokens.size() != 4 ) {
                     message =
                     "Invalid syntax for legacy command \"" + commandString +
-                    "\".  Expecting TS Alias = ReadUsgsNwis(InputFile,InputStart,InputEnd).";
+                    "\".  Expecting TS Alias = ReadUsgsNwisRdb(InputFile,InputStart,InputEnd).";
                     Message.printWarning ( warning_level, routine, message);
                     CommandStatus status = getCommandStatus();
                     status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -419,7 +419,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType command_p
 throws InvalidCommandParameterException,
        CommandWarningException,
        CommandException
-{	String routine = "ReadUsgsNwis_Command.runCommand", message;
+{	String routine = "ReadUsgsNwisRdb_Command.runCommand", message;
 	int warning_level = 2;
     int log_level = 3;
 	String command_tag = "" + command_number;
@@ -593,7 +593,7 @@ throws InvalidCommandParameterException,
         }
         else {
             // No requested units...
-            ts = UsgsNwisTS.readTimeSeries ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, null, read_data );
+            ts = UsgsNwisRdbTS.readTimeSeries ( InputFile_full, InputStart_DateTime, InputEnd_DateTime, null, read_data );
             if ( ts == null ) {
                 message = "Unable to read time series from USGS NWIS file \"" + InputFile_full + "\".";
                 status.addToLog(command_phase,

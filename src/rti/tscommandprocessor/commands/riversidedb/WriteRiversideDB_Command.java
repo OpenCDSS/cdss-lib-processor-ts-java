@@ -29,6 +29,8 @@ import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.InvalidTimeIntervalException;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the WriteRiversideDB() command.
@@ -64,9 +66,9 @@ throws InvalidCommandParameterException
     String Location = parameters.getValue ( "Location" );
     String DataSource = parameters.getValue ( "DataSource" );
     String DataType = parameters.getValue ( "DataType" );
-    String DataSubType = parameters.getValue ( "DataSubType" );
+    //String DataSubType = parameters.getValue ( "DataSubType" );
     String Interval = parameters.getValue ( "Interval" );
-    String Scenario = parameters.getValue ( "Scenario" );
+    //String Scenario = parameters.getValue ( "Scenario" );
     String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -90,15 +92,15 @@ throws InvalidCommandParameterException
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the location name." ) );
+                message, "Specify the location." ) );
     }
 
     if ( (DataSource == null) || DataSource.equals("") ) {
-        message = "The model name must be specified.";
+        message = "The data source must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the model name." ) );
+                message, "Specify the data source." ) );
     }
 
     if ( (DataType == null) || DataType.equals("") ) {
@@ -113,10 +115,10 @@ throws InvalidCommandParameterException
     
     if ( (Interval != null) && !Interval.equals("") ) {
         try {
-            DateTime.parse(Interval);
+            TimeInterval.parseInterval(Interval);
         }
         catch ( Exception e ) {
-            message = "The data interval is invalid.";
+            message = "The data interval (" + Interval + ") is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -125,6 +127,7 @@ throws InvalidCommandParameterException
     }
     
     // Scenario OK to be blank
+    // SequenceNumber OK to be blank
     
     if ( (WriteDataFlags != null) && !WriteDataFlags.equals("") ) {
         if ( !WriteDataFlags.equalsIgnoreCase(_False) && !WriteDataFlags.equalsIgnoreCase(_True) ) {
@@ -179,6 +182,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataSubType" );
     valid_Vector.add ( "Interval" );
     valid_Vector.add ( "Scenario" );
+    valid_Vector.add ( "SequenceNumber" );
     valid_Vector.add ( "WriteDataFlags" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
@@ -229,14 +233,25 @@ CommandWarningException, CommandException
     }
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String SiteCommonName = parameters.getValue ( "SiteCommonName" );
-    String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
-    String ModelName = parameters.getValue ( "ModelName" );
-    String ModelRunName = parameters.getValue ( "ModelRunName" );
-    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
-    String ModelRunDate = parameters.getValue ( "ModelRunDate" );
-    String ValidationFlag = parameters.getValue ( "ValidationFlag" );
-    String DataFlags = parameters.getValue ( "DataFlags" );
+    String Location = parameters.getValue ( "Location" );
+    String DataSource = parameters.getValue ( "DataSource" );
+    String DataType = parameters.getValue ( "DataType" );
+    String DataSubType = parameters.getValue ( "DataSubType" );
+    String Interval = parameters.getValue ( "Interval" );
+    TimeInterval interval = null;
+    try {
+        TimeInterval.parseInterval(Interval);
+    }
+    catch ( InvalidTimeIntervalException e ) {
+        // Will have been caught in checkCommandParameters()
+    }
+    String Scenario = parameters.getValue ( "Scenario" );
+    String SequenceNumber = parameters.getValue ( "SequenceNumber" );
+    String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
+    boolean writeDataFlags = true;
+    if ( (WriteDataFlags != null) && WriteDataFlags.equalsIgnoreCase(_False) ) {
+        writeDataFlags = false;
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -244,7 +259,6 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	boolean haveTS = true;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
@@ -257,7 +271,6 @@ CommandWarningException, CommandException
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
-		haveTS = false;
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -390,30 +403,38 @@ CommandWarningException, CommandException
             Message.printWarning ( 2, routine, message );
             status.addToLog ( CommandPhaseType.RUN,
                 new CommandLogRecord(CommandStatusType.FAILURE,
-                    message, "Verify that a ReclamationHDB database connection has been opened with name \"" +
+                    message, "Verify that a RiversideDB database connection has been opened with name \"" +
                     DataStore + "\"." ) );
             throw new RuntimeException ( message );
         }
         RiversideDB_DMI dmi = (RiversideDB_DMI)((RiversideDBDataStore)dataStore).getDMI();
-        Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" +
+        Message.printStatus ( 2, routine, "Writing RiversideDB time series to data store \"" +
             dataStore.getName() + "\"" );
-        boolean isEnsemble = false;
-        DateTime modelRunDate = null;
-        String loadingApp = "TSTool";
-        message = "Command is not fully implemented - not writing time series to Reclamation HDB database.";
-        Message.printWarning(3, routine, message);
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Check log file for details." ) );
-        boolean doWrite = false;
-        if ( doWrite ) {
-            //dmi.writeTimeSeriesList ( tslist, loadingApp, isEnsemble, SiteCommonName,
-           //     DataTypeCommonName, ModelName, ModelRunName, HydrologicIndicator,
-            //    modelRunDate, ValidationFlag, DataFlags, OutputStart_DateTime, OutputEnd_DateTime );
+        boolean writeSingle = true;
+        if ( writeSingle ) {
+            // Only allow one time series to be written
+            if ( tslist.size() != 1 ) {
+                message = "Only a single time series may be written - not writing time series to RiversideDB database.";
+                Message.printWarning(3, routine, message);
+                status.addToLog ( CommandPhaseType.RUN,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that a single time series is specified for writing." ) );
+            }
+            else {
+                TS ts = (TS)tslist.get(0);
+                dmi.writeTimeSeries ( ts, Location, DataSource, DataType, DataSubType, interval,
+                    Scenario, SequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime );
+            }
+        }
+        else {
+            // Writing multiple time series
+            //for ( ts : tsList ) {
+                // Call the same method as above
+            //}
         }
     }
     catch ( Exception e ) {
-        message = "Unexpected error writing time series to Reclamation HDB data store \"" +
+        message = "Unexpected error writing time series to RiversideDB data store \"" +
             DataStore + "\" (" + e + ")";
         Message.printWarning ( warning_level, 
                 MessageUtil.formatMessageTag(command_tag, ++warning_count),routine, message );
@@ -507,13 +528,13 @@ public String toString ( PropList parameters )
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "ValidationFlag=\"" + Scenario + "\"" );
+        b.append ( "Scenario=\"" + Scenario + "\"" );
     }
     if ( (WriteDataFlags != null) && (WriteDataFlags.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "WriteDataFlags=\"" + WriteDataFlags + "\"" );
+        b.append ( "WriteDataFlags=" + WriteDataFlags );
     }
     if ( (OutputStart != null) && (OutputStart.length() > 0) ) {
         if ( b.length() > 0 ) {

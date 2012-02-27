@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.riversidedb;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,11 +14,13 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -82,6 +85,8 @@ private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog?
 private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
 
+private JTabbedPane __tsInfo_JTabbedPane = null;
+
 //private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector(); // Corresponds to displayed list
 
 // List in the order of the UI (NOT the TSID!)
@@ -116,6 +121,20 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+}
+
+/**
+Refresh the query choices for the currently selected RiversideDB data source.
+*/
+private void actionPerformedDataSourceSelected ( )
+{
+    if ( __DataSource_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // Now populate the scenario choices corresponding to the data type, data sub-type, interval, location,
+    // and data source
+    populateScenarioChoices ( __dmi );
 }
 
 /**
@@ -171,8 +190,35 @@ private void actionPerformedIntervalSelected ( )
         // Startup initialization
         return;
     }
-    // Now populate the data location choices corresponding to the data type, sub-type, and interval
+    // Now populate the location choices corresponding to the data type, sub-type, and interval
     populateLocationChoices ( __dmi );
+}
+
+/**
+Refresh the query choices for the currently selected RiversideDB data store.
+*/
+private void actionPerformedLocationSelected ( )
+{
+    if ( __Location_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // Now populate the data source choices corresponding to the data type, sub-type, interval, and location
+    populateDataSourceChoices ( __dmi );
+}
+
+/**
+Refresh the query choices for the currently selected RiversideDB scenario.
+*/
+private void actionPerformedScenarioSelected ( )
+{
+    if ( __Scenario_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // Now populate the sequence number choices corresponding to the data type, data sub-type, interval, location,
+    // and data source
+    populateSequenceNumberChoices ( __dmi );
 }
 
 /**
@@ -486,29 +532,29 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = -1;
+	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>This command currently will write only one time series.  " +
         "Use parameters to match a single time series in the database.</b></html>." ),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Use the parameters to match a specific time series; " +
 		"choices will be updated based on previous selections." ),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "TSTool will only write time series records.  TSTool will not write records for " +
         "time series metadata (the time series must have been previously defined)."),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Enter output date/times to a " +
 		"precision appropriate for output time series."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // List available data stores of the correct type
     // Other lists are NOT populated until a data store is selected (driven by events)
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
         RiversideDBDataStore.class );
@@ -520,100 +566,129 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     }
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - open data store for HDB database."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
-    y = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, y );
+    yMain = CommandEditorUtil.addTSListToEditorDialogPanel ( this, main_JPanel, __TSList_JComboBox, yMain );
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
     List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
+    yMain = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, yMain );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
     List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
-    y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
-        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
-  
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    yMain = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
+        this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, yMain );
+    
+    // Create a tabbed pane to allow specifying time series specifically or using the time series
+    // properties (allows processing multiple time series)
+    
+    __tsInfo_JTabbedPane = new JTabbedPane ();
+    __tsInfo_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Indicate how to match time series in database" ));
+    JGUIUtil.addComponent(main_JPanel, __tsInfo_JTabbedPane,
+        0, ++yMain, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JPanel singleTS_JPanel = new JPanel();
+    singleTS_JPanel.setLayout(new GridBagLayout());
+    __tsInfo_JTabbedPane.addTab ( "Match Specified Single Time Series", singleTS_JPanel );
+ 
+    int ySingle = -1;
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data type:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataType_JComboBox = new SimpleJComboBox (false);
     __DataType_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __DataType_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching (main) data type in the database."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data sub-type:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data sub-type:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSubType_JComboBox = new SimpleJComboBox (false);
     __DataSubType_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DataSubType_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __DataSubType_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching (sub) data type in the database (may be blank)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data interval:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data interval:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Interval_JComboBox = new SimpleJComboBox (false);
     __Interval_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __Interval_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching data interval in the database."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Put the following after data type and interval so that the list of locations is reasonably short
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Location (station/area) ID:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location (station/area) ID:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Location_JComboBox = new SimpleJComboBox (false);
     __Location_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Location_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __Location_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching location ID in the database."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Data source abbreviation:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Data source abbreviation:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataSource_JComboBox = new SimpleJComboBox (false);
     __DataSource_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DataSource_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __DataSource_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching data source in the database."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Scenario:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Scenario:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Scenario_JComboBox = new SimpleJComboBox ( false );
     __Scenario_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __Scenario_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __Scenario_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching scenario in the database (may be blank)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Sequence number:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Sequence number:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceNumber_JComboBox = new SimpleJComboBox ( false );
+    __SequenceNumber_JComboBox.setEnabled ( false );
     __SequenceNumber_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(main_JPanel, __SequenceNumber_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
+    JGUIUtil.addComponent(singleTS_JPanel, __SequenceNumber_JComboBox,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - for ensembles, the sequence number (trace starting year)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JPanel multipleTS_JPanel = new JPanel();
+    multipleTS_JPanel.setLayout(new GridBagLayout());
+    __tsInfo_JTabbedPane.addTab ( "Match Time Series Using Properties", multipleTS_JPanel );
+ 
+    int yMultiple = -1;
+    JGUIUtil.addComponent(multipleTS_JPanel, new JLabel (
+        "In the future matching time series will be specified using time series properties (e.g., %L for location), " +
+        "to allow multiple time series to be written with one command."),
+        0, yMultiple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Select the single time series
+    
+    __tsInfo_JTabbedPane.setSelectedIndex(0);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Write data flags?:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __WriteDataFlags_JComboBox = new SimpleJComboBox ( false );
     __WriteDataFlags_JComboBox.addItemListener (this);
     List<String> writeDataFlagsList = new Vector();
@@ -623,39 +698,39 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     __WriteDataFlags_JComboBox.setData ( writeDataFlagsList );
     __WriteDataFlags_JComboBox.select(0);
     JGUIUtil.addComponent(main_JPanel, __WriteDataFlags_JComboBox,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - should data flags be written? (default=" + __command._True + ")."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Output start:"), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputStart_JTextField = new JTextField (20);
 	__OutputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputStart_JTextField,
-		1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output start (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output end:"), 
-		0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__OutputEnd_JTextField = new JTextField (20);
 	__OutputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __OutputEnd_JTextField,
-		1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
-		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+		3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
-    		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __command_JTextArea = new JTextArea ( 4, 50 );
     __command_JTextArea.setLineWrap ( true );
     __command_JTextArea.setWrapStyleWord ( true );
     __command_JTextArea.setEditable ( false );
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-    		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    		1, yMain, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
     // All of the components have been initialized above but now generate an event to populate...
     if ( __DataStore_JComboBox.getItemCount() > 0 ) {
@@ -667,7 +742,7 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         JGUIUtil.addComponent(main_JPanel, button_JPanel, 
-		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
 	__cancel_JButton = new SimpleJButton("Cancel", "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
@@ -709,9 +784,22 @@ public void itemStateChanged (ItemEvent e)
             actionPerformedDataTypeSelected ();
         }
         else if ( (source == __Interval_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a data type.
+            // User has selected an interval.
             actionPerformedIntervalSelected ();
         }
+        else if ( (source == __Location_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+            // User has selected a location.
+            actionPerformedLocationSelected ();
+        }
+        else if ( (source == __DataSource_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+            // User has selected a location.
+            actionPerformedDataSourceSelected ();
+        }
+        else if ( (source == __Scenario_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+            // User has selected a location.
+            actionPerformedScenarioSelected ();
+        }
+        // Sequence number does not need additional action - command text will update on refresh()
     }
  
 	refresh();
@@ -746,6 +834,58 @@ Indicate if the user pressed OK (cancel otherwise).
 */
 public boolean ok ()
 {	return __ok;
+}
+
+/**
+Populate the data source choices.
+*/
+private void populateDataSourceChoices ( RiversideDB_DMI dmi )
+{   String routine = getClass().getName() + ".populateDataSourceChoices";
+    if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ||
+        (__Interval_JComboBox == null) || (__Location_JComboBox == null) ) {
+        // Initialization
+        return;
+    }
+    String tsid = getTSIDFromParameters ( Parameter.LOCATION,
+            __DataType_JComboBox.getSelected(),
+            __DataSubType_JComboBox.getSelected(),
+            __Interval_JComboBox.getSelected(),
+            __Location_JComboBox.getSelected(),
+            null, // data source
+            null, // scenario
+            null ); // sequence number
+    List<RiversideDB_MeasType> measTypeList = null;
+    try {
+        measTypeList = dmi.readMeasTypeListForTSIdent ( tsid );
+    }
+    catch ( Exception e ) {
+        Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
+            __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
+        Message.printWarning(2, routine, e);
+        return;
+    }
+    Message.printStatus(2, routine, "Got " + measTypeList.size() + " MeasType using tsid=\"" + tsid + "\"." );
+    __DataSource_JComboBox.removeAll ();
+    String dataSource;
+    List<String> dataSourceList = new Vector();
+    for ( RiversideDB_MeasType measType : measTypeList ) {
+        // Only add if not already listed. Alternatively - need to enable a "distinct" query
+        dataSource = measType.getSource_abbrev();
+        if ( dataSource == null ) {
+            continue;
+        }
+        dataSource = dataSource.trim();
+        if ( StringUtil.indexOfIgnoreCase(dataSourceList, dataSource) < 0 ){
+            dataSourceList.add(dataSource);
+        }
+    }
+    java.util.Collections.sort(dataSourceList);
+    __DataSource_JComboBox.setData ( dataSourceList );
+    // Select first choice (may get reset from existing parameter values).
+    __DataSource_JComboBox.select ( null );
+    if ( __DataSource_JComboBox.getItemCount() > 0 ) {
+        __DataSource_JComboBox.select ( 0 );
+    }
 }
 
 /**
@@ -810,6 +950,7 @@ private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
     List<RiversideDB_MeasType> measTypeList = null;
     List<RiversideDB_DataType> dataTypeList = null;
     try {
+        // MeasTypes come back sorted by abbreviation
         measTypeList = rdmi.readMeasTypeListForDistinctData_type();
         dataTypeList = rdmi.readDataTypeList();
     }
@@ -819,36 +960,28 @@ private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
         Message.printWarning ( 3, routine, rdmi.getLastSQLString() );
         measTypeList = null;
     }
-    int size = 0;
-    if ( measTypeList != null ) {
-        size = measTypeList.size();
-    }
     int dataTypeLengthMax = 80;
-    if ( size > 0 ) {
-        RiversideDB_MeasType mt = null;
-        int pos;
-        String data_type;
-        for ( int i = 0; i < size; i++ ) {
-            mt = measTypeList.get(i);
-            pos = RiversideDB_DataType.indexOf (dataTypeList, mt.getData_type() );
-            if ( pos < 0 ) {
-                __DataType_JComboBox.add(mt.getData_type() );
+    int pos;
+    String data_type;
+    for ( RiversideDB_MeasType mt: measTypeList ) {
+        pos = RiversideDB_DataType.indexOf (dataTypeList, mt.getData_type() );
+        if ( pos < 0 ) {
+            __DataType_JComboBox.add(mt.getData_type() );
+        }
+        else {
+            data_type = mt.getData_type() + " - " + dataTypeList.get(pos).getDescription();
+            if ( data_type.length() > dataTypeLengthMax ) {
+                __DataType_JComboBox.add( data_type.substring(0,dataTypeLengthMax) + "..." );
             }
             else {
-                data_type = mt.getData_type() + " - " + dataTypeList.get(pos).getDescription();
-                if ( data_type.length() > dataTypeLengthMax ) {
-                    __DataType_JComboBox.add( data_type.substring(0,dataTypeLengthMax) + "..." );
-                }
-                else {
-                    __DataType_JComboBox.add( data_type );
-                }
+                __DataType_JComboBox.add( data_type );
             }
         }
-        // Select first choice (may get reset from existing parameter values).
-        __DataType_JComboBox.select ( null );
-        if ( __DataType_JComboBox.getItemCount() > 0 ) {
-            __DataType_JComboBox.select ( 0 );
-        }
+    }
+    // Select first choice (may get reset from existing parameter values).
+    __DataType_JComboBox.select ( null );
+    if ( __DataType_JComboBox.getItemCount() > 0 ) {
+        __DataType_JComboBox.select ( 0 );
     }
 }
 
@@ -965,11 +1098,116 @@ private void populateLocationChoices ( RiversideDB_DMI dmi )
         }
     }
     java.util.Collections.sort(locationList);
+    __Location_JComboBox.setData ( locationList );
     // Select first choice (may get reset from existing parameter values).
     __Location_JComboBox.select ( null );
-    __Location_JComboBox.setData ( locationList );
     if ( __Location_JComboBox.getItemCount() > 0 ){
         __Location_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the scenario choices.
+*/
+private void populateScenarioChoices ( RiversideDB_DMI dmi )
+{   String routine = getClass().getName() + ".populateScenarioChoices";
+    if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ||
+        (__Interval_JComboBox == null) || (__Location_JComboBox == null) || (__DataSource_JComboBox == null)) {
+        // Initialization
+        return;
+    }
+    String tsid = getTSIDFromParameters ( Parameter.DATA_SOURCE,
+            __DataType_JComboBox.getSelected(),
+            __DataSubType_JComboBox.getSelected(),
+            __Interval_JComboBox.getSelected(),
+            __Location_JComboBox.getSelected(),
+            __DataSource_JComboBox.getSelected(),
+            null, // scenario
+            null ); // sequence number
+    List<RiversideDB_MeasType> measTypeList = null;
+    try {
+        measTypeList = dmi.readMeasTypeListForTSIdent ( tsid );
+    }
+    catch ( Exception e ) {
+        Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
+            __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
+        Message.printWarning(2, routine, e);
+        return;
+    }
+    Message.printStatus(2, routine, "Got " + measTypeList.size() + " MeasType using tsid=\"" + tsid + "\"." );
+    __Scenario_JComboBox.removeAll ();
+    String scenario;
+    List<String> scenarioList = new Vector();
+    for ( RiversideDB_MeasType measType : measTypeList ) {
+        // Only add if not already listed. Alternatively - need to enable a "distinct" query
+        scenario = measType.getScenario();
+        if ( scenario == null ) {
+            continue;
+        }
+        scenario = scenario.trim();
+        if ( StringUtil.indexOfIgnoreCase(scenarioList, scenario) < 0 ){
+            scenarioList.add(scenario);
+        }
+    }
+    java.util.Collections.sort(scenarioList);
+    __Scenario_JComboBox.setData ( scenarioList );
+    // Select first choice (may get reset from existing parameter values).
+    __Scenario_JComboBox.select ( null );
+    if ( __Scenario_JComboBox.getItemCount() > 0 ) {
+        __Scenario_JComboBox.select ( 0 );
+    }
+}
+
+/**
+Populate the sequence number choices.
+*/
+private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
+{   String routine = getClass().getName() + ".populateSequenceNumberChoices";
+    if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ||
+        (__Interval_JComboBox == null) || (__Location_JComboBox == null) || (__DataSource_JComboBox == null) ||
+        (__Scenario_JComboBox == null)) {
+        // Initialization
+        return;
+    }
+    String tsid = getTSIDFromParameters ( Parameter.SCENARIO,
+            __DataType_JComboBox.getSelected(),
+            __DataSubType_JComboBox.getSelected(),
+            __Interval_JComboBox.getSelected(),
+            __Location_JComboBox.getSelected(),
+            __DataSource_JComboBox.getSelected(),
+            __Scenario_JComboBox.getSelected(),
+            null ); // sequence number
+    List<RiversideDB_MeasType> measTypeList = null;
+    try {
+        measTypeList = dmi.readMeasTypeListForTSIdent ( tsid );
+    }
+    catch ( Exception e ) {
+        Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
+            __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
+        Message.printWarning(2, routine, e);
+        return;
+    }
+    Message.printStatus(2, routine, "Got " + measTypeList.size() + " MeasType using tsid=\"" + tsid + "\"." );
+    __SequenceNumber_JComboBox.removeAll ();
+    String sequenceNumber;
+    List<String> sequenceNumberList = new Vector();
+    for ( RiversideDB_MeasType measType : measTypeList ) {
+        // Only add if not already listed. Alternatively - need to enable a "distinct" query
+        sequenceNumber = null;//measType.getSequenceNumber();
+        if ( sequenceNumber == null ) {
+            continue;
+        }
+        sequenceNumber = sequenceNumber.trim();
+        if ( StringUtil.indexOfIgnoreCase(sequenceNumberList, sequenceNumber) < 0 ){
+            sequenceNumberList.add(sequenceNumber);
+        }
+    }
+    java.util.Collections.sort(sequenceNumberList);
+    __SequenceNumber_JComboBox.setData ( sequenceNumberList );
+    // Select first choice (may get reset from existing parameter values).
+    __SequenceNumber_JComboBox.select ( null );
+    if ( __SequenceNumber_JComboBox.getItemCount() > 0 ) {
+        __SequenceNumber_JComboBox.select ( 0 );
     }
 }
 
@@ -1076,7 +1314,8 @@ private void refresh ()
         // First populate the choices...
         populateDataTypeChoices(getRiversideDB_DMI() );
         // Then set to the initial value.  Parameter will be like "QIN" but choice will be like "QIN - Description"
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null ) ) {
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS,
+            " ", 0, null, true)) {
             __DataType_JComboBox.select ( DataType );
         }
         else if ( (DataType != null) && (DataType.indexOf(" ") > 0) &&
@@ -1156,8 +1395,7 @@ private void refresh ()
             }
         }
         // First populate the choices...
-        // TODO SAM 2012-02-18 Need to enable
-        //populateDataSourceChoices(getRiversideDB_DMI() );
+        populateDataSourceChoices(getRiversideDB_DMI() );
         // Then set to the initial value
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataSource_JComboBox, DataSource, JGUIUtil.NONE, null, null ) ) {
             __DataSource_JComboBox.select ( DataSource );
@@ -1176,8 +1414,7 @@ private void refresh ()
             }
         }
         // First populate the choices...
-        // TODO SAM 2012-02-18 Need to enable
-        //populateScenarioChoices(getRiversideDB_DMI() );
+        populateScenarioChoices(getRiversideDB_DMI() );
         // Then set to the initial value
         if ( JGUIUtil.isSimpleJComboBoxItem(__Scenario_JComboBox, Scenario, JGUIUtil.NONE, null, null ) ) {
             __Scenario_JComboBox.select ( Scenario );
@@ -1196,8 +1433,7 @@ private void refresh ()
             }
         }
         // First populate the choices...
-        // TODO SAM 2012-02-18 Need to enable
-        //populateSequenceNumberChoices(getRiversideDB_DMI() );
+        populateSequenceNumberChoices(getRiversideDB_DMI() );
         // Then set to the initial value
         if ( JGUIUtil.isSimpleJComboBoxItem(__SequenceNumber_JComboBox, SequenceNumber, JGUIUtil.NONE, null, null ) ) {
             __SequenceNumber_JComboBox.select ( SequenceNumber );

@@ -211,7 +211,8 @@ import rti.tscommandprocessor.commands.ts.WriteTimeSeriesProperty_Command;
 
 // USGS commands
 
-import rti.tscommandprocessor.commands.usgs.rdb.ReadUsgsNwisRdb_Command;
+import rti.tscommandprocessor.commands.usgs.nwis.rdb.ReadUsgsNwisRdb_Command;
+import rti.tscommandprocessor.commands.usgs.nwis.daily.ReadUsgsNwisDaily_Command;
 
 // Utility commands.
 
@@ -237,6 +238,15 @@ import rti.tscommandprocessor.commands.util.TestCommand_Command;
 import rti.tscommandprocessor.commands.util.WebGet_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 import rti.tscommandprocessor.commands.view.NewTreeView_Command;
+
+// WaterML commands
+
+import rti.tscommandprocessor.commands.waterml.ReadWaterML_Command;
+import rti.tscommandprocessor.commands.waterml.WriteWaterML_Command;
+
+// WaterOneFlow commands
+
+import rti.tscommandprocessor.commands.wateroneflow.ws.ReadWaterOneFlow_Command;
 
 /**
 This class instantiates Commands for time series processing.  The full command name
@@ -647,6 +657,15 @@ throws UnknownCommandException
         // Automatically convert legacy command to new name
         return new ReadUsgsNwisRdb_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("ReadUsgsNwisDaily") ) {
+        return new ReadUsgsNwisDaily_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadWaterML") ) {
+        return new ReadWaterML_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("ReadWaterOneFlow") ) {
+        return new ReadWaterOneFlow_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("RelativeDiff") ) {
         return new RelativeDiff_Command ();
     }
@@ -849,6 +868,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("WriteTimeSeriesProperty") ) {
         return new WriteTimeSeriesProperty_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("WriteWaterML") ) {
+        return new WriteWaterML_Command ();
     }
     
     // Check for time series identifier.

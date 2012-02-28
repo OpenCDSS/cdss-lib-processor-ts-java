@@ -32,6 +32,9 @@ import org.xml.sax.SAXException;
 import com.google.gson.Gson;
 
 import riverside.datastore.AbstractWebServiceDataStore;
+import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisParameterType;
+import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisSiteTimeSeriesMetadata;
+import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisStatisticType;
 
 import RTi.TS.TS;
 import RTi.TS.TSDataFlagMetadata;
@@ -65,14 +68,15 @@ public class UsgsNwisDailyDataStore extends AbstractWebServiceDataStore
 {
     
 /**
-The records of table variables, read from:  http://data.rcc-acis.org/doc/VariableTable.html
+The records of valid parameters, listed here:  http://nwis.waterdata.usgs.gov/usa/nwis/pmcodes?radio_pm_search=param_group&pm_group=All+--+include+all+parameter+groups&pm_search=&casrn_search=&srsname_search=&format=html_table&show=parameter_group_nm&show=parameter_nm&show=casrn&show=srsname&show=parameter_units
+Examples here:  http://waterservices.usgs.gov/rest/USGS-DV-Service.html
 */
-//private List<RccAcisVariableTableRecord> __variableTableRecordList = new Vector();
-
+private List<UsgsNwisParameterType> __parameterTypeList = new Vector();
+    
 /**
-The station codes for provider agency station identifiers.
+The records of valid statistics, listed here:  http://waterservices.usgs.gov/rest/USGS-DV-Service.html
 */
-//private List<RccAcisStationType> __stationTypeList = new Vector();
+private List<UsgsNwisStatisticType> __statisticTypeList = new Vector();
     
 /**
 Constructor for web service.
@@ -83,22 +87,33 @@ throws URISyntaxException, IOException
     setName ( name );
     setDescription ( description );
     setServiceRootURI ( serviceRootURI );
-    /** xx
-    // Read the variable table.
-    readVariableTable();
-    // Initialize the station types - this may be available as a service at some point but for now inline
-    __stationTypeList.add ( new RccAcisStationType(0,"ACIS","ACIS internal id"));
-    __stationTypeList.add ( new RccAcisStationType(1,"WBAN","5-digit WBAN id"));
-    __stationTypeList.add ( new RccAcisStationType(2,"COOP","6-digit COOP id"));
-    __stationTypeList.add ( new RccAcisStationType(3,"FAA","3-character FAA id"));
-    __stationTypeList.add ( new RccAcisStationType(4,"WMO","5-digit WMO id"));
-    __stationTypeList.add ( new RccAcisStationType(5,"ICAO","4-character ICAO id"));
-    __stationTypeList.add ( new RccAcisStationType(6,"GHCN","?-character GHCN id"));
-    __stationTypeList.add ( new RccAcisStationType(7,"NWSLI","5-character NWSLI"));
-    __stationTypeList.add ( new RccAcisStationType(9,"ThreadEx","6-character ThreadEx id"));
-    __stationTypeList.add ( new RccAcisStationType(10,"CoCoRaHS","5+ character CoCoRaHS identifier"));
-    __stationTypeList.add ( new RccAcisStationType(16,"AWDN","7-character HPRCC AWDN id"));
-    xx */
+    // Initialize the parameter types - this may be available as a service at some point but for now inline
+    __parameterTypeList.add ( new UsgsNwisParameterType("00054","Physical","Reservoir storage, acre feet","","Reservoir storage","ac-ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("00060","Physical","Discharge, cubic feet per second","","Stream flow, mean. daily","cfs"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("00065","Physical","Gage height, feet","","Height, gage","ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("74207","Physical","Moisture content, soil, volumetric, percent of total volume","","Moisture content","%"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("63160","Physical","Stream water level elevation above NAVD 1988, in feet","","","ft"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("72020","Physical","Reservoir storage, total pool, percent of capacity","","","%"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("81026","Physical","Water content of snow, inches","","Water content of snow","in"));
+    __parameterTypeList.add ( new UsgsNwisParameterType("82300","Physical","Snow depth, inches","","Depth, snow cover","in"));
+    // Initialize the statistic types - this may be available as a service at some point but for now inline
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00001","Maximum","Maximum values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00002","Minimum","Minimum values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00003","Mean","Mean values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00006","Sum","Sum of values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00007","Mode","Modal values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00008","Median","Median values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00009","STD","Standard deviation values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00010","Variance","Variance values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00021","Tidal high","High high-tide values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00022","Tidal high","High high-tide values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00023","Tidal high","High high-tide values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("00024","Tidal high","High high-tide values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("01002","?","?"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("31200","Observation at 12:00",
+         "Instantaneous observation at time hhmm where hhmm runs from 00001 to 2400"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("32359","Observation at 23:59",
+    //    "Instantaneous observation at time hhmm where hhmm runs from 00001 to 2400"));
 }
 
 /**
@@ -120,6 +135,161 @@ throws IOException, Exception
 
     UsgsNwisDailyDataStore ds = new UsgsNwisDailyDataStore( name, description, new URI(serviceRootURI) );
     return ds;
+}
+
+/**
+Return the list of agencies that are available.  Currently this returns an empty list.
+@param includeName whether to include the name.
+*/
+public List<String> getAgencyStrings ( boolean includeName )
+{   List<String> agencyList = new Vector();
+    /*
+    for ( UsgsNwisAgencyType agency: __agencyTypeList ) {
+        if ( includeName ) {
+            agencyList.add( "" + agency.getAbbreviation() + " - " + agency.getName() );
+        }
+        else {
+            agencyList.add( "" + agency.getAbbreviation() );
+        }
+    }
+    */
+    return agencyList;
+}
+
+/**
+Return the unique list of data interval strings available for a data type, returning values that
+are consistent with TSTool ("Day", rather than "daily").  There is only one choice since using the daily
+value web service.
+*/
+public List<String> getDataIntervalStringsForDataType ( String dataType )
+{   List<String> dataIntervalStrings = new Vector();
+    dataIntervalStrings.add("Day");
+    return dataIntervalStrings;
+}
+
+/**
+Return the list of data types that are available.  Currently this returns the parameter code and optionally
+the name.  Duplicates in the table are ignored.
+TODO SAM 2011-01-07 It would be good to have the option of using data type abbreviations, but this may
+not be an option.
+@param includeName whether to include the name.
+*/
+public List<String> getDataTypeStrings ( boolean includeName )
+{   List<String> dataTypeList = new Vector();
+    for ( UsgsNwisParameterType param: __parameterTypeList ) {
+        if ( includeName ) {
+            dataTypeList.add( "" + param.getCode() + " - " + param.getName() );
+        }
+        else {
+            dataTypeList.add( "" + param.getCode() );
+        }
+    }
+    return dataTypeList;
+}
+
+/**
+Return the list of statistics that are available.  Currently this returns the statistic code and optionally
+the name.
+@param includeName whether to include the name.
+*/
+public List<String> getStatisticStrings ( boolean includeName )
+{   List<String> statisticList = new Vector();
+    for ( UsgsNwisStatisticType statistic: __statisticTypeList ) {
+        if ( includeName ) {
+            statisticList.add( "" + statistic.getCode() + " - " + statistic.getName() );
+        }
+        else {
+            statisticList.add( "" + statistic.getCode() );
+        }
+    }
+    return statisticList;
+}
+
+/**
+Look up the parameter type given the parameter string "Code" or "Code - name".
+@return the parameter or null if not found.
+*/
+public UsgsNwisParameterType lookupParameterType ( String parameter )
+{   int pos = parameter.indexOf("-");
+    String parameterCode = null;
+    if ( pos > 0 ) {
+        parameterCode = parameter.substring(0,pos).trim();
+    }
+    else {
+        parameterCode = parameter.trim();
+    }
+    for ( UsgsNwisParameterType parameterType: __parameterTypeList ) {
+        if ( parameterType.getCode().equalsIgnoreCase(parameterCode) ) {
+            return parameterType;
+        }
+    }
+    return null;
+}
+
+/**
+Look up the statistic type given the statistic string "Code" or "Code - name".
+@return the statistic or null if not found.
+*/
+public UsgsNwisStatisticType lookupStatisticType ( String statistic )
+{   int pos = statistic.indexOf("-");
+    String statisticCode = null;
+    if ( pos > 0 ) {
+        statisticCode = statistic.substring(0,pos).trim();
+    }
+    else {
+        statisticCode = statistic.trim();
+    }
+    for ( UsgsNwisStatisticType statisticType: __statisticTypeList ) {
+        if ( statisticType.getCode().equalsIgnoreCase(statisticCode) ) {
+            return statisticType;
+        }
+    }
+    return null;
+}
+
+/**
+Read a list of site/time series data records.  Currently the CUAHSI cataloging service is not enabled and
+the USGS service does not seem to provide a catalog list either so just construct a single metadata instance
+from the query parameters and return.
+*/
+public List<UsgsNwisSiteTimeSeriesMetadata> readSiteTimeSeriesMetadataList(
+    String dataType, String timeStep, InputFilter_JPanel ifp )
+throws IOException, MalformedURLException
+{   //String routine = getClass().getName() + ".readSiteTimeSeriesMetadataList";
+    List<UsgsNwisSiteTimeSeriesMetadata> metadataList = new Vector();
+    UsgsNwisSiteTimeSeriesMetadata metadata = new UsgsNwisSiteTimeSeriesMetadata();
+    metadata.setDataStore(this);
+    metadata.setInterval("1Day");
+    // Parameter is from the data type
+    metadata.setParameter(lookupParameterType(dataType));
+    // Get the information from the input filter
+    // Site number...
+    List<String> siteNumber = ifp.getInput(null, "SiteNum", true, null);
+    if ( siteNumber.size() > 1 ) {
+        throw new IOException ( "<= 1 site number can be specified." );
+    }
+    else if ( siteNumber.size() == 1 ) {
+        metadata.setSiteNum ( siteNumber.get(0).trim() );
+    }
+    // Agency...
+    List<String> agency = ifp.getInput(null, "AgencyCode", true, null);
+    if ( agency.size() > 1 ) {
+        throw new IOException ( "<= 1 agency can be specified." );
+    }
+    else if ( agency.size() == 1 ) {
+        metadata.setAgencyCode( agency.get(0).trim() );
+    }
+    // Statistic...
+    List<String> statistic = ifp.getInput(null, "StatisticCode", true, null);
+    if ( statistic.size() > 1 ) {
+        throw new IOException ( "<= 1 statistic can be specified." );
+    }
+    else if ( statistic.size() == 1 ) {
+        String statisticCode = statistic.get(0).trim();
+        metadata.setStatistic(lookupStatisticType(statisticCode));
+    }
+    metadataList.add(metadata);
+    return metadataList;
 }
 
 /**

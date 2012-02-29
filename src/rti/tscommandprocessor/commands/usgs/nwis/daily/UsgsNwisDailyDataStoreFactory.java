@@ -15,7 +15,7 @@ public class UsgsNwisDailyDataStoreFactory implements DataStoreFactory
 {
 
 /**
-Create a UsgsNwisDailyDataStore instances.
+Create a UsgsNwisDailyDataStore instance.
 */
 public DataStore create ( PropList props )
 {
@@ -26,7 +26,10 @@ public DataStore create ( PropList props )
     }
     String serviceRootURI = props.getValue ( "ServiceRootURI" );
     try {
-        return new UsgsNwisDailyDataStore ( name, description, new URI(serviceRootURI) );
+        UsgsNwisDailyDataStore dataStore =
+            new UsgsNwisDailyDataStore ( name, description, new URI(serviceRootURI) );
+        dataStore.setProperties ( props );
+        return dataStore;
     }
     catch ( Exception e ) {
         throw new RuntimeException ( e );

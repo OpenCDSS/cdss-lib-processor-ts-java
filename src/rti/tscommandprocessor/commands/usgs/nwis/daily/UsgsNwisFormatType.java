@@ -1,28 +1,22 @@
-package rti.tscommandprocessor.commands.wateroneflow.waterml;
+package rti.tscommandprocessor.commands.usgs.nwis.daily;
 
 /**
-WaterML versions, reflecting different official WaterML specifications and implementation variations such
-as the USGS data.  This enumeration is used internally once a version is detected, and also allows
-selections in user interfaces.
+USGS NWIS data formats.
 */
-public enum WaterMLVersion
+public enum UsgsNwisFormatType
 {
     /**
-    Matches specification.
+    JSON.
     */
-    STANDARD_1_0("1.0"),
+    JSON("JSON"),
     /**
-    Matches specification.
+    RDB.
     */
-    STANDARD_1_1("1.1"),
+    RDB("RDB"),
     /**
-    USGS variation on 1.1?
+    WaterML
     */
-    //USGS_1_1("USGS_1.1"),
-    /**
-    Data values are not transformed prior to analysis.
-    */
-    UNKNOWN("Unknown");
+    WATERML("WaterML");
     
     private final String displayName;
 
@@ -30,7 +24,7 @@ public enum WaterMLVersion
      * Name that should be displayed in choices, etc.
      * @param displayName
      */
-    private WaterMLVersion(String displayName) {
+    private UsgsNwisFormatType(String displayName) {
         this.displayName = displayName;
     }
 
@@ -47,13 +41,13 @@ public enum WaterMLVersion
      * Return the enumeration value given a string name (case-independent).
      * @return the enumeration value given a string name (case-independent), or null if not matched.
      */
-    public static WaterMLVersion valueOfIgnoreCase(String name)
+    public static UsgsNwisFormatType valueOfIgnoreCase(String name)
     {
         if ( name == null ) {
             return null;
         }
-        WaterMLVersion [] values = values();
-        for ( WaterMLVersion t : values ) {
+        UsgsNwisFormatType [] values = values();
+        for ( UsgsNwisFormatType t : values ) {
             if ( name.equalsIgnoreCase(t.toString()) ) {
                 return t;
             }

@@ -50,17 +50,9 @@ import RTi.Util.Time.DateTime;
 
 // TODO SAM 2012-02-28 Need to enable
 /**
-Data store for USGS NWIS daily value web services.  This class maintains the web service information in a general way.
-To deal with slow performance, the following was done:
+Data store for USGS NWIS daily value web services.
 <pre>
-Date:   Thu, 25 Aug 2011 11:00:57 -0400
-From:   Keith Eggleston <kle1@cornell.edu>
-If you don't need to get the AWDN sites, Bill has instituted a patch to ignore them, thus speeding up access to the other stations. Here's the note I received:
-
-"As a temporary work-around for the AWDN problems I have added a parameter to the MultiStnData call that will ignore any AWDN stations.
-Just add a parameter 'no_awdn' to the parameter list:
-curl "http://data.rcc-acis.org/MultiStnData?postal=NE&elems=1,2&meta=sIds,name&no_awdn=1&date=20110801&output=json"
---Bill"
+http://waterservices.usgs.gov/rest/Site-Service.html
 </pre>
 @author sam
 */
@@ -290,6 +282,232 @@ throws IOException, MalformedURLException
     }
     metadataList.add(metadata);
     return metadataList;
+}
+
+/**
+Read a time series list given the query parameters for the REST interface.  The parameters are used to
+form the URL for the query.  The payload that is received is optionally saved as the output file.  The payload
+is then parsed into 1+ time series and returned.
+@param readStart the starting date/time to read, or null to read all data.
+@param readEnd the ending date/time to read, or null to read all data.
+@param readData if true, read the data; if false, construct the time series and populate properties but do
+not read the data
+@return the time series list read from the USGS NWIS daily web services
+*/
+public List<TS> readTimeSeriesList ( List<String> siteList, List<String> stateList,
+    List<String> hucList, double[] boundingBox, List<String> countyList,
+    List<UsgsNwisParameterType> parameterList, List<UsgsNwisStatisticType> statisticTypeList,
+    UsgsNwisSiteStatusType siteStatus, List<UsgsNwisSiteType> siteTypeList, String agency,
+    UsgsNwisFormatType format, String outputFile,
+    DateTime readStart, DateTime readEnd, boolean readData )
+throws MalformedURLException, IOException, Exception
+{
+    String routine = getClass().getName() + ".readTimeSeriesList";
+    List<TS> tslist = new Vector();
+
+    // Form the URL, starting with the root
+    StringBuffer urlString = new StringBuffer("" + getServiceRootURI() );
+    // Specify these in the order of the web service API documentation
+    // Major filter - location, pick the first one specified
+    List<String> queryParameters = new Vector(); // Correspond to each query argument - ? and & handled later
+    // Site list
+    if ( siteList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("sites=");
+        for ( int i = 0; i < siteList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(siteList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // State list
+    else if ( stateList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("stateCd=");
+        for ( int i = 0; i < stateList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(stateList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // HUC list
+    else if ( hucList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("huc=");
+        for ( int i = 0; i < hucList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(hucList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // Bounding box
+    else if ( (boundingBox != null) && (boundingBox.length == 4) ) {
+        StringBuffer b = new StringBuffer("bBox=");
+        for ( int i = 0; i < boundingBox.length; i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(StringUtil.formatString(boundingBox[i],"%.6f"));
+        }
+        queryParameters.add(b.toString());
+    }
+    // County list
+    else if ( countyList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("countyCd=");
+        for ( int i = 0; i < countyList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(countyList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // The start and end date.  If not reading data, don't specify dates and the last value will
+    // be returned.  If reading data, there is no way to request "all"
+    // TODO SAM 2012-02-29 Figure if there is a way to request all
+    if ( !readData ) {
+        // Specify a minimal period to try a query and make sure that the time series is defined.
+        readStart = null;
+        readEnd = null;
+    }
+    else {
+        if ( readStart != null ) {
+            queryParameters.add("startDT=" + readEnd.toString(DateTime.FORMAT_YYYY_MM_DD));
+        }
+        if ( readEnd != null ) {
+            queryParameters.add("endDT=" + readEnd.toString(DateTime.FORMAT_YYYY_MM_DD));
+        }
+    }
+    // Format
+    if ( format != null ) {
+        queryParameters.add("format=" + format);
+    }
+    // Parameter list
+    if ( parameterList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("parameterCd=");
+        for ( int i = 0; i < parameterList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(parameterList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // Statistic list
+    if ( statisticTypeList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("statCd=");
+        for ( int i = 0; i < statisticTypeList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(statisticTypeList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // Site status
+    if ( siteStatus != null ) {
+        queryParameters.add("siteStatus=" + siteStatus);
+    }
+    // Site types
+    if ( siteTypeList.size() > 0 ) {
+        StringBuffer b = new StringBuffer("siteType=");
+        for ( int i = 0; i < siteTypeList.size(); i++ ) {
+            if ( i > 0 ) {
+                b.append(",");
+            }
+            b.append(siteTypeList.get(i));
+        }
+        queryParameters.add(b.toString());
+    }
+    // Site was modified (not currently supported)
+    // TODO SAM 2012-02-29 Evaluate whether useful
+    // Agency code
+    if ( agency != null ) {
+        queryParameters.add("agencyCd=" + agency);
+    }
+    // Altitude (not currently supported)
+    // TODO SAM 2012-02-29 Evaluate whether useful
+    // Surface water arguments (not currently supported)
+    // TODO SAM 2012-02-29 Evaluate whether useful
+    // Groundwater arguments (not currently supported)
+    // TODO SAM 2012-02-29 Evaluate whether useful
+    // Hole depth (not currently supported)
+    // TODO SAM 2012-02-29 Evaluate whether useful
+    // Now process the query parameters and handle ? and &
+    if ( queryParameters.size() > 0 ) {
+        urlString.append ( "?");
+    }
+    for ( int i = 0; i < queryParameters.size(); i++ ) {
+        if ( i > 0 ) {
+            urlString.append ( "&" );
+        }
+        urlString.append ( queryParameters.get(i) );
+    }
+    Message.printStatus(2, routine, "Performing the following request:  " + urlString.toString() );
+    URL url = new URL ( urlString.toString() );
+    // Open the input stream...
+    HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+    InputStream in = null;
+    Message.printStatus(2, routine, "Response code=" + urlConnection.getResponseCode() +
+        " Response message = \"" + urlConnection.getResponseMessage() + "\"" );
+    if ( urlConnection.getResponseCode() >= 400 ) {
+        in = urlConnection.getErrorStream();
+    }
+    else {
+        in = urlConnection.getInputStream();
+    }
+    InputStreamReader inp = new InputStreamReader(in);
+    BufferedReader reader = new BufferedReader(inp);
+    char[] buffer = new char[8192];
+    int len1 = 0;
+    StringBuffer b = new StringBuffer();
+    while ( (len1 = reader.read(buffer)) != -1 ) {
+        b.append(buffer,0,len1);
+    }
+    in.close();
+    urlConnection.disconnect();
+    String resultString = b.toString();
+    // TODO SAM 2012-02-29 Might want to constrain this more based on error codes
+    // so it does not bloat the log, especially since the response can be written to the output file
+    if ( Message.isDebugOn ) {
+        Message.printStatus(10,routine,"Returned data="+resultString);
+    }
+    if ( b.indexOf("error") >= 0 ) {
+        throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
+    }
+    else {
+        // Save the output to a file if requested
+        if ( (outputFile != null) && !outputFile.equals("") ) {
+            try {
+                IOUtil.writeFile(outputFile, resultString);
+                Message.printStatus ( 2, routine, "Wrote output to file \"" + outputFile + "\"." );
+            }
+            catch ( Exception e ) {
+                Message.printWarning(3,routine,"Error writing output file \"" + outputFile + "\" (" + e + ")." );
+            }
+        }
+        // Create the time series from the WaterML...
+        /*
+        Document dom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
+            new ReaderInputStream(new StringReader(resultString)));
+        List<TS> tsList = readTimeSeriesList(urlString.toString(), dom, readData );
+        // Expect one and only one time series based on how the request was originally made
+        if ( tsList.size() == 0 ) {
+            throw new IOException ( "Read 0 time series matching TSID \"" + tsidentString + ".\"" );
+        }
+        else if ( tsList.size() > 1 ) {
+            throw new IOException ( "Read " + tsList.size() + " time series matching TSID \"" +
+                tsidentString + " - expecting exactly 1 time series.\"" );
+        }
+        else {
+            ts = tsList.get(0); 
+        }
+        */
+    }
+    return tslist;
 }
 
 /**

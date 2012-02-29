@@ -1,5 +1,7 @@
 package rti.tscommandprocessor.commands.usgs.nwis.daily;
 
+import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -12,31 +14,38 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
+import java.net.URI;
 import java.util.List;
-import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import riverside.datastore.DataStore;
+import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisFormatType;
 import rti.tscommandprocessor.core.TSCommandProcessor;
+import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
-import RTi.Util.GUI.InputFilter_JPanel;
+import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
+import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.CommandProcessor;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
-import RTi.Util.String.StringUtil;
 
 /**
 Editor for he ReadUsgsNwisDaily() command.
@@ -44,21 +53,40 @@ Editor for he ReadUsgsNwisDaily() command.
 public class ReadUsgsNwisDaily_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
+
+private final String __AddWorkingDirectory = "Add Working Directory";
+private final String __RemoveWorkingDirectory = "Remove Working Directory";
+    
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __dataStoreDocumentation_JButton = null;
+private SimpleJButton __dataStoreOnline_JButton = null;
 private ReadUsgsNwisDaily_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
-private SimpleJComboBox __DataType_JComboBox = null;
-private SimpleJComboBox __Interval_JComboBox = null;
+//private SimpleJComboBox __DataType_JComboBox = null;
+private JTextField __Sites_JTextField;
+private JTextField __States_JTextField;
+private JTextField __HUCs_JTextField;
+private JTextField __BoundingBox_JTextField;
+private JTextField __Counties_JTextField;
+private JTextField __Parameters_JTextField;
+private JTextField __Statistics_JTextField;
+private JTextField __Agency_JTextField;
+private SimpleJComboBox __SiteStatus_JComboBox = null;
+private JTextField __SiteTypes_JTextField;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private SimpleJComboBox __Format_JComboBox = null;
+private JTextField __OutputFile_JTextField = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
-private InputFilter_JPanel __inputFilter_JPanel =null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK was pressed when closing the dialog.
+private String __working_dir = null; // Working directory.
 
 /**
 Command editor constructor.
@@ -78,9 +106,64 @@ Responds to ActionEvents.
 public void actionPerformed( ActionEvent event )
 {	Object o = event.getSource();
 
-	if ( o == __cancel_JButton ) {
+    if ( o == __browse_JButton ) {
+        String last_directory_selected = JGUIUtil.getLastFileDialogDirectory();
+        JFileChooser fc = null;
+        if ( last_directory_selected != null ) {
+            fc = JFileChooserFactory.createJFileChooser( last_directory_selected );
+        }
+        else {
+            fc = JFileChooserFactory.createJFileChooser( __working_dir );
+        }
+        fc.setDialogTitle("Select Time Series File to Write");
+        SimpleFileFilter sff = new SimpleFileFilter("json", "USGS NWIS JSON Time Series File");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("rdb", "USGS NWIS RDB Time Series File");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("xml", "USGS NWIS WaterML Time Series File");
+        fc.addChoosableFileFilter(sff);
+        sff = new SimpleFileFilter("waterml", "USGS NWIS WaterML Time Series File");
+        fc.addChoosableFileFilter(sff);
+        
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            String directory = fc.getSelectedFile().getParent();
+            String filename = fc.getSelectedFile().getName(); 
+            String path = fc.getSelectedFile().getPath(); 
+    
+            if (filename == null || filename.equals("")) {
+                return;
+            }
+    
+            if (path != null) {
+                __OutputFile_JTextField.setText(path );
+                JGUIUtil.setLastFileDialogDirectory(directory );
+                refresh();
+            }
+        }
+    }
+    else if ( o == __cancel_JButton ) {
 		response ( false );
 	}
+    else if ( o == __dataStoreDocumentation_JButton ) {
+        try {
+            Desktop desktop = Desktop.getDesktop();
+            desktop.browse ( new URI(__dataStoreDocumentation_JButton.getActionCommand()) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning(1, null, "Unable to display USGS NWIS web service documentation using \"" +
+                __dataStoreDocumentation_JButton.getActionCommand() + "\"" );
+        }
+    }
+    else if ( o == __dataStoreOnline_JButton ) {
+        try {
+            Desktop desktop = Desktop.getDesktop();
+            desktop.browse ( new URI(__dataStoreOnline_JButton.getActionCommand()) );
+        }
+        catch ( Exception e ) {
+            Message.printWarning(1, null, "Unable to display USGS NWIS web service online using \"" +
+                __dataStoreOnline_JButton.getActionCommand() + "\"");
+        }
+    }
 	else if ( o == __ok_JButton ) {
 		refresh ();
 		checkInput ();
@@ -88,6 +171,22 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+    else if ( o == __path_JButton ) {
+        if ( __path_JButton.getText().equals(__AddWorkingDirectory) ) {
+            __OutputFile_JTextField.setText (
+            IOUtil.toAbsolutePath(__working_dir, __OutputFile_JTextField.getText() ) );
+        }
+        else if ( __path_JButton.getText().equals(__RemoveWorkingDirectory) ) {
+            try {
+                __OutputFile_JTextField.setText (
+                IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
+            }
+            catch ( Exception e ) {
+                Message.printWarning ( 1, "WriteDateValue_JDialog", "Error converting file to relative path." );
+            }
+        }
+        refresh ();
+    }
 	else {
 		refresh();
 	}
@@ -129,6 +228,26 @@ Check the state of the dialog, disabling/enabling components as appropriate.
 */
 private void checkGUIState()
 {
+    // If data store is selected and has property for help, enable the button
+    UsgsNwisDailyDataStore dataStore = getSelectedDataStore();
+    if ( dataStore != null ) {
+        String urlString = dataStore.getProperty ( "ServiceAPIDocumentationURI" );
+        if ( urlString == null ) {
+            __dataStoreDocumentation_JButton.setEnabled(false);
+        }
+        else {
+            __dataStoreDocumentation_JButton.setActionCommand(urlString);
+            __dataStoreDocumentation_JButton.setEnabled(true);
+        }
+        urlString = dataStore.getProperty ( "ServiceOnlineURI" );
+        if ( urlString == null ) {
+            __dataStoreOnline_JButton.setEnabled(false);
+        }
+        else {
+            __dataStoreOnline_JButton.setActionCommand(urlString);
+            __dataStoreOnline_JButton.setEnabled(true);
+        }
+    }
 }
 
 /**
@@ -139,25 +258,49 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	__error_wait = false;
-	/* TODO SAM 2012-02-28 Need to enable
 	String DataStore = __DataStore_JComboBox.getSelected();
 	if ( (DataStore != null) && (DataStore.length() > 0) ) {
 		props.set ( "DataStore", DataStore );
 	}
-	String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
-    if ( DataType.length() > 0 ) {
-        props.set ( "DataType", DataType );
+    String Sites = __Sites_JTextField.getText().trim();
+    if ( Sites.length() > 0 ) {
+        props.set ( "Sites", Sites );
     }
-    String Interval = __Interval_JComboBox.getSelected();
-    if ( (Interval != null) && (Interval.length() > 0) ) {
-        props.set ( "Interval", Interval );
+    String States = __States_JTextField.getText().trim();
+    if ( States.length() > 0 ) {
+        props.set ( "States", States );
     }
-	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
-	for ( int i = 1; i <= numWhere; i++ ) {
-	    String where = getWhere ( i - 1 );
-	    if ( where.length() > 0 ) {
-	        props.set ( "Where" + i, where );
-	    }
+    String HUCs = __HUCs_JTextField.getText().trim();
+    if ( HUCs.length() > 0 ) {
+        props.set ( "HUCs", HUCs );
+    }
+    String BoundingBox = __BoundingBox_JTextField.getText().trim();
+    if ( BoundingBox.length() > 0 ) {
+        props.set ( "BoundingBox", BoundingBox );
+    }
+    String Counties = __Counties_JTextField.getText().trim();
+    if ( Counties.length() > 0 ) {
+        props.set ( "Counties", Counties );
+    }
+    String Parameters = __Parameters_JTextField.getText().trim();
+    if ( Parameters.length() > 0 ) {
+        props.set ( "Parameters", Parameters );
+    }
+    String Statistics = __Statistics_JTextField.getText().trim();
+    if ( Statistics.length() > 0 ) {
+        props.set ( "Statistics", Statistics );
+    }
+    String Agency = __Agency_JTextField.getText().trim();
+    if ( Agency.length() > 0 ) {
+        props.set ( "Agency", Agency );
+    }
+    String SiteStatus = __SiteStatus_JComboBox.getSelected();
+    if ( (SiteStatus != null) && (SiteStatus.length() > 0) ) {
+        props.set ( "SiteStatus", SiteStatus );
+    }
+    String SiteTypes = __SiteTypes_JTextField.getText().trim();
+    if ( SiteTypes.length() > 0 ) {
+        props.set ( "SiteTypes", SiteTypes );
     }
 	String InputStart = __InputStart_JTextField.getText().trim();
 	if ( InputStart.length() > 0 ) {
@@ -171,6 +314,14 @@ private void checkInput ()
     if ( Alias.length() > 0 ) {
         props.set ( "Alias", Alias );
     }
+    String Format = __Format_JComboBox.getSelected();
+    if ( (Format != null) && (Format.length() > 0) ) {
+        props.set ( "Format", Format );
+    }
+    String OutputFile = __OutputFile_JTextField.getText().trim();
+    if ( OutputFile.length() > 0 ) {
+        props.set ( "OutputFile", OutputFile );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -179,7 +330,6 @@ private void checkInput ()
 		// The warning would have been printed in the check code.
 		__error_wait = true;
 	}
-	*/
 }
 
 /**
@@ -188,29 +338,37 @@ already been checked and no errors were detected.
 */
 private void commitEdits ()
 {	String DataStore = __DataStore_JComboBox.getSelected();
-/* TODO SAM 2012-02-28 Need to enable
-    String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
-    String Interval = __Interval_JComboBox.getSelected();
-	__command.setCommandParameter ( "DataStore", DataStore );
-	__command.setCommandParameter ( "DataType", DataType );
-	__command.setCommandParameter ( "Interval", Interval );
-	String delim = ";";
-	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
-	for ( int i = 1; i <= numWhere; i++ ) {
-	    String where = getWhere ( i - 1 );
-	    if ( where.startsWith(delim) ) {
-	        where = "";
-	    }
-	    __command.setCommandParameter ( "Where" + i, where );
-	}
-	// Both versions of the commands use these...
+    String Sites = __Sites_JTextField.getText().trim();
+    String States = __States_JTextField.getText().trim();
+    String HUCs = __HUCs_JTextField.getText().trim();
+    String BoundingBox = __BoundingBox_JTextField.getText().trim();
+    String Counties = __Counties_JTextField.getText().trim();
+    String Parameters = __Parameters_JTextField.getText().trim();
+    String Statistics = __Statistics_JTextField.getText().trim();
+    String Agency = __Agency_JTextField.getText().trim();
+    String SiteStatus = __SiteStatus_JComboBox.getSelected();
+    String SiteTypes = __SiteTypes_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
-	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
-	__command.setCommandParameter ( "InputEnd", InputEnd );
 	String Alias = __Alias_JTextField.getText().trim();
+    String OutputFile = __OutputFile_JTextField.getText().trim();
+    String Format = __Format_JComboBox.getSelected();
+	__command.setCommandParameter ( "DataStore", DataStore );
+	__command.setCommandParameter ( "Sites", Sites );
+	__command.setCommandParameter ( "States", States );
+	__command.setCommandParameter ( "HUCs", HUCs );
+	__command.setCommandParameter ( "BoundingBox", BoundingBox );
+	__command.setCommandParameter ( "Counties", Counties );
+	__command.setCommandParameter ( "Parameters", Parameters );
+	__command.setCommandParameter ( "Statistics", Statistics );
+	__command.setCommandParameter ( "Agency", Agency );
+	__command.setCommandParameter ( "SiteStatus", SiteStatus );
+	__command.setCommandParameter ( "SiteTypes", SiteTypes );
+    __command.setCommandParameter ( "InputStart", InputStart );
+    __command.setCommandParameter ( "InputEnd", InputEnd );
     __command.setCommandParameter ( "Alias", Alias );
-    */
+    __command.setCommandParameter ( "Format", Format );
+    __command.setCommandParameter ( "OutputFile", OutputFile );
 }
 
 /**
@@ -244,28 +402,15 @@ private UsgsNwisDailyDataStore getSelectedDataStore ()
 }
 
 /**
-Return the "WhereN" parameter for the requested input filter.
-@return the "WhereN" parameter for the requested input filter.
-@param ifg the Input filter to process (zero index).
-*/
-private String getWhere ( int ifg )
-{
-	// TODO SAM 2006-04-24 Need to enable other input filter panels
-	String delim = ";";	// To separate input filter parts
-	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
-	String where = filter_panel.toString(ifg,delim).trim();
-	return where;
-}
-
-/**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
 private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
-{	String routine = "ReadReclamationHDB_JDialog.initialize";
+{	//String routine = "ReadUsgsNwisDaily_JDialog.initialize";
 	__command = command;
 	CommandProcessor processor = __command.getCommandProcessor();
+	__working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( processor, __command );
 
 	addWindowListener( this );
 
@@ -274,133 +419,247 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = -1;
+	int yMain = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>This command is under development.</b></html>"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"Read one or more time series from the USGS NWIS daily value web service."),
-    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>WARNING - This command can be slow.  " +
-        "It is recommended that the Where filters be used to limit queries.</b></html>"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        "<html><b>WARNING - This command can be slow.  Constrain the query to improve performance.</b></html>"),
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the USGS NWIS Daily Data Store documentation for more information." ), 
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
     	"<html>Constrain the query by specifying time series metadata to match.  " +
     	"<b>A location constraint must be specified.</b></html>" ), 
-    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    	0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optionally, also write time series to a file," +
+        " which can be specified using a full or relative path (relative to the working directory)." ),
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    if ( __working_dir != null ) {
+        JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "The working directory is: " + __working_dir ), 
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    }
+    __dataStoreDocumentation_JButton = new SimpleJButton ("USGS NWIS Documentation",this);
+    JGUIUtil.addComponent(main_JPanel, __dataStoreDocumentation_JButton, 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreDocumentation_JButton.setEnabled(false);
+    __dataStoreDocumentation_JButton.setToolTipText("Show the USGS NWIS web service documentation in a browser - " +
+        "useful for explaining query parameters.");
+    __dataStoreOnline_JButton = new SimpleJButton ("USGS NWIS Online",this);
+    JGUIUtil.addComponent(main_JPanel, __dataStoreOnline_JButton, 
+        1, yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __dataStoreOnline_JButton.setEnabled(false);
+    __dataStoreOnline_JButton.setToolTipText("Show the USGS NWIS web service web page in a browser - " +
+        "useful for testing queries.");
+    JGUIUtil.addComponent(main_JPanel, new JSeparator(), 
+        0, ++yMain, 7, 1, 1, 1, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
    	
    	// List available data stores of the correct type
    	
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
     TSCommandProcessor tsProcessor = (TSCommandProcessor)processor;
     List<DataStore> dataStoreList = tsProcessor.getDataStoresByType( UsgsNwisDailyDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
-    if ( dataStoreList.size() > 0 ) {   
+    if ( dataStoreList.size() > 0 ) {
         __DataStore_JComboBox.select ( 0 );
     }
     __DataStore_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data store containing data."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    // Data types are particular to the data store...
+    // Panel for location
+    int yLoc = -1;
+    JPanel loc_JPanel = new JPanel();
+    loc_JPanel.setLayout( new GridBagLayout() );
+    loc_JPanel.setBorder( BorderFactory.createTitledBorder (
+        BorderFactory.createLineBorder(Color.black),
+        "Location constraint (specify only one constraint)" ));
+    JGUIUtil.addComponent( main_JPanel, loc_JPanel,
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data type:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DataType_JComboBox = new SimpleJComboBox ( false );
-    setDataTypeChoices();
-    __DataType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __DataType_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data type for time series."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("Site number(s):"), 
+        0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Sites_JTextField = new JTextField (20);
+    __Sites_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(loc_JPanel, __Sites_JTextField,
+        1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ site numbers separated by commas."),
+        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    // Intervals are hard-coded
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("State(s):"), 
+        0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __States_JTextField = new JTextField (20);
+    __States_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(loc_JPanel, __States_JTextField,
+        1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ state abbreviations separated by commas."),
+        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data interval:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Interval_JComboBox = new SimpleJComboBox ( false );
-    setIntervalChoices();
-    __DataType_JComboBox.addItemListener ( this );
-    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	
-   	// Input filters
-    // TODO SAM 2010-11-02 Need to use SetInputFilters() so the filters can change when a
-    // data store is selected.  For now it is OK because the input filters do not provide choices.
-    /** TODO SAM need to enable
-	int buffer = 3;
-	Insets insets = new Insets(0,buffer,0,0);
-	try {
-	    // Add input filters for ReclamationHDB time series...
-		__inputFilter_JPanel = new RccAcis_TimeSeries_InputFilter_JPanel(
-		    getSelectedDataStore(), __command.getNumFilterGroups() );
-		JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
-			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
-			GridBagConstraints.WEST );
-   		__inputFilter_JPanel.addEventListeners ( this );
-   	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - query filters."),
-   	        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-	}
-	catch ( Exception e ) {
-		Message.printWarning ( 2, routine, "Unable to initialize RCC ACIS input filter." );
-		Message.printWarning ( 2, routine, e );
-	}
-	*/
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("HUC(s):"), 
+        0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __HUCs_JTextField = new JTextField (20);
+    __HUCs_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(loc_JPanel, __HUCs_JTextField,
+        1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ HUCs separated by commas."),
+        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box:"), 
+        0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __BoundingBox_JTextField = new JTextField (20);
+    __BoundingBox_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(loc_JPanel, __BoundingBox_JTextField,
+        1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box: WestLon,SouthLat,EastLon,NorthLat"),
+        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("FIPS counties:"), 
+        0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Counties_JTextField = new JTextField (20);
+    __Counties_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,
+        1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ counties separated by commas."),
+        3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Parameters
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Parameter(s):"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Parameters_JTextField = new JTextField (20);
+    __Parameters_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Parameters_JTextField,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of parameters separated by commas (default=all)."),
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Statistics
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic(s):"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Statistics_JTextField = new JTextField (20);
+    __Statistics_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Statistics_JTextField,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of statistics separated by commas (default=all)."),
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Site status are hard-coded
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Site status:"),
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SiteStatus_JComboBox = new SimpleJComboBox ( false );
+    __SiteStatus_JComboBox.add ( "" );
+    __SiteStatus_JComboBox.add ( "" + UsgsNwisSiteStatusType.ALL );
+    __SiteStatus_JComboBox.add ( "" + UsgsNwisSiteStatusType.ACTIVE );
+    __SiteStatus_JComboBox.add ( "" + UsgsNwisSiteStatusType.INACTIVE );
+    __SiteStatus_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __SiteStatus_JComboBox,
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - site status (default=" + UsgsNwisSiteStatusType.ALL + ")."), 
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    // Site types
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Site types(s):"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SiteTypes_JTextField = new JTextField (20);
+    __SiteTypes_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __SiteTypes_JTextField,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of site types separated by commas (default=all)."),
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    // Agency code
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Agency:"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Agency_JTextField = new JTextField (20);
+    __Agency_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __Agency_JTextField,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - agency code (default=all)."),
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputStart_JTextField = new JTextField (20);
     __InputStart_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - YYYY-MM-DD, override the global input start."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
-        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __InputEnd_JTextField = new JTextField (20);
     __InputEnd_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - YYYY-MM-DD, override the global input end."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
     __Alias_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __Alias_JTextField.addKeyListener ( this );
     __Alias_JTextField.getDocument().addDocumentListener(this);
     __Alias_JTextField.setToolTipText("%L for location, %T for data type.");
     JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
-        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Format:"),
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Format_JComboBox = new SimpleJComboBox ( false );
+    __Format_JComboBox.add ( "" );
+    __Format_JComboBox.add ( "" + UsgsNwisFormatType.JSON );
+    __Format_JComboBox.add ( "" + UsgsNwisFormatType.RDB );
+    __Format_JComboBox.add ( "" + UsgsNwisFormatType.WATERML );
+    __Format_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Format_JComboBox,
+        1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Optional - data format (default=" + UsgsNwisFormatType.WATERML + ")."), 
+        3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Output file to write:" ), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __OutputFile_JTextField = new JTextField ( 50 );
+    __OutputFile_JTextField.addKeyListener ( this );
+    __OutputFile_JTextField.setToolTipText (
+        "Optional output file to save time series data, which can be read by other commands");
+    JGUIUtil.addComponent(main_JPanel, __OutputFile_JTextField,
+        1, yMain, 5, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    __browse_JButton = new SimpleJButton ( "Browse", this );
+    JGUIUtil.addComponent(main_JPanel, __browse_JButton,
+        6, yMain, 1, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__command_JTextArea = new JTextArea (4,50);
 	__command_JTextArea.setLineWrap ( true );
 	__command_JTextArea.setWrapStyleWord ( true );
 	__command_JTextArea.setEditable ( false );
 	JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
-		1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		1, yMain, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
 	// Refresh the contents...
 	refresh ();
@@ -409,8 +668,13 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
     JGUIUtil.addComponent(main_JPanel, button_JPanel, 
-		0, ++y, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
+		0, ++yMain, 8, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
 
+    if ( __working_dir != null ) {
+        // Add the button to allow conversion to/from relative path...
+        __path_JButton = new SimpleJButton( __RemoveWorkingDirectory, __RemoveWorkingDirectory, this);
+        button_JPanel.add ( __path_JButton );
+    }
 	__cancel_JButton = new SimpleJButton( "Cancel", this);
 	button_JPanel.add ( __cancel_JButton );
 	__ok_JButton = new SimpleJButton("OK", this);
@@ -433,9 +697,7 @@ public void itemStateChanged ( ItemEvent event )
 {
     // If a new data store has been selected, update the data type, interval, list and the input filter
     if ( event.getSource() == __DataStore_JComboBox ) {
-        setDataTypeChoices();
-        setIntervalChoices();
-        setInputFilters();
+        //setDataTypeChoices();
     }
     refresh();
 }
@@ -470,26 +732,45 @@ public boolean ok ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "ReadReclamationHDB_JDialog.refresh";
+{	String routine = "ReadUsgsNwisDaily_JDialog.refresh";
 	__error_wait = false;
 	String DataStore = "";
-	String DataType = "";
-	String Interval = "";
-	String filter_delim = ";";
+	String Sites = "";
+    String States = "";
+    String HUCs = "";
+    String BoundingBox = "";
+    String Counties = "";
+    String Parameters = "";
+    String Statistics = "";
+    String Agency = "";
+    String SiteStatus = "";
+    String SiteTypes = "";
 	String InputStart = "";
 	String InputEnd = "";
 	String Alias = "";
+	String Format = "";
+	String OutputFile = "";
 	PropList props = null;
 	if ( __first_time ) {
 		__first_time = false;
 		// Get the parameters from the command...
 		props = __command.getCommandParameters();
 		DataStore = props.getValue ( "DataStore" );
-		DataType = props.getValue ( "DataType" );
-		Interval = props.getValue ( "Interval" );
+		Sites = props.getValue ( "Sites" );
+		States = props.getValue ( "States" );
+		HUCs = props.getValue ( "HUCs" );
+		BoundingBox = props.getValue ( "BoundingBox" );
+		Counties = props.getValue ( "Counties" );
+		Parameters = props.getValue ( "Parameters" );
+		Statistics = props.getValue ( "Statistics" );
+		Agency = props.getValue ( "Agency" );
+		SiteStatus = props.getValue ( "SiteStatus" );
+		SiteTypes = props.getValue ( "SiteTypes" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
+		Format = props.getValue ( "Format" );
+		OutputFile = props.getValue ( "OutputFile" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
         }
@@ -506,57 +787,47 @@ private void refresh ()
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        // Data types as displayed are verbose:  "4 - Precipitation (daily)" but parameter uses only "4" to
-        // ensure uniqueness.  Therefore, select in the list based only on the first token
-        int [] index = new int[1];
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, index, true ) ) {
-            __DataType_JComboBox.select ( index[0] );
+        if ( Sites != null ) {
+            __Sites_JTextField.setText ( Sites );
+        }
+        if ( States != null ) {
+            __States_JTextField.setText ( States );
+        }
+        if ( HUCs != null ) {
+            __HUCs_JTextField.setText ( HUCs );
+        }
+        if ( BoundingBox != null ) {
+            __BoundingBox_JTextField.setText ( BoundingBox );
+        }
+        if ( Counties != null ) {
+            __Counties_JTextField.setText ( Counties );
+        }
+        if ( Parameters != null ) {
+            __Parameters_JTextField.setText ( Parameters );
+        }
+        if ( Statistics != null ) {
+            __Statistics_JTextField.setText ( Statistics );
+        }
+        if ( SiteTypes != null ) {
+            __SiteTypes_JTextField.setText ( SiteTypes );
+        }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__SiteStatus_JComboBox, SiteStatus, JGUIUtil.NONE, null, null ) ) {
+            __SiteStatus_JComboBox.select ( SiteStatus );
         }
         else {
-            if ( (DataType == null) || DataType.equals("") ) {
+            if ( (SiteStatus == null) || SiteStatus.equals("") ) {
                 // New command...select the default...
-                if ( __DataType_JComboBox.getItemCount() > 0 ) {
-                    __DataType_JComboBox.select ( 0 );
-                }
+                __SiteStatus_JComboBox.select ( 0 );
             }
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataType parameter \"" + DataType + "\".  Select a\ndifferent value or Cancel." );
+                  "SiteStatus parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
-        if ( JGUIUtil.isSimpleJComboBoxItem(__Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
-            __Interval_JComboBox.select ( Interval );
+        if ( Agency != null ) {
+            __Agency_JTextField.setText ( Agency );
         }
-        else {
-            if ( (Interval == null) || Interval.equals("") ) {
-                // New command...select the default...
-                __Interval_JComboBox.select ( 0 );
-            }
-            else {
-                // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "Interval parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
-            }
-        }
-        InputFilter_JPanel filter_panel = __inputFilter_JPanel;
-        /* TODO SAM 2012-02-28 Need to enable
-        int nfg = filter_panel.getNumFilterGroups();
-        String where;
-        for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-            where = props.getValue ( "Where" + (ifg + 1) );
-            if ( (where != null) && (where.length() > 0) ) {
-                // Set the filter...
-                try {
-                    filter_panel.setInputFilter (ifg, where, filter_delim );
-                }
-                catch ( Exception e ) {
-                    Message.printWarning ( 1, routine, "Error setting where information using \"" + where + "\"" );
-                    Message.printWarning ( 3, routine, e );
-                }
-            }
-        }
-        */
 		if ( InputStart != null ) {
 			__InputStart_JTextField.setText ( InputStart );
 		}
@@ -566,42 +837,75 @@ private void refresh ()
         if ( Alias != null ) {
             __Alias_JTextField.setText ( Alias );
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem(__Format_JComboBox, Format, JGUIUtil.NONE, null, null ) ) {
+            __Format_JComboBox.select ( Format );
+        }
+        else {
+            if ( (Format == null) || Format.equals("") ) {
+                // New command...select the default...
+                __Format_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                  "Format parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
+        if ( OutputFile != null ) {
+            __OutputFile_JTextField.setText ( OutputFile );
+        }
 	}
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
 	// Regardless, reset the command from the fields...
-	if ( true == true ) {
-	    // TODO SAM 2012-02-28 Need to enable
-	    return;
-	}
 	props = new PropList ( __command.getCommandName() );
 	DataStore = __DataStore_JComboBox.getSelected().trim();
-	// Only save the major variable number because parentheses cause problems in properties
-	DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
-	Interval = __Interval_JComboBox.getSelected().trim();
+    Sites = __Sites_JTextField.getText().trim();
+    States = __States_JTextField.getText().trim();
+    HUCs = __HUCs_JTextField.getText().trim();
+    BoundingBox = __BoundingBox_JTextField.getText().trim();
+    Counties = __Counties_JTextField.getText().trim();
+    Parameters = __Parameters_JTextField.getText().trim();
+    Statistics = __Statistics_JTextField.getText().trim();
+    SiteStatus = __SiteStatus_JComboBox.getSelected();
+    SiteTypes = __SiteTypes_JTextField.getText().trim();
+    Agency = __Agency_JTextField.getText().trim();
+    InputEnd = __InputEnd_JTextField.getText().trim();
+    InputStart = __InputStart_JTextField.getText().trim();
+    Format = __Format_JComboBox.getSelected();
+    OutputFile = __OutputFile_JTextField.getText().trim();
     props.add ( "DataStore=" + DataStore );
-    props.add ( "DataType=" + DataType );
-    props.add ( "Interval=" + Interval );
-	// Add the where clause(s)...
-	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
-	int nfg = filter_panel.getNumFilterGroups();
-	String where;
-	String delim = ";";	// To separate input filter parts
-	for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-		where = filter_panel.toString(ifg,delim).trim();
-		// Make sure there is a field that is being checked in a where clause...
-		if ( (where.length() > 0) && !where.startsWith(delim) ) {
-		    // FIXME SAM 2010-11-01 The following discards '=' in the quoted string
-			//props.add ( "Where" + (ifg + 1) + "=" + where );
-			props.set ( "Where" + (ifg + 1), where );
-		}
-	}
-	InputStart = __InputStart_JTextField.getText().trim();
+    props.add ( "Sites=" + Sites );
+    props.add ( "States=" + States );
+    props.add ( "HUCs=" + HUCs );
+    props.add ( "BoundingBox=" + BoundingBox );
+    props.add ( "Counties=" + Counties );
+    props.add ( "Parameters=" + Parameters );
+    props.add ( "Statistics=" + Statistics );
+    props.add ( "Agency=" + Agency );
+    props.add ( "SiteStatus=" + SiteStatus );
+    props.add ( "SiteTypes=" + SiteTypes );
 	props.add ( "InputStart=" + InputStart );
-	InputEnd = __InputEnd_JTextField.getText().trim();
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "Alias=" + Alias );
+	props.add ( "Format=" + Format );
+	props.add ( "OutputFile=" + OutputFile );
 	__command_JTextArea.setText( __command.toString ( props ) );
+    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
+        if ( __path_JButton != null ) {
+            __path_JButton.setEnabled ( false );
+        }
+    }
+    if ( __path_JButton != null ) {
+        __path_JButton.setEnabled ( true );
+        File f = new File ( OutputFile );
+        if ( f.isAbsolute() ) {
+            __path_JButton.setText ( __RemoveWorkingDirectory );
+        }
+        else {
+            __path_JButton.setText ( __AddWorkingDirectory );
+        }
+    }
 
 	// Check the GUI state to determine whether some controls should be disabled.
 
@@ -626,48 +930,6 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
-}
-
-/**
-Set the data type choices in response to a new data store being selected.
-*/
-private void setDataTypeChoices ()
-{   String routine = getClass().getName() + ".setDataTypeChoices";
-    UsgsNwisDailyDataStore ds = getSelectedDataStore();
-    List<String> dataTypes = new Vector();
-    /* TODO SAM 2012-02-28 Need to enable
-    try {
-        dataTypes = ds.getDataTypeStrings ( true, true );
-    }
-    catch ( Exception e ) {
-        // Hopefully should not happen
-        Message.printWarning(2, routine, "Unable to get data types for data store \"" +
-            ds.getName() + "\" - web service unavailable?");
-    }
-    */
-    __DataType_JComboBox.setData ( dataTypes );
-    if ( dataTypes.size() > 0 ) {
-        __DataType_JComboBox.select ( 0 );
-    }
-}
-
-
-/**
-Set the input filters in response to a new data store being selected.
-*/
-private void setInputFilters ()
-{
-
-}
-
-/**
-Set the data interval choices in response to a new data store being selected.
-*/
-private void setIntervalChoices ()
-{
-    __Interval_JComboBox.removeAll();
-    __Interval_JComboBox.add ( "Day" );
-    __Interval_JComboBox.select ( 0 );
 }
 
 /**

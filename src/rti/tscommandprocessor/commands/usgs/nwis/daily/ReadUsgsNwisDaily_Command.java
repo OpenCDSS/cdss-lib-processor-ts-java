@@ -48,7 +48,7 @@ private List<TS> __discovery_TS_Vector = null;
 /**
 Bounding box coordinate WestLon, SouthLat, EastLon, NorthLat
 */
-double [] __boundingBox = null;
+double [] __boundingBox = null; // Use null to indicate no bounding box specified
 
 /**
 Output file that is created by this command.
@@ -108,6 +108,7 @@ throws InvalidCommandParameterException
     if ( (HUCs != null) && !HUCs.equals("") ) {
         ++locCount;
     }
+    __boundingBox = null;
     if ( (BoundingBox != null) && !BoundingBox.equals("") ) {
         // Make sure that 4 numbers are specified
         ++locCount;
@@ -127,6 +128,7 @@ throws InvalidCommandParameterException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                         message, "Specify the bounding box as WestLonDeg,SouthLatDeg,EastLonDeg,NorthLatDeg." ) );
             }
+            __boundingBox = new double[4];
             for ( int i = 0; i < parts.length; i++ ) {
                 try {
                     __boundingBox[i] = Double.parseDouble(parts[i].trim());

@@ -376,13 +376,11 @@ throws MalformedURLException, IOException, Exception
         readStart = null;
         readEnd = null;
     }
-    else {
-        if ( readStart != null ) {
-            queryParameters.add("startDT=" + readStart.toString(DateTime.FORMAT_YYYY_MM_DD));
-        }
-        if ( readEnd != null ) {
-            queryParameters.add("endDT=" + readEnd.toString(DateTime.FORMAT_YYYY_MM_DD));
-        }
+    if ( readStart != null ) {
+        queryParameters.add("startDT=" + readStart.toString(DateTime.FORMAT_YYYY_MM_DD));
+    }
+    if ( readEnd != null ) {
+        queryParameters.add("endDT=" + readEnd.toString(DateTime.FORMAT_YYYY_MM_DD));
     }
     // Format
     if ( format != null ) {
@@ -392,10 +390,13 @@ throws MalformedURLException, IOException, Exception
     if ( parameterList.size() > 0 ) {
         StringBuffer b = new StringBuffer("parameterCd=");
         for ( int i = 0; i < parameterList.size(); i++ ) {
-            if ( i > 0 ) {
-                b.append(",");
+            String code = parameterList.get(i).getCode();
+            if ( (code != null) && !code.equals("") ) {
+                if ( i > 0 ) {
+                    b.append(",");
+                }
+                b.append(code);
             }
-            b.append(parameterList.get(i));
         }
         queryParameters.add(b.toString());
     }
@@ -403,10 +404,13 @@ throws MalformedURLException, IOException, Exception
     if ( statisticTypeList.size() > 0 ) {
         StringBuffer b = new StringBuffer("statCd=");
         for ( int i = 0; i < statisticTypeList.size(); i++ ) {
-            if ( i > 0 ) {
-                b.append(",");
+            String code = statisticTypeList.get(i).getCode();
+            if ( (code != null) && !code.equals("") ) {
+                if ( i > 0 ) {
+                    b.append(",");
+                }
+                b.append(code);
             }
-            b.append(statisticTypeList.get(i));
         }
         queryParameters.add(b.toString());
     }
@@ -418,17 +422,20 @@ throws MalformedURLException, IOException, Exception
     if ( siteTypeList.size() > 0 ) {
         StringBuffer b = new StringBuffer("siteType=");
         for ( int i = 0; i < siteTypeList.size(); i++ ) {
-            if ( i > 0 ) {
-                b.append(",");
+            String code = siteTypeList.get(i).getCode();
+            if ( (code != null) && !code.equals("") ) {
+                if ( i > 0 ) {
+                    b.append(",");
+                }
+                b.append(code);
             }
-            b.append(siteTypeList.get(i));
         }
         queryParameters.add(b.toString());
     }
     // Site was modified (not currently supported)
     // TODO SAM 2012-02-29 Evaluate whether useful
     // Agency code
-    if ( agency != null ) {
+    if ( (agency != null) && !agency.equals("") ) {
         queryParameters.add("agencyCd=" + agency);
     }
     // Altitude (not currently supported)
@@ -492,12 +499,18 @@ throws MalformedURLException, IOException, Exception
                 Message.printWarning(3,routine,"Error writing output file \"" + outputFile + "\" (" + e + ")." );
             }
         }
-        // Create the time series from the WaterML...
-        WaterMLReader watermlReader = new WaterMLReader ( resultString );
-        // This is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
-        // the time series data interval
-        TimeInterval interval = TimeInterval.parseInterval("Day");
-        tslist = watermlReader.readTimeSeriesList( interval, readData );
+        if ( format == UsgsNwisFormatType.WATERML ) {
+            // Create the time series from the WaterML...
+            WaterMLReader watermlReader = new WaterMLReader ( resultString, urlString.toString(), null );
+            // This is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
+            // the time series data interval
+            TimeInterval interval = TimeInterval.parseInterval("Day");
+            tslist = watermlReader.readTimeSeriesList( interval, readData );
+        }
+        else {
+            Message.printWarning(3, routine, "USGS NWIS Daily format " + format +
+                " is not supported for conversion to time series." );
+        }
     }
     return tslist;
 }

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.wateroneflow.waterml;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -19,6 +20,7 @@ import org.w3c.dom.NodeList;
 import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLVersion;
 
 import RTi.TS.TS;
+import RTi.TS.TSDataFlagMetadata;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
 import RTi.Util.IO.ReaderInputStream;
@@ -33,9 +35,10 @@ public class WaterMLReader
 {
     
 /**
+TODO SAM 2012-03-05 Evaluate whether to support WaterML 1.0
 WaterML 1.0 name space.
 */
-private static final String WATERML_1_0_NS = "http://www.cuahsi.org/waterML/1.0/";
+//private static final String WATERML_1_0_NS = "http://www.cuahsi.org/waterML/1.0/";
 
 /**
 WaterML 1.1 name space.
@@ -46,13 +49,28 @@ private static final String WATERML_1_1_NS = "http://www.cuahsi.org/waterML/1.1/
 WaterML content as string.
 */
 private String __waterMLString = "";
+
+/**
+URL used to read the WaterML.
+*/
+private String __url = "";
+
+/**
+File path from which WaterML is being read.
+*/
+private File __file = null;
     
 /**
 Constructor.
+@param waterMLString the string from which to parse the time series (may be result of in-memory
+web service call, or text read from WaterML file)
+@param url the full URL query used to make the query (specify as null or empty if read from a file)
 */
-public WaterMLReader ( String waterMLString )
+public WaterMLReader ( String waterMLString, String url, File file )
 {
     __waterMLString = waterMLString;
+    __url = url;
+    __file = file;
     
 }
 
@@ -220,14 +238,19 @@ private boolean isUsgsNwis ( Document dom, WaterMLVersion watermlVersion )
 /**
 Read a single time series from the DOM given an element for the "timeseries" tag.
 @param watermlVersion WaterML version being read (element names are different)
+@param domElement the top level DOM element
 @param timeSeriesElement the "timeSeries" element that is being processed, containing one time series
 @param interval indicates the interval for data in the file, needed as a hint because there is nothing
 in the file that indicates that data are daily values, etc.
+@param url the original URL used to read the WaterML (can be null or "" if read from a file), used to
+populate the history comments in the time series
+@param file the original File corresponding to the WaterML file (can be null or "" if read from a file), used to
+populate the history comments in the time series
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
 */
-private TS readTimeSeries( WaterMLVersion watermlVersion, Element timeSeriesElement,
-    TimeInterval interval, boolean readData)
+private TS readTimeSeries( WaterMLVersion watermlVersion, Element domElement, Element timeSeriesElement,
+    TimeInterval interval, String url, File file, boolean readData)
 throws IOException
 {
     String sourceInfoTag = null;
@@ -259,10 +282,50 @@ throws IOException
     // Set the main time series properties
     
     try {
+        // Missing data value
+        ts.setMissing ( Double.NaN );
+        // Data units
         ts.setDataUnits(readTimeSeries_ParseUnits(watermlVersion,variableElement));
+        // Description - set to site name
         Element siteName = getSingleElement(timeSeriesElement, "siteName");
         if ( siteName != null ) {
             ts.setDescription(siteName.getTextContent());
+        }
+        // History
+        if ( (url != null) && !url.equals("") ) {
+            // Set creation information from URL
+            ts.addToGenesis("Create time series from WaterML queried with URL:  " + url );
+        }
+        else {
+            if ( file != null ) {
+                // Set creation information from file
+                ts.addToGenesis("Create time series from contents of file:  " + file.getAbsolutePath() );
+            }
+            // Also extract creation information from the WaterML (probably a file).
+            ts.addToGenesis("Query information extracted from WaterML (as XML elements):  " );
+            Element queryInfoElement = getSingleElement(domElement, "queryInfo");
+            if ( queryInfoElement != null ) {
+                // Just pass through the information
+                ts.addToGenesis ( queryInfoElement.toString() );
+            }
+        }
+        // TODO SAM 2012-03-05 Need to enable more sourceInfo as time series properties, perhaps
+        // finish when the interactive browsing is in place and it is more obvious how to handle
+        // all the properties.
+        
+        // Qualifiers on flags, as per:
+        // <ns1:qualifier qualifierID="0" ns1:network="NWIS" ns1:vocabulary="uv_rmk_cd">
+        //     <ns1:qualifierCode>P</ns1:qualifierCode>
+        //     <ns1:qualifierDescription>Provisional data subject to revision.</ns1:qualifierDescription>
+        // </ns1:qualifier>
+        NodeList nodes = valuesElement.getElementsByTagNameNS("*","qualifier");
+        for ( int i = 0; i < nodes.getLength(); i++ ) {
+            Element qualifierElement = (Element)nodes.item(i);
+            String qualifierCode = getSingleElementValue(qualifierElement,"qualifierCode");
+            String qualifierDescription = getSingleElementValue(qualifierElement,"qualifierDescription");
+            if ( (qualifierCode != null) && !qualifierCode.equals("") ) {
+                ts.addDataFlagMetadata(new TSDataFlagMetadata(qualifierCode,qualifierDescription));
+            }
         }
     }
     catch (Exception ex) {
@@ -271,7 +334,8 @@ throws IOException
     
     // Set the time series period and optionally read the data
 
-    readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, readData );
+    String noDataValue = getSingleElementValue(variableElement, "noDataValue" );
+    readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, noDataValue, readData );
 
     return ts;
 }
@@ -431,11 +495,12 @@ throws IOException
 Parse time series values from the DOM, and also set the period.
 @param ts the time series that has been previously created and initialized
 @param valuesElement element containing a list of data values elements
+@param noDataValue text that indicates no data value
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
 */
 private void readTimeSeries_ParseValues(WaterMLVersion watermlVersion, TS ts, Element valuesElement,
-    boolean readData )
+    String noDataValue, boolean readData )
 throws IOException
 {
     DateTime start = null;
@@ -484,6 +549,8 @@ throws IOException
     ts.setDate1Original(start);
     ts.setDate2(end);
     ts.setDate2Original(end);
+    String dataValueString;
+    double dataValue;
     String dataFlag;
     DateTime dateTime;
     if ( readData ) {
@@ -500,11 +567,18 @@ throws IOException
                 }
                 dateTime = DateTime.parse(dateTimeString);
                 dataFlag = el.getAttribute("qualifiers");
-                if ( (dataFlag != null) && !dataFlag.equals("") ) {
-                    ts.setDataValue(dateTime, Double.parseDouble(el.getTextContent()), dataFlag, 0);
+                dataValueString = el.getTextContent();
+                if ( dataValueString.equals(noDataValue) ) {
+                    dataValue = Double.NaN;
                 }
                 else {
-                    ts.setDataValue(dateTime, Double.parseDouble(el.getTextContent()));
+                    dataValue = Double.parseDouble(el.getTextContent());
+                }
+                if ( (dataFlag != null) && !dataFlag.equals("") ) {
+                    ts.setDataValue(dateTime, dataValue, dataFlag, 0);
+                }
+                else {
+                    ts.setDataValue(dateTime, dataValue);
                 }
             }
             catch ( Exception e ) {
@@ -548,7 +622,8 @@ throws MalformedURLException, IOException, Exception
         //node = timeSeries.item(i);
         //Message.printStatus(2, routine, "NodeLocalName=" + node.getLocalName() +
         //    ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
-        tsList.add(readTimeSeries(watermlVersion, (Element)timeSeries.item(i), interval, readData ));
+        tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (Element)timeSeries.item(i),
+            interval, __url, __file, readData ));
     }
     return tsList;
 }

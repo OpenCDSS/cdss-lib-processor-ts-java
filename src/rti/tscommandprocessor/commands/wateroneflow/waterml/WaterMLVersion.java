@@ -16,9 +16,8 @@ public enum WaterMLVersion
     */
     STANDARD_1_1("1.1"),
     /**
-    USGS variation on 1.1?
+    USGS and other variations are handled with specific checks.
     */
-    //USGS_1_1("USGS_1.1"),
     /**
     Data values are not transformed prior to analysis.
     */

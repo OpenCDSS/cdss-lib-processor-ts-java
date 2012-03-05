@@ -35,6 +35,7 @@ import riverside.datastore.AbstractWebServiceDataStore;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisParameterType;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisSiteTimeSeriesMetadata;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisStatisticType;
+import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLReader;
 
 import RTi.TS.TS;
 import RTi.TS.TSDataFlagMetadata;
@@ -47,6 +48,7 @@ import RTi.Util.IO.ReaderInputStream;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 // TODO SAM 2012-02-28 Need to enable
 /**
@@ -370,12 +372,13 @@ throws MalformedURLException, IOException, Exception
     // TODO SAM 2012-02-29 Figure if there is a way to request all
     if ( !readData ) {
         // Specify a minimal period to try a query and make sure that the time series is defined.
+        // If no period is specified the latest value will be returned.
         readStart = null;
         readEnd = null;
     }
     else {
         if ( readStart != null ) {
-            queryParameters.add("startDT=" + readEnd.toString(DateTime.FORMAT_YYYY_MM_DD));
+            queryParameters.add("startDT=" + readStart.toString(DateTime.FORMAT_YYYY_MM_DD));
         }
         if ( readEnd != null ) {
             queryParameters.add("endDT=" + readEnd.toString(DateTime.FORMAT_YYYY_MM_DD));
@@ -490,22 +493,11 @@ throws MalformedURLException, IOException, Exception
             }
         }
         // Create the time series from the WaterML...
-        /*
-        Document dom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
-            new ReaderInputStream(new StringReader(resultString)));
-        List<TS> tsList = readTimeSeriesList(urlString.toString(), dom, readData );
-        // Expect one and only one time series based on how the request was originally made
-        if ( tsList.size() == 0 ) {
-            throw new IOException ( "Read 0 time series matching TSID \"" + tsidentString + ".\"" );
-        }
-        else if ( tsList.size() > 1 ) {
-            throw new IOException ( "Read " + tsList.size() + " time series matching TSID \"" +
-                tsidentString + " - expecting exactly 1 time series.\"" );
-        }
-        else {
-            ts = tsList.get(0); 
-        }
-        */
+        WaterMLReader watermlReader = new WaterMLReader ( resultString );
+        // This is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
+        // the time series data interval
+        TimeInterval interval = TimeInterval.parseInterval("Day");
+        tslist = watermlReader.readTimeSeriesList( interval, readData );
     }
     return tslist;
 }

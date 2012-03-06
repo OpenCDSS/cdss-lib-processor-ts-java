@@ -2,9 +2,12 @@ package rti.tscommandprocessor.commands.waterml;
 
 import javax.swing.JFrame;
 
+import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLReader;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.List;
 import java.util.Vector;
 
@@ -27,6 +30,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the ReadWaterML() commands.
@@ -35,13 +39,6 @@ public class ReadWaterML_Command extends AbstractCommand
 implements Command, CommandDiscoverable, ObjectListProvider
 {
 
-    /*
-protected static final String
-	_FALSE = "False",
-	_TRUE = "True";
-    */
-
-// FIXME SAM 2007-12-19 Need to evaluate this - runtime versions may be different.
 /**
 Private data members shared between the checkCommandParameter() and the 
 runCommand() methods (prevent code duplication parsing dateTime strings).  
@@ -89,6 +86,7 @@ throws InvalidCommandParameterException
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
+	String Interval = parameters.getValue( "Interval" );
     
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
@@ -177,6 +175,27 @@ throws InvalidCommandParameterException
                             message, "Specify an input start less than the input end." ) );
 		}
 	}
+
+    if ( Interval == null || (Interval.length() == 0) ) {
+        message = "The data interval must be specified.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify a data interval."));
+    }
+    else {
+        try {
+            TimeInterval.parseInterval(Interval);
+        }
+        catch ( Exception e ) {
+            // Should not happen because choices are valid
+            message = "The data interval \"" + Interval + "\" is invalid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(
+                CommandStatusType.FAILURE, message, "Specify a data interval using the command editor."));
+        }
+    }
     
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
@@ -184,6 +203,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "Interval" );
     //valid_Vector.add ( "NewUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
@@ -307,6 +327,18 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	String InputStart = parameters.getValue("InputStart");
 	String InputEnd = parameters.getValue("InputEnd");
 	String Alias = parameters.getValue("Alias");
+    // The following is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
+    // the time series data interval
+	String Interval = parameters.getValue("Interval");
+    TimeInterval interval = null;
+    if ( (Interval != null) && !Interval.equals("") ) {
+        try {
+            interval = TimeInterval.parseInterval(Interval);
+        }
+        catch ( Exception e ) {
+            // Should not happen because checked previously
+        }
+    }
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
@@ -458,11 +490,22 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                     message, "Verify that filename is correct and that the file exists." ) );
         }
         else {
-            // Read everything in the file (one time series or traces).
-            tslist = new Vector();
-            // TODO SAM 2012-02-28 Need to enable reading
-            //DateValueTS.readTimeSeriesList (
-            //    InputFile_full, InputStart_DateTime, InputEnd_DateTime, NewUnits, readData );
+            // Read everything in the file.
+            StringBuilder fileContents = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new FileReader(InputFile_full));
+            String ls = System.getProperty ( "line.separator" );
+            String line;
+            int count = 0;
+            while ( (line = reader.readLine()) != null ) {
+                ++count;
+                if ( count > 1 ) {
+                    fileContents.append(ls);
+                }
+                fileContents.append(line);
+            }
+            reader.close();
+            WaterMLReader watermlReader = new WaterMLReader ( fileContents.toString(), null, new File(InputFile_full) );
+            tslist = watermlReader.readTimeSeriesList( interval, InputStart_DateTime, InputEnd_DateTime, readData );
         }
 			
 		if ( tslist != null ) {
@@ -568,6 +611,7 @@ public String toString ( PropList props )
 	//String NewUnits = props.getValue("NewUnits");
 	String InputStart = props.getValue("InputStart");
 	String InputEnd = props.getValue("InputEnd");
+	String Interval = props.getValue("Interval");
 
 	StringBuffer b = new StringBuffer ();
 
@@ -607,6 +651,12 @@ public String toString ( PropList props )
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
+    if ((Interval != null) && (Interval.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("Interval=\"" + Interval + "\"");
+    }
 
     return getCommandName() + "("+ b.toString()+")";
 }

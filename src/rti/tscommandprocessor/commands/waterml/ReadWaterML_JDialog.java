@@ -6,6 +6,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
@@ -30,18 +32,20 @@ import RTi.TS.TSFormatSpecifiersJPanel;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 
 import RTi.Util.Message.Message;
+import RTi.Util.Time.TimeInterval;
 
 /**
 Editor for the ReadWaterML() command.
 */
 public class ReadWaterML_JDialog extends JDialog
-implements ActionListener, DocumentListener, KeyListener, WindowListener
+implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 private SimpleJButton __browse_JButton = null,
 			__path_JButton = null, // Convert between relative and absolute path.
@@ -53,6 +57,7 @@ private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private JTextField __InputFile_JTextField = null;
+private SimpleJComboBox __Interval_JComboBox = null;
 //private JTextField __NewUnits_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -180,6 +185,7 @@ private void checkInput () {
 	String InputEnd = __InputEnd_JTextField.getText().trim();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
+	String Interval  = __Interval_JComboBox.getSelected();
 	
 	__error_wait = false;
 
@@ -195,6 +201,9 @@ private void checkInput () {
 	if (InputEnd.length() > 0 && !InputEnd.equals("*")) {
 		props.set("InputEnd", InputEnd);
 	}
+    if (Interval.length() > 0 && !Interval.equals("*")) {
+        props.set("Interval", Interval);
+    }
 	//if (NewUnits.length() > 0 && !NewUnits.equals("*")) {
 	//	props.set("NewUnits", NewUnits);
 	//}
@@ -217,12 +226,14 @@ private void commitEdits() {
 	String InputFile = __InputFile_JTextField.getText().trim();
 	String InputStart = __InputStart_JTextField.getText().trim();
 	String InputEnd = __InputEnd_JTextField.getText().trim();
+	String Interval  = __Interval_JComboBox.getSelected();
 	//String NewUnits = __NewUnits_JTextField.getText().trim();
 
     __command.setCommandParameter("Alias", Alias);
 	__command.setCommandParameter("InputFile", InputFile);
 	__command.setCommandParameter("InputStart", InputStart);
 	__command.setCommandParameter("InputEnd", InputEnd);
+	__command.setCommandParameter("Interval", Interval);
 	//__command.setCommandParameter("NewUnits", NewUnits);
 }
 
@@ -268,11 +279,8 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development.</b></html>"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Read all the time series from a WaterML file, using " +
-        "information in the file to assign the identifier."),
+        "information in the file to assign the time series identifier."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to the working " +
@@ -308,6 +316,19 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Interval:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __Interval_JComboBox = new SimpleJComboBox ( false );
+    __Interval_JComboBox.setData (
+        TimeInterval.getTimeIntervalChoices(TimeInterval.MINUTE, TimeInterval.YEAR,false,-1));
+    // Select a default...
+    __Interval_JComboBox.select ( 0 );
+    __Interval_JComboBox.addItemListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __Interval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data interval for data."),
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     /*
     JGUIUtil.addComponent(main_JPanel, new JLabel("Units to convert to:"),
@@ -376,6 +397,15 @@ private void initialize(JFrame parent, ReadWaterML_Command command) {
 }
 
 /**
+Handle ItemEvent events.
+@param e ItemEvent to handle.
+*/
+public void itemStateChanged ( ItemEvent e )
+{
+    refresh();
+}
+
+/**
 Respond to KeyEvents.
 */
 public void keyPressed(KeyEvent event) {
@@ -411,12 +441,14 @@ public boolean ok() {
 /**
 Refresh the command from the other text field contents.
 */
-private void refresh() {
+private void refresh()
+{   String routine = getClass().getName() + ".refresh";
 	String InputFile = "",
 	       InputStart = "",
 	       InputEnd = "",
 	       //NewUnits = "",
-	       Alias = "";
+	       Alias = "",
+	       Interval = "";;
 
 	PropList props = null;
 
@@ -429,6 +461,7 @@ private void refresh() {
 		InputFile = props.getValue("InputFile");
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
+		Interval = props.getValue("Interval");
 		//NewUnits = props.getValue("NewUnits");
 		// Set the control fields
 		if (Alias != null) {
@@ -443,6 +476,19 @@ private void refresh() {
 		if (InputEnd != null) {
 			__InputEnd_JTextField.setText(InputEnd);
 		}
+        if ( Interval == null || Interval.equals("") ) {
+            // Select a default...
+            __Interval_JComboBox.select ( 0 );
+        } 
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __Interval_JComboBox, Interval, JGUIUtil.NONE, null, null ) ) {
+                __Interval_JComboBox.select ( Interval );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid\nInterval \"" +
+                    Interval + "\".  Select a different choice or Cancel." );
+            }
+        }
 		//if (NewUnits != null) {
 		//	__NewUnits_JTextField.setText(NewUnits);
 		//}
@@ -455,6 +501,7 @@ private void refresh() {
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	//NewUnits = __NewUnits_JTextField.getText().trim();
 	Alias = __Alias_JTextField.getText().trim();
+	Interval = __Interval_JComboBox.getSelected();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
@@ -462,6 +509,7 @@ private void refresh() {
 	props.add("InputEnd=" + InputEnd);
 	//props.add("NewUnits=" + NewUnits);
 	props.add("Alias=" + Alias);
+	props.add("Interval=" + Interval);
 	__Command_JTextArea.setText( __command.toString(props) );
 
 	// Refresh the Path Control text.

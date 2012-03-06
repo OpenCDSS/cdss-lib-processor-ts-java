@@ -246,11 +246,13 @@ in the file that indicates that data are daily values, etc.
 populate the history comments in the time series
 @param file the original File corresponding to the WaterML file (can be null or "" if read from a file), used to
 populate the history comments in the time series
+@param readStart starting date/time to read
+@param readEnd ending date/time to read
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
 */
 private TS readTimeSeries( WaterMLVersion watermlVersion, Element domElement, Element timeSeriesElement,
-    TimeInterval interval, String url, File file, boolean readData)
+    TimeInterval interval, String url, File file, DateTime readStart, DateTime readEnd, boolean readData)
 throws IOException
 {
     String sourceInfoTag = null;
@@ -286,6 +288,7 @@ throws IOException
         ts.setMissing ( Double.NaN );
         // Data units
         ts.setDataUnits(readTimeSeries_ParseUnits(watermlVersion,variableElement));
+        ts.setDataUnitsOriginal(ts.getDataUnits());
         // Description - set to site name
         Element siteName = getSingleElement(timeSeriesElement, "siteName");
         if ( siteName != null ) {
@@ -335,7 +338,7 @@ throws IOException
     // Set the time series period and optionally read the data
 
     String noDataValue = getSingleElementValue(variableElement, "noDataValue" );
-    readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, noDataValue, readData );
+    readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, noDataValue, readStart, readEnd, readData );
 
     return ts;
 }
@@ -496,14 +499,16 @@ Parse time series values from the DOM, and also set the period.
 @param ts the time series that has been previously created and initialized
 @param valuesElement element containing a list of data values elements
 @param noDataValue text that indicates no data value
+@param readStart starting date/time to read
+@param readEnd ending date/time to read
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
 */
 private void readTimeSeries_ParseValues(WaterMLVersion watermlVersion, TS ts, Element valuesElement,
-    String noDataValue, boolean readData )
+    String noDataValue, DateTime readStart, DateTime readEnd, boolean readData )
 throws IOException
 {
-    DateTime start = null;
+    DateTime dataStart = null;
     // TODO SAM 2011-01-11 Why not just used beginDateTime and endDateTime for the period?
     NodeList valuelist = valuesElement.getElementsByTagNameNS("*","value");
     if ( (valuelist == null) || (valuelist.getLength() == 0) ) {
@@ -518,7 +523,7 @@ throws IOException
         if ( pos > 0 ) {
             dateTimeString = dateTimeString.substring(0,pos);
         }
-        start = DateTime.parse( dateTimeString, DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
+        dataStart = DateTime.parse( dateTimeString, DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
     }
     catch (IOException ex) {
         throw ex;
@@ -528,7 +533,7 @@ throws IOException
     }
     // DO NOT use count data in the WaterML to determine the end date.  Apparently missing values in the original
     // data result in no XML record.  Therefore it is necessary to parse all DateTime strings from the data.
-    DateTime end = null;
+    DateTime dataEnd = null;
     dateTimeString = "";
     try {
         dateTimeString = ((Element)valuelist.item(valuelist.getLength() - 1)).getAttribute("dateTime");
@@ -537,7 +542,7 @@ throws IOException
         if ( pos > 0 ) {
             dateTimeString = dateTimeString.substring(0,pos);
         }
-        end = DateTime.parse(dateTimeString,DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
+        dataEnd = DateTime.parse(dateTimeString,DateTime.FORMAT_YYYY_MM_DD_HH_mm_SS);
     }
     catch (IOException ex) {
         throw ex;
@@ -545,10 +550,16 @@ throws IOException
     catch (Exception ex) {
         throw new IOException("Error parsing date/time \"" + dateTimeString + "\"", ex);
     }
-    ts.setDate1(start);
-    ts.setDate1Original(start);
-    ts.setDate2(end);
-    ts.setDate2Original(end);
+    if ( readStart == null ) {
+        readStart = new DateTime(dataStart);
+    }
+    if ( readEnd == null ) {
+        readEnd = new DateTime(dataEnd);
+    }
+    ts.setDate1(readStart);
+    ts.setDate1Original(dataStart);
+    ts.setDate2(readEnd);
+    ts.setDate2Original(dataEnd);
     String dataValueString;
     double dataValue;
     String dataFlag;
@@ -566,6 +577,10 @@ throws IOException
                     dateTimeString = dateTimeString.substring(0,pos);
                 }
                 dateTime = DateTime.parse(dateTimeString);
+                if ( dateTime.lessThan(readStart) || dateTime.greaterThan(readEnd) ) {
+                    // Date/time is non in the requested period
+                    continue;
+                }
                 dataFlag = el.getAttribute("qualifiers");
                 dataValueString = el.getTextContent();
                 if ( dataValueString.equals(noDataValue) ) {
@@ -593,9 +608,11 @@ throws IOException
 Read the time series list from the string WaterML.
 @param interval indicates the interval for data in the file, needed as a hint because there is nothing
 in the file that indicates that data are daily values, etc.
+@param readStart starting date/time to read
+@param readEnd ending date/time to read
 @param readData if true, read all the data values; if false, only initialize the time series header information
 */
-public List<TS> readTimeSeriesList ( TimeInterval interval, boolean readData )
+public List<TS> readTimeSeriesList ( TimeInterval interval, DateTime readStart, DateTime readEnd, boolean readData )
 throws MalformedURLException, IOException, Exception
 {   String routine = getClass().getName() + ".readTimeSeriesList";
     // Create the time series from the WaterML...
@@ -623,7 +640,7 @@ throws MalformedURLException, IOException, Exception
         //Message.printStatus(2, routine, "NodeLocalName=" + node.getLocalName() +
         //    ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
         tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (Element)timeSeries.item(i),
-            interval, __url, __file, readData ));
+            interval, __url, __file, readStart, readEnd, readData ));
     }
     return tsList;
 }

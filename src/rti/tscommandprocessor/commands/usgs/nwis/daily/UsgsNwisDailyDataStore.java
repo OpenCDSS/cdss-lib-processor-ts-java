@@ -505,7 +505,9 @@ throws MalformedURLException, IOException, Exception
             // This is necessary because WaterML (1.1 at least) does not appear to have a clear indicator of
             // the time series data interval
             TimeInterval interval = TimeInterval.parseInterval("Day");
-            tslist = watermlReader.readTimeSeriesList( interval, readData );
+            // Pass the input period here because it is used for memory allocation and the time series
+            // in the data my have gaps that cause the period to be different
+            tslist = watermlReader.readTimeSeriesList( interval, readStart, readEnd, readData );
         }
         else {
             Message.printWarning(3, routine, "USGS NWIS Daily format " + format +

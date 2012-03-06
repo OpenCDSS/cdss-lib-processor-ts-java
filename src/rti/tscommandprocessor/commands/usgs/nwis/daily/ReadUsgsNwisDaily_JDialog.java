@@ -729,7 +729,7 @@ public boolean ok ()
 Refresh the command string from the dialog contents.
 */
 private void refresh ()
-{	String routine = "ReadUsgsNwisDaily_JDialog.refresh";
+{	String routine = getClass().getName() + ".refresh";
 	__error_wait = false;
 	String DataStore = "";
 	String Sites = "";

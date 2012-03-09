@@ -296,7 +296,7 @@ private void initialize ( JFrame parent, Command command )
 	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>This command is under development.</b></html>" ),
+        "<html><b>This command is under development.  Functionality currently is very limited.</b></html>" ),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Write time series to a WaterML format file," +

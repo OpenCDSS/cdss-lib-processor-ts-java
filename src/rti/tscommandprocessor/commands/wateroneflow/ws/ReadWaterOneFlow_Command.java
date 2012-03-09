@@ -96,7 +96,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data store." ) );
     }
-    
+    /*
     if ( (DataType == null) || DataType.equals("") ) {
         message = "The data type must be specified.";
         warning += "\n" + message;
@@ -141,6 +141,7 @@ throws InvalidCommandParameterException
                     message, "Specify a date/time or InputEnd." ) );
 		}
 	}
+	*/
 
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
@@ -262,12 +263,9 @@ CommandWarningException, CommandException
         setDiscoveryTSList ( null );
         readData = false;
     }
-    if ( true == true ) {
-        // TODO SAM 2012-02-28 need to enable
-        return;
-    }
     
     String DataStore = parameters.getValue("DataStore");
+    /*
     String DataType = parameters.getValue("DataType");
     // This may be of the form "4" or "4 - Precipitation (daily") but only want the number
     int pos = DataType.indexOf("-");
@@ -382,6 +380,7 @@ CommandWarningException, CommandException
                         message, "Report problem to software support." ) );
 		}
 	}
+	*/
 
 	if ( warning_count > 0 ) {
 		message = "There were " + warning_count + " warnings about command parameters.";
@@ -513,6 +512,10 @@ CommandWarningException, CommandException
 			}
 		}
 		 */
+		TS ts = waterOneFlowDataStore.readTimeSeries ( );
+		if ( ts != null ) {
+		    tslist.add ( ts );
+		}
     
         int size = 0;
         if ( tslist != null ) {

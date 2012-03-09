@@ -139,11 +139,11 @@ private void checkInput ()
 {	// Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	__error_wait = false;
-	/* TODO SAM 2012-02-28 Need to enable
 	String DataStore = __DataStore_JComboBox.getSelected();
 	if ( (DataStore != null) && (DataStore.length() > 0) ) {
 		props.set ( "DataStore", DataStore );
 	}
+	   /* TODO SAM 2012-02-28 Need to enable
 	String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
     if ( DataType.length() > 0 ) {
         props.set ( "DataType", DataType );
@@ -171,6 +171,7 @@ private void checkInput ()
     if ( Alias.length() > 0 ) {
         props.set ( "Alias", Alias );
     }
+    */
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -179,7 +180,6 @@ private void checkInput ()
 		// The warning would have been printed in the check code.
 		__error_wait = true;
 	}
-	*/
 }
 
 /**
@@ -191,7 +191,9 @@ private void commitEdits ()
 /* TODO SAM 2012-02-28 Need to enable
     String DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
     String Interval = __Interval_JComboBox.getSelected();
+    */
 	__command.setCommandParameter ( "DataStore", DataStore );
+	/*
 	__command.setCommandParameter ( "DataType", DataType );
 	__command.setCommandParameter ( "Interval", Interval );
 	String delim = ";";
@@ -570,16 +572,14 @@ private void refresh ()
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
 	// Regardless, reset the command from the fields...
-	if ( true == true ) {
-	    // TODO SAM 2012-02-28 Need to enable
-	    return;
-	}
 	props = new PropList ( __command.getCommandName() );
 	DataStore = __DataStore_JComboBox.getSelected().trim();
 	// Only save the major variable number because parentheses cause problems in properties
-	DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
+	/*DataType = StringUtil.getToken(__DataType_JComboBox.getSelected().trim(), " ", 0, 0 );
 	Interval = __Interval_JComboBox.getSelected().trim();
+	*/
     props.add ( "DataStore=" + DataStore );
+    /*
     props.add ( "DataType=" + DataType );
     props.add ( "Interval=" + Interval );
 	// Add the where clause(s)...
@@ -601,6 +601,7 @@ private void refresh ()
 	InputEnd = __InputEnd_JTextField.getText().trim();
 	props.add ( "InputEnd=" + InputEnd );
 	props.add ( "Alias=" + Alias );
+	*/
 	__command_JTextArea.setText( __command.toString ( props ) );
 
 	// Check the GUI state to determine whether some controls should be disabled.

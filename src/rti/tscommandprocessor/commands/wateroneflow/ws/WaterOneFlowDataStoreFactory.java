@@ -15,7 +15,8 @@ public class WaterOneFlowDataStoreFactory implements DataStoreFactory
 {
 
 /**
-Create a UsgsNwisDailyDataStore instances.
+Create a WaterOneFlowDataStore instances.
+@param props properties, typically read from a data store configuration file
 */
 public DataStore create ( PropList props )
 {
@@ -25,8 +26,16 @@ public DataStore create ( PropList props )
         description = "";
     }
     String serviceRootURI = props.getValue ( "ServiceRootURI" );
+    String version = props.getValue ( "Version" );
+    WaterOneFlowAPI wof = null;
+    if ( version.equals("1.0") ) {
+        wof = new WaterOneFlowAPI_1_0();
+    }
+    else {
+        throw new WaterMLVersionNotSupportedException ( "WaterML version is not supported: " + version );
+    }
     try {
-        return new WaterOneFlowDataStore ( name, description, new URI(serviceRootURI) );
+        return new WaterOneFlowDataStore ( name, description, new URI(serviceRootURI), wof );
     }
     catch ( Exception e ) {
         throw new RuntimeException ( e );

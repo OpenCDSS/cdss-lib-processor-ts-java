@@ -814,7 +814,7 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "InputFile" );
     valid_Vector.add ( "Delimiter" );
     valid_Vector.add ( "TreatConsecutiveDelimitersAsOne" );
@@ -1363,8 +1363,9 @@ throws IOException
             interval + "." + scenarios.get(its);
         if ( valuePos[its] < 0 ) {
             // Was a problem looking up column numbers
-            errorMessages.add ( "Column name \"" +
-                columnNames.get(its) + "\" does not match known columns - will not read.");
+            errorMessages.add ( "Value column name \"" +
+                valueColumns.get(its) + "\" does not match known data columns (" +
+                StringUtil.toString(columnNames,",") + ") - will not read.");
         }
         else {
             try {

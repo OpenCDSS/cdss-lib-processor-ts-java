@@ -22,10 +22,19 @@ public class WaterOneFlow
     extends Service
 {
 
-    private final static URL WATERONEFLOW_WSDL_LOCATION;
-    private final static Logger logger = Logger.getLogger(org.cuahsi.his._1_0.ws.WaterOneFlow.class.getName());
+    //private final static URL WATERONEFLOW_WSDL_LOCATION;
+    //private final static Logger logger = Logger.getLogger(org.cuahsi.his._1_0.ws.WaterOneFlow.class.getName());
 
+    public WaterOneFlow ( String wsdlLocation )
+    throws MalformedURLException
+    {
+        super(
+            new URL(org.cuahsi.his._1_0.ws.WaterOneFlow.class.getResource("."),wsdlLocation),
+            new QName("http://www.cuahsi.org/his/1.0/ws/", "WaterOneFlow"));
+    /* SAM 2012-03-08 The following is what the wsimport JDK program generated.
+    Modify so that the WSDL can be specified in the constructor in a more generic way
     static {
+        /*
         URL url = null;
         try {
             URL baseUrl;
@@ -36,15 +45,16 @@ public class WaterOneFlow
             logger.warning(e.getMessage());
         }
         WATERONEFLOW_WSDL_LOCATION = url;
+        */
     }
 
     public WaterOneFlow(URL wsdlLocation, QName serviceName) {
         super(wsdlLocation, serviceName);
     }
 
-    public WaterOneFlow() {
-        super(WATERONEFLOW_WSDL_LOCATION, new QName("http://www.cuahsi.org/his/1.0/ws/", "WaterOneFlow"));
-    }
+    //public WaterOneFlow() {
+    //    super(WATERONEFLOW_WSDL_LOCATION, new QName("http://www.cuahsi.org/his/1.0/ws/", "WaterOneFlow"));
+    //}
 
     /**
      * 

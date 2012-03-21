@@ -57,7 +57,7 @@ throws IOException, Exception
     WaterOneFlowAPI wof = null;
     // TODO SAM 2012-03-08 Need to automatically determine version from WSDL
     if ( version.equals("1.0") ) {
-        wof = new WaterOneFlowAPI_1_0();
+        wof = new WaterOneFlowAPI_1_0(serviceRootURI);
     }
     else {
         throw new WaterMLVersionNotSupportedException ( "WaterML version is not supported: " + version );

@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.wateroneflow.ws;
 
+import java.net.MalformedURLException;
 import java.util.List;
 
 import org.cuahsi.waterml._1.TimeSeriesResponseType;
@@ -24,9 +25,10 @@ private org.cuahsi.his._1_0.ws.WaterOneFlow __wof = null;
 /**
 Constructor.
 */
-public WaterOneFlowAPI_1_0 ()
+public WaterOneFlowAPI_1_0 ( String wsdlLocation )
+throws MalformedURLException
 {
-    __wof = new org.cuahsi.his._1_0.ws.WaterOneFlow();
+    __wof = new org.cuahsi.his._1_0.ws.WaterOneFlow( wsdlLocation );
 }
 
 /**
@@ -49,6 +51,15 @@ public TS readTimeSeries ( )
     String endDate = "2010-03-15";
     String authToken = "";
     org.cuahsi.his._1_0.ws.WaterOneFlow wof = getWaterOneFlow();
+    // Get the time series as a String (WaterML?)
+    try {
+        String response = wof.getWaterOneFlowSoap12().getValues(location, variable, startDate, endDate, authToken);
+        Message.printStatus(2, routine, response);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(2, routine, "Error calling getValues() (" + e + ")" );
+    }
+    // Get the time series as an object
     TimeSeriesResponseType tsResponse = wof.getWaterOneFlowSoap12().getValuesObject(
         location, variable, startDate, endDate, authToken);
     /* TODO SAM 2012-03-08 This code worked with his 1.1 WISDL, but 1.1 is a development release

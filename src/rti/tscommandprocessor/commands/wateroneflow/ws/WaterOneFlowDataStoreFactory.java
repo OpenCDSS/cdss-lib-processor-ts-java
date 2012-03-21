@@ -29,7 +29,12 @@ public DataStore create ( PropList props )
     String version = props.getValue ( "Version" );
     WaterOneFlowAPI wof = null;
     if ( version.equals("1.0") ) {
-        wof = new WaterOneFlowAPI_1_0();
+        try {
+            wof = new WaterOneFlowAPI_1_0(serviceRootURI);
+        }
+        catch ( Exception e ) {
+            throw new RuntimeException ( e );
+        }
     }
     else {
         throw new WaterMLVersionNotSupportedException ( "WaterML version is not supported: " + version );

@@ -143,14 +143,14 @@ throws InvalidCommandParameterException
     }
     if ( (ReferenceDate != null) && !ReferenceDate.equals("") ) {
         try {
-            DateTime.parse ( ReferenceDate );
+            DateTime.parse ( ReferenceDate, null );
         }
         catch ( Exception e ) {
             message = "The reference date \"" + ReferenceDate + "\" is invalid.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date (or blank) for the reference date." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify a valid date/time (or blank) for the reference date." ) );
         }
     }
 
@@ -361,7 +361,8 @@ CommandWarningException, CommandException
     DateTime ReferenceDate_DateTime = null;
     if ( (ReferenceDate != null) && !ReferenceDate.equals("") ) {
         try {
-            ReferenceDate_DateTime = DateTime.parse(ReferenceDate);
+            // The following call will recognize special values like CurrentToDay
+            ReferenceDate_DateTime = DateTime.parse(ReferenceDate,null);
         }
         catch ( Exception e ) {
             message="Reference date \"" + ReferenceDate + "\" is invalid.";

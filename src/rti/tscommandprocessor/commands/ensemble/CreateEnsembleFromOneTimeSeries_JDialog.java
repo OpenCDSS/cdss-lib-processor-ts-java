@@ -211,7 +211,7 @@ private void initialize ( JFrame parent, CreateEnsembleFromOneTimeSeries_Command
         "Specify the period to limit the number of traces generated from the original time series."),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specify the reference date using standard date formats to a precision appropriate for the data."),
+		"Specify the reference date using standard date formats to a precision appropriate for the data, or use \"CurrentToDay\", etc., notation."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If shifted, each trace will start on the reference date (use to align time series for display and analysis)."),

@@ -2590,6 +2590,7 @@ throws Exception
 	__ts_processor.setIsRunning ( true );
 	// Stopwatch to time each command...
     StopWatch stopWatch = new StopWatch();
+    int runtimeTotal = 0;
 	for ( i = 0; i < size; i++ ) {
 		// 1-offset comand count for messages
 		i_for_message = i + 1;
@@ -2868,8 +2869,10 @@ throws Exception
 		prev_command_complete_notified = true;
 		__ts_processor.notifyCommandProcessorListenersOfCommandCompleted ( i, size, command );
 		Message.printStatus ( 1, routine,
-                "Done processing command \"" + command_String + "\" (" +  (i + 1) + " of " + size + " commands)" );
-                 Message.printStatus ( 1, routine, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" );
+            "Done processing command \"" + command_String + "\" (" +  (i + 1) + " of " + size + " commands, " +
+            StringUtil.formatString(command.getRunTime(),"%d") + " ms runtime)" );
+		runtimeTotal += command.getRunTime();
+        Message.printStatus ( 2, routine, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" );
 	}
 	// If necessary, do a final notify for the last command...
 	if ( !prev_command_complete_notified ) {
@@ -2898,8 +2901,8 @@ throws Exception
 	// Get the final time - note this includes intervening warnings if any occurred...
 
 	stopwatch.stop();
-	Message.printStatus ( 1, routine, "Processing took " +
-		StringUtil.formatString(stopwatch.getSeconds(),"%.2f") + " seconds" );
+	Message.printStatus ( 1, routine, "Processing took " + runtimeTotal + " ms, " +
+		StringUtil.formatString(runtimeTotal/1000.0,"%.4f") + " seconds" );
 
 	// Check for fatal errors (for Command classes, only warn if failures since
 	// others are likely not a problem)...

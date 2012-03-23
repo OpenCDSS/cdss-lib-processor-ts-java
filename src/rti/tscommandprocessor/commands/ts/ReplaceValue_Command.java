@@ -76,6 +76,10 @@ throws InvalidCommandParameterException
     if ( MaxValue == null ) {
         MaxValue = ""; // To simplify checks below
     }
+    String MatchFlag = parameters.getValue ( "MatchFlag" );
+    if ( MatchFlag == null ) {
+        MatchFlag = ""; // To simplify checks below
+    }
     String NewValue = parameters.getValue ( "NewValue" );
     if ( NewValue == null ) {
         NewValue = ""; // To simplify checks below
@@ -109,27 +113,12 @@ throws InvalidCommandParameterException
                     message, "Do not specify the TSID parameter." ) );
 		}
 	}
-    /*
-	if ( TSList == null ) {
-		// Probably legacy command...
-		// TODO SAM 2005-05-17 Need to require TSList when legacy
-		// commands are safely nonexistent...  At that point the
-		// following check can occur in any case.
-		if ( (TSID == null) || (TSID.length() == 0) ) {
-            message = "A TSID must be specified.";
-			warning += "\n" + message;
-            status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a TSList parameter value." ) );
-		}
-	}
-    */
-	if ( (MinValue == null) || MinValue.equals("") ) {
-        message = "The minimum value must be specified.";
+	if ( MinValue.equals("") && MatchFlag.equals("") ) {
+        message = "The minimum value or match flag must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the minimum value as a number." ) );  
+                message, "Specify the minimum value or match flag." ) );  
 	}
 	else {
     	if ( !MinValue.equals("") && !StringUtil.isDouble(MinValue) ) {
@@ -236,12 +225,13 @@ throws InvalidCommandParameterException
     }
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "MinValue" );
     valid_Vector.add ( "MaxValue" );
+    valid_Vector.add ( "MatchFlag" );
     valid_Vector.add ( "NewValue" );
     valid_Vector.add ( "Action" );
     valid_Vector.add ( "SetStart" );
@@ -494,6 +484,7 @@ CommandWarningException, CommandException
     if ( StringUtil.isDouble(MaxValue) ) {
         MaxValue_double = Double.parseDouble ( MaxValue );
     }
+    String MatchFlag = parameters.getValue("MatchFlag");
     String NewValue = parameters.getValue("NewValue");
     Double NewValue_double = null;
     if ( StringUtil.isDouble(NewValue) ) {
@@ -657,8 +648,8 @@ CommandWarningException, CommandException
 		request_params = new PropList ( "" );
 		request_params.setUsingObject ( "Index", new Integer(tspos[its]) );
 		bean = null;
-		try { bean =
-			processor.processRequest( "GetTimeSeries", request_params);
+		try {
+		    bean = processor.processRequest( "GetTimeSeries", request_params);
 		}
 		catch ( Exception e ) {
             message = "Error requesting GetTimeSeries(Index=" + tspos[its] + "\") from processor.";
@@ -680,7 +671,8 @@ CommandWarningException, CommandException
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
 		}
-		else {	ts = (TS)prop_contents;
+		else {
+		    ts = (TS)prop_contents;
 		}
 		
 		if ( ts == null ) {
@@ -700,7 +692,7 @@ CommandWarningException, CommandException
 		    NewValue + ", action=\"" + Action + "\"." );
 		try {
             TSUtil.replaceValue ( ts, SetStart_DateTime, SetEnd_DateTime, MinValue_double, MaxValue_double,
-                NewValue_double, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SetFlag );
+                NewValue_double, MatchFlag, Action, AnalysisWindowStart_DateTime, AnalysisWindowEnd_DateTime, SetFlag );
 		}
 		catch ( Exception e ) {
 			message = "Unexpected error replacing values in time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -737,6 +729,7 @@ public String toString ( PropList props )
     String EnsembleID = props.getValue( "EnsembleID" );
 	String MinValue = props.getValue( "MinValue" );
     String MaxValue = props.getValue( "MaxValue" );
+    String MatchFlag = props.getValue( "MatchFlag" );
     String NewValue = props.getValue( "NewValue" );
     String Action = props.getValue( "Action" );
 	String SetStart = props.getValue("SetStart");
@@ -774,6 +767,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "MaxValue=" + MaxValue );
+    }
+    if ( (MatchFlag != null) && (MatchFlag.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MatchFlag=\"" + MatchFlag + "\"" );
     }
     if ( (NewValue != null) && (NewValue.length() > 0) ) {
         if ( b.length() > 0 ) {

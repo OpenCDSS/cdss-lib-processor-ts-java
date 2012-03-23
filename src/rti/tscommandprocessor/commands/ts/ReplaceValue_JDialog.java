@@ -53,6 +53,7 @@ private ReplaceValue_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __MinValue_JTextField = null;
 private JTextField __MaxValue_JTextField = null;
+private JTextField __MatchFlag_JTextField = null;
 private JTextField __NewValue_JTextField = null;
 private SimpleJComboBox __Action_JComboBox = null;
 private JTextField __SetStart_JTextField = null; // First date to reset.
@@ -105,8 +106,8 @@ private void checkGUIState ()
 {
     String TSList = __TSList_JComboBox.getSelected();
     if ( TSListType.ALL_MATCHING_TSID.equals(TSList) ||
-            TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
-            TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
+        TSListType.FIRST_MATCHING_TSID.equals(TSList) ||
+        TSListType.LAST_MATCHING_TSID.equals(TSList) ) {
         __TSID_JComboBox.setEnabled(true);
         __TSID_JLabel.setEnabled ( true );
     }
@@ -146,6 +147,7 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MinValue = __MinValue_JTextField.getText().trim();
     String MaxValue = __MaxValue_JTextField.getText().trim();
+    String MatchFlag = __MatchFlag_JTextField.getText().trim();
     String NewValue = __NewValue_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
@@ -168,6 +170,9 @@ private void checkInput ()
     }
     if ( MaxValue.length() > 0 ) {
         parameters.set ( "MaxValue", MaxValue );
+    }
+    if ( MatchFlag.length() > 0 ) {
+        parameters.set ( "MatchFlag", MatchFlag );
     }
     if ( NewValue.length() > 0 ) {
         parameters.set ( "NewValue", NewValue );
@@ -214,6 +219,7 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
     String MaxValue = __MaxValue_JTextField.getText().trim();
     String MinValue = __MinValue_JTextField.getText().trim();
+    String MatchFlag = __MatchFlag_JTextField.getText().trim();
     String NewValue = __NewValue_JTextField.getText().trim();
     String SetStart = __SetStart_JTextField.getText().trim();
     String SetEnd = __SetEnd_JTextField.getText().trim();
@@ -224,6 +230,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "MaxValue", MaxValue );
     __command.setCommandParameter ( "MinValue", MinValue );
+    __command.setCommandParameter ( "MatchFlag", MatchFlag );
     __command.setCommandParameter ( "NewValue", NewValue );
     __command.setCommandParameter ( "SetStart", SetStart );
     __command.setCommandParameter ( "SetEnd", SetEnd );
@@ -271,13 +278,16 @@ private void initialize ( JFrame parent, Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Replace a single data value or range of data values with a constant."),
-		0, y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optionally, set missing, or remove the values entirely (if an irregular interval time series)."),
+        "The data values and/or flags are matched to determine values to replace."),
+        0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optionally, set missing or remove the values entirely (if an irregular interval time series)."),
         0, ++y, 7, 1, 0, 0, insetsMin, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If the missing value indicator is a number in the given range, missing values also will be replaced." ),
@@ -308,7 +318,7 @@ private void initialize ( JFrame parent, Command command )
 	__MinValue_JTextField.addKeyListener ( this );
         JGUIUtil.addComponent(main_JPanel, __MinValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
-    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (maximum value can also be specified)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional (maximum value also can be specified)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Maximum value to replace:"),
@@ -318,6 +328,15 @@ private void initialize ( JFrame parent, Command command )
     JGUIUtil.addComponent(main_JPanel, __MaxValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - use when specifying range."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel( "Flag to match for replace:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MatchFlag_JTextField = new JTextField ( 10 );
+    __MatchFlag_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MatchFlag_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - use when matching flags."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Constant value to replace with:"), 
@@ -472,12 +491,13 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{   String routine = "ReplaceValue_JDialog.refresh";
+{   String routine = getClass().getName() + ".refresh";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
     String MinValue = "";
     String MaxValue = "";
+    String MatchFlag = "";
     String NewValue = "";
     String Action = "";
     String SetStart = "";
@@ -494,6 +514,7 @@ private void refresh ()
         EnsembleID = props.getValue ( "EnsembleID" );
         MinValue = props.getValue ( "MinValue" );
         MaxValue = props.getValue ( "MaxValue" );
+        MatchFlag = props.getValue ( "MatchFlag" );
         NewValue = props.getValue ( "NewValue" );
         Action = props.getValue ( "Action" );
         SetStart = props.getValue ( "SetStart" );
@@ -516,17 +537,18 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __TSID_JComboBox.select ( TSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+            // Automatically add to the list after the blank...
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+                // Select the blank...
                 __TSID_JComboBox.select ( 0 );
             }
         }
@@ -550,6 +572,9 @@ private void refresh ()
         }
         if ( MaxValue != null ) {
             __MaxValue_JTextField.setText( MaxValue );
+        }
+        if ( MatchFlag != null ) {
+            __MatchFlag_JTextField.setText( MatchFlag );
         }
         if ( NewValue != null ) {
             __NewValue_JTextField.setText( NewValue );
@@ -617,6 +642,7 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     MinValue = __MinValue_JTextField.getText().trim();
     MaxValue = __MaxValue_JTextField.getText().trim();
+    MatchFlag = __MatchFlag_JTextField.getText().trim();
     NewValue = __NewValue_JTextField.getText().trim();
     Action = __Action_JComboBox.getSelected();
     SetStart = __SetStart_JTextField.getText().trim();
@@ -628,6 +654,7 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "MinValue=" + MinValue );
     props.add ( "MaxValue=" + MaxValue );
+    props.add ( "MatchFlag=" + MatchFlag );
     props.add ( "NewValue=" + NewValue );
     props.add ( "Action=" + Action );
     props.add ( "SetStart=" + SetStart );

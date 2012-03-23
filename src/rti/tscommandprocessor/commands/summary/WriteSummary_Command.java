@@ -566,8 +566,7 @@ public String toString ( PropList parameters )
 
 /**
 Write a summary time series file given the current time series.
-@param tslist list of time series to write.  Currently this is ignored if
-a BinaryTS has been created for daily data.
+@param tslist list of time series to write.
 @param outputFile Name of file to write.
 @param outputStart Datetime to start output.
 @param outputEnd Datetime to end output.

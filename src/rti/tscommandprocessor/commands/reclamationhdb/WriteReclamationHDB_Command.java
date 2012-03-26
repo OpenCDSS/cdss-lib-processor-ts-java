@@ -398,6 +398,7 @@ CommandWarningException, CommandException
         status.addToLog ( CommandPhaseType.RUN,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Check log file for details." ) );
+        // TODO SAM 2012-03-25 Enable when ready
         boolean doWrite = false;
         if ( doWrite ) {
             dmi.writeTimeSeriesList ( tslist, loadingApp, isEnsemble, SiteCommonName,
@@ -436,8 +437,8 @@ public String toString ( PropList parameters )
     String DataTypeCommonName = parameters.getValue( "DataTypeCommonName" );
     String ModelName = parameters.getValue( "ModelName" );
     String ModelRunName = parameters.getValue( "ModelRunName" );
-    String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
+    String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
     String ValidationFlag = parameters.getValue( "ValidationFlag" );
     String DataFlags = parameters.getValue( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -467,12 +468,6 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( SiteCommonName == null ) {
-        Message.printStatus(2, "XXX", "Site common name is null value." );
-    }
-    else {
-        Message.printStatus(2, "XXX", "Site common name is string value \"" + SiteCommonName + "\"" );
-    }
     if ( (SiteCommonName != null) && (SiteCommonName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -497,17 +492,17 @@ public String toString ( PropList parameters )
         }
         b.append ( "ModelRunName=\"" + ModelRunName + "\"" );
     }
-    if ( (HydrologicIndicator != null) && (HydrologicIndicator.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "HydrologicIndicator=\"" + HydrologicIndicator + "\"" );
-    }
     if ( (ModelRunDate != null) && (ModelRunDate.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "ModelRunDate=\"" + ModelRunDate + "\"" );
+    }
+    if ( (HydrologicIndicator != null) && (HydrologicIndicator.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "HydrologicIndicator=\"" + HydrologicIndicator + "\"" );
     }
     if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
         if ( b.length() > 0 ) {

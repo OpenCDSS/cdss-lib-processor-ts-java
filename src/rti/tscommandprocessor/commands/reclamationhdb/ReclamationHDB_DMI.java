@@ -4,6 +4,7 @@ import java.security.InvalidParameterException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
@@ -183,6 +184,86 @@ Determine the database version.
 public void determineDatabaseVersion()
 {
     // TODO SAM 2010-10-18 Need to enable
+}
+
+/**
+Find an instance of ReclamationHDB_Model given the model name.
+@return the list of matching items (a non-null list is guaranteed)
+@param modelList a list of ReclamationHDB_Model to search
+@param  modelName the model name to match (case-insensitive)
+*/
+public List<ReclamationHDB_Model> findModel( List<ReclamationHDB_Model> modelList, String modelName )
+{
+    List<ReclamationHDB_Model> foundList = new Vector();
+    for ( ReclamationHDB_Model model: modelList ) {
+        if ( (modelName != null) && !model.getModelName().equalsIgnoreCase(modelName) ) {
+            // Model name to match was specified but did not match
+            continue;
+        }
+        // If here OK to add to the list.
+        foundList.add ( model );
+    }
+    return foundList;
+}
+
+/**
+Find an instance of ReclamationHDB_ModelRun given information about the model run.
+@return the list of matching items (a non-null list is guaranteed)
+@param modelRunList a list of ReclamationHDB_ModelRun to search
+@param  modelName the model name to match (case-insensitive)
+*/
+public List<ReclamationHDB_ModelRun> findModelRun( List<ReclamationHDB_ModelRun> modelRunList,
+    int modelID, String modelRunName, String modelRunDate, String hydrologicIndicator )
+{
+    List<ReclamationHDB_ModelRun> foundList = new Vector();
+    for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
+        if ( (modelID >= 0) && (modelRun.getModelID() != modelID) ) {
+            // Model name to match was specified but did not match
+            continue;
+        }
+        if ( (modelRunName != null) && !modelRunName.equals("") &&
+            !modelRun.getModelRunName().equalsIgnoreCase(modelRunName) ) {
+            // Model run name to match was specified but did not match
+            continue;
+        }
+        /* TODO SAM 2012-03-26 Need to enable - deal with date/time formatting
+        if ( (modelRunDate != null) && !modelRun.getModelRunDate().equalsIgnoreCase(modelRunDate) ) {
+            // Model run date to match was specified but did not match
+            continue;
+        }
+        */
+        if ( (hydrologicIndicator != null) && !hydrologicIndicator.equals("") &&
+            !modelRun.getHydrologicIndicator().equalsIgnoreCase(hydrologicIndicator) ) {
+            // Hydrologic indicator to match was specified but did not match
+            continue;
+        }
+        // If here OK to add to the list.
+        foundList.add ( modelRun );
+    }
+    return foundList;
+}
+
+/**
+Find an instance of ReclamationHDB_SiteDataType given the site common name and data type common name.
+@return the list of matching items (a non-null list is guaranteed).
+*/
+public List<ReclamationHDB_SiteDataType> findSiteDataType( List<ReclamationHDB_SiteDataType> siteDataTypeList,
+    String siteCommonName, String dataTypeCommonName )
+{
+    List<ReclamationHDB_SiteDataType> foundList = new Vector();
+    for ( ReclamationHDB_SiteDataType siteDataType: siteDataTypeList ) {
+        if ( (siteCommonName != null) && !siteDataType.getSiteCommonName().equalsIgnoreCase(siteCommonName) ) {
+            // Site common name to match was specified but did not match
+            continue;
+        }
+        if ( (dataTypeCommonName != null) && !siteDataType.getDataTypeCommonName().equalsIgnoreCase(dataTypeCommonName) ) {
+            // Data type common name to match was specified but did not match
+            continue;
+        }
+        // If here OK to add to the list.
+        foundList.add ( siteDataType );
+    }
+    return foundList;
 }
 
 /**
@@ -685,6 +766,76 @@ throws SQLException
             s = rs.getString(col++);
             if ( !rs.wasNull() ) {
                 data.setCmmnt(s);
+            }
+            results.add ( data );
+        }
+    }
+    catch (SQLException e) {
+        Message.printWarning(3, routine, "Error getting loading application data from HDB (" + e + ")." );
+        Message.printWarning(3, routine, e );
+    }
+    finally {
+        if ( rs != null ) {
+            rs.close();
+        }
+        stmt.close();
+    }
+    
+    return results;
+}
+
+/**
+Read the database model runs from the HDB_MODEL_RUN table given the model ID.
+@param modelID the model identifier to match, if >= 0
+@return the list of model runs
+*/
+public List<ReclamationHDB_ModelRun> readHdbModelRunListForModelID ( int modelID )
+throws SQLException
+{   String routine = getClass().getName() + ".readHdbModelList";
+    List<ReclamationHDB_ModelRun> results = new Vector();
+    StringBuffer sqlCommand = new StringBuffer (
+        "select REF_MODEL_RUN.MODEL_ID, REF_MODEL_RUN.MODEL_RUN_ID, REF_MODEL_RUN.MODEL_RUN_NAME," +
+        "REF_MODEL_RUN.HYDROLOGIC_INDICATOR, REF_MODEL_RUN.RUN_DATE from REF_MODEL_RUN" );
+    if ( modelID >= 0 ) {
+        sqlCommand.append ( " WHERE REF_MODEL_RUN.MODEL_ID = " + modelID );
+    }
+    ResultSet rs = null;
+    Statement stmt = null;
+    try {
+        stmt = __hdbConnection.ourConn.createStatement();
+        rs = stmt.executeQuery(sqlCommand.toString());
+        // Set the fetch size to a relatively big number to try to improve performance.
+        // Hopefully this improves performance over VPN and using remote databases
+        rs.setFetchSize(10000);
+        int i;
+        String s;
+        Date date;
+        int record = 0;
+        int col;
+        ReclamationHDB_ModelRun data;
+        while (rs.next()) {
+            ++record;
+            data = new ReclamationHDB_ModelRun();
+            col = 1;
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setModelID(i);
+            }
+            i = rs.getInt(col++);
+            if ( !rs.wasNull() ) {
+                data.setModelRunID(i);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setModelRunName(s);
+            }
+            s = rs.getString(col++);
+            if ( !rs.wasNull() ) {
+                data.setHydrologicIndicator(s);
+            }
+            date = rs.getTimestamp(col++);
+            if ( !rs.wasNull() ) {
+                data.setRunDate(date);
             }
             results.add ( data );
         }

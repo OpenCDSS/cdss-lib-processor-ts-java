@@ -1189,20 +1189,19 @@ private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
     }
     Message.printStatus(2, routine, "Got " + measTypeList.size() + " MeasType using tsid=\"" + tsid + "\"." );
     __SequenceNumber_JComboBox.removeAll ();
-    String sequenceNumber;
+    int sequenceNumber;
     List<String> sequenceNumberList = new Vector();
+    sequenceNumberList.add ( "" );
     for ( RiversideDB_MeasType measType : measTypeList ) {
         // Only add if not already listed. Alternatively - need to enable a "distinct" query
-        sequenceNumber = null;//measType.getSequenceNumber();
-        if ( sequenceNumber == null ) {
+        sequenceNumber = measType.getSequence_num();
+        if ( DMIUtil.isMissing(sequenceNumber) ) {
             continue;
         }
-        sequenceNumber = sequenceNumber.trim();
-        if ( StringUtil.indexOfIgnoreCase(sequenceNumberList, sequenceNumber) < 0 ){
-            sequenceNumberList.add(sequenceNumber);
-        }
+        sequenceNumberList.add("" + sequenceNumber);
     }
     java.util.Collections.sort(sequenceNumberList);
+    StringUtil.removeDuplicates(sequenceNumberList, true, true);
     __SequenceNumber_JComboBox.setData ( sequenceNumberList );
     // Select first choice (may get reset from existing parameter values).
     __SequenceNumber_JComboBox.select ( null );

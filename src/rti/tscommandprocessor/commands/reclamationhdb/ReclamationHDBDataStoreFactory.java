@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 import riverside.datastore.DataStore;
 import riverside.datastore.DataStoreFactory;
@@ -23,11 +24,11 @@ public DataStore create ( PropList props )
     if ( description == null ) {
         description = "";
     }
-    String databaseEngine = props.getValue ( "DatabaseEngine" );
-    String databaseServer = props.getValue ( "DatabaseServer" );
-    String databaseName = props.getValue ( "DatabaseName" );
-    String systemLogin = props.getValue ( "SystemLogin" );
-    String systemPassword = props.getValue ( "SystemPassword" );
+    String databaseEngine = IOUtil.expandPropertyForEnvironment(props.getValue ( "DatabaseEngine" ));
+    String databaseServer = IOUtil.expandPropertyForEnvironment(props.getValue ( "DatabaseServer" ));
+    String databaseName = IOUtil.expandPropertyForEnvironment(props.getValue ( "DatabaseName" ));
+    String systemLogin = IOUtil.expandPropertyForEnvironment(props.getValue ( "SystemLogin" ));
+    String systemPassword = IOUtil.expandPropertyForEnvironment(props.getValue ( "SystemPassword" ));
     try {
         ReclamationHDB_DMI dmi = new ReclamationHDB_DMI (
             databaseEngine, // OK if null, will use SQL Server

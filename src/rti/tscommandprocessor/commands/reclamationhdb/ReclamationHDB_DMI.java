@@ -1,10 +1,12 @@
 package rti.tscommandprocessor.commands.reclamationhdb;
 
 import java.security.InvalidParameterException;
+import java.sql.BatchUpdateException;
+import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
@@ -13,12 +15,17 @@ import java.util.Vector;
 import rti.tscommandprocessor.commands.reclamationhdb.java_lib.hdbLib.JavaConnections;
 
 import RTi.DMI.DMI;
+import RTi.DMI.DMIStoredProcedureData;
 import RTi.DMI.DMIUtil;
+import RTi.DMI.DMIWriteStatement;
 import RTi.TS.TS;
+import RTi.TS.TSData;
 import RTi.TS.TSIdent;
+import RTi.TS.TSIterator;
 import RTi.TS.TSUtil;
 import RTi.Util.GUI.InputFilter;
 import RTi.Util.GUI.InputFilter_JPanel;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
@@ -37,6 +44,11 @@ public class ReclamationHDB_DMI extends DMI
 Connection to the database.
 */
 private JavaConnections __hdbConnection = null;
+
+/**
+The hashtable that caches stored procedures.
+*/
+private Hashtable __storedProcedureHashtable = new Hashtable();
 
 /**
 Database parameters from REF_DB_PARAMETER.
@@ -87,7 +99,7 @@ throws Exception {
         setDatabaseEngine("Oracle");
     }
     setEditable(true);
-    setSecure(false);
+    setSecure(true);
 }
 
 /**
@@ -104,7 +116,7 @@ private DateTime convertHDBDateTimesToInternal ( DateTime startDateTime, DateTim
         // Create a new instance with precision that matches the interval...
         dateTime = new DateTime(intervalBase);
     }
-    if ( intervalBase == TimeInterval.HOUR ) {
+    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
         // The ending date/time has the hour of interest
         dateTime.setDate(endDateTime);
     }
@@ -130,6 +142,10 @@ private DateTime convertHDBStartDateTimeToInternal ( Date startDateTime, int int
         // The date/time using internal conventions is one hour later
         // FIXME SAM 2010-11-01 Are there any instantaneous 1hour values?
         dateTime.addHour(1);
+        dateTime.setTimeZone(timeZone);
+    }
+    else if ( intervalBase == TimeInterval.IRREGULAR ) {
+        dateTime.setPrecision(DateTime.PRECISION_MINUTE);
         dateTime.setTimeZone(timeZone);
     }
     // Otherwise for DAY, MONTH, YEAR the starting date/time is correct when precision is considered
@@ -184,6 +200,27 @@ Determine the database version.
 public void determineDatabaseVersion()
 {
     // TODO SAM 2010-10-18 Need to enable
+}
+
+/**
+Find an instance of ReclamationHDB_LoadingApplication given the application name.
+@return the list of matching items (a non-null list is guaranteed)
+@param loadingApplicationList a list of ReclamationHDB_Model to search
+@param  loadingApplication the model name to match (case-insensitive)
+*/
+public List<ReclamationHDB_LoadingApplication> findLoadingApplication (
+    List<ReclamationHDB_LoadingApplication> loadingApplicationList, String loadingApplication )
+{
+    List<ReclamationHDB_LoadingApplication> foundList = new Vector();
+    for ( ReclamationHDB_LoadingApplication la: loadingApplicationList ) {
+        if ( (loadingApplication != null) && !la.getLoadingApplicationName().equalsIgnoreCase(loadingApplication) ) {
+            // Application name to match was specified but did not match
+            continue;
+        }
+        // If here OK to add to the list.
+        foundList.add ( la );
+    }
+    return foundList;
 }
 
 /**
@@ -281,6 +318,14 @@ public String getDatabaseTimeZone ()
 }
 
 /**
+Return the list of loading applications.
+*/
+private List<ReclamationHDB_LoadingApplication> getLoadingApplicationList ()
+{
+    return __loadingApplicationList;
+}
+
+/**
 Get the "Object name - data type" strings to use in time series data type selections.
 @param includeObjectType if true, include the object type before the data type; if false, just return
 the data type
@@ -372,6 +417,36 @@ private String getOracleDateFormat ( int intervalBase )
 }
 
 /**
+Get the sample interval for the write_to_hdb stored procedure, given the time series base interval.
+@param intervalBase the time series base interval
+@return the HDB sample interval string
+*/
+private String getSampleIntervalFromInterval ( int intervalBase )
+{
+    String sampleInterval = null;
+    if ( intervalBase == TimeInterval.HOUR ) {
+        sampleInterval = "hour";
+    }
+    else if ( intervalBase == TimeInterval.DAY ) {
+        sampleInterval = "day";
+    }
+    else if ( intervalBase == TimeInterval.MONTH ) {
+        sampleInterval = "month";
+    }
+    else if ( intervalBase == TimeInterval.YEAR ) {
+        sampleInterval = "yr";
+    }
+    else if ( intervalBase == TimeInterval.IRREGULAR ) {
+        sampleInterval = "instant";
+    }
+    // TODO SAM 2012-03-28 "wy" is not handled
+    else {
+        throw new InvalidParameterException("Interval \"" + intervalBase + "\" is not supported." );
+    }
+    return sampleInterval;
+}
+
+/**
 Get the time series data table name based on the data interval.
 @param interval the data interval "hour", etc.
 @param isReal true if the data are to be extracted from the real data tables.
@@ -395,7 +470,6 @@ private String getTimeSeriesTableFromInterval ( String interval, boolean isReal 
     else if ( interval.equalsIgnoreCase("year") || interval.equalsIgnoreCase("1year")) {
         return prefix + "YEAR";
     }
-    /* TODO SAM 2010-10-28 Support later.
     else if ( interval.toUpperCase().indexOf("IRR") >= 0 ) {
         if ( isReal ) {
             return prefix + "INSTANT";
@@ -404,7 +478,6 @@ private String getTimeSeriesTableFromInterval ( String interval, boolean isReal 
             throw new InvalidParameterException("Interval \"" + interval + "\" is not supported for model data." );
         }
     }
-    */
     else {
         throw new InvalidParameterException("Interval \"" + interval + "\" is not supported." );
     }
@@ -485,6 +558,47 @@ Return the list of global validation flags.
 public List<ReclamationHDB_Validation> getHdbValidationList()
 {
     return __validationList;
+}
+
+/**
+Get the write statement for writing time series.  A stored procedure statement is re-used.
+*/
+private DMIWriteStatement getWriteTimeSeriesStatement ( DMIWriteStatement writeStatement )
+throws Exception
+{   String routine = getClass().getName() + ".getWriteTimeSeriesStatement";
+    // Look up the definition of the stored procedure (stored in a
+    // DMIStoredProcedureData object) in the hashtable.  This allows
+    // repeated calls to the same stored procedure to re-used stored
+    // procedure meta data without requerying the database.
+
+    String name = "WRITE_TO_HDB"; //"write_to_hdb";
+    DMIStoredProcedureData spData = (DMIStoredProcedureData)__storedProcedureHashtable.get(name);
+    boolean tryAnyway = true; // Try to use procedure even if following code can't see it defined
+    if (spData != null) {
+        // If a data object was found, set up the data in the statement below
+    }
+    else if ( DMIUtil.databaseHasStoredProcedure(this, name) || tryAnyway ) {
+        // If no data object was found, but the stored procedure is
+        // defined in the database then build the data object for the
+        // stored procedure and then store it in the hashtable.
+        spData = new DMIStoredProcedureData(this, name);
+        __storedProcedureHashtable.put(name, spData);
+    }
+    else {
+        // If no data object was found and the stored procedure is not
+        // defined in the database, can't execute.
+        Message.printWarning(3, routine,
+            "No stored procedure defined in database for procedure \"" + name + "\"" );      
+        return null;
+    }
+
+    //DMIUtil.dumpProcedureInfo(this, name);
+
+    // Set the data object in the statement.  Doing so will set up the
+    // statement as a stored procedure statement.
+
+    writeStatement.setStoredProcedureData(spData);
+    return writeStatement;
 }
 
 /**
@@ -1104,7 +1218,9 @@ throws SQLException
         if ( rs != null ) {
             rs.close();
         }
-        stmt.close();
+        if ( stmt != null ) {
+            stmt.close();
+        }
     }
     
     return results;
@@ -1470,19 +1586,27 @@ throws Exception
             // The date/time will be internal representation, but need to convert to hdb data record start
             hdbReqStartDateMin = convertInternalDateTimeToHDBStartString ( readStart, intervalBase );
             ts.setDate1(readStart);
-            if ( intervalBase == TimeInterval.HOUR ) {
-                ts.getDate1().setTimeZone(timeZone);
+            if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
+                ts.setDate1(ts.getDate1().setTimeZone(timeZone) );
+            }
+            if ( intervalBase == TimeInterval.IRREGULAR ) {
+                ts.setDate1(ts.getDate1().setPrecision(DateTime.PRECISION_MINUTE) );
             }
         }
         else {
+            Message.printStatus(2, routine, "before date1Original=" + ts.getDate1Original());
             ts.setDate1(ts.getDate1Original());
+            Message.printStatus(2, routine, "after date1=" + ts.getDate1() + " date1Original=" + ts.getDate1Original());
         }
         if ( readEnd != null ) {
             // The date/time will be internal representation, but need to convert to hdb data record start
             hdbReqStartDateMax = convertInternalDateTimeToHDBStartString ( readEnd, intervalBase );
             ts.setDate2(readEnd);
-            if ( intervalBase == TimeInterval.HOUR ) {
-                ts.getDate2().setTimeZone(timeZone);
+            if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
+                ts.setDate2( ts.getDate2().setTimeZone(timeZone) );
+            }
+            if ( intervalBase == TimeInterval.IRREGULAR ) {
+                ts.setDate2( ts.getDate2().setPrecision(DateTime.PRECISION_MINUTE) );
             }
         }
         else {
@@ -1540,8 +1664,10 @@ throws Exception
             String derivationFlags;
             String dateTimeString;
             DateTime dateTime = null; // Reused to set time series values
-            DateTime startDateTime = new DateTime(); // Reused start for each record
-            DateTime endDateTime = new DateTime(); // Reused end for each record
+            // Create the date/times from the period information to set precision and time zone,
+            // in particular to help with irregular data
+            DateTime startDateTime = new DateTime(ts.getDate1()); // Reused start for each record
+            DateTime endDateTime = new DateTime(ts.getDate1()); // Reused end for each record
             int col = 1;
             boolean transferDateTimesAsStrings = true; // Use to evaluate performance of date/time transfer
                                                        // It seems that strings are a bit faster
@@ -1557,7 +1683,7 @@ throws Exception
                 }
                 else {
                     // Use Date variants to transfer data (seems to be slow)
-                    if ( intervalBase == TimeInterval.HOUR ) {
+                    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                         dt = rs.getTimestamp(col++);
                     }
                     else {
@@ -1567,7 +1693,7 @@ throws Exception
                         // Cannot process record
                         continue;
                     }
-                    if ( intervalBase == TimeInterval.HOUR ) {
+                    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                         startDateTime.setDate(dt);
                     }
                     else {
@@ -1576,7 +1702,7 @@ throws Exception
                         startDateTime.setMonth(dt.getMonth() + 1);
                         startDateTime.setDay(dt.getDate());
                     }
-                    if ( intervalBase == TimeInterval.HOUR ) {
+                    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                         dt = rs.getTimestamp(col++);
                     }
                     else {
@@ -1586,7 +1712,7 @@ throws Exception
                         // Cannot process record
                         continue;
                     }
-                    if ( intervalBase == TimeInterval.HOUR ) {
+                    if ( (intervalBase == TimeInterval.HOUR) || (intervalBase == TimeInterval.IRREGULAR) ) {
                         endDateTime.setDate(dt);
                     }
                     else {
@@ -1676,15 +1802,15 @@ throws SQLException
 }
 
 /**
-Set a DateTime's contents given a string.  This does not do a full parse constructor because a single
-DateTime instance is reused.
+Set a DateTime's contents given an HDB (Oracle) date/time string.
+This does not do a full parse constructor because a single DateTime instance is reused.
 @param dateTime the DateTime instance to set values in (should be at an appropriate precision)
 @param intervalBase the base data interval for the date/time being processed - will limit the transfer from
 the string
 @param dateTimeString a string in the format YYYY-MM-DD hh:mm:ss.  The intervalBase is used to determine when
 to stop transferring values.
 */
-private void setDateTime ( DateTime dateTime, int intervalBase, String dateTimeString )
+public void setDateTime ( DateTime dateTime, int intervalBase, String dateTimeString )
 {
     // Transfer the year
     dateTime.setYear ( Integer.parseInt(dateTimeString.substring(0,4)) );
@@ -1703,7 +1829,8 @@ private void setDateTime ( DateTime dateTime, int intervalBase, String dateTimeS
     if ( intervalBase == TimeInterval.HOUR ) {
         return;
     }
-    // TODO don't handle instantaneous
+    // Instantaneous treat as minute...
+    dateTime.setMinute ( Integer.parseInt(dateTimeString.substring(14,16)) );
 }
 
 /**
@@ -1889,18 +2016,227 @@ private List<ReclamationHDB_SiteTimeSeriesMetadata> toReclamationHDBSiteTimeSeri
 }
 
 /**
-Write a list of time series to the database.
-@param tslist list of time series to write.
-@param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool").
+Write a time series to the database.
+@param ts time series to write
+@param loadingApp the application name - must match HDB_LOADING_APPLICATION (e.g., "TSTool")
+@param siteCommonName site common name, to determine site_datatype_id
+@param dataTypeCommonName data type common name, to determine site_datatype_id
+@param sideDataTypeID if specified, will be used instead of that determined from above
+@param modelName model name, to determine model_run_id
+@param modelRunName model run name, to determine model_run_id
+@param modelRunDate model run date, to determine model_run_id
+@param hydrologicIndicator, to determine model_run_id
+@param modelRunID, will be used instead of that determined from above
+@param validationFlag validation flag for value
+@param dataFlags user-specified data flags
+@param timeZone time zone to write (can be null)
 @param outputStart start of period to write (if null write full period).
 @param outputEnd end of period to write (if null write full period).
 */
-public void writeTimeSeriesList ( List<TS> tslist, String loadingApp,
-    boolean isEnsemble, String siteCommonName,
-    String dataTypeCommonName, String modelName, String modelRunName, String hydrologicIndicator,
-    DateTime modelRunDate, String validationFlag, String dataFlags, DateTime outputStart, DateTime outputEnd )
-{
-    
+public void writeTimeSeries ( TS ts, String loadingApp,
+    String siteCommonName, String dataTypeCommonName, Long siteDataTypeID,
+    String modelName, String modelRunName, String modelRunDate, String hydrologicIndicator, Long modelRunID,
+    String validationFlag, String dataFlags, String timeZone, DateTime outputStartReq, DateTime outputEndReq )
+throws SQLException
+{   String routine = getClass().getName() + ".writeTimeSeries";
+    if ( ts == null ) {
+        return;
+    }
+    if ( !ts.hasData() ) {
+        return;
+    }
+    // Determine the loading application
+    List<ReclamationHDB_LoadingApplication> loadingApplicationList =
+        findLoadingApplication ( getLoadingApplicationList(), loadingApp );
+    if ( loadingApplicationList.size() != 1 ) {
+        throw new IllegalArgumentException("Unable to match loading application \"" + loadingApp + "\"" );
+    }
+    int loadingAppID = loadingApplicationList.get(0).getLoadingApplicationID();
+    String sampleInterval = getSampleIntervalFromInterval ( ts.getDataIntervalBase() );
+    // Get the site_datatype_id
+    if ( siteDataTypeID == null ) {
+        // Try to get from the parts
+        // TODO SAM 2012-03-28 Evaluate whether this should be cached
+        List<ReclamationHDB_SiteDataType> siteDataTypeList = readHdbSiteDataTypeList();
+        List<ReclamationHDB_SiteDataType> matchedList = findSiteDataType(
+            siteDataTypeList, siteCommonName, dataTypeCommonName);
+        if ( matchedList.size() == 1 ) {
+            siteDataTypeID = new Long(matchedList.get(0).getSiteDataTypeID());
+        }
+        else {
+            throw new IllegalArgumentException("Unable to determine site_datatype_id from SiteCommonName=\"" +
+                siteCommonName + "\", DataTypeCommonName=\"" + dataTypeCommonName + "\"" );
+        }
+    }
+    if ( modelRunID == null ) {
+        if ( modelRunName != null ) {
+            // Try to get from the parts
+            throw new IllegalArgumentException(
+                "Determining model_run_id from other parameters currently is not supported." );
+        }
+        else {
+            modelRunID = new Long(0);
+        }
+    }
+    Integer computeID = null; // Use default
+    if ( (validationFlag != null) && validationFlag.equals("") ) {
+        // Set to null to use default
+        validationFlag = null;
+    }
+    if ( (dataFlags != null) && dataFlags.equals("") ) {
+        // Set to null to use default
+        dataFlags = null;
+    }
+    if ( (timeZone != null) && timeZone.equals("") ) {
+        // Set to null to use default
+        timeZone = null;
+    }
+    DateTime outputStart = new DateTime(ts.getDate1());
+    if ( outputStartReq != null ) {
+        outputStart = new DateTime(outputStartReq);
+    }
+    DateTime outputEnd = new DateTime(ts.getDate2());
+    if ( outputEndReq != null ) {
+        outputEnd = new DateTime(outputEndReq);
+    }
+    TSIterator tsi = null;
+    try {
+        tsi = ts.iterator(outputStart,outputEnd);
+    }
+    catch ( Exception e ) {
+        throw new RuntimeException("Unable to initialize iterator for period " + outputStart + " to " + outputEnd );
+    }
+    // If true use RiversideDMI, if false use basic callable statement as per some code from Dave King
+    boolean writeUsingRiversideDMI = false;
+    DMIWriteStatement writeStatement = null;
+    CallableStatement cs = null;
+    if ( writeUsingRiversideDMI ) {
+        writeStatement = new DMIWriteStatement(this);
+        // Call the stored procedure that writes the data
+        try {
+            writeStatement = getWriteTimeSeriesStatement ( writeStatement );
+        }
+        catch ( Exception e ) {
+            throw new RuntimeException("Unable to get write statement (" + e + ")" );
+        }
+        if ( writeStatement == null ) {
+            throw new RuntimeException("Unable to create write statement for stored procedure." );
+        }
+    }
+    else {
+        //cs = getConnection().prepareCall("begin write_to_hdb (?,?,?,?,?,?,?,?); end;");
+        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?)}");
+    }
+    TSData tsdata;
+    DateTime dt;
+    String sampleDateTimeString;
+    int errorCount = 0;
+    int writeTryCount = 0;
+    double value;
+    int iParam;
+    // Repeatedly call the stored procedure that writes the data
+    while ( (tsdata = tsi.next()) != null ) {
+        // Set the information in the write statement
+        dt = tsdata.getDate();
+        value = tsdata.getDataValue();
+        if ( ts.isDataMissing(value) ) {
+            // TODO SAM 2012-03-27 Evaluate whether should have option to write
+            continue;
+        }
+        try {
+            iParam = 1; // JDBC code is 1-based (use argument 1 for return value if used)
+            ++writeTryCount;
+            if ( writeUsingRiversideDMI ) {
+                writeStatement.setValue(siteDataTypeID,iParam++); // SAMPLE_SDI
+                // Format the date/time as a string consistent with the database engine
+                //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
+                //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+                writeStatement.setValue(dt,iParam++); // SAMPLE_DATE_TIME
+                writeStatement.setValue(value,iParam++); // SAMPLE_VALUE
+                writeStatement.setValue(sampleInterval,iParam++); // SAMPLE_INTERVAL
+                writeStatement.setValue(loadingAppID,iParam++); // LOADING_APP_ID
+                writeStatement.setValue(computeID,iParam++); // COMPUTE_ID
+                writeStatement.setValue(modelRunID,iParam++); // MODEL_RUN_ID
+                writeStatement.setValue(validationFlag,iParam++); // VALIDATION_FLAG
+                writeStatement.setValue(dataFlags,iParam++); // DATA_FLAGS
+                writeStatement.setValue(timeZone,iParam++); // TIME_ZONE
+                // Execute the statement
+                //Message.printStatus(2, routine, "Statement is: " + writeStatement.toString() );
+                //dmiWrite(writeStatement, 0);
+            }
+            else {
+                cs.setInt(iParam++,siteDataTypeID.intValue()); // SAMPLE_SDI
+                // Format the date/time as a string consistent with the database engine
+                //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
+                //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
+                cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime())); // SAMPLE_DATE_TIME
+                cs.setDouble(iParam++,value); // SAMPLE_VALUE
+                cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
+                cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
+                if ( computeID == null ) {
+                    cs.setNull(iParam++,java.sql.Types.INTEGER);
+                }
+                else {
+                    cs.setInt(iParam++,computeID); // COMPUTE_ID
+                }
+                cs.setInt(iParam++,modelRunID.intValue()); // MODEL_RUN_ID - should always be non-null
+                if ( validationFlag == null ) { // VALIDATION_FLAG
+                    cs.setNull(iParam++,java.sql.Types.CHAR);
+                }
+                else {
+                    cs.setString(iParam++,validationFlag);
+                }
+                if ( dataFlags == null ) { // DATA_FLAGS
+                    cs.setNull(iParam++,java.sql.Types.VARCHAR);
+                }
+                else {
+                    cs.setString(iParam++,dataFlags);
+                }
+                if ( timeZone == null ) { // TIME_ZONE
+                    cs.setNull(iParam++,java.sql.Types.VARCHAR);
+                }
+                else {
+                    cs.setString(iParam++,timeZone);
+                }
+                cs.addBatch();
+            }
+        }
+        catch ( Exception e ) {
+            if ( writeUsingRiversideDMI ) {
+                Message.printWarning ( 3, routine, "Error writing value at " + dt + " (" + e + " )" );
+            }
+            else {
+                Message.printWarning ( 3, routine, "Error constructing batch write call at " + dt + " (" + e + " )" );
+            }
+            ++errorCount;
+            if ( errorCount <= 10 ) {
+                // Log the exception, but only for the first 10 errors
+                Message.printWarning(3,routine,e);
+            }
+        }
+        if ( writeTryCount > 0 ) {
+            // TODO SAM 2012-03-28 Only write one value for testing
+            break;
+        }
+    }
+    if ( !writeUsingRiversideDMI ) {
+        try {
+            // TODO SAM 2012-03-28 Uncomment when no errors above
+            //int [] updateCounts = cs.executeBatch();
+            cs.close();
+        }
+        catch (BatchUpdateException e) {
+            Message.printWarning(3,routine,e);
+            throw new RuntimeException ( "Error executing write callable statement.", e );
+        }
+        catch (SQLException e) {
+            Message.printWarning(3,routine,e);
+            throw new RuntimeException ( "Error executing write callable statement.", e );
+        }
+    }
+    if ( errorCount > 0 ) {
+        throw new RuntimeException ( "Had " + errorCount + " errors out of total of " + writeTryCount + " attempts." );
+    }
 }
     
 }

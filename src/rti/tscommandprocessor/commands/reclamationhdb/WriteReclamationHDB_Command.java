@@ -26,6 +26,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -55,10 +56,14 @@ throws InvalidCommandParameterException
 {	String DataStore = parameters.getValue ( "DataStore" );
     String SiteCommonName = parameters.getValue ( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+    String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
     String ModelName = parameters.getValue ( "ModelName" );
     String ModelRunName = parameters.getValue ( "ModelRunName" );
     String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
+    String ModelRunID = parameters.getValue ( "ModelRunID" );
+    String ValidationFlag = parameters.getValue ( "ValidationFlag" );
+    String DataFlags = parameters.getValue ( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String warning = "";
@@ -76,6 +81,17 @@ throws InvalidCommandParameterException
                 message, "Specify the data store." ) );
     }
     
+    // SiteCommonName or SiteDatatypeID is required.
+
+    if ( ((SiteCommonName == null) || SiteCommonName.equals("")) &&
+        ((SiteDataTypeID == null) || SiteDataTypeID.equals("")) ) {
+        message = "The SiteCommonName or SiteDataTypeID must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the SiteCommonName or SiteDataTypeID." ) );
+    }
+    /* Now optional 
     if ( (SiteCommonName == null) || SiteCommonName.equals("") ) {
         message = "The site common name must be specified.";
         warning += "\n" + message;
@@ -91,7 +107,9 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the data type common name." ) );
     }
+    */
     
+    /* Now optional
     if ( (ModelName == null) || ModelName.equals("") ) {
         message = "The model name must be specified.";
         warning += "\n" + message;
@@ -115,6 +133,7 @@ throws InvalidCommandParameterException
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the hydrologic indicator." ) );
     }
+    */
     
     if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
         try {
@@ -127,6 +146,26 @@ throws InvalidCommandParameterException
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Specify the model run date as YYYY-MM-DD hh:mm:ss." ) );
         }
+    }
+    
+    if ( ValidationFlag != null ) {
+        ValidationFlag = ValidationFlag.trim();
+        if ( (ValidationFlag.length() != 0) && (!Character.isLetter(ValidationFlag.charAt(0)) ||
+            !Character.isUpperCase(ValidationFlag.charAt(0))) ) {
+            message = "The validation flag (" + ValidationFlag + ") is not an upper-case letter.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the validation flag as an uppercase letter." ) );
+        }
+    }
+    
+    if ( (DataFlags != null) && DataFlags.trim().length() > 20 ) {
+        message = "The data flags (" + DataFlags + ") must be <= 20 characters.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the data flags as <= 20 characters." ) );
     }
     
 	if ( (OutputStart != null) && !OutputStart.equals("")) {
@@ -167,10 +206,12 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "SiteCommonName" );
     valid_Vector.add ( "DataTypeCommonName" );
+    valid_Vector.add ( "SiteDataTypeID" );
     valid_Vector.add ( "ModelName" );
     valid_Vector.add ( "ModelRunName" );
     valid_Vector.add ( "HydrologicIndicator" );
     valid_Vector.add ( "ModelRunDate" );
+    valid_Vector.add ( "ModelRunID" );
     valid_Vector.add ( "ValidationFlag" );
     valid_Vector.add ( "DataFlags" );
 	valid_Vector.add ( "OutputStart" );
@@ -224,10 +265,20 @@ CommandWarningException, CommandException
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String SiteCommonName = parameters.getValue ( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue ( "DataTypeCommonName" );
+    String SiteDataTypeID = parameters.getValue ( "SiteDataTypeID" );
+    Long siteDataTypeID = null;
+    if ( StringUtil.isLong(SiteDataTypeID) ) {
+        siteDataTypeID = Long.parseLong(SiteDataTypeID);
+    }
     String ModelName = parameters.getValue ( "ModelName" );
     String ModelRunName = parameters.getValue ( "ModelRunName" );
-    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
+    String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
+    String ModelRunID = parameters.getValue ( "ModelRunID" );
+    Long modelRunID = null;
+    if ( StringUtil.isLong(ModelRunID) ) {
+        modelRunID = Long.parseLong(ModelRunID);
+    }
     String ValidationFlag = parameters.getValue ( "ValidationFlag" );
     String DataFlags = parameters.getValue ( "DataFlags" );
 
@@ -237,7 +288,6 @@ CommandWarningException, CommandException
 	request_params.set ( "TSID", TSID );
     request_params.set ( "EnsembleID", EnsembleID );
 	CommandProcessorRequestResultsBean bean = null;
-	boolean haveTS = true;
 	try {
         bean = processor.processRequest( "GetTimeSeriesToProcess", request_params);
 	}
@@ -250,7 +300,6 @@ CommandWarningException, CommandException
 		status.addToLog ( CommandPhaseType.RUN,
 				new CommandLogRecord(CommandStatusType.FAILURE,
 						message, "Report problem to software support." ) );
-		haveTS = false;
 	}
 	PropList bean_PropList = bean.getResultsPropList();
 	Object o_TSList = bean_PropList.getContents ( "TSToProcessList" );
@@ -390,20 +439,16 @@ CommandWarningException, CommandException
         ReclamationHDB_DMI dmi = (ReclamationHDB_DMI)((ReclamationHDBDataStore)dataStore).getDMI();
         Message.printStatus ( 2, routine, "Writing ReclamationHDB time series to data store \"" +
             dataStore.getName() + "\"" );
-        boolean isEnsemble = false;
-        DateTime modelRunDate = null;
         String loadingApp = "TSTool";
-        message = "Command is not fully implemented - not writing time series to Reclamation HDB database.";
-        Message.printWarning(3, routine, message);
-        status.addToLog ( CommandPhaseType.RUN,
-            new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Check log file for details." ) );
-        // TODO SAM 2012-03-25 Enable when ready
-        boolean doWrite = false;
-        if ( doWrite ) {
-            dmi.writeTimeSeriesList ( tslist, loadingApp, isEnsemble, SiteCommonName,
-                DataTypeCommonName, ModelName, ModelRunName, HydrologicIndicator,
-                modelRunDate, ValidationFlag, DataFlags, OutputStart_DateTime, OutputEnd_DateTime );
+        boolean doWrite = true;
+        String timeZone = null;
+        if ( doWrite && (tslist != null) ) {
+            for ( TS ts : tslist ) {
+                dmi.writeTimeSeries ( ts, loadingApp,
+                    SiteCommonName, DataTypeCommonName, siteDataTypeID,
+                    ModelName, ModelRunName, ModelRunDate, HydrologicIndicator, modelRunID,
+                    ValidationFlag, DataFlags, timeZone, OutputStart_DateTime, OutputEnd_DateTime );
+            }
         }
     }
     catch ( Exception e ) {
@@ -435,10 +480,12 @@ public String toString ( PropList parameters )
     String EnsembleID = parameters.getValue( "EnsembleID" );
     String SiteCommonName = parameters.getValue( "SiteCommonName" );
     String DataTypeCommonName = parameters.getValue( "DataTypeCommonName" );
+    String SiteDataTypeID = parameters.getValue( "SiteDataTypeID" );
     String ModelName = parameters.getValue( "ModelName" );
     String ModelRunName = parameters.getValue( "ModelRunName" );
     String ModelRunDate = parameters.getValue( "ModelRunDate" );
     String HydrologicIndicator = parameters.getValue( "HydrologicIndicator" );
+    String ModelRunID = parameters.getValue( "ModelRunID" );
     String ValidationFlag = parameters.getValue( "ValidationFlag" );
     String DataFlags = parameters.getValue( "DataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
@@ -480,6 +527,12 @@ public String toString ( PropList parameters )
         }
         b.append ( "DataTypeCommonName=\"" + DataTypeCommonName + "\"" );
     }
+    if ( (SiteDataTypeID != null) && (SiteDataTypeID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SiteDataTypeID=" + SiteDataTypeID );
+    }
     if ( (ModelName != null) && (ModelName.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
@@ -503,6 +556,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "HydrologicIndicator=\"" + HydrologicIndicator + "\"" );
+    }
+    if ( (ModelRunID != null) && (ModelRunID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ModelRunID=" + ModelRunID );
     }
     if ( (ValidationFlag != null) && (ValidationFlag.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -434,7 +434,7 @@ private String getSampleIntervalFromInterval ( int intervalBase )
         sampleInterval = "month";
     }
     else if ( intervalBase == TimeInterval.YEAR ) {
-        sampleInterval = "yr";
+        sampleInterval = "year";
     }
     else if ( intervalBase == TimeInterval.IRREGULAR ) {
         sampleInterval = "instant";
@@ -2125,7 +2125,7 @@ throws SQLException
     }
     else {
         //cs = getConnection().prepareCall("begin write_to_hdb (?,?,?,?,?,?,?,?); end;");
-        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?)}");
+        cs = getConnection().prepareCall("{call write_to_hdb (?,?,?,?,?,?,?,?,?,?)}");
     }
     TSData tsdata;
     DateTime dt;
@@ -2134,6 +2134,11 @@ throws SQLException
     int writeTryCount = 0;
     double value;
     int iParam;
+    int timeOffset = 0;
+    if ( ts.getDataIntervalBase() == TimeInterval.HOUR ) {
+        // Hourly data need to have the hour shifted by one hour
+        timeOffset = -1000*3600;
+    }
     // Repeatedly call the stored procedure that writes the data
     while ( (tsdata = tsi.next()) != null ) {
         // Set the information in the write statement
@@ -2169,7 +2174,7 @@ throws SQLException
                 // Format the date/time as a string consistent with the database engine
                 //sampleDateTimeString = DMIUtil.formatDateTime(this, dt, false);
                 //writeStatement.setValue(sampleDateTimeString,iParam++); // SAMPLE_DATE_TIME
-                cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime())); // SAMPLE_DATE_TIME
+                cs.setTimestamp(iParam++,new Timestamp(dt.getDate().getTime()+timeOffset)); // SAMPLE_DATE_TIME
                 cs.setDouble(iParam++,value); // SAMPLE_VALUE
                 cs.setString(iParam++,sampleInterval); // SAMPLE_INTERVAL
                 cs.setInt(iParam++,loadingAppID); // LOADING_APP_ID
@@ -2214,18 +2219,20 @@ throws SQLException
                 Message.printWarning(3,routine,e);
             }
         }
-        if ( writeTryCount > 0 ) {
-            // TODO SAM 2012-03-28 Only write one value for testing
-            break;
-        }
+        //if ( writeTryCount > 0 ) {
+        //    // TODO SAM 2012-03-28 Only write one value for testing
+        //    break;
+        //}
     }
     if ( !writeUsingRiversideDMI ) {
         try {
-            // TODO SAM 2012-03-28 Uncomment when no errors above
-            //int [] updateCounts = cs.executeBatch();
+            // TODO SAM 2012-03-28 Figure out how to use to compare values updated with expected number
+            //int [] updateCounts =
+                cs.executeBatch();
             cs.close();
         }
         catch (BatchUpdateException e) {
+            // Will happen if any of the batch commands fail.
             Message.printWarning(3,routine,e);
             throw new RuntimeException ( "Error executing write callable statement.", e );
         }
@@ -2237,6 +2244,7 @@ throws SQLException
     if ( errorCount > 0 ) {
         throw new RuntimeException ( "Had " + errorCount + " errors out of total of " + writeTryCount + " attempts." );
     }
+    Message.printStatus(2,routine,"Wrote " + writeTryCount + " values to HDB.");
 }
     
 }

@@ -56,6 +56,7 @@ private JTextField __Description_JTextField = null;
 private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
 private JTextField __Units_JTextField = null;
+private JTextField __MissingValue_JTextField = null;
 private JTextArea __PatternValues_JTextArea=null; // Value(s) to fill TS with.
 private JTextArea __PatternFlags_JTextArea=null; // Flags(s) to fill TS with.
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -177,6 +178,7 @@ private void checkInput ()
 	String SetStart = __SetStart_JTextField.getText().trim();
 	String SetEnd = __SetEnd_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String PatternValues = __PatternValues_JTextArea.getText().trim();
 	String PatternFlags = __PatternFlags_JTextArea.getText().trim();
 	__error_wait = false;
@@ -202,6 +204,9 @@ private void checkInput ()
 	if ( Units.length() > 0 ) {
 		props.set ( "Units", Units );
 	}
+    if ( MissingValue.length() > 0 ) {
+        props.set ( "MissingValue", MissingValue );
+    }
 	if ( (PatternValues != null) && (PatternValues.length() > 0) ) {
 		props.set ( "PatternValues", PatternValues );
 	}
@@ -229,6 +234,7 @@ private void commitEdits ()
 	String SetStart = __SetStart_JTextField.getText().trim();
 	String SetEnd = __SetEnd_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String PatternValues = __PatternValues_JTextArea.getText().trim();
 	String PatternFlags = __PatternFlags_JTextArea.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
@@ -238,6 +244,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SetStart", SetStart );
 	__command.setCommandParameter ( "SetEnd", SetEnd );
 	__command.setCommandParameter ( "Units", Units );
+	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "PatternValues", PatternValues );
 	__command.setCommandParameter ( "PatternFlags", PatternFlags );
 }
@@ -378,6 +385,16 @@ private void initialize ( JFrame parent, NewPatternTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - for example:  ACFT, CFS, IN."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - missing data value (default=-999, recommended=NaN)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Pattern values:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -485,6 +502,7 @@ private void refresh ()
 	String SetStart = "*";
 	String SetEnd = "*";
 	String Units = "";
+	String MissingValue = "";
 	String PatternValues = "";
 	String PatternFlags = "";
 	PropList props = __command.getCommandParameters();
@@ -497,6 +515,7 @@ private void refresh ()
 		SetStart = props.getValue ( "SetStart" );
 		SetEnd = props.getValue ( "SetEnd" );
 		Units = props.getValue ( "Units" );
+		MissingValue = props.getValue ( "MissingValue" );
 		PatternValues = props.getValue ( "PatternValues" );
 		PatternFlags = props.getValue ( "PatternFlags" );
 		if ( Alias != null ) {
@@ -532,6 +551,9 @@ private void refresh ()
 		if ( Units != null ) {
 			__Units_JTextField.setText( Units );
 		}
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText( MissingValue );
+        }
 		if ( PatternValues != null ) {
 			__PatternValues_JTextArea.setText ( PatternValues );
 		}
@@ -548,6 +570,7 @@ private void refresh ()
 	SetStart = __SetStart_JTextField.getText().trim();
 	SetEnd = __SetEnd_JTextField.getText().trim();
 	Units = __Units_JTextField.getText().trim();
+	MissingValue = __MissingValue_JTextField.getText().trim();
 	PatternValues = __PatternValues_JTextArea.getText().trim();
 	PatternFlags = __PatternFlags_JTextArea.getText().trim();
 	props = new PropList ( __command.getCommandName() );
@@ -558,6 +581,7 @@ private void refresh ()
 	props.add ( "SetStart=" + SetStart );
 	props.add ( "SetEnd=" + SetEnd );
 	props.add ( "Units=" + Units );
+	props.add ( "MissingValue=" + MissingValue );
 	props.add ( "PatternValues=" + PatternValues );
 	props.add ( "PatternFlags=" + PatternFlags );
 	__command_JTextArea.setText( __command.toString ( props ) );

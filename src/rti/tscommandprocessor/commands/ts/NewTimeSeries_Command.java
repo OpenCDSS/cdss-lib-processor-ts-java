@@ -70,6 +70,7 @@ throws InvalidCommandParameterException
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
+	String MissingValue = parameters.getValue ( "MissingValue" );
 	String InitialValue = parameters.getValue ( "InitialValue" );
 	String warning = "";
     String message;
@@ -114,6 +115,17 @@ throws InvalidCommandParameterException
                             message, "Use the command editor to enter required fields." ) );
 		}
 	}
+	
+	// TODO SAM 2012-04-01 Evaluate whether range should be supported
+    if ( (MissingValue != null) && !MissingValue.equals("") &&
+        !StringUtil.isDouble(MissingValue) && !MissingValue.equalsIgnoreCase("NaN")) {
+        message = "The missing value (" + MissingValue+ ") must be a number or NaN.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify the missing value as a number or NaN."));
+    }
 
 	if ( (InitialValue != null) && !InitialValue.equals("") ) {
 		// If an initial value is specified, make sure it is a number...
@@ -160,6 +172,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "SetStart" );
     valid_Vector.add ( "SetEnd" );
     valid_Vector.add ( "Units" );
+    valid_Vector.add ( "MissingValue" );
     valid_Vector.add ( "InitialValue" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -333,6 +346,11 @@ CommandWarningException, CommandException
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String Units = parameters.getValue ( "Units" );
+    String MissingValue = parameters.getValue ( "MissingValue" );
+    Double missingValue = null;
+    if ( (MissingValue != null) && !MissingValue.equals("") ) {
+        missingValue = Double.parseDouble(MissingValue);
+    }
 	String InitialValue = parameters.getValue ( "InitialValue" );
 	double InitialValue_double = 0.0;
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
@@ -415,6 +433,9 @@ CommandWarningException, CommandException
 		ts.setDate1Original ( SetStart_DateTime );
 		ts.setDate2 ( SetEnd_DateTime );
 		ts.setDate2Original ( SetEnd_DateTime );
+        if ( missingValue != null ) {
+            ts.setMissing(missingValue);
+        }
 		if ( commandPhase == CommandPhaseType.RUN ) {
     		if ( ts.allocateDataSpace() != 0 ) {
     			message = "Unable to allocate memory for time series.";
@@ -509,6 +530,7 @@ public String toString ( PropList props, int majorVersion )
 	String SetStart = props.getValue( "SetStart" );
 	String SetEnd = props.getValue( "SetEnd" );
 	String Units = props.getValue( "Units" );
+	String MissingValue = props.getValue( "MissingValue" );
 	String InitialValue = props.getValue( "InitialValue" );
 	StringBuffer b = new StringBuffer ();
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
@@ -541,6 +563,12 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "Units=\"" + Units + "\"" );
 	}
+    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MissingValue=" + MissingValue );
+    }
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

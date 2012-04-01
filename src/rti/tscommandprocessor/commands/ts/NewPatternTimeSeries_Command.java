@@ -85,6 +85,7 @@ throws InvalidCommandParameterException
     String Alias = parameters.getValue ( "Alias" );
 	String NewTSID = parameters.getValue ( "NewTSID" );
 	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
+	String MissingValue = parameters.getValue ( "MissingValue" );
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String PatternValues = parameters.getValue ( "PatternValues" );
@@ -202,6 +203,17 @@ throws InvalidCommandParameterException
 	    __PatternFlags = StringUtil.toArray(StringUtil.breakStringList(PatternFlags,",",0));
 	}
 	
+	// TODO SAM 2012-04-01 Evaluate whether range should be supported
+    if ( (MissingValue != null) && !MissingValue.equals("") &&
+        !StringUtil.isDouble(MissingValue) && !MissingValue.equalsIgnoreCase("NaN")) {
+        message = "The missing value (" + MissingValue+ ") must be a number or NaN.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify the missing value as a number or NaN."));
+    }
+	
 	if ( (SetStart != null) && !SetStart.equals("") &&
 		!SetStart.equalsIgnoreCase("OutputStart") &&
 		!SetStart.equalsIgnoreCase("OutputEnd") ) {
@@ -266,6 +278,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "SetStart" );
 	valid_Vector.add ( "SetEnd" );
 	valid_Vector.add ( "Units" );
+	valid_Vector.add ( "MissingValue" );
 	valid_Vector.add ( "PatternValues" );
 	valid_Vector.add ( "PatternFlags" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
@@ -448,6 +461,11 @@ CommandWarningException, CommandException
 	String SetStart = parameters.getValue ( "SetStart" );
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String Units = parameters.getValue ( "Units" );
+	String MissingValue = parameters.getValue ( "MissingValue" );
+	Double missingValue = null;
+	if ( (MissingValue != null) && !MissingValue.equals("") ) {
+	    missingValue = Double.parseDouble(MissingValue);
+	}
 
 	if ( SetStart == null ) {
 		SetStart = "";	// Makes for better messages
@@ -515,6 +533,9 @@ CommandWarningException, CommandException
 		if ( (Units != null) && (Units.length() > 0) ) {
 			ts.setDataUnits ( Units );
 			ts.setDataUnitsOriginal ( Units );
+		}
+		if ( missingValue != null ) {
+		    ts.setMissing(missingValue);
 		}
 		ts.setDate1 ( SetStart_DateTime );
 		ts.setDate1Original ( SetStart_DateTime );
@@ -697,6 +718,7 @@ public String toString ( PropList props, int majorVersion )
 	String SetStart = props.getValue( "SetStart" );
 	String SetEnd = props.getValue( "SetEnd" );
 	String Units = props.getValue( "Units" );
+	String MissingValue = props.getValue( "MissingValue" );
 	String PatternValues = props.getValue( "PatternValues" );
 	String PatternFlags = props.getValue( "PatternFlags" );
 	StringBuffer b = new StringBuffer ();
@@ -736,6 +758,12 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "Units=\"" + Units + "\"" );
 	}
+    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MissingValue=" + MissingValue );
+    }
 	if ( (PatternValues != null) && (PatternValues.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

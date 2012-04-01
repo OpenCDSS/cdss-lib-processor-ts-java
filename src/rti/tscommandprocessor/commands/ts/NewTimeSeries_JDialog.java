@@ -48,6 +48,7 @@ private JTextField __Description_JTextField = null;
 private JTextField __SetStart_JTextField = null;
 private JTextField __SetEnd_JTextField = null;
 private JTextField __Units_JTextField = null;
+private JTextField __MissingValue_JTextField = null;
 private JTextField __InitialValue_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -154,6 +155,7 @@ private void checkInput ()
 	String SetStart = __SetStart_JTextField.getText().trim();
 	String SetEnd = __SetEnd_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
 	__error_wait = false;
 
@@ -175,6 +177,9 @@ private void checkInput ()
 	if ( Units.length() > 0 ) {
 		props.set ( "Units", Units );
 	}
+    if ( MissingValue.length() > 0 ) {
+        props.set ( "MissingValue", MissingValue );
+    }
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		props.set ( "InitialValue", InitialValue );
 	}
@@ -199,6 +204,7 @@ private void commitEdits ()
 	String SetStart = __SetStart_JTextField.getText().trim();
 	String SetEnd = __SetEnd_JTextField.getText().trim();
 	String Units = __Units_JTextField.getText().trim();
+	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
@@ -206,6 +212,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "SetStart", SetStart );
 	__command.setCommandParameter ( "SetEnd", SetEnd );
 	__command.setCommandParameter ( "Units", Units );
+	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "InitialValue", InitialValue );
 }
 
@@ -327,6 +334,16 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - for example:  ACFT, CFS, IN (default=no units)."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - missing data value (default=-999, recommended=NaN)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial value:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -416,9 +433,10 @@ private void refresh ()
 {	String Alias = "";
 	String NewTSID = "";
 	String Description = "";
-	String SetStart = "*";
-	String SetEnd = "*";
+	String SetStart = "";
+	String SetEnd = "";
 	String Units = "";
+	String MissingValue = "";
 	String InitialValue = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -429,6 +447,7 @@ private void refresh ()
 		SetStart = props.getValue ( "SetStart" );
 		SetEnd = props.getValue ( "SetEnd" );
 		Units = props.getValue ( "Units" );
+		MissingValue = props.getValue ( "MissingValue" );
 		InitialValue = props.getValue ( "InitialValue" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
@@ -448,6 +467,9 @@ private void refresh ()
 		if ( Units != null ) {
 			__Units_JTextField.setText( Units );
 		}
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText( MissingValue );
+        }
 		if ( InitialValue != null ) {
 			__InitialValue_JTextField.setText ( InitialValue );
 		}
@@ -459,6 +481,7 @@ private void refresh ()
 	SetStart = __SetStart_JTextField.getText().trim();
 	SetEnd = __SetEnd_JTextField.getText().trim();
 	Units = __Units_JTextField.getText().trim();
+	MissingValue = __MissingValue_JTextField.getText().trim();
 	InitialValue = __InitialValue_JTextField.getText();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
@@ -467,6 +490,7 @@ private void refresh ()
 	props.add ( "SetStart=" + SetStart );
 	props.add ( "SetEnd=" + SetEnd );
 	props.add ( "Units=" + Units );
+	props.add ( "MissingValue=" + MissingValue );
 	props.add ( "InitialValue=" + InitialValue );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }

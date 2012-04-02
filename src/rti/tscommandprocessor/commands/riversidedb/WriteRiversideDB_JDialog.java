@@ -24,6 +24,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -68,13 +69,15 @@ private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private WriteRiversideDB_Command __command = null;
 private JTextArea __command_JTextArea=null;
-private SimpleJComboBox __Location_JComboBox = null;
+private SimpleJComboBox __LocationID_JComboBox = null;
 private SimpleJComboBox __DataSource_JComboBox = null;
 private SimpleJComboBox __DataType_JComboBox = null;
 private SimpleJComboBox __DataSubType_JComboBox = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private SimpleJComboBox __Scenario_JComboBox = null;
 private SimpleJComboBox __SequenceNumber_JComboBox = null;
+private JLabel __selectedMeasLocNum_JLabel = null;
+private JLabel __selectedMeasTypeNum_JLabel = null;
 private SimpleJComboBox __WriteDataFlags_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
@@ -83,11 +86,11 @@ private RiversideDB_DMI __dmi = null; // RiversideDB_DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog?
-private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
+private boolean __ignoreEvents = false; // Used to ignore cascading events when working with choices
 
 private JTabbedPane __tsInfo_JTabbedPane = null;
 
-//private List<ReclamationHDB_SiteDataType> __siteDataTypeList = new Vector(); // Corresponds to displayed list
+private List<RiversideDB_MeasType> __measTypeList = new Vector(); // Corresponds to displayed list, used for "find" calls
 
 // List in the order of the UI (NOT the TSID!)
 private enum Parameter {
@@ -109,7 +112,11 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+{   if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+
+    Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -135,6 +142,8 @@ private void actionPerformedDataSourceSelected ( )
     // Now populate the scenario choices corresponding to the data type, data sub-type, interval, location,
     // and data source
     populateScenarioChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
@@ -146,13 +155,16 @@ private void actionPerformedDataStoreSelected ( )
 {
     if ( __DataStore_JComboBox.getSelected() == null ) {
         // Startup initialization
+        Message.printStatus(2, "", "Selected null data store...initialization" );
         return;
     }
     __dataStore = getSelectedDataStore();
     __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
-    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
+    Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the data store
     populateDataTypeChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
@@ -166,6 +178,8 @@ private void actionPerformedDataSubTypeSelected ( )
     }
     // Now populate the interval choices corresponding to the data type and data sub-type
     populateIntervalChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
@@ -179,6 +193,8 @@ private void actionPerformedDataTypeSelected ( )
     }
     // Now populate the data sub-type choices corresponding to the data type
     populateDataSubTypeChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
@@ -192,19 +208,23 @@ private void actionPerformedIntervalSelected ( )
     }
     // Now populate the location choices corresponding to the data type, sub-type, and interval
     populateLocationChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
 Refresh the query choices for the currently selected RiversideDB data store.
 */
-private void actionPerformedLocationSelected ( )
+private void actionPerformedLocationIDSelected ( )
 {
-    if ( __Location_JComboBox.getSelected() == null ) {
+    if ( __LocationID_JComboBox.getSelected() == null ) {
         // Startup initialization
         return;
     }
     // Now populate the data source choices corresponding to the data type, sub-type, interval, and location
     populateDataSourceChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
@@ -219,6 +239,22 @@ private void actionPerformedScenarioSelected ( )
     // Now populate the sequence number choices corresponding to the data type, data sub-type, interval, location,
     // and data source
     populateSequenceNumberChoices ( __dmi );
+    // Update the matched information
+    updateInfoTextFields();
+}
+
+/**
+Refresh the query choices for the currently selected RiversideDB sequence number.
+*/
+private void actionPerformedSequenceNumberSelected ( )
+{
+    if ( __SequenceNumber_JComboBox.getSelected() == null ) {
+        // Startup initialization
+        return;
+    }
+    // No need to populate any additional choices
+    // Update the matched information
+    updateInfoTextFields();
 }
 
 /**
@@ -253,22 +289,18 @@ to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
 {	// Put together a list of parameters to check...
+    if ( __ignoreEvents ) {
+        // Startup
+        return;
+    }
 	PropList parameters = new PropList ( "" );
     String DataStore = __DataStore_JComboBox.getSelected();
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String Location = __Location_JComboBox.getSelected();
+    String LocationID = __LocationID_JComboBox.getSelected();
     String DataSource = __DataSource_JComboBox.getSelected();
-    String DataType = __DataType_JComboBox.getSelected();
-    if ( DataType != null ) {
-        if ( DataType.indexOf(" ") > 0 ) {
-            DataType = StringUtil.getToken(DataType," ",0,0).trim();
-        }
-        else {
-            DataType = DataType.trim();
-        }
-    }
+    String DataType = getSelectedDataType();
     String DataSubType = __DataSubType_JComboBox.getSelected();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JComboBox.getSelected();
@@ -291,8 +323,8 @@ private void checkInput ()
     if ( EnsembleID.length() > 0 ) {
         parameters.set ( "EnsembleID", EnsembleID );
     }
-    if ( (Location != null) && (Location.length() > 0) ) {
-        parameters.set ( "Location", Location );
+    if ( (LocationID != null) && (LocationID.length() > 0) ) {
+        parameters.set ( "LocationID", LocationID );
     }
     if ( (DataSource != null) && (DataSource.length() > 0) ) {
         parameters.set ( "DataSource", DataSource );
@@ -341,17 +373,9 @@ private void commitEdits ()
     String TSList = __TSList_JComboBox.getSelected();
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
-    String Location = __Location_JComboBox.getSelected();
+    String LocationID = __LocationID_JComboBox.getSelected();
     String DataSource = __DataSource_JComboBox.getSelected();
-    String DataType = __DataType_JComboBox.getSelected();
-    if ( DataType != null ) {
-        if ( DataType.indexOf(" ") > 0 ) {
-            DataType = StringUtil.getToken(DataType," ",0,0).trim();
-        }
-        else {
-            DataType = DataType.trim();
-        }
-    }
+    String DataType = getSelectedDataType();
     String DataSubType = __DataSubType_JComboBox.getSelected();
     String Interval = __Interval_JComboBox.getSelected();
     String Scenario = __Scenario_JComboBox.getSelected();
@@ -363,7 +387,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
-    __command.setCommandParameter ( "Location", Location );
+    __command.setCommandParameter ( "LocationID", LocationID );
     __command.setCommandParameter ( "DataSource", DataSource );
     __command.setCommandParameter ( "DataType", DataType );
     __command.setCommandParameter ( "DataSubType", DataSubType );
@@ -414,6 +438,24 @@ private RiversideDBDataStore getSelectedDataStore ()
         Message.printStatus(2, routine, "Cannot get data store for \"" + DataStore + "\"." );
     }
     return dataStore;
+}
+
+/**
+Return the selected data type, omitting the description.
+*/
+private String getSelectedDataType()
+{
+    if ( __DataType_JComboBox == null ) {
+        return null;
+    }
+    String dataType = __DataType_JComboBox.getSelected();
+    if ( dataType.indexOf(" ") > 0 ) {
+        dataType = StringUtil.getToken(dataType," ",0,0).trim();
+    }
+    else {
+        dataType = dataType.trim();
+    }
+    return dataType;
 }
 
 /**
@@ -552,19 +594,20 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     
     // List available data stores of the correct type
     // Other lists are NOT populated until a data store is selected (driven by events)
+
+    __ignoreEvents = true; // So that a full pass of initialization can occur
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Data store:"),
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataStore_JComboBox = new SimpleJComboBox ( false );
-    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(
-        RiversideDBDataStore.class );
+    List<DataStore> dataStoreList = ((TSCommandProcessor)processor).getDataStoresByType(RiversideDBDataStore.class );
     for ( DataStore dataStore: dataStoreList ) {
         __DataStore_JComboBox.addItem ( dataStore.getName() );
     }
     if ( __DataStore_JComboBox.getItemCount() > 0 ) {
         __DataStore_JComboBox.select ( 0 );
     }
-    __DataStore_JComboBox.addItemListener ( this );
+    __DataStore_JComboBox.addItemListener ( this ); // Add after initial select to avoid event
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - open data store for HDB database."), 
@@ -634,9 +677,9 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Location (station/area) ID:"), 
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Location_JComboBox = new SimpleJComboBox (false);
-    __Location_JComboBox.addItemListener (this);
-    JGUIUtil.addComponent(singleTS_JPanel, __Location_JComboBox,
+    __LocationID_JComboBox = new SimpleJComboBox (false);
+    __LocationID_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __LocationID_JComboBox,
         1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - matching location ID in the database."),
@@ -665,12 +708,29 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Sequence number:"), 
         0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __SequenceNumber_JComboBox = new SimpleJComboBox ( false );
-    __SequenceNumber_JComboBox.setEnabled ( false );
     __SequenceNumber_JComboBox.addItemListener (this);
     JGUIUtil.addComponent(singleTS_JPanel, __SequenceNumber_JComboBox,
         1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
         "Required - for ensembles, the sequence number (trace starting year)."),
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Matching MeasLoc_num:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedMeasLocNum_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(singleTS_JPanel, __selectedMeasLocNum_JLabel,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Matching MeasType_num:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __selectedMeasTypeNum_JLabel = new JLabel ( "");
+    JGUIUtil.addComponent(singleTS_JPanel, __selectedMeasTypeNum_JLabel,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
         3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JPanel multipleTS_JPanel = new JPanel();
@@ -732,12 +792,6 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JScrollPane(__command_JTextArea),
     		1, yMain, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     
-    // All of the components have been initialized above but now generate an event to populate...
-    if ( __DataStore_JComboBox.getItemCount() > 0 ) {
-        __DataStore_JComboBox.select(null);
-        __DataStore_JComboBox.select(0);
-    }
-
 	// South Panel: North
 	JPanel button_JPanel = new JPanel();
 	button_JPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -753,7 +807,18 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
 	
 	// Refresh the contents...
     checkGUIState();
+    // All of the components have been initialized above but now generate an event to populate choices
+    // based on the data store...
+    /*
+    Message.printStatus(2,"","Selecting first data store to cascade choices");
+    if ( __DataStore_JComboBox.getItemCount() > 0 ) {
+        __DataStore_JComboBox.select(null);
+        __DataStore_JComboBox.select(0);
+    }
+    */
+    Message.printStatus(2,"","Calling refresh()");
     refresh ();
+    __ignoreEvents = false; // After initialization of components let events happen
     
 	setResizable ( false ); // TODO SAM 2010-12-10 Resizing causes some problems
     pack();
@@ -766,40 +831,44 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged (ItemEvent e)
-{   checkGUIState();
-
+{   
+    if ( __ignoreEvents ) {
+        return;
+    }
+    checkGUIState();
     Object source = e.getSource();
     int sc = e.getStateChange();
-    if ( !__ignoreItemEvents ) {
-        if ( (source == __DataStore_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a data store.
-            actionPerformedDataStoreSelected ();
-        }
-        else if ( (source == __DataSubType_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a data sub-type.
-            actionPerformedDataSubTypeSelected ();
-        }
-        else if ( (source == __DataType_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a data type.
-            actionPerformedDataTypeSelected ();
-        }
-        else if ( (source == __Interval_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected an interval.
-            actionPerformedIntervalSelected ();
-        }
-        else if ( (source == __Location_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a location.
-            actionPerformedLocationSelected ();
-        }
-        else if ( (source == __DataSource_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a location.
-            actionPerformedDataSourceSelected ();
-        }
-        else if ( (source == __Scenario_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a location.
-            actionPerformedScenarioSelected ();
-        }
-        // Sequence number does not need additional action - command text will update on refresh()
+    if ( (source == __DataStore_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a data store.
+        actionPerformedDataStoreSelected ();
+    }
+    else if ( (source == __DataSubType_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a data sub-type.
+        actionPerformedDataSubTypeSelected ();
+    }
+    else if ( (source == __DataType_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a data type.
+        actionPerformedDataTypeSelected ();
+    }
+    else if ( (source == __Interval_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected an interval.
+        actionPerformedIntervalSelected ();
+    }
+    else if ( (source == __LocationID_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a location.
+        actionPerformedLocationIDSelected ();
+    }
+    else if ( (source == __DataSource_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a data source.
+        actionPerformedDataSourceSelected ();
+    }
+    else if ( (source == __Scenario_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a scenario.
+        actionPerformedScenarioSelected ();
+    }
+    else if ( (source == __SequenceNumber_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a sequence number.
+        actionPerformedSequenceNumberSelected ();
     }
  
 	refresh();
@@ -809,7 +878,10 @@ public void itemStateChanged (ItemEvent e)
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    int code = event.getKeyCode();
 
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
@@ -821,7 +893,10 @@ public void keyPressed ( KeyEvent event )
 }
 
 public void keyReleased ( KeyEvent event )
-{	refresh();
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    refresh();
 }
 
 public void keyTyped ( KeyEvent event )
@@ -842,7 +917,7 @@ Populate the data source choices.
 private void populateDataSourceChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateDataSourceChoices";
     if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ||
-        (__Interval_JComboBox == null) || (__Location_JComboBox == null) ) {
+        (__Interval_JComboBox == null) || (__LocationID_JComboBox == null) ) {
         // Initialization
         return;
     }
@@ -850,7 +925,7 @@ private void populateDataSourceChoices ( RiversideDB_DMI dmi )
             __DataType_JComboBox.getSelected(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
-            __Location_JComboBox.getSelected(),
+            __LocationID_JComboBox.getSelected(),
             null, // data source
             null, // scenario
             null ); // sequence number
@@ -892,44 +967,26 @@ private void populateDataSourceChoices ( RiversideDB_DMI dmi )
 Populate the data sub-type choices for the given data type.
 */
 private void populateDataSubTypeChoices ( RiversideDB_DMI dmi )
-{   String routine = getClass().getName() + ".populateDataSubTypeChoices";
+{   //String routine = getClass().getName() + ".populateDataSubTypeChoices";
     if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ) {
         // Still in initialization
         return;
     }
-    String dataType = __DataType_JComboBox.getSelected();
+    String dataType = getSelectedDataType();
     if ( dataType == null ) {
         return;
     }
-    dataType = StringUtil.getToken(dataType," ",0,0).trim();
-    List<RiversideDB_MeasType> measTypeList = null;
-    try {
-        measTypeList = dmi.readMeasTypeListForData_type ( dataType );
-    }
-    catch ( Exception e ) {
-        Message.printWarning(2, routine, "Error getting MeasType list from RiversideDB \"" +
-            __dataStore.getName() + " and data type \"" + dataType + "\" (" + e + ").");
-        Message.printWarning(2, routine, e);
-        measTypeList = null;
-    }
+    List<String> dataSubTypeStrings = new Vector();
+    dataSubTypeStrings.add(""); // Add empty string because may be null in database
+    List<RiversideDB_MeasType> measTypeList = dmi.findMeasType(
+        __measTypeList, -1, null, dataType, null, null, null, null);
     __DataSubType_JComboBox.removeAll ();
-    List<String> dataSubTypeList = new Vector();
-    String dataSubType;
     for ( RiversideDB_MeasType measType : measTypeList ) {
-        // Only add if not already listed. Alternatively - add a "distinct" query
-        dataSubType = measType.getSub_type();
-        if ( dataSubType == null ) {
-            dataSubType = "";
-        }
-        else {
-            dataSubType = dataSubType.trim();
-        }
-        if ( StringUtil.indexOfIgnoreCase(dataSubTypeList, dataSubType) < 0 ) {
-            dataSubTypeList.add(dataSubType);
-        }
+        dataSubTypeStrings.add ( measType.getSub_type() );
     }
-    java.util.Collections.sort(dataSubTypeList);
-    __DataSubType_JComboBox.setData(dataSubTypeList);
+    Collections.sort(dataSubTypeStrings,String.CASE_INSENSITIVE_ORDER);
+    StringUtil.removeDuplicates(dataSubTypeStrings, true, true);
+    __DataSubType_JComboBox.setData(dataSubTypeStrings);
     // Select first choice (may get reset from existing parameter values).
     __DataSubType_JComboBox.select ( null );
     if ( __DataSubType_JComboBox.getItemCount() > 0 ) {
@@ -942,16 +999,23 @@ Populate the data type list based on the selected database.
 */
 private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateDataTypeChoices";
-    if ( (rdmi == null) || (__DataType_JComboBox == null) ) {
+    if ( rdmi == null ) {
         // Initialization
+        Message.printStatus(2,routine,"DMI is null - not initializing choices" );
+        return;
+    }
+    if ( __DataType_JComboBox == null ) {
+        // Initialization
+        Message.printStatus(2,routine,"__DataType_Combobox is null - not initializing choices" );
         return;
     }
     __DataType_JComboBox.removeAll ();
     List<RiversideDB_MeasType> measTypeList = null;
     List<RiversideDB_DataType> dataTypeList = null;
     try {
-        // MeasTypes come back sorted by abbreviation
+        // MeasTypes come back sorted by data type abbreviation
         measTypeList = rdmi.readMeasTypeListForDistinctData_type();
+        // Unique data types in RiversideDB
         dataTypeList = rdmi.readDataTypeList();
     }
     catch ( Exception e ) {
@@ -962,21 +1026,50 @@ private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
     }
     int dataTypeLengthMax = 80;
     int pos;
-    String data_type;
+    String dataType;
     for ( RiversideDB_MeasType mt: measTypeList ) {
         pos = RiversideDB_DataType.indexOf (dataTypeList, mt.getData_type() );
         if ( pos < 0 ) {
+            // Data type is not in the DataType table so can't add description
             __DataType_JComboBox.add(mt.getData_type() );
         }
         else {
-            data_type = mt.getData_type() + " - " + dataTypeList.get(pos).getDescription();
-            if ( data_type.length() > dataTypeLengthMax ) {
-                __DataType_JComboBox.add( data_type.substring(0,dataTypeLengthMax) + "..." );
+            // Have matching data type object so can get description of data type - still unique since only appending to end
+            // of each string
+            dataType = mt.getData_type() + " - " + dataTypeList.get(pos).getDescription();
+            if ( dataType.length() > dataTypeLengthMax ) {
+                // Shorten the string
+                __DataType_JComboBox.add( dataType.substring(0,dataTypeLengthMax) + "..." );
             }
             else {
-                __DataType_JComboBox.add( data_type );
+                __DataType_JComboBox.add( dataType );
             }
         }
+    }
+    Message.printStatus(2,routine,"Got " + __DataType_JComboBox.getItemCount() + " data types" );
+    // TODO SAM 2012-04-02 May need to save this list filtered a bit more to improve performance but go with
+    // it for now
+    // Additionally, query all matching MeasType so that these choices can be filtered without having
+    // to requery the database
+    String tsid = getTSIDFromParameters ( Parameter.INTERVAL, __DataType_JComboBox.getSelected(),
+        null, // data sub-type
+        null, // interval
+        null, // location
+        null, // data source
+        null, // scenario
+        null ); // sequence number
+    if ( tsid == null ) {
+        return;
+    }
+    try {
+        __measTypeList = rdmi.readMeasTypeListForTSIdent ( tsid );
+        Message.printStatus(2,routine,"Got " + __measTypeList.size() + " MeasTypes for TSID \"" + tsid + "\"" );
+    }
+    catch ( Exception e ) {
+        Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
+            __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
+        Message.printWarning(2, routine, e);
+        return;
     }
     // Select first choice (may get reset from existing parameter values).
     __DataType_JComboBox.select ( null );
@@ -1044,14 +1137,14 @@ private void populateLocationChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateLocationChoices";
     if ( (dmi == null) || (__DataType_JComboBox == null) ||
         (__DataSubType_JComboBox == null) || (__Interval_JComboBox == null) ||
-        (__Location_JComboBox == null)) {
+        (__LocationID_JComboBox == null)) {
         // Initialization
         return;
     }
     String tsid = getTSIDFromParameters ( Parameter.INTERVAL, __DataType_JComboBox.getSelected(),
         __DataSubType_JComboBox.getSelected(),
         __Interval_JComboBox.getSelected(),
-        __Location_JComboBox.getSelected(), // location
+        null, // location
         null, // data source
         null, // scenario
         null ); // sequence number
@@ -1069,7 +1162,7 @@ private void populateLocationChoices ( RiversideDB_DMI dmi )
         return;
     }
     Message.printStatus(2, routine, "Got " + measTypeList.size() + " MeasType using tsid=\"" + tsid + "\"." );
-    __Location_JComboBox.removeAll ();
+    __LocationID_JComboBox.removeAll ();
     List<String> locationList = new Vector();
     String id;
     RiversideDB_MeasLoc measLoc;
@@ -1098,11 +1191,11 @@ private void populateLocationChoices ( RiversideDB_DMI dmi )
         }
     }
     java.util.Collections.sort(locationList);
-    __Location_JComboBox.setData ( locationList );
+    __LocationID_JComboBox.setData ( locationList );
     // Select first choice (may get reset from existing parameter values).
-    __Location_JComboBox.select ( null );
-    if ( __Location_JComboBox.getItemCount() > 0 ){
-        __Location_JComboBox.select ( 0 );
+    __LocationID_JComboBox.select ( null );
+    if ( __LocationID_JComboBox.getItemCount() > 0 ){
+        __LocationID_JComboBox.select ( 0 );
     }
 }
 
@@ -1112,7 +1205,7 @@ Populate the scenario choices.
 private void populateScenarioChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateScenarioChoices";
     if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ||
-        (__Interval_JComboBox == null) || (__Location_JComboBox == null) || (__DataSource_JComboBox == null)) {
+        (__Interval_JComboBox == null) || (__LocationID_JComboBox == null) || (__DataSource_JComboBox == null)) {
         // Initialization
         return;
     }
@@ -1120,7 +1213,7 @@ private void populateScenarioChoices ( RiversideDB_DMI dmi )
             __DataType_JComboBox.getSelected(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
-            __Location_JComboBox.getSelected(),
+            __LocationID_JComboBox.getSelected(),
             __DataSource_JComboBox.getSelected(),
             null, // scenario
             null ); // sequence number
@@ -1164,7 +1257,7 @@ Populate the sequence number choices.
 private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateSequenceNumberChoices";
     if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ||
-        (__Interval_JComboBox == null) || (__Location_JComboBox == null) || (__DataSource_JComboBox == null) ||
+        (__Interval_JComboBox == null) || (__LocationID_JComboBox == null) || (__DataSource_JComboBox == null) ||
         (__Scenario_JComboBox == null)) {
         // Initialization
         return;
@@ -1173,7 +1266,7 @@ private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
             __DataType_JComboBox.getSelected(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
-            __Location_JComboBox.getSelected(),
+            __LocationID_JComboBox.getSelected(),
             __DataSource_JComboBox.getSelected(),
             __Scenario_JComboBox.getSelected(),
             null ); // sequence number
@@ -1212,14 +1305,19 @@ private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
 
 /**
 Refresh the command from the other text field contents.
+When first called this method will attempt to populate the components using parameter values.
+Subsequent to the first call the response is passive in that the command string is reconstructed
+from displayed values.
 */
 private void refresh ()
-{	String routine = "WriteReclamationHDB_JDialog.refresh";
+{
+    String routine = "WriteRiversideDB_JDialog.refresh";
+    Message.printStatus ( 2, routine, "__first_time=" + __first_time );
     String DataStore = "";
     String TSList = "";
     String TSID = "";
     String EnsembleID = "";
-    String Location = "";
+    String LocationID = "";
     String DataType = "";
     String DataSource = "";
     String DataSubType = "";
@@ -1233,13 +1331,14 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
+		Message.printStatus(2,routine,"Start initializing parameter components from command");
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		DataStore = parameters.getValue ( "DataStore" );
         TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
-        Location = parameters.getValue ( "Location" );
+        LocationID = parameters.getValue ( "LocationID" );
         DataSource = parameters.getValue ( "DataSource" );
         DataType = parameters.getValue ( "DataType" );
         DataSubType = parameters.getValue ( "DataSubType" );
@@ -1250,18 +1349,29 @@ private void refresh ()
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
+            // This will force a cascading event...
             __DataStore_JComboBox.select ( DataStore );
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the data store and DMI are actually selected
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                actionPerformedDataStoreSelected();
+            }
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
                 // New command...select the default...
                 if ( __DataStore_JComboBox.getItemCount() > 0 ) {
                     __DataStore_JComboBox.select ( 0 );
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the data store and DMI are actually selected
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        actionPerformedDataStoreSelected();
+                    }
                 }
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "DataStore parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
             }
         }
@@ -1275,7 +1385,7 @@ private void refresh ()
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nTSList value \"" + TSList +
+                "Existing command references an invalid TSList value \"" + TSList +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
@@ -1305,22 +1415,30 @@ private void refresh ()
             }
             else {
                 Message.printWarning ( 1, routine,
-                "Existing command references an invalid\nEnsembleID value \"" + EnsembleID +
+                "Existing command references an invalid EnsembleID value \"" + EnsembleID +
                 "\".  Select a different value or Cancel.");
                 __error_wait = true;
             }
         }
+        // These need to be in the order of the dialog in order to properly cascade
         // First populate the choices...
+        Message.printStatus(2,routine,"Initializing data type choices");
         populateDataTypeChoices(getRiversideDB_DMI() );
-        // Then set to the initial value.  Parameter will be like "QIN" but choice will be like "QIN - Description"
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.CHECK_SUBSTRINGS,
-            " ", 0, null, true)) {
+        // Then set to the initial value.
+        int [] dataTypeIndex = new int[1];
+        Message.printStatus(2,routine,"Comparing \"" + DataType + "\" to " +
+            __DataType_JComboBox.getItemCount() + " gives: " +
+            JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox,
+                DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, dataTypeIndex, true) );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null) ) {
+            // Exact match
             __DataType_JComboBox.select ( DataType );
         }
-        else if ( (DataType != null) && (DataType.indexOf(" ") > 0) &&
-            JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox,
-            DataType, StringUtil.DELIM_ALLOW_STRINGS, " ", 0, null, true) ) {
-            __DataType_JComboBox.select ( DataType );
+        else if ( JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox,
+            DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, dataTypeIndex, true) ) {
+            // DataType will be like "QIN" but choice will be like "QIN - Description" so select based on the
+            // first token
+            __DataType_JComboBox.select ( dataTypeIndex[0] );
         }
         else {
             if ( (DataType == null) || DataType.equals("") ) {
@@ -1331,12 +1449,11 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataType parameter \"" + DataType + "\".  Select a different value or Cancel." );
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                    "DataType parameter \"" + DataType + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the choices...
-        // TODO SAM 2012-02-18 Need to enable
         populateDataSubTypeChoices(getRiversideDB_DMI() );
         // Then set to the initial value
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataSubType_JComboBox, DataSubType, JGUIUtil.NONE, null, null ) ) {
@@ -1351,7 +1468,7 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "DataSubType parameter \"" + DataSubType + "\".  Select a different value or Cancel." );
             }
         }
@@ -1370,27 +1487,27 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "Interval parameter \"" + Interval + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the choices...
         populateLocationChoices(getRiversideDB_DMI() );
         // Then set to the initial value
-        if ( JGUIUtil.isSimpleJComboBoxItem(__Location_JComboBox, Location, JGUIUtil.NONE, null, null ) ) {
-            __Location_JComboBox.select ( Location );
+        if ( JGUIUtil.isSimpleJComboBoxItem(__LocationID_JComboBox, LocationID, JGUIUtil.NONE, null, null ) ) {
+            __LocationID_JComboBox.select ( LocationID );
         }
         else {
-            if ( (Location == null) || Location.equals("") ) {
+            if ( (LocationID == null) || LocationID.equals("") ) {
                 // New command...select the default...
-                if ( __Location_JComboBox.getItemCount() > 0 ) {
-                    __Location_JComboBox.select ( 0 );
+                if ( __LocationID_JComboBox.getItemCount() > 0 ) {
+                    __LocationID_JComboBox.select ( 0 );
                 }
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "Location parameter \"" + Location + "\".  Select a different value or Cancel." );
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "LocationID parameter \"" + LocationID + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the choices...
@@ -1408,7 +1525,7 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "DataSource parameter \"" + DataSource + "\".  Select a different value or Cancel." );
             }
         }
@@ -1427,7 +1544,7 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "Scenario parameter \"" + Scenario + "\".  Select a different value or Cancel." );
             }
         }
@@ -1446,7 +1563,7 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "SequenceNumber parameter \"" + SequenceNumber + "\".  Select a different value or Cancel." );
             }
         }
@@ -1462,7 +1579,7 @@ private void refresh ()
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
                   "WriteDataFlags parameter \"" + WriteDataFlags + "\".  Select a different value or Cancel." );
             }
         }
@@ -1472,6 +1589,7 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+		Message.printStatus(2,routine,"...done initializing parameter components from command");
 	}
 	// Regardless, reset the command from the fields...
 	DataStore = __DataStore_JComboBox.getSelected();
@@ -1506,9 +1624,9 @@ private void refresh ()
     if ( Interval == null ) {
         Interval = "";
     }
-    Location = __Location_JComboBox.getSelected();
-    if ( Location == null ) {
-        Location = "";
+    LocationID = __LocationID_JComboBox.getSelected();
+    if ( LocationID == null ) {
+        LocationID = "";
     }
     DataSource = __DataSource_JComboBox.getSelected();
     if ( DataSource == null ) {
@@ -1536,7 +1654,7 @@ private void refresh ()
     parameters.add ( "DataType=" + DataType );
     parameters.add ( "DataSubType=" + DataSubType );
     parameters.add ( "Interval=" + Interval );
-    parameters.add ( "Location=" + Location );
+    parameters.add ( "LocationID=" + LocationID );
     parameters.add ( "DataSource=" + DataSource );
     parameters.add ( "Scenario=" + Scenario );
     parameters.add ( "SequenceNumber=" + SequenceNumber );
@@ -1564,6 +1682,54 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
+}
+
+/**
+Update the information text fields.
+*/
+private void updateInfoTextFields ()
+{   // First find the MeasLoc
+    RiversideDB_MeasLoc measLoc = null;
+    String locationID = __LocationID_JComboBox.getSelected();
+    if ( (locationID != null) && !locationID.equals("") ) {
+        try {
+            measLoc = __dmi.readMeasLocForIdentifier(locationID);
+        }
+        catch ( Exception e ) {
+            
+        }
+    }
+    if ( measLoc == null ) {
+        __selectedMeasLocNum_JLabel.setText ( "No matches" );
+    }
+    else {
+        __selectedMeasLocNum_JLabel.setText ( "" + measLoc.getMeasLoc_num() );
+    }
+
+    if ( measLoc == null ) {
+        __selectedMeasTypeNum_JLabel.setText ( "No matches because MeasLoc_num not matched." );
+    }
+    else {
+        // Next use the MeasLoc_num with other data to find the MeasType_num
+        List<RiversideDB_MeasType> measTypeList = __dmi.findMeasType(__measTypeList,
+            measLoc.getMeasLoc_num(),
+            __DataSource_JComboBox.getSelected(),
+            __DataType_JComboBox.getSelected(),
+            __DataSubType_JComboBox.getSelected(),
+            __Interval_JComboBox.getSelected(),
+            __Scenario_JComboBox.getSelected(),
+            __SequenceNumber_JComboBox.getSelected() );
+        if ( measTypeList.size() == 0 ) {
+            __selectedMeasTypeNum_JLabel.setText ( "No matches" );
+        }
+        else if ( measTypeList.size() > 0 ) {
+            __selectedMeasTypeNum_JLabel.setText ( "" + measTypeList.get(0).getMeasType_num() +
+                " (" + measTypeList.size() + " matches)" );
+        }
+        else {
+            __selectedMeasTypeNum_JLabel.setText ( "" + measTypeList.size() + " matches" );
+        }
+    }
 }
 
 /**

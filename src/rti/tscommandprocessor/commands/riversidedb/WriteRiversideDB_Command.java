@@ -63,7 +63,7 @@ cross-reference to the original commands.
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
 {	String DataStore = parameters.getValue ( "DataStore" );
-    String Location = parameters.getValue ( "Location" );
+    String LocationID = parameters.getValue ( "LocationID" );
     String DataSource = parameters.getValue ( "DataSource" );
     String DataType = parameters.getValue ( "DataType" );
     //String DataSubType = parameters.getValue ( "DataSubType" );
@@ -87,12 +87,12 @@ throws InvalidCommandParameterException
                 message, "Specify the data store." ) );
     }
 
-    if ( (Location == null) || Location.equals("") ) {
-        message = "The location must be specified.";
+    if ( (LocationID == null) || LocationID.equals("") ) {
+        message = "The location ID must be specified.";
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify the location." ) );
+                message, "Specify the location ID." ) );
     }
 
     if ( (DataSource == null) || DataSource.equals("") ) {
@@ -176,7 +176,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
-    valid_Vector.add ( "Location" );
+    valid_Vector.add ( "LocationID" );
     valid_Vector.add ( "DataSource" );
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "DataSubType" );
@@ -233,7 +233,7 @@ CommandWarningException, CommandException
     }
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
-    String Location = parameters.getValue ( "Location" );
+    String LocationID = parameters.getValue ( "LocationID" );
     String DataSource = parameters.getValue ( "DataSource" );
     String DataType = parameters.getValue ( "DataType" );
     String DataSubType = parameters.getValue ( "DataSubType" );
@@ -422,7 +422,7 @@ CommandWarningException, CommandException
             }
             else {
                 TS ts = (TS)tslist.get(0);
-                dmi.writeTimeSeries ( ts, Location, DataSource, DataType, DataSubType, interval,
+                dmi.writeTimeSeries ( ts, LocationID, DataSource, DataType, DataSubType, interval,
                     Scenario, SequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime );
             }
         }
@@ -460,7 +460,7 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
-    String Location = parameters.getValue( "Location" );
+    String LocationID = parameters.getValue( "LocationID" );
     String DataType = parameters.getValue( "DataType" );
     String DataSubType = parameters.getValue( "DataSubType" );
     String DataSource = parameters.getValue( "DataSource" );
@@ -494,11 +494,11 @@ public String toString ( PropList parameters )
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
     }
-    if ( (Location != null) && (Location.length() > 0) ) {
+    if ( (LocationID != null) && (LocationID.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
-        b.append ( "Location=\"" + Location + "\"" );
+        b.append ( "LocationID=\"" + LocationID + "\"" );
     }
     if ( (DataSource != null) && (DataSource.length() > 0) ) {
         if ( b.length() > 0 ) {

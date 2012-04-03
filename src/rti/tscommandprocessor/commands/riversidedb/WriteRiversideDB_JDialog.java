@@ -90,7 +90,12 @@ private boolean __ignoreEvents = false; // Used to ignore cascading events when 
 
 private JTabbedPane __tsInfo_JTabbedPane = null;
 
-private List<RiversideDB_MeasType> __measTypeList = new Vector(); // Corresponds to displayed list, used for "find" calls
+// Populated in readMeasTypeListForDataType and corresponds to displayed list
+// The list is used for "findMeasType" calls to filter the list of MeasType based on parameter values
+// This is cleaner in some cases than making repeated calls to the database
+// TODO SAM 2012-04-03 One issue is that if the list of MeasType for a data type is huge, it will
+// temporarily eat up memory
+private List<RiversideDB_MeasType> __measTypeList = new Vector();
 
 // List in the order of the UI (NOT the TSID!)
 private enum Parameter {
@@ -155,12 +160,12 @@ private void actionPerformedDataStoreSelected ( )
 {
     if ( __DataStore_JComboBox.getSelected() == null ) {
         // Startup initialization
-        Message.printStatus(2, "", "Selected null data store...initialization" );
+        //Message.printStatus(2, "", "Selected null data store...initialization" );
         return;
     }
     __dataStore = getSelectedDataStore();
     __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
-    Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
+    //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the data store
     populateDataTypeChoices ( __dmi );
     // Update the matched information
@@ -470,6 +475,7 @@ private RiversideDB_DMI getSelectedDMI()
     return null;
 }
 
+// TODO SAM 2012-04-02 After other cleanup this seems way too complicated - need to get rid of "parameter"
 /**
 Form a TSID string from the selected parameters.  Checks are done based on the parameter that is being
 processed, to reflect the cascade of changes that occur as a user selects parameter values.
@@ -480,7 +486,7 @@ The parameters are listed in the order of cascading choices, as values from the 
 component data are not initialized).
 @param parameter the parameter to include in the TSID, which should be one "less" than the current parameter
 being processed to create a list (e.g., if the choices for location are being populated, pass the UI parameter
-above this (interval).
+above this (interval).  Specify as null to include all specified parameter values.
 */
 private String getTSIDFromParameters ( Parameter parameter, String dataType, String dataSubType, String interval,
     String location, String dataSource, String scenario, String sequenceNumber )
@@ -492,22 +498,15 @@ private String getTSIDFromParameters ( Parameter parameter, String dataType, Str
     String scenario2 = "";
     String sequenceNumber2 = "";
     // Data type is selected first
-    if ( parameter.ordinal() >= Parameter.DATA_TYPE.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.DATA_TYPE.ordinal()) ) {
         if ( dataType == null ) {
-            // This is always going to be a problem
-            return null;
+            dataType = "";
         }
-        if ( dataType.indexOf(" ") > 0 ) {
-            // Should be of form "dataType - Description"
-            dataType2 = StringUtil.getToken(dataType," ",0,0).trim();
-        }
-        else {
-            dataType2 = dataType.trim();
-        }
+        dataType2 = dataType.trim();
     }
-    if ( parameter.ordinal() >= Parameter.DATA_SUBTYPE.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.DATA_SUBTYPE.ordinal()) ) {
         if ( dataSubType == null ) {
-            return null;
+            dataSubType = "";
         }
         dataSubType = dataSubType.trim();
         if ( dataSubType.length() > 0 ) {
@@ -515,33 +514,33 @@ private String getTSIDFromParameters ( Parameter parameter, String dataType, Str
             dataType2 = dataType2 + "-" + dataSubType;
         }
     }
-    if ( parameter.ordinal() >= Parameter.INTERVAL.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.INTERVAL.ordinal()) ) {
         if ( interval == null ) {
-            return null;
+            interval = "";
         }
         interval2 = interval.trim();
     }
-    if ( parameter.ordinal() >= Parameter.LOCATION.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.LOCATION.ordinal()) ) {
         if ( location == null ) {
-            return null;
+            location = "";
         }
         location2 = location.trim();
     }
-    if ( parameter.ordinal() >= Parameter.DATA_SOURCE.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.DATA_SOURCE.ordinal()) ) {
         if ( dataSource == null ) {
-            return null;
+            dataSource = "";
         }
         dataSource2 = dataSource.trim();
     }
-    if ( parameter.ordinal() >= Parameter.SCENARIO.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.SCENARIO.ordinal()) ) {
         if ( scenario == null ) {
-            return null;
+            scenario = "";
         }
         scenario2 = scenario.trim();
     }
-    if ( parameter.ordinal() >= Parameter.SEQUENCE_NUMBER.ordinal() ) {
+    if ( (parameter == null) || (parameter.ordinal() >= Parameter.SEQUENCE_NUMBER.ordinal()) ) {
         if ( sequenceNumber == null ) {
-            return null;
+            sequenceNumber = "";
         }
         sequenceNumber2 = sequenceNumber.trim();
         if ( sequenceNumber2.length() > 0 ) {
@@ -610,7 +609,7 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     __DataStore_JComboBox.addItemListener ( this ); // Add after initial select to avoid event
     JGUIUtil.addComponent(main_JPanel, __DataStore_JComboBox,
         1, yMain, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - open data store for HDB database."), 
+    JGUIUtil.addComponent(main_JPanel, new JLabel("Required - open data store for RiversideDB database."), 
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     __TSList_JComboBox = new SimpleJComboBox(false);
@@ -816,9 +815,10 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
         __DataStore_JComboBox.select(0);
     }
     */
-    Message.printStatus(2,"","Calling refresh()");
+    //Message.printStatus(2,"","Calling refresh()");
     refresh ();
     __ignoreEvents = false; // After initialization of components let events happen
+    updateInfoTextFields();
     
 	setResizable ( false ); // TODO SAM 2010-12-10 Resizing causes some problems
     pack();
@@ -922,7 +922,7 @@ private void populateDataSourceChoices ( RiversideDB_DMI dmi )
         return;
     }
     String tsid = getTSIDFromParameters ( Parameter.LOCATION,
-            __DataType_JComboBox.getSelected(),
+            getSelectedDataType(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
             __LocationID_JComboBox.getSelected(),
@@ -967,7 +967,7 @@ private void populateDataSourceChoices ( RiversideDB_DMI dmi )
 Populate the data sub-type choices for the given data type.
 */
 private void populateDataSubTypeChoices ( RiversideDB_DMI dmi )
-{   //String routine = getClass().getName() + ".populateDataSubTypeChoices";
+{   String routine = getClass().getName() + ".populateDataSubTypeChoices";
     if ( (dmi == null) || (__DataType_JComboBox == null) || (__DataSubType_JComboBox == null) ) {
         // Still in initialization
         return;
@@ -1001,12 +1001,12 @@ private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
 {   String routine = getClass().getName() + ".populateDataTypeChoices";
     if ( rdmi == null ) {
         // Initialization
-        Message.printStatus(2,routine,"DMI is null - not initializing choices" );
+        //Message.printStatus(2,routine,"DMI is null - not initializing choices" );
         return;
     }
     if ( __DataType_JComboBox == null ) {
         // Initialization
-        Message.printStatus(2,routine,"__DataType_Combobox is null - not initializing choices" );
+        //Message.printStatus(2,routine,"__DataType_Combobox is null - not initializing choices" );
         return;
     }
     __DataType_JComboBox.removeAll ();
@@ -1046,31 +1046,8 @@ private void populateDataTypeChoices ( RiversideDB_DMI rdmi )
             }
         }
     }
-    Message.printStatus(2,routine,"Got " + __DataType_JComboBox.getItemCount() + " data types" );
-    // TODO SAM 2012-04-02 May need to save this list filtered a bit more to improve performance but go with
-    // it for now
-    // Additionally, query all matching MeasType so that these choices can be filtered without having
-    // to requery the database
-    String tsid = getTSIDFromParameters ( Parameter.INTERVAL, __DataType_JComboBox.getSelected(),
-        null, // data sub-type
-        null, // interval
-        null, // location
-        null, // data source
-        null, // scenario
-        null ); // sequence number
-    if ( tsid == null ) {
-        return;
-    }
-    try {
-        __measTypeList = rdmi.readMeasTypeListForTSIdent ( tsid );
-        Message.printStatus(2,routine,"Got " + __measTypeList.size() + " MeasTypes for TSID \"" + tsid + "\"" );
-    }
-    catch ( Exception e ) {
-        Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
-            __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
-        Message.printWarning(2, routine, e);
-        return;
-    }
+    //Message.printStatus(2,routine,"Got " + __DataType_JComboBox.getItemCount() + " data types" );
+    readMeasTypeListForDataType(rdmi);
     // Select first choice (may get reset from existing parameter values).
     __DataType_JComboBox.select ( null );
     if ( __DataType_JComboBox.getItemCount() > 0 ) {
@@ -1087,7 +1064,7 @@ private void populateIntervalChoices ( RiversideDB_DMI dmi )
         // Initialization
         return;
     }
-    String tsid = getTSIDFromParameters ( Parameter.DATA_SUBTYPE, __DataType_JComboBox.getSelected(),
+    String tsid = getTSIDFromParameters ( Parameter.DATA_SUBTYPE, getSelectedDataType(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
             null, // location
@@ -1141,7 +1118,7 @@ private void populateLocationChoices ( RiversideDB_DMI dmi )
         // Initialization
         return;
     }
-    String tsid = getTSIDFromParameters ( Parameter.INTERVAL, __DataType_JComboBox.getSelected(),
+    String tsid = getTSIDFromParameters ( Parameter.INTERVAL, getSelectedDataType(),
         __DataSubType_JComboBox.getSelected(),
         __Interval_JComboBox.getSelected(),
         null, // location
@@ -1210,7 +1187,7 @@ private void populateScenarioChoices ( RiversideDB_DMI dmi )
         return;
     }
     String tsid = getTSIDFromParameters ( Parameter.DATA_SOURCE,
-            __DataType_JComboBox.getSelected(),
+            getSelectedDataType(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
             __LocationID_JComboBox.getSelected(),
@@ -1263,7 +1240,7 @@ private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
         return;
     }
     String tsid = getTSIDFromParameters ( Parameter.SCENARIO,
-            __DataType_JComboBox.getSelected(),
+            getSelectedDataType(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
             __LocationID_JComboBox.getSelected(),
@@ -1304,6 +1281,37 @@ private void populateSequenceNumberChoices ( RiversideDB_DMI dmi )
 }
 
 /**
+Read the MeasType list for the selected data type, used as the master list for some filters.
+*/
+private void readMeasTypeListForDataType ( RiversideDB_DMI rdmi )
+{   String routine = getClass().getName() + "readMeasTypeForDataType";
+    // TODO SAM 2012-04-02 May need to save this list filtered a bit more to improve performance but go with
+    // it for now
+    // Additionally, query all matching MeasType so that these choices can be filtered without having
+    // to requery the database
+    String tsid = getTSIDFromParameters ( null, getSelectedDataType(),
+        null, // data sub-type
+        null, // interval
+        null, // location
+        null, // data source
+        null, // scenario
+        null ); // sequence number
+    if ( tsid != null ) {
+        try {
+            __measTypeList = rdmi.readMeasTypeListForTSIdent ( tsid );
+            Message.printStatus(2,routine,"Got " + __measTypeList.size() +
+                " MeasTypes for TSID \"" + tsid + "\" to use as list to filter choices" );
+        }
+        catch ( Exception e ) {
+            Message.printWarning(2, routine, "Error getting MeasTypes from RiversideDB \"" +
+                __dataStore.getName() + " tsid=\"" + tsid + "\" (" + e + ").");
+            Message.printWarning(2, routine, e);
+            return;
+        }
+    }
+}
+
+/**
 Refresh the command from the other text field contents.
 When first called this method will attempt to populate the components using parameter values.
 Subsequent to the first call the response is passive in that the command string is reconstructed
@@ -1312,7 +1320,7 @@ from displayed values.
 private void refresh ()
 {
     String routine = "WriteRiversideDB_JDialog.refresh";
-    Message.printStatus ( 2, routine, "__first_time=" + __first_time );
+    //Message.printStatus ( 2, routine, "__first_time=" + __first_time );
     String DataStore = "";
     String TSList = "";
     String TSID = "";
@@ -1331,7 +1339,7 @@ private void refresh ()
 	PropList parameters = null;
 	if ( __first_time ) {
 		__first_time = false;
-		Message.printStatus(2,routine,"Start initializing parameter components from command");
+		//Message.printStatus(2,routine,"Start initializing parameter components from command");
 		// Get the parameters from the command...
 		parameters = __command.getCommandParameters();
 		DataStore = parameters.getValue ( "DataStore" );
@@ -1422,29 +1430,40 @@ private void refresh ()
         }
         // These need to be in the order of the dialog in order to properly cascade
         // First populate the choices...
-        Message.printStatus(2,routine,"Initializing data type choices");
+        //Message.printStatus(2,routine,"Initializing data type choices");
         populateDataTypeChoices(getRiversideDB_DMI() );
         // Then set to the initial value.
         int [] dataTypeIndex = new int[1];
-        Message.printStatus(2,routine,"Comparing \"" + DataType + "\" to " +
-            __DataType_JComboBox.getItemCount() + " gives: " +
-            JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox,
-                DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, dataTypeIndex, true) );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null) ) {
             // Exact match
             __DataType_JComboBox.select ( DataType );
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __measTypeList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                readMeasTypeListForDataType(__dmi);
+            }
         }
         else if ( JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox,
             DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, dataTypeIndex, true) ) {
             // DataType will be like "QIN" but choice will be like "QIN - Description" so select based on the
             // first token
             __DataType_JComboBox.select ( dataTypeIndex[0] );
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __measTypeList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                readMeasTypeListForDataType(__dmi);
+            }
         }
         else {
             if ( (DataType == null) || DataType.equals("") ) {
                 // New command...select the default...
                 if ( __DataType_JComboBox.getItemCount() > 0 ) {
                     __DataType_JComboBox.select ( 0 );
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the __measTypeList is populated
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        readMeasTypeListForDataType(__dmi);
+                    }
                 }
             }
             else {
@@ -1604,18 +1623,7 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     // FIXME SAM 2011-10-03 Might be able to remove check for null if events and list population are
     // implemented correctly
-    DataType = __DataType_JComboBox.getSelected();
-    if ( DataType == null ) {
-        DataType = "";
-    }
-    else {
-        if ( DataType.indexOf(" ") > 0 ) {
-            DataType = StringUtil.getToken(DataType," ",0,0).trim();
-        }
-        else {
-            DataType = DataType.trim();
-        }
-    }
+    DataType = getSelectedDataType();
     DataSubType = __DataSubType_JComboBox.getSelected();
     if ( DataSubType == null ) {
         DataSubType = "";
@@ -1714,7 +1722,7 @@ private void updateInfoTextFields ()
         List<RiversideDB_MeasType> measTypeList = __dmi.findMeasType(__measTypeList,
             measLoc.getMeasLoc_num(),
             __DataSource_JComboBox.getSelected(),
-            __DataType_JComboBox.getSelected(),
+            getSelectedDataType(),
             __DataSubType_JComboBox.getSelected(),
             __Interval_JComboBox.getSelected(),
             __Scenario_JComboBox.getSelected(),
@@ -1723,8 +1731,7 @@ private void updateInfoTextFields ()
             __selectedMeasTypeNum_JLabel.setText ( "No matches" );
         }
         else if ( measTypeList.size() > 0 ) {
-            __selectedMeasTypeNum_JLabel.setText ( "" + measTypeList.get(0).getMeasType_num() +
-                " (" + measTypeList.size() + " matches)" );
+            __selectedMeasTypeNum_JLabel.setText ( "" + measTypeList.get(0).getMeasType_num() );
         }
         else {
             __selectedMeasTypeNum_JLabel.setText ( "" + measTypeList.size() + " matches" );

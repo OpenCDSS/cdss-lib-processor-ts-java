@@ -58,6 +58,7 @@ private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataType_JComboBox = null;
 private SimpleJComboBox __Interval_JComboBox = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTextField __MissingValue_JTextField = null;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;	
 		
@@ -215,6 +216,10 @@ private void checkInput ()
     if ( Alias.length() > 0 ) {
         props.set ( "Alias", Alias );
     }
+    String MissingValue = __MissingValue_JTextField.getText().trim();
+    if ( MissingValue.length() > 0 ) {
+        props.set ( "MissingValue", MissingValue );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -252,6 +257,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "InputEnd", InputEnd );
     String Alias = __Alias_JTextField.getText().trim();
     __command.setCommandParameter ( "Alias", Alias );
+    String MissingValue = __MissingValue_JTextField.getText().trim();
+    __command.setCommandParameter ( "MissingValue", MissingValue );
 }
 
 /**
@@ -424,6 +431,16 @@ private void initialize ( JFrame parent, ReadRiversideDB_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Missing value:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MissingValue_JTextField = new JTextField ( "", 10 );
+    JGUIUtil.addComponent(main_JPanel, __MissingValue_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    __MissingValue_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - missing data value (default=-999, recommended=NaN)."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -613,6 +630,7 @@ private void refresh ()
     String InputStart = "";
     String InputEnd = "";
     String Alias = "";
+    String MissingValue = "";
     PropList props = null;
     if ( __first_time ) {
         __first_time = false;
@@ -624,6 +642,7 @@ private void refresh ()
         InputStart = props.getValue ( "InputStart" );
         InputEnd = props.getValue ( "InputEnd" );
         Alias = props.getValue ( "Alias" );
+        MissingValue = props.getValue ( "MissingValue" );
         // The data store list is set up in initialize() but is selected here
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
@@ -700,6 +719,9 @@ private void refresh ()
         if ( Alias != null ) {
             __Alias_JTextField.setText ( Alias );
         }
+        if ( MissingValue != null ) {
+            __MissingValue_JTextField.setText( MissingValue );
+        }
     }
     // Regardless, reset the command from the fields...
     Alias = __Alias_JTextField.getText().trim();
@@ -739,6 +761,8 @@ private void refresh ()
     InputEnd = __InputEnd_JTextField.getText().trim();
     props.add ( "InputEnd=" + InputEnd );
     props.add ( "Alias=" + Alias );
+    MissingValue = __MissingValue_JTextField.getText().trim();
+    props.add ( "MissingValue=" + MissingValue );
     __command_JTextArea.setText( __command.toString ( props ) );
 
     // Check the GUI state to determine whether some controls should be disabled.

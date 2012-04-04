@@ -31,6 +31,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -89,6 +90,7 @@ throws InvalidCommandParameterException
     String Interval = parameters.getValue ( "Interval" );
     String InputStart = parameters.getValue ( "InputStart" );
     String InputEnd = parameters.getValue ( "InputEnd" );
+    String MissingValue = parameters.getValue ( "MissingValue" );
 
     CommandStatus status = getCommandStatus();
     status.clearLog(CommandPhaseType.INITIALIZATION);
@@ -145,6 +147,17 @@ throws InvalidCommandParameterException
                     message, "Specify a date/time or InputEnd." ) );
 		}
 	}
+	
+	// TODO SAM 2012-04-01 Evaluate whether range should be supported
+    if ( (MissingValue != null) && !MissingValue.equals("") &&
+        !StringUtil.isDouble(MissingValue) && !MissingValue.equalsIgnoreCase("NaN")) {
+        message = "The missing value (" + MissingValue+ ") must be a number or NaN.";
+        warning += "\n" + message;
+        status.addToLog(CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(
+            CommandStatusType.FAILURE, message,
+            "Specify the missing value as a number or NaN."));
+    }
 
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
@@ -157,6 +170,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputStart" );
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "MissingValue" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -277,6 +291,11 @@ CommandWarningException, CommandException
     }
     String Interval = parameters.getValue("Interval");
     String Alias = parameters.getValue("Alias");
+    String MissingValue = parameters.getValue ( "MissingValue" );
+    Double missingValue = null;
+    if ( (MissingValue != null) && !MissingValue.equals("") ) {
+        missingValue = Double.parseDouble(MissingValue);
+    }
     
 	String InputStart = parameters.getValue ( "InputStart" );
 	DateTime InputStart_DateTime = null;
@@ -511,6 +530,7 @@ CommandWarningException, CommandException
 				try {
 				    ts = dmi.readTimeSeries ( tsidentString, InputStart_DateTime, InputEnd_DateTime,
 				         null, // The requested data units
+				         missingValue,
 				         readData );
 				    if ( (Alias != null) && !Alias.equals("") ) {
                         String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
@@ -673,6 +693,13 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Alias=\"" + Alias + "\"" );
+    }
+    String MissingValue = props.getValue("MissingValue");
+    if ( (MissingValue != null) && (MissingValue.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MissingValue=\"" + MissingValue + "\"" );
     }
 
     return getCommandName() + "(" + b.toString() + ")";

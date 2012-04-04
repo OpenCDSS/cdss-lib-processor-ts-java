@@ -41,6 +41,7 @@ import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DataType;
 import RTi.DMI.RiversideDB_DMI.RiversideDB_MeasLoc;
 import RTi.DMI.RiversideDB_DMI.RiversideDB_MeasType;
+import RTi.DMI.RiversideDB_DMI.RiversideDB_WriteMethodType;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
@@ -81,6 +82,11 @@ private JLabel __selectedMeasTypeNum_JLabel = null;
 private SimpleJComboBox __WriteDataFlags_JComboBox = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private SimpleJComboBox __WriteMethod_JComboBox = null;
+private JTextField __ProtectedFlags_JTextField = null;
+private JTextField __RevisionDateTime_JTextField = null;
+private JTextField __RevisionUser_JTextField = null;
+private JTextField __RevisionComment_JTextField = null;
 private RiversideDBDataStore __dataStore = null; // selected RiversideDB_DataStore
 private RiversideDB_DMI __dmi = null; // RiversideDB_DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
@@ -313,6 +319,11 @@ private void checkInput ()
     String WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+	String WriteMethod = __WriteMethod_JComboBox.getSelected();
+	String ProtectedFlags = __ProtectedFlags_JTextField.getText().trim();
+	String RevisionDateTime = __RevisionDateTime_JTextField.getText().trim();
+	String RevisionUser = __RevisionUser_JTextField.getText().trim();
+	String RevisionComment = __RevisionComment_JTextField.getText().trim();
 
 	__error_wait = false;
 
@@ -358,6 +369,21 @@ private void checkInput ()
 	if ( OutputEnd.length() > 0 ) {
 		parameters.set ( "OutputEnd", OutputEnd );
 	}
+    if ( WriteMethod.length() > 0 ) {
+        parameters.set ( "WriteMethod", WriteMethod );
+    }
+    if ( ProtectedFlags.length() > 0 ) {
+        parameters.set ( "ProtectedFlags", ProtectedFlags );
+    }
+    if ( RevisionDateTime.length() > 0 ) {
+        parameters.set ( "RevisionDateTime", RevisionDateTime );
+    }
+    if ( RevisionUser.length() > 0 ) {
+        parameters.set ( "RevisionUser", RevisionUser );
+    }
+    if ( RevisionComment.length() > 0 ) {
+        parameters.set ( "RevisionComment", RevisionComment );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -388,6 +414,11 @@ private void commitEdits ()
     String WriteDataFlags = __WriteDataFlags_JComboBox.getSelected();
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
+    String WriteMethod = __WriteMethod_JComboBox.getSelected();
+    String ProtectedFlags = __ProtectedFlags_JTextField.getText().trim();
+    String RevisionDateTime = __RevisionDateTime_JTextField.getText().trim();
+    String RevisionUser = __RevisionUser_JTextField.getText().trim();
+    String RevisionComment = __RevisionComment_JTextField.getText().trim();
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -402,6 +433,11 @@ private void commitEdits ()
     __command.setCommandParameter ( "WriteDataFlags", WriteDataFlags );
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
+	__command.setCommandParameter ( "WriteMethod", WriteMethod );
+	__command.setCommandParameter ( "ProtectedFlags", ProtectedFlags );
+	__command.setCommandParameter ( "RevisionDateTime", RevisionDateTime );
+	__command.setCommandParameter ( "RevisionUser", RevisionUser );
+	__command.setCommandParameter ( "RevisionComment", RevisionComment );
 }
 
 /**
@@ -781,6 +817,62 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
 		3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Write method:"), 
+        0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __WriteMethod_JComboBox = new SimpleJComboBox ( false );
+    List<String> writeMethodList = new Vector();
+    writeMethodList.add("");
+    writeMethodList.add("" + RiversideDB_WriteMethodType.DELETE );
+    writeMethodList.add("" + RiversideDB_WriteMethodType.DELETE_INSERT);
+    writeMethodList.add("" + RiversideDB_WriteMethodType.TRACK_REVISIONS);
+    __WriteMethod_JComboBox.setData ( writeMethodList );
+    __WriteMethod_JComboBox.select(0);
+    __WriteMethod_JComboBox.addItemListener (this);
+    JGUIUtil.addComponent(main_JPanel, __WriteMethod_JComboBox,
+        1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - how to write."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Protected flags:"), 
+        0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ProtectedFlags_JTextField = new JTextField (10);
+    __ProtectedFlags_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ProtectedFlags_JTextField,
+        1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - database flag(s) that indicate values protected from overwrite."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Revision date/time:"), 
+        0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RevisionDateTime_JTextField = new JTextField (10);
+    __RevisionDateTime_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __RevisionDateTime_JTextField,
+        1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - date/time for revision (default=time that command is run)."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Revision user:"), 
+        0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RevisionUser_JTextField = new JTextField (10);
+    __RevisionUser_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __RevisionUser_JTextField,
+        1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - user that is writing revision (default=operating system user login)."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Revision comment:"), 
+        0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __RevisionComment_JTextField = new JTextField (30);
+    __RevisionComment_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __RevisionComment_JTextField,
+        1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - comment for revision (default=no comment)."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -806,18 +898,9 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
 	
 	// Refresh the contents...
     checkGUIState();
-    // All of the components have been initialized above but now generate an event to populate choices
-    // based on the data store...
-    /*
-    Message.printStatus(2,"","Selecting first data store to cascade choices");
-    if ( __DataStore_JComboBox.getItemCount() > 0 ) {
-        __DataStore_JComboBox.select(null);
-        __DataStore_JComboBox.select(0);
-    }
-    */
-    //Message.printStatus(2,"","Calling refresh()");
-    refresh ();
-    __ignoreEvents = false; // After initialization of components let events happen
+    refresh (); // This will do an initial population of lists in cascading order
+    __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade
+    checkGUIState(); // Do this again because it may not have happened due to the special event handling
     updateInfoTextFields();
     
 	setResizable ( false ); // TODO SAM 2010-12-10 Resizing causes some problems
@@ -1335,6 +1418,11 @@ private void refresh ()
     String WriteDataFlags = "";
 	String OutputStart = "";
 	String OutputEnd = "";
+	String WriteMethod = "";
+	String ProtectedFlags = "";
+	String RevisionDateTime = "";
+	String RevisionUser = "";
+	String RevisionComment = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -1356,6 +1444,11 @@ private void refresh ()
         WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
 		OutputStart = parameters.getValue ( "OutputStart" );
 		OutputEnd = parameters.getValue ( "OutputEnd" );
+		WriteMethod = parameters.getValue ( "WriteMethod" );
+        ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
+        RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
+        RevisionUser = parameters.getValue ( "RevisionUser" );
+        RevisionComment = parameters.getValue ( "RevisionComment" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             // This will force a cascading event...
             __DataStore_JComboBox.select ( DataStore );
@@ -1608,6 +1701,34 @@ private void refresh ()
 		if ( OutputEnd != null ) {
 			__OutputEnd_JTextField.setText (OutputEnd);
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__WriteMethod_JComboBox, WriteMethod, JGUIUtil.NONE, null, null ) ) {
+            __WriteMethod_JComboBox.select ( WriteMethod );
+        }
+        else {
+            if ( (WriteMethod == null) || WriteMethod.equals("") ) {
+                // New command...select the default...
+                if ( __WriteMethod_JComboBox.getItemCount() > 0 ) {
+                    __WriteMethod_JComboBox.select ( 0 );
+                }
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                  "WriteMethod parameter \"" + WriteMethod + "\".  Select a different value or Cancel." );
+            }
+        }
+        if ( ProtectedFlags != null ) {
+            __ProtectedFlags_JTextField.setText (ProtectedFlags);
+        }
+        if ( RevisionDateTime != null ) {
+            __RevisionDateTime_JTextField.setText (RevisionDateTime);
+        }
+        if ( RevisionUser != null ) {
+            __RevisionUser_JTextField.setText (RevisionUser);
+        }
+        if ( RevisionComment != null ) {
+            __RevisionComment_JTextField.setText (RevisionComment);
+        }
 		Message.printStatus(2,routine,"...done initializing parameter components from command");
 	}
 	// Regardless, reset the command from the fields...
@@ -1654,6 +1775,11 @@ private void refresh ()
     }
 	OutputStart = __OutputStart_JTextField.getText().trim();
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
+	WriteMethod = __WriteMethod_JComboBox.getSelected();
+	ProtectedFlags = __ProtectedFlags_JTextField.getText().trim();
+	RevisionDateTime = __RevisionDateTime_JTextField.getText().trim();
+	RevisionUser = __RevisionUser_JTextField.getText().trim();
+	RevisionComment = __RevisionComment_JTextField.getText().trim();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "DataStore=" + DataStore );
 	parameters.add ( "TSList=" + TSList );
@@ -1669,6 +1795,11 @@ private void refresh ()
     parameters.add ( "WriteDataFlags=" + WriteDataFlags );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+    parameters.add ( "WriteMethod=" + WriteMethod );
+    parameters.add ( "ProtectedFlags=" + ProtectedFlags );
+    parameters.add ( "RevisionDateTime=" + RevisionDateTime );
+    parameters.add ( "RevisionUser=" + RevisionUser );
+    parameters.add ( "RevisionComment=" + RevisionComment );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 }
 

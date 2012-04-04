@@ -12,6 +12,7 @@ import rti.tscommandprocessor.core.TSListType;
 
 import RTi.DMI.RiversideDB_DMI.RiversideDBDataStore;
 import RTi.DMI.RiversideDB_DMI.RiversideDB_DMI;
+import RTi.DMI.RiversideDB_DMI.RiversideDB_WriteMethodType;
 import RTi.TS.TS;
 
 import RTi.Util.IO.AbstractCommand;
@@ -72,6 +73,7 @@ throws InvalidCommandParameterException
     String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String WriteMethod = parameters.getValue ( "WriteMethod" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -170,6 +172,31 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+	
+    if ( (WriteMethod == null) || WriteMethod.equals("") ) {
+        message = "The write method must be specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the parameter as " + RiversideDB_WriteMethodType.DELETE +
+                "," + RiversideDB_WriteMethodType.DELETE_INSERT +
+                ", or " + RiversideDB_WriteMethodType.TRACK_REVISIONS + ".") );
+    }
+    else {
+        if ( !WriteMethod.equalsIgnoreCase("" + RiversideDB_WriteMethodType.DELETE) &&
+            !WriteMethod.equalsIgnoreCase("" + RiversideDB_WriteMethodType.DELETE_INSERT) &&
+            !WriteMethod.equalsIgnoreCase("" + RiversideDB_WriteMethodType.TRACK_REVISIONS))  {
+            message = "The WriteMethod parameter \"" + WriteMethod + "\" must be " + RiversideDB_WriteMethodType.DELETE +
+            "," + RiversideDB_WriteMethodType.DELETE_INSERT + ", or " + RiversideDB_WriteMethodType.TRACK_REVISIONS + ".";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + RiversideDB_WriteMethodType.DELETE +
+                    "," + RiversideDB_WriteMethodType.DELETE_INSERT +
+                    ", or " + RiversideDB_WriteMethodType.TRACK_REVISIONS + "."));
+        }
+    }
+    
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "DataStore" );
@@ -186,6 +213,11 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "WriteDataFlags" );
 	valid_Vector.add ( "OutputStart" );
 	valid_Vector.add ( "OutputEnd" );
+	valid_Vector.add ( "WriteMethod" );
+	valid_Vector.add ( "ProtectedFlags" );
+	valid_Vector.add ( "RevisionDateTime" );
+	valid_Vector.add ( "RevisionUser" );
+	valid_Vector.add ( "RevisionComment" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -240,7 +272,7 @@ CommandWarningException, CommandException
     String Interval = parameters.getValue ( "Interval" );
     TimeInterval interval = null;
     try {
-        TimeInterval.parseInterval(Interval);
+        interval = TimeInterval.parseInterval(Interval);
     }
     catch ( InvalidTimeIntervalException e ) {
         // Will have been caught in checkCommandParameters()
@@ -252,6 +284,12 @@ CommandWarningException, CommandException
     if ( (WriteDataFlags != null) && WriteDataFlags.equalsIgnoreCase(_False) ) {
         writeDataFlags = false;
     }
+    String WriteMethod = parameters.getValue ( "WriteMethod" );
+    RiversideDB_WriteMethodType writeMethod = RiversideDB_WriteMethodType.valueOfIgnoreCase(WriteMethod);
+    if ( WriteMethod == null ) {
+        writeMethod = null; // Default
+    }
+    String ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -285,7 +323,7 @@ CommandWarningException, CommandException
 						message, "Report problem to software support." ) );
 	}
 	List<TS> tslist = (List <TS>)o_TSList;
-	if ( tslist.size() == 0 ) {
+	if ( (tslist.size() == 0) && (writeMethod != RiversideDB_WriteMethodType.DELETE) ) {
         message = "No time series are available from processor GetTimeSeriesToProcess (TSList=\"" + TSList +
         "\" TSID=\"" + TSID + "\", EnsembleID=\"" + EnsembleID + "\").";
 		Message.printWarning ( warning_level,
@@ -411,9 +449,13 @@ CommandWarningException, CommandException
         Message.printStatus ( 2, routine, "Writing RiversideDB time series to data store \"" +
             dataStore.getName() + "\"" );
         boolean writeSingle = true;
+        boolean deleteOnly = false;
+        if ( writeMethod == RiversideDB_WriteMethodType.DELETE ) {
+            deleteOnly = true;
+        }
         if ( writeSingle ) {
             // Only allow one time series to be written
-            if ( tslist.size() != 1 ) {
+            if ( (tslist.size() != 1) && !deleteOnly ) {
                 message = "Only a single time series may be written - not writing time series to RiversideDB database.";
                 Message.printWarning(3, routine, message);
                 status.addToLog ( CommandPhaseType.RUN,
@@ -421,9 +463,13 @@ CommandWarningException, CommandException
                         message, "Verify that a single time series is specified for writing." ) );
             }
             else {
-                TS ts = (TS)tslist.get(0);
+                TS ts = null;
+                if ( !deleteOnly ) {
+                    ts = (TS)tslist.get(0);
+                }
                 dmi.writeTimeSeries ( ts, LocationID, DataSource, DataType, DataSubType, interval,
-                    Scenario, SequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime );
+                    Scenario, SequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime, writeMethod,
+                    ProtectedFlags );
             }
         }
         else {
@@ -469,6 +515,11 @@ public String toString ( PropList parameters )
     String WriteDataFlags = parameters.getValue( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+    String WriteMethod = parameters.getValue ( "WriteMethod" );
+    String ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
+    String RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
+    String RevisionUser = parameters.getValue ( "RevisionUser" );
+    String RevisionComment = parameters.getValue ( "RevisionComment" );
 	StringBuffer b = new StringBuffer ();
 	if ( (DataStore != null) && (DataStore.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -547,6 +598,36 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "OutputEnd=\"" + OutputEnd + "\"" );
+    }
+    if ( (WriteMethod != null) && (WriteMethod.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "WriteMethod=" + WriteMethod );
+    }
+    if ( (ProtectedFlags != null) && (ProtectedFlags.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ProtectedFlags=\"" + ProtectedFlags + "\"" );
+    }
+    if ( (RevisionDateTime != null) && (RevisionDateTime.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RevisionDateTime=\"" + RevisionDateTime + "\"" );
+    }
+    if ( (RevisionUser != null) && (RevisionUser.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RevisionUser=\"" + RevisionUser + "\"" );
+    }
+    if ( (RevisionComment != null) && (RevisionComment.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "RevisionComment=\"" + RevisionComment + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

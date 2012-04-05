@@ -728,7 +728,7 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "NewTSID=\"" + NewTSID + "\"" );
 	}
-   if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }

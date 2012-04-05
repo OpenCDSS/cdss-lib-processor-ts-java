@@ -31,6 +31,7 @@ import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.TimeInterval;
 
 /**
 This class initializes, checks, and runs the WriteDateValue() command.
@@ -67,6 +68,7 @@ throws InvalidCommandParameterException
     String Precision = parameters.getValue ( "Precision" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
+	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -177,8 +179,23 @@ throws InvalidCommandParameterException
 							message, "Specify a valid output end date/time." ) );
 		}
 	}
+
+    if ( (IrregularInterval != null) && !IrregularInterval.equals("") ) {
+        try {
+            TimeInterval.parseInterval ( IrregularInterval );
+        }
+        catch ( Exception e ) {
+            message = "The irregular time series interval is not valid.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(
+                    CommandStatusType.FAILURE, message,
+                    "Specify a standard interval (e.g., 6Hour, Day, Month)."));
+        }
+    }
+
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "OutputFile" );
 	valid_Vector.add ( "Delimiter" );
 	valid_Vector.add ( "Precision" );
@@ -188,6 +205,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
+    valid_Vector.add ( "IrregularInterval" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	if ( warning.length() > 0 ) {
@@ -304,6 +322,14 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String OutputFile = parameters.getValue ( "OutputFile" );
+	String IrregularInterval = parameters.getValue ( "IrregularInterval" );
+    TimeInterval irregularInterval = null;
+    try {
+        irregularInterval = TimeInterval.parseInterval ( IrregularInterval );
+    }
+    catch ( Exception e ) {
+        // Will have been checked previously
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -464,7 +490,7 @@ CommandWarningException, CommandException
     
     // Get the comments to add to the top of the file.
 
-    List OutputComments_Vector = null;
+    List<String> OutputComments_Vector = null;
     try {
         Object o = processor.getPropContents ( "OutputComments" );
         // Comments are available so use them...
@@ -479,6 +505,10 @@ CommandWarningException, CommandException
         Message.printDebug(10, routine, message );
     }
     
+    if ( irregularInterval != null ) {
+        props.setUsingObject("IrregularInterval",irregularInterval);
+    }
+    
     // Write the time series file even if no time series are available.  This is useful for
     // troubleshooting and testing (in cases where no time series are available.
     //if ( (tslist != null) && (tslist.size() > 0) ) {
@@ -486,8 +516,8 @@ CommandWarningException, CommandException
         try {
             // Convert to an absolute path...
             OutputFile_full = IOUtil.verifyPathForOS(
-                    IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
-                            TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
+                IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),
+                    TSCommandProcessorUtil.expandParameterValue(processor,this,OutputFile)));
             Message.printStatus ( 2, routine, "Writing DateValue file \"" + OutputFile_full + "\"" );
             DateValueTS.writeTimeSeriesList ( tslist, OutputFile_full,
 				OutputStart_DateTime, OutputEnd_DateTime, "", true, props );
@@ -534,6 +564,7 @@ public String toString ( PropList parameters )
     String TSList = parameters.getValue ( "TSList" );
     String TSID = parameters.getValue( "TSID" );
     String EnsembleID = parameters.getValue( "EnsembleID" );
+    String IrregularInterval = parameters.getValue( "IrregularInterval" );
 	StringBuffer b = new StringBuffer ();
 	if ( (OutputFile != null) && (OutputFile.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -588,6 +619,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "EnsembleID=\"" + EnsembleID + "\"" );
+    }
+    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "IrregularInterval=" + IrregularInterval );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

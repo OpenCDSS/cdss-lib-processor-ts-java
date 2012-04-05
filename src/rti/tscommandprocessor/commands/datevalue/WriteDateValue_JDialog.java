@@ -24,6 +24,7 @@ import javax.swing.JTextField;
 
 import java.io.File;
 import java.util.List;
+import java.util.Vector;
 
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
@@ -50,18 +51,19 @@ implements ActionListener, KeyListener, ItemListener, WindowListener
 private final String __AddWorkingDirectory = "Add Working Directory";
 private final String __RemoveWorkingDirectory = "Remove Working Directory";
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__browse_JButton = null,// Browse Button
-			__ok_JButton = null,	// Ok Button
-			__path_JButton = null;	// Button to add/remove path
-private WriteDateValue_Command __command = null;// Command to edit
-private String __working_dir = null;	// Working directory.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SimpleJButton __path_JButton = null;
+private WriteDateValue_Command __command = null;
+private String __working_dir = null;
 private JTextArea __command_JTextArea=null;
 private JTextField __OutputFile_JTextField = null;
 private JTextField __Delimiter_JTextField = null;
-private JTextField __Precision_JTextField = null;// Precision for output
+private JTextField __Precision_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
+private SimpleJComboBox __IrregularInterval_JComboBox = null; // Interval used to write irregular time series
 private SimpleJComboBox	__TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -190,6 +192,7 @@ private void checkInput ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String MissingValue = __MissingValue_JTextField.getText().trim();
+    String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 
 	__error_wait = false;
 	
@@ -220,6 +223,9 @@ private void checkInput ()
     if ( MissingValue.length() > 0 ) {
         parameters.set ( "MissingValue", MissingValue );
     }
+    if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+        parameters.set ( "IrregularInterval", IrregularInterval );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( parameters, null, 1 );
@@ -245,6 +251,7 @@ private void commitEdits ()
 	String OutputStart = __OutputStart_JTextField.getText().trim();
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
+	String IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	__command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -254,6 +261,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputStart", OutputStart );
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
+	__command.setCommandParameter ( "IrregularInterval", IrregularInterval );
 }
 
 /**
@@ -315,13 +323,13 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
 
     __TSID_JLabel = new JLabel ("TSID (for TSList=" + TSListType.ALL_MATCHING_TSID.toString() + "):");
     __TSID_JComboBox = new SimpleJComboBox ( true );  // Allow edits
-    List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+    List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addTSIDToEditorDialogPanel ( this, this, main_JPanel, __TSID_JLabel, __TSID_JComboBox, tsids, y );
     
     __EnsembleID_JLabel = new JLabel ("EnsembleID (for TSList=" + TSListType.ENSEMBLE_ID.toString() + "):");
     __EnsembleID_JComboBox = new SimpleJComboBox ( true ); // Allow edits
-    List EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
+    List<String> EnsembleIDs = TSCommandProcessorUtil.getEnsembleIdentifiersFromCommandsBeforeCommand(
         (TSCommandProcessor)__command.getCommandProcessor(), __command );
     y = CommandEditorUtil.addEnsembleIDToEditorDialogPanel (
         this, this, main_JPanel, __EnsembleID_JLabel, __EnsembleID_JComboBox, EnsembleIDs, y );
@@ -384,6 +392,25 @@ private void initialize ( JFrame parent, WriteDateValue_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Optional - override the global output end (default=write all data)."),
 		3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Interval for irregular time series:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __IrregularInterval_JComboBox = new SimpleJComboBox ( false );
+    List<String> intervalChoices = new Vector();
+    intervalChoices.add("");
+    intervalChoices.add("Minute");
+    intervalChoices.add("Hour");
+    intervalChoices.add("Day");
+    intervalChoices.add("Month");
+    intervalChoices.add("Year");
+    __IrregularInterval_JComboBox.setData ( intervalChoices );
+    __IrregularInterval_JComboBox.select(0);
+    __IrregularInterval_JComboBox.addItemListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __IrregularInterval_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Required for irregular time series - used to process date/times."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
     		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -456,7 +483,7 @@ public void keyTyped ( KeyEvent event )
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -476,6 +503,7 @@ private void refresh ()
 	String TSList = "";
     String TSID = "";
     String EnsembleID = "";
+    String IrregularInterval = "";
 	__error_wait = false;
 	PropList parameters = null;
 	if ( __first_time ) {
@@ -491,6 +519,7 @@ private void refresh ()
 		TSList = parameters.getValue ( "TSList" );
         TSID = parameters.getValue ( "TSID" );
         EnsembleID = parameters.getValue ( "EnsembleID" );
+        IrregularInterval = parameters.getValue ( "IrregularInterval" );
 		if ( OutputFile != null ) {
 			__OutputFile_JTextField.setText (OutputFile);
 		}
@@ -554,6 +583,21 @@ private void refresh ()
                 __error_wait = true;
             }
         }
+        if ( JGUIUtil.isSimpleJComboBoxItem( __IrregularInterval_JComboBox, IrregularInterval, JGUIUtil.NONE, null, null ) ) {
+            __IrregularInterval_JComboBox.select ( IrregularInterval );
+        }
+        else {
+            // Automatically add to the list after the blank (might be a multiple)...
+            if ( (IrregularInterval != null) && (IrregularInterval.length() > 0) ) {
+                __IrregularInterval_JComboBox.insertItemAt ( IrregularInterval, 1 );
+                // Select...
+                __IrregularInterval_JComboBox.select ( IrregularInterval );
+            }
+            else {
+                // Select the blank...
+                __IrregularInterval_JComboBox.select ( 0 );
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	OutputFile = __OutputFile_JTextField.getText().trim();
@@ -565,6 +609,7 @@ private void refresh ()
 	TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
+    IrregularInterval = __IrregularInterval_JComboBox.getSelected();
 	parameters = new PropList ( __command.getCommandName() );
 	parameters.add ( "TSList=" + TSList );
     parameters.add ( "TSID=" + TSID );
@@ -575,6 +620,7 @@ private void refresh ()
 	parameters.add ( "MissingValue=" + MissingValue );
 	parameters.add ( "OutputStart=" + OutputStart );
 	parameters.add ( "OutputEnd=" + OutputEnd );
+	parameters.add ( "IrregularInterval=" + IrregularInterval );
 	__command_JTextArea.setText( __command.toString ( parameters ) );
 	if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
 		if ( __path_JButton != null ) {
@@ -595,7 +641,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )

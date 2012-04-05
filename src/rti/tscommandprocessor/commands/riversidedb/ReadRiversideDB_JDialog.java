@@ -71,7 +71,7 @@ private boolean __error_wait = false; // Is there an error to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false; // Was OK pressed when closing the dialog.
 
-private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
+private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
 /**
 Command editor constructor.
@@ -88,7 +88,10 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    Object o = event.getSource();
 
 	if ( o == __cancel_JButton ) {
 		response ( false );
@@ -132,8 +135,7 @@ private void actionPerformedDataStoreSelected ( )
         // Startup initialization
         return;
     }
-    __dataStore = getSelectedDataStore();
-    __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
+    setDMIForSelectedDataStore();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the data store
     populateDataTypeChoices ( __dmi );
@@ -182,14 +184,17 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    // Put together a list of parameters to check...
 	PropList props = new PropList ( "" );
 	__error_wait = false;
     String DataStore = __DataStore_JComboBox.getSelected();
     if ( DataStore.length() > 0 ) {
         props.set ( "DataStore", DataStore );
     }
-    String DataType = __DataType_JComboBox.getSelected();
+    String DataType = getSelectedDataType();
     if ( DataType.length() > 0 ) {
         props.set ( "DataType", DataType );
     }
@@ -237,7 +242,7 @@ already been checked and no errors were detected.
 private void commitEdits ()
 {
     String DataStore = __DataStore_JComboBox.getSelected();
-    String DataType = __DataType_JComboBox.getSelected();
+    String DataType = getSelectedDataType();
     String Interval = __Interval_JComboBox.getSelected();
     __command.setCommandParameter ( "DataStore", DataStore );
     __command.setCommandParameter ( "DataType", DataType );
@@ -276,6 +281,24 @@ Return the RiversideDB_DMI that is currently being used for database interaction
 private RiversideDB_DMI getRiversideDB_DMI ()
 {
     return __dmi;
+}
+
+/**
+Return the selected data type, omitting the trailing " - description".
+*/
+private String getSelectedDataType()
+{
+    if ( __DataType_JComboBox == null ) {
+        return null;
+    }
+    String dataType = __DataType_JComboBox.getSelected();
+    if ( dataType.indexOf(" ") > 0 ) {
+        dataType = StringUtil.getToken(dataType," ",0,0).trim();
+    }
+    else {
+        dataType = dataType.trim();
+    }
+    return dataType;
 }
 
 /**
@@ -336,6 +359,8 @@ private void initialize ( JFrame parent, ReadRiversideDB_Command command )
 		"Specifying the period will limit data that are available " +
 		"for fill commands but can increase performance." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+   	
+    __ignoreEvents = true; // So that a full pass of initialization can occur
    	
     // List available data stores of the correct type
     
@@ -467,11 +492,15 @@ private void initialize ( JFrame parent, ReadRiversideDB_Command command )
 
 	setTitle ( "Edit " + __command.getCommandName() + " Command" );
 
-	// Dialogs do not need to be resizable...
-	setResizable ( true );
+	checkGUIState();
+	refresh();	// Sets the __path_JButton status
+    __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade
+    checkGUIState(); // Do this again because it may not have happened due to the special event handling
+
+    // Dialogs do not need to be resizable...
+    setResizable ( true );
     pack();
     JGUIUtil.center( this );
-	refresh();	// Sets the __path_JButton status
     super.setVisible( true );
 }
 
@@ -479,16 +508,16 @@ private void initialize ( JFrame parent, ReadRiversideDB_Command command )
 Respond to ItemEvents.
 */
 public void itemStateChanged ( ItemEvent event )
-{
-    if ( !__ignoreItemEvents ) {
-        if ( (event.getSource() == __DataStore_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
-            // User has selected a data store.
-            actionPerformedDataStoreSelected ();
-        }
-        else if ( (event.getSource() == __DataType_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
-            // User has selected a data store.
-            actionPerformedDataTypeSelected ();
-        }
+{   if ( __ignoreEvents ) {
+        return; // Startup
+    }
+    if ( (event.getSource() == __DataStore_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
+        // User has selected a data store.
+        actionPerformedDataStoreSelected ();
+    }
+    else if ( (event.getSource() == __DataType_JComboBox) && (event.getStateChange() == ItemEvent.SELECTED) ) {
+        // User has selected a data store.
+        actionPerformedDataTypeSelected ();
     }
     refresh();
 }
@@ -497,14 +526,20 @@ public void itemStateChanged ( ItemEvent event )
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	refresh();
+{	if ( __ignoreEvents ) {
+        return; // Startup
+    }
+    refresh();
 }
 
 /**
 Need this to properly capture key events, especially deletes.
 */
 public void keyReleased ( KeyEvent event )
-{	refresh();	
+{	if ( __ignoreEvents ) {
+        return; // Startup
+    }
+    refresh();	
 }
 
 public void keyTyped ( KeyEvent event )
@@ -575,7 +610,7 @@ Populate the interval choices.
 */
 private void populateIntervalChoices ( RiversideDB_DMI dmi )
 {   String routine = getClass().getName() + ".populateIntervalChoices";
-    String dataType = StringUtil.getToken(__DataType_JComboBox.getSelected()," ",0,0).trim();
+    String dataType = getSelectedDataType();
     List<RiversideDB_MeasType> v = null;
     try {
         v = dmi.readMeasTypeListForTSIdent ( ".." + dataType + ".." );
@@ -647,12 +682,22 @@ private void refresh ()
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
             __DataStore_JComboBox.select ( DataStore ); // This will trigger getting the DMI for use in the editor
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the data store and DMI are actually selected
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                setDMIForSelectedDataStore();
+            }
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
                 // New command...select the default...
                 __DataStore_JComboBox.select ( null ); // To ensure that following causes an event
                 __DataStore_JComboBox.select ( 0 );
+                if ( __ignoreEvents ) {
+                    // Also need to make sure that the data store and DMI are actually selected
+                    // Call manually because events are disabled at startup to allow cascade to work properly
+                    setDMIForSelectedDataStore();
+                }
             }
             else {
                 // Bad user command...
@@ -662,19 +707,29 @@ private void refresh ()
         }
         // First populate the data type choices...
         populateDataTypeChoices(getRiversideDB_DMI() );
-        // Now select what the command had previously (if specified)...
-        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null ) ) {
+        // Then set to the initial value.
+        int [] dataTypeIndex = new int[1];
+        if ( JGUIUtil.isSimpleJComboBoxItem(__DataType_JComboBox, DataType, JGUIUtil.NONE, null, null) ) {
+            // Exact match
             __DataType_JComboBox.select ( DataType );
+        }
+        else if ( JGUIUtil.isSimpleJComboBoxItem( __DataType_JComboBox,
+            DataType, JGUIUtil.CHECK_SUBSTRINGS, " ", 0, dataTypeIndex, true) ) {
+            // DataType will be like "QIN" but choice will be like "QIN - Description" so select based on the
+            // first token
+            __DataType_JComboBox.select ( dataTypeIndex[0] );
         }
         else {
             if ( (DataType == null) || DataType.equals("") ) {
                 // New command...select the default...
-                __DataType_JComboBox.select ( 0 );
+                if ( __DataType_JComboBox.getItemCount() > 0 ) {
+                    __DataType_JComboBox.select ( 0 );
+                }
             }
             else {
                 // Bad user command...
-                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "DataType parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                Message.printWarning ( 1, routine, "Existing command references an invalid "+
+                    "DataType parameter \"" + DataType + "\".  Select a different value or Cancel." );
             }
         }
         // First populate the interval choices...
@@ -691,7 +746,7 @@ private void refresh ()
             else {
                 // Bad user command...
                 Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
-                  "Interval parameter \"" + DataStore + "\".  Select a\ndifferent value or Cancel." );
+                  "Interval parameter \"" + Interval + "\".  Select a\ndifferent value or Cancel." );
             }
         }
         InputFilter_JPanel filter_panel = __inputFilter_JPanel;
@@ -731,10 +786,7 @@ private void refresh ()
     if ( DataStore == null ) {
         DataStore = "";
     }
-    DataType = __DataType_JComboBox.getSelected();
-    if ( DataType == null ) {
-        DataType = "";
-    }
+    DataType = getSelectedDataType();
     Interval = __Interval_JComboBox.getSelected();
     if ( Interval == null ) {
         Interval = "";
@@ -788,6 +840,14 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
+}
+
+/**
+Set the internal data based on the selected data store.
+*/
+private void setDMIForSelectedDataStore()
+{   __dataStore = getSelectedDataStore();
+    __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
 }
 
 /**

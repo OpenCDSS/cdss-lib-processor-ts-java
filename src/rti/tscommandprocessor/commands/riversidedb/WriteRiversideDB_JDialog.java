@@ -92,7 +92,7 @@ private RiversideDB_DMI __dmi = null; // RiversideDB_DMI to do queries.
 private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog?
-private boolean __ignoreEvents = false; // Used to ignore cascading events when working with choices
+private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
 private JTabbedPane __tsInfo_JTabbedPane = null;
 
@@ -169,8 +169,7 @@ private void actionPerformedDataStoreSelected ( )
         //Message.printStatus(2, "", "Selected null data store...initialization" );
         return;
     }
-    __dataStore = getSelectedDataStore();
-    __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
+    setDMIForSelectedDataStore();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the data store
     populateDataTypeChoices ( __dmi );
@@ -482,7 +481,7 @@ private RiversideDBDataStore getSelectedDataStore ()
 }
 
 /**
-Return the selected data type, omitting the description.
+Return the selected data type, omitting the trailing " - description".
 */
 private String getSelectedDataType()
 {
@@ -916,7 +915,7 @@ Handle ItemEvent events.
 public void itemStateChanged (ItemEvent e)
 {   
     if ( __ignoreEvents ) {
-        return;
+        return; // Startup
     }
     checkGUIState();
     Object source = e.getSource();
@@ -1455,7 +1454,7 @@ private void refresh ()
             if ( __ignoreEvents ) {
                 // Also need to make sure that the data store and DMI are actually selected
                 // Call manually because events are disabled at startup to allow cascade to work properly
-                actionPerformedDataStoreSelected();
+                setDMIForSelectedDataStore();
             }
         }
         else {
@@ -1466,7 +1465,7 @@ private void refresh ()
                     if ( __ignoreEvents ) {
                         // Also need to make sure that the data store and DMI are actually selected
                         // Call manually because events are disabled at startup to allow cascade to work properly
-                        actionPerformedDataStoreSelected();
+                        setDMIForSelectedDataStore();
                     }
                 }
             }
@@ -1742,8 +1741,6 @@ private void refresh ()
     TSList = __TSList_JComboBox.getSelected();
     TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
-    // FIXME SAM 2011-10-03 Might be able to remove check for null if events and list population are
-    // implemented correctly
     DataType = getSelectedDataType();
     DataSubType = __DataSubType_JComboBox.getSelected();
     if ( DataSubType == null ) {
@@ -1821,6 +1818,14 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
+}
+
+/**
+Set the internal data based on the selected data store.
+*/
+private void setDMIForSelectedDataStore()
+{   __dataStore = getSelectedDataStore();
+    __dmi = (RiversideDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
 }
 
 /**

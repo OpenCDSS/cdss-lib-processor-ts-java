@@ -29,6 +29,7 @@ import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.InvalidTimeIntervalException;
 import RTi.Util.Time.TimeInterval;
@@ -70,6 +71,7 @@ throws InvalidCommandParameterException
     //String DataSubType = parameters.getValue ( "DataSubType" );
     String Interval = parameters.getValue ( "Interval" );
     //String Scenario = parameters.getValue ( "Scenario" );
+    String SequenceNumber = parameters.getValue ( "SequenceNumber" );
     String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -129,7 +131,14 @@ throws InvalidCommandParameterException
     }
     
     // Scenario OK to be blank
-    // SequenceNumber OK to be blank
+    
+    if ( (SequenceNumber != null) && !SequenceNumber.equals("") && !StringUtil.isInteger(SequenceNumber)) {
+        message = "The sequence number (" + SequenceNumber + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the sequence number as an integer." ) );
+    }
     
     if ( (WriteDataFlags != null) && !WriteDataFlags.equals("") ) {
         if ( !WriteDataFlags.equalsIgnoreCase(_False) && !WriteDataFlags.equalsIgnoreCase(_True) ) {
@@ -279,6 +288,10 @@ CommandWarningException, CommandException
     }
     String Scenario = parameters.getValue ( "Scenario" );
     String SequenceNumber = parameters.getValue ( "SequenceNumber" );
+    Integer sequenceNumber = null;
+    if ( (SequenceNumber != null) && StringUtil.isInteger(SequenceNumber)) {
+        sequenceNumber = Integer.parseInt(SequenceNumber);
+    }
     String WriteDataFlags = parameters.getValue ( "WriteDataFlags" );
     boolean writeDataFlags = true;
     if ( (WriteDataFlags != null) && WriteDataFlags.equalsIgnoreCase(_False) ) {
@@ -468,7 +481,7 @@ CommandWarningException, CommandException
                     ts = (TS)tslist.get(0);
                 }
                 dmi.writeTimeSeries ( ts, LocationID, DataSource, DataType, DataSubType, interval,
-                    Scenario, SequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime, writeMethod,
+                    Scenario, sequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime, writeMethod,
                     ProtectedFlags );
             }
         }
@@ -512,6 +525,7 @@ public String toString ( PropList parameters )
     String DataSource = parameters.getValue( "DataSource" );
     String Interval = parameters.getValue( "Interval" );
     String Scenario = parameters.getValue( "Scenario" );
+    String SequenceNumber = parameters.getValue( "SequenceNumber" );
     String WriteDataFlags = parameters.getValue( "WriteDataFlags" );
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
@@ -580,6 +594,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "Scenario=\"" + Scenario + "\"" );
+    }
+    if ( (SequenceNumber != null) && (SequenceNumber.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SequenceNumber=\"" + SequenceNumber + "\"" );
     }
     if ( (WriteDataFlags != null) && (WriteDataFlags.length() > 0) ) {
         if ( b.length() > 0 ) {

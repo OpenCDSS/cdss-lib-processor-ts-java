@@ -27,6 +27,7 @@ import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
+import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.InvalidCommandParameterException;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
@@ -76,6 +77,7 @@ throws InvalidCommandParameterException
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String WriteMethod = parameters.getValue ( "WriteMethod" );
+	String RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
 	String message;
@@ -206,6 +208,24 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (RevisionDateTime != null) && !RevisionDateTime.equals("") ) {
+        if ( RevisionDateTime.indexOf("${") >= 0 ) {
+            // Assigned using a property so wait until runtime to determine value
+        }
+        else {
+            try {
+                DateTime.parse ( RevisionDateTime, null );
+            }
+            catch ( Exception e ) {
+                message = "The revision date/time \"" + RevisionDateTime + "\" is invalid.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify a valid date/time (or blank) for the revision date/time." ) );
+            }
+        }
+    }
+    
 	// Check for invalid parameters...
 	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "DataStore" );
@@ -303,6 +323,47 @@ CommandWarningException, CommandException
         writeMethod = null; // Default
     }
     String ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
+    String RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
+    DateTime revisionDateTime = null;
+    if ( RevisionDateTime == null ) {
+        // Get the revision date/time from the current time
+        revisionDateTime = new DateTime ( DateTime.DATE_CURRENT );
+    }
+    else {
+        if ( RevisionDateTime.indexOf("${") >= 0 ) {
+            // First expand to a string
+            RevisionDateTime = TSCommandProcessorUtil.expandParameterValue(processor,this,RevisionDateTime);
+        }
+        // Then try to convert to a date/time
+        try {
+            // The following call will recognize special values like CurrentToDay
+            revisionDateTime = DateTime.parse(RevisionDateTime,null);
+        }
+        catch ( Exception e ) {
+            message="Revision date/time \"" + RevisionDateTime + "\" is invalid.";
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(
+                command_tag,++warning_count), routine, message );
+            status.addToLog ( CommandPhaseType.RUN,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Verify that the date/time is correctly specified." ) );
+        }
+    }
+    String RevisionUser = parameters.getValue ( "RevisionUser" );
+    String revisionUser = "Unknown";
+    if ( RevisionUser == null ) {
+        // Get the user from the computer
+        revisionUser = IOUtil.getProgramUser();
+    }
+    else {
+        revisionUser = TSCommandProcessorUtil.expandParameterValue(processor,this,RevisionUser);
+    }
+    String RevisionComment = parameters.getValue ( "RevisionComment" );
+    String revisionComment = "";
+    if ( RevisionComment != null ) {
+        // Allow expansion of properties
+        revisionComment = TSCommandProcessorUtil.expandParameterValue(processor,this,RevisionComment);
+    }
 
 	// Get the time series to process...
 	PropList request_params = new PropList ( "" );
@@ -482,7 +543,7 @@ CommandWarningException, CommandException
                 }
                 dmi.writeTimeSeries ( ts, LocationID, DataSource, DataType, DataSubType, interval,
                     Scenario, sequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime, writeMethod,
-                    ProtectedFlags );
+                    ProtectedFlags, revisionDateTime, revisionUser, revisionComment );
             }
         }
         else {

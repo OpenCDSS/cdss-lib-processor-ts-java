@@ -84,6 +84,7 @@ private JTextField __OutputStart_JTextField = null;
 private JTextField __OutputEnd_JTextField = null;
 private SimpleJComboBox __WriteMethod_JComboBox = null;
 private JTextField __ProtectedFlags_JTextField = null;
+private JTextField __ComparePrecision_JTextField = null;
 private JTextField __RevisionDateTime_JTextField = null;
 private JTextField __RevisionUser_JTextField = null;
 private JTextField __RevisionComment_JTextField = null;
@@ -320,6 +321,7 @@ private void checkInput ()
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
 	String WriteMethod = __WriteMethod_JComboBox.getSelected();
 	String ProtectedFlags = __ProtectedFlags_JTextField.getText().trim();
+	String ComparePrecision = __ComparePrecision_JTextField.getText().trim();
 	String RevisionDateTime = __RevisionDateTime_JTextField.getText().trim();
 	String RevisionUser = __RevisionUser_JTextField.getText().trim();
 	String RevisionComment = __RevisionComment_JTextField.getText().trim();
@@ -374,6 +376,9 @@ private void checkInput ()
     if ( ProtectedFlags.length() > 0 ) {
         parameters.set ( "ProtectedFlags", ProtectedFlags );
     }
+    if ( ComparePrecision.length() > 0 ) {
+        parameters.set ( "ComparePrecision", ComparePrecision );
+    }
     if ( RevisionDateTime.length() > 0 ) {
         parameters.set ( "RevisionDateTime", RevisionDateTime );
     }
@@ -415,6 +420,7 @@ private void commitEdits ()
 	String OutputEnd = __OutputEnd_JTextField.getText().trim();
     String WriteMethod = __WriteMethod_JComboBox.getSelected();
     String ProtectedFlags = __ProtectedFlags_JTextField.getText().trim();
+    String ComparePrecision = __ComparePrecision_JTextField.getText().trim();
     String RevisionDateTime = __RevisionDateTime_JTextField.getText().trim();
     String RevisionUser = __RevisionUser_JTextField.getText().trim();
     String RevisionComment = __RevisionComment_JTextField.getText().trim();
@@ -434,6 +440,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "OutputEnd", OutputEnd );
 	__command.setCommandParameter ( "WriteMethod", WriteMethod );
 	__command.setCommandParameter ( "ProtectedFlags", ProtectedFlags );
+	__command.setCommandParameter ( "ComparePrecision", ComparePrecision );
 	__command.setCommandParameter ( "RevisionDateTime", RevisionDateTime );
 	__command.setCommandParameter ( "RevisionUser", RevisionUser );
 	__command.setCommandParameter ( "RevisionComment", RevisionComment );
@@ -841,6 +848,16 @@ private void initialize ( JFrame parent, WriteRiversideDB_Command command )
         1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - database flag(s) that indicate values protected from overwrite."),
+        3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision when comparing:"), 
+        0, ++yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ComparePrecision_JTextField = new JTextField (10);
+    __ComparePrecision_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ComparePrecision_JTextField,
+        1, yMain, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - precision when comparing values for revision tracking (default=4)."),
         3, yMain, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Revision date/time:"), 
@@ -1419,6 +1436,7 @@ private void refresh ()
 	String OutputEnd = "";
 	String WriteMethod = "";
 	String ProtectedFlags = "";
+	String ComparePrecision = "";
 	String RevisionDateTime = "";
 	String RevisionUser = "";
 	String RevisionComment = "";
@@ -1445,6 +1463,7 @@ private void refresh ()
 		OutputEnd = parameters.getValue ( "OutputEnd" );
 		WriteMethod = parameters.getValue ( "WriteMethod" );
         ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
+        ComparePrecision = parameters.getValue ( "ComparePrecision" );
         RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
         RevisionUser = parameters.getValue ( "RevisionUser" );
         RevisionComment = parameters.getValue ( "RevisionComment" );
@@ -1719,6 +1738,9 @@ private void refresh ()
         if ( ProtectedFlags != null ) {
             __ProtectedFlags_JTextField.setText (ProtectedFlags);
         }
+        if ( ComparePrecision != null ) {
+            __ComparePrecision_JTextField.setText (ComparePrecision);
+        }
         if ( RevisionDateTime != null ) {
             __RevisionDateTime_JTextField.setText (RevisionDateTime);
         }
@@ -1774,6 +1796,7 @@ private void refresh ()
 	OutputEnd = __OutputEnd_JTextField.getText().trim();
 	WriteMethod = __WriteMethod_JComboBox.getSelected();
 	ProtectedFlags = __ProtectedFlags_JTextField.getText().trim();
+	ComparePrecision = __ComparePrecision_JTextField.getText().trim();
 	RevisionDateTime = __RevisionDateTime_JTextField.getText().trim();
 	RevisionUser = __RevisionUser_JTextField.getText().trim();
 	RevisionComment = __RevisionComment_JTextField.getText().trim();
@@ -1794,6 +1817,7 @@ private void refresh ()
 	parameters.add ( "OutputEnd=" + OutputEnd );
     parameters.add ( "WriteMethod=" + WriteMethod );
     parameters.add ( "ProtectedFlags=" + ProtectedFlags );
+    parameters.add ( "ComparePrecision=" + ComparePrecision );
     parameters.add ( "RevisionDateTime=" + RevisionDateTime );
     parameters.add ( "RevisionUser=" + RevisionUser );
     parameters.add ( "RevisionComment=" + RevisionComment );

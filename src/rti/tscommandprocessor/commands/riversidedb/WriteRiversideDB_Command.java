@@ -77,6 +77,7 @@ throws InvalidCommandParameterException
 	String OutputStart = parameters.getValue ( "OutputStart" );
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
 	String WriteMethod = parameters.getValue ( "WriteMethod" );
+	String ComparePrecision = parameters.getValue ( "ComparePrecision" );
 	String RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
 	String warning = "";
 	String routine = getCommandName() + ".checkCommandParameters";
@@ -208,6 +209,14 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (ComparePrecision != null) && !ComparePrecision.equals("") && !StringUtil.isInteger(ComparePrecision)) {
+        message = "The compare precision (" + ComparePrecision + ") is invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify the compare precision as an integer or blank for default.") );
+    }
+    
     if ( (RevisionDateTime != null) && !RevisionDateTime.equals("") ) {
         if ( RevisionDateTime.indexOf("${") >= 0 ) {
             // Assigned using a property so wait until runtime to determine value
@@ -244,6 +253,7 @@ throws InvalidCommandParameterException
 	valid_Vector.add ( "OutputEnd" );
 	valid_Vector.add ( "WriteMethod" );
 	valid_Vector.add ( "ProtectedFlags" );
+	valid_Vector.add ( "ComparePrecision" );
 	valid_Vector.add ( "RevisionDateTime" );
 	valid_Vector.add ( "RevisionUser" );
 	valid_Vector.add ( "RevisionComment" );
@@ -323,6 +333,11 @@ CommandWarningException, CommandException
         writeMethod = null; // Default
     }
     String ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
+    String ComparePrecision = parameters.getValue ( "ComparePrecision" );
+    Integer comparePrecision = null; // Default
+    if ( (ComparePrecision != null) && StringUtil.isInteger(ComparePrecision) ) {
+        comparePrecision = Integer.parseInt(ComparePrecision);
+    }
     String RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
     DateTime revisionDateTime = null;
     if ( RevisionDateTime == null ) {
@@ -543,7 +558,7 @@ CommandWarningException, CommandException
                 }
                 dmi.writeTimeSeries ( ts, LocationID, DataSource, DataType, DataSubType, interval,
                     Scenario, sequenceNumber, writeDataFlags, OutputStart_DateTime, OutputEnd_DateTime, writeMethod,
-                    ProtectedFlags, revisionDateTime, revisionUser, revisionComment );
+                    ProtectedFlags, comparePrecision, revisionDateTime, revisionUser, revisionComment );
             }
         }
         else {
@@ -592,6 +607,7 @@ public String toString ( PropList parameters )
 	String OutputEnd = parameters.getValue ( "OutputEnd" );
     String WriteMethod = parameters.getValue ( "WriteMethod" );
     String ProtectedFlags = parameters.getValue ( "ProtectedFlags" );
+    String ComparePrecision = parameters.getValue ( "ComparePrecision" );
     String RevisionDateTime = parameters.getValue ( "RevisionDateTime" );
     String RevisionUser = parameters.getValue ( "RevisionUser" );
     String RevisionComment = parameters.getValue ( "RevisionComment" );
@@ -691,6 +707,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "ProtectedFlags=\"" + ProtectedFlags + "\"" );
+    }
+    if ( (ComparePrecision != null) && (ComparePrecision.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ComparePrecision=" + ComparePrecision );
     }
     if ( (RevisionDateTime != null) && (RevisionDateTime.length() > 0) ) {
         if ( b.length() > 0 ) {

@@ -82,7 +82,7 @@ private boolean __error_wait = false; // Is there an error to be cleared up?
 private boolean __first_time = true;
 private boolean __ok = false; // Has user pressed OK to close the dialog?
 
-private boolean __ignoreItemEvents = false; // Used to ignore cascading events when working with choices
+private boolean __ignoreEvents = false; // Used to ignore cascading events when initializing the components
 
 private ReclamationHDBDataStore __dataStore = null; // selected ReclamationHDBDataStore
 private ReclamationHDB_DMI __dmi = null; // ReclamationHDB_DMI to do queries.
@@ -106,8 +106,10 @@ Responds to ActionEvents.
 @param event ActionEvent object
 */
 public void actionPerformed( ActionEvent event )
-{	Object o = event.getSource();
-
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    Object o = event.getSource();
 	if ( o == __cancel_JButton ) {
 		response ( false );
 	}
@@ -129,8 +131,7 @@ private void actionPerformedDataStoreSelected ( )
         // Startup initialization
         return;
     }
-    __dataStore = getSelectedDataStore();
-    __dmi = (ReclamationHDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
+    setDMIForSelectedDataStore();
     //Message.printStatus(2, "", "Selected data store " + __dataStore + " __dmi=" + __dmi );
     // Now populate the data type choices corresponding to the data store
     populateSiteCommonNameChoices ( __dmi );
@@ -262,7 +263,11 @@ Check the input.  If errors exist, warn the user and set the __error_wait flag
 to true.  This should be called before response() is allowed to complete.
 */
 private void checkInput ()
-{	// Put together a list of parameters to check...
+{	if ( __ignoreEvents ) {
+        // Startup
+        return;
+    }
+    // Put together a list of parameters to check...
 	PropList parameters = new PropList ( "" );
     String DataStore = __DataStore_JComboBox.getSelected();
     String TSList = __TSList_JComboBox.getSelected();
@@ -468,6 +473,8 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 		"precision appropriate for output time series."),
 		0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    __ignoreEvents = true; // So that a full pass of initialization can occur
+    
     // List available data stores of the correct type
     // Other lists are NOT populated until a data store is selected (driven by events)
     
@@ -538,12 +545,18 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __selectedSiteID_JLabel = new JLabel ( "");
     JGUIUtil.addComponent(siteDataType_JPanel, __selectedSiteID_JLabel,
         1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Matching site_datatype_id:"), 
         0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __selectedSiteDataTypeID_JLabel = new JLabel ( "");
     JGUIUtil.addComponent(siteDataType_JPanel, __selectedSiteDataTypeID_JLabel,
         1, ySiteDataType, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(siteDataType_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, ySiteDataType, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(siteDataType_JPanel, new JLabel ("Site data type ID:"), 
         0, ++ySiteDataType, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -610,12 +623,18 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
     __selectedModelID_JLabel = new JLabel ( "");
     JGUIUtil.addComponent(model_JPanel, __selectedModelID_JLabel,
         1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(model_JPanel, new JLabel ("Selected model_run_id:"), 
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __selectedModelRunID_JLabel = new JLabel ( "");
     JGUIUtil.addComponent(model_JPanel, __selectedModelRunID_JLabel,
         1, yModel, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(model_JPanel, new JLabel (
+        "Information - useful when comparing to database contents."),
+        3, yModel, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(model_JPanel, new JLabel ("Model run ID:"), 
         0, ++yModel, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -697,6 +716,10 @@ private void initialize ( JFrame parent, WriteReclamationHDB_Command command )
 	// Refresh the contents...
     checkGUIState();
     refresh ();
+    __ignoreEvents = false; // After initialization of components let events happen to dynamically cause cascade
+    checkGUIState(); // Do this again because it may not have happened due to the special event handling
+    updateSiteIDTextFields();
+    updateModelIDTextFields();
     
 	setResizable ( false ); // TODO SAM 2010-12-10 Resizing causes some problems
     pack();
@@ -709,39 +732,40 @@ Handle ItemEvent events.
 @param e ItemEvent to handle.
 */
 public void itemStateChanged (ItemEvent e)
-{   checkGUIState();
+{   if ( __ignoreEvents ) {
+        return; // Startup
+    }
 
+    checkGUIState();
     Object source = e.getSource();
     int sc = e.getStateChange();
-    if ( !__ignoreItemEvents ) {
-        if ( (source == __DataStore_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a data store.
-            actionPerformedDataStoreSelected ();
-        }
-        else if ( (source == __SiteCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a site common name.
-            actionPerformedSiteCommonNameSelected ();
-        }
-        else if ( (source == __DataTypeCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a data type common name.
-            actionPerformedDataTypeCommonNameSelected ();
-        }
-        else if ( (source == __ModelName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a model name.
-            actionPerformedModelNameSelected ();
-        }
-        else if ( (source == __ModelRunName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a model run name.
-            actionPerformedModelRunNameSelected ();
-        }
-        else if ( (source == __ModelRunDate_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a model run date.
-            actionPerformedModelRunDateSelected ();
-        }
-        else if ( (source == __HydrologicIndicator_JComboBox) && (sc == ItemEvent.SELECTED) ) {
-            // User has selected a model name.
-            actionPerformedHydrologicIndicatorSelected ();
-        }
+    if ( (source == __DataStore_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a data store.
+        actionPerformedDataStoreSelected ();
+    }
+    else if ( (source == __SiteCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a site common name.
+        actionPerformedSiteCommonNameSelected ();
+    }
+    else if ( (source == __DataTypeCommonName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a data type common name.
+        actionPerformedDataTypeCommonNameSelected ();
+    }
+    else if ( (source == __ModelName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a model name.
+        actionPerformedModelNameSelected ();
+    }
+    else if ( (source == __ModelRunName_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a model run name.
+        actionPerformedModelRunNameSelected ();
+    }
+    else if ( (source == __ModelRunDate_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a model run date.
+        actionPerformedModelRunDateSelected ();
+    }
+    else if ( (source == __HydrologicIndicator_JComboBox) && (sc == ItemEvent.SELECTED) ) {
+        // User has selected a model name.
+        actionPerformedHydrologicIndicatorSelected ();
     }
  
     refresh();
@@ -751,8 +775,10 @@ public void itemStateChanged (ItemEvent e)
 Respond to KeyEvents.
 */
 public void keyPressed ( KeyEvent event )
-{	int code = event.getKeyCode();
-
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    int code = event.getKeyCode();
 	if ( code == KeyEvent.VK_ENTER ) {
 		refresh ();
 		checkInput();
@@ -763,7 +789,10 @@ public void keyPressed ( KeyEvent event )
 }
 
 public void keyReleased ( KeyEvent event )
-{	refresh();
+{	if ( __ignoreEvents ) {
+        return; // Startup.
+    }
+    refresh();
 }
 
 public void keyTyped ( KeyEvent event )
@@ -862,9 +891,8 @@ private void populateModelNameChoices ( ReclamationHDB_DMI rdmi )
     List<String> modelNameStrings = new Vector();
     modelNameStrings.add ( "" ); // Always add blank because user may not want model time series
     try {
-        List<ReclamationHDB_Model> modelList = rdmi.readHdbModelList();
-        setModelList(modelList);
-        for ( ReclamationHDB_Model model: modelList ) {
+        readModelList(rdmi);
+        for ( ReclamationHDB_Model model: __modelList ) {
             modelNameStrings.add ( model.getModelName() );
         }
         Collections.sort(modelNameStrings,String.CASE_INSENSITIVE_ORDER);
@@ -961,39 +989,19 @@ private void populateModelRunIDChoices ( ReclamationHDB_DMI rdmi )
 Populate the model run name list based on the selected data store.
 */
 private void populateModelRunNameChoices ( ReclamationHDB_DMI rdmi )
-{   String routine = getClass().getName() + ".populateModelRunNameChoices";
+{   //String routine = getClass().getName() + ".populateModelRunNameChoices";
     if ( (rdmi == null) || (__ModelRunName_JComboBox == null) ) {
         // Initialization
         return;
     }
-    String selectedModelName = __ModelName_JComboBox.getSelected();
-    List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
+    readModelRunListForSelectedModel(rdmi);
     List<String> modelRunNameStrings = new Vector();
-    modelRunNameStrings.add ( "" ); // Always add blank because user may not want model time series
-    if ( modelList.size() == 1 ) {
-        ReclamationHDB_Model model = modelList.get(0);
-        int modelID = model.getModelID();
-        Message.printStatus ( 2, routine, "Model ID=" + modelID + " for model name \"" + selectedModelName + "\"" );
-        try {
-            // There may be no run names for the model id.
-            List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID( modelID );
-            // The following list matches the model_id and can be used for further filtering
-            setModelRunList(modelRunList);
-            for ( ReclamationHDB_ModelRun modelRun: modelRunList ) {
-                modelRunNameStrings.add ( modelRun.getModelRunName() );
-            }
-            Collections.sort(modelRunNameStrings,String.CASE_INSENSITIVE_ORDER);
-            StringUtil.removeDuplicates(modelRunNameStrings, true, true);
-        }
-        catch ( Exception e ) {
-            Message.printWarning(3, routine, "Error getting HDB model run list (" + e + ")." );
-            modelRunNameStrings = new Vector();
-        }
+    modelRunNameStrings.add ( "" );
+    for ( ReclamationHDB_ModelRun modelRun: __modelRunList ) {
+        modelRunNameStrings.add ( modelRun.getModelRunName() );
     }
-    else {
-        Message.printStatus ( 2, routine, "Have " + modelList.size() + " models matching name \"" +
-            selectedModelName + "\" - unable to find matching model runs." );
-    }
+    Collections.sort(modelRunNameStrings,String.CASE_INSENSITIVE_ORDER);
+    StringUtil.removeDuplicates(modelRunNameStrings, true, true);
     __ModelRunName_JComboBox.removeAll ();
     __ModelRunName_JComboBox.setData(modelRunNameStrings);
     // Select first choice (may get reset from existing parameter values).
@@ -1014,9 +1022,8 @@ private void populateSiteCommonNameChoices ( ReclamationHDB_DMI rdmi )
     }
     List<String> siteCommonNameStrings = new Vector();
     try {
-        List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
-        setSiteDataTypeList(siteDataTypeList);
-        for ( ReclamationHDB_SiteDataType siteDataType: siteDataTypeList ) {
+        readSiteDataTypeList(rdmi);
+        for ( ReclamationHDB_SiteDataType siteDataType: __siteDataTypeList ) {
             siteCommonNameStrings.add ( siteDataType.getSiteCommonName() );
         }
         Collections.sort(siteCommonNameStrings,String.CASE_INSENSITIVE_ORDER);
@@ -1105,6 +1112,67 @@ private void populateValidationFlagChoices ( ReclamationHDB_DMI rdmi )
 }
 
 /**
+Read the model list and set for use in the editor.
+*/
+private void readModelList ( ReclamationHDB_DMI rdmi )
+throws Exception
+{
+    try {
+        List<ReclamationHDB_Model> modelList = rdmi.readHdbModelList();
+        setModelList(modelList);
+    }
+    catch ( Exception e ) {
+        setModelList(new Vector());
+        throw e;
+    }
+}
+
+/**
+Read the model run list for the selected model.
+*/
+private void readModelRunListForSelectedModel ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getName() + ".readModelRunList";
+    String selectedModelName = __ModelName_JComboBox.getSelected();
+    List<ReclamationHDB_Model> modelList = rdmi.findModel(__modelList, selectedModelName);
+    List<String> modelRunNameStrings = new Vector();
+    modelRunNameStrings.add ( "" ); // Always add blank because user may not want model time series
+    if ( modelList.size() == 1 ) {
+        ReclamationHDB_Model model = modelList.get(0);
+        int modelID = model.getModelID();
+        Message.printStatus ( 2, routine, "Model ID=" + modelID + " for model name \"" + selectedModelName + "\"" );
+        try {
+            // There may be no run names for the model id.
+            List<ReclamationHDB_ModelRun> modelRunList = rdmi.readHdbModelRunListForModelID( modelID );
+            // The following list matches the model_id and can be used for further filtering
+            setModelRunList(modelRunList);
+        }
+        catch ( Exception e ) {
+            Message.printWarning(3, routine, "Error getting HDB model run list (" + e + ")." );
+            setModelRunList(new Vector());
+        }
+    }
+    else {
+        Message.printStatus ( 2, routine, "Have " + modelList.size() + " models matching name \"" +
+            selectedModelName + "\" - unable to find matching model runs." );
+    }
+}
+
+/**
+Read the site_datatype list and set for use in the editor.
+*/
+private void readSiteDataTypeList ( ReclamationHDB_DMI rdmi )
+{   String routine = getClass().getName() + ".readSiteDataTypeIdList";
+    try {
+        List<ReclamationHDB_SiteDataType> siteDataTypeList = rdmi.readHdbSiteDataTypeList();
+        setSiteDataTypeList(siteDataTypeList);
+    }
+    catch ( Exception e ) {
+        Message.printWarning(3, routine, "Error getting HDB site data type list (" + e + ")." );
+        setSiteDataTypeList(new Vector());
+    }
+}
+
+/**
 Refresh the command from the other text field contents.
 */
 private void refresh ()
@@ -1149,12 +1217,52 @@ private void refresh ()
 		OutputEnd = parameters.getValue ( "OutputEnd" );
         if ( JGUIUtil.isSimpleJComboBoxItem(__DataStore_JComboBox, DataStore, JGUIUtil.NONE, null, null ) ) {
             __DataStore_JComboBox.select ( DataStore );
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the data store and DMI are actually selected
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                setDMIForSelectedDataStore();
+            }
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __siteDataTypeList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                readSiteDataTypeList(__dmi);
+            }
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __modelList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                try {
+                    readModelList(__dmi);
+                }
+                catch ( Exception e ) {
+                    // The above call will set the list to empty.
+                }
+            }
         }
         else {
             if ( (DataStore == null) || DataStore.equals("") ) {
                 // New command...select the default...
                 if ( __DataStore_JComboBox.getItemCount() > 0 ) {
                     __DataStore_JComboBox.select ( 0 );
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the data store and DMI are actually selected
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        setDMIForSelectedDataStore();
+                    }
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the __siteDataTypeList is populated
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        readSiteDataTypeList(__dmi);
+                    }
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the __modelList is populated
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        try {
+                            readModelList(__dmi);
+                        }
+                        catch ( Exception e ) {
+                            // The above call will set the list to empty.
+                        }
+                    }
                 }
             }
             else {
@@ -1266,12 +1374,22 @@ private void refresh ()
         populateModelNameChoices(getReclamationHDB_DMI() );
         if ( JGUIUtil.isSimpleJComboBoxItem(__ModelName_JComboBox, ModelName, JGUIUtil.NONE, null, null ) ) {
             __ModelName_JComboBox.select ( ModelName );
+            if ( __ignoreEvents ) {
+                // Also need to make sure that the __modelRunList is populated
+                // Call manually because events are disabled at startup to allow cascade to work properly
+                readModelRunListForSelectedModel(__dmi);
+            }
         }
         else {
             if ( (ModelName == null) || ModelName.equals("") ) {
                 // New command...select the default...
                 if ( __ModelName_JComboBox.getItemCount() > 0 ) {
                     __ModelName_JComboBox.select ( 0 );
+                    if ( __ignoreEvents ) {
+                        // Also need to make sure that the __modelRunList is populated
+                        // Call manually because events are disabled at startup to allow cascade to work properly
+                        readModelRunListForSelectedModel(__dmi);
+                    }
                 }
             }
             else {
@@ -1470,6 +1588,14 @@ private void response ( boolean ok )
 	// Now close out...
 	setVisible( false );
 	dispose();
+}
+
+/**
+Set the internal data based on the selected data store.
+*/
+private void setDMIForSelectedDataStore()
+{   __dataStore = getSelectedDataStore();
+    __dmi = (ReclamationHDB_DMI)((DatabaseDataStore)__dataStore).getDMI();
 }
 
 /**

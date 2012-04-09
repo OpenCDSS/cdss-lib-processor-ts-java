@@ -136,7 +136,13 @@ throws InvalidCommandParameterException
     */
     
     if ( (ModelRunDate != null) && !ModelRunDate.equals("") ) {
-        try {
+        // If the date/time has a trailing .0, remove because the parse code does not handle the hundredths
+        // TODO SAM 2012-04-09 Decide if hundredths should be in parameter value
+        int pos = ModelRunDate.indexOf(".0");
+        if ( pos > 0 ) {
+            ModelRunDate = ModelRunDate.substring(0,pos);
+        }
+        try { 
             DateTime.parse(ModelRunDate);
         }
         catch ( Exception e ) {
@@ -273,6 +279,12 @@ CommandWarningException, CommandException
     String ModelName = parameters.getValue ( "ModelName" );
     String ModelRunName = parameters.getValue ( "ModelRunName" );
     String ModelRunDate = parameters.getValue ( "ModelRunDate" );
+    if ( ModelRunDate != null ) {
+        int pos = ModelRunDate.indexOf(".0");
+        if ( pos > 0 ) {
+            ModelRunDate = ModelRunDate.substring(0,pos);
+        }
+    }
     String HydrologicIndicator = parameters.getValue ( "HydrologicIndicator" );
     String ModelRunID = parameters.getValue ( "ModelRunID" );
     Long modelRunID = null;

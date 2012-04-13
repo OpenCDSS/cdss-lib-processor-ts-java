@@ -336,7 +336,7 @@ public static String expandTimeSeriesMetadataString ( CommandProcessor processor
     }
     // First expand using the % characters...
     String s2 = ts.formatLegend ( s );
-    Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
+    //Message.printStatus(2, routine, "After formatLegend(), string is \"" + s2 + "\"" );
     // Now replace ${Property} strings with properties from the processor
     int start = 0;
     int pos2 = 0;

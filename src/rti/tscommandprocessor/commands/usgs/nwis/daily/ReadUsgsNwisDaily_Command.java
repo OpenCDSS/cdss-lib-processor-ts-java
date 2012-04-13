@@ -197,13 +197,7 @@ throws InvalidCommandParameterException
 		}
 	}
 	
-    if ( (OutputFile == null) || (OutputFile.length() == 0) ) {
-        message = "The output file: \"" + OutputFile + "\" must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION,new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Specify an output file." ) );
-    }
-    else {
+    if ( (OutputFile != null) && (OutputFile.length() != 0) ) {
         String working_dir = null;
         try {
             Object o = processor.getPropContents ( "WorkingDir" );

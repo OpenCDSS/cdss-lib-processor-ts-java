@@ -182,7 +182,7 @@ public void actionPerformed( ActionEvent event )
                 IOUtil.toRelativePath ( __working_dir, __OutputFile_JTextField.getText() ) );
             }
             catch ( Exception e ) {
-                Message.printWarning ( 1, "WriteDateValue_JDialog", "Error converting file to relative path." );
+                Message.printWarning ( 1, "ReadUsgsNwisDaily_JDialog", "Error converting file to relative path." );
             }
         }
         refresh ();

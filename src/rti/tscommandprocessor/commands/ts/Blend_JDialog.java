@@ -39,23 +39,23 @@ public class Blend_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton	__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private Blend_Command __command = null;// Command as Vector of String
-private JTextArea __command_JTextArea = null;// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private Blend_Command __command = null;
+private JTextArea __command_JTextArea = null;
 private SimpleJComboBox	__TSID_JComboBox = null;
 private SimpleJComboBox __IndependentTSID_JComboBox = null;
-private SimpleJComboBox	__BlendMethod_JComboBox = null; // Choice for blend methods.
+private SimpleJComboBox	__BlendMethod_JComboBox = null;
 private boolean __error_wait = false;
 private boolean __first_time = true;
-private boolean __ok = false;       // Was OK pressed last (false=cancel)?
+private boolean __ok = false; // Was OK pressed last (false=cancel)?
 
 /**
 Command editor constructor.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-public Blend_JDialog ( JFrame parent, Command command )
+public Blend_JDialog ( JFrame parent, Blend_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -147,8 +147,8 @@ Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
-{   __command = (Blend_Command)command;
+private void initialize ( JFrame parent, Blend_Command command )
+{   __command = command;
 
 	addWindowListener( this );
 
@@ -179,8 +179,8 @@ private void initialize ( JFrame parent, Command command )
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
 	__TSID_JComboBox = new SimpleJComboBox ( false );
 	
-	List tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
-            (TSCommandProcessor)__command.getCommandProcessor(), __command );
+	List<String> tsids = TSCommandProcessorUtil.getTSIdentifiersNoInputFromCommandsBeforeCommand(
+        (TSCommandProcessor)__command.getCommandProcessor(), __command );
     
 	__TSID_JComboBox.setData ( tsids );
 	__TSID_JComboBox.addItemListener ( this );
@@ -269,7 +269,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {   return __ok;
@@ -292,33 +292,54 @@ private void refresh ()
         IndependentTSID = props.getValue ( "IndependentTSID" );
         BlendMethod = props.getValue ( "BlendMethod" );
 		// Now check the information and set in the GUI...
-		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
-			__TSID_JComboBox.select ( TSID );
-		}
-		else {
-		    Message.printWarning ( 1,
-			routine, "Existing command references a non-existent\n"+
-			"time series \"" + TSID + "\".  Select a\n" +
-			"different time series or Cancel." );
-		}
-		
-        if ( JGUIUtil.isSimpleJComboBoxItem( __IndependentTSID_JComboBox, IndependentTSID, JGUIUtil.NONE, null, null ) ) {
-            __IndependentTSID_JComboBox.select ( IndependentTSID );
+        if ( TSID == null ) {
+            // Select default...
+            if ( __TSID_JComboBox.getItemCount() > 0 ) {
+                __TSID_JComboBox.select ( 0 );
+            }
         }
         else {
-            Message.printWarning ( 1,
-            routine, "Existing command references a non-existent\n"+
-            "independent time series \"" + IndependentTSID + "\".  Select a\n" +
-            "different time series or Cancel." );
+    		if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+    			__TSID_JComboBox.select ( TSID );
+    		}
+    		else {
+    		    Message.printWarning ( 1,
+    			routine, "Existing command references a non-existent\n"+
+    			"time series \"" + TSID + "\".  Select a\n" +
+    			"different time series or Cancel." );
+    		}
         }
-
-		if ( JGUIUtil.isSimpleJComboBoxItem( __BlendMethod_JComboBox, BlendMethod, JGUIUtil.NONE, null, null ) ) {
-			__BlendMethod_JComboBox.select ( BlendMethod );
-		}
-		else {	Message.printWarning ( 1,
-			routine, "Existing command references an invalid "+
-			"blend method choice \"" + BlendMethod + "\".\nSelect a different choice or Cancel." );
-		}
+        if ( IndependentTSID == null ) {
+            // Select default...
+            if ( __IndependentTSID_JComboBox.getItemCount() > 0 ) {
+                __IndependentTSID_JComboBox.select ( 0 );
+            }
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __IndependentTSID_JComboBox, IndependentTSID, JGUIUtil.NONE, null, null ) ) {
+                __IndependentTSID_JComboBox.select ( IndependentTSID );
+            }
+            else {
+                Message.printWarning ( 1,
+                routine, "Existing command references a non-existent\n"+
+                "independent time series \"" + IndependentTSID + "\".  Select a\n" +
+                "different time series or Cancel." );
+            }
+        }
+        if ( BlendMethod == null ) {
+            // Select default...
+            __BlendMethod_JComboBox.select ( 0 );
+        }
+        else {
+    		if ( JGUIUtil.isSimpleJComboBoxItem( __BlendMethod_JComboBox, BlendMethod, JGUIUtil.NONE, null, null ) ) {
+    			__BlendMethod_JComboBox.select ( BlendMethod );
+    		}
+    		else {
+    		    Message.printWarning ( 1,
+    			routine, "Existing command references an invalid "+
+    			"blend method choice \"" + BlendMethod + "\".\nSelect a different choice or Cancel." );
+    		}
+        }
 	}
 	// Regardless, reset the command from the fields...
 	TSID = __TSID_JComboBox.getSelected();
@@ -333,7 +354,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
+@param ok if false, then the edit is canceled.  If true, the edit is committed
 and the dialog is closed.
 */
 private void response ( boolean ok )
@@ -366,4 +387,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end Blend_JDialog
+}

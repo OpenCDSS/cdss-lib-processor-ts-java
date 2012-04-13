@@ -40,19 +40,21 @@ import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
 
 import RTi.Util.Message.Message;
+import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
+import RTi.Util.Time.DateTimeFormatterType;
 import RTi.Util.Time.TimeInterval;
 
 /**
-Editor for the ReadDateValue() command.
+Editor for the ReadDelimitedFile() command.
 */
 public class ReadDelimitedFile_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton	__browse_JButton = null,// File browse button
-			__path_JButton = null,	// Convert between relative and absolute path.
-			__cancel_JButton = null,// Cancel Button
-			__ok_JButton = null;	// Ok Button
-private ReadDelimitedFile_Command __command = null;   // Command to edit
+private SimpleJButton __browse_JButton = null;
+private SimpleJButton __path_JButton = null;
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private ReadDelimitedFile_Command __command = null;
 private String __working_dir = null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private JTextField __InputFile_JTextField = null;
@@ -61,6 +63,7 @@ private JTextField __ColumnNames_JTextField = null;
 private JTextField __DateColumn_JTextField = null;
 private JTextField __TimeColumn_JTextField = null;
 private JTextField __DateTimeColumn_JTextField = null;
+private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private JTextField __ValueColumn_JTextField = null;
 private JTextField __Comment_JTextField = null;
 private JTextField __SkipRows_JTextField = null;
@@ -73,8 +76,8 @@ private SimpleJComboBox __Interval_JComboBox = null;
 private JTextField __Scenario_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
-//private JTextField __InputStart_JTextField = null;
-//private JTextField __InputEnd_JTextField = null;
+private JTextField __InputStart_JTextField = null;
+private JTextField __InputEnd_JTextField = null;
 private JTextArea __Command_JTextArea = null;
 private boolean __error_wait = false;	// Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
@@ -90,23 +93,6 @@ Command editor constructor.
 public ReadDelimitedFile_JDialog ( JFrame parent, ReadDelimitedFile_Command command )
 {
 	super(parent, true);
-
-	/*
-	PropList props = command.getCommandParameters();
-	String alias = props.getValue("Alias");
-	Message.printStatus(1, "", "Props: " + props.toString("\n"));
-	if (alias == null || alias.trim().equalsIgnoreCase("")) {
-        if (((ReadDelimitedFile_Command)command).getCommandString().trim().toUpperCase().startsWith("TS ")) {
-            __isAliasVersion = true;
-		}
-		else {
-			__isAliasVersion = false;
-		}
-	}
-	else {
-		__isAliasVersion = true;
-	}
-	*/
 	initialize ( parent, command );
 }
 
@@ -236,6 +222,7 @@ private void checkInput () {
 	String DateColumn = __DateColumn_JTextField.getText().trim();
 	String TimeColumn = __TimeColumn_JTextField.getText().trim();
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+	String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
 	String ValueColumn = __ValueColumn_JTextField.getText().trim();
 	String LocationID = __LocationID_JTextField.getText().trim();
 	String Provider = __Provider_JTextField.getText().trim();
@@ -245,23 +232,8 @@ private void checkInput () {
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String Alias = __Alias_JTextField.getText().trim();
-
-	//String InputStart = __InputStart_JTextField.getText().trim();
-	//String InputEnd = __InputEnd_JTextField.getText().trim();
-	/*
-	String Alias = null;
-    String TSID = null;
-	if (__isAliasVersion) { 
-		Alias = __Alias_JTextField.getText().trim();
-        TSID = __TSID_JTextField.getText().trim();
-        if (Alias != null && Alias.length() > 0) {
-            props.set("Alias", Alias);
-        }
-        if (TSID != null && TSID.length() > 0) {
-            props.set("TSID", TSID);
-        }
-	}
-	*/
+	String InputStart = __InputStart_JTextField.getText().trim();
+	String InputEnd = __InputEnd_JTextField.getText().trim();
 	
 	__error_wait = false;
 	
@@ -295,6 +267,9 @@ private void checkInput () {
     if (DateTimeColumn.length() > 0) {
         props.set("DateTimeColumn", DateTimeColumn);
     }
+    if (DateTimeFormat.length() > 0) {
+        props.set("DateTimeFormat", DateTimeFormat);
+    }
     if (ValueColumn.length() > 0) {
         props.set("ValueColumn", ValueColumn);
     }
@@ -322,16 +297,12 @@ private void checkInput () {
     if (Alias.length() > 0) {
         props.set("Alias", Alias);
     }
-
-    /*
 	if (InputStart.length() > 0 ) {
 		props.set("InputStart", InputStart);
 	}
 	if (InputEnd.length() > 0 ) {
 		props.set("InputEnd", InputEnd);
 	}
-	*/
-
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -356,6 +327,7 @@ private void commitEdits() {
     String TreatConsecutiveDelimitersAsOne = __TreatConsecutiveDelimitersAsOne_JComboBox.getSelected();
     String ColumnNames = __ColumnNames_JTextField.getText().trim();
     String DateColumn = __DateColumn_JTextField.getText().trim();
+    String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
     String TimeColumn = __TimeColumn_JTextField.getText().trim();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String ValueColumn = __ValueColumn_JTextField.getText().trim();
@@ -367,9 +339,8 @@ private void commitEdits() {
     String Units = __Units_JTextField.getText().trim();
     String MissingValue = __MissingValue_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
-    
-	//String InputStart = __InputStart_JTextField.getText().trim();
-	//String InputEnd = __InputEnd_JTextField.getText().trim();
+    String InputStart = __InputStart_JTextField.getText().trim();
+	String InputEnd = __InputEnd_JTextField.getText().trim();
 
 	__command.setCommandParameter("InputFile", InputFile);
 	__command.setCommandParameter("Comment", Comment);
@@ -381,6 +352,7 @@ private void commitEdits() {
 	__command.setCommandParameter("DateColumn", DateColumn);
 	__command.setCommandParameter("TimeColumn", TimeColumn);
 	__command.setCommandParameter("DateTimeColumn", DateTimeColumn);
+	__command.setCommandParameter("DateTimeFormat", DateTimeFormat);
 	__command.setCommandParameter("ValueColumn", ValueColumn);
 	__command.setCommandParameter("LocationID", LocationID);
 	__command.setCommandParameter("Provider", Provider );
@@ -390,8 +362,8 @@ private void commitEdits() {
 	__command.setCommandParameter("Units", Units);
 	__command.setCommandParameter("MissingValue", MissingValue);
 	__command.setCommandParameter("Alias", Alias);
-	//__command.setCommandParameter("InputStart", InputStart);
-	//__command.setCommandParameter("InputEnd", InputEnd);
+	__command.setCommandParameter("InputStart", InputStart);
+	__command.setCommandParameter("InputEnd", InputEnd);
 }
 
 /**
@@ -417,7 +389,6 @@ throws Throwable {
 /**
 Instantiates the GUI components.
 @param parent JFrame class instantiating this class.
-@param app_PropList Properties from application.
 @param command Command to edit.
 */
 private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
@@ -455,6 +426,9 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         " after comments." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "If used, specify input start and end to a precision appropriate for the data." ), 
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"Specify a full path or relative path (relative to working " +
 		"directory) for a delimited file to read." ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -463,25 +437,6 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 		"The working directory is: " + __working_dir ), 
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	}
-
-	/*
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Specifying the input period will limit data that are " +
-		"available for fill commands but can increase performance." ), 
-		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-		*/
-
-    /*
-	if (__isAliasVersion) {
-	    JGUIUtil.addComponent(main_JPanel, 
-			new JLabel("Time series alias:"),
-			0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-		__Alias_JTextField = new JTextField ( 30 );
-		__Alias_JTextField.addKeyListener ( this );
-		JGUIUtil.addComponent(main_JPanel, __Alias_JTextField,
-			1, y, 3, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	}
-	*/
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (	"Delimited file to read:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -530,7 +485,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     __SkipRows_JTextField = new JTextField (10);
     __SkipRows_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __SkipRows_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Optional - comma-separated numbers (1+) and ranges (e.g., 1,3-7) (default=none)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
@@ -564,18 +519,17 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
         "Required - if date and time are in the same column (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JTextField __DateTimeFormat_JTextField;
     JLabel DateTimeFormat_JLabel = new JLabel ("Date/time format:");
-    DateTimeFormat_JLabel.setEnabled( false );
     JGUIUtil.addComponent(main_JPanel, DateTimeFormat_JLabel,
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __DateTimeFormat_JTextField = new JTextField (10);
-    __DateTimeFormat_JTextField.setEnabled( false );
-    __DateTimeFormat_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JTextField,
+    __DateTimeFormat_JPanel = new DateTimeFormatterSpecifiersJPanel(20,true,true);
+    __DateTimeFormat_JPanel.addKeyListener (this);
+    __DateTimeFormat_JPanel.addFormatterTypeItemListener (this); // Respond to changes in formatter choice
+    __DateTimeFormat_JPanel.getDocument().addDocumentListener(this); // Respond to changes in text field contents
+    JGUIUtil.addComponent(main_JPanel, __DateTimeFormat_JPanel,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - date/time format MM/DD/YYYY, etc. (under development)."),
+        "Optional - date/time format MM/DD/YYYY, etc. (default=auto-detect)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Date column:"),
@@ -625,7 +579,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(main_JPanel, __Provider_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - data provider for the data (default=blank)."),
+        "Optional - data provider (data source) for the data (default=blank)."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Data type(s):"),
@@ -695,20 +649,23 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
-	/* FIXME SAM 2008-01-31 Enable when functionality of low-level code is confirmed
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "Period to read:" ), 
-		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__InputStart_JTextField = new JTextField ( "", 15 );
-	__InputStart_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
-		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-	JGUIUtil.addComponent(main_JPanel, new JLabel ( "to" ), 
-		3, y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-	__InputEnd_JTextField = new JTextField ( "", 15 );
-	__InputEnd_JTextField.addKeyListener ( this );
-	JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
-		4, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-		*/
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Input start:"), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputStart_JTextField = new JTextField (20);
+    __InputStart_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputStart_JTextField,
+        1, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input start."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Input end:"), 
+        0, ++y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InputEnd_JTextField = new JTextField (20);
+    __InputEnd_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InputEnd_JTextField,
+        1, y, 6, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - overrides the global input end."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -738,18 +695,12 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
 	__ok_JButton = new SimpleJButton("OK", this);
 	button_JPanel.add ( __ok_JButton );
 
-	/*
-	if (__isAliasVersion) {
-		setTitle("Edit TS Alias = ReadDateValue() Command");
-	}
-	else {*/
-		setTitle("Edit ReadDelimitedFile() Command");
-	//}
+	setTitle("Edit ReadDelimitedFile() Command");
 
 	setResizable ( true );
     pack();
     JGUIUtil.center( this );
-	refreshPathControl();	// Sets the __path_JButton status
+	refreshPathControl();
     super.setVisible( true );
 }
 
@@ -790,7 +741,7 @@ public void keyTyped(KeyEvent event) {
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok() {
 	return __ok;
@@ -800,7 +751,7 @@ public boolean ok() {
 Refresh the command from the other text field contents.
 */
 private void refresh()
-{   String routine = "ReadDelimitedFile_JDialog.refresh", message;
+{   String routine = getClass().getName() + ".refresh", message;
     String InputFile = "";
     String Comment = "";
     String SkipRows = "";
@@ -811,6 +762,7 @@ private void refresh()
     String DateColumn = "";
     String TimeColumn = "";
     String DateTimeColumn = "";
+    String DateTimeFormat = "";
     String ValueColumn = "";
     String LocationID = "";
     String Provider = "";
@@ -830,12 +782,6 @@ private void refresh()
 
 		// Get the properties from the command
 		props = __command.getCommandParameters();
-		/*
-        if ( __isAliasVersion ) {
-            Alias = props.getValue("Alias");
-            TSID = props.getValue("TSID");
-        }
-        */
 		InputFile = props.getValue("InputFile");
 		Comment = props.getValue("Comment");
 		SkipRows = props.getValue("SkipRows");
@@ -846,6 +792,7 @@ private void refresh()
 	    DateColumn = props.getValue("DateColumn");
 	    TimeColumn = props.getValue("TimeColumn");
 	    DateTimeColumn = props.getValue("DateTimeColumn");
+	    DateTimeFormat = props.getValue("DateTimeFormat");
 	    ValueColumn = props.getValue("ValueColumn");
 	    LocationID = props.getValue("LocationID");
 	    Provider = props.getValue("Provider");
@@ -858,11 +805,6 @@ private void refresh()
 		InputStart = props.getValue("InputStart");
 		InputEnd = props.getValue("InputEnd");
 		// Set the control fields
-		/*
-        if (TSID != null && __isAliasVersion) {
-            __TSID_JTextField.setText(TSID.trim());
-        }
-        */
 		if (InputFile != null) {
 			__InputFile_JTextField.setText(InputFile);
 		}
@@ -907,6 +849,27 @@ private void refresh()
         if (DateTimeColumn != null) {
             __DateTimeColumn_JTextField.setText(DateTimeColumn);
         }
+        if (DateTimeFormat != null) {
+            // The front part of the string may match a formatter type (e.g., "C:") in which case
+            // only the latter part of the string should be displayed.
+            int pos = DateTimeFormat.indexOf(":");
+            if ( pos > 0 ) {
+                try {
+                    __DateTimeFormat_JPanel.selectFormatterType(
+                        DateTimeFormatterType.valueOfIgnoreCase(DateTimeFormat.substring(0,pos)));
+                    Message.printStatus(2, routine, "Selecting format \"" + DateTimeFormat.substring(0,pos) + "\"");
+                    if ( DateTimeFormat.length() > pos ) {
+                        __DateTimeFormat_JPanel.setText(DateTimeFormat.substring(pos + 1));
+                    }
+                }
+                catch ( IllegalArgumentException e ) {
+                    __DateTimeFormat_JPanel.setText(DateTimeFormat);
+                }
+            }
+            else {
+                __DateTimeFormat_JPanel.setText(DateTimeFormat);
+            }
+        }
         if (ValueColumn != null) {
             __ValueColumn_JTextField.setText(ValueColumn);
         }
@@ -945,14 +908,12 @@ private void refresh()
         if ( Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
-        /*
 		if (InputStart != null) {
 			__InputStart_JTextField.setText(InputStart);
 		}
 		if (InputEnd != null) {
 			__InputEnd_JTextField.setText(InputEnd);
 		}
-		*/
 	}
 
 	// Regardless, reset the command from the fields.  This is only  visible
@@ -967,6 +928,7 @@ private void refresh()
     DateColumn = __DateColumn_JTextField.getText().trim();
     TimeColumn = __TimeColumn_JTextField.getText().trim();
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    DateTimeFormat = __DateTimeFormat_JPanel.getText(true,true).trim();
     ValueColumn = __ValueColumn_JTextField.getText().trim();
     LocationID = __LocationID_JTextField.getText().trim();
     Provider = __Provider_JTextField.getText().trim();
@@ -976,14 +938,8 @@ private void refresh()
     Units = __Units_JTextField.getText().trim();
     MissingValue = __MissingValue_JTextField.getText().trim();
     Alias = __Alias_JTextField.getText().trim();
-	//InputStart = __InputStart_JTextField.getText().trim();
-	//InputEnd = __InputEnd_JTextField.getText().trim();
-	/*
-	if (__isAliasVersion) {
-		Alias = __Alias_JTextField.getText().trim();
-        TSID = __TSID_JTextField.getText().trim();
-	}
-	*/
+	InputStart = __InputStart_JTextField.getText().trim();
+	InputEnd = __InputEnd_JTextField.getText().trim();
 
 	props = new PropList(__command.getCommandName());
 	props.add("InputFile=" + InputFile);
@@ -996,6 +952,7 @@ private void refresh()
     props.add("DateColumn=" + DateColumn );
     props.add("TimeColumn=" + TimeColumn );
     props.add("DateTimeColumn=" + DateTimeColumn );
+    props.add("DateTimeFormat=" + DateTimeFormat );
     props.add("ValueColumn=" + ValueColumn );
     props.add("LocationID=" + LocationID );
     props.add("Provider=" + Provider );
@@ -1007,11 +964,6 @@ private void refresh()
     props.add("Alias=" + Alias );
 	props.add("InputStart=" + InputStart);
 	props.add("InputEnd=" + InputEnd);
-	/*
-    if (TSID != null) {
-        props.add("TSID=" + TSID);
-    }
-    */
 	
 	__Command_JTextArea.setText( __command.toString(props) );
 

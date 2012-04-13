@@ -21,6 +21,7 @@ import RTi.Util.IO.AbstractCommand;
 import RTi.Util.IO.CommandDiscoverable;
 import RTi.Util.IO.CommandLogRecord;
 import RTi.Util.IO.CommandPhaseType;
+import RTi.Util.IO.CommandProcessorRequestResultsBean;
 import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.IOUtil;
@@ -35,6 +36,7 @@ import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
+import RTi.Util.Time.DateTimeParser;
 import RTi.Util.Time.TimeInterval;
 
 /**
@@ -57,8 +59,8 @@ protected final String _FC = "FC[";
 Private data members shared between the checkCommandParameter() and the 
 runCommand() methods (prevent code duplication parsing input).  
 */
-//private DateTime __InputStart = null;
-//private DateTime __InputEnd   = null;
+private DateTime __InputStart = null;
+private DateTime __InputEnd = null;
 
 /**
 Column names for each time series being processed, from the ColumnNames parameter that
@@ -194,8 +196,8 @@ throws InvalidCommandParameterException
     String Units = parameters.getValue("Units" );
     String MissingValue = parameters.getValue("MissingValue" );
     String Alias = parameters.getValue("Alias" );
-	//String InputStart = parameters.getValue("InputStart");
-	//String InputEnd   = parameters.getValue("InputEnd");
+	String InputStart = parameters.getValue("InputStart");
+	String InputEnd = parameters.getValue("InputEnd");
 	
     String InputFile_full = null;
     if ( (InputFile == null) || (InputFile.length() == 0) ) {
@@ -761,7 +763,6 @@ throws InvalidCommandParameterException
         setMissingValue ( tokens );
     }
 
-    /*
 	// InputStart
 	if ((InputStart != null) && !InputStart.equals("")) {
 		try {
@@ -800,7 +801,6 @@ throws InvalidCommandParameterException
                             message, "Specify an input start less than the input end." ) );
 		}
 	}
-	*/
     
     if (Alias != null && !Alias.equals("")) {
         if (Alias.indexOf(" ") > -1) {
@@ -835,8 +835,8 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Units" );
     valid_Vector.add ( "MissingValue" );
     valid_Vector.add ( "Alias" );
-    //valid_Vector.add ( "InputStart" );
-    //valid_Vector.add ( "InputEnd" );
+    valid_Vector.add ( "InputStart" );
+    valid_Vector.add ( "InputEnd" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
 
 	// Throw an InvalidCommandParameterException in case of errors.
@@ -854,7 +854,7 @@ Determine the time series end date/time by reading the end of the file to determ
 This opens a temporary connection, reads the end of the file, and parses out data to get the date.
 */
 private DateTime determineEndDateTimeFromFile ( String inputFileFull, int dateTimePos, int datePos, int timePos,
-    String delim, int parseFlag )
+    String delim, int parseFlag, DateTimeParser dateTimeParser )
 throws FileNotFoundException, IOException
 {   String routine = getClass().getName() + ".determineEndDateTimeFromFile";
     int dl = 30;
@@ -935,7 +935,12 @@ throws FileNotFoundException, IOException
         if ( Message.isDebugOn ) {
             Message.printDebug( 2, routine, "Got end date/time string \"" + dateTimeString + "\" from line \"" + string + "\"" );
         }
-        datetime = DateTime.parse(dateTimeString);
+        if ( dateTimeParser == null ) {
+            datetime = DateTime.parse(dateTimeString);
+        }
+        else {
+            datetime = dateTimeParser.parse(null,dateTimeString);
+        }
     }
     catch ( Exception e ) {
         Message.printWarning ( 3, routine, "Error parsing end date/time \"" + dateTimeString + "\" from file \"" +
@@ -1311,6 +1316,7 @@ Read a list of time series from a delimited file.
 @param treatConsecutiveDelimitersAsOne indicate whether consecutive delimiter characters should be treated as one.
 @param columnNames names of columns to use when mapping columns
 @param readColumnNamesFromFile if true, then the column names will be read from the file
+@param dateTimeFormat the date/time format, if not determined automatically
 @param dateTimeColumn the date/time column name
 @param dateColumn the date column name
 @param timeColumn the time column name
@@ -1333,8 +1339,8 @@ Read a list of time series from a delimited file.
 */
 private List<TS> readTimeSeriesList ( String inputFileFull,
     String delim, boolean treatConsecutiveDelimitersAsOne,
-    List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, String dateColumn,
-    String timeColumn, List<String> valueColumns,
+    List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, String dateTimeFormat,
+    String dateColumn, String timeColumn, List<String> valueColumns,
     String commentChar, int[][] skipRows, int skipRowsAfterComments,
     List<String> ids, List<String> providers, List<String> datatypes, TimeInterval interval,
     List<String> scenarios, List<String> units, List<String> missing,
@@ -1349,6 +1355,11 @@ throws IOException
     in = new BufferedReader ( new InputStreamReader(IOUtil.getInputStream ( inputFileFull )) );
     // Translate column names to integer values to speed up processing below - these have been expanded for runtime
     int dateTimePos = getColumnNumberFromName(dateTimeColumn,columnNames);
+    DateTimeParser dateTimeParser = null;
+    if ( (dateTimeFormat != null) && !dateTimeFormat.trim().equals("") ) {
+        // Set to null to simplify logic below
+        dateTimeParser = new DateTimeParser ( dateTimeFormat );
+    }
     int datePos = getColumnNumberFromName(dateColumn,columnNames);
     int timePos = getColumnNumberFromName(timeColumn,columnNames);
     int [] valuePos = getColumnNumbersFromNames(valueColumns,columnNames);
@@ -1356,6 +1367,8 @@ throws IOException
         datePos + " time column=" + timePos );
     // Create the time series - at this time meta-data are not read from the file
     // If this changes, then some values may need to be (re)set when the file is read
+    DateTime earliest = null, latest = null;
+    boolean periodRequested = false;
     for ( int its = 0; its < valuePos.length; its++ ) {
         TSIdent tsident = null;
         TS ts = null;
@@ -1386,6 +1399,17 @@ throws IOException
                     ts.setDataUnitsOriginal ( units.get(its) );
                     ts.setMissing ( Double.NaN );
                     ts.setInputName ( inputFileFull );
+                    if ( inputStart != null ) {
+                        ts.setDate1(inputStart);
+                        ts.setDate1Original(inputStart);
+                    }
+                    if ( inputEnd != null ) {
+                        ts.setDate2(inputEnd);
+                        ts.setDate2Original(inputEnd);
+                    }
+                    if ( (inputStart != null) && (inputEnd != null) ) {
+                        periodRequested = true;
+                    }
                 }
                 catch ( Exception e ) {
                     // Set the TS to null to match the column positions but won't be able to set data below
@@ -1417,6 +1441,7 @@ throws IOException
         int dl = 10;
         int ntokens = 0; // Number of tokens parsed from a line
         double value; // Data value
+        int dtErrorCount = 0; // Count of errors parsing date/times
         while ( true ) {
             // Read a line and deal with skipping
             s = in.readLine();
@@ -1500,14 +1525,27 @@ throws IOException
             }
             dateTime = null;
             try {
-                dateTime = DateTime.parse(dateTimeString);
+                if ( dateTimeFormat == null ) {
+                    dateTime = DateTime.parse(dateTimeString);
+                }
+                else {
+                    // Reuse the date/time for performance
+                    // This is safe because for regular time series only the parts are used
+                    // and for irregular a copy is made when setting the value
+                    dateTime = dateTimeParser.parse(dateTime,dateTimeString);
+                }
             }
             catch ( Exception dte ) {
                 if ( errorMessages != null ) {
                     errorMessages.add ( "Error parsing date/time in row " + row + " column " +
                         dateTimeColumn + " \"" + dateTimeString + "\" (" + dte + ")" );
-                    continue; // No reason to process the data in the row
                 }
+                ++dtErrorCount;
+                if ( dtErrorCount == 1 ) {
+                    // Print one exception to help with troubleshooting
+                    Message.printWarning(3, routine, dte);
+                }
+                continue; // No reason to process the data in the row
             }
             // Process the time series for the row
             for ( ival = 0; ival < valuePos.length; ival++ ) {
@@ -1526,12 +1564,11 @@ throws IOException
                      (!readColumnNamesFromFile && dataRowCount == 1) ) {
                     // The first date will be set from the first row of data
                     DateTime lastFileDateTime = determineEndDateTimeFromFile (
-                        inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag );
+                        inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag, dateTimeParser );
                     if ( lastFileDateTime == null ) {
                         throw new IOException ( "Unable to determine date/time from last line in file." );
                     }
                     //Message.printStatus(2,routine,"Latest date/time in file is " + lastFileDateTime );
-                    DateTime earliest = null, latest = null;
                     if ( dateTime.greaterThan(lastFileDateTime)) {
                         earliest = lastFileDateTime;
                         latest = dateTime;
@@ -1540,9 +1577,16 @@ throws IOException
                         earliest = dateTime;
                         latest = lastFileDateTime;
                     }
-                    ts.setDate1(earliest);
+                    // Always set the original to the file but only set period if not passed in
+                    if ( inputStart == null ) {
+                        ts.setDate1(earliest);
+                        inputStart = earliest;
+                    }
                     ts.setDate1Original(earliest);
-                    ts.setDate2(latest);
+                    if ( inputEnd == null ) {
+                        ts.setDate2(latest);
+                        inputEnd = latest;
+                    }
                     ts.setDate2Original(latest);
                     ts.addToGenesis ( "Read time series from file \"" + inputFileFull + "\" for period " +
                         ts.getDate1() + " to " + ts.getDate2() );
@@ -1560,7 +1604,7 @@ throws IOException
                     // done with all time series).
                     continue;
                 }
-                valueString = tokens.get(valuePos[ival] );
+                valueString = tokens.get(valuePos[ival]).trim();
                 if ( valueString.equals("") || (StringUtil.indexOfIgnoreCase(missing, valueString) >= 0) ) {
                     // Missing so just let it remain missing in the time series.
                 }
@@ -1575,6 +1619,11 @@ throws IOException
                     if ( Message.isDebugOn ) {
                         Message.printDebug(dl, routine, "Setting value of " + valueColumns.get(ival) + " at " +
                         dateTime + " -> " + value );
+                    }
+                    if ( periodRequested && dateTime.lessThan(earliest) || dateTime.greaterThan(latest) ) {
+                        // Data record is not in period so don't set
+                        // Need to check each one because there is no requirement that records be in order.
+                        continue;
                     }
                     ts.setDataValue ( dateTime, value );
                 }
@@ -1852,7 +1901,7 @@ private void runCommandInternal ( int command_number, CommandPhaseType commandPh
 throws InvalidCommandParameterException, CommandWarningException, CommandException
 {	String routine = "ReadDelimitedFile_Command.runCommand", message;
 	int warning_level = 2;
-    //int log_level = 3;
+    int log_level = 3;
 	String command_tag = "" + command_number;
 	int warning_count = 0;
 	    
@@ -1870,71 +1919,73 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
 	if ( (Comment == null) || Comment.equals("") ) {
 	    Comment = "#"; // default
 	}
+	String DateTimeFormat = parameters.getValue("DateTimeFormat");
 	String Alias = parameters.getValue("Alias");
-	//String InputStart = parameters.getValue("InputStart");
-    //String InputEnd = parameters.getValue("InputEnd");
+	String InputStart = parameters.getValue("InputStart");
+    String InputEnd = parameters.getValue("InputEnd");
     
     DateTime InputStart_DateTime = null;
     DateTime InputEnd_DateTime = null;
-    /* FIXME SAM 2008-02-01 Evaluate whether supported
     if ( (InputStart != null) && (InputStart.length() != 0) ) {
         try {
-        PropList request_params = new PropList ( "" );
-        request_params.set ( "DateTime", InputStart );
-        CommandProcessorRequestResultsBean bean = null;
-        try {
-            bean = processor.processRequest( "DateTime", request_params);
-        }
-        catch ( Exception e ) {
-            message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
-            Message.printWarning(log_level,
+            PropList request_params = new PropList ( "" );
+            request_params.set ( "DateTime", InputStart );
+            CommandProcessorRequestResultsBean bean = null;
+            try {
+                bean = processor.processRequest( "DateTime", request_params);
+            }
+            catch ( Exception e ) {
+                message = "Error requesting InputStart DateTime(DateTime=" + InputStart + ") from processor.";
+                Message.printWarning(log_level,
+                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                        routine, message );
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Report the problem to software support." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+    
+            PropList bean_PropList = bean.getResultsPropList();
+            Object prop_contents = bean_PropList.getContents ( "DateTime" );
+            if ( prop_contents == null ) {
+                message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
+                Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Verify that the specified date/time is valid." ) );
+                throw new InvalidCommandParameterException ( message );
+            }
+            else {  InputStart_DateTime = (DateTime)prop_contents;
+            }
+        }
+        catch ( Exception e ) {
+            message = "InputStart \"" + InputStart + "\" is invalid.";
+            Message.printWarning(warning_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                            message, "Specify a valid date/time for the input start, " +
+                            "or InputStart for the global input start." ) );
             throw new InvalidCommandParameterException ( message );
         }
-
-        PropList bean_PropList = bean.getResultsPropList();
-        Object prop_contents = bean_PropList.getContents ( "DateTime" );
-        if ( prop_contents == null ) {
-            message = "Null value for InputStart DateTime(DateTime=" + InputStart + ") returned from processor.";
-            Message.printWarning(log_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-            status.addToLog ( command_phase,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Verify that the specified date/time is valid." ) );
-            throw new InvalidCommandParameterException ( message );
-        }
-        else {  InputStart_DateTime = (DateTime)prop_contents;
-        }
     }
-    catch ( Exception e ) {
-        message = "InputStart \"" + InputStart + "\" is invalid.";
-        Message.printWarning(warning_level,
-                MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                routine, message );
-        status.addToLog ( command_phase,
-                new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Specify a valid date/time for the input start, " +
-                        "or InputStart for the global input start." ) );
-        throw new InvalidCommandParameterException ( message );
-    }
-    }
-    else {  // Get the global input start from the processor...
-        try {   Object o = processor.getPropContents ( "InputStart" );
-                if ( o != null ) {
-                    InputStart_DateTime = (DateTime)o;
-                }
+    else {
+        // Get the global input start from the processor...
+        try {
+            Object o = processor.getPropContents ( "InputStart" );
+            if ( o != null ) {
+                InputStart_DateTime = (DateTime)o;
+            }
         }
         catch ( Exception e ) {
             message = "Error requesting the global InputStart from processor.";
             Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Report the problem to software support." ) );
             throw new InvalidCommandParameterException ( message );
@@ -1954,7 +2005,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning(log_level,
                         MessageUtil.formatMessageTag( command_tag, ++warning_count),
                         routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Report problem to software support." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -1967,7 +2018,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
                 Message.printWarning(log_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-                status.addToLog ( command_phase,
+                status.addToLog ( commandPhase,
                         new CommandLogRecord(CommandStatusType.FAILURE,
                                 message, "Verify that the end date/time is valid." ) );
                 throw new InvalidCommandParameterException ( message );
@@ -1980,30 +2031,31 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             Message.printWarning(warning_level,
                     MessageUtil.formatMessageTag( command_tag, ++warning_count),
                     routine, message );
-            status.addToLog ( command_phase,
+            status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
                             message, "Specify a valid date/time for the input end, " +
                             "or InputEnd for the global input start." ) );
             throw new InvalidCommandParameterException ( message );
         }
-        }
-        else {  // Get from the processor...
-            try {   Object o = processor.getPropContents ( "InputEnd" );
-                    if ( o != null ) {
-                        InputEnd_DateTime = (DateTime)o;
-                    }
-            }
-            catch ( Exception e ) {
-                message = "Error requesting the global InputEnd from processor.";
-                Message.printWarning(log_level,
-                        MessageUtil.formatMessageTag( command_tag, ++warning_count),
-                        routine, message );
-                status.addToLog ( command_phase,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Report problem to software support." ) );
-            }
     }
-    */
+    else {
+        // Get from the processor...
+        try {
+            Object o = processor.getPropContents ( "InputEnd" );
+            if ( o != null ) {
+                InputEnd_DateTime = (DateTime)o;
+            }
+        }
+        catch ( Exception e ) {
+            message = "Error requesting the global InputEnd from processor.";
+            Message.printWarning(log_level,
+                    MessageUtil.formatMessageTag( command_tag, ++warning_count),
+                    routine, message );
+            status.addToLog ( commandPhase,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report problem to software support." ) );
+        }
+    }
 
 	// Read the file.
     String InputFile_full = InputFile;
@@ -2075,7 +2127,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
         // Read the time series
         tslist = readTimeSeriesList ( InputFile_full, StringUtil.literalToInternal(Delimiter),
             getTreatConsecutiveDelimitersAsOne(),
-            getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(), getDateColumnRuntime(),
+            getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(),
+            DateTimeFormat, getDateColumnRuntime(),
             getTimeColumnRuntime(), getValueColumnsRuntime(),
             Comment, getSkipRows(), getSkipRowsAfterComments(),
             getLocationIDRuntime(), getProvider(), getDataType(), getInterval(), getScenario(),
@@ -2324,9 +2377,8 @@ public String toString ( PropList props )
     String Units = props.getValue("Units" );
     String MissingValue = props.getValue("MissingValue" );
     String Alias = props.getValue("Alias" );
-
-	//String InputStart = props.getValue("InputStart");
-	//String InputEnd = props.getValue("InputEnd");
+	String InputStart = props.getValue("InputStart");
+	String InputEnd = props.getValue("InputEnd");
 
 	StringBuffer b = new StringBuffer ();
 
@@ -2448,24 +2500,18 @@ public String toString ( PropList props )
         }
         b.append("Alias=\"" + Alias + "\"");
     }
-
-	/*
-	// Input Start
 	if ((InputStart != null) && (InputStart.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
 		b.append("InputStart=\"" + InputStart + "\"");
 	}
-
-	// Input End
 	if ((InputEnd != null) && (InputEnd.length() > 0)) {
 		if (b.length() > 0) {
 			b.append(",");
 		}
 		b.append("InputEnd=\"" + InputEnd + "\"");
 	}
-	*/
 
 	return getCommandName() + "(" + b.toString() + ")";
 }

@@ -20,6 +20,7 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
@@ -93,12 +94,12 @@ throws InvalidCommandParameterException
 	}
 	if ( (FormatterType != null) && !FormatterType.equals("") ) {
 	    // Check the value given the type - only support types that are enabled in this command.
-	    if ( FormatterType.equalsIgnoreCase(""+DateTimeFormatterType.STRFTIME) ) {
+	    if ( FormatterType.equalsIgnoreCase(""+DateTimeFormatterType.C) ) {
 	        message = "The date/time formatter \"" + FormatterType + "\" is not recognized.";
 	        warning += "\n" + message;
 	        status.addToLog ( CommandPhaseType.INITIALIZATION,
 	            new CommandLogRecord(CommandStatusType.FAILURE,
-	                message, "Specify the date/time formatter type as " + DateTimeFormatterType.STRFTIME ));
+	                message, "Specify the date/time formatter type as " + DateTimeFormatterType.C ));
 	    }
 	}
     if ( (Format == null) || Format.equals("") ) {
@@ -167,7 +168,23 @@ public List getObjectList ( Class c )
     }
 }
 
-// Use the base class parseCommand()
+/**
+Parse the command string into a PropList of parameters.  A check for a legacy definition is needed to
+transition to new conventions.
+@param command_string A string command to parse.
+@exception InvalidCommandSyntaxException if during parsing the command is determined to have invalid syntax.
+@exception InvalidCommandParameterException if during parsing the command parameters are determined to be invalid.
+*/
+public void parseCommand ( String command_string )
+throws InvalidCommandSyntaxException, InvalidCommandParameterException
+{   super.parseCommand( command_string);
+    // Changed STRFTIME to C because using more terse abbreviations like "ISO" and "MS"
+    PropList parameters = getCommandParameters();
+    String propVal = parameters.getValue("FormatterType");
+    if ( (propVal != null) && propVal.equalsIgnoreCase("Strftime") ) {
+        parameters.set("FormatterType", "C");
+    }
+}
 
 /**
 Run the command.
@@ -226,7 +243,7 @@ CommandWarningException, CommandException
 	String DateTimePropertyName = parameters.getValue ( "DateTimePropertyName" );
     String FormatterType = parameters.getValue ( "FormatterType" );
     if ( (FormatterType == null) || FormatterType.equals("") ) {
-        FormatterType = "" + DateTimeFormatterType.STRFTIME;
+        FormatterType = "" + DateTimeFormatterType.C;
     }
     DateTimeFormatterType formatterType = DateTimeFormatterType.valueOfIgnoreCase(FormatterType);
 	String Format = parameters.getValue ( "Format" );
@@ -238,7 +255,7 @@ CommandWarningException, CommandException
 	    Object Property_Object = null;
 	    if ( dateTimeProperty != null ) {
 	        DateTime dt = (DateTime)dateTimeProperty;
-	        if ( formatterType == DateTimeFormatterType.STRFTIME ) {
+	        if ( formatterType == DateTimeFormatterType.C ) {
 	            Property_Object = TimeUtil.formatDateTime(dt, Format);
 	        }
 	    }

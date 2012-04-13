@@ -35,7 +35,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 import RTi.Util.Time.DateTimeFormatterType;
-import RTi.Util.Time.StrftimeDateTimeFormatterSpecifiersJPanel;
+import RTi.Util.Time.DateTimeFormatterSpecifiersJPanel;
 
 public class FormatDateTimeProperty_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
@@ -47,7 +47,7 @@ private JTextArea __command_JTextArea = null;
 private JTextField __PropertyName_JTextField = null;
 private SimpleJComboBox __DateTimePropertyName_JComboBox = null;
 private SimpleJComboBox __FormatterType_JComboBox = null;
-private StrftimeDateTimeFormatterSpecifiersJPanel __Format_JTextField = null;
+private DateTimeFormatterSpecifiersJPanel __Format_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -263,18 +263,20 @@ private void initialize ( JFrame parent, FormatDateTimeProperty_Command command 
     __FormatterType_JComboBox = new SimpleJComboBox ( false );
     __FormatterType_JComboBox.addItem ( "" );
     //__FormatterType_JComboBox.addItem ( "" + DateTimeFormatterType.EXCEL );
-    __FormatterType_JComboBox.addItem ( "" + DateTimeFormatterType.STRFTIME );
+    __FormatterType_JComboBox.addItem ( "" + DateTimeFormatterType.C );
     __FormatterType_JComboBox.select ( "" );
     __FormatterType_JComboBox.addItemListener ( this );
     JGUIUtil.addComponent(main_JPanel, __FormatterType_JComboBox,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - formatting to use (default=" + DateTimeFormatterType.STRFTIME + ")."), 
+        "Optional - formatting to use (default=" + DateTimeFormatterType.C + ")."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+    // TODO SAM 2012-04-10 Evaluate whether the formatter should just be the first part of the format, which
+    // is supported by the panel
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Format:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-	__Format_JTextField = new StrftimeDateTimeFormatterSpecifiersJPanel ( 20 );
+	__Format_JTextField = new DateTimeFormatterSpecifiersJPanel ( 20, false, false );
 	__Format_JTextField.addKeyListener ( this );
 	__Format_JTextField.getDocument().addDocumentListener ( this );
     JGUIUtil.addComponent(main_JPanel, __Format_JTextField,

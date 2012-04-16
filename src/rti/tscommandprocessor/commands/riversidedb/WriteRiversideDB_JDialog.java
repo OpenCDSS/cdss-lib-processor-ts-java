@@ -492,7 +492,7 @@ Return the selected data type, omitting the trailing " - description".
 */
 private String getSelectedDataType()
 {
-    if ( __DataType_JComboBox == null ) {
+    if ( (__DataType_JComboBox == null) || (__DataType_JComboBox.getSelected() == null) ) {
         return null;
     }
     String dataType = __DataType_JComboBox.getSelected();

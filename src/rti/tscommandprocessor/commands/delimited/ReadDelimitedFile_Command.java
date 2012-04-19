@@ -1332,8 +1332,8 @@ Read a list of time series from a delimited file.
 @param scenarios list of scenarios to use for time series
 @param units data list of data units to use for time series
 @param missing list of missing values to use for time series
-@param inputStart requested start of data (null to return all).
-@param inputEnd requested end of data (null to return all).
+@param inputStartReq requested start of data (null to return all).
+@param inputEndReq requested end of data (null to return all).
 @param readData True to read data, false to only read the header information.
 @param errorMessages Error message strings to be propagated back to calling code.
 */
@@ -1344,7 +1344,7 @@ private List<TS> readTimeSeriesList ( String inputFileFull,
     String commentChar, int[][] skipRows, int skipRowsAfterComments,
     List<String> ids, List<String> providers, List<String> datatypes, TimeInterval interval,
     List<String> scenarios, List<String> units, List<String> missing,
-    DateTime inputStart, DateTime inputEnd,
+    DateTime inputStartReq, DateTime inputEndReq,
     boolean readData, List<String> errorMessages )
 throws IOException
 {   String routine = getClass().getName() + ".readTimeSeriesList";
@@ -1367,7 +1367,7 @@ throws IOException
         datePos + " time column=" + timePos );
     // Create the time series - at this time meta-data are not read from the file
     // If this changes, then some values may need to be (re)set when the file is read
-    DateTime earliest = null, latest = null;
+    DateTime earliest = null, latest = null; // Make sure these are initialized to null
     boolean periodRequested = false;
     for ( int its = 0; its < valuePos.length; its++ ) {
         TSIdent tsident = null;
@@ -1399,15 +1399,15 @@ throws IOException
                     ts.setDataUnitsOriginal ( units.get(its) );
                     ts.setMissing ( Double.NaN );
                     ts.setInputName ( inputFileFull );
-                    if ( inputStart != null ) {
-                        ts.setDate1(inputStart);
-                        ts.setDate1Original(inputStart);
+                    if ( inputStartReq != null ) {
+                        ts.setDate1(inputStartReq);
+                        ts.setDate1Original(inputStartReq); // Will get reset
                     }
-                    if ( inputEnd != null ) {
-                        ts.setDate2(inputEnd);
-                        ts.setDate2Original(inputEnd);
+                    if ( inputEndReq != null ) {
+                        ts.setDate2(inputEndReq);
+                        ts.setDate2Original(inputEndReq); // Will get reset
                     }
-                    if ( (inputStart != null) && (inputEnd != null) ) {
+                    if ( (inputStartReq != null) && (inputEndReq != null) ) {
                         periodRequested = true;
                     }
                 }
@@ -1563,29 +1563,32 @@ throws IOException
                 if ( (readColumnNamesFromFile && (dataRowCount == 2)) ||
                      (!readColumnNamesFromFile && dataRowCount == 1) ) {
                     // The first date will be set from the first row of data
-                    DateTime lastFileDateTime = determineEndDateTimeFromFile (
-                        inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag, dateTimeParser );
-                    if ( lastFileDateTime == null ) {
-                        throw new IOException ( "Unable to determine date/time from last line in file." );
-                    }
-                    //Message.printStatus(2,routine,"Latest date/time in file is " + lastFileDateTime );
-                    if ( dateTime.greaterThan(lastFileDateTime)) {
-                        earliest = lastFileDateTime;
-                        latest = dateTime;
-                    }
-                    else {
-                        earliest = dateTime;
-                        latest = lastFileDateTime;
+                    if ( latest == null ) {
+                        // Determine the last date by reading the end of the file - only need to do for first time series
+                        DateTime lastFileDateTime = determineEndDateTimeFromFile (
+                            inputFileFull, dateTimePos, datePos, timePos, delim, breakFlag, dateTimeParser );
+                        if ( lastFileDateTime == null ) {
+                            throw new IOException ( "Unable to determine date/time from last line in file." );
+                        }
+                        if ( Message.isDebugOn ) {
+                            Message.printDebug(dl,routine,"Latest date/time in file is " + lastFileDateTime );
+                        }
+                        if ( dateTime.greaterThan(lastFileDateTime)) {
+                            earliest = lastFileDateTime;
+                            latest = dateTime;
+                        }
+                        else {
+                            earliest = dateTime;
+                            latest = lastFileDateTime;
+                        }
                     }
                     // Always set the original to the file but only set period if not passed in
-                    if ( inputStart == null ) {
+                    if ( inputStartReq == null ) {
                         ts.setDate1(earliest);
-                        inputStart = earliest;
                     }
                     ts.setDate1Original(earliest);
-                    if ( inputEnd == null ) {
+                    if ( inputEndReq == null ) {
                         ts.setDate2(latest);
-                        inputEnd = latest;
                     }
                     ts.setDate2Original(latest);
                     ts.addToGenesis ( "Read time series from file \"" + inputFileFull + "\" for period " +
@@ -1595,8 +1598,8 @@ throws IOException
                         ts.allocateDataSpace();
                     }
                     if ( Message.isDebugOn ) {
-                        Message.printDebug(dl, routine, "Set period of time series: " + ts.getDate1() +
-                            " to " + ts.getDate2() );
+                        Message.printDebug(dl, routine, "Set period of time series " + ts.getIdentifierString() +
+                            ": " + ts.getDate1() + " to " + ts.getDate2() );
                     }
                 }
                 if ( !readData ) {

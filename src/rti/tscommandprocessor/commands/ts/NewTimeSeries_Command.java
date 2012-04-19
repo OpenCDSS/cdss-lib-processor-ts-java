@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Vector;
 
 import RTi.TS.TS;
+import RTi.TS.TSFunctionType;
 import RTi.TS.TSIdent;
 import RTi.TS.TSUtil;
+import RTi.TS.TSUtil_SetDataValuesUsingFunction;
 
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
@@ -72,6 +74,7 @@ throws InvalidCommandParameterException
 	String SetEnd = parameters.getValue ( "SetEnd" );
 	String MissingValue = parameters.getValue ( "MissingValue" );
 	String InitialValue = parameters.getValue ( "InitialValue" );
+	String InitialFunction = parameters.getValue ( "InitialFunction" );
 	String warning = "";
     String message;
     
@@ -106,8 +109,7 @@ throws InvalidCommandParameterException
 		}
 		catch ( Exception e ) {
 			// TODO SAM 2007-03-12 Need to catch a specific exception like
-			// InvalidIntervalException so that more intelligent messages can be
-			// generated.
+			// InvalidIntervalException so that more intelligent messages can be generated.
             message = "NewTSID is not a valid identifier.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
@@ -133,27 +135,67 @@ throws InvalidCommandParameterException
             message = "The initial value (" + InitialValue + ") is not a number.";
 			warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                        new CommandLogRecord(CommandStatusType.FAILURE,
-                                message, "Specify the initial value as a number." ) ); 
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the initial value as a number." ) ); 
 		}
-	}
-	if (	(SetStart != null) && !SetStart.equals("") &&
-		!SetStart.equalsIgnoreCase("OutputStart") &&
-		!SetStart.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse(SetStart);
-		}
-		catch ( Exception e ) {
-            message = "The set start \"" + SetStart + "\" is not a valid date/time.";
+		if ( (InitialFunction != null) && !InitialFunction.equals("") ) {
+		    message = "The initial value and function cannot both be specified.";
             warning += "\n" + message;
             status.addToLog ( CommandPhaseType.INITIALIZATION,
-                    new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the initial value OR function." ) ); 
 		}
 	}
-	if (	(SetEnd != null) && !SetEnd.equals("") &&
-		!SetEnd.equalsIgnoreCase("OutputStart") &&
+    if ( (InitialFunction != null) && !InitialFunction.equals("") ) {
+        // Make sure that the statistic is known in general
+        boolean supported = false;
+        TSFunctionType functionType = null;
+        try {
+            functionType = TSFunctionType.valueOfIgnoreCase(InitialFunction);
+            supported = true;
+        }
+        catch ( Exception e ) {
+            message = "The function (" + InitialFunction + ") is not recognized.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Select a supported function using the command editor." ) );
+        }
+        
+        // Make sure that it is in the supported list for this command
+        
+        if ( supported ) {
+            supported = false;
+            List<TSFunctionType> functionTypes = getFunctionChoices();
+            for ( int i = 0; i < functionTypes.size(); i++ ) {
+                if ( functionType == functionTypes.get(i) ) {
+                    supported = true;
+                }
+            }
+            if ( !supported ) {
+                message = "The function (" + InitialFunction + ") is not supported by this command.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Select a supported function using the command editor." ) );
+            }
+        }
+    }
+    if ( (SetStart != null) && !SetStart.equals("") && !SetStart.equalsIgnoreCase("OutputStart") &&
+        !SetStart.equalsIgnoreCase("OutputEnd") ) {
+            try {
+                DateTime.parse(SetStart);
+            }
+            catch ( Exception e ) {
+                message = "The set start \"" + SetStart + "\" is not a valid date/time.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a valid date/time, OutputStart, or OutputEnd." ) );
+            }
+        }
+	if ( (SetEnd != null) && !SetEnd.equals("") && !SetEnd.equalsIgnoreCase("OutputStart") &&
 		!SetEnd.equalsIgnoreCase("OutputEnd") ) {
-		try {	DateTime.parse( SetEnd );
+		try {
+		    DateTime.parse( SetEnd );
 		}
 		catch ( Exception e ) {
             message = "The set end \"" + SetEnd + "\" is not a valid date/time.";
@@ -174,6 +216,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Units" );
     valid_Vector.add ( "MissingValue" );
     valid_Vector.add ( "InitialValue" );
+    valid_Vector.add ( "InitialFunction" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -202,6 +245,20 @@ Return the list of time series read in discovery phase.
 private List<TS> getDiscoveryTSList ()
 {
     return __discoveryTSList;
+}
+
+/**
+Return the list of supported functions for the InitialFunction parameter.
+*/
+protected List<TSFunctionType> getFunctionChoices()
+{
+    List<TSFunctionType> functionTypes = new Vector();
+    functionTypes.add ( TSFunctionType.DATE_YYYY );
+    functionTypes.add ( TSFunctionType.DATE_YYYYMM );
+    functionTypes.add ( TSFunctionType.DATE_YYYYMMDD );
+    functionTypes.add ( TSFunctionType.DATETIME_YYYYMMDD_HH );
+    functionTypes.add ( TSFunctionType.DATETIME_YYYYMMDD_HHMM );
+    return functionTypes;
 }
 
 /**
@@ -356,6 +413,11 @@ CommandWarningException, CommandException
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		InitialValue_double = Double.parseDouble ( InitialValue );
 	}
+	String InitialFunction = parameters.getValue ( "InitialFunction" );
+	TSFunctionType initialFunction = null;
+	if ( InitialFunction != null ) {
+	    initialFunction = TSFunctionType.valueOfIgnoreCase(InitialFunction);
+	}
 	if ( SetStart == null ) {
 		SetStart = "";	// Makes for better messages
 	}
@@ -447,7 +509,13 @@ CommandWarningException, CommandException
                                 message, "Verify that the period for the time series is not huge." ) );
     		}
     		if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
+    		    // Assign values to the constant
     			TSUtil.setConstant ( ts, InitialValue_double );
+    		}
+    		else if ( initialFunction != null ) {
+    		    // Assign values using the function
+    		    TSUtil_SetDataValuesUsingFunction tsu = new TSUtil_SetDataValuesUsingFunction ( ts, initialFunction );
+    		    tsu.setDataValuesUsingFunction ();
     		}
 		}
         if ( (Alias != null) && !Alias.equals("") ) {
@@ -532,6 +600,7 @@ public String toString ( PropList props, int majorVersion )
 	String Units = props.getValue( "Units" );
 	String MissingValue = props.getValue( "MissingValue" );
 	String InitialValue = props.getValue( "InitialValue" );
+	String InitialFunction = props.getValue( "InitialFunction" );
 	StringBuffer b = new StringBuffer ();
 	if ( (NewTSID != null) && (NewTSID.length() > 0) ) {
 		if ( b.length() > 0 ) {
@@ -575,6 +644,12 @@ public String toString ( PropList props, int majorVersion )
 		}
 		b.append ( "InitialValue=" + InitialValue );
 	}
+    if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "InitialFunction=\"" + InitialFunction + "\"" );
+    }
     if ( majorVersion < 10 ) {
         if ( (Alias == null) || Alias.equals("") ) {
             Alias = "Alias";

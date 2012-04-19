@@ -11,6 +11,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -23,11 +24,13 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.TS.TSFunctionType;
 import RTi.TS.TSIdent;
 import RTi.TS.TSIdent_JDialog;
 
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
+import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -35,9 +38,9 @@ public class NewTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, KeyListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null; // Cancel Button
-private SimpleJButton __ok_JButton = null; // Ok Button
-private JFrame __parent_JFrame = null; // parent JFrame
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JFrame __parent_JFrame = null;
 private NewTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
@@ -50,6 +53,7 @@ private JTextField __SetEnd_JTextField = null;
 private JTextField __Units_JTextField = null;
 private JTextField __MissingValue_JTextField = null;
 private JTextField __InitialValue_JTextField = null;
+private SimpleJComboBox __InitialFunction_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Whether OK has been pressed.
@@ -109,6 +113,10 @@ public void actionPerformed( ActionEvent event )
 			response ( true );
 		}
 	}
+	else {
+	    // Change in choice
+	    refresh();
+	}
 }
 
 // Start event handlers for DocumentListener...
@@ -157,6 +165,7 @@ private void checkInput ()
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
+	String InitialFunction = __InitialFunction_JComboBox.getSelected();
 	__error_wait = false;
 
 	if ( Alias.length() > 0 ) {
@@ -183,6 +192,9 @@ private void checkInput ()
 	if ( (InitialValue != null) && (InitialValue.length() > 0) ) {
 		props.set ( "InitialValue", InitialValue );
 	}
+    if ( (InitialFunction != null) && (InitialFunction.length() > 0) ) {
+        props.set ( "InitialFunction", InitialFunction );
+    }
 	try {
 	    // This will warn the user...
 		__command.checkCommandParameters ( props, null, 1 );
@@ -206,6 +218,7 @@ private void commitEdits ()
 	String Units = __Units_JTextField.getText().trim();
 	String MissingValue = __MissingValue_JTextField.getText().trim();
 	String InitialValue = __InitialValue_JTextField.getText().trim();
+	String InitialFunction = __InitialFunction_JComboBox.getSelected();
 	__command.setCommandParameter ( "Alias", Alias );
 	__command.setCommandParameter ( "NewTSID", NewTSID );
 	__command.setCommandParameter ( "Description", Description );
@@ -214,6 +227,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "Units", Units );
 	__command.setCommandParameter ( "MissingValue", MissingValue );
 	__command.setCommandParameter ( "InitialValue", InitialValue );
+	__command.setCommandParameter ( "InitialFunction", InitialFunction );
 }
 
 /**
@@ -354,6 +368,22 @@ private void initialize ( JFrame parent, NewTimeSeries_Command command )
     JGUIUtil.addComponent(main_JPanel, new JLabel(
 		"Optional - default is to initialize with the missing value."),
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Initial function:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __InitialFunction_JComboBox = new SimpleJComboBox(false);
+    // TODO SAM 2009-11-11 Ideally should figure out the input time series interval and limit the choices.
+    List<TSFunctionType> functionTypes = __command.getFunctionChoices();
+    __InitialFunction_JComboBox.add ( "" );
+    for ( TSFunctionType functionType : functionTypes ) {
+        __InitialFunction_JComboBox.add ( "" + functionType );
+    }
+    __InitialFunction_JComboBox.select ( 0 );
+    __InitialFunction_JComboBox.addActionListener (this);
+    JGUIUtil.addComponent(main_JPanel, __InitialFunction_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - function to initialize data."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:"),
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -430,7 +460,8 @@ public boolean ok ()
 Refresh the command from the other text field contents.
 */
 private void refresh ()
-{	String Alias = "";
+{	String routine = getClass().getName() + ".refresh";
+    String Alias = "";
 	String NewTSID = "";
 	String Description = "";
 	String SetStart = "";
@@ -438,6 +469,7 @@ private void refresh ()
 	String Units = "";
 	String MissingValue = "";
 	String InitialValue = "";
+	String InitialFunction = "";
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
 		__first_time = false;
@@ -449,6 +481,7 @@ private void refresh ()
 		Units = props.getValue ( "Units" );
 		MissingValue = props.getValue ( "MissingValue" );
 		InitialValue = props.getValue ( "InitialValue" );
+		InitialFunction = props.getValue ( "InitialFunction" );
 		if ( Alias != null ) {
 			__Alias_JTextField.setText ( Alias );
 		}
@@ -473,6 +506,21 @@ private void refresh ()
 		if ( InitialValue != null ) {
 			__InitialValue_JTextField.setText ( InitialValue );
 		}
+        if ( InitialFunction == null ) {
+            // Select default...
+            __InitialFunction_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __InitialFunction_JComboBox, InitialFunction, JGUIUtil.NONE, null, null ) ) {
+                __InitialFunction_JComboBox.select ( InitialFunction );
+            }
+            else {
+                Message.printWarning ( 1, routine,
+                "Existing command references an invalid\nInitialFunction value \"" +
+                InitialFunction + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
 	Alias = __Alias_JTextField.getText().trim();
@@ -483,6 +531,7 @@ private void refresh ()
 	Units = __Units_JTextField.getText().trim();
 	MissingValue = __MissingValue_JTextField.getText().trim();
 	InitialValue = __InitialValue_JTextField.getText();
+	InitialFunction = __InitialFunction_JComboBox.getSelected();
 	props = new PropList ( __command.getCommandName() );
 	props.add ( "Alias=" + Alias );
 	props.add ( "NewTSID=" + NewTSID );
@@ -492,6 +541,7 @@ private void refresh ()
 	props.add ( "Units=" + Units );
 	props.add ( "MissingValue=" + MissingValue );
 	props.add ( "InitialValue=" + InitialValue );
+	props.add ( "InitialFunction=" + InitialFunction );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

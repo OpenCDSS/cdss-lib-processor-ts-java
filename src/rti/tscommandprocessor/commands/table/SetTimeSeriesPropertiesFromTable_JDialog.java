@@ -39,9 +39,9 @@ import RTi.Util.Message.Message;
 public class SetTimeSeriesPropertiesFromTable_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private SetTimeSeriesPropertiesFromTable_Command __command = null;	// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private SetTimeSeriesPropertiesFromTable_Command __command = null;
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -52,6 +52,7 @@ private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __TableTSIDColumn_JTextField = null;
 private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for time series identifiers
 private JTextField __TableInputColumns_JTextField = null;
+private JTextField __TSPropertyNames_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -156,6 +157,7 @@ private void checkInput ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableInputColumns = __TableInputColumns_JTextField.getText().trim();
+    String TSPropertyNames = __TSPropertyNames_JTextField.getText().trim();
 	PropList parameters = new PropList ( "" );
 
 	__error_wait = false;
@@ -181,6 +183,9 @@ private void checkInput ()
     if ( TableInputColumns.length() > 0 ) {
         parameters.set ( "TableInputColumns", TableInputColumns );
     }
+    if ( TSPropertyNames.length() > 0 ) {
+        parameters.set ( "TSPropertyNames", TSPropertyNames );
+    }
 
 	try {
 	    // This will warn the user...
@@ -204,6 +209,7 @@ private void commitEdits ()
     String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String TableInputColumns = __TableInputColumns_JTextField.getText().trim();
+    String TSPropertyNames = __TSPropertyNames_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -211,7 +217,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
     __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "TableInputColumns", TableInputColumns );
-
+    __command.setCommandParameter ( "TSPropertyNames", TSPropertyNames );
 }
 
 /**
@@ -314,6 +320,16 @@ private void initialize ( JFrame parent, SetTimeSeriesPropertiesFromTable_Comman
     JGUIUtil.addComponent(main_JPanel, new JLabel(
         "Required - column names from which to set properties."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Time series property names:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TSPropertyNames_JTextField = new JTextField ( 10 );
+    __TSPropertyNames_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __TSPropertyNames_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - property names in time series (default=input columns)."), 
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
 		0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -398,6 +414,7 @@ private void refresh ()
     String TableTSIDColumn = "";
     String TableTSIDFormat = "";
     String TableInputColumns = "";
+    String TSPropertyNames = "";
 
 	PropList props = __command.getCommandParameters();
 	if ( __first_time ) {
@@ -410,6 +427,7 @@ private void refresh ()
         TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
         TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         TableInputColumns = props.getValue ( "TableInputColumns" );
+        TSPropertyNames = props.getValue ( "TSPropertyNames" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -478,6 +496,9 @@ private void refresh ()
         if ( TableInputColumns != null ) {
             __TableInputColumns_JTextField.setText ( TableInputColumns );
         }
+        if ( TSPropertyNames != null ) {
+            __TSPropertyNames_JTextField.setText ( TSPropertyNames );
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -487,6 +508,7 @@ private void refresh ()
     TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
     TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     TableInputColumns = __TableInputColumns_JTextField.getText().trim();
+    TSPropertyNames = __TSPropertyNames_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -495,6 +517,7 @@ private void refresh ()
     props.add ( "TableTSIDColumn=" + TableTSIDColumn );
     props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "TableInputColumns=" + TableInputColumns );
+    props.add ( "TSPropertyNames=" + TSPropertyNames );
 	__command_JTextArea.setText( __command.toString ( props ) );
 }
 

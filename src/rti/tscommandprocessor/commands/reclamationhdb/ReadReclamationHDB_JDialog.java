@@ -642,6 +642,7 @@ private void setIntervalChoices ()
     __Interval_JComboBox.add ( "Month" );
     __Interval_JComboBox.add ( "Year" );
     // FIXME SAM 2010-10-26 Could handle WY as YEAR, but need to think about it
+    __Interval_JComboBox.add ( "Irregular" );
     __Interval_JComboBox.select ( 0 );
 }
 

@@ -393,6 +393,7 @@ throws SQLException
 // TODO SAM 2010-11-02 Figure out if this can be put in DMIUtil, etc.
 /**
 Get the Oracle date/time format string given the data interval.
+See http://www.techonthenet.com/oracle/functions/to_date.php
 @param a TimeInterval base interval
 @return the Oracle string for the to_date() SQL function (e.g., "YYYY-MM-DD HH24:MI:SS")
 */
@@ -409,6 +410,10 @@ private String getOracleDateFormat ( int intervalBase )
     }
     else if ( intervalBase == TimeInterval.YEAR ) {
         return "YYYY";
+    }
+    else if ( intervalBase == TimeInterval.IRREGULAR ) {
+        // Use minute since that seems to be what instantaneous data are
+        return "YYYY-MM-DD HH24:MI";
     }
     else {
         throw new InvalidParameterException("Time interval " + intervalBase +

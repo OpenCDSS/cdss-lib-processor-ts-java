@@ -65,6 +65,7 @@ private JTextField __TimeColumn_JTextField = null;
 private JTextField __DateTimeColumn_JTextField = null;
 private DateTimeFormatterSpecifiersJPanel __DateTimeFormat_JPanel = null;
 private JTextField __ValueColumn_JTextField = null;
+private JTextField __FlagColumn_JTextField = null;
 private JTextField __Comment_JTextField = null;
 private JTextField __SkipRows_JTextField = null;
 private JTextField __SkipRowsAfterComments_JTextField = null;
@@ -224,6 +225,7 @@ private void checkInput () {
 	String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
 	String DateTimeFormat =__DateTimeFormat_JPanel.getText(true,true).trim();
 	String ValueColumn = __ValueColumn_JTextField.getText().trim();
+	String FlagColumn = __FlagColumn_JTextField.getText().trim();
 	String LocationID = __LocationID_JTextField.getText().trim();
 	String Provider = __Provider_JTextField.getText().trim();
 	String DataType = __DataType_JTextField.getText().trim();
@@ -272,6 +274,9 @@ private void checkInput () {
     }
     if (ValueColumn.length() > 0) {
         props.set("ValueColumn", ValueColumn);
+    }
+    if (FlagColumn.length() > 0) {
+        props.set("FlagColumn", FlagColumn);
     }
     if (LocationID.length() > 0) {
         props.set("LocationID", LocationID);
@@ -331,6 +336,7 @@ private void commitEdits() {
     String TimeColumn = __TimeColumn_JTextField.getText().trim();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     String ValueColumn = __ValueColumn_JTextField.getText().trim();
+    String FlagColumn = __FlagColumn_JTextField.getText().trim();
     String LocationID = __LocationID_JTextField.getText().trim();
     String Provider = __Provider_JTextField.getText().trim();
     String DataType = __DataType_JTextField.getText().trim();
@@ -354,6 +360,7 @@ private void commitEdits() {
 	__command.setCommandParameter("DateTimeColumn", DateTimeColumn);
 	__command.setCommandParameter("DateTimeFormat", DateTimeFormat);
 	__command.setCommandParameter("ValueColumn", ValueColumn);
+	__command.setCommandParameter("FlagColumn", FlagColumn);
 	__command.setCommandParameter("LocationID", LocationID);
 	__command.setCommandParameter("Provider", Provider );
 	__command.setCommandParameter("DataType", DataType);
@@ -561,6 +568,16 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Required - specify column names for time series values, separated by commas (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Flag column(s):"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __FlagColumn_JTextField = new JTextField (20);
+    __FlagColumn_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __FlagColumn_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - specify column names for time series flags, separated by commas (can use \"FC[N:N]\")."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Location ID(s):"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -764,6 +781,7 @@ private void refresh()
     String DateTimeColumn = "";
     String DateTimeFormat = "";
     String ValueColumn = "";
+    String FlagColumn = "";
     String LocationID = "";
     String Provider = "";
     String DataType = "";
@@ -794,6 +812,7 @@ private void refresh()
 	    DateTimeColumn = props.getValue("DateTimeColumn");
 	    DateTimeFormat = props.getValue("DateTimeFormat");
 	    ValueColumn = props.getValue("ValueColumn");
+	    FlagColumn = props.getValue("FlagColumn");
 	    LocationID = props.getValue("LocationID");
 	    Provider = props.getValue("Provider");
 	    DataType = props.getValue("DataType");
@@ -873,6 +892,9 @@ private void refresh()
         if (ValueColumn != null) {
             __ValueColumn_JTextField.setText(ValueColumn);
         }
+        if (FlagColumn != null) {
+            __FlagColumn_JTextField.setText(FlagColumn);
+        }
         if (LocationID != null) {
             __LocationID_JTextField.setText(LocationID);
         }
@@ -930,6 +952,7 @@ private void refresh()
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
     DateTimeFormat = __DateTimeFormat_JPanel.getText(true,true).trim();
     ValueColumn = __ValueColumn_JTextField.getText().trim();
+    FlagColumn = __FlagColumn_JTextField.getText().trim();
     LocationID = __LocationID_JTextField.getText().trim();
     Provider = __Provider_JTextField.getText().trim();
     DataType = __DataType_JTextField.getText().trim();
@@ -954,6 +977,7 @@ private void refresh()
     props.add("DateTimeColumn=" + DateTimeColumn );
     props.add("DateTimeFormat=" + DateTimeFormat );
     props.add("ValueColumn=" + ValueColumn );
+    props.add("FlagColumn=" + FlagColumn );
     props.add("LocationID=" + LocationID );
     props.add("Provider=" + Provider );
     props.add("DataType=" + DataType );

@@ -146,6 +146,11 @@ Column names for data values, for each time series being processed, expanded for
 private List<String> __valueColumnsRuntime = new Vector();
 
 /**
+Column names for data flags, for each time series being processed, expanded for runtime.
+*/
+private List<String> __flagColumnsRuntime = new Vector();
+
+/**
 Constructor.
 */
 public ReadDelimitedFile_Command ()
@@ -182,6 +187,7 @@ throws InvalidCommandParameterException
     String DateColumn = parameters.getValue("DateColumn" );
     String TimeColumn = parameters.getValue("TimeColumn" );
     String ValueColumn = parameters.getValue("ValueColumn" );
+    String FlagColumn = parameters.getValue("FlagColumn" );
     String Comment = parameters.getValue("Comment" );  // No checks, but needed to process column names
     if ( Comment == null ) {
         Comment = "#"; // need default for checks
@@ -496,7 +502,7 @@ throws InvalidCommandParameterException
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
-                message, "Specify data column(s) as values from ColumnNames, separated by commas." ) );
+                message, "Specify data column(s) from ColumnNames, separated by commas." ) );
     }
     else {
         valueColumns = StringUtil.breakStringList(ValueColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
@@ -521,7 +527,7 @@ throws InvalidCommandParameterException
             valueColumnsRuntime = valueColumns;
         }
         setValueColumnsRuntime ( valueColumnsRuntime );
-        // Now check for valid values...
+        // Now check for valid column names...
         for ( String valueColumnRuntime : valueColumnsRuntime ) {
             if ( getColumnNumberFromName(valueColumnRuntime, getValueColumnsRuntime()) < 0 ) {
                 message = "The ValueColumn (" + valueColumnRuntime + ") is not a recognized column name.";
@@ -531,6 +537,53 @@ throws InvalidCommandParameterException
                         message, "Specify value column(s) matching ColumnNames, separated by commas." ) );
             }
         }
+    }
+    
+    List<String> flagColumns = new Vector();
+    List<String> flagColumnsRuntime = new Vector();
+    setFlagColumnsRuntime ( flagColumnsRuntime );
+    if ( (FlagColumn != null) && (FlagColumn.length() != 0) ) {
+        flagColumns = StringUtil.breakStringList(FlagColumn, ",", StringUtil.DELIM_ALLOW_STRINGS );
+        if ( StringUtil.indexOfIgnoreCase(FlagColumn,_FC, 0) >= 0 ) {
+            // Original string used slice notation for column name in file
+            try {
+                flagColumnsRuntime = readColumnNamesFromFile(InputFile_full, flagColumns,
+                    StringUtil.literalToInternal(Delimiter), Comment, getSkipRows(),
+                    getSkipRowsAfterComments() );
+            }
+            catch ( Exception e ) {
+                message = "Error getting the flag column name(s) to use for runtime processing (" + e + ").";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Verify that the flag column name(s) are specified using valid syntax." ) );
+                Message.printWarning( 3, routine, e );
+            }
+        }
+        else {
+            // Just use the column names as specified for runtime
+            flagColumnsRuntime = flagColumns;
+        }
+        setFlagColumnsRuntime ( flagColumnsRuntime );
+        // Now check for valid column names...
+        for ( String flagColumnRuntime : flagColumnsRuntime ) {
+            if ( getColumnNumberFromName(flagColumnRuntime, getFlagColumnsRuntime()) < 0 ) {
+                message = "The FlagColumn (" + flagColumnRuntime + ") is not a recognized column name.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                        message, "Specify flag column(s) matching ColumnNames, separated by commas." ) );
+            }
+        }
+    }
+    if ( (valueColumnsRuntime.size() > 0) && (flagColumnsRuntime.size() > 0) &&
+        (valueColumnsRuntime.size() != flagColumnsRuntime.size()) ) {
+        message = "The number of flag column names (" + flagColumnsRuntime.size() +
+            ") does not match the number of value column names (" + valueColumnsRuntime.size() + ").";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify " + valueColumnsRuntime.size() + " flag column names separated by commas." ) );
     }
 
     List<String> locationIDRuntime = new Vector();
@@ -827,6 +880,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DateColumn" );
     valid_Vector.add ( "TimeColumn" );
     valid_Vector.add ( "ValueColumn" );
+    valid_Vector.add ( "FlagColumn" );
     valid_Vector.add ( "LocationID" );
     valid_Vector.add ( "Provider" );
     valid_Vector.add ( "DataType" );
@@ -1045,6 +1099,14 @@ Return the list of time series read in discovery phase.
 private List<TS> getDiscoveryTSList ()
 {
     return __discovery_TS_List;
+}
+
+/**
+Return the flag column list, expanded for runtime.
+*/
+private List<String> getFlagColumnsRuntime()
+{
+    return __flagColumnsRuntime;
 }
 
 /**
@@ -1340,7 +1402,7 @@ Read a list of time series from a delimited file.
 private List<TS> readTimeSeriesList ( String inputFileFull,
     String delim, boolean treatConsecutiveDelimitersAsOne,
     List<String> columnNames, boolean readColumnNamesFromFile, String dateTimeColumn, String dateTimeFormat,
-    String dateColumn, String timeColumn, List<String> valueColumns,
+    String dateColumn, String timeColumn, List<String> valueColumns, List<String> flagColumns,
     String commentChar, int[][] skipRows, int skipRowsAfterComments,
     List<String> ids, List<String> providers, List<String> datatypes, TimeInterval interval,
     List<String> scenarios, List<String> units, List<String> missing,
@@ -1363,6 +1425,17 @@ throws IOException
     int datePos = getColumnNumberFromName(dateColumn,columnNames);
     int timePos = getColumnNumberFromName(timeColumn,columnNames);
     int [] valuePos = getColumnNumbersFromNames(valueColumns,columnNames);
+    // For simplification, make flagPos the same length as valuePos and set to -1 if flags not used
+    int [] flagPos = null;
+    if ( (flagColumns == null) || (flagColumns.size() == 0) ) {
+        flagPos = new int[valuePos.length];
+        for ( int i = 0; i < flagPos.length; i++ ) {
+            flagPos[i] = -1;
+        }
+    }
+    else {
+        flagPos = getColumnNumbersFromNames(flagColumns,columnNames);
+    }
     Message.printStatus(2, routine, "Date/time column=" + dateTimePos + " date column=" +
         datePos + " time column=" + timePos );
     // Create the time series - at this time meta-data are not read from the file
@@ -1441,6 +1514,7 @@ throws IOException
         int dl = 10;
         int ntokens = 0; // Number of tokens parsed from a line
         double value; // Data value
+        String flag; // Data flag
         int dtErrorCount = 0; // Count of errors parsing date/times
         while ( true ) {
             // Read a line and deal with skipping
@@ -1608,8 +1682,18 @@ throws IOException
                     continue;
                 }
                 valueString = tokens.get(valuePos[ival]).trim();
+                // Get the flag if specified (can have flag even if value is missing)
+                flag = null;
+                if ( (flagPos.length >= ival) && (flagPos[ival] >= 0) ) {
+                    flag = tokens.get(flagPos[ival]).trim();
+                    flag.replace("\"", "");
+                }
                 if ( valueString.equals("") || (StringUtil.indexOfIgnoreCase(missing, valueString) >= 0) ) {
-                    // Missing so just let it remain missing in the time series.
+                    // Missing so just let it remain missing in the time series, unless flag needs to be set
+                    if ( (flag != null) && !flag.equals("") ) {
+                        value = ts.getMissing();
+                        ts.setDataValue ( dateTime, value, flag, 0 );
+                    }
                 }
                 else if ( !StringUtil.isDouble(valueString) ) {
                     // Data error
@@ -1628,7 +1712,12 @@ throws IOException
                         // Need to check each one because there is no requirement that records be in order.
                         continue;
                     }
-                    ts.setDataValue ( dateTime, value );
+                    if ( (flag != null) && !flag.equals("") ) {
+                        ts.setDataValue ( dateTime, value, flag, 0 );
+                    }
+                    else {
+                        ts.setDataValue ( dateTime, value );
+                    }
                 }
             }
             // If reading the data, can break without allocating data and reading
@@ -2107,12 +2196,17 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             StringUtil.indexOfIgnoreCase(parameters.getValue("ValueColumn"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
+        else if ( (parameters.getValue("FlagColumn") != null) &&
+            StringUtil.indexOfIgnoreCase(parameters.getValue("FlagColumn"),_FC,0) >= 0 ) {
+            readColumnNamesFromFile = true;
+        }
         else if ( (parameters.getValue("LocationID") != null) &&
             StringUtil.indexOfIgnoreCase(parameters.getValue("LocationID"),_FC,0) >= 0 ) {
             readColumnNamesFromFile = true;
         }
         // Check some run-time information
         // Make sure that data column names for mapping are unique...
+        // TODO SAM 2012-04-24 Why is this important?  Why not allow multiple time series from same column?
         List<String>valueColumns = getValueColumnsRuntime();
         for ( int ic = 0; ic < valueColumns.size(); ic++ ) {
             for ( int jc = (ic + 1); jc < valueColumns.size(); jc++ ) {
@@ -2132,7 +2226,7 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
             getTreatConsecutiveDelimitersAsOne(),
             getColumnNamesRuntime(), readColumnNamesFromFile, getDateTimeColumnRuntime(),
             DateTimeFormat, getDateColumnRuntime(),
-            getTimeColumnRuntime(), getValueColumnsRuntime(),
+            getTimeColumnRuntime(), getValueColumnsRuntime(), getFlagColumnsRuntime(),
             Comment, getSkipRows(), getSkipRowsAfterComments(),
             getLocationIDRuntime(), getProvider(), getDataType(), getInterval(), getScenario(),
             getUnits(), getMissingValue(),
@@ -2264,6 +2358,14 @@ private void setDiscoveryTSList ( List discovery_TS_List )
 }
 
 /**
+Set the flag column names for each time series, expanded for runtime.
+*/
+private void setFlagColumnsRuntime ( List<String> flagColumnsRuntime )
+{
+    __flagColumnsRuntime = flagColumnsRuntime;
+}
+
+/**
 Set the data interval for the time series.
 */
 private void setInterval ( TimeInterval interval )
@@ -2368,6 +2470,7 @@ public String toString ( PropList props )
     String DateColumn = props.getValue("DateColumn" );
     String TimeColumn = props.getValue("TimeColumn" );
     String ValueColumn = props.getValue("ValueColumn" );
+    String FlagColumn = props.getValue("FlagColumn" );
     String Comment = props.getValue("Comment" );
     String SkipRows = props.getValue("SkipRows" );
     String SkipRowsAfterComments = props.getValue("SkipRowsAfterComments" );
@@ -2436,6 +2539,12 @@ public String toString ( PropList props )
             b.append(",");
         }
         b.append("ValueColumn=\"" + ValueColumn + "\"");
+    }
+    if ((FlagColumn != null) && (FlagColumn.length() > 0)) {
+        if (b.length() > 0) {
+            b.append(",");
+        }
+        b.append("FlagColumn=\"" + FlagColumn + "\"");
     }
     if ((Comment != null) && (Comment.length() > 0)) {
         if (b.length() > 0) {

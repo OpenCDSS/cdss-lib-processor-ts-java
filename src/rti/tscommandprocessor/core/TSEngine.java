@@ -669,8 +669,8 @@ import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import us.co.state.dwr.hbguest.ColoradoWaterHBGuestService;
-import us.co.state.dwr.sms.ColoradoWaterSMS;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
+import us.co.state.dwr.sms.datastore.ColoradoWaterSMSDataStore;
 
 import DWR.DMI.SatMonSysDMI.SatMonSysDMI;
 
@@ -4234,11 +4234,12 @@ throws Exception
             ts = null;
         }
     }
-	else if ( (inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterSMS") ) {
-        // New style TSID~input_type~input_name
+    else if ((dataStore != null) && (dataStore instanceof ColoradoWaterSMSDataStore) ) {
+        // New style TSID~dataStore
+        ColoradoWaterSMSDataStore cwds = (ColoradoWaterSMSDataStore)dataStore;
         try {
             ts = ColoradoWaterSMSAPI.readTimeSeries (
-                new ColoradoWaterSMS(), tsidentString2, readStart, readEnd, readData );
+                cwds.getColoradoWaterSMS(), tsidentString2, readStart, readEnd, readData );
         }
         catch ( Exception te ) {
             Message.printWarning ( 2, routine, "Error reading \"" + tsidentString2 +

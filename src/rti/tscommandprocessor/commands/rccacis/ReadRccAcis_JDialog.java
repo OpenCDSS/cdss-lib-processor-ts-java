@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.rccacis;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -15,11 +16,13 @@ import java.awt.event.WindowListener;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
@@ -50,9 +53,11 @@ private ReadRccAcis_Command __command = null;
 private SimpleJComboBox __DataStore_JComboBox = null;
 private SimpleJComboBox __DataType_JComboBox = null;
 private SimpleJComboBox __Interval_JComboBox = null;
+private JTextField __SiteID_JTextField;
 private JTextField __InputStart_JTextField;
 private JTextField __InputEnd_JTextField;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private JTabbedPane __tsInfo_JTabbedPane = null;
 			
 private JTextArea __command_JTextArea = null; // Command as JTextArea
 private InputFilter_JPanel __inputFilter_JPanel =null;
@@ -151,6 +156,10 @@ private void checkInput ()
     if ( Interval.length() > 0 ) {
         props.set ( "Interval", Interval );
     }
+    String SiteID = __SiteID_JTextField.getText().trim();
+    if ( SiteID.length() > 0 ) {
+        props.set ( "SiteID", SiteID );
+    }
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
 	    String where = getWhere ( i - 1 );
@@ -191,6 +200,8 @@ private void commitEdits ()
 	__command.setCommandParameter ( "DataStore", DataStore );
 	__command.setCommandParameter ( "DataType", DataType );
 	__command.setCommandParameter ( "Interval", Interval );
+    String SiteID = __SiteID_JTextField.getText().trim();
+    __command.setCommandParameter ( "SiteID", SiteID );
 	String delim = ";";
 	int numWhere = __inputFilter_JPanel.getNumFilterGroups();
 	for ( int i = 1; i <= numWhere; i++ ) {
@@ -200,7 +211,6 @@ private void commitEdits ()
 	    }
 	    __command.setCommandParameter ( "Where" + i, where );
 	}
-	// Both versions of the commands use these...
 	String InputStart = __InputStart_JTextField.getText().trim();
 	__command.setCommandParameter ( "InputStart", InputStart );
 	String InputEnd = __InputEnd_JTextField.getText().trim();
@@ -281,15 +291,11 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>WARNING - This command can be slow.  " +
-        "It is recommended that the Where filters be used to limit queries.</b></html>"),
+        "It is recommended that the Where filters be used to limit queries when reading multiple time series.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the RCC ACIS Data Store documentation for more information." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-   	JGUIUtil.addComponent(main_JPanel, new JLabel (
-    	"<html>Constrain the query by specifying time series metadata to match.  " +
-    	"<b>A location constraint must be specified.</b></html>" ), 
-    	0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
 		"If not specified, the input period defaults to the input period from SetInputPeriod()."),
 		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -334,6 +340,36 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel("Required - data interval (time step) for time series."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    __tsInfo_JTabbedPane = new JTabbedPane ();
+    __tsInfo_JTabbedPane.setBorder(
+        BorderFactory.createTitledBorder ( BorderFactory.createLineBorder(Color.black),
+        "Indicate how to match time series in ACIS" ));
+    JGUIUtil.addComponent(main_JPanel, __tsInfo_JTabbedPane,
+        0, ++y, 7, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JPanel singleTS_JPanel = new JPanel();
+    singleTS_JPanel.setLayout(new GridBagLayout());
+    __tsInfo_JTabbedPane.addTab ( "Match Single Time Series", singleTS_JPanel );
+    
+    int ySingle = -1;
+    JGUIUtil.addComponent(singleTS_JPanel,
+        new JLabel ("Specify a site ID when a specific time series is being processed."), 
+        0, ++ySingle, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel, new JLabel ("Site ID:"), 
+        0, ++ySingle, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __SiteID_JTextField = new JTextField (20);
+    __SiteID_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(singleTS_JPanel, __SiteID_JTextField,
+        1, ySingle, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleTS_JPanel,
+        new JLabel ("Required - site type (optional) and identifier (e.g., COOP:052454)."),
+        3, ySingle, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JPanel multipleTS_JPanel = new JPanel();
+    multipleTS_JPanel.setLayout(new GridBagLayout());
+    __tsInfo_JTabbedPane.addTab ( "Match 1+ Time Series Using Filter", multipleTS_JPanel );
+ 
+    int yMultiple = -1;
    	
    	// Input filters
     // TODO SAM 2010-11-02 Need to use SetInputFilters() so the filters can change when a
@@ -342,15 +378,18 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
 	int buffer = 3;
 	Insets insets = new Insets(0,buffer,0,0);
 	try {
+	    JGUIUtil.addComponent(multipleTS_JPanel,
+            new JLabel ("Specify filters when multiple time series are being processed (a location constraint must be specified)."), 
+            0, ++yMultiple, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 	    // Add input filters for ReclamationHDB time series...
 		__inputFilter_JPanel = new RccAcis_TimeSeries_InputFilter_JPanel(
 		    getSelectedDataStore(), __command.getNumFilterGroups() );
-		JGUIUtil.addComponent(main_JPanel, __inputFilter_JPanel,
-			0, ++y, 7, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
+		JGUIUtil.addComponent(multipleTS_JPanel, __inputFilter_JPanel,
+			0, ++yMultiple, 3, 1, 0.0, 0.0, insets, GridBagConstraints.HORIZONTAL,
 			GridBagConstraints.WEST );
    		__inputFilter_JPanel.addEventListeners ( this );
-   	    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Optional - query filters."),
-   	        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+   	    JGUIUtil.addComponent(multipleTS_JPanel, new JLabel ( "Optional - query filters."),
+   	        3, yMultiple, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 	}
 	catch ( Exception e ) {
 		Message.printWarning ( 2, routine, "Unable to initialize RCC ACIS input filter." );
@@ -469,6 +508,7 @@ private void refresh ()
 	String DataStore = "";
 	String DataType = "";
 	String Interval = "";
+	String SiteID = "";
 	String filter_delim = ";";
 	String InputStart = "";
 	String InputEnd = "";
@@ -481,6 +521,7 @@ private void refresh ()
 		DataStore = props.getValue ( "DataStore" );
 		DataType = props.getValue ( "DataType" );
 		Interval = props.getValue ( "Interval" );
+		SiteID = props.getValue ( "SiteID" );
 		InputStart = props.getValue ( "InputStart" );
 		InputEnd = props.getValue ( "InputEnd" );
 		Alias = props.getValue ( "Alias" );
@@ -532,17 +573,29 @@ private void refresh ()
         InputFilter_JPanel filter_panel = __inputFilter_JPanel;
         int nfg = filter_panel.getNumFilterGroups();
         String where;
+        int numSet = 0;
         for ( int ifg = 0; ifg < nfg; ifg ++ ) {
             where = props.getValue ( "Where" + (ifg + 1) );
             if ( (where != null) && (where.length() > 0) ) {
                 // Set the filter...
                 try {
                     filter_panel.setInputFilter (ifg, where, filter_delim );
+                    ++numSet;
                 }
                 catch ( Exception e ) {
                     Message.printWarning ( 1, routine, "Error setting where information using \"" + where + "\"" );
                     Message.printWarning ( 3, routine, e );
                 }
+            }
+        }
+        if ( numSet > 0 ) {
+            __tsInfo_JTabbedPane.setSelectedIndex(1);
+        }
+        // Put this after filters because if SiteID is specified the tab should be shown
+        if ( SiteID != null ) {
+            __SiteID_JTextField.setText ( SiteID );
+            if ( !SiteID.equals("") ) {
+                __tsInfo_JTabbedPane.setSelectedIndex(0);
             }
         }
 		if ( InputStart != null ) {
@@ -566,6 +619,8 @@ private void refresh ()
     props.add ( "DataStore=" + DataStore );
     props.add ( "DataType=" + DataType );
     props.add ( "Interval=" + Interval );
+    SiteID = __SiteID_JTextField.getText().trim();
+    props.add ( "SiteID=" + SiteID );
 	// Add the where clause(s)...
 	InputFilter_JPanel filter_panel = __inputFilter_JPanel;
 	int nfg = filter_panel.getNumFilterGroups();

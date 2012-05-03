@@ -50,7 +50,7 @@ private String postal = "";
 
 /**
 Agency station identifiers and internal agency code (e.g., "SOMEID 2".
-Use the RccAcisDataStore.lookupStationIDType() method.
+Use the RccAcisDataStore.lookupStationIDType() method to convert the number to a string.
 */
 private String [] sIds = { "" };
 
@@ -154,7 +154,7 @@ public String getIDPreferred ( boolean prefix )
 
 /**
 Return the specific station identifier, or a blank string if not a of the specific type station.
-@param stationIDType a station identifier type (e.g., "WBAN") from the RccAcisStationType instances.
+@param stationIDType a station identifier type (e.g., "WBAN" or "BUFthr 9") from the RccAcisStationType instances.
 @return station identifier for the specific station type.
 */
 public String getIDSpecific(String stationIDType)
@@ -247,6 +247,15 @@ Set the name.
 public void setPostal ( String postal2 )
 {
     postal = postal2;
+}
+
+/**
+Set the site identifiers.
+@param sids array of site identifiers of form ("COOP 2").
+*/
+public void setSIds ( String [] sids )
+{
+    sIds = sids;
 }
 
 /**

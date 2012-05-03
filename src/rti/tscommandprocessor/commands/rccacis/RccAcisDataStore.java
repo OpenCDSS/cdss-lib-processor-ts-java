@@ -169,6 +169,7 @@ public List<String> getDataTypeStrings ( boolean includeName, boolean includeInt
 
 /**
 Look up the station type given the station code (return null if not found).
+@param code station code (e.g., 2 for COOP).
 */
 public RccAcisStationType lookupStationTypeFromCode ( int code )
 {
@@ -181,7 +182,8 @@ public RccAcisStationType lookupStationTypeFromCode ( int code )
 }
 
 /**
-Look up the station type given the station type (return null if not found).
+Look up the station type given the station type string (return null if not found).
+@param type station type (e.g., "COOP").
 */
 public RccAcisStationType lookupStationTypeFromType ( String type )
 {
@@ -199,7 +201,7 @@ Look up the variable information given the data type, which is a string of the f
 @param dataType data type to match in variable data.
 @return the variable that matches the data type.
 */
-private RccAcisVariableTableRecord lookupVariable ( String dataType )
+public RccAcisVariableTableRecord lookupVariable ( String dataType )
 {   String majorString = null;
     String name = null;
     int pos = dataType.indexOf("-");

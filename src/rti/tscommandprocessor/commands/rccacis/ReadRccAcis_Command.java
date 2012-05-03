@@ -147,6 +147,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "DataStore" );
     valid_Vector.add ( "DataType" );
     valid_Vector.add ( "Interval" );
+    valid_Vector.add ( "SiteID" );
     for ( int i = 1; i <= __numFilterGroups; i++ ) { 
         valid_Vector.add ( "Where" + i );
     }
@@ -271,6 +272,10 @@ CommandWarningException, CommandException
         DataType = DataType.substring(0,pos);
     }
     String Interval = parameters.getValue("Interval");
+    String SiteID = parameters.getValue("SiteID");
+    if ( SiteID == null ) {
+        SiteID = ""; // To simplify code below
+    }
     String Alias = parameters.getValue("Alias");
     
 	String InputStart = parameters.getValue ( "InputStart" );
@@ -393,75 +398,118 @@ CommandWarningException, CommandException
 					// Will be added to for one time series
 					// read or replaced if a list is read.
 	try {
-        // Read 1+ time series...
-		List WhereN_Vector = new Vector ( 6 );
-		String WhereN;
-		int nfg = 0;	// Used below.
-		for ( nfg = 0; nfg < 100; nfg++ ) {
-			WhereN = parameters.getValue ( "Where" + (nfg + 1) );
-			if ( WhereN == null ) {
-				break;	// No more where clauses
-			}
-			WhereN_Vector.add ( WhereN );
-		}
-	
-		// Find the data store to use...
-		DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
-		    DataStore, RccAcisDataStore.class );
-		if ( dataStore == null ) {
-			message = "Could not get data store for name \"" + DataStore + "\" to query data.";
-			Message.printWarning ( 2, routine, message );
+        // Find the data store to use...
+        DataStore dataStore = ((TSCommandProcessor)processor).getDataStoreForName (
+            DataStore, RccAcisDataStore.class );
+        if ( dataStore == null ) {
+            message = "Could not get data store for name \"" + DataStore + "\" to query data.";
+            Message.printWarning ( 2, routine, message );
             status.addToLog ( commandPhase,
                 new CommandLogRecord(CommandStatusType.FAILURE,
                     message, "Verify that the RCC ACIS web service has been configured with name \"" +
                     DataStore + "\" and is available." ) );
-			throw new Exception ( message );
-		}
-		RccAcisDataStore rccAcisDataStore = (RccAcisDataStore)dataStore;
-
-		// Initialize an input filter based on the data type...
-
-		RccAcis_TimeSeries_InputFilter_JPanel filterPanel =
-		    new RccAcis_TimeSeries_InputFilter_JPanel((RccAcisDataStore)dataStore, getNumFilterGroups());
-
-		// Populate with the where information from the command...
-
-		String filterDelim = ";";
-		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
-			WhereN = (String)WhereN_Vector.get(ifg);
-            if ( WhereN.length() == 0 ) {
-                continue;
-            }
-			// Set the filter...
-			try {
-                filterPanel.setInputFilter( ifg, WhereN, filterDelim );
-			}
-			catch ( Exception e ) {
-                message = "Error setting where information using \""+WhereN+"\"";
-				Message.printWarning ( 2, routine,message);
-				Message.printWarning ( 3, routine, e );
-				++warning_count;
+            throw new Exception ( message );
+        }
+        RccAcisDataStore rccAcisDataStore = (RccAcisDataStore)dataStore;
+        List<RccAcisStationTimeSeriesMetadata> tsMetadataList = null;
+	    if ( !SiteID.equals("") ) {
+	        // If the SiteID is specified so read one time series.  Do this by initializing a metadata object
+	        // as if it were returned from the multi-station web service call
+	        tsMetadataList = new Vector();
+	        RccAcisStationTimeSeriesMetadata tsMetadata = new RccAcisStationTimeSeriesMetadata();
+	        // Split the SiteID into parts if a station type is specified
+	        String stationType = null;
+	        String siteID2 = null; // SiteID with only site (no station type)
+	        RccAcisStationType stationTypeO = null;
+	        if ( SiteID.indexOf(":") > 0 ) {
+	            String [] parts = SiteID.split(":");
+	            stationType = parts[0].trim();
+	            siteID2 = parts[1].trim();
+    	        stationTypeO = rccAcisDataStore.lookupStationTypeFromType(stationType);
+    	        if ( stationTypeO == null ) {
+    	            message = "Could not get station type code from \"" + stationType + "\" to query data.";
+    	            Message.printWarning ( 2, routine, message );
+    	            status.addToLog ( commandPhase,
+    	                new CommandLogRecord(CommandStatusType.FAILURE,
+    	                    message, "Verify that SiteID is prefixed by a valid station type code." ) );
+    	            throw new Exception ( message );
+    	        }
+	        }
+	        String [] sids = { siteID2 };
+	        if ( stationTypeO != null ) {
+	            sids[0] = siteID2 + " " + stationTypeO.getCode();
+	        }
+	        tsMetadata.setDataStore(rccAcisDataStore);
+	        tsMetadata.setSIds(sids);
+	        RccAcisVariableTableRecord variable = rccAcisDataStore.lookupVariable(DataType);
+            if ( variable == null ) {
+                message = "Could not determine variable from \"" + DataType + "\" to query data.";
+                Message.printWarning ( 2, routine, message );
                 status.addToLog ( commandPhase,
                     new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Report the problem to software support - also see the log file." ) );
-			}
-		}
-		
-		// Read the list of metadata from which identifiers can be obtained.
+                        message, "Verify that the variable is valid." ) );
+                throw new Exception ( message );
+            }
+	        tsMetadata.setVariable(variable);
+	        tsMetadataList.add ( tsMetadata );
+	        Message.printStatus ( 2, routine, "Single ACIS time series was requested for site ID \"" + sids[0] + "\"." );
+	    }
+	    else {
+            // Read 1+ time series...
+    		List<String> WhereN_Vector = new Vector ( 6 );
+    		String WhereN;
+    		int nfg = 0; // Used below.
+    		for ( nfg = 0; nfg < 100; nfg++ ) {
+    			WhereN = parameters.getValue ( "Where" + (nfg + 1) );
+    			if ( WhereN == null ) {
+    				break;	// No more where clauses
+    			}
+    			WhereN_Vector.add ( WhereN );
+    		}
+    	
+    		// Initialize an input filter based on the data type...
+    
+    		RccAcis_TimeSeries_InputFilter_JPanel filterPanel =
+    		    new RccAcis_TimeSeries_InputFilter_JPanel((RccAcisDataStore)dataStore, getNumFilterGroups());
+    
+    		// Populate with the where information from the command...
+    
+    		String filterDelim = ";";
+    		for ( int ifg = 0; ifg < nfg; ifg ++ ) {
+    			WhereN = (String)WhereN_Vector.get(ifg);
+                if ( WhereN.length() == 0 ) {
+                    continue;
+                }
+    			// Set the filter...
+    			try {
+                    filterPanel.setInputFilter( ifg, WhereN, filterDelim );
+    			}
+    			catch ( Exception e ) {
+                    message = "Error setting where information using \""+WhereN+"\"";
+    				Message.printWarning ( 2, routine,message);
+    				Message.printWarning ( 3, routine, e );
+    				++warning_count;
+                    status.addToLog ( commandPhase,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Report the problem to software support - also see the log file." ) );
+    			}
+    		}
+    		
+    		// Read the list of metadata from which identifiers can be obtained.
+    	
+    		Message.printStatus ( 2, routine, "Getting the list of stations and time series metadata using filter(s)..." );
+    	
+    		// The data type in the command is "ObjectType - DataCommonName", which is OK for the following call
+            tsMetadataList = rccAcisDataStore.readStationTimeSeriesMetadataList( DataType, Interval, filterPanel );
+	    }
+	    
+        // Make sure that size is set...
+        int size = 0;
+        if ( tsMetadataList != null ) {
+            size = tsMetadataList.size();
+        }
 	
-		Message.printStatus ( 2, routine, "Getting the list of stations and time series metadata..." );
-	
-		List<RccAcisStationTimeSeriesMetadata> tsMetadataList = null;
-
-		// The data type in the command is "ObjectType - DataCommonName", which is OK for the following call
-        tsMetadataList = rccAcisDataStore.readStationTimeSeriesMetadataList( DataType, Interval, filterPanel );
-		// Make sure that size is set...
-		int size = 0;
-		if ( tsMetadataList != null ) {
-			size = tsMetadataList.size();
-		}
-	
-   		if ( (tsMetadataList == null) || (size == 0) ) {
+   		if ( size == 0 ) {
 			Message.printStatus ( 2, routine,"No RCC ACIS time series were found." );
 	        // Warn if nothing was retrieved (can be overridden to ignore).
             message = "No time series were read from the RCC ACIS web service.";
@@ -619,6 +667,13 @@ public String toString ( PropList props )
 		}
 		b.append ( "Interval=\"" + Interval + "\"" );
 	}
+    String SiteID = props.getValue("SiteID");
+    if ( (SiteID != null) && (SiteID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "SiteID=\"" + SiteID + "\"" );
+    }
 	String delim = ";";
     for ( int i = 1; i <= __numFilterGroups; i++ ) {
     	String where = props.getValue("Where" + i);

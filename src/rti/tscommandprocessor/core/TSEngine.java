@@ -669,6 +669,7 @@ import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
 import rti.tscommandprocessor.commands.util.Exit_Command;
 import us.co.state.dwr.hbguest.ColoradoWaterHBGuestService;
+import us.co.state.dwr.hbguest.datastore.ColoradoWaterHBGuestDataStore;
 import us.co.state.dwr.sms.ColoradoWaterSMSAPI;
 import us.co.state.dwr.sms.datastore.ColoradoWaterSMSDataStore;
 
@@ -4211,13 +4212,15 @@ throws Exception
             }
         }
     }
-    else if ((inputType != null) && inputType.equalsIgnoreCase("ColoradoWaterHBGuest") ) {
+    else if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
+        // New style TSID~dataStore
+        ColoradoWaterHBGuestDataStore cwds = (ColoradoWaterHBGuestDataStore)dataStore;
         if ( Message.isDebugOn ) {
             Message.printDebug ( 10, routine, "Reading time series..." +
             tsidentString + "," + readStart + "," + readEnd);
         }
         try {
-            ts = ColoradoWaterHBGuestService.getService().readTimeSeries (
+            ts = cwds.getColoradoWaterHBGuestService().readTimeSeries (
                 tsidentString, readStart, readEnd, units, readData );
             if ( Message.isDebugOn ) {
                 Message.printStatus ( 10, routine, "...done reading time series." );

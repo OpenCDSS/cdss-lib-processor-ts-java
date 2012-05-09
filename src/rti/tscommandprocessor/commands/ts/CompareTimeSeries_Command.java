@@ -256,7 +256,7 @@ CommandWarningException, CommandException
     
 	PropList parameters = getCommandParameters();
 	
-	List tslist = null;
+	List<TS> tslist = null;
 	try {
 	    Object o = processor.getPropContents( "TSResultsList" );
 		tslist = (List)o;
@@ -493,13 +493,13 @@ CommandWarningException, CommandException
 		int it; // Counter for tolerances.
 		int totalcount = 0; // Total non-missing data values.
 		String loc1, datatype1; // Location and data type for the first time series. 
-		List loc_Vector = new Vector();	// Location/datatype
-		List datatype_Vector = new Vector(); // pairs that have already been processed.
+		List<String> loc_Vector = new Vector();	// Location/datatype
+		List<String> datatype_Vector = new Vector(); // pairs that have already been processed.
 		if ( CreateDiffTS_boolean ) {
 			diffts_Vector = new Vector ( size );
 		}
 		for ( int i = 0; i < size; i++ ) {
-			ts1 = (TS)tslist.get(i);
+			ts1 = tslist.get(i);
 			loc1 = ts1.getLocation();
 			datatype1 = ts1.getDataType();
 			// Make sure not to analyze the same combination
@@ -510,10 +510,10 @@ CommandWarningException, CommandException
 				// Check the parts individually...
 				found_loc1 = false;
 				found_datatype1 = false;
-				if ( loc1.equalsIgnoreCase( (String)loc_Vector.get(j)) ) {
+				if ( loc1.equalsIgnoreCase( loc_Vector.get(j)) ) {
 					found_loc1 = true;
 				}
-				if ( datatype1.equalsIgnoreCase((String)datatype_Vector.get(j))) {
+				if ( datatype1.equalsIgnoreCase(datatype_Vector.get(j))) {
 					found_datatype1 = true;
 				}
 				// Now reset found_loc1 depending on whether the location and datatype (one or both) are
@@ -543,7 +543,7 @@ CommandWarningException, CommandException
 				if ( i == j ) {
 					continue;
 				}
-				ts2 = (TS)tslist.get(j);
+				ts2 = tslist.get(j);
 				// Make sure that the interval is the same...
 				if ( !((ts1.getDataIntervalBase() == ts2.getDataIntervalBase()) &&
 					(ts1.getDataIntervalMult() == ts2.getDataIntervalMult())) ) {

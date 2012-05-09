@@ -4345,8 +4345,9 @@ throws Exception
 				ts = null;
 			}
 			else {
-                ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData,
-                    null );	// HydroBaseDMI read props Use defaults here
+			    // Do need to fill daily diversion records with carry forward
+			    // TODO SAM 2012-05-08 Need to evaluate whether to turn on fill with diversion comments by default
+                ts = hbdmi.readTimeSeries ( tsidentString, readStart, readEnd, units, readData, null );
 			}
 			if ( Message.isDebugOn ) {
 				Message.printStatus ( 10, routine, "...done reading time series." );

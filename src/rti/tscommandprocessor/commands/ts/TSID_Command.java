@@ -221,12 +221,13 @@ throws InvalidCommandParameterException,
 	TS ts = null;
 	try {
 	    boolean notFoundLogged = false;
-        // Make a request to the processor...
+        // Make a request to the processor to read the time series...
         PropList request_params = new PropList ( "" );
         request_params.set ( "TSID", TSID );
         request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );
         request_params.set ( "CommandTag", command_tag );
         request_params.set ( "IfNotFound", IfNotFound );
+        // Indicates discovery mode...
         request_params.setUsingObject ( "ReadData", new Boolean(readData) );
         CommandProcessorRequestResultsBean bean = null;
         try {
@@ -347,7 +348,7 @@ throws InvalidCommandParameterException,
                         message, "Check the log file - report the problem to software support." ) );
 	}
 	
-	List tslist = new Vector(1);
+	List<TS> tslist = new Vector(1);
     if ( ts != null ) {
         tslist.add ( ts );
     }
@@ -367,6 +368,7 @@ throws InvalidCommandParameterException,
         }
     }
     else if ( commandPhase == CommandPhaseType.DISCOVERY ) {
+        //Message.printStatus(2,routine,"TS in discovery mode is " + ts );
         if ( ts == null ) {
             try {
                 // Create a time series and set the identifier - other metadata will not be set
@@ -385,6 +387,9 @@ throws InvalidCommandParameterException,
                             message, "Confirm that the TSID is a valid format." ) );
             }
         }
+        //else {
+        //    Message.printStatus(2,routine,"TSID in discovery mode is " + ts.getIdentifierString() );
+        //}
         setDiscoveryTSList ( tslist );
     }
 

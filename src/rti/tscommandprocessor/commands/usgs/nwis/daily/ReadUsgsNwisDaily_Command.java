@@ -660,7 +660,9 @@ CommandWarningException, CommandException
 			}
 			
             // Save the output file name...
-            setOutputFile ( new File(OutputFile_full));
+			if ( (OutputFile != null) && !OutputFile.equals("") ) {
+			    setOutputFile ( new File(OutputFile_full));
+			}
 		}
     
         Message.printStatus ( 2, routine, "Read " + size + " USGS NWIS daily time series." );

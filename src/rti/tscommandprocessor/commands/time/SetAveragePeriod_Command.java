@@ -26,9 +26,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the SetAveragePeriod() command.
-</p>
 */
 public class SetAveragePeriod_Command extends AbstractCommand implements Command
 {
@@ -275,6 +273,29 @@ throws CommandWarningException, CommandException
 	status.refreshPhaseSeverity(CommandPhaseType.RUN,CommandStatusType.SUCCESS);
 }
 
-// Can rely on base class for toString().
+/**
+Return the string representation of the command.
+*/
+public String toString ( PropList props )
+{   if ( props == null ) {
+        return getCommandName() + "()";
+    }
+    String AverageStart = props.getValue( "AverageStart" );
+    String AverageEnd = props.getValue( "AverageEnd" );
+    StringBuffer b = new StringBuffer ();
+    if ( (AverageStart != null) && (AverageStart.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AverageStart=\"" + AverageStart + "\"");
+    }
+    if ( (AverageEnd != null) && (AverageEnd.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AverageEnd=\"" + AverageEnd + "\"");
+    }
+    return getCommandName() + "(" + b.toString() + ")";
+}
 
 }

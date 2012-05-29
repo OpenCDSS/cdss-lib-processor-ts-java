@@ -512,7 +512,7 @@ private void initialize(JFrame parent, ReadDelimitedFile_Command command) {
     __ColumnNames_JTextField = new JTextField (30);
     __ColumnNames_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(main_JPanel, __ColumnNames_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Required - column names for file, used below to read data (can use \"FC[N:N]\")."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
         

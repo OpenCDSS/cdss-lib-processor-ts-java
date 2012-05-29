@@ -62,6 +62,7 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private SimpleJComboBox __Statistic_JComboBox = null;
 private SimpleJComboBox __SampleMethod_JComboBox = null;
 private JTextField __Bracket_JTextField = null;
+private JTextField __AllowMissingCount_JTextField = null;
 private JLabel __Bracket_JLabel = null; // Label for bracket
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up
@@ -192,6 +193,7 @@ private void checkInput ()
     String Statistic = __Statistic_JComboBox.getSelected();
     String SampleMethod = __SampleMethod_JComboBox.getSelected();
     String Bracket = __Bracket_JTextField.getText().trim();
+    String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     __error_wait = false;
 
@@ -212,6 +214,9 @@ private void checkInput ()
     }
     if ( Bracket.length() > 0 ) {
         parameters.set ( "Bracket", Bracket );
+    }
+    if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
+        parameters.set ( "AllowMissingCount", AllowMissingCount );
     }
     if (Alias.length() > 0) {
         parameters.set("Alias", Alias);
@@ -237,6 +242,7 @@ private void commitEdits ()
     String Statistic = __Statistic_JComboBox.getSelected();
     String SampleMethod = __SampleMethod_JComboBox.getSelected();
     String Bracket = __Bracket_JTextField.getText().trim();
+    String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
@@ -244,6 +250,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Statistic", Statistic );
     __command.setCommandParameter ( "SampleMethod", SampleMethod );
     __command.setCommandParameter ( "Bracket", Bracket );
+    __command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
     __command.setCommandParameter ( "Alias", Alias );
 }
 
@@ -347,6 +354,16 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (except for " + RunningAverageType.N_ALL_YEAR + ")."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Allow missing count:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __AllowMissingCount_JTextField = new JTextField (10);
+    __AllowMissingCount_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "Optional - number of missing values allowed in sample (default=0)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Alias_JTextField = new TSFormatSpecifiersJPanel(10);
@@ -439,6 +456,7 @@ private void refresh ()
     String Statistic = "";
     String SampleMethod = "";
     String Bracket = "";
+    String AllowMissingCount = "";
     String Alias = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
@@ -450,6 +468,7 @@ private void refresh ()
         Statistic = props.getValue ( "Statistic" );
         SampleMethod = props.getValue ( "SampleMethod" );
         Bracket = props.getValue ( "Bracket" );
+        AllowMissingCount = props.getValue ( "AllowMissingCount" );
         Alias = props.getValue ( "Alias" );
         if ( TSList == null ) {
             // Select default...
@@ -527,6 +546,9 @@ private void refresh ()
         if ( Bracket != null ) {
             __Bracket_JTextField.setText( Bracket );
         }
+        if ( AllowMissingCount != null ) {
+            __AllowMissingCount_JTextField.setText ( AllowMissingCount );
+        }
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
@@ -538,6 +560,7 @@ private void refresh ()
     Statistic = __Statistic_JComboBox.getSelected();
     SampleMethod = __SampleMethod_JComboBox.getSelected();
     Bracket = __Bracket_JTextField.getText().trim();
+    AllowMissingCount = __AllowMissingCount_JTextField.getText();
     Alias = __Alias_JTextField.getText().trim();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
@@ -546,6 +569,7 @@ private void refresh ()
     props.add ( "Statistic=" + Statistic );
     props.add ( "SampleMethod=" + SampleMethod );
     props.add ( "Bracket=" + Bracket );
+    props.add ( "AllowMissingCount=" + AllowMissingCount );
     props.add ( "Alias=" + Alias );
     __command_JTextArea.setText( __command.toString ( props ) );
 }

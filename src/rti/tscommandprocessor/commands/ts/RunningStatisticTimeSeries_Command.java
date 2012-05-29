@@ -67,6 +67,7 @@ throws InvalidCommandParameterException
     String Statistic = parameters.getValue ( "Statistic" );
 	String SampleMethod = parameters.getValue ( "SampleMethod" );
     String Bracket = parameters.getValue ( "Bracket" );
+    String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     //String Alias = parameters.getValue ( "Alias" );
 	String warning = "";
     String message;
@@ -156,6 +157,27 @@ throws InvalidCommandParameterException
         }
     }
     
+    if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
+        if ( !StringUtil.isInteger(AllowMissingCount) ) {
+            message = "The AllowMissingCount value (" + AllowMissingCount + ") is not an integer.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                    new CommandLogRecord(CommandStatusType.FAILURE,
+                            message, "Specify an integer for AllowMissingCount." ) );
+        }
+        else {
+            // Make sure it is an allowable value >= 0...
+            int i = Integer.parseInt(AllowMissingCount);
+            if ( i < 0 ) {
+                message = "The AllowMissingCount value (" + AllowMissingCount + ") must be >= 0.";
+                warning += "\n" + message;
+                status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                                message, "Specify a value >= 0." ) );
+            }
+        }
+    }
+    
     /*
     if ( (Alias == null) || Alias.equals("") ) {
         message = "The time series alias must be specified.";
@@ -173,6 +195,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Statistic" );
     valid_Vector.add ( "SampleMethod" );
     valid_Vector.add ( "Bracket" );
+    valid_Vector.add ( "AllowMissingCount" );
     valid_Vector.add ( "Alias" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
@@ -295,6 +318,11 @@ CommandWarningException, CommandException
     if ( (Bracket != null) && Bracket.length() > 0) {
         Bracket_int = Integer.valueOf ( Bracket );
     }
+    String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
+    int AllowMissingCount_int = 0;
+    if ( (AllowMissingCount != null) && AllowMissingCount.length() > 0) {
+        AllowMissingCount_int = Integer.valueOf ( AllowMissingCount );
+    }
     String Alias = parameters.getValue ( "Alias" );
 
     // Get the time series to process.
@@ -386,13 +414,23 @@ CommandWarningException, CommandException
 	    ts = tslist.get(its);
 		try {
             // Do the processing...
-			Message.printStatus ( 2, routine, "Converting to running statistic: \"" + ts.getIdentifier() + "\"." );
-			TSUtil_RunningStatistic tsu = new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod );
+			Message.printStatus ( 2, routine, "Calculating running statistic: \"" + ts.getIdentifier() + "\"." );
+			TSUtil_RunningStatistic tsu =
+			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod, AllowMissingCount_int );
 			newts = tsu.runningStatistic(createData);
 			if ( (Alias != null) && !Alias.equals("") ) {
                 String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
                     processor, newts, Alias, status, commandPhase);
                 newts.setAlias ( alias );
+            }
+	        // Append problems in the low-level code to command status log
+            for ( String problem : tsu.getProblems() ) {
+                Message.printWarning ( warning_level,
+                    MessageUtil.formatMessageTag(command_tag,++warning_count),routine,problem );
+                // No recommendation since it is a user-defined check
+                // FIXME SAM 2009-04-23 Need to enable using the ProblemType in the log.
+                status.addToLog ( commandPhase,new CommandLogRecord(CommandStatusType.WARNING,
+                    problem, "" ) );
             }
             if ( commandPhase == CommandPhaseType.DISCOVERY ) {
                 discoveryTSList.add ( newts );
@@ -402,8 +440,8 @@ CommandWarningException, CommandException
             }  
 		}
 		catch ( Exception e ) {
-			message = "Unexpected error converting time series \""+	ts.getIdentifier() +
-			    "\" to running statistic (" + e + ").";
+			message = "Unexpected error calculating running statistic for time series \"" + ts.getIdentifier() +
+			    "\" (" + e + ").";
 			Message.printWarning ( warning_level,
 				MessageUtil.formatMessageTag(
 				command_tag,++warning_count),routine,message );
@@ -452,6 +490,7 @@ public String toString ( PropList props )
     String Statistic = props.getValue("Statistic");
 	String SampleMethod = props.getValue("SampleMethod");
 	String Bracket = props.getValue("Bracket");
+	String AllowMissingCount = props.getValue("AllowMissingCount");
 	String Alias = props.getValue("Alias");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
@@ -490,6 +529,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "Bracket=" + Bracket );
 	}
+    if ( (AllowMissingCount != null) && (AllowMissingCount.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "AllowMissingCount=" + AllowMissingCount );
+    }
     if ( (Alias != null) && (Alias.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );

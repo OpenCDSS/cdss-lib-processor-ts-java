@@ -361,7 +361,7 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
     JGUIUtil.addComponent(main_JPanel, __AllowMissingCount_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "Optional - number of missing values allowed in sample (default=0)."),
+        "Optional - number of missing values allowed in sample (default=no limit)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel("Alias to assign:"),

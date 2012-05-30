@@ -172,6 +172,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "InputEnd" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "EnsembleName" );
+    valid_Vector.add ( "Alias" );
 	valid_Vector.add ( "TraceLength" );
 	valid_Vector.add ( "ReferenceDate" );
     valid_Vector.add ( "ShiftDataHow" );
@@ -296,6 +297,10 @@ CommandWarningException, CommandException
     String EnsembleName = parameters.getValue ( "EnsembleName" );
     if ( EnsembleName == null ) {
         EnsembleName = "";
+    }
+    String Alias = parameters.getValue ( "Alias" );
+    if ( Alias == null ) {
+        Alias = "";
     }
     String TraceLength = parameters.getValue ( "TraceLength" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
@@ -485,7 +490,7 @@ CommandWarningException, CommandException
     try {
         TSUtil_CreateTracesFromTimeSeries util = new TSUtil_CreateTracesFromTimeSeries();
         tslist = util.getTracesFromTS ( ts, TraceLength, ReferenceDate_DateTime,
-            ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, createData );
+            ShiftDataHow, InputStart_DateTime, InputEnd_DateTime, Alias, createData );
     }
     catch ( Exception e ) {
         message = "Unexpected error creating traces from time series \"" + ts.getIdentifier() + "\" (" + e + ").";
@@ -567,6 +572,7 @@ public String toString ( PropList parameters )
     String InputEnd = parameters.getValue ( "InputEnd" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
     String EnsembleName = parameters.getValue ( "EnsembleName" );
+    String Alias = parameters.getValue ( "Alias" );
     String ReferenceDate = parameters.getValue ( "ReferenceDate" );
     String ShiftDataHow = parameters.getValue ( "ShiftDataHow" );
 	StringBuffer b = new StringBuffer ();
@@ -605,6 +611,12 @@ public String toString ( PropList parameters )
             b.append ( "," );
         }
         b.append ( "EnsembleName=\"" + EnsembleName + "\"" );
+    }
+    if ( (Alias != null) && (Alias.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Alias=\"" + Alias + "\"" );
     }
     if ( (ReferenceDate != null) && (ReferenceDate.length() > 0) ) {
         if ( b.length() > 0 ) {

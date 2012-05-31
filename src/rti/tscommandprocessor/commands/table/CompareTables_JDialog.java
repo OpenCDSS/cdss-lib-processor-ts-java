@@ -52,15 +52,17 @@ private boolean __first_time = true; // Indicate first time display
 private JTextArea __command_JTextArea = null;
 private SimpleJComboBox __Table1ID_JComboBox = null;
 private SimpleJComboBox __Table2ID_JComboBox = null;
+private JTextField __CompareColumns1_JTextField = null;
+private JTextField __ExcludeColumns1_JTextField = null;
+private JTextField __CompareColumns2_JTextField = null;
+private SimpleJComboBox __MatchColumnsHow_JComboBox = null;
 private JTextField __Precision_JTextField = null;
 private JTextField __Tolerance_JTextField = null;
 private JTextField __AllowedDiff_JTextField = null;
-private JTextField __CompareColumns1_JTextField = null;
-private JTextField __CompareColumns2_JTextField = null;
 private JTextField __NewTableID_JTextField = null;
 private JTextField __OutputFile_JTextField = null;
-private SimpleJComboBox __IfDifferent_JComboBox =null;
-private SimpleJComboBox __IfSame_JComboBox =null;
+private SimpleJComboBox __IfDifferent_JComboBox = null;
+private SimpleJComboBox __IfSame_JComboBox = null;
 private SimpleJButton __browse_JButton = null;
 private SimpleJButton __cancel_JButton = null;
 private SimpleJButton __ok_JButton = null;
@@ -163,7 +165,9 @@ private void checkInput ()
 	String Table1ID = __Table1ID_JComboBox.getSelected();
 	String Table2ID = __Table2ID_JComboBox.getSelected();
     String CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
+    String ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
 	String CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+	String MatchColumnsHow = __MatchColumnsHow_JComboBox.getSelected();
     String Precision = __Precision_JTextField.getText().trim();
     String Tolerance = __Tolerance_JTextField.getText().trim();
     String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
@@ -182,9 +186,15 @@ private void checkInput ()
     if ( CompareColumns1.length() > 0 ) {
         props.set ( "CompareColumns1", CompareColumns1 );
     }
+    if ( ExcludeColumns1.length() > 0 ) {
+        props.set ( "ExcludeColumns1", ExcludeColumns1 );
+    }
 	if ( CompareColumns2.length() > 0 ) {
 		props.set ( "CompareColumns2", CompareColumns2 );
 	}
+    if ( MatchColumnsHow.length() > 0 ) {
+        props.set ( "MatchColumnsHow", MatchColumnsHow );
+    }
     if ( Precision.length() > 0 ) {
         props.set ( "Precision", Precision );
     }
@@ -225,7 +235,9 @@ private void commitEdits ()
 {	String Table1ID = __Table1ID_JComboBox.getSelected();
     String Table2ID = __Table2ID_JComboBox.getSelected();
     String CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
+    String ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
     String CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+    String MatchColumnsHow = __MatchColumnsHow_JComboBox.getSelected();
     String Precision = __Precision_JTextField.getText().trim();
     String Tolerance = __Tolerance_JTextField.getText().trim();
     String AllowedDiff = __AllowedDiff_JTextField.getText().trim();
@@ -236,7 +248,9 @@ private void commitEdits ()
     __command.setCommandParameter ( "Table1ID", Table1ID );
     __command.setCommandParameter ( "Table2ID", Table2ID );
     __command.setCommandParameter ( "CompareColumns1", CompareColumns1 );
+    __command.setCommandParameter ( "ExcludeColumns1", ExcludeColumns1 );
 	__command.setCommandParameter ( "CompareColumns2", CompareColumns2 );
+	__command.setCommandParameter ( "MatchColumnsHow", MatchColumnsHow );
     __command.setCommandParameter ( "Precision", Precision );
 	__command.setCommandParameter ( "Tolerance", Tolerance );
 	__command.setCommandParameter ( "AllowedDiff", AllowedDiff );
@@ -315,6 +329,24 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - first table to compare."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 1 columns to compare:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __CompareColumns1_JTextField = new JTextField (10);
+    __CompareColumns1_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __CompareColumns1_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 1 columns to exclude:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ExcludeColumns1_JTextField = new JTextField (10);
+    __ExcludeColumns1_JTextField.addKeyListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ExcludeColumns1_JTextField,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
+        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Table2 ID:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Table2ID_JComboBox = new SimpleJComboBox ( 12, true );    // Allow edit
@@ -325,15 +357,6 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel( "Required - second table to compare."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-	
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 1 columns to compare:"),
-        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __CompareColumns1_JTextField = new JTextField (10);
-    __CompareColumns1_JTextField.addKeyListener (this);
-    JGUIUtil.addComponent(main_JPanel, __CompareColumns1_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
-        3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Table 2 columns to compare:"), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -344,6 +367,20 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - default is to compare all."),
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Match columns how:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MatchColumnsHow_JComboBox = new SimpleJComboBox ( false );
+    __MatchColumnsHow_JComboBox.addItem ( "" ); // Default
+    __MatchColumnsHow_JComboBox.addItem ( __command._Name );
+    __MatchColumnsHow_JComboBox.addItem ( __command._Order );
+    __MatchColumnsHow_JComboBox.select ( 0 );
+    __MatchColumnsHow_JComboBox.addActionListener ( this );
+    JGUIUtil.addComponent(main_JPanel, __MatchColumnsHow_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel(
+        "Optional - how to match columns in tables (default=" + __command._Name + ")."), 
+        3, y, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Precision:" ), 
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __Precision_JTextField = new JTextField ( 5 );
@@ -351,7 +388,7 @@ private void initialize ( JFrame parent, CompareTables_Command command, List<Str
     JGUIUtil.addComponent(main_JPanel, __Precision_JTextField,
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-        "Optional - digits after decimal to compare (default=use precision set for column)."), 
+        "Optional - digits after decimal to compare (default=use precision from table column)."), 
         3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Tolerance:" ), 
@@ -506,7 +543,9 @@ private void refresh ()
     String Table1ID = "";
     String Table2ID = "";
     String CompareColumns1 = "";
+    String ExcludeColumns1 = "";
     String CompareColumns2 = "";
+    String MatchColumnsHow = "";
     String Precision = "";
     String Tolerance = "";
     String AllowedDiff = "";
@@ -520,7 +559,9 @@ private void refresh ()
         Table1ID = props.getValue ( "Table1ID" );
         Table2ID = props.getValue ( "Table2ID" );
         CompareColumns1 = props.getValue ( "CompareColumns1" );
+        ExcludeColumns1 = props.getValue ( "ExcludeColumns1" );
         CompareColumns2 = props.getValue ( "CompareColumns2" );
+        MatchColumnsHow = props.getValue ( "MatchColumnsHow" );
         Precision = props.getValue ( "Precision" );
         Tolerance = props.getValue ( "Tolerance" );
         AllowedDiff = props.getValue ( "AllowedDiff" );
@@ -561,9 +602,26 @@ private void refresh ()
         if ( CompareColumns1 != null ) {
             __CompareColumns1_JTextField.setText ( CompareColumns1 );
         }
+        if ( ExcludeColumns1 != null ) {
+            __ExcludeColumns1_JTextField.setText ( ExcludeColumns1 );
+        }
 		if ( CompareColumns2 != null ) {
 			__CompareColumns2_JTextField.setText ( CompareColumns2 );
 		}
+        if ( JGUIUtil.isSimpleJComboBoxItem(__MatchColumnsHow_JComboBox, MatchColumnsHow, JGUIUtil.NONE, null, null ) ) {
+            __MatchColumnsHow_JComboBox.select ( MatchColumnsHow );
+        }
+        else {
+            if ( (MatchColumnsHow == null) || MatchColumnsHow.equals("") ) {
+                // New command...select the default...
+                __MatchColumnsHow_JComboBox.select ( 0 );
+            }
+            else {
+                // Bad user command...
+                Message.printWarning ( 1, routine, "Existing command references an invalid\n"+
+                "MatchColumnsHow parameter \"" + MatchColumnsHow + "\".  Select a\ndifferent value or Cancel." );
+            }
+        }
         if ( Precision != null ) {
             __Precision_JTextField.setText ( Precision );
         }
@@ -614,7 +672,9 @@ private void refresh ()
 	Table1ID = __Table1ID_JComboBox.getSelected();
 	Table2ID = __Table2ID_JComboBox.getSelected();
     CompareColumns1 = __CompareColumns1_JTextField.getText().trim();
+    ExcludeColumns1 = __ExcludeColumns1_JTextField.getText().trim();
 	CompareColumns2 = __CompareColumns2_JTextField.getText().trim();
+	MatchColumnsHow = __MatchColumnsHow_JComboBox.getSelected();
     Precision = __Precision_JTextField.getText().trim();
     Tolerance = __Tolerance_JTextField.getText().trim();
     AllowedDiff = __AllowedDiff_JTextField.getText().trim();
@@ -626,7 +686,9 @@ private void refresh ()
     props.add ( "Table1ID=" + Table1ID );
     props.add ( "Table2ID=" + Table2ID );
     props.add ( "CompareColumns1=" + CompareColumns1 );
+    props.add ( "ExcludeColumns1=" + ExcludeColumns1 );
 	props.add ( "CompareColumns2=" + CompareColumns2 );
+	props.add ( "MatchColumnsHow=" + MatchColumnsHow );
 	props.add ( "Precision=" + Precision );
 	props.add ( "Tolerance=" + Tolerance );
 	props.add ( "AllowedDiff=" + AllowedDiff );

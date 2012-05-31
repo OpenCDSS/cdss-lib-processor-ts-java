@@ -46,6 +46,12 @@ protected final String _Warn = "Warn";
 protected final String _Fail = "Fail";
 
 /**
+Possible values for MatchColumnsHow parameters.
+*/
+protected final String _Name = "Name";
+protected final String _Order = "Order";
+
+/**
 The comparison table that is created.
 */
 private DataTable __table = null;
@@ -76,6 +82,7 @@ throws InvalidCommandParameterException
 {	String Table1ID = parameters.getValue ( "Table1ID" );
     String Table2ID = parameters.getValue ( "Table2ID" );
     String Precision = parameters.getValue ( "Precision" );
+    String MatchColumnsHow = parameters.getValue ( "MatchColumnsHow" );
     String Tolerance = parameters.getValue ( "Tolerance" );
     String AllowedDiff = parameters.getValue ( "AllowedDiff" );
     String NewTableID = parameters.getValue ( "NewTableID" );
@@ -121,6 +128,15 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION,
             new CommandLogRecord(CommandStatusType.FAILURE,
                 message, "Specify the new table identifier different from the second table identifier." ) );
+    }
+    
+    if ( (MatchColumnsHow != null) && !MatchColumnsHow.equals("") && !MatchColumnsHow.equalsIgnoreCase(_Name) &&
+        !MatchColumnsHow.equalsIgnoreCase(_Order) ) {
+            message = "The MatchColumnsHow parameter \"" + MatchColumnsHow + "\" is not a valid value.";
+            warning += "\n" + message;
+            status.addToLog(CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify the parameter as " + _Name + " (default) or " + _Order + "."));
     }
     
     if ( (Precision != null) && !Precision.equals("") ) {
@@ -229,7 +245,9 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Table1ID" );
     valid_Vector.add ( "Table2ID" );
     valid_Vector.add ( "CompareColumns1" );
+    valid_Vector.add ( "ExcludeColumns1" );
     valid_Vector.add ( "CompareColumns2" );
+    valid_Vector.add ( "MatchColumnsHow" );
     valid_Vector.add ( "Precision" );
     valid_Vector.add ( "Tolerance" );
     valid_Vector.add ( "AllowedDiff" );
@@ -362,7 +380,13 @@ CommandWarningException, CommandException
     String Table1ID = parameters.getValue ( "Table1ID" );
     String Table2ID = parameters.getValue ( "Table2ID" );
     String CompareColumns1 = parameters.getValue ( "CompareColumns1" );
+    String ExcludeColumns1 = parameters.getValue ( "ExcludeColumns1" );
     String CompareColumns2 = parameters.getValue ( "CompareColumns2" );
+    String MatchColumnsHow = parameters.getValue ( "MatchColumnsHow" );
+    boolean matchColumnsByName = true;
+    if ( (MatchColumnsHow != null) && MatchColumnsHow.equalsIgnoreCase(_Order) ) {
+        matchColumnsByName = false;
+    }
     String Precision = parameters.getValue ( "Precision" );
     Integer Precision_Integer = null;
     if ( (Precision != null) && !Precision.equals("") ) {
@@ -413,6 +437,13 @@ CommandWarningException, CommandException
         compareColumns1 = CompareColumns1.split(",");
         for ( int i = 0; i < compareColumns1.length; i++ ) {
             compareColumns1[i] = compareColumns1[i].trim();
+        }
+    }
+    String [] excludeColumns1 = null;
+    if ( (ExcludeColumns1 != null) && !ExcludeColumns1.equals("") ) {
+        excludeColumns1 = ExcludeColumns1.split(",");
+        for ( int i = 0; i < excludeColumns1.length; i++ ) {
+            excludeColumns1[i] = excludeColumns1[i].trim();
         }
     }
     String [] compareColumns2 = null;
@@ -508,9 +539,10 @@ CommandWarningException, CommandException
     	        OutputFile_full = IOUtil.verifyPathForOS(
     	            IOUtil.toAbsolutePath(TSCommandProcessorUtil.getWorkingDir(processor),OutputFile) );
 	        }
-	        DataTableComparer comparer = new DataTableComparer ( table1, table2,
-	            StringUtil.toList(compareColumns1),
-	            StringUtil.toList(compareColumns2), Precision_Integer, Tolerance_Double, newTableID );
+	        DataTableComparer comparer = new DataTableComparer ( table1, 
+	            StringUtil.toList(compareColumns1), StringUtil.toList(excludeColumns1),
+	            table2, StringUtil.toList(compareColumns2),
+	            matchColumnsByName, Precision_Integer, Tolerance_Double, newTableID );
 	        comparer.compare ();
 	        comparer.writeHtmlFile ( OutputFile_full );
 	        DataTable comparisonTable = comparer.getComparisonTable();
@@ -638,8 +670,10 @@ public String toString ( PropList props )
 	}
     String Table1ID = props.getValue( "Table1ID" );
     String Table2ID = props.getValue( "Table2ID" );
-	String CompareColumns1 = props.getValue( "IncludeColumns" );
+	String CompareColumns1 = props.getValue( "CompareColumns1" );
+	String ExcludeColumns1 = props.getValue( "ExcludeColumns1" );
 	String CompareColumns2 = props.getValue( "CompareColumns2" );
+	String MatchColumnsHow = props.getValue("MatchColumnsHow");
     String Precision = props.getValue("Precision");
     String Tolerance = props.getValue("Tolerance");
     String AllowedDiff = props.getValue("AllowedDiff");
@@ -654,23 +688,35 @@ public String toString ( PropList props )
         }
         b.append ( "Table1ID=\"" + Table1ID + "\"" );
     }
-    if ( (Table2ID != null) && (Table2ID.length() > 0) ) {
-        if ( b.length() > 0 ) {
-            b.append ( "," );
-        }
-        b.append ( "Table2ID=\"" + Table2ID + "\"" );
-    }
     if ( (CompareColumns1 != null) && (CompareColumns1.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "CompareColumns1=\"" + CompareColumns1 + "\"" );
     }
+    if ( (ExcludeColumns1 != null) && (ExcludeColumns1.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ExcludeColumns1=\"" + ExcludeColumns1 + "\"" );
+    }
+    if ( (Table2ID != null) && (Table2ID.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "Table2ID=\"" + Table2ID + "\"" );
+    }
     if ( (CompareColumns2 != null) && (CompareColumns2.length() > 0) ) {
         if ( b.length() > 0 ) {
             b.append ( "," );
         }
         b.append ( "CompareColumns2=\"" + CompareColumns2 + "\"" );
+    }
+    if ( (MatchColumnsHow != null) && (MatchColumnsHow.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MatchColumnsHow=" + MatchColumnsHow );
     }
     if ( (Precision != null) && (Precision.length() > 0) ) {
         if ( b.length() > 0 ) {

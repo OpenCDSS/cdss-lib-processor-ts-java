@@ -493,7 +493,7 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     JGUIUtil.addComponent(mainCheck_JPanel, __MinimumSampleSize_JTextField,
         1, yCheck, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(mainCheck_JPanel, new JLabel(
-        "Optional - minimum number of overlapping points for relationship (default=not checked)."),
+        "Optional - minimum number of overlapping points for relationship (default=minimum computational requirement)."),
         3, yCheck, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
     // Minimum R
@@ -575,11 +575,11 @@ private void initialize ( JFrame parent, FillRegression_Command command, List<St
     
     JGUIUtil.addComponent(mainFill_JPanel, new JLabel ( "Fill flag description:" ), 
         0, ++yFill, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __FillFlagDesc_JTextField = new JTextField ( 15 );
+    __FillFlagDesc_JTextField = new JTextField ( 25 );
     __FillFlagDesc_JTextField.addKeyListener ( this );
     JGUIUtil.addComponent(mainFill_JPanel, __FillFlagDesc_JTextField,
         1, yFill, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(mainFill_JPanel, new JLabel( "Optional - description for fill flag used in reports."), 
+    JGUIUtil.addComponent(mainFill_JPanel, new JLabel( "Optional - description for fill flag used in report legends."), 
         3, yFill, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     
     // Panel for output statistics

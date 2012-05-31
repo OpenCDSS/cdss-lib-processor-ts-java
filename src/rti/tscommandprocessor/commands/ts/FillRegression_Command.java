@@ -1012,7 +1012,7 @@ CommandWarningException, CommandException
                     FillStart_DateTime, FillEnd_DateTime,
                     FillFlag,
                     FillFlagDesc,
-                    Fill_boolean,
+                    Fill_boolean, // Whether to fill or just analyze for filling (but don't fill) 
                     null ); // No user-specified description
 	            // Fill the missing values in the dependent
 	            tsufr.fillRegression ();
@@ -1055,7 +1055,8 @@ CommandWarningException, CommandException
                     // Now set in the table
                     if ( (TableID != null) && !TableID.equals("") ) {
                         tsufr.saveStatisticsToTable ( tsToFill, table,
-                            TableTSIDColumn, TableTSIDFormat, numberOfEquations, transformation );
+                            TableTSIDColumn, TableTSIDFormat, RegressionType.OLS_REGRESSION,
+                            numberOfEquations, transformation );
                     }
                 }
                 else {

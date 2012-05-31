@@ -1599,14 +1599,15 @@ throws IOException
             }
             dateTime = null;
             try {
-                if ( dateTimeFormat == null ) {
-                    dateTime = DateTime.parse(dateTimeString);
-                }
-                else {
+                if ( dateTimeParser != null ) {
                     // Reuse the date/time for performance
                     // This is safe because for regular time series only the parts are used
                     // and for irregular a copy is made when setting the value
                     dateTime = dateTimeParser.parse(dateTime,dateTimeString);
+                }
+                else {
+                    // Let the parse() method figure out the format
+                    dateTime = DateTime.parse(dateTimeString);
                 }
             }
             catch ( Exception dte ) {

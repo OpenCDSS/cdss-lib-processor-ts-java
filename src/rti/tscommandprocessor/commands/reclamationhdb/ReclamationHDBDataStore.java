@@ -39,13 +39,13 @@ throws IOException, Exception
     PropList props = new PropList ("");
     props.setPersistentName ( filename );
     props.readPersistent ( false );
-    String name = IOUtil.expandPropertyForEnvironment(props.getValue("Name"));
-    String description = IOUtil.expandPropertyForEnvironment(props.getValue("Description"));
-    String databaseEngine = IOUtil.expandPropertyForEnvironment(props.getValue("DatabaseEngine"));
-    String databaseServer = IOUtil.expandPropertyForEnvironment(props.getValue("DatabaseServer"));
-    String databaseName = IOUtil.expandPropertyForEnvironment(props.getValue("DatabaseName"));
-    String systemLogin = IOUtil.expandPropertyForEnvironment(props.getValue("SystemLogin"));
-    String systemPassword = IOUtil.expandPropertyForEnvironment(props.getValue("SystemPassword"));
+    String name = IOUtil.expandPropertyForEnvironment("Name",props.getValue("Name"));
+    String description = IOUtil.expandPropertyForEnvironment("Description",props.getValue("Description"));
+    String databaseEngine = IOUtil.expandPropertyForEnvironment("DatabaseEngine",props.getValue("DatabaseEngine"));
+    String databaseServer = IOUtil.expandPropertyForEnvironment("DatabaseServer",props.getValue("DatabaseServer"));
+    String databaseName = IOUtil.expandPropertyForEnvironment("DatabaseName",props.getValue("DatabaseName"));
+    String systemLogin = IOUtil.expandPropertyForEnvironment("SystemLogin",props.getValue("SystemLogin"));
+    String systemPassword = IOUtil.expandPropertyForEnvironment("SystemPassword",props.getValue("SystemPassword"));
     
     // Get the properties and create an instance
     ReclamationHDB_DMI dmi = new ReclamationHDB_DMI ( databaseEngine, databaseServer, databaseName, -1, systemLogin, systemPassword );

@@ -121,9 +121,9 @@ throws IOException, Exception
     PropList props = new PropList ("");
     props.setPersistentName ( filename );
     props.readPersistent ( false );
-    String name = IOUtil.expandPropertyForEnvironment(props.getValue("Name"));
-    String description = IOUtil.expandPropertyForEnvironment(props.getValue("Description"));
-    String serviceRootURI = IOUtil.expandPropertyForEnvironment(props.getValue("ServiceRootURI"));
+    String name = IOUtil.expandPropertyForEnvironment("Name",props.getValue("Name"));
+    String description = IOUtil.expandPropertyForEnvironment("Description",props.getValue("Description"));
+    String serviceRootURI = IOUtil.expandPropertyForEnvironment("ServiceRootURI",props.getValue("ServiceRootURI"));
     
     // Get the properties and create an instance
 

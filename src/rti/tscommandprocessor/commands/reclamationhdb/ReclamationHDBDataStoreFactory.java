@@ -24,11 +24,11 @@ public DataStore create ( PropList props )
     if ( description == null ) {
         description = "";
     }
-    String databaseEngine = IOUtil.expandPropertyForEnvironment(props.getValue ( "DatabaseEngine" ));
-    String databaseServer = IOUtil.expandPropertyForEnvironment(props.getValue ( "DatabaseServer" ));
-    String databaseName = IOUtil.expandPropertyForEnvironment(props.getValue ( "DatabaseName" ));
-    String systemLogin = IOUtil.expandPropertyForEnvironment(props.getValue ( "SystemLogin" ));
-    String systemPassword = IOUtil.expandPropertyForEnvironment(props.getValue ( "SystemPassword" ));
+    String databaseEngine = IOUtil.expandPropertyForEnvironment("DatabaseEngine",props.getValue ( "DatabaseEngine" ));
+    String databaseServer = IOUtil.expandPropertyForEnvironment("DatabaseServer",props.getValue ( "DatabaseServer" ));
+    String databaseName = IOUtil.expandPropertyForEnvironment("DatabaseName",props.getValue ( "DatabaseName" ));
+    String systemLogin = IOUtil.expandPropertyForEnvironment("SystemLogin",props.getValue ( "SystemLogin" ));
+    String systemPassword = IOUtil.expandPropertyForEnvironment("SystemPassword",props.getValue ( "SystemPassword" ));
     try {
         ReclamationHDB_DMI dmi = new ReclamationHDB_DMI (
             databaseEngine, // OK if null, will use SQL Server

@@ -432,7 +432,11 @@ throws PyException
     }
     int warning_level = 2;
     
-    ProcessManager pm = new ProcessManager ( commandLineArray );
+    ProcessManager pm = new ProcessManager ( commandLineArray,
+        0, // No timeout
+        (String)null, // Exit status indicator
+        false, // No command shell (just run directly) - otherwise the command hangs on the python prompt
+        (File)null); // Override working directory
     String commandLine = pm.getCommand();
     Message.printStatus ( 2, routine, "Running:  " + commandLine );
     

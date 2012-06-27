@@ -33,11 +33,11 @@ public RccAcis_TimeSeries_InputFilter_JPanel( RccAcisDataStore dataStore, int nu
 
 /**
 Set the filter data.  This method is called at setup.
+Always use the most current parameter name from the API (translate when filter is initialized from input).
 @param numFilterGroups the number of filter groups to display
 */
 public void setFilters ( int numFilterGroups )
 {   //String routine = getClass().getName() + ".setFilters";
-
     List<InputFilter> filters = new Vector();
 
     filters.add(new InputFilter("", "", StringUtil.TYPE_STRING, null, null, false)); // Blank
@@ -48,10 +48,10 @@ public void setFilters ( int numFilterGroups )
     
     // Get the global state FIPS data
     List<FIPSState> states = FIPSState.getData();
-    String [] postalArray = new String[states.size()];
+    String [] stateArray = new String[states.size()];
     int i = 0;
     for ( FIPSState fips : states ) {
-        postalArray[i++] = fips.getAbbreviation() + " - " + fips.getName() + " (" + fips.getCode() + ")";
+        stateArray[i++] = fips.getAbbreviation() + " - " + fips.getName() + " (" + fips.getCode() + ")";
     }
     
     // Get the global county FIPS data
@@ -85,10 +85,10 @@ public void setFilters ( int numFilterGroups )
     
     List<String> climateDivsList = Arrays.asList(climateDivsArray);
     filters.add(new InputFilter("Climate Division",
-        "clim_div", "clim_div",
+        "climdiv", "climdiv",
         StringUtil.TYPE_STRING, climateDivsList, climateDivsList,
         true,
-        "Specify 2 digits (e.g., 01, 10) if postal is specified or combine here (e.g., NY01, NY10)" +
+        "Specify 2 digits (e.g., 01, 10) if state is specified or combine here (e.g., NY01, NY10)" +
         " (see: http://www.esrl.noaa.gov/psd/data/usclimate/map.html)"));
     
     filters.add(new InputFilter("Drainage Basin (HUC)",
@@ -108,10 +108,10 @@ public void setFilters ( int numFilterGroups )
         StringUtil.TYPE_STRING, null, null, true,
         "For example BOI (see: http://www.aprs-is.net/WX/NWSZones.aspx)"));
     
-    List<String>postalList = Arrays.asList(postalArray);
-    filters.add(new InputFilter("Postal (State) Code",
-        "postal", "postal",
-        StringUtil.TYPE_STRING, postalList, postalList,
+    List<String>stateList = Arrays.asList(stateArray);
+    filters.add(new InputFilter("State Code",
+        "state", "state",
+        StringUtil.TYPE_STRING, stateList, stateList,
         true, // Allow edits because more than one state can be specified
         "State abbreviation (can specify more than one separated by commas)") );
     

@@ -26,7 +26,9 @@ public DataStore create ( PropList props )
     }
     String serviceRootURI = props.getValue ( "ServiceRootURI" );
     try {
-        return new RccAcisDataStore ( name, description, new URI(serviceRootURI) );
+        DataStore ds = new RccAcisDataStore ( name, description, new URI(serviceRootURI) );
+        ds.setProperties ( props );
+        return ds;
     }
     catch ( Exception e ) {
         throw new RuntimeException ( e );

@@ -8,6 +8,11 @@ public class RccAcisVariableTableRecord
 {
     
 /**
+Element abbreviation corresponding to the major variable.
+*/
+private String __elem = "";
+    
+/**
 Major variable type.
 */
 private int __major = -1;
@@ -50,9 +55,10 @@ private String __source = "";
 /**
 Constructor.
 */
-public RccAcisVariableTableRecord ( int major, int minor, String name, String method, String measureInterval,
-    String reportInterval, String units, String source )
+public RccAcisVariableTableRecord ( String elem, int major, int minor, String name, String method,
+    String measureInterval, String reportInterval, String units, String source )
 {
+    __elem = elem;
     __major = major;
     __minor = minor;
     __name = name;
@@ -61,6 +67,14 @@ public RccAcisVariableTableRecord ( int major, int minor, String name, String me
     __reportInterval = reportInterval;
     __units = units;
     __source = source;
+}
+
+/**
+Return the name.
+*/
+public String getElem()
+{
+    return __elem;
 }
 
 /**

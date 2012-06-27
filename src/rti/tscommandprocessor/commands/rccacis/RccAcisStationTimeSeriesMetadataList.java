@@ -1,16 +1,29 @@
 package rti.tscommandprocessor.commands.rccacis;
 
 import java.util.List;
+import java.util.Vector;
 
+import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 
 /**
-Metadata for station time series joined data.  The data correspond to the MultiStn request metadata.
+Metadata for station time series joined data.  The data correspond to the MultiStn request metadata and
+StaMeta in version 2.  GSON sets the data members directly, where the names must match the JSON elements.
+The getMeta() method is used to retrieve the parsed data.  Calling code should use the version 2+ conventions
+but the version 1 data will be returned if it was parsed.
 */
 public class RccAcisStationTimeSeriesMetadataList
 {
 
-private List<RccAcisStationTimeSeriesMetadata> data;
+/**
+The list of meta elements from the JSON data for version 1 API ("data" element).
+*/
+private List<RccAcisStationTimeSeriesMetadata> data = null;    
+    
+/**
+The list of meta elements from the JSON data ("meta" in version 2).
+*/
+private List<RccAcisStationTimeSeriesMetadata> meta = null;
 
 /**
 Default constructor, required by GSON.
@@ -19,9 +32,23 @@ public RccAcisStationTimeSeriesMetadataList ()
 {
 }
 
-public List<RccAcisStationTimeSeriesMetadata> getData ()
+/**
+Return the list of "meta" elements, used with version 2+ API, guaranteed to be non-null.
+@return the list of "meta" elements
+*/
+public List<RccAcisStationTimeSeriesMetadata> getMeta ()
 {
-    return data;
+    List<RccAcisStationTimeSeriesMetadata> metaList = null;
+    if ( this.data != null ) {
+        metaList = this.data;
+    }
+    else {
+        metaList = this.meta;
+    }
+    if ( metaList == null ) {
+        metaList = new Vector<RccAcisStationTimeSeriesMetadata>();
+    }
+    return metaList;
 }
 
 /**
@@ -32,11 +59,11 @@ Also adjust dates with year 9999 to be current year.
 */
 public void cleanupData ()
 {
-    List<RccAcisStationTimeSeriesMetadata> data = getData();
+    List<RccAcisStationTimeSeriesMetadata> metaList = getMeta();
     DateTime now = new DateTime(DateTime.DATE_CURRENT);
     RccAcisStationTimeSeriesMetadata metadata;
-    for ( int i = 0; i < data.size(); i++ ) {
-        metadata = data.get(i);
+    for ( int i = 0; i < metaList.size(); i++ ) {
+        metadata = metaList.get(i);
         String dates[] = metadata.getValid_daterange();
         if ( (dates == null) || (dates.length == 0) ) {
             // Did not have data in the original so insert defaults
@@ -60,13 +87,16 @@ public void cleanupData ()
                 dates[1] = "" + now.getYear() + dates[1].substring(4);
             }
         //}
-     }
-    setData(data);
+    }
 }
 
-public void setData ( List<RccAcisStationTimeSeriesMetadata> data2 )
+/**
+Set the metadata list.
+@param meta metadata list
+*/
+public void setMeta ( List<RccAcisStationTimeSeriesMetadata> meta )
 {
-    data = data2;
+    this.meta = meta;
 }
 
 }

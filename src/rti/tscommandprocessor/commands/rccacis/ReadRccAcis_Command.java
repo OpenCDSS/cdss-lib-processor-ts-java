@@ -22,11 +22,13 @@ import RTi.Util.IO.CommandStatus;
 import RTi.Util.IO.CommandStatusType;
 import RTi.Util.IO.CommandWarningException;
 import RTi.Util.IO.InvalidCommandParameterException;
+import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.ObjectListProvider;
 import RTi.Util.IO.PropList;
 import RTi.Util.IO.AbstractCommand;
 import RTi.Util.Message.Message;
 import RTi.Util.Message.MessageUtil;
+import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
@@ -210,6 +212,35 @@ not (e.g., "Cancel" was pressed.
 public boolean editCommand ( JFrame parent )
 {	// The command will be modified if changed...
 	return (new ReadRccAcis_JDialog ( parent, this )).ok();
+}
+
+/**
+Parse the command parameters.  Special care is taken here to translate legacy input filter values
+to current RCC ACIS API values.
+*/
+public void parseCommand ( String command )
+throws InvalidCommandParameterException, InvalidCommandSyntaxException
+{
+    super.parseCommand(command);
+    // Look for WhereN parameters and translate the parameter names to the current syntax
+    PropList parameters = getCommandParameters();
+    for ( int i = 1; ; i++ ) {
+        String whereN = "Where" + i;
+        String propVal = parameters.getValue(whereN);
+        if ( propVal == null ) {
+            break;
+        }
+        // Check for Where clauses that need to be updated.
+        int pos = propVal.indexOf(";");
+        if ( StringUtil.startsWithIgnoreCase(propVal, "postal") ) {
+            // Change to "state"
+            parameters.set(whereN,"state"+propVal.substring(pos));
+        }
+        else if ( StringUtil.startsWithIgnoreCase(propVal, "clim_div") ) {
+            // Change to "state"
+            parameters.set(whereN,"climdiv"+propVal.substring(pos));
+        }
+    }
 }
 
 /**
@@ -530,7 +561,7 @@ CommandWarningException, CommandException
 			int i = -1;
 			for ( RccAcisStationTimeSeriesMetadata meta : tsMetadataList ) {
 			    ++i;
-				tsidentString = meta.getTSID(DataStore);
+				tsidentString = meta.getTSID(rccAcisDataStore);
 	
 				message = "Reading RCC ACIS time series " + (i + 1) + " of " + size + " \"" + tsidentString + "\"...";
 				Message.printStatus ( 2, routine, message );

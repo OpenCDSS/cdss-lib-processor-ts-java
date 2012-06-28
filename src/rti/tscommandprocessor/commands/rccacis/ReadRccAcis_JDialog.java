@@ -286,10 +286,6 @@ private void initialize ( JFrame parent, ReadRccAcis_Command command )
     	"Read one or more time series from the RCC ACIS web service."),
     	0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "<html><b>Although many data types are listed," +
-        " only core types like daily precipitation are known to work.</b></html>"),
-        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "<html><b>WARNING - This command can be slow.  " +
         "It is recommended that the Where filters be used to limit queries when reading multiple time series.</b></html>"),
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);

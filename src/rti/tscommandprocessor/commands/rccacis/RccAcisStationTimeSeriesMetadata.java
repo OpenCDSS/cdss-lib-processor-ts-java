@@ -1,7 +1,5 @@
 package rti.tscommandprocessor.commands.rccacis;
 
-import RTi.Util.Message.Message;
-
 /**
 <p>
 Metadata for station time series joined data.  The data correspond to the MultiStn or new version 2 StnMeta request.
@@ -92,9 +90,9 @@ ACIS station identifier.
 private String uid = "";
 
 /**
-Valid date range.
+Valid date range for each element being queried.
 */
-private String[] valid_daterange = { "", "" };
+private String[][] valid_daterange = null;
 
 /**
 Return the FIPS county.
@@ -273,7 +271,7 @@ public String getUid()
 /**
 Return the valid date range.
 */
-public String [] getValid_daterange()
+public String [][] getValid_daterange()
 {
     return valid_daterange;
 }
@@ -339,7 +337,7 @@ public void setSIds ( String [] SIds )
 /**
 Set the valid date range.
 */
-public void setValid_daterange ( String [] valid_daterange )
+public void setValid_daterange ( String [][] valid_daterange )
 {
     this.valid_daterange = valid_daterange;
 }

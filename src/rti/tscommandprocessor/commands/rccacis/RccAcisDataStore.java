@@ -28,6 +28,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
 import com.google.gson.Gson;
 
 import riverside.datastore.AbstractWebServiceDataStore;
@@ -45,7 +46,8 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-Data store for NCDC ACIS web services.  This class maintains the web service information in a general way.
+Data store for Regional Climate Center Applied Climate Information System (RCC ACIS) web services.
+This class provides a general interface to the web service, consistent with TSTool conventions.
 @author sam
 */
 public class RccAcisDataStore extends AbstractWebServiceDataStore
@@ -255,7 +257,12 @@ Look up the station type given the station type string (return null if not found
 @param type station type (e.g., "COOP").
 */
 public RccAcisStationType lookupStationTypeFromType ( String type )
-{
+{   try {
+        initialize();
+    }
+    catch ( Exception e ) {
+        // Should not happen
+    }
     for ( RccAcisStationType stationType: __stationTypeList ) {
         if ( stationType.getType().equalsIgnoreCase(type) ) {
             return stationType;
@@ -437,18 +444,6 @@ throws IOException, MalformedURLException, URISyntaxException
     }
     else {
         // Parse the JSON
-        // First fix a known issue with the parsing by replacing offending empty valid date range with something
-        // that GSON can handle
-        // Extra bracket around date range...
-        //resultString = resultString.replace("valid_daterange\":[[", "valid_daterange\":[");
-        //resultString = resultString.replace("]],\"postal","],\"postal");
-        //resultString = resultString.replace("valid_daterange\":[[]]", "valid_daterange\":[\"\",\"\"]");
-        resultString = resultString.replace("[[", "[");
-        resultString = resultString.replace("]]", "]");
-        //Message.printStatus(2,routine,"Returned data after cleanup="+resultString);
-        if ( Message.isDebugOn ) {
-            Message.printDebug(1,routine,"Returned data after cleanup="+resultString);
-        }
         Gson gson = new Gson();
         RccAcisStationTimeSeriesMetadataList metadataListObject =
             gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
@@ -591,18 +586,6 @@ throws IOException, MalformedURLException
     }
     else {
         // Parse the JSON
-        // First fix a known issue with the parsing by replacing offending empty valid date range with something
-        // that GSON can handle
-        // Extra bracket around date range...
-        //resultString = resultString.replace("valid_daterange\":[[", "valid_daterange\":[");
-        //resultString = resultString.replace("]],\"postal","],\"postal");
-        //resultString = resultString.replace("valid_daterange\":[[]]", "valid_daterange\":[\"\",\"\"]");
-        resultString = resultString.replace("[[", "[");
-        resultString = resultString.replace("]]", "]");
-        //Message.printStatus(2,routine,"Returned data after cleanup="+resultString);
-        if ( Message.isDebugOn ) {
-            Message.printDebug(1,routine,"Returned data after cleanup="+resultString);
-        }
         Gson gson = new Gson();
         RccAcisStationTimeSeriesMetadataList metadataListObject =
             gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
@@ -659,10 +642,6 @@ throws MalformedURLException, Exception
         throw new IllegalArgumentException("Data type is not recognized:  " + tsident.getType() );
     }
     int apiVersion = getAPIVersion();
-    String stateParam = "state";
-    if ( apiVersion == 1 ) {
-        stateParam = "postal";
-    }
     // The station ID needs to specify the location type...
     String stationIDAndStationType = readTimeSeries_FormHttpRequestStationID ( tsident.getLocation() );
     // The start and end date are required.
@@ -707,7 +686,12 @@ throws MalformedURLException, Exception
     String elems = "" + variable.getMajor();
     // Form the URL - no need to ask for metadata?
     // Always specify the station id type to avoid ambiguity
-    boolean requestJSON = false; // JSON more work to parse so use simple CSV
+    boolean requestJSON = true; // JSON more work to parse, CSV is verified to work
+    if ( apiVersion == 1 ) {
+        // Version 1 worked with CSV so leave it as is
+        // For version 2 can focus on new features
+        requestJSON = false;
+    }
     StringBuffer urlString = new StringBuffer("" + getServiceRootURI() + "/StnData" );
     if ( requestJSON ) {
         urlString.append("?output=json");
@@ -717,8 +701,9 @@ throws MalformedURLException, Exception
         urlString.append("?output=csv");
     }
     // Only JSON format allows metadata to be requested
+    // Version 1 requires sId... whereas version 2 is case-independent
     if ( requestJSON ) {
-        urlString.append( "&meta=sIds,uid,name," + stateParam + ",county,ll,elev" );
+        urlString.append( "&meta=sIds,uid,name,state,county,huc,climdiv,cwa,ll,elev,valid_daterange" );
     }
     urlString.append( "&sId=" +
          URLEncoder.encode(stationIDAndStationType,"UTF-8") +
@@ -745,17 +730,6 @@ throws MalformedURLException, Exception
     else {
         in = urlConnection.getInputStream();
     }
-    /*
-    try {
-
-    }
-    catch ( Exception e ) {
-        Message.printWarning(3,routine,"Error in RCC ACIS request (" + e + ")" );
-        Message.printWarning(3,routine,e);
-        // Rethrow...
-        throw e;
-    }
-    */
     InputStreamReader inp = new InputStreamReader(in);
     BufferedReader reader = new BufferedReader(inp);
     char[] buffer = new char[8192];
@@ -767,35 +741,31 @@ throws MalformedURLException, Exception
     in.close();
     urlConnection.disconnect();
     String resultString = b.toString();
-    Message.printStatus(2,routine,"Returned data="+resultString);
+    //Message.printStatus(2,routine,"Returned string="+resultString);
     if ( Message.isDebugOn ) {
-        Message.printDebug(1,routine,"Returned data="+resultString);
+        Message.printDebug(1,routine,"Returned string="+resultString);
     }
     if ( b.indexOf("error") >= 0 ) {
         throw new IOException ( "Error retrieving data for URL \"" + urlStringEncoded +
             "\":  " + resultString + " (" + b + ")." );
     }
     else {
+        RccAcisStationTimeSeriesMetaAndData metaAndData = null;
         if ( requestJSON ) {
-            // Parse the JSON for time series attributes
-            //Gson gson = new Gson();
-            /*
-            RccAcisStationTimeSeriesMetadataList metadataListObject =
-                gson.fromJson(resultString, RccAcisStationTimeSeriesMetadataList.class);
-            if ( metadataListObject != null ) {
-                for ( RccAcisStationTimeSeriesMetadata metadata: metadataListObject.getData() ) {
-                    //Message.printStatus(2,routine,metadata.getName());
-                    metadata.setVariable(variable);
-                    metadata.setDataStore ( this );
-                    // TODO SAM 2011-01-07 Some metadata like HUC do not return so may need to set based
-                    // on whether the information was entered in the filter
-                }
+            // Parse the JSON for time series ("meta" and "data)
+            Gson gson = new Gson();
+            metaAndData = gson.fromJson(resultString, RccAcisStationTimeSeriesMetaAndData.class);
+            // Should only be one record since a specific time series is requested
+            if ( metaAndData == null ) {
+                throw new IOException ( "Expecting metadata for 1 time series, no metadata returned." );
             }
-            return metadataListObject.getData();
-            */
+            else {
+                metaAndData.getMeta().setVariable(variable);
+                metaAndData.getMeta().setDataStore ( this );
+            }
         }
         else {
-            
+            // No metadata for CSV.  Get the station name from the first line of data
         }
         // Create the time series.
         ts = TSUtil.newTimeSeries(tsidentString, true);
@@ -803,60 +773,65 @@ throws MalformedURLException, Exception
         ts.setMissing(Double.NaN);// Use this instead of legacy default -999
         // Parse the data into short strings
         String [] dataStringsArray = new String[0];
-        DateTime dataStart = null;
+        DateTime dataStart = null; // Determined from data records
         DateTime dataEnd = null;
+        DateTime validDataStart = null; // Determined from valid_daterange metadata (only if JSON)
+        DateTime validDataEnd = null;
         String stationName = "";
         int mCount = 0;
         int tCount = 0;
         int commaPos = 0; // Position of comma
+        // Set the time series properties from returned data
+        String [][] data = null;
+        int nData = 0; // Number of records to process
+        int iFirstData = 0; // Index of first data record to process
         if ( requestJSON ) {
-            // Process the JSON by brute force.  Data are after "data":[ and are a sequence of
-            // ["yyyy-mm-dd","value"],... where value can be a number, "M" for missing, or "T" for trace.
-            // Station name is "name":"xxxx"
-            int pos = resultString.indexOf("name\":");
-            if ( pos > 0 ) {
-                // Find the closing quote on the name
-                int pos2 = resultString.indexOf("\"",pos + 8);
-                if ( pos2 >= 0 ) {
-                    stationName = resultString.substring(pos+5,pos2);
-                }
+            // Set time series properties from the metadata
+            stationName = metaAndData.getMeta().getName();
+            data = metaAndData.getData();
+            nData = data.length; // Number of rows in 2D array
+            iFirstData = 0;
+            Message.printStatus(2, routine, "Have " + nData + " data records." );
+            if ( nData > 0 ) {
+                dataStart = DateTime.parse(data[iFirstData][0]);
+                dataEnd = DateTime.parse(data[nData - 1][0]);
             }
-            pos = resultString.indexOf("data\":[");
-            if ( pos > 0 ) {
-                // Found the data section
-                dataStringsArray = resultString.substring(pos + 7).split(",");
-                Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data values." );
-                if ( dataStringsArray.length > 0 ) {
-                    // Each string should be ["YYYY-MM-DD","Val"]
-                    dataStart = DateTime.parse(dataStringsArray[0].substring(2,12));
-                    dataEnd = DateTime.parse(dataStringsArray[dataStringsArray.length - 1].substring(2,12));
-                }
-            }
+            // Also get the valid data start and end from the metadata
+            validDataStart = DateTime.parse(metaAndData.getMeta().getValid_daterange()[0][0]);
+            validDataEnd = DateTime.parse(metaAndData.getMeta().getValid_daterange()[0][1]);
         }
         else {
+            // Used by default with version 1 API...
             // CSV, each newline delimited row has YYYY-MM-DD,valueFlag
             // (Flag character is optional) with the first line being the station name
             dataStringsArray = resultString.split("\n");
             Message.printStatus(2, routine, "Have " + dataStringsArray.length + " data records (first is station name)." );
-            if ( dataStringsArray.length > 1 ) {
+            nData = dataStringsArray.length;
+            iFirstData = 1; // Station name is record 1
+            if ( nData > 1 ) {
                 stationName = dataStringsArray[0];
                 commaPos = dataStringsArray[1].indexOf(",");
                 dataStart = DateTime.parse(dataStringsArray[1].substring(0,commaPos));
                 commaPos = dataStringsArray[dataStringsArray.length - 1].indexOf(",");
                 dataEnd = DateTime.parse(dataStringsArray[dataStringsArray.length - 1].substring(0,commaPos));
+                // Since CSV does not have metadata and not doing a round-trip would be a hit, use the same dates
+                validDataStart = new DateTime(dataStart);
+                validDataEnd = new DateTime(dataEnd);
             }
         }
         ts.setDataUnits(variable.getUnits());
         ts.setDataUnitsOriginal(variable.getUnits());
         ts.setDescription(stationName);
+        // Since there is no way currently to retrieve the separate periods, set both to what was retrieved.
         ts.setDate1(dataStart);
         ts.setDate2(dataEnd);
-        ts.setDate1Original(dataStart);
-        ts.setDate2Original(dataEnd);
+        ts.setDate1Original(validDataStart);
+        ts.setDate2Original(validDataEnd);
         DateTime date = null;
         String [] dataStringParts = null;
-        String valueString; // string containing value and optionally flag part of data
-        String flagString; // string containing flag part of data
+        String dateString = ""; // string containing the date
+        String valueString = ""; // string containing value and optionally flag part of data
+        String flagString; // string containing flag part of data (split out of "valueString")
         int valueStringLength;
         // Nolan Doesken and Bill Noon indicate that 0 is what people use for trace
         double traceValue = 0.0;
@@ -864,148 +839,96 @@ throws MalformedURLException, Exception
         if ( readData ) {
             ts.allocateDataSpace();
             // Process each data string.  Trace values result in setting the data flag.
-            if ( requestJSON ) {
-                for ( int i = 0; i < dataStringsArray.length; i++ ) {
-                    try {
+            for ( int i = iFirstData; i < nData; i++ ) {
+                try {
+                    if ( requestJSON ) {
+                        dateString = data[i][0];
+                        valueString = data[i][1];
+                    }
+                    else {
+                        // CSV
                         dataStringParts = dataStringsArray[i].split(",");
-                        dataStringParts[0] = dataStringParts[0].substring(2,14);
-                        dataStringParts[1] = dataStringParts[1].substring(1,dataStringParts[1].length() - 2);
+                        dateString = dataStringParts[0];
                         valueString = dataStringParts[1];
-                        valueStringLength = valueString.length();
-                        date = DateTime.parse(dataStringsArray[i]); // TODO SAM is this correct?
-                        if ( valueString.equals("M") ) {
-                            // No value and missing flag.  Do set a flag since ACIS specific sets a flag
-                            ts.setDataValue(date, missing, "M", 0 );
-                            ++mCount;
-                        }
-                        else if ( valueString.equals("T") ) {
-                            // No value and trace flag.  Do set a flag since ACIS specific sets a flag
-                            ts.setDataValue(date, traceValue, "T", 0 );
-                            ++tCount;
-                        }
-                        // Check for data string form ##F or ##F1 (two one-character flags may occur, with
-                        // the second flag possibly being a character or digit)
-                        else if ( (valueString.length() > 0) &&
-                            Character.isLetter(valueString.charAt(valueStringLength - 1)) ) {
-                            flagString = valueString.substring(valueStringLength - 1);
-                            valueString = valueString.substring(0,valueStringLength - 1);
-                            if ( valueString.length() > 0 ) {
-                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
-                            }
-                            else {
-                                // Only flag was available
-                                ts.setDataValue(date, missing, flagString, 0 );
-                            }
-                        }
-                        else if ( (valueString.length() > 1) &&
-                            Character.isLetter(valueString.charAt(valueStringLength - 2)) ) {
-                            flagString = valueString.substring(valueStringLength - 2);
-                            valueString = valueString.substring(0,valueStringLength - 2);
+                    }
+                    //Message.printStatus(2,routine,"Date="+dateString+", value="+valueString);
+                    date = DateTime.parse(dateString);
+                    valueStringLength = valueString.length();
+                    if ( valueString.equals("M") ) {
+                        // No value and missing flag.  Do set a flag since ACIS specific sets a flag
+                        ts.setDataValue(date, missing, "M", 0 );
+                        ++mCount;
+                    }
+                    else if ( valueString.equals("T") ) {
+                        // No value and trace flag.  Do set a flag since ACIS specific sets a flag
+                        ts.setDataValue(date, traceValue, "T", 0 );
+                        ++tCount;
+                    }
+                    // Check for data string form ##F or ##F1 (two one-character flags may occur, with
+                    // the second flag possibly being a character or digit)
+                    else if ( (valueString.length() > 0) &&
+                        Character.isLetter(valueString.charAt(valueStringLength - 1)) ) {
+                        flagString = valueString.substring(valueStringLength - 1);
+                        valueString = valueString.substring(0,valueStringLength - 1);
+                        if ( valueString.length() > 0 ) {
                             ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
-                            if ( valueString.length() > 0 ) {
-                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
-                            }
-                            else {
-                                // Only flag was available
-                                ts.setDataValue(date, missing, flagString, 0 );
-                            }
                         }
                         else {
-                            ts.setDataValue(date,Double.parseDouble(valueString));
+                            // Only flag was available
+                            ts.setDataValue(date, missing, flagString, 0 );
                         }
                     }
-                    catch ( Exception e ) {
-                        Message.printWarning(3,routine,"Error parsing data point \"" +
-                            dataStringsArray[i] + "\" (" + e + ").");
-                        continue;
+                    else if ( (valueString.length() > 1) &&
+                        Character.isLetter(valueString.charAt(valueStringLength - 2)) ) {
+                        flagString = valueString.substring(valueStringLength - 2);
+                        valueString = valueString.substring(0,valueStringLength - 2);
+                        ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                        if ( valueString.length() > 0 ) {
+                            ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
+                        }
+                        else {
+                            // Only flag was available
+                            ts.setDataValue(date, missing, flagString, 0 );
+                        }
+                    }
+                    else {
+                        // Just the data value
+                        ts.setDataValue(date,Double.parseDouble(valueString));
                     }
                 }
-            }
-            else {
-                // CSV data - start in second row since first is the station name
-                for ( int i = 1; i < dataStringsArray.length; i++ ) {
-                    try {
-                        dataStringParts = dataStringsArray[i].split(",");
-                        date = DateTime.parse(dataStringParts[0]);
-                        valueString = dataStringParts[1];
-                        valueStringLength = valueString.length();
-                        if ( valueString.equals("M") ) {
-                            // No value and missing flag.  Do set a flag since ACIS specific sets a flag
-                            ts.setDataValue(date, missing, "M", 0 );
-                            ++mCount;
+                catch ( NumberFormatException e ) {
+                    Message.printWarning(3,routine,"Error parsing data point date=" + dateString + " valueString=\"" +
+                        valueString + "\" (" + e + ") - treating as flagged data.");
+                    // TODO SAM 2011-04-04 Have seen data values like "S", "0.20A".  Should these be
+                    // considered valid data points or treated as missing because they failed some test?
+                    // Submitted an email request to the ACIS contact page to see if I can get an answer.
+                    // For now, strip the characters off the end and treat as the flag and use the numerical
+                    // part (if present) for the value.
+                    int lastDigitPos = -1;
+                    for ( int iChar = valueString.length() - 1; iChar >= 0; iChar-- ) {
+                        if ( Character.isDigit(valueString.charAt(iChar)) ) {
+                            lastDigitPos = iChar;
+                            break;
                         }
-                        else if ( valueString.equals("T") ) {
-                            // No value and trace flag.  Do set a flag since ACIS specific sets a flag
-                            ts.setDataValue(date, traceValue, "T", 0 );
-                            ++tCount;
-                        }
-                        // Check for data string form ##F or ##F1 (two one-character flags may occur, with
-                        // the second flag possibly being a character or digit)
-                        else if ( (valueString.length() > 0) &&
-                            Character.isLetter(valueString.charAt(valueStringLength - 1)) ) {
-                            flagString = valueString.substring(valueStringLength - 1);
-                            valueString = valueString.substring(0,valueStringLength - 1);
-                            if ( valueString.length() > 0 ) {
-                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
-                            }
-                            else {
-                                // Only flag was available
-                                ts.setDataValue(date, missing, flagString, 0 );
-                            }
-                        }
-                        else if ( (valueString.length() > 1) &&
-                            Character.isLetter(valueString.charAt(valueStringLength - 2)) ) {
-                            flagString = valueString.substring(valueStringLength - 2);
-                            valueString = valueString.substring(0,valueStringLength - 2);
-                            ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
-                            if ( valueString.length() > 0 ) {
-                                ts.setDataValue(date, Double.parseDouble(valueString), flagString, 0 );
-                            }
-                            else {
-                                // Only flag was available
-                                ts.setDataValue(date, missing, flagString, 0 );
-                            }
+                    }
+                    if ( lastDigitPos >= 0 ) {
+                        String number = valueString.substring(0,lastDigitPos);
+                        if ( StringUtil.isDouble(number) ) {
+                            ts.setDataValue(date,Double.parseDouble(number),
+                                valueString.substring(lastDigitPos + 1),0);
                         }
                         else {
-                            // Just the data value
-                            ts.setDataValue(date,Double.parseDouble(valueString));
+                            // Set the entire string as the flag
+                            ts.setDataValue(date,ts.getMissing(),valueString,0);
                         }
                     }
-                    catch ( NumberFormatException e ) {
-                        Message.printWarning(3,routine,"Error parsing data point \"" +
-                            dataStringsArray[i] + "\" (" + e + ") - treating as flagged data.");
-                        // TODO SAM 2011-04-04 Have seen data values like "S", "0.20A".  Should these be
-                        // considered valid data points or treated as missing because they failed some test?
-                        // Submitted an email request to the ACIS contact page to see if I can get an answer.
-                        // For now, strip the characters off the end and treat as the flag and use the numerical
-                        // part (if present) for the value.
-                        int lastDigitPos = -1;
-                        String dataStringPart = dataStringParts[1];
-                        for ( int iChar = dataStringPart.length() - 1; iChar >= 0; iChar-- ) {
-                            if ( Character.isDigit(dataStringPart.charAt(iChar)) ) {
-                                lastDigitPos = iChar;
-                                break;
-                            }
-                        }
-                        if ( lastDigitPos >= 0 ) {
-                            String number = dataStringPart.substring(0,lastDigitPos);
-                            if ( StringUtil.isDouble(number) ) {
-                                ts.setDataValue(date,Double.parseDouble(number),
-                                    dataStringPart.substring(lastDigitPos + 1),0);
-                            }
-                            else {
-                                // Set the entire string as the flag
-                                ts.setDataValue(date,ts.getMissing(),dataStringPart,0);
-                            }
-                        }
-                        else {
-                            ts.setDataValue(date,ts.getMissing(),dataStringPart,0);
-                        }
+                    else {
+                        ts.setDataValue(date,ts.getMissing(),valueString,0);
                     }
-                    catch ( Exception e ) {
-                        Message.printWarning(3,routine,"Error parsing data point \"" +
-                            dataStringsArray[i] + "\" (" + e + ").");
-                    }
+                }
+                catch ( Exception e ) {
+                    Message.printWarning(3,routine,"Error parsing data point date=" + dateString + ", valueString=\"" +
+                        valueString + "\" (" + e + ").");
                 }
             }
         }

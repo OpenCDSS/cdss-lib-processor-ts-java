@@ -3,12 +3,12 @@ package rti.tscommandprocessor.commands.rccacis;
 import java.util.List;
 import java.util.Vector;
 
-import RTi.Util.Message.Message;
 import RTi.Util.Time.DateTime;
 
 /**
-Metadata for station time series joined data.  The data correspond to the MultiStn request metadata and
-StaMeta in version 2.  GSON sets the data members directly, where the names must match the JSON elements.
+Metadata for station time series joined data.  The data correspond to the MultiStn request in versions 1 and 2 and
+StaMeta in version 2 (preferred for retrieving metadata).  GSON sets the data members directly,
+where the names must match the JSON elements.
 The getMeta() method is used to retrieve the parsed data.  Calling code should use the version 2+ conventions
 but the version 1 data will be returned if it was parsed.
 */
@@ -64,12 +64,12 @@ public void cleanupData ()
     RccAcisStationTimeSeriesMetadata metadata;
     for ( int i = 0; i < metaList.size(); i++ ) {
         metadata = metaList.get(i);
-        String dates[] = metadata.getValid_daterange();
-        if ( (dates == null) || (dates.length == 0) ) {
+        String dates[][] = metadata.getValid_daterange();
+        if ( (dates == null) || (dates[0].length == 0) ) {
             // Did not have data in the original so insert defaults
-            dates = new String[2];
-            dates[0] = "";
-            dates[1] = "";
+            dates = new String[1][2];
+            dates[0][0] = "";
+            dates[0][1] = "";
             metadata.setValid_daterange(dates);
         }
         // TODO SAM 2011-01-21 Evaluate whether needed - previously had some other code that was causing problems
@@ -80,11 +80,11 @@ public void cleanupData ()
             --i;
         }
         else {*/
-            if ( dates[0].startsWith("9999") ) {
-                dates[0] = "" + now.getYear() + dates[0].substring(4);
+            if ( dates[0][0].startsWith("9999") ) {
+                dates[0][0] = "" + now.getYear() + dates[0][0].substring(4);
             }
-            if ( dates[1].startsWith("9999") ) {
-                dates[1] = "" + now.getYear() + dates[1].substring(4);
+            if ( dates[0][1].startsWith("9999") ) {
+                dates[0][1] = "" + now.getYear() + dates[0][1].substring(4);
             }
         //}
     }

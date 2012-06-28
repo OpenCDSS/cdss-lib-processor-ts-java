@@ -16,7 +16,6 @@ import RTi.Util.String.StringUtil;
 
 
 // Data checks (for now keep separate from logging and data tests)
-import rti.tscommandprocessor.commands.bndss.ReadColoradoBNDSS_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeriesStatistic_Command;
 import rti.tscommandprocessor.commands.check.CheckTimeSeries_Command;
 import rti.tscommandprocessor.commands.check.WriteCheckFile_Command;
@@ -581,10 +580,6 @@ throws UnknownCommandException
 
 	// "R" commands...
 
-    else if ( commandName.equalsIgnoreCase("ReadColoradoBNDSS") ||
-        commandName.equalsIgnoreCase("ReadColoradoIPP")) { // Legacy
-        return new ReadColoradoBNDSS_Command ();
-    }
     else if ( commandName.equalsIgnoreCase("ReadDateValue") ) {
         return new ReadDateValue_Command ();
     }

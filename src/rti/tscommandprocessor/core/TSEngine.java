@@ -657,8 +657,6 @@ import java.util.Vector;
 import DWR.DMI.HydroBaseDMI.HydroBaseDMI;
 
 import riverside.datastore.DataStore;
-import rti.tscommandprocessor.commands.bndss.BNDSS_DMI;
-import rti.tscommandprocessor.commands.bndss.ColoradoBNDSSDataStore;
 import rti.tscommandprocessor.commands.hecdss.HecDssAPI;
 import rti.tscommandprocessor.commands.rccacis.RccAcisDataStore;
 import rti.tscommandprocessor.commands.reclamationhdb.ReclamationHDBDataStore;
@@ -4192,27 +4190,7 @@ throws Exception
 	// series.  Always check the new convention first.
 
 	TS ts = null;
-	if ((dataStore != null) && (dataStore instanceof ColoradoBNDSSDataStore) ) {
-        // New style TSID~dataStoreName for ColoradoBNDSS...
-	    BNDSS_DMI bndssdmi = (BNDSS_DMI)((ColoradoBNDSSDataStore)dataStore).getDMI();
-        if ( bndssdmi == null ) {
-            Message.printWarning ( 3, routine, "Unable to get ColoradoBNDSS connection for " +
-            "data store name \"" + inputName +  "\".  Unable to read time series." );
-            ts = null;
-        }
-        else {
-            try {
-                ts = bndssdmi.readTimeSeries ( tsidentString2, readStart, readEnd, units, readData );
-            }
-            catch ( Exception te ) {
-                Message.printWarning ( 2, routine,"Error reading time series \"" + tsidentString2 +
-                    "\" from ColoradoBNDSS database" );
-                Message.printWarning ( 3, routine, te );
-                ts = null;
-            }
-        }
-    }
-    else if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
+	if ((dataStore != null) && (dataStore instanceof ColoradoWaterHBGuestDataStore) ) {
         // New style TSID~dataStore
         ColoradoWaterHBGuestDataStore cwds = (ColoradoWaterHBGuestDataStore)dataStore;
         if ( Message.isDebugOn ) {

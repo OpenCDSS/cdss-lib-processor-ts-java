@@ -1,16 +1,10 @@
 package rti.tscommandprocessor.commands.rccacis;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.security.InvalidParameterException;
 import java.util.List;
@@ -52,6 +46,11 @@ This class provides a general interface to the web service, consistent with TSTo
 */
 public class RccAcisDataStore extends AbstractWebServiceDataStore
 {
+
+/**
+The web service API version, critical for forming the request URL and parsing the results.
+*/
+private int __apiVersion = 2; // Default
     
 /**
 The records of table variables, for version 1 read from:  http://data.rcc-acis.org/doc/VariableTable.html
@@ -80,6 +79,10 @@ throws URISyntaxException, IOException
     setName ( name );
     setDescription ( description );
     setServiceRootURI ( serviceRootURI );
+    // Determine the web service version
+    determineAPIVersion();
+    // OK to initialize since no properties other than the main properties impact anything
+    initialize();
 }
 
 /**
@@ -105,21 +108,42 @@ throws IOException, Exception
 }
 
 /**
-Get the service API version.  Currently this is determined from data store properties; however
-in the future it may be determined by an on-line resource.
+Determine the web service API version.
+*/
+private void determineAPIVersion()
+{   String routine = "RccAcisDataStore.determineAPIVersion";
+    __apiVersion = 2; // Default is most current
+    String urlString = "" + getServiceRootURI() + "/version";
+    try {
+        String resultString = IOUtil.readFromURL(urlString);
+        // Format of result is JSON like:  "2.0.0-beta.1"
+        // Therefore check the 2nd character
+        if ( resultString.length() >= 2 ) {
+            if ( resultString.charAt(1) == '1' ) {
+                __apiVersion = 1;
+            }
+            else if ( resultString.charAt(1) != '2' ) {
+                String message = "ACIS API version is not supported:  " + resultString;
+                Message.printWarning ( 2, routine, message );
+                throw new RuntimeException ( message );
+            }
+        }
+    }
+    catch ( Exception e ) {
+        // Might be disconnected from the internet - usually safe to default to latest version
+        Message.printWarning ( 2, routine,
+            "Error reading version for web service API using \"" + urlString +
+            "\" - possibly due to not being connected to internet.  Assuming version is " + __apiVersion );
+    }
+}
+
+/**
+Return the service API version as determined from determineAPIVersion().
 @return the API version
 */
 public int getAPIVersion ()
 {
-    // Check the data store properties for a version.
-    String propVal = getProperty("ServiceVersion");
-    if ( (propVal != null) && propVal.startsWith("1") ) {
-        return 1;
-    }
-    else {
-        // Default is most recent version.
-        return 2;
-    }
+    return __apiVersion;
 }
 
 /**
@@ -197,6 +221,7 @@ throws URISyntaxException, IOException
     }
     // Otherwise initialize the global data for the data store
     __initialized = true;
+    // Determine the API version from a web request
     if ( getAPIVersion() == 1 ) {
         // Read variables from the HTML file on the website
         readVariableTableVersion1();
@@ -414,33 +439,13 @@ throws IOException, MalformedURLException, URISyntaxException
     // Always want JSON results...
     urlString.append("&output=json");
     Message.printStatus(2, routine, "Performing the following request:  " + urlString );
-    URL url = new URL ( urlString.toString() );
-    // Open the input stream...
-    HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
-    InputStream in = null;
-    if ( urlConnection.getResponseCode() >= 400 ) {
-        in = urlConnection.getErrorStream();
-    }
-    else {
-        in = urlConnection.getInputStream();
-    }
-    InputStreamReader inp = new InputStreamReader(in);
-    BufferedReader reader = new BufferedReader(inp);
-    char[] buffer = new char[8192];
-    int len1 = 0;
-    StringBuffer b = new StringBuffer();
-    while ( (len1 = reader.read(buffer)) != -1 ) {
-        b.append(buffer,0,len1);
-    }
-    in.close();
-    urlConnection.disconnect();
-    String resultString = b.toString();
+    String resultString = IOUtil.readFromURL(urlString.toString() );
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Returned data="+resultString);
     }
-    if ( b.indexOf("error") >= 0 ) {
-        throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " +
-            resultString + " (" + b + ")." );
+    // Check for error in response string...
+    if ( resultString.indexOf("error") >= 0 ) {
+        throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " + resultString );
     }
     else {
         // Parse the JSON
@@ -556,33 +561,12 @@ throws IOException, MalformedURLException
     // Always want JSON results...
     urlString.append("&output=json");
     Message.printStatus(2, routine, "Performing the following request:  " + urlString );
-    URL url = new URL ( urlString.toString() );
-    // Open the input stream...
-    HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
-    InputStream in = null;
-    if ( urlConnection.getResponseCode() >= 400 ) {
-        in = urlConnection.getErrorStream();
-    }
-    else {
-        in = urlConnection.getInputStream();
-    }
-    InputStreamReader inp = new InputStreamReader(in);
-    BufferedReader reader = new BufferedReader(inp);
-    char[] buffer = new char[8192];
-    int len1 = 0;
-    StringBuffer b = new StringBuffer();
-    while ( (len1 = reader.read(buffer)) != -1 ) {
-        b.append(buffer,0,len1);
-    }
-    in.close();
-    urlConnection.disconnect();
-    String resultString = b.toString();
+    String resultString = IOUtil.readFromURL(urlString.toString());
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Returned data="+resultString);
     }
-    if ( b.indexOf("error") >= 0 ) {
-        throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " +
-            resultString + " (" + b + ")." );
+    if ( resultString.indexOf("error") >= 0 ) {
+        throw new IOException ( "Error retrieving data for URL \"" + urlString + "\":  " + resultString );
     }
     else {
         // Parse the JSON
@@ -650,6 +634,8 @@ throws MalformedURLException, Exception
     if ( !readData ) {
         // Specify a minimal period to try a query and make sure that the time series is defined.
         // If this period is not valid for the time series, a missing value will come back.
+        // TODO SAM 2012-06-28 Evaluate whether this impacts the number of stations returned since not all
+        // will be active on the requested day
         readStart = DateTime.parse("2011-01-01");
         readEnd = DateTime.parse("2011-01-01");
     }
@@ -710,44 +696,14 @@ throws MalformedURLException, Exception
          "&elems=" + elems + "&sDate=" + readStartString + "&eDate=" + readEndString );
     String urlStringEncoded = urlString.toString(); //URLEncoder.encode(urlString.toString(),"UTF-8");
     Message.printStatus(2, routine, "Performing the following request:  " + urlStringEncoded );
-    URL url = new URL ( urlStringEncoded );
-    // Open the input stream...
-    HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
-    // TODO SAM 2011-06-21 Set the timeouts if a property in the datastore file.
-    // This may be necessary if network performance
-    // is very slow.  However, the default of 0 means no timeout... so why does this sometimes throw
-    // a timeout exception?  Is there a timeout of a sub-process on the other end that gets enforced?
-    //urlConnection.setConnectTimeout(5000);
-    //urlConnection.setReadTimeout(5000);
-    //Message.printStatus(2, routine, "Default connect timeout=" + urlConnection.getConnectTimeout() );
-    //Message.printStatus(2, routine, "Default read timeout=" + urlConnection.getReadTimeout() );
-    InputStream in = null;
-    Message.printStatus(2, routine, "Response code=" + urlConnection.getResponseCode() +
-        " Response message = \"" + urlConnection.getResponseMessage() + "\"" );
-    if ( urlConnection.getResponseCode() >= 400 ) {
-        in = urlConnection.getErrorStream();
-    }
-    else {
-        in = urlConnection.getInputStream();
-    }
-    InputStreamReader inp = new InputStreamReader(in);
-    BufferedReader reader = new BufferedReader(inp);
-    char[] buffer = new char[8192];
-    int len1 = 0;
-    StringBuffer b = new StringBuffer();
-    while ( (len1 = reader.read(buffer)) != -1 ) {
-        b.append(buffer,0,len1);
-    }
-    in.close();
-    urlConnection.disconnect();
-    String resultString = b.toString();
+    String resultString = IOUtil.readFromURL(urlStringEncoded);
     //Message.printStatus(2,routine,"Returned string="+resultString);
     if ( Message.isDebugOn ) {
         Message.printDebug(1,routine,"Returned string="+resultString);
     }
-    if ( b.indexOf("error") >= 0 ) {
+    if ( resultString.indexOf("error") >= 0 ) {
         throw new IOException ( "Error retrieving data for URL \"" + urlStringEncoded +
-            "\":  " + resultString + " (" + b + ")." );
+            "\":  " + resultString );
     }
     else {
         RccAcisStationTimeSeriesMetaAndData metaAndData = null;
@@ -979,26 +935,16 @@ String readTimeSeries_FormHttpRequestStationID ( String tsidLocation )
 
 /**
 Make a request to get the variable table, which is used to map ACIS data to time series available in TSTool.
+This approach is used with the version 1 API.
 The table comes back as HTML so need to use a DOM and extract cells.
 TODO SAM 2011-01-08 Need Bill Noon to implement an API to get the variable table.
 */
 private void readVariableTableVersion1 ()
 throws URISyntaxException, IOException
 {   String routine = getClass().getName() + ".readVariableTableVersion1";
-    // Get the file
-    URL url = new URL ( "" + getServiceRootURI() + "/doc/VariableTable.html" );
-    // Open the input stream...
-    URLConnection urlConnection = url.openConnection();
-    InputStream in = urlConnection.getInputStream();
-    InputStreamReader inp = new InputStreamReader(in);
-    BufferedReader reader = new BufferedReader(inp);
-    char[] buffer = new char[8192];
-    int len1 = 0;
-    StringBuffer b = new StringBuffer();
-    while ( (len1 = reader.read(buffer)) != -1 ) {
-        b.append(buffer,0,len1);
-    }
-    in.close();
+    // Get the variable table file
+    String urlString = "" + getServiceRootURI() + "/doc/VariableTable.html";
+    StringBuffer b = new StringBuffer ( IOUtil.readFromURL(urlString) );
     // TODO SAM 2011-01-11 Need to perhaps use standalone="yes" rather than using a DTD when parsing the HTML
     // Prepend the DTD information so document parsing/verification will work properly
     // And content does not have html tag at start?

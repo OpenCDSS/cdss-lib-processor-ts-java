@@ -589,6 +589,7 @@ CommandWarningException, CommandException
 					difftotal[it] = (double)0.0;
 					difftotalabs[it] = (double)0.0;
 				}
+				// Analysis period should encompass the period from both time series
 				if ( AnalysisStart_DateTime == null ) {
 					date1 = new DateTime (ts1.getDate1());
 					if ( ts2.getDate1().lessThan(date1) ) {
@@ -627,16 +628,28 @@ CommandWarningException, CommandException
 					flag2 = tsdata2.getDataFlag().trim();
 					if ( Precision != null ) {
 						// Need to round.  For now do with strings, which handles the rounding...
-						value1 = Double.parseDouble(StringUtil.formatString(value1_orig,"%."+Precision_int +"f"));
-						value2 = Double.parseDouble(StringUtil.formatString(value2_orig,"%."+Precision_int +"f"));
+					    if ( Double.isNaN(value1_orig)) {
+					        value1 = value1_orig;
+					    }
+					    else {
+					        value1 = Double.parseDouble(StringUtil.formatString(value1_orig,"%."+Precision_int +"f"));
+					    }
+					    if ( Double.isNaN(value2_orig)) {
+					        value2 = value2_orig;
+					    }
+					    else {
+					        value2 = Double.parseDouble(StringUtil.formatString(value2_orig,"%."+Precision_int +"f"));
+					    }
 					}
 					else {
 					    value1 = value1_orig;
 						value2 = value2_orig;
 					}
+					// For troubleshooting...
+					//Message.printStatus(2,routine,"Value1="+ value1_orig + " Value2="+ value2_orig);
 					// Count of data points that are checked...
 					++totalcount;
-					is_diff = false;	// Initialize
+					is_diff = false; // Initialize
 					if ( ts1.isDataMissing(value1_orig) && !ts2.isDataMissing(value2_orig)) {
 						Message.printStatus ( 2, routine, loc1 + " has different data on " + date +
 							" TS1 = missing " + flag1 +

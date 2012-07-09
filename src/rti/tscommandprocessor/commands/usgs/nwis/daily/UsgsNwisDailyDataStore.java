@@ -1,18 +1,9 @@
 package rti.tscommandprocessor.commands.usgs.nwis.daily;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Vector;
 
@@ -38,13 +29,9 @@ import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisStatisticType;
 import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLReader;
 
 import RTi.TS.TS;
-import RTi.TS.TSDataFlagMetadata;
-import RTi.TS.TSIdent;
-import RTi.TS.TSUtil;
 import RTi.Util.GUI.InputFilter_JPanel;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
-import RTi.Util.IO.ReaderInputStream;
 import RTi.Util.Message.Message;
 import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
@@ -458,36 +445,14 @@ throws MalformedURLException, IOException, Exception
         urlString.append ( queryParameters.get(i) );
     }
     Message.printStatus(2, routine, "Performing the following request:  " + urlString.toString() );
-    URL url = new URL ( urlString.toString() );
-    // Open the input stream...
-    HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
-    InputStream in = null;
-    Message.printStatus(2, routine, "Response code=" + urlConnection.getResponseCode() +
-        " Response message = \"" + urlConnection.getResponseMessage() + "\"" );
-    if ( urlConnection.getResponseCode() >= 400 ) {
-        in = urlConnection.getErrorStream();
-    }
-    else {
-        in = urlConnection.getInputStream();
-    }
-    InputStreamReader inp = new InputStreamReader(in);
-    BufferedReader reader = new BufferedReader(inp);
-    char[] buffer = new char[8192];
-    int len1 = 0;
-    StringBuffer b = new StringBuffer();
-    while ( (len1 = reader.read(buffer)) != -1 ) {
-        b.append(buffer,0,len1);
-    }
-    in.close();
-    urlConnection.disconnect();
-    String resultString = b.toString();
+    String resultString = IOUtil.readFromURL(urlString.toString());
     // TODO SAM 2012-02-29 Might want to constrain this more based on error codes
     // so it does not bloat the log, especially since the response can be written to the output file
     if ( Message.isDebugOn ) {
         Message.printStatus(10,routine,"Returned data="+resultString);
     }
-    if ( b.indexOf("error") >= 0 ) {
-        throw new IOException ( "Error retrieving data:  " + resultString + " (" + b + ")." );
+    if ( resultString.indexOf("error") >= 0 ) {
+        throw new IOException ( "Error retrieving data:  " + resultString + " (" + resultString + ")." );
     }
     else {
         // Save the output to a file if requested

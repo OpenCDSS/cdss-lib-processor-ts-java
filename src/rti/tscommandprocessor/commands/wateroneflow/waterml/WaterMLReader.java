@@ -9,13 +9,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.parsers.DocumentBuilderFactory;
+//import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+// Instances are explicitly declared with full path to avoid conflict with similar Apache classes
+//import org.w3c.dom.Document;
+//import org.w3c.dom.Element;
+//import org.w3c.dom.NamedNodeMap;
+//import org.w3c.dom.Node;
+//import org.w3c.dom.NodeList;
 
 import rti.tscommandprocessor.commands.wateroneflow.waterml.WaterMLVersion;
 
@@ -79,7 +80,7 @@ Determine the WaterML version.
 @param dom DOM from WaterML
 @throws IOException
 */
-private WaterMLVersion determineWaterMLVersion(Document dom)
+private WaterMLVersion determineWaterMLVersion(org.w3c.dom.Document dom)
 throws IOException
 {   String routine = getClass().getName() + "determineWaterMLVersion";
     String xmlns = dom.getDocumentElement().getAttribute("xmlns");
@@ -115,11 +116,11 @@ Return the list of element text values.
 @param parentElement parent element
 @param name name of element to match
 */
-private List<String> getElementValues(Element parentElement, String name) throws IOException {
-    NodeList nodes = parentElement.getElementsByTagNameNS("*",name);
+private List<String> getElementValues(org.w3c.dom.Element parentElement, String name) throws IOException {
+    org.w3c.dom.NodeList nodes = parentElement.getElementsByTagNameNS("*",name);
     ArrayList<String> vals = new ArrayList<String>(nodes.getLength());
     for (int i = 0; i < nodes.getLength(); i++) {
-        vals.add(((Element) nodes.item(i)).getTextContent().trim());
+        vals.add(((org.w3c.dom.Element) nodes.item(i)).getTextContent().trim());
     }
     return vals;
 }
@@ -132,7 +133,7 @@ Find an element (given a parent element) that matches the given element name.
 @return the first matched element, or null if none are matched
 @throws IOException
 */
-private Element findSingleElement(Element parentElement, String elementName ) throws IOException {
+private org.w3c.dom.Element findSingleElement(org.w3c.dom.Element parentElement, String elementName ) throws IOException {
     return findSingleElement ( parentElement, elementName, null );
 }
 
@@ -143,9 +144,9 @@ Find an element (given a parent element) that matches the given element name.
 @return the first matched element, or null if none are matched
 @throws IOException
 */
-private Element findSingleElement(Element parentElement, String elementName,
+private org.w3c.dom.Element findSingleElement(org.w3c.dom.Element parentElement, String elementName,
     String attributeName ) throws IOException {
-    NodeList nodes = parentElement.getElementsByTagNameNS("*",elementName);
+    org.w3c.dom.NodeList nodes = parentElement.getElementsByTagNameNS("*",elementName);
     if ( nodes.getLength() == 0 ) {
         return null;
     }
@@ -153,18 +154,18 @@ private Element findSingleElement(Element parentElement, String elementName,
         if ( (attributeName != null) && !attributeName.equals("") ) {
             // Want to search to see if the node has a matching attribute name
             for ( int i = 0; i < nodes.getLength(); i++ ) {
-                Node node = nodes.item(i);
-                NamedNodeMap nodeMap = node.getAttributes();
+                org.w3c.dom.Node node = nodes.item(i);
+                org.w3c.dom.NamedNodeMap nodeMap = node.getAttributes();
                 if ( nodeMap.getNamedItem(attributeName) != null ) {
                     // Found the node of interest
-                    return (Element)node;
+                    return (org.w3c.dom.Element)node;
                 }
             }
             // No node had the requested attribute
             return null;
         }
         else {
-            return nodes.getLength() > 0 ? (Element) nodes.item(0) : null;
+            return nodes.getLength() > 0 ? (org.w3c.dom.Element) nodes.item(0) : null;
         }
     }
 }
@@ -176,12 +177,12 @@ Find an element (given a parent element) that matches the given element name and
 @return the first string text of the first matched element, or null if none are matched
 @throws IOException
 */
-private String findSingleElementValue(Element parentElement, String elementName) throws IOException {
-    Element el = findSingleElement(parentElement, elementName);
+private String findSingleElementValue(org.w3c.dom.Element parentElement, String elementName) throws IOException {
+    org.w3c.dom.Element el = findSingleElement(parentElement, elementName);
     return el == null ? null : el.getTextContent().trim();
 }
 
-private String getSingleElementValue(Element parent, String name)
+private String getSingleElementValue(org.w3c.dom.Element parent, String name)
 throws IOException {
     return getSingleElement(parent, name).getTextContent().trim();
 }
@@ -193,12 +194,12 @@ Get the single element matching the given name from a parent element
 @return the element matching elementName, or null if not matched
 @throws IOException
 */
-private Element getSingleElement(Element parentElement, String name) throws IOException {
-    NodeList nodes = parentElement.getElementsByTagNameNS("*",name);
+private org.w3c.dom.Element getSingleElement(org.w3c.dom.Element parentElement, String name) throws IOException {
+    org.w3c.dom.NodeList nodes = parentElement.getElementsByTagNameNS("*",name);
     if (nodes.getLength() != 1) {
         throw new IOException("Expected to find child \"" + name + "\" in \"" + parentElement.getTagName() + "\"");
     }
-    return (Element) nodes.item(0);
+    return (org.w3c.dom.Element) nodes.item(0);
 }
 
 private String grepValue(List<String> items, String regex) {
@@ -218,13 +219,13 @@ private String grepValue(List<String> items, String regex) {
 Determine whether the WaterML is for USGS NWIS, in which case some additional information is present
 beyond the WaterML namespace.
 */
-private boolean isUsgsNwis ( Document dom, WaterMLVersion watermlVersion )
+private boolean isUsgsNwis ( org.w3c.dom.Document dom, WaterMLVersion watermlVersion )
 {
     // Further check to see if USGS version, something like:
     // <ns2:queryURL>http://waterservices.usgs.gov/nwis/dv</ns2:queryURL>
     if ( watermlVersion == WaterMLVersion.STANDARD_1_1) {
-        NodeList nodes = dom.getDocumentElement().getElementsByTagNameNS("*","queryURL");
-        Node node;
+        org.w3c.dom.NodeList nodes = dom.getDocumentElement().getElementsByTagNameNS("*","queryURL");
+        org.w3c.dom.Node node;
         for ( int i = 0; i < nodes.getLength(); i++ ) {
             node = nodes.item(i);
             if ( node.getTextContent().toUpperCase().indexOf("USGS") >= 0 ) {
@@ -251,10 +252,11 @@ populate the history comments in the time series
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
 */
-private TS readTimeSeries( WaterMLVersion watermlVersion, Element domElement, Element timeSeriesElement,
+private TS readTimeSeries( WaterMLVersion watermlVersion, org.w3c.dom.Element domElement,
+    org.w3c.dom.Element timeSeriesElement,
     TimeInterval interval, String url, File file, DateTime readStart, DateTime readEnd, boolean readData)
 throws IOException
-{
+{   String routine = "WaterMLReader.readTimeSeries";
     String sourceInfoTag = null;
     String variableTag = null;
     String valuesTag = null;
@@ -263,13 +265,19 @@ throws IOException
         variableTag = "variable"; // Information about data type
         valuesTag = "values"; // Data values and information about flags
     }
-    Element sourceInfoElement = getSingleElement(timeSeriesElement, sourceInfoTag);
-    Element variableElement = getSingleElement(timeSeriesElement, variableTag);
-    Element valuesElement = getSingleElement(timeSeriesElement, valuesTag);
+    org.w3c.dom.Element sourceInfoElement = getSingleElement(timeSeriesElement, sourceInfoTag);
+    org.w3c.dom.Element variableElement = getSingleElement(timeSeriesElement, variableTag);
+    org.w3c.dom.Element valuesElement = getSingleElement(timeSeriesElement, valuesTag);
 
     // Get the time series identifier for the time series in order to initialize the time series
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"Parsing TSIdent...");
+    }
     TSIdent ident = readTimeSeries_ParseIdent(watermlVersion, interval,
         sourceInfoElement, variableElement, valuesElement);
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"...back from parsing TSIdent");
+    }
 
     TS ts;
     try {
@@ -290,7 +298,7 @@ throws IOException
         ts.setDataUnits(readTimeSeries_ParseUnits(watermlVersion,variableElement));
         ts.setDataUnitsOriginal(ts.getDataUnits());
         // Description - set to site name
-        Element siteName = getSingleElement(timeSeriesElement, "siteName");
+        org.w3c.dom.Element siteName = getSingleElement(timeSeriesElement, "siteName");
         if ( siteName != null ) {
             ts.setDescription(siteName.getTextContent());
         }
@@ -306,7 +314,7 @@ throws IOException
             }
             // Also extract creation information from the WaterML (probably a file).
             ts.addToGenesis("Query information extracted from WaterML (as XML elements):  " );
-            Element queryInfoElement = getSingleElement(domElement, "queryInfo");
+            org.w3c.dom.Element queryInfoElement = getSingleElement(domElement, "queryInfo");
             if ( queryInfoElement != null ) {
                 // Just pass through the information
                 ts.addToGenesis ( queryInfoElement.toString() );
@@ -321,9 +329,9 @@ throws IOException
         //     <ns1:qualifierCode>P</ns1:qualifierCode>
         //     <ns1:qualifierDescription>Provisional data subject to revision.</ns1:qualifierDescription>
         // </ns1:qualifier>
-        NodeList nodes = valuesElement.getElementsByTagNameNS("*","qualifier");
+        org.w3c.dom.NodeList nodes = valuesElement.getElementsByTagNameNS("*","qualifier");
         for ( int i = 0; i < nodes.getLength(); i++ ) {
-            Element qualifierElement = (Element)nodes.item(i);
+            org.w3c.dom.Element qualifierElement = (org.w3c.dom.Element)nodes.item(i);
             String qualifierCode = getSingleElementValue(qualifierElement,"qualifierCode");
             String qualifierDescription = getSingleElementValue(qualifierElement,"qualifierDescription");
             if ( (qualifierCode != null) && !qualifierCode.equals("") ) {
@@ -338,7 +346,13 @@ throws IOException
     // Set the time series period and optionally read the data
 
     String noDataValue = getSingleElementValue(variableElement, "noDataValue" );
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"Parsing values...");
+    }
     readTimeSeries_ParseValues ( watermlVersion, ts, valuesElement, noDataValue, readStart, readEnd, readData );
+    if ( Message.isDebugOn ) {
+        Message.printDebug(1,routine,"...back from parsing values");
+    }
 
     return ts;
 }
@@ -356,7 +370,7 @@ in the file that indicates that data are daily values, etc.
 @throws IOException
 */
 private TSIdent readTimeSeries_ParseIdent(WaterMLVersion watermlVersion, TimeInterval interval,
-    Element sourceInfoElement, Element variableElement, Element valuesElement )
+    org.w3c.dom.Element sourceInfoElement, org.w3c.dom.Element variableElement, org.w3c.dom.Element valuesElement )
 throws IOException
 {   String routine = getClass().getName() + ".readTimeSeries_ParseIdent";
     TSIdent ident = new TSIdent();
@@ -380,12 +394,12 @@ throws IOException
         //     <ns1:option name="Statistic" optionCode="00006">Sum</ns1:option>
         //</ns1:options>
         // To be bulletproof and avoid periods that would cause a problem in the TSID, use the code
-        Element optionsElement = findSingleElement(variableElement,"options");
+        org.w3c.dom.Element optionsElement = findSingleElement(variableElement,"options");
         if ( optionsElement != null ) {
-            NodeList optionElements = optionsElement.getElementsByTagNameNS("*", "option");
+            org.w3c.dom.NodeList optionElements = optionsElement.getElementsByTagNameNS("*", "option");
             if ( optionElements != null ) {
                 for ( int i = 0; i < optionElements.getLength(); i++ ) {
-                    Element optionElement = (Element)optionElements.item(i);
+                    org.w3c.dom.Element optionElement = (org.w3c.dom.Element)optionElements.item(i);
                     subtype = optionElement.getAttribute("optionCode"); // DO NOT use getAttributeNS("*"
                     if ( (subtype != null) && useDataTypePrefix ) {
                         subtype = "StatisticCode:" + subtype;
@@ -436,7 +450,7 @@ throws IOException
         */
     if (watermlVersion == WaterMLVersion.STANDARD_1_1) {
         try {
-            Element siteCodeElement = getSingleElement(sourceInfoElement, "siteCode");
+            org.w3c.dom.Element siteCodeElement = getSingleElement(sourceInfoElement, "siteCode");
             if ( siteCodeElement != null ) {
                 String agencyCode = siteCodeElement.getAttribute("agencyCode");
                 if ( agencyCode != null ) {
@@ -459,12 +473,12 @@ throws IOException
     return ident;
 }
 
-private String readTimeSeries_ParseInterval(Element variable) throws IOException {
-    Element timeSupport = getSingleElement(variable, "timeSupport");
+private String readTimeSeries_ParseInterval(org.w3c.dom.Element variable) throws IOException {
+    org.w3c.dom.Element timeSupport = getSingleElement(variable, "timeSupport");
     boolean regular = timeSupport.getAttribute("isRegular").equalsIgnoreCase("true");
     String interval = "IRREGULAR";
     if (regular) {
-        Element unit = getSingleElement(timeSupport, "unit");
+        org.w3c.dom.Element unit = getSingleElement(timeSupport, "unit");
         String type = findSingleElementValue(unit, "UnitName");
         if (type == null) {
             type = findSingleElementValue(unit, "UnitDescription");
@@ -480,7 +494,7 @@ Parse data units from the DOM.
 @param variableElement the variable element that contains unit information
 @return the units as a string
 */
-private String readTimeSeries_ParseUnits ( WaterMLVersion watermlVersion, Element variableElement )
+private String readTimeSeries_ParseUnits ( WaterMLVersion watermlVersion, org.w3c.dom.Element variableElement )
 throws IOException
 {
     String unitsTag = null;
@@ -504,20 +518,20 @@ Parse time series values from the DOM, and also set the period.
 @param readData whether to read data values (if false initialize the period but do not allocate
 memory or process the data values)
 */
-private void readTimeSeries_ParseValues(WaterMLVersion watermlVersion, TS ts, Element valuesElement,
+private void readTimeSeries_ParseValues(WaterMLVersion watermlVersion, TS ts, org.w3c.dom.Element valuesElement,
     String noDataValue, DateTime readStart, DateTime readEnd, boolean readData )
 throws IOException
 {
     DateTime dataStart = null;
     // TODO SAM 2011-01-11 Why not just used beginDateTime and endDateTime for the period?
-    NodeList valuelist = valuesElement.getElementsByTagNameNS("*","value");
+    org.w3c.dom.NodeList valuelist = valuesElement.getElementsByTagNameNS("*","value");
     if ( (valuelist == null) || (valuelist.getLength() == 0) ) {
         // No data to process.  This may occur, for example, if a date range is requested that has no data
         return;
     }
     String dateTimeString = "";
     try {
-        dateTimeString = ((Element)valuelist.item(0)).getAttribute("dateTime");
+        dateTimeString = ((org.w3c.dom.Element)valuelist.item(0)).getAttribute("dateTime");
         // Strip off the hundredths
         int pos = dateTimeString.indexOf(".");
         if ( pos > 0 ) {
@@ -536,7 +550,7 @@ throws IOException
     DateTime dataEnd = null;
     dateTimeString = "";
     try {
-        dateTimeString = ((Element)valuelist.item(valuelist.getLength() - 1)).getAttribute("dateTime");
+        dateTimeString = ((org.w3c.dom.Element)valuelist.item(valuelist.getLength() - 1)).getAttribute("dateTime");
         // Strip off the hundredths
         int pos = dateTimeString.indexOf(".");
         if ( pos > 0 ) {
@@ -569,7 +583,7 @@ throws IOException
         for (int i = 0; i < valuelist.getLength(); i++) {
             // Must parse the dates because missing results in gaps
             try {
-                Element el = (Element) valuelist.item(i);
+                org.w3c.dom.Element el = (org.w3c.dom.Element) valuelist.item(i);
                 dateTimeString = el.getAttribute("dateTime");
                 // Strip off the hundredths
                 int pos = dateTimeString.indexOf(".");
@@ -616,11 +630,19 @@ public List<TS> readTimeSeriesList ( TimeInterval interval, DateTime readStart, 
 throws MalformedURLException, IOException, Exception
 {   String routine = getClass().getName() + ".readTimeSeriesList";
     // Create the time series from the WaterML...
-    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    // The following allows conflicts in class path parsers to occur...
+    //javax.xml.parsers.DocumentBuilderFactory dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+    // Specify the class that should be used for the DocumentBuilderFactory implementation (use internal Java factory
+    // rather than xerces jar file)
+    // This is needed because the separate xerces implementation generates exceptions
+    // TODO SAM 2012-07-09 Need to spend time figuring it out
+    javax.xml.parsers.DocumentBuilderFactory dbf =
+        javax.xml.parsers.DocumentBuilderFactory.newInstance("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+            null); // Use current thread class loader
     // Be aware of namespace to transparently handle ns1: in front of element names, but do not
     // do full validation with setValidating(true)
     dbf.setNamespaceAware(true);
-    Document dom = dbf.newDocumentBuilder().parse(
+    org.w3c.dom.Document dom = dbf.newDocumentBuilder().parse(
         new ReaderInputStream(new StringReader(__waterMLString)));
     WaterMLVersion watermlVersion= determineWaterMLVersion(dom);
     List<TS> tsList = new ArrayList<TS>();
@@ -631,15 +653,18 @@ throws MalformedURLException, IOException, Exception
     else {
         throw new IOException ( "WaterML version " + watermlVersion + " is not supported.");
     }
-    NodeList timeSeries = dom.getDocumentElement().getElementsByTagNameNS("*",timeSeriesTag);
+    org.w3c.dom.NodeList timeSeries = dom.getDocumentElement().getElementsByTagNameNS("*",timeSeriesTag);
     Message.printStatus(2, routine, "Have " + timeSeries.getLength() +
         " WaterML timeSeries elements to process." );
     //Node node;
     for (int i = 0; i < timeSeries.getLength(); i++) {
-        //node = timeSeries.item(i);
-        //Message.printStatus(2, routine, "NodeLocalName=" + node.getLocalName() +
-        //    ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
-        tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (Element)timeSeries.item(i),
+        // Uncomment for troubleshooting...
+        if ( Message.isDebugOn ) {
+            org.w3c.dom.Node node = timeSeries.item(i);
+            Message.printDebug(1, routine, "NodeLocalName=" + node.getLocalName() +
+                ", namespace=" + node.getNamespaceURI() + ", name=" + node.getNodeName());
+        }
+        tsList.add(readTimeSeries(watermlVersion, dom.getDocumentElement(), (org.w3c.dom.Element)timeSeries.item(i),
             interval, __url, __file, readStart, readEnd, readData ));
     }
     return tsList;

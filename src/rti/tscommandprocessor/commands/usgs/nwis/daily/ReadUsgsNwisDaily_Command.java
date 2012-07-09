@@ -678,7 +678,7 @@ CommandWarningException, CommandException
                     Message.printWarning ( warning_level, 
                         MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                     status.addToLog ( commandPhase, new CommandLogRecord(CommandStatusType.FAILURE,
-                            message, "Report the problem to software support." ) );
+                        message, "Report the problem to software support." ) );
                     // Don't throw an exception - probably due to missing data.
                 }
     

@@ -13,6 +13,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -65,6 +66,7 @@ private JTextField __Bracket_JTextField = null;
 private JTextField __AllowMissingCount_JTextField = null;
 private JLabel __Bracket_JLabel = null; // Label for bracket
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
+private SimpleJComboBox __ProbabilityUnits_JComboBox = null;
 private boolean __error_wait = false; // Is there an error to be cleared up
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -195,6 +197,7 @@ private void checkInput ()
     String Bracket = __Bracket_JTextField.getText().trim();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
+    String ProbabilityUnits = __ProbabilityUnits_JComboBox.getSelected();
     __error_wait = false;
 
     if ( TSList.length() > 0 ) {
@@ -221,6 +224,9 @@ private void checkInput ()
     if (Alias.length() > 0) {
         parameters.set("Alias", Alias);
     }
+    if (ProbabilityUnits.length() > 0) {
+        parameters.set("ProbabilityUnits", ProbabilityUnits);
+    }
     try {
         // This will warn the user...
         __command.checkCommandParameters ( parameters, null, 1 );
@@ -244,6 +250,7 @@ private void commitEdits ()
     String Bracket = __Bracket_JTextField.getText().trim();
     String AllowMissingCount = __AllowMissingCount_JTextField.getText().trim();
     String Alias = __Alias_JTextField.getText().trim();
+    String ProbabilityUnits = __ProbabilityUnits_JComboBox.getSelected();
     __command.setCommandParameter ( "TSList", TSList );
     __command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
@@ -252,6 +259,7 @@ private void commitEdits ()
     __command.setCommandParameter ( "Bracket", Bracket );
     __command.setCommandParameter ( "AllowMissingCount", AllowMissingCount);
     __command.setCommandParameter ( "Alias", Alias );
+    __command.setCommandParameter ( "ProbabilityUnits", ProbabilityUnits );
 }
 
 /**
@@ -375,6 +383,22 @@ private void initialize ( JFrame parent, RunningStatisticTimeSeries_Command comm
         1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - use %L for location, etc. (default=no alias)."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Probability units:"),
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __ProbabilityUnits_JComboBox = new SimpleJComboBox(false);
+    List<String> probabilityUnits = new Vector();
+    probabilityUnits.add ( "" );
+    probabilityUnits.add ( "Fraction" );
+    probabilityUnits.add ( "Percent" );
+    probabilityUnits.add ( "%" );
+    __ProbabilityUnits_JComboBox.setData ( probabilityUnits );
+    __ProbabilityUnits_JComboBox.select ( 0 );
+    __ProbabilityUnits_JComboBox.addActionListener (this);
+    JGUIUtil.addComponent(main_JPanel, __ProbabilityUnits_JComboBox,
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - units for probability statistic (default=Fraction)."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Command:" ), 
             0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -458,6 +482,7 @@ private void refresh ()
     String Bracket = "";
     String AllowMissingCount = "";
     String Alias = "";
+    String ProbabilityUnits = "";
     PropList props = __command.getCommandParameters();
     if ( __first_time ) {
         __first_time = false;
@@ -470,6 +495,7 @@ private void refresh ()
         Bracket = props.getValue ( "Bracket" );
         AllowMissingCount = props.getValue ( "AllowMissingCount" );
         Alias = props.getValue ( "Alias" );
+        ProbabilityUnits = props.getValue ( "ProbabilityUnits" );
         if ( TSList == null ) {
             // Select default...
             __TSList_JComboBox.select ( 0 );
@@ -485,17 +511,18 @@ private void refresh ()
                 __error_wait = true;
             }
         }
-        if (    JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID,
-                JGUIUtil.NONE, null, null ) ) {
-                __TSID_JComboBox.select ( TSID );
+        if ( JGUIUtil.isSimpleJComboBoxItem( __TSID_JComboBox, TSID, JGUIUtil.NONE, null, null ) ) {
+            __TSID_JComboBox.select ( TSID );
         }
-        else {  // Automatically add to the list after the blank...
+        else {
+            // Automatically add to the list after the blank...
             if ( (TSID != null) && (TSID.length() > 0) ) {
                 __TSID_JComboBox.insertItemAt ( TSID, 1 );
                 // Select...
                 __TSID_JComboBox.select ( TSID );
             }
-            else {  // Select the blank...
+            else {
+                // Select the blank...
                 __TSID_JComboBox.select ( 0 );
             }
         }
@@ -552,6 +579,20 @@ private void refresh ()
         if (Alias != null ) {
             __Alias_JTextField.setText(Alias.trim());
         }
+        if ( ProbabilityUnits == null ) {
+            // Select default...
+            __ProbabilityUnits_JComboBox.select ( 0 );
+        }
+        else {
+            if ( JGUIUtil.isSimpleJComboBoxItem( __ProbabilityUnits_JComboBox, ProbabilityUnits, JGUIUtil.NONE, null, null ) ) {
+                __ProbabilityUnits_JComboBox.select ( ProbabilityUnits );
+            }
+            else {
+                Message.printWarning ( 1, routine, "Existing command references an invalid ProbabilityUnits value \"" +
+                    ProbabilityUnits + "\".  Select a different value or Cancel.");
+                __error_wait = true;
+            }
+        }
 	}
 	// Regardless, reset the command from the fields...
     TSList = __TSList_JComboBox.getSelected();
@@ -562,6 +603,7 @@ private void refresh ()
     Bracket = __Bracket_JTextField.getText().trim();
     AllowMissingCount = __AllowMissingCount_JTextField.getText();
     Alias = __Alias_JTextField.getText().trim();
+    ProbabilityUnits = __ProbabilityUnits_JComboBox.getSelected();
     props = new PropList ( __command.getCommandName() );
     props.add ( "TSList=" + TSList );
     props.add ( "TSID=" + TSID );
@@ -571,6 +613,7 @@ private void refresh ()
     props.add ( "Bracket=" + Bracket );
     props.add ( "AllowMissingCount=" + AllowMissingCount );
     props.add ( "Alias=" + Alias );
+    props.add ( "ProbabilityUnits=" + ProbabilityUnits );
     __command_JTextArea.setText( __command.toString ( props ) );
 }
 

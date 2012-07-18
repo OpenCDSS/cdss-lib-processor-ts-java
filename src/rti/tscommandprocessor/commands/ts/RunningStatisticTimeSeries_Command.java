@@ -69,6 +69,7 @@ throws InvalidCommandParameterException
     String Bracket = parameters.getValue ( "Bracket" );
     String AllowMissingCount = parameters.getValue ( "AllowMissingCount" );
     //String Alias = parameters.getValue ( "Alias" );
+    String ProbabilityUnits = parameters.getValue ( "ProbabilityUnits" );
 	String warning = "";
     String message;
     
@@ -186,6 +187,15 @@ throws InvalidCommandParameterException
             message, "Provide a time series alias." ) );
     }
     */
+    
+    if ( (ProbabilityUnits != null) && !ProbabilityUnits.equals("") && !ProbabilityUnits.equalsIgnoreCase("Fraction") &&
+        !ProbabilityUnits.equalsIgnoreCase("Percent") && !ProbabilityUnits.equalsIgnoreCase("%")) {
+        message = "The probability units are invalid.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Specify a the probability units as Fraction, Percent, or %." ) );
+    }
       
     // Check for invalid parameters...
     List<String> valid_Vector = new Vector();
@@ -197,6 +207,7 @@ throws InvalidCommandParameterException
     valid_Vector.add ( "Bracket" );
     valid_Vector.add ( "AllowMissingCount" );
     valid_Vector.add ( "Alias" );
+    valid_Vector.add ( "ProbabilityUnits" );
     warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );
     
 	if ( warning.length() > 0 ) {
@@ -324,6 +335,7 @@ CommandWarningException, CommandException
         AllowMissingCount_int = Integer.valueOf ( AllowMissingCount );
     }
     String Alias = parameters.getValue ( "Alias" );
+    String ProbabilityUnits = parameters.getValue ( "ProbabilityUnits" );
 
     // Get the time series to process.
 
@@ -416,7 +428,8 @@ CommandWarningException, CommandException
             // Do the processing...
 			Message.printStatus ( 2, routine, "Calculating running statistic: \"" + ts.getIdentifier() + "\"." );
 			TSUtil_RunningStatistic tsu =
-			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod, AllowMissingCount_int );
+			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod, AllowMissingCount_int,
+			        ProbabilityUnits );
 			newts = tsu.runningStatistic(createData);
 			if ( (Alias != null) && !Alias.equals("") ) {
                 String alias = TSCommandProcessorUtil.expandTimeSeriesMetadataString(
@@ -492,6 +505,7 @@ public String toString ( PropList props )
 	String Bracket = props.getValue("Bracket");
 	String AllowMissingCount = props.getValue("AllowMissingCount");
 	String Alias = props.getValue("Alias");
+	String ProbabilityUnits = props.getValue("ProbabilityUnits");
 	StringBuffer b = new StringBuffer ();
     if ( (TSList != null) && (TSList.length() > 0) ) {
         if ( b.length() > 0 ) {
@@ -540,6 +554,12 @@ public String toString ( PropList props )
             b.append ( "," );
         }
         b.append ( "Alias=\"" + Alias + "\"" );
+    }
+    if ( (ProbabilityUnits != null) && (ProbabilityUnits.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "ProbabilityUnits=\"" + ProbabilityUnits + "\"" );
     }
 	return getCommandName() + "(" + b.toString() + ")";
 }

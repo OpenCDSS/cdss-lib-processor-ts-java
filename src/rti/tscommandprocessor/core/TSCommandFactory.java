@@ -35,6 +35,7 @@ import rti.tscommandprocessor.commands.ensemble.CopyEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.CreateEnsembleFromOneTimeSeries_Command;
 import rti.tscommandprocessor.commands.ensemble.InsertTimeSeriesIntoEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewEnsemble_Command;
+import rti.tscommandprocessor.commands.ensemble.NewStatisticEnsemble_Command;
 import rti.tscommandprocessor.commands.ensemble.NewStatisticTimeSeriesFromEnsemble_Command;
 
 // GRTS commands (time series products).
@@ -540,6 +541,9 @@ throws UnknownCommandException
     }
     else if ( commandName.equalsIgnoreCase("NewPatternTimeSeries") ) {
         return new NewPatternTimeSeries_Command ();
+    }
+    else if ( commandName.equalsIgnoreCase("NewStatisticEnsemble") ) {
+        return new NewStatisticEnsemble_Command ();
     }
     else if ( commandName.equalsIgnoreCase("NewStatisticTimeSeriesFromEnsemble") ) {
         return new NewStatisticTimeSeriesFromEnsemble_Command ();

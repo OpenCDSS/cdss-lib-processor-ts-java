@@ -214,7 +214,7 @@ throws InvalidCommandParameterException
             }
         }
     }
-    
+
     if ( (OutputYearType != null) && !OutputYearType.equals("") ) {
         try {
             YearType.valueOfIgnoreCase(OutputYearType);

@@ -214,7 +214,7 @@ private List<TS> getDiscoveryTSList ()
 }
 
 /**
-Return a list of objects of the requested type.  This class only keeps a list of TSEnsemble objects.
+Return a list of objects of the requested type.
 */
 public List getObjectList ( Class c )
 {   TSEnsemble tsensemble = getDiscoveryEnsemble();
@@ -223,7 +223,6 @@ public List getObjectList ( Class c )
     if ( (tsensemble != null) && (c == tsensemble.getClass()) ) {
         v = new Vector();
         v.add ( tsensemble );
-        Message.printStatus ( 2, "", "Added ensemble to object list: " + tsensemble.getEnsembleID());
     }
     else if ( (discoveryTSList != null) && (discoveryTSList.size() != 0) ) {
         // Since all time series must be the same interval, check the class for the first one (e.g., MonthTS)

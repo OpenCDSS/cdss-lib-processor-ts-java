@@ -74,16 +74,18 @@ throws InvalidCommandParameterException
 				message, "Specify the file to remove."));
 	}
 	if ( (IfNotFound != null) && !IfNotFound.equals("") ) {
-		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn) ) {
+		if ( !IfNotFound.equalsIgnoreCase(_Ignore) && !IfNotFound.equalsIgnoreCase(_Warn)
+		    && !IfNotFound.equalsIgnoreCase(_Fail) ) {
 			message = "The IfNoutFound parameter \"" + IfNotFound + "\" is invalid.";
 			warning += "\n" + message;
 			status.addToLog(CommandPhaseType.INITIALIZATION,
 				new CommandLogRecord(CommandStatusType.FAILURE,
-					message, "Specify the parameter as " + _Ignore + " or (default) " + _Warn + "."));
+					message, "Specify the parameter as " + _Ignore + ", " + _Warn + " (default), or " +
+					_Fail + "."));
 		}
 	}
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
 	valid_Vector.add ( "InputFile" );
 	valid_Vector.add ( "IfNotFound" );
 	warning = TSCommandProcessorUtil.validateParameterNames ( valid_Vector, this, warning );

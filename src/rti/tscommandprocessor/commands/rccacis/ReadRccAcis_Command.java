@@ -576,7 +576,7 @@ CommandWarningException, CommandException
 					tslist.add ( ts );
 				}
 				catch ( Exception e ) {
-					message = "Unexpected error reading Reclamation RCC ACIS time series (" + e + ").";
+					message = "Unexpected error reading RCC ACIS time series (" + e + ").";
 					Message.printWarning ( 3, routine, message );
 					Message.printWarning ( 3, routine, e );
 					++warning_count;

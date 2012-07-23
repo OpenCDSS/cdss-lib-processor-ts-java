@@ -216,6 +216,7 @@ import rti.tscommandprocessor.commands.usgs.nwis.daily.ReadUsgsNwisDaily_Command
 
 // Utility commands.
 
+import rti.tscommandprocessor.commands.util.AppendFile_Command;
 import rti.tscommandprocessor.commands.util.Comment_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockStart_Command;
 import rti.tscommandprocessor.commands.util.CommentBlockEnd_Command;
@@ -347,6 +348,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("AnalyzePattern") ) {
 		return new AnalyzePattern_Command ();
 	}
+    else if ( commandName.equalsIgnoreCase("AppendFile") ) {
+        return new AppendFile_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ARMA") ) {
         return new ARMA_Command ();
     }

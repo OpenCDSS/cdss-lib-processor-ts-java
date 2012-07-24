@@ -870,6 +870,8 @@ CommandWarningException, CommandException
 	List<TS> resultList = new Vector();
     for ( int its = 0; its < nts; its++ ) {
         original_ts = tslist.get(its);
+        notifyCommandProgressListeners ( its, nts, (float)-1.0, "Changing interval for " +
+            original_ts.getIdentifier().toStringAliasAndTSID() );
     	try {
     		// Process the change of interval
     	    TSUtil_ChangeInterval tsu = new TSUtil_ChangeInterval( original_ts, newInterval,

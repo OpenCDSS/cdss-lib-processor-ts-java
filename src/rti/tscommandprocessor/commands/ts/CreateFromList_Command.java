@@ -33,9 +33,7 @@ import RTi.Util.Table.TableRecord;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
 This class initializes, checks, and runs the CreateFromList() command.
-</p>
 */
 public class CreateFromList_Command extends AbstractCommand implements Command, CommandDiscoverable, ObjectListProvider
 {
@@ -183,7 +181,7 @@ throws InvalidCommandParameterException
 	}
 
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "ListFile" );
     valid_Vector.add ( "IDCol" );
     valid_Vector.add ( "Delim" );
@@ -323,8 +321,7 @@ Run the command.
 @param command_number The number of the command being run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -445,6 +442,7 @@ throws InvalidCommandParameterException,
             try {
                 // Make a request to the processor...
                 String TSID = tsident_string.toString();
+                notifyCommandProgressListeners ( i, tsize, (float)-1.0, "Creating time series " + TSID);
                 PropList request_params = new PropList ( "" );
                 request_params.set ( "TSID", tsident_string.toString() );
                 request_params.setUsingObject ( "WarningLevel", new Integer(warning_level) );

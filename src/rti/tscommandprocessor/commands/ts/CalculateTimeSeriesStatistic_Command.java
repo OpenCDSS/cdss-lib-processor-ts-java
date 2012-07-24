@@ -502,6 +502,8 @@ CommandWarningException, CommandException
                 continue;
             }
             ts = (TS)o_ts;
+            notifyCommandProgressListeners ( its, nts, (float)-1.0, "Calculating statistic for " +
+                ts.getIdentifier().toStringAliasAndTSID() );
             
             try {
                 // Do the calculation...

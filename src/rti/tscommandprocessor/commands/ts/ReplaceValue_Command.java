@@ -688,6 +688,8 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the setting...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Replacing value in " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		Message.printStatus ( 2, routine, "Replacing value in \"" + ts.getIdentifier()+ "\" with new value " +
 		    NewValue + ", action=\"" + Action + "\"." );
 		try {

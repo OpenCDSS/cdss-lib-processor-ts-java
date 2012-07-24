@@ -512,6 +512,8 @@ CommandWarningException, CommandException
 		
 		try {
 		    // Create the delta time series...
+		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Creating delta for " +
+	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Creating delta time series from \"" + ts.getIdentifier()+ "\"." );
 			TSUtil_Delta tsu = new TSUtil_Delta ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime,
 			    trendType, resetMin, resetMax, Flag, createData );

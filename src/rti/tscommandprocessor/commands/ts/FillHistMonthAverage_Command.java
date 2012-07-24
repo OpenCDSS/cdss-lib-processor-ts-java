@@ -489,7 +489,9 @@ CommandWarningException, CommandException
 		}
 		else {	ts = (TS)prop_contents;
 		}
-		
+
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Filling time series " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		if ( ts.getDataIntervalBase() != TimeInterval.MONTH) {
 			message = "Filling with historic month average is only implemented for monthly time series.  Skipping:\n" +
 			ts.getIdentifier();

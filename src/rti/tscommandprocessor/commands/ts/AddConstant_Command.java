@@ -31,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the AddConstant() command.
-</p>
 */
 public class AddConstant_Command extends AbstractCommand implements Command
 {
@@ -118,7 +116,7 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -472,6 +470,8 @@ CommandWarningException, CommandException
 			continue;
 		}
 		ts = (TS)o_ts;
+	    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Adding constant to " +
+	        ts.getIdentifier().toStringAliasAndTSID() );
 		
 		try {
             // Do the processing...

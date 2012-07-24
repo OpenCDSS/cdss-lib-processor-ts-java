@@ -31,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the FillInterpolate() command.
-</p>
 */
 public class FillInterpolate_Command extends AbstractCommand implements Command
 {
@@ -162,7 +160,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -269,8 +267,7 @@ Run the command.
 @param command_number number of command to run.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -561,6 +558,8 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the filling...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Filling time series " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" by interpolating." );
 		try {
             TSUtil.fillInterpolate ( ts, FillStart_DateTime, FillEnd_DateTime, props );

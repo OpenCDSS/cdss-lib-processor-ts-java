@@ -135,7 +135,7 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -435,6 +435,7 @@ CommandWarningException, CommandException
         // otherwise an infinite loop).
         tsposArray[iposMax] = -1;
         try {
+            notifyCommandProgressListeners ( its, nts, (float)-1.0, "Freeing time series [" + tspos + "]" );
             int warning_count2 = removeTimeSeriesAtIndex ( processor, TSID, new Integer(tspos),
                     FreeEnsembleIfEmpty, status, 0, warning_level, command_tag );
             warning_count += warning_count2;

@@ -670,6 +670,8 @@ CommandWarningException, CommandException
             
             try {
                 // Do the statistic calculation...
+                notifyCommandProgressListeners ( its, nts, (float)-1.0, "Checking statistic for " +
+                    ts.getIdentifier().toStringAliasAndTSID() );
                 TSStatisticType statisticType = TSStatisticType.valueOfIgnoreCase(Statistic);
                 TSUtil_CalculateTimeSeriesStatistic tsStatistic = new TSUtil_CalculateTimeSeriesStatistic(ts, statisticType,
                     AnalysisStart_DateTime, AnalysisEnd_DateTime,

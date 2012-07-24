@@ -759,6 +759,8 @@ CommandWarningException, CommandException
     for ( int i = 0; i < size; i++ ) {
         // Create a copy of the original, but with the new scenario.
         ts = (TS)tslist.get(i);
+        notifyCommandProgressListeners ( i, size, (float)-1.0, "Resequencing " +
+            ts.getIdentifier().toStringAliasAndTSID() );
         if ( ts.getDataIntervalBase() != TimeInterval.MONTH ) {
             message = "Resequencing currently only can be applied to monthly time series.";
             Message.printWarning ( warning_level,

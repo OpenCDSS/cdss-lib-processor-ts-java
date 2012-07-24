@@ -28,12 +28,9 @@ import RTi.Util.IO.InvalidCommandSyntaxException;
 import RTi.Util.IO.Prop;
 import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
-import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the ConvertDataUnits() command.
-</p>
 */
 public class ConvertDataUnits_Command extends AbstractCommand implements Command
 {
@@ -52,8 +49,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -75,7 +71,7 @@ throws InvalidCommandParameterException
     */
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -175,8 +171,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -328,8 +323,10 @@ CommandWarningException, CommandException
 		
 		try {
             // Do the processing...
+		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Converting data units for " +
+		        ts.getIdentifier().toStringAliasAndTSID() );
             Message.printStatus ( 2, routine, "Converting \"" + ts.getIdentifier() + "\" data units to \"" +
-                    NewUnits + "\"." );
+                NewUnits + "\"." );
 			TSUtil.convertUnits ( ts, NewUnits );
 		}
 		catch ( Exception e ) {

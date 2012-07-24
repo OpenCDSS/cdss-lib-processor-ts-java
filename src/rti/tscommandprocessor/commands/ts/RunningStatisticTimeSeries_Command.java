@@ -426,6 +426,8 @@ CommandWarningException, CommandException
 	    ts = tslist.get(its);
 		try {
             // Do the processing...
+		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Running statistic for " +
+	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Calculating running statistic: \"" + ts.getIdentifier() + "\"." );
 			TSUtil_RunningStatistic tsu =
 			    new TSUtil_RunningStatistic(ts, Bracket_int, statisticType, sampleMethod, AllowMissingCount_int,

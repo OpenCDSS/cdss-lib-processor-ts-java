@@ -30,9 +30,7 @@ import RTi.Util.IO.PropList;
 import RTi.Util.String.StringUtil;
 
 /**
-<p>
 This class initializes, checks, and runs the Add() command.
-</p>
 */
 public class Add_Command extends AbstractCommand implements Command
 {
@@ -667,7 +665,7 @@ CommandWarningException, CommandException
     }
 
 	TS ts = null;  // Time series to be added to
-    // Loop through the time series being modified...
+    // Loop through the time series being added...
 	for ( int its = 0; its < nts; its++ ) {
 		ts = getTimeSeriesToProcess ( its, tspos, command_tag, warning_count );
 		if ( ts == null ) {
@@ -681,6 +679,8 @@ CommandWarningException, CommandException
                     message, "Report the problem to software support." ) );
 			continue;
 		}
+	    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Adding time series " +
+	        ts.getIdentifier().toStringAliasAndTSID() );
         
         // TODO SAM 2008-01-06 Phase out if customer does not need or if a more robust way to check
         // for dates can be implemented

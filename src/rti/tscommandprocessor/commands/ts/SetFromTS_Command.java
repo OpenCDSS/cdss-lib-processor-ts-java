@@ -815,6 +815,8 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the setting...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Setting values in " +
+            ts.getIdentifier().toStringAliasAndTSID() );
         if ( n_independent_ts == 1 ) {
             // Reuse the same independent time series for all transfers...
             independent_ts = getTimeSeriesToProcess ( 0, independent_tspos, command_tag, warning_count );

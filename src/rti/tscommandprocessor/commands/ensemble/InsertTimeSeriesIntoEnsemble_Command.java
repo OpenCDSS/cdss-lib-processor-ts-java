@@ -176,7 +176,7 @@ throws InvalidCommandParameterException
     */
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -364,6 +364,8 @@ throws InvalidCommandParameterException, CommandWarningException, CommandExcepti
     try {
         for ( int i = 0; i < nts; i++ ) {
             ts = tslist.get(i);
+            notifyCommandProgressListeners ( i, nts, (float)-1.0, "Inserting time series " +
+                ts.getIdentifier().toStringAliasAndTSID() );
             tsidMessage = " \"" + ts.getIdentifierString() + "\" "; // in case exception caught
             // Get list of ensemble time series as new list, to check against this time series
             List<TS>checkList = tsensemble.getTimeSeriesList(true);

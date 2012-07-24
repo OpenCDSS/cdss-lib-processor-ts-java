@@ -31,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
 This class initializes, checks, and runs the ARMA() command.
-</p>
 */
 public class ARMA_Command extends AbstractCommand implements Command
 {
@@ -62,8 +60,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -199,7 +196,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -493,6 +490,9 @@ CommandWarningException, CommandException
                     message, "Report the problem to software support." ) );
 			continue;
 		}
+		
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Processing ARMA on " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		
 		// Do the setting...
 		Message.printStatus ( 2, routine, "Processing \"" + ts.getIdentifier()+ "\" using ARMA." );

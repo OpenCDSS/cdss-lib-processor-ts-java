@@ -483,6 +483,8 @@ CommandWarningException, CommandException
 		ts = (TS)o_ts;
 		
 		try {	// Do the scaling...
+		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Scaling " +
+	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Scaling \"" + ts.getIdentifier()+ "\" by " + ScaleValue );
 			TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, -1, ScaleValue );
 			// If requested, change the data units...

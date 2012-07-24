@@ -313,7 +313,7 @@ throws InvalidCommandParameterException
     }
 	
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -712,6 +712,8 @@ throws CommandWarningException, CommandException
     			else {
     			    analysisTS = (TS)prop_contents;
     			}
+    		    notifyCommandProgressListeners ( nTS, tsCount, (float)-1.0, "Analyzing pattern for " +
+    		        analysisTS.getIdentifier().toStringAliasAndTSID() );
                 
                 if ( !(analysisTS instanceof MonthTS) ) {
                     message = "Time series does not monthly data (skipping):  " + analysisTS.getIdentifierString();

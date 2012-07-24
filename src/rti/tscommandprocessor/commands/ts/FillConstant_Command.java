@@ -31,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the FillConstant() command.
-</p>
 */
 public class FillConstant_Command extends AbstractCommand implements Command
 {
@@ -52,8 +50,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -137,7 +134,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -260,7 +257,7 @@ CommandWarningException, CommandException
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
-	int log_level = 3;	// Warning message level for non-user messgaes
+	int log_level = 3;	// Warning message level for non-user messages
 
 	// Make sure there are time series available to operate on...
 	
@@ -533,6 +530,8 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the filling...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Filling time series " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		Message.printStatus ( 2, routine, "Filling \"" +
 		ts.getIdentifier()+"\" with constant " + ConstantValue + "." );
 		try {	TSUtil.fillConstant ( ts,

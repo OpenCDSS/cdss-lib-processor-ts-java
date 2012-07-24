@@ -60,9 +60,7 @@ import DWR.DMI.HydroBaseDMI.HydroBase_Util;
 import DWR.DMI.HydroBaseDMI.HydroBase_WaterDistrict;
 
 /**
-<p>
 This class initializes, checks, and runs the FillUsingDiversionComments() command.
-</p>
 */
 public class FillUsingDiversionComments_Command extends AbstractCommand
 implements Command
@@ -163,7 +161,7 @@ throws InvalidCommandParameterException
     }
     
     // Check for invalid parameters...
-    List valid_Vector = new Vector();
+    List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "FillStart" );
     valid_Vector.add ( "FillEnd" );
@@ -524,6 +522,8 @@ CommandWarningException, CommandException
 		if ( HaveOutputPeriod_boolean ) {
 			// No need to extend the period...
 			try {
+			    notifyCommandProgressListeners ( its, end_pos, (float)-1.0, "Filling time series " +
+		            ts.getIdentifier().toStringAliasAndTSID() );
 				HydroBase_Util.fillTSUsingDiversionComments ( hbdmi, ts, start, end, FillFlag, false );
 			} catch (Exception e) {
                 message = "Could not fill time series:" + ts.getIdentifier() + " with diversion comments.";

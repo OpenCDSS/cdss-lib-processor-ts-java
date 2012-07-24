@@ -775,6 +775,8 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the setting...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Filling time series " +
+            ts.getIdentifier().toStringAliasAndTSID() );
         int independent_tspos_touse = -1;
         if ( n_independent_ts == 1 ) {
             // Reuse the same independent time series for all transfers...

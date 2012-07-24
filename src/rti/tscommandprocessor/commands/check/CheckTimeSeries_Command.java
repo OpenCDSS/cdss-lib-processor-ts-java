@@ -427,6 +427,8 @@ CommandWarningException, CommandException
                 continue;
             }
             ts = (TS)o_ts;
+            notifyCommandProgressListeners ( its, nts, (float)-1.0, "Checking time series " +
+                ts.getIdentifier().toStringAliasAndTSID() );
             
             try {
                 // Do the check...

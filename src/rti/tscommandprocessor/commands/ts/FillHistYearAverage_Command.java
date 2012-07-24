@@ -48,9 +48,7 @@ import RTi.Util.Time.DateTime;
 import RTi.Util.Time.TimeInterval;
 
 /**
-<p>
 This class initializes, checks, and runs the FillHistYearAverage() command.
-</p>
 */
 public class FillHistYearAverage_Command extends AbstractCommand
 implements Command
@@ -242,8 +240,7 @@ Run the command.
 @param command_number Number of command in sequence.
 @exception CommandWarningException Thrown if non-fatal warnings occur (the
 command could produce some results).
-@exception CommandException Thrown if fatal warnings occur (the command could
-not produce output).
+@exception CommandException Thrown if fatal warnings occur (the command could not produce output).
 @exception InvalidCommandParameterException Thrown if parameter one or more
 parameter values are invalid.
 */
@@ -521,6 +518,8 @@ CommandWarningException, CommandException
                             message, "Verify that the TSList parameter specifies only yearly time series." ) );
 		}
 		// Do the filling...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Filling time series " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+"\" with yearly average." );
 		try {
             TSLimits average_limits = ts.getDataLimitsOriginal();

@@ -31,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the FillRepeat() command.
-</p>
 */
 public class FillRepeat_Command extends AbstractCommand implements Command
 {
@@ -144,7 +142,7 @@ throws InvalidCommandParameterException
 	}
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -544,6 +542,8 @@ CommandWarningException, CommandException
 		}
 		
 		// Do the filling...
+		notifyCommandProgressListeners ( its, nts, (float)-1.0, "Filling time series " +
+            ts.getIdentifier().toStringAliasAndTSID() );
 		Message.printStatus ( 2, routine, "Filling \"" + ts.getIdentifier()+ "\" by repeating, direction=" + FillDirection );
 		try {
             TSUtil.fillRepeat ( ts, FillStart_DateTime, FillEnd_DateTime, FillDirection_int, MaxIntervals_int, FillFlag );

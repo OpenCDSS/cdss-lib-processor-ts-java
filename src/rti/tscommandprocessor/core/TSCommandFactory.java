@@ -227,6 +227,7 @@ import rti.tscommandprocessor.commands.util.FTPGet_Command;
 import rti.tscommandprocessor.commands.util.FormatDateTimeProperty_Command;
 import rti.tscommandprocessor.commands.util.MergeListFileColumns_Command;
 import rti.tscommandprocessor.commands.util.PrintTextFile_Command;
+import rti.tscommandprocessor.commands.util.ReadPropertiesFromFile_Command;
 import rti.tscommandprocessor.commands.util.RemoveFile_Command;
 import rti.tscommandprocessor.commands.util.RunCommands_Command;
 import rti.tscommandprocessor.commands.util.RunDSSUTL_Command;
@@ -237,6 +238,7 @@ import rti.tscommandprocessor.commands.util.SetWorkingDir_Command;
 import rti.tscommandprocessor.commands.util.StartRegressionTestResultsReport_Command;
 import rti.tscommandprocessor.commands.util.TestCommand_Command;
 import rti.tscommandprocessor.commands.util.WebGet_Command;
+import rti.tscommandprocessor.commands.util.WritePropertiesToFile_Command;
 import rti.tscommandprocessor.commands.util.WriteProperty_Command;
 import rti.tscommandprocessor.commands.view.NewTreeView_Command;
 
@@ -618,6 +620,9 @@ throws UnknownCommandException
     else if ( commandName.equalsIgnoreCase("ReadPatternFile") ) {
         return new ReadPatternFile_Command ();
     }
+    else if ( commandName.equalsIgnoreCase("ReadPropertiesFromFile") ) {
+        return new ReadPropertiesFromFile_Command ();
+    }
     else if ( commandName.equalsIgnoreCase("ReadRccAcis") ) {
         return new ReadRccAcis_Command ();
     }
@@ -839,6 +844,9 @@ throws UnknownCommandException
 	else if ( commandName.equalsIgnoreCase("WriteNWSRFSESPTraceEnsemble")) {
 		return new WriteNWSRFSESPTraceEnsemble_Command();
 	}
+    else if ( commandName.equalsIgnoreCase("WritePropertiesToFile") ) {
+        return new WritePropertiesToFile_Command ();
+    }
 	else if ( commandName.equalsIgnoreCase("WriteProperty") ) {
 		return new WriteProperty_Command ();
 	}

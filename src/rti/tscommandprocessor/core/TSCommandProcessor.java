@@ -3161,6 +3161,14 @@ throws Exception
             bean.setWarningRecommendationText ( "This is likely a software code error.");
             throw new RequestParameterNotFoundException ( warning );
     }
+    // Try to set official property...
+    try {
+        setPropContents(PropertyName, o2);
+    }
+    catch ( UnrecognizedRequestException e ) {
+        // Not recognized as a core internal so will set below as a user property
+    }
+    // Otherwise it is a user-defined property...
     __property_Hashtable.put ( PropertyName, o2 );
     // No data are returned in the bean.
     return bean;

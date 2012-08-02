@@ -35,7 +35,6 @@ import RTi.TS.TSUtil_NewStatisticTimeSeries;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleJButton;
 import RTi.Util.GUI.SimpleJComboBox;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
@@ -43,10 +42,10 @@ public class NewStatisticTimeSeries_JDialog extends JDialog
 implements ActionListener, DocumentListener, ItemListener, KeyListener, WindowListener
 {
 
-private SimpleJButton __cancel_JButton = null;// Cancel button
-private SimpleJButton __ok_JButton = null;	// Ok button
-private JFrame __parent_JFrame = null;	// parent JFrame
-private NewStatisticTimeSeries_Command __command = null;	// Command to edit.
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private JFrame __parent_JFrame = null;
+private NewStatisticTimeSeries_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private TSFormatSpecifiersJPanel __Alias_JTextField = null;
 private SimpleJComboBox __TSID_JComboBox = null;
@@ -289,9 +288,9 @@ Instantiates the GUI components.
 @param title Dialog title.
 @param command Command to edit.
 */
-private void initialize ( JFrame parent, Command command )
+private void initialize ( JFrame parent, NewStatisticTimeSeries_Command command )
 {	__parent_JFrame = parent;
-	__command = (NewStatisticTimeSeries_Command)command;
+	__command = command;
 
 	addWindowListener( this );
 

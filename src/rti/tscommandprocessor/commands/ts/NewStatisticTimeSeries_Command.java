@@ -152,9 +152,7 @@ throws InvalidCommandParameterException
 							message, "Specify a number for the test value." ) );
 		}
 	}
-	// TODO SAM 2005-09-12
-	// Need to evaluate whether the test value is needed, depending on the
-	// statistic
+	// TODO SAM 2005-09-12 Evaluate whether the test value is needed, depending on the statistic
 	if ( (AllowMissingCount != null) && !AllowMissingCount.equals("") ) {
 		if ( !StringUtil.isInteger(AllowMissingCount) ) {
 			message = "The AllowMissingCount value (" + AllowMissingCount + ") is not an integer.";

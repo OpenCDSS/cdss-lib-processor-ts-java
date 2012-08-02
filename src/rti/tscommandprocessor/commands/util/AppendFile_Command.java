@@ -74,7 +74,7 @@ throws InvalidCommandParameterException
 	CommandStatus status = getCommandStatus();
 	status.clearLog(CommandPhaseType.INITIALIZATION);
 	
-	// The existence of the file to remove is not checked during initialization
+	// The existence of the file to append is not checked during initialization
 	// because files may be created dynamically at runtime.
 
 	if ( (InputFile == null) || (InputFile.length() == 0) ) {
@@ -200,8 +200,23 @@ CommandWarningException, CommandException
 	}
 	else if ( f.getName().startsWith("*.") ) {
 	    // Process all files in the folder with the matching extension
-	    ext =  IOUtil.getFileExtension(f.getName());
+	    ext = IOUtil.getFileExtension(f.getName());
 	    fileList = IOUtil.getFilesMatchingPattern(f.getParent(),ext);
+	}
+	if ( fileList.size() == 0 ) {
+	    message = "Unable to match any files using InputFile=\"" + InputFile + "\"";
+	    if ( IfNotFound.equalsIgnoreCase(_Fail) ) {
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Verify that the input file(s) exist(s) at the time the command is run."));
+        }
+        else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
+            Message.printWarning ( warning_level,
+                MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
+            status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
+                message, "Verify that the file exists at the time the command is run."));
+        }
 	}
 	for ( File file : fileList ) {
     	if ( !file.exists() ) {
@@ -210,13 +225,13 @@ CommandWarningException, CommandException
                 Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                 status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.FAILURE,
-                        message, "Verify that the file exists at the time the command is run."));
+                    message, "Verify that the file exists at the time the command is run."));
             }
             else if ( IfNotFound.equalsIgnoreCase(_Warn) ) {
                 Message.printWarning ( warning_level,
                     MessageUtil.formatMessageTag(command_tag,++warning_count), routine, message );
                 status.addToLog(CommandPhaseType.RUN, new CommandLogRecord(CommandStatusType.WARNING,
-                        message, "Verify that the file exists at the time the command is run."));
+                    message, "Verify that the file exists at the time the command is run."));
             }
             else {
                 Message.printStatus( 2, routine, message + "  Ignoring.");

@@ -228,24 +228,40 @@ throws URISyntaxException, IOException
     }
     else {
         // TODO SAM 2012-06-25 where does the list of variables come from for the version 2 API?
+        // TODO SAM 2012-07-25 Version 2 documentation lists a few more variables so add below
         // 2012-06-26 Bill Noon pointed to test site (http://scacis.rcc-acis.org/ACIS_Builder.html) but this
         // only shows "Common Element Names" - an API call will be made available
         // Hard-code in order of major variable
         // Elem, major, minor, name, method, measInterval, reportInterval, units, source
+        // Version 2 uses the element abbreviation and if VarMajor is not known, use a  negative number
+        // All VarMajor need to be unique because duplicates are ignored
+        //
+        // Precipitation...
         __variableTableRecordList.add(new RccAcisVariableTableRecord("pcpn", 4, 1, "Precipitation", "sum",
             "daily", "daily", "Inch", ""));
+        // Snow...
         __variableTableRecordList.add(new RccAcisVariableTableRecord("snwd", 11, 1, "Snow depth, at obs time", "inst",
             "inst", "daily", "Inch", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("snow", 10, 1, "Snowfall", "sum",
             "daily", "daily", "Inch", ""));
-        __variableTableRecordList.add(new RccAcisVariableTableRecord("obst", 3, 1, "Temperature, at obs time", "inst",
-            "inst", "daily", "DegF", ""));
+        // Temperature...
         __variableTableRecordList.add(new RccAcisVariableTableRecord("avgt", 43, 1, "Temperature, average", "ave",
             "daily", "daily", "DegF", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("maxt", 1, 1, "Temperature, maximum", "max",
             "daily", "daily", "DegF", ""));
         __variableTableRecordList.add(new RccAcisVariableTableRecord("mint", 2, 1, "Temperature, minimum", "min",
             "daily", "daily", "DegF", ""));
+        __variableTableRecordList.add(new RccAcisVariableTableRecord("obst", 3, 1, "Temperature, at obs time", "inst",
+            "inst", "daily", "DegF", ""));
+        // Degree days based on temperature...
+        __variableTableRecordList.add(new RccAcisVariableTableRecord("hdd", 45, 1, "Heating degree days (base 65)", "sum",
+            "daily", "daily", "Day", ""));
+        __variableTableRecordList.add(new RccAcisVariableTableRecord("cdd", 44, 1, "Cooling degree days (base 65)", "sum",
+            "daily", "daily", "Day", ""));
+        __variableTableRecordList.add(new RccAcisVariableTableRecord("gdd50", 9990, 1, "Growing degree days (base 50)", "sum",
+            "daily", "daily", "Day", ""));
+        __variableTableRecordList.add(new RccAcisVariableTableRecord("gdd40", 9991, 1, "Growing degree days (base 40)", "sum",
+            "daily", "daily", "Day", ""));
     }
     // Initialize the station types - this may be available as a service at some point but for now inline
     __stationTypeList.add ( new RccAcisStationType(0,"ACIS","ACIS internal id"));
@@ -669,7 +685,18 @@ throws MalformedURLException, Exception
         //}
     }
     // Only one data type is requested as per readTimeSeries() conventions
-    String elems = "" + variable.getMajor();
+    String elems = "";
+    if ( apiVersion == 1 ) {
+        // Version 1 uses var major number
+        // Note this may cause an error if VarMajor is not known, but since the Version 1 API is obsolete
+        // this hopefully should not be an issue.
+        elems = "" + variable.getMajor();
+    }
+    else {
+        // Version 2 uses element name or var major (but use element name because some data types don't
+        // seem to have documented var major)
+        elems = "" + variable.getElem();
+    }
     // Form the URL - no need to ask for metadata?
     // Always specify the station id type to avoid ambiguity
     boolean requestJSON = true; // JSON more work to parse, CSV is verified to work

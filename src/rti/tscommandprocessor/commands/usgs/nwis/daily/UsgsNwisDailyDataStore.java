@@ -84,15 +84,15 @@ throws URISyntaxException, IOException
     __statisticTypeList.add ( new UsgsNwisStatisticType("00006","Sum","Sum of values"));
     __statisticTypeList.add ( new UsgsNwisStatisticType("00007","Mode","Modal values"));
     __statisticTypeList.add ( new UsgsNwisStatisticType("00008","Median","Median values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("00009","STD","Standard deviation values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("00010","Variance","Variance values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("00021","Tidal high","High high-tide values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("00022","Tidal high","High high-tide values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("00023","Tidal high","High high-tide values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("00024","Tidal high","High high-tide values"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("01002","?","?"));
-    __statisticTypeList.add ( new UsgsNwisStatisticType("31200","Observation at 12:00",
-         "Instantaneous observation at time hhmm where hhmm runs from 00001 to 2400"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("00009","STD","Standard deviation values"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("00010","Variance","Variance values"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("00021","Tidal high","High high-tide values"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("00022","Tidal high","High high-tide values"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("00023","Tidal high","High high-tide values"));
+    //__statisticTypeList.add ( new UsgsNwisStatisticType("00024","Tidal high","High high-tide values"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("01001","0.1 Percentile","0.1 Percentile"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("01002","0.2 Percentile","0.2 Percentile"));
+    __statisticTypeList.add ( new UsgsNwisStatisticType("01983","98.3 Percentile","98.3 Percentile"));
     //__statisticTypeList.add ( new UsgsNwisStatisticType("32359","Observation at 23:59",
     //    "Instantaneous observation at time hhmm where hhmm runs from 00001 to 2400"));
 }
@@ -150,13 +150,13 @@ public List<String> getDataIntervalStringsForDataType ( String dataType )
 }
 
 /**
-Return the list of data types that are available.  Currently this returns the parameter code and optionally
+Return the list of parameters that are available.  Currently this returns the parameter code and optionally
 the name.  Duplicates in the table are ignored.
-TODO SAM 2011-01-07 It would be good to have the option of using data type abbreviations, but this may
-not be an option.
+TODO SAM 2011-01-07 It would be good to have the option of using data type abbreviations instead of
+numeric codes, but this may not be an option.
 @param includeName whether to include the name.
 */
-public List<String> getDataTypeStrings ( boolean includeName )
+public List<String> getParameterStrings ( boolean includeName )
 {   List<String> dataTypeList = new Vector();
     for ( UsgsNwisParameterType param: __parameterTypeList ) {
         if ( includeName ) {

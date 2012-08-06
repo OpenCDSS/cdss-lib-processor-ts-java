@@ -17,6 +17,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.net.URI;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -32,11 +33,13 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import riverside.datastore.DataStore;
+import rti.tscommandprocessor.commands.rccacis.FIPSCounty;
 import rti.tscommandprocessor.commands.usgs.nwis.daily.UsgsNwisFormatType;
 import rti.tscommandprocessor.core.TSCommandProcessor;
 import rti.tscommandprocessor.core.TSCommandProcessorUtil;
 
 import RTi.TS.TSFormatSpecifiersJPanel;
+import RTi.Util.GUI.ChoiceFormatterJPanel;
 import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
@@ -70,9 +73,9 @@ private JTextField __Sites_JTextField;
 private JTextField __States_JTextField;
 private JTextField __HUCs_JTextField;
 private JTextField __BoundingBox_JTextField;
-private JTextField __Counties_JTextField;
-private JTextField __Parameters_JTextField;
-private JTextField __Statistics_JTextField;
+private ChoiceFormatterJPanel __Counties_JTextField;
+private ChoiceFormatterJPanel __Parameters_JTextField;
+private ChoiceFormatterJPanel __Statistics_JTextField;
 private JTextField __Agency_JTextField;
 private SimpleJComboBox __SiteStatus_JComboBox = null;
 private JTextField __SiteTypes_JTextField;
@@ -428,6 +431,10 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
         "<html><b>WARNING - This command can be slow.  Constrain the query to improve performance.</b></html>"),
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
+        "<html><b>Common choices are provided for convenience but may not apply (additional enhancements " +
+        "to web services may improve intelligent choices in the future).</b></html>"),
+        0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel (
         "Refer to the USGS NWIS Daily Data Store documentation for more information." ), 
         0, ++yMain, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
    	JGUIUtil.addComponent(main_JPanel, new JLabel (
@@ -514,7 +521,7 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     __HUCs_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __HUCs_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ HUCs separated by commas."),
+    JGUIUtil.addComponent(loc_JPanel, new JLabel ("List of 1+ (1 2-digit and/or up to 10 8-digit) HUCs separated by commas."),
         3, yLoc, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("Bounding box:"), 
@@ -528,7 +535,14 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     
     JGUIUtil.addComponent(loc_JPanel, new JLabel ("FIPS counties:"), 
         0, ++yLoc, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Counties_JTextField = new JTextField (20);
+    // Get the global county FIPS data
+    List<FIPSCounty> counties = FIPSCounty.getData();
+    List<String> countyList = new Vector();
+    for ( FIPSCounty fips : counties ) {
+        countyList.add(fips.getCode() + " - " + fips.getName() + ", " + fips.getStateAbbreviation());
+    }
+    __Counties_JTextField = new ChoiceFormatterJPanel ( countyList, "-",
+        "Select a FIPS county to insert in the text field at right.", "-- Select County --", ",",  20 );
     __Counties_JTextField.addKeyListener (this);
     JGUIUtil.addComponent(loc_JPanel, __Counties_JTextField,
         1, yLoc, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -539,22 +553,26 @@ private void initialize ( JFrame parent, ReadUsgsNwisDaily_Command command )
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Parameter(s):"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Parameters_JTextField = new JTextField (20);
+    __Parameters_JTextField = new ChoiceFormatterJPanel ( getSelectedDataStore().getParameterStrings(true),
+        "-", "Select a parameter to insert in the text field at right.", "-- Select Parameter --", ",",  20 );
     __Parameters_JTextField.addKeyListener (this);
+    __Parameters_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(main_JPanel, __Parameters_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of parameters separated by commas (default=all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of parameter codes separated by commas (default=all)."),
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Statistics
     
     JGUIUtil.addComponent(main_JPanel, new JLabel ("Statistic(s):"), 
         0, ++yMain, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
-    __Statistics_JTextField = new JTextField (20);
+    __Statistics_JTextField = new ChoiceFormatterJPanel ( getSelectedDataStore().getStatisticStrings(true),
+        "-", "Select a statistic to insert in the text field at right.", "-- Select Statistic --", ",",  20 );
     __Statistics_JTextField.addKeyListener (this);
+    __Statistics_JTextField.addDocumentListener (this);
     JGUIUtil.addComponent(main_JPanel, __Statistics_JTextField,
         1, yMain, 2, 1, 0, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of statistics separated by commas (default=all)."),
+    JGUIUtil.addComponent(main_JPanel, new JLabel ("Optional - list of statistic codes separated by commas (default=all)."),
         3, yMain, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
     // Site status are hard-coded

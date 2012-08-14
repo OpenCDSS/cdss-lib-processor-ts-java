@@ -31,9 +31,7 @@ import RTi.Util.String.StringUtil;
 import RTi.Util.Time.DateTime;
 
 /**
-<p>
 This class initializes, checks, and runs the SetConstant() command.
-</p>
 */
 public class SetConstant_Command extends AbstractCommand implements Command
 {
@@ -52,8 +50,7 @@ Check the command parameter for valid values, combination, etc.
 @param command_tag an indicator to be used when printing messages, to allow a
 cross-reference to the original commands.
 @param warning_level The warning level to use when printing parse warnings
-(recommended is 2 for initialization, and 1 for interactive command editor
-dialogs).
+(recommended is 2 for initialization, and 1 for interactive command editor dialogs).
 */
 public void checkCommandParameters ( PropList parameters, String command_tag, int warning_level )
 throws InvalidCommandParameterException
@@ -113,7 +110,7 @@ throws InvalidCommandParameterException
                 message, "Specify the constant value as a number." ) );
 	}
     if ( MonthValues.length() > 0 ) {
-    	List v = StringUtil.breakStringList ( MonthValues,",", 0 );
+    	List<String> v = StringUtil.breakStringList ( MonthValues,",", 0 );
         if ( (v == null) || (v.size() != 12) ) {
             message = "12 monthly values must be specified.";
             warning += "\n" + message;
@@ -124,7 +121,7 @@ throws InvalidCommandParameterException
         else {
             String val;
             for ( int i = 0; i < 12; i++ ) {
-                val = ((String)v.get(i)).trim();
+                val = v.get(i).trim();
                 if ( !StringUtil.isDouble(val) ) {
                     message = "Monthly value \"" + val + "\" is not a number.";
                     warning += "\n" + message;
@@ -136,7 +133,7 @@ throws InvalidCommandParameterException
         }
     }
     if ( (ConstantValue.length() == 0) && (MonthValues.length() == 0) ) {
-        message = "Neither single or monthly contant values are specified.";;
+        message = "Neither single or monthly constant values are specified.";;
         warning += "\n" + message;
         status.addToLog ( CommandPhaseType.INITIALIZATION,
                 new CommandLogRecord(CommandStatusType.FAILURE,
@@ -182,7 +179,7 @@ throws InvalidCommandParameterException
     */
     
 	// Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
@@ -424,10 +421,10 @@ CommandWarningException, CommandException
     double [] MonthValues_double = null;
     if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
         MonthValues_double = new double[12];
-        List v = StringUtil.breakStringList ( MonthValues,",", 0 );
+        List<String> v = StringUtil.breakStringList ( MonthValues,",", 0 );
         String val;
         for ( int i = 0; i < 12; i++ ) {
-            val = ((String)v.get(i)).trim();
+            val = v.get(i).trim();
             MonthValues_double[i] = Double.parseDouble ( val );
         }
     }

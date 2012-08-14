@@ -74,8 +74,8 @@ throws IOException
         if ( fileLineTrimmed.startsWith("#") || fileLineTrimmed.equals("") ) {
             continue;
         }
-        // Determine how many tabs...
-        ntabPrev = ntab;
+        // Determine how many tabs at the start of the current line...
+        ntabPrev = ntab; // From previous line
         ntab = 0;
         for ( int i = 0; i < fileLine.length(); i++ ) {
             if ( fileLine.charAt(i) == '\t' ) {
@@ -99,12 +99,12 @@ throws IOException
                 folderNode = __rootNode;
                 nodePrev = folderNode;
                 rootFound = true;
-                ntab = 1; // This will correspond to using the root as the folder
+                //ntab = 1; // This will correspond to using the root as the folder
                 continue;
             }
         }
         // Other lines are added to the root or appropriate nodes under the root
-        if ( ntab == 0 ) {
+        if ( rootFound && (ntab == 0) ) {
             throw new IOException ( "Can only have one root Label: in \"" + filename +
             "\" (need to insert tab(s) near line " + lineCount + "?)." );
         }
@@ -120,7 +120,7 @@ throws IOException
             }
             else if ( ntab > (ntabPrev + 1)) {
                 // Not allowed to jump more than one indent over the previous
-                throw new IOException ( "Cannot jump more than one tab forward.  Check \"" + filename +
+                throw new IOException ( "Cannot jump more than one tab forward from previous line.  Check \"" + filename +
                 "\" near line " + lineCount + "." );
             }
             else {

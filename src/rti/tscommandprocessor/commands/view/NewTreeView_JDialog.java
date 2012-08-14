@@ -31,7 +31,6 @@ import RTi.Util.GUI.JFileChooserFactory;
 import RTi.Util.GUI.JGUIUtil;
 import RTi.Util.GUI.SimpleFileFilter;
 import RTi.Util.GUI.SimpleJButton;
-import RTi.Util.IO.Command;
 import RTi.Util.IO.CommandProcessor;
 import RTi.Util.IO.IOUtil;
 import RTi.Util.IO.PropList;
@@ -65,7 +64,7 @@ Command dialog constructor.
 @param command Command to edit.
 @param runnable If true, the command can be run from the dialog, as a Tool.
 */
-public NewTreeView_JDialog ( JFrame parent, Command command )
+public NewTreeView_JDialog ( JFrame parent, NewTreeView_Command command )
 {	super(parent, true);
 	initialize ( parent, command );
 }
@@ -187,8 +186,8 @@ Instantiates the GUI components.
 @param command Command to edit and possibly run.
 @param runnable If true, the command can be run from the dialog, as a Tool.
 */
-private void initialize ( JFrame parent, Command command )
-{	__command = (NewTreeView_Command)command;
+private void initialize ( JFrame parent, NewTreeView_Command command )
+{	__command = command;
     CommandProcessor processor = __command.getCommandProcessor();
     __working_dir = TSCommandProcessorUtil.getWorkingDirForCommand ( (TSCommandProcessor)processor, __command );
 
@@ -330,7 +329,7 @@ private void refresh ()
     ViewID = __ViewID_JTextField.getText().trim();
     InputFile = __InputFile_JTextField.getText().trim();
 	props = new PropList ( __command.getCommandName() );
-    props.add ( "TableID=" + ViewID );
+    props.add ( "ViewID=" + ViewID );
     props.add ( "InputFile=" + InputFile );
 	__command_JTextArea.setText( __command.toString ( props ) );
 	   // Check the path and determine what the label on the path button should be...

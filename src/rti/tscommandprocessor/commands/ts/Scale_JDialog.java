@@ -1,30 +1,3 @@
-// ----------------------------------------------------------------------------
-// scale_JDialog - editor for scale()
-// ----------------------------------------------------------------------------
-// Copyright:	See the COPYRIGHT file.
-// ----------------------------------------------------------------------------
-// History: 
-//
-// 30 Nov 2000	Steven A. Malers, RTi	Initial version.
-// 2002-04-16	SAM, RTi		Clean up interface.  Add analysis
-//					period.
-// 2002-05-26	SAM, RTi		Fix bug where date with hours is not
-//					properly parsed.
-// 2003-12-15	SAM, RTi		Update to Swing.
-// 2005-08-23	SAM, RTi		Update to free-format parameters and
-//					command classes.
-// 2005-11-10	SAM, RTi		Add DaysInMonth and DaysInMonthInverse
-//					as constants that are recognized as the
-//					scale value.
-//					Add the NewUnits parameter.
-// 2005-11-29	SAM, RTi		Fix bug where new units were not being
-//					parsed out of existing command - were
-//					being displayed as blank.
-// 2007-02-16	SAM, RTi		Update to use new CommandProcessor interface.
-//					Clean up code based on Eclipse feedback.
-// 2007-05-08	SAM, RTi		Cleanup code based on Eclipse feedback.
-// ----------------------------------------------------------------------------
-
 package rti.tscommandprocessor.commands.ts;
 
 import java.awt.event.ActionEvent;
@@ -60,12 +33,15 @@ import RTi.Util.GUI.SimpleJComboBox;
 import RTi.Util.IO.PropList;
 import RTi.Util.Message.Message;
 
+/**
+Editor for Scale() command.
+*/
 public class Scale_JDialog extends JDialog
 implements ActionListener, ItemListener, KeyListener, WindowListener
 {
-private SimpleJButton __cancel_JButton = null;// Cancel Button
-private SimpleJButton __ok_JButton = null;	// Ok Button
-private Scale_Command __command = null;	// Command to edit
+private SimpleJButton __cancel_JButton = null;
+private SimpleJButton __ok_JButton = null;
+private Scale_Command __command = null;
 private JTextArea __command_JTextArea=null;
 private SimpleJComboBox __TSList_JComboBox = null;
 private JLabel __TSID_JLabel = null;
@@ -73,9 +49,10 @@ private SimpleJComboBox	__TSID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JTextField __ScaleValue_JTextField = null;
+private JTextField __MonthValues_JTextField = null; // Monthly scale values
 private JTextField __AnalysisStart_JTextField = null;
 private JTextField __AnalysisEnd_JTextField = null;
-private JTextField __NewUnits_JTextField = null;// Field for new units
+private JTextField __NewUnits_JTextField = null;
 private boolean __error_wait = false; // Is there an error to be cleared up or Cancel?
 private boolean __first_time = true;
 private boolean __ok = false; // Indicates whether OK button has been pressed.
@@ -146,6 +123,7 @@ private void checkInput ()
 	String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
 	String ScaleValue = __ScaleValue_JTextField.getText().trim();
+	String MonthValues = __MonthValues_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -163,6 +141,9 @@ private void checkInput ()
 	if ( ScaleValue.length() > 0 ) {
 		parameters.set ( "ScaleValue", ScaleValue );
 	}
+    if ( MonthValues.length() > 0 ) {
+        parameters.set ( "MonthValues", MonthValues );
+    }
 	if ( AnalysisStart.length() > 0 ) {
 		parameters.set ( "AnalysisStart", AnalysisStart );
 	}
@@ -191,6 +172,7 @@ private void commitEdits ()
     String TSID = __TSID_JComboBox.getSelected();
     String EnsembleID = __EnsembleID_JComboBox.getSelected();   
 	String ScaleValue = __ScaleValue_JTextField.getText().trim();
+	String MonthValues = __MonthValues_JTextField.getText().trim();
 	String AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	String AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	String NewUnits = __NewUnits_JTextField.getText().trim();
@@ -198,6 +180,7 @@ private void commitEdits ()
 	__command.setCommandParameter ( "TSID", TSID );
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
 	__command.setCommandParameter ( "ScaleValue", ScaleValue );
+	__command.setCommandParameter ( "MonthValues", MonthValues );
 	__command.setCommandParameter ( "AnalysisStart", AnalysisStart );
 	__command.setCommandParameter ( "AnalysisEnd", AnalysisEnd );
 	__command.setCommandParameter ( "NewUnits", NewUnits );
@@ -270,8 +253,17 @@ private void initialize ( JFrame parent, Scale_Command command )
     JGUIUtil.addComponent(main_JPanel, __ScaleValue_JTextField,
 		1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel(
-		"Required - constant scale value, DaysInMonth, or DaysInMonthInverse."), 
+		"Required (if no monthly values) - constant scale value, DaysInMonth, or DaysInMonthInverse."), 
 		3, y, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Monthly values:" ), 
+        0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __MonthValues_JTextField = new JTextField ( 20 );
+    __MonthValues_JTextField.addKeyListener ( this );
+        JGUIUtil.addComponent(main_JPanel, __MonthValues_JTextField,
+        1, y, 6, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required (if no single value) - monthly scale values, separated by commas."),
+        3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
 
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Analysis start:" ),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -368,7 +360,7 @@ public void keyTyped ( KeyEvent event ) {;}
 
 /**
 Indicate if the user pressed OK (cancel otherwise).
-@return true if the edits were committed, false if the user cancelled.
+@return true if the edits were committed, false if the user canceled.
 */
 public boolean ok ()
 {	return __ok;
@@ -383,6 +375,7 @@ private void refresh ()
     String TSID = "";
     String EnsembleID = "";
 	String ScaleValue = "";
+	String MonthValues = "";
 	String AnalysisStart = "";
 	String AnalysisEnd = "";
 	String NewUnits = "";
@@ -394,6 +387,7 @@ private void refresh ()
 		TSID = props.getValue ( "TSID" );
         EnsembleID = props.getValue ( "EnsembleID" );
 		ScaleValue = props.getValue ( "ScaleValue" );
+		MonthValues = props.getValue ( "MonthValues" );
 		AnalysisStart = props.getValue ( "AnalysisStart" );
 		AnalysisEnd = props.getValue ( "AnalysisEnd" );
 		NewUnits = props.getValue ( "NewUnits" );
@@ -445,6 +439,9 @@ private void refresh ()
 		if ( ScaleValue != null ) {
 			__ScaleValue_JTextField.setText ( ScaleValue );
 		}
+        if ( MonthValues != null ) {
+            __MonthValues_JTextField.setText( MonthValues );
+        }
 		if ( AnalysisStart != null ) {
 			__AnalysisStart_JTextField.setText( AnalysisStart );
 		}
@@ -460,6 +457,7 @@ private void refresh ()
 	TSID = __TSID_JComboBox.getSelected();
     EnsembleID = __EnsembleID_JComboBox.getSelected();
 	ScaleValue = __ScaleValue_JTextField.getText().trim();
+	MonthValues = __MonthValues_JTextField.getText().trim();
 	AnalysisStart = __AnalysisStart_JTextField.getText().trim();
 	AnalysisEnd = __AnalysisEnd_JTextField.getText().trim();
 	NewUnits = __NewUnits_JTextField.getText().trim();
@@ -468,6 +466,7 @@ private void refresh ()
 	props.add ( "TSID=" + TSID );
     props.add ( "EnsembleID=" + EnsembleID );
 	props.add ( "ScaleValue=" + ScaleValue );
+	props.add ( "MonthValues=" + MonthValues );
 	props.add ( "AnalysisStart=" + AnalysisStart );
 	props.add ( "AnalysisEnd=" + AnalysisEnd );
 	props.add ( "NewUnits=" + NewUnits );
@@ -476,8 +475,7 @@ private void refresh ()
 
 /**
 React to the user response.
-@param ok if false, then the edit is cancelled.  If true, the edit is committed
-and the dialog is closed.
+@param ok if false, then the edit is canceled.  If true, the edit is committed and the dialog is closed.
 */
 private void response ( boolean ok )
 {	__ok = ok;	// Save to be returned by ok()
@@ -509,4 +507,4 @@ public void windowDeiconified( WindowEvent evt ){;}
 public void windowIconified( WindowEvent evt ){;}
 public void windowOpened( WindowEvent evt ){;}
 
-} // end scale_JDialog
+}

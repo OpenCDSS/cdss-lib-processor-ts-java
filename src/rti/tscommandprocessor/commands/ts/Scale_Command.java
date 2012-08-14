@@ -78,6 +78,13 @@ public void checkCommandParameters ( PropList parameters, String command_tag, in
 throws InvalidCommandParameterException
 {	//String TSID = parameters.getValue ( "TSID" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
+    if ( ScaleValue == null ) {
+        ScaleValue = ""; // To simplify checks below
+    }
+    String MonthValues = parameters.getValue ( "MonthValues" );
+    if ( MonthValues == null ) {
+        MonthValues = ""; // To simplify checks below
+    }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String warning = "";
@@ -94,13 +101,7 @@ throws InvalidCommandParameterException
             message, "Provide a time series identifier." ) );
 	}
     */
-	if ( (ScaleValue == null) || ScaleValue.equals("") ) {
-        message = "The scale value must be specified.";
-        warning += "\n" + message;
-        status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
-            message, "Provide a scale value." ) );
-	}
-	else if ( !ScaleValue.equalsIgnoreCase(_DaysInMonth) &&
+	if ( !ScaleValue.equals("") && !ScaleValue.equalsIgnoreCase(_DaysInMonth) &&
 		!ScaleValue.equalsIgnoreCase(_DaysInMonthInverse) &&
 		!StringUtil.isDouble(ScaleValue) ) {
         message = "The scale value (" + ScaleValue + ") is invalid.";
@@ -108,6 +109,43 @@ throws InvalidCommandParameterException
         status.addToLog ( CommandPhaseType.INITIALIZATION, new CommandLogRecord(CommandStatusType.FAILURE,
             message, "Specify the scale value as a number, " + _DaysInMonth + ", or " + _DaysInMonthInverse + "." ) );
 	}
+    if ( MonthValues.length() > 0 ) {
+        List<String> v = StringUtil.breakStringList ( MonthValues,",", 0 );
+        if ( (v == null) || (v.size() != 12) ) {
+            message = "12 monthly values must be specified.";
+            warning += "\n" + message;
+            status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Specify 12 monthly values separated by commas." ) );
+        }
+        else {
+            String val;
+            for ( int i = 0; i < 12; i++ ) {
+                val = v.get(i).trim();
+                if ( !StringUtil.isDouble(val) ) {
+                    message = "Monthly value \"" + val + "\" is not a number.";
+                    warning += "\n" + message;
+                    status.addToLog ( CommandPhaseType.INITIALIZATION,
+                        new CommandLogRecord(CommandStatusType.FAILURE,
+                             message, "Specify 12 monthly values separated by commas." ) );
+                }
+            }
+        }
+    }
+    if ( (ScaleValue.length() == 0) && (MonthValues.length() == 0) ) {
+        message = "Single or monthly scale values must be specified.";;
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+                new CommandLogRecord(CommandStatusType.FAILURE,
+                    message, "Choose a single value or monthly values, but not both." ) );
+    }
+    if ( (ScaleValue.length() > 0) && (MonthValues.length() > 0) ) {
+        message = "Both single and monthly scale values are specified.";
+        warning += "\n" + message;
+        status.addToLog ( CommandPhaseType.INITIALIZATION,
+            new CommandLogRecord(CommandStatusType.FAILURE,
+                message, "Choose a single value or monthly values, but not both." ) );
+    }
 	if ( (AnalysisStart != null) && !AnalysisStart.equals("") &&
 		!AnalysisStart.equalsIgnoreCase("OutputStart") && !AnalysisStart.equalsIgnoreCase("OutputEnd") ) {
 		try {
@@ -134,11 +172,12 @@ throws InvalidCommandParameterException
 	}
     
     // Check for invalid parameters...
-	List valid_Vector = new Vector();
+	List<String> valid_Vector = new Vector();
     valid_Vector.add ( "TSList" );
     valid_Vector.add ( "TSID" );
     valid_Vector.add ( "EnsembleID" );
     valid_Vector.add ( "ScaleValue" );
+    valid_Vector.add ( "MonthValues" );
     valid_Vector.add ( "AnalysisStart" );
     valid_Vector.add ( "AnalysisEnd" );
     valid_Vector.add ( "NewUnits" );
@@ -195,26 +234,26 @@ throws InvalidCommandSyntaxException, InvalidCommandParameterException
 		// removed as soon as commands have been migrated to the new syntax.
 		//
 		// Old syntax without named parameters.
-    	List v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
+    	List<String> v = StringUtil.breakStringList ( command_string,"(),", StringUtil.DELIM_SKIP_BLANKS );
 		String TSID = "";
 		String ScaleValue = "";
 		String AnalysisStart = "";
 		String AnalysisEnd = "";
 		if ( (v != null) && (v.size() >= 3) ) {
 			// Second field is identifier...
-			TSID = ((String)v.get(1)).trim();
+			TSID = v.get(1).trim();
 			// Third field has scale...
-			ScaleValue = ((String)v.get(2)).trim();
+			ScaleValue = v.get(2).trim();
 			// Fourth and fifth fields optionally have analysis period...
 			if ( v.size() >= 4 ) {
-				AnalysisStart = ((String)v.get(3)).trim();
+				AnalysisStart = v.get(3).trim();
 				if ( AnalysisStart.equals("*") ) {
 					// Change to new default...
 					AnalysisStart = "";
 				}
 			}
 			if ( v.size() >= 5 ) {
-				AnalysisEnd = ((String)v.get(4)).trim();
+				AnalysisEnd = v.get(4).trim();
 				if ( AnalysisEnd.equals("*") ) {
 					// Change to new default...
 					AnalysisEnd = "";
@@ -259,7 +298,7 @@ Run the command.
 public void runCommand ( int command_number )
 throws InvalidCommandParameterException,
 CommandWarningException, CommandException
-{	String routine = "scale_Command.runCommand", message;
+{	String routine = "Scale_Command.runCommand", message;
 	int warning_count = 0;
 	int warning_level = 2;
 	String command_tag = "" + command_number;
@@ -280,6 +319,17 @@ CommandWarningException, CommandException
 	String TSID = parameters.getValue ( "TSID" );
     String EnsembleID = parameters.getValue ( "EnsembleID" );
 	String ScaleValue = parameters.getValue ( "ScaleValue" );
+    String MonthValues = parameters.getValue("MonthValues");
+    double [] MonthValues_double = null;
+    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
+        MonthValues_double = new double[12];
+        List<String> v = StringUtil.breakStringList ( MonthValues,",", 0 );
+        String val;
+        for ( int i = 0; i < 12; i++ ) {
+            val = v.get(i).trim();
+            MonthValues_double[i] = Double.parseDouble ( val );
+        }
+    }
 	String AnalysisStart = parameters.getValue ( "AnalysisStart" );
 	String AnalysisEnd = parameters.getValue ( "AnalysisEnd" );
 	String NewUnits = parameters.getValue ( "NewUnits" );
@@ -482,11 +532,21 @@ CommandWarningException, CommandException
 		}
 		ts = (TS)o_ts;
 		
-		try {	// Do the scaling...
+		try {
+		    // Do the scaling...
 		    notifyCommandProgressListeners ( its, nts, (float)-1.0, "Scaling " +
 	            ts.getIdentifier().toStringAliasAndTSID() );
 			Message.printStatus ( 2, routine, "Scaling \"" + ts.getIdentifier()+ "\" by " + ScaleValue );
-			TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, -1, ScaleValue );
+			if ( MonthValues_double == null ) {
+			    // Scaling by a single value
+			    TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, -1, ScaleValue );
+			}
+			else {
+			    // Scaling by monthly values
+			    for ( int i = 1; i <= 12; i++ ) {
+			        TSUtil.scale ( ts, AnalysisStart_DateTime, AnalysisEnd_DateTime, i, MonthValues_double[i - 1] );
+			    }
+			}
 			// If requested, change the data units...
 			if ( (NewUnits != null) && (NewUnits.length() > 0) ) {
 				ts.addToGenesis ( "Changed units from \"" + ts.getDataUnits() + "\" to \"" + NewUnits+"\"");
@@ -528,6 +588,7 @@ public String toString ( PropList props )
 	String TSID = props.getValue( "TSID" );
     String EnsembleID = props.getValue( "EnsembleID" );
 	String ScaleValue = props.getValue("ScaleValue");
+	String MonthValues = props.getValue( "MonthValues" );
 	String AnalysisStart = props.getValue("AnalysisStart");
 	String AnalysisEnd = props.getValue("AnalysisEnd");
 	String NewUnits = props.getValue("NewUnits");
@@ -556,6 +617,12 @@ public String toString ( PropList props )
 		}
 		b.append ( "ScaleValue=" + ScaleValue );
 	}
+    if ( (MonthValues != null) && (MonthValues.length() > 0) ) {
+        if ( b.length() > 0 ) {
+            b.append ( "," );
+        }
+        b.append ( "MonthValues=\"" + MonthValues + "\"");
+    }
 	if ( (AnalysisStart != null) && (AnalysisStart.length() > 0) ) {
 		if ( b.length() > 0 ) {
 			b.append ( "," );

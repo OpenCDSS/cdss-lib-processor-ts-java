@@ -67,7 +67,7 @@ Responds to action performed events sent by popup menus of the tree nodes.
 public void actionPerformed(ActionEvent event)
 {   String action = event.getActionCommand();
     //Object o = event.getSource();
-    String routine = "StateMod_DataSet_JTree.actionPerformed";
+    String routine = getClass().getName() + ".actionPerformed";
 
     //Object data = __popup_Node.getData();
     List selectedNodes = getSelectedNodes();

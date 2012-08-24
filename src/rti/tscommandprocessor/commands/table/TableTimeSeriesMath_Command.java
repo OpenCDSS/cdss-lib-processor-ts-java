@@ -31,7 +31,7 @@ import RTi.Util.Table.DataTableMathOperatorType;
 import RTi.Util.Table.TableRecord;
 
 /**
-This class initializes, checks, and runs the TableMath() command.
+This class initializes, checks, and runs the TableTimeSeriesMath() command.
 */
 public class TableTimeSeriesMath_Command extends AbstractCommand implements Command
 {

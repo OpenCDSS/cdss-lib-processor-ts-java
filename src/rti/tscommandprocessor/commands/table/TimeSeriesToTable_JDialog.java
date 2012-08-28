@@ -1,5 +1,6 @@
 package rti.tscommandprocessor.commands.table;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,6 +14,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -61,6 +63,8 @@ private SimpleJComboBox __EnsembleID_JComboBox = null;
 private JLabel __EnsembleID_JLabel = null;
 private SimpleJComboBox __TableID_JComboBox = null;
 private JTextField __DateTimeColumn_JTextField = null;
+private JTextField __TableTSIDColumn_JTextField = null;
+private TSFormatSpecifiersJPanel __TableTSIDFormat_JTextField = null; // Format for TSID column output
 private TSFormatSpecifiersJPanel __DataColumn_JTextField = null;
 private JTextField __DataRow_JTextField = null;
 private JTextField __OutputStart_JTextField = null;
@@ -186,6 +190,8 @@ private void checkInput ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String DataColumn = __DataColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -207,6 +213,12 @@ private void checkInput ()
     }
     if ( DateTimeColumn.length() > 0 ) {
         props.set ( "DateTimeColumn", DateTimeColumn );
+    }
+    if ( TableTSIDColumn.length() > 0 ) {
+        props.set ( "TableTSIDColumn", TableTSIDColumn );
+    }
+    if ( TableTSIDFormat.length() > 0 ) {
+        props.set ( "TableTSIDFormat", TableTSIDFormat );
     }
     if ( DataColumn.length() > 0 ) {
         props.set ( "DataColumn", DataColumn );
@@ -253,6 +265,8 @@ private void commitEdits ()
     String EnsembleID = __EnsembleID_JComboBox.getSelected();
     String TableID = __TableID_JComboBox.getSelected();
     String DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    String TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    String TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     String DataColumn = __DataColumn_JTextField.getText().trim();
     String DataRow = __DataRow_JTextField.getText().trim();
     String OutputStart = __OutputStart_JTextField.getText().trim();
@@ -263,6 +277,8 @@ private void commitEdits ()
     __command.setCommandParameter ( "EnsembleID", EnsembleID );
     __command.setCommandParameter ( "TableID", TableID );
     __command.setCommandParameter ( "DateTimeColumn", DateTimeColumn );
+    __command.setCommandParameter ( "TableTSIDColumn", TableTSIDColumn );
+    __command.setCommandParameter ( "TableTSIDFormat", TableTSIDFormat );
     __command.setCommandParameter ( "DataColumn", DataColumn );
     __command.setCommandParameter ( "DataRow", DataRow );
     __command.setCommandParameter ( "OutputStart", OutputStart );
@@ -310,13 +326,14 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
 	JPanel main_JPanel = new JPanel();
 	main_JPanel.setLayout( new GridBagLayout() );
 	getContentPane().add ( "North", main_JPanel );
-	int y = 0;
+	int y = -1;
 
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-		"Copy time series date/time and value pairs to columns in a new table." ), 
-		0, y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+		"Copy time series date/time and value pairs to column(s) in a new table.  " +
+		"If the table TSID column is specified, output will be to a single column." ), 
+		0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
-        "The time series must have the same data interval." ), 
+        "The time series must have the same data interval if each time series is a column in output." ), 
         0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel (
         "If the output window is specified, use a date/time precision consistent with data." ), 
@@ -368,14 +385,45 @@ private void initialize ( JFrame parent, TimeSeriesToTable_Command command )
         "Required - column name for date/times."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
-    JGUIUtil.addComponent(main_JPanel,new JLabel( "Column(s) for data:"),
+    // Panel for single-column output
+    int ySingleColumn = -1;
+    JPanel singleColumn_JPanel = new JPanel();
+    singleColumn_JPanel.setLayout( new GridBagLayout() );
+    singleColumn_JPanel.setBorder( BorderFactory.createTitledBorder (
+        BorderFactory.createLineBorder(Color.black),
+        "Single-column output parameters" ));
+    JGUIUtil.addComponent( main_JPanel, singleColumn_JPanel,
+        0, ++y, 7, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ( "Table TSID column:" ), 
+        0, ++ySingleColumn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDColumn_JTextField = new JTextField ( 20 );
+    __TableTSIDColumn_JTextField.addKeyListener ( this );
+    JGUIUtil.addComponent(singleColumn_JPanel, __TableTSIDColumn_JTextField,
+        1, ySingleColumn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleColumn_JPanel, new JLabel( "Optional - column name for TSID (if values in single column)."), 
+        3, ySingleColumn, 4, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+    
+    JGUIUtil.addComponent(singleColumn_JPanel, new JLabel("Format of TSID:"),
+        0, ++ySingleColumn, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
+    __TableTSIDFormat_JTextField = new TSFormatSpecifiersJPanel(20);
+    __TableTSIDFormat_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
+    __TableTSIDFormat_JTextField.addKeyListener ( this );
+    __TableTSIDFormat_JTextField.getDocument().addDocumentListener(this);
+    __TableTSIDFormat_JTextField.setToolTipText("%L for location, %T for data type.");
+    JGUIUtil.addComponent(singleColumn_JPanel, __TableTSIDFormat_JTextField,
+        1, ySingleColumn, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+    JGUIUtil.addComponent(singleColumn_JPanel, new JLabel ("Optional - can use if TableTSIDColumn is specified (default=alias or TSID)."),
+        3, ySingleColumn, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
+    
+    JGUIUtil.addComponent(main_JPanel,new JLabel( "Data column(s) in table:"),
         0, ++y, 1, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.EAST);
     __DataColumn_JTextField = new TSFormatSpecifiersJPanel(10);
     __DataColumn_JTextField.setToolTipText("Use %L for location, %T for data type, %I for interval.");
     __DataColumn_JTextField.addKeyListener ( this );
     __DataColumn_JTextField.getDocument().addDocumentListener(this);
     JGUIUtil.addComponent(main_JPanel, __DataColumn_JTextField,
-        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        1, y, 2, 1, 1, 0, insetsTLBR, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
     JGUIUtil.addComponent(main_JPanel, new JLabel ( "Required - data column name(s) for 1+ time series."),
         3, y, 3, 1, 0, 0, insetsTLBR, GridBagConstraints.NONE, GridBagConstraints.WEST );
     
@@ -521,6 +569,8 @@ private void refresh ()
     String EnsembleID = "";
     String TableID = "";
     String DateTimeColumn = "";
+    String TableTSIDColumn = "";
+    String TableTSIDFormat = "";
     String DataColumn = "";
     String DataRow = "";
     String OutputStart = "";
@@ -541,6 +591,8 @@ private void refresh ()
         OutputWindowStart = props.getValue ( "OutputWindowStart" );
         OutputWindowEnd = props.getValue ( "OutputWindowEnd" );
         DateTimeColumn = props.getValue ( "DateTimeColumn" );
+        TableTSIDColumn = props.getValue ( "TableTSIDColumn" );
+        TableTSIDFormat = props.getValue ( "TableTSIDFormat" );
         DataColumn = props.getValue ( "DataColumn" );
         DataRow = props.getValue ( "DataRow" );
         IfTableNotFound = props.getValue ( "IfTableNotFound" );
@@ -608,6 +660,12 @@ private void refresh ()
         }
         if ( DateTimeColumn != null ) {
             __DateTimeColumn_JTextField.setText ( DateTimeColumn );
+        }
+        if ( TableTSIDColumn != null ) {
+            __TableTSIDColumn_JTextField.setText ( TableTSIDColumn );
+        }
+        if (TableTSIDFormat != null ) {
+            __TableTSIDFormat_JTextField.setText(TableTSIDFormat.trim());
         }
         if ( DataColumn != null ) {
             __DataColumn_JTextField.setText ( DataColumn );
@@ -679,6 +737,8 @@ private void refresh ()
     EnsembleID = __EnsembleID_JComboBox.getSelected();
     TableID = __TableID_JComboBox.getSelected();
     DateTimeColumn = __DateTimeColumn_JTextField.getText().trim();
+    TableTSIDColumn = __TableTSIDColumn_JTextField.getText().trim();
+    TableTSIDFormat = __TableTSIDFormat_JTextField.getText().trim();
     DataColumn = __DataColumn_JTextField.getText().trim();
     DataRow = __DataRow_JTextField.getText().trim();
     OutputStart = __OutputStart_JTextField.getText().trim();
@@ -690,6 +750,8 @@ private void refresh ()
     props.add ( "EnsembleID=" + EnsembleID );
     props.add ( "TableID=" + TableID );
     props.add ( "DateTimeColumn=" + DateTimeColumn );
+    props.add ( "TableTSIDColumn=" + TableTSIDColumn );
+    props.add ( "TableTSIDFormat=" + TableTSIDFormat );
     props.add ( "DataColumn=" + DataColumn );
     props.add ( "DataRow=" + DataRow );
     props.add ( "Transformation=" + IfTableNotFound );
